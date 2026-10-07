@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" role="img" aria-labelledby="title">
+  <title id="title">Ảnh minh họa hiện vật mẫu</title>
+  <rect width="960" height="600" fill="#e9e0d2"/>
+  <circle cx="480" cy="220" r="130" fill="#d4b896"/>
+  <path d="M405 130h150l-20 80 70 250H355l70-250z" fill="#a97057" stroke="#704d3c" stroke-width="10"/>
+  <path d="M390 330q90-80 180 0M375 400q105-80 210 0" fill="none" stroke="#e7c9a6" stroke-width="17"/>
+  <text x="480" y="545" text-anchor="middle" font-family="sans-serif" font-size="32" fill="#51463d">Ảnh minh họa / placeholder</text>
+</svg>
