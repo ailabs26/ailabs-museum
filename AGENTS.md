@@ -1,58 +1,58 @@
-# Repository instructions
+# Hướng dẫn kho mã nguồn
 
-These instructions apply to the entire repository. More specific instructions in a nested `AGENTS.md`, when present, take precedence for that subtree.
+Các hướng dẫn này áp dụng cho toàn bộ kho mã nguồn. Nếu một thư mục con có `AGENTS.md` riêng thì hướng dẫn trong file gần nhất được ưu tiên cho cây thư mục đó.
 
-## Branch workflow
+## Quy trình nhánh
 
-- Start every task from the latest `origin/dev`.
-- Use one branch and one pull request per task.
-- Use `feat/<short-name>` for features, `fix/<short-name>` for bug fixes, `docs/<short-name>` for documentation, `chore/<short-name>` for maintenance, and `refactor/<short-name>` for behavior-preserving restructuring.
-- Open task pull requests against `dev`.
-- Do not push task commits directly to `dev`.
-- Never merge a task branch directly into `main`.
-- `main` receives release pull requests from `dev` only.
+- Luôn bắt đầu mỗi nhiệm vụ từ bản `origin/dev` mới nhất.
+- Mỗi nhiệm vụ chỉ dùng một nhánh và một pull request.
+- Dùng `feat/<ten-ngan>` cho tính năng mới, `fix/<ten-ngan>` cho sửa lỗi, `docs/<ten-ngan>` cho tài liệu, `chore/<ten-ngan>` cho bảo trì và `refactor/<ten-ngan>` cho thay đổi cấu trúc không làm đổi hành vi.
+- Mở pull request của nhiệm vụ vào `dev`.
+- Không push commit của nhiệm vụ trực tiếp vào `dev`.
+- Không bao giờ merge nhánh nhiệm vụ trực tiếp vào `main`.
+- `main` chỉ nhận pull request phát hành từ `dev`.
 
-## Before editing
+## Trước khi chỉnh sửa
 
-- Read the relevant implementation, README files, plans, and coding conventions before changing code.
-- Trace the current behavior and identify the layer that owns the requested change.
-- Keep the change within the task scope and preserve unrelated team or user changes.
-- Do not add speculative features, unrelated cleanup, broad renames, or premature abstractions.
-- Do not claim behavior or test results without current evidence.
+- Đọc phần triển khai, README, kế hoạch và quy ước lập trình liên quan trước khi sửa code.
+- Truy vết hành vi hiện tại và xác định đúng lớp chịu trách nhiệm cho thay đổi được yêu cầu.
+- Giữ thay đổi trong phạm vi nhiệm vụ và bảo toàn các thay đổi không liên quan của nhóm hoặc người dùng.
+- Không thêm tính năng suy đoán, dọn dẹp không liên quan, đổi tên diện rộng hoặc tạo lớp trừu tượng quá sớm.
+- Không tuyên bố hành vi hay kết quả kiểm thử khi chưa có bằng chứng hiện tại.
 
 ## Frontend
 
-- Follow `front-end/docs/coding-conventions.md`.
-- The frontend communicates with the NestJS API, not directly with PostgreSQL, Supabase, or storage.
-- Validate external API responses before application code consumes them.
-- Preserve accessible DOM and fallback behavior alongside 3D and WebXR behavior.
-- For frontend changes, run the relevant gates from `front-end/`:
+- Tuân theo `front-end/docs/coding-conventions.md`.
+- Frontend giao tiếp với NestJS API, không kết nối trực tiếp tới PostgreSQL, Supabase hoặc dịch vụ lưu trữ.
+- Kiểm tra tính hợp lệ của phản hồi từ API bên ngoài trước khi code ứng dụng sử dụng.
+- Duy trì DOM có khả năng tiếp cận và hành vi dự phòng song song với trải nghiệm 3D và WebXR.
+- Với thay đổi frontend, chạy các bước kiểm tra liên quan từ `front-end/`:
   - `npm run typecheck`
   - `npm run lint`
   - `npm run build`
 
 ## Backend
 
-- Follow `back-end/docs/coding-conventions.md`.
-- Keep public content endpoints read-only unless authenticated admin behavior is explicitly requested.
-- Keep TypeORM `synchronize` disabled.
-- Do not generate, run, revert, edit, or delete database migrations without explicit approval from the database owner.
-- For backend changes, run the relevant gates from `back-end/`:
+- Tuân theo `back-end/docs/coding-conventions.md`.
+- Giữ các endpoint nội dung công khai ở chế độ chỉ đọc, trừ khi nhiệm vụ yêu cầu rõ hành vi quản trị đã xác thực.
+- Luôn tắt TypeORM `synchronize`.
+- Không tạo, chạy, hoàn tác, chỉnh sửa hoặc xóa database migration nếu chưa có phê duyệt rõ ràng từ người phụ trách database.
+- Với thay đổi backend, chạy các bước kiểm tra liên quan từ `back-end/`:
   - `npm run typecheck`
   - `npm run lint`
   - `npm run build`
 
-## Verification and pull requests
+## Kiểm chứng và pull request
 
-- Verify the task's acceptance conditions with the smallest sufficient proof.
-- Run checks for every affected application. Run repository-wide checks only when the change crosses application boundaries or shared behavior.
-- Review the complete diff before committing and again before merging.
-- Use a concise commit message that describes the completed change.
-- Confirm that the pull request base is `dev`.
-- Do not merge while required checks or acceptance conditions are failing.
-- Merge into `dev` only after the pull request has been reviewed and the task is complete.
-- For database, authentication, authorization, security, privacy, or potentially destructive changes, stop at the pull request and request human review before merging.
+- Kiểm chứng các điều kiện nghiệm thu của nhiệm vụ bằng bằng chứng tối thiểu nhưng đầy đủ.
+- Chạy kiểm tra cho mọi ứng dụng bị ảnh hưởng. Chỉ chạy kiểm tra toàn kho mã nguồn khi thay đổi đi qua ranh giới ứng dụng hoặc tác động đến hành vi dùng chung.
+- Review toàn bộ diff trước khi commit và một lần nữa trước khi merge.
+- Dùng commit message ngắn gọn, mô tả thay đổi đã hoàn thành.
+- Xác nhận base của pull request là `dev`.
+- Không merge khi bước kiểm tra bắt buộc hoặc điều kiện nghiệm thu đang thất bại.
+- Chỉ merge vào `dev` sau khi pull request đã được review và nhiệm vụ đã hoàn thành.
+- Với thay đổi liên quan đến database, xác thực, phân quyền, bảo mật, quyền riêng tư hoặc có khả năng phá hủy dữ liệu, dừng tại pull request và yêu cầu con người review trước khi merge.
 
-## Completion report
+## Báo cáo hoàn thành
 
-Report the branch, commit, pull request URL, material changes, verification results, merge result, and any remaining risks or omissions.
+Báo cáo nhánh, commit, URL pull request, các thay đổi quan trọng, kết quả kiểm chứng, kết quả merge và mọi rủi ro hoặc phần còn thiếu.
