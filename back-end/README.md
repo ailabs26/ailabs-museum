@@ -13,8 +13,10 @@ cd back-end
 cp .env.example .env
 npm install
 npm run migration:run
-npm run dev
+npm run start
 ```
+
+`npm run start` tự biên dịch và khởi động lại khi sửa code trong `src/`; `npm run dev` là lệnh tương đương. Để chạy bản đã build mà không theo dõi thay đổi, dùng `npm run build` rồi `npm run start:prod`.
 
 API: `http://localhost:3001/rooms`, `GET /rooms/phong-kham-pha`, `GET /health`; Swagger ở `http://localhost:3001/docs`. `GET /media/placeholder-artifact.svg` là ảnh minh họa tĩnh. Có thể chạy `npm run migration:revert` để lùi migration cuối.
 
