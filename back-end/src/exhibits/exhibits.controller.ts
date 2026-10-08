@@ -9,9 +9,13 @@ export class ExhibitsController {
 
   @Get()
   @ApiOperation({ summary: 'Danh sách phòng công khai' })
-  listRooms() { return this.service.roomsList(); }
+  listRooms() {
+    return this.service.roomsList();
+  }
 
   @Get(':slug')
   @ApiOperation({ summary: 'Phòng và hiện vật công khai theo slug' })
-  getRoom(@Param('slug') slug: string) { return this.service.roomWithExhibits(slug); }
+  getRoom(@Param('slug') slug: string) {
+    return this.service.roomWithExhibits(slug);
+  }
 }

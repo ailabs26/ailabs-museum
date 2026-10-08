@@ -27,6 +27,14 @@ Ví dụ: `exhibits/`, `access-control/`, `dto/`, `repositories/`.
 | Decorator | `<purpose>.decorator.ts` | `current-user.decorator.ts` |
 | Test | `<source>.spec.ts` | `exhibits.service.spec.ts` |
 
+## Luồng xử lý API
+
+- Với chức năng có truy cập dữ liệu, luôn đi theo **Controller → Service → Repository**.
+- Controller nhận request, dùng DTO để kiểm tra dữ liệu đầu vào và gọi Service; không truy cập TypeORM trực tiếp.
+- Service xử lý quy tắc nghiệp vụ, phân quyền và transaction; không viết truy vấn database trực tiếp.
+- Repository chứa truy vấn TypeORM và ánh xạ dữ liệu; không xử lý request HTTP hoặc quyết định nghiệp vụ.
+- Đăng ký các thành phần cần thiết trong Module của chức năng. Ví dụ: `ExhibitsController` → `ExhibitsService` → `ExhibitsRepository`.
+
 ## Class, type và enum
 
 - Dùng **PascalCase**.
@@ -64,6 +72,12 @@ Ví dụ: `MAX_UPLOAD_SIZE`, `DATABASE_URL`, `FRONTEND_ORIGIN`.
 - Không đổi tên bảng hoặc cột chỉ để chỉnh style nếu chưa có yêu cầu nghiệp vụ.
 
 Ví dụ: bảng `exhibits`, property `displayOrder`, khóa ngoại `roomId`.
+
+## Thời gian và múi giờ
+
+- Mọi thời điểm (`createdAt`, `expiresAt`, ...) dùng PostgreSQL `timestamptz` và TypeScript `Date`; trường tùy chọn dùng `Date | null`. Không dùng `timestamp` không có múi giờ cho một thời điểm.
+- Trao đổi thời điểm qua API bằng ISO 8601 có `Z` (UTC), ví dụ `2026-10-09T09:00:00.000Z`. Không phụ thuộc múi giờ của máy chạy backend hoặc database.
+- Chỉ đổi sang múi giờ người dùng khi hiển thị. Với giờ theo lịch ở Việt Nam, dùng múi giờ IANA `Asia/Ho_Chi_Minh` để diễn giải trước khi đổi thành thời điểm UTC; ngày thuần túy dùng kiểu `date` riêng.
 
 ## Import và export
 
