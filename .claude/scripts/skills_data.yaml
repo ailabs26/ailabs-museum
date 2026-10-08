@@ -1,0 +1,665 @@
+- name: "agent-browser"
+  path: "agent-browser/SKILL.md"
+  description: "Automate browsers and apps with agent-browser. Use for testing, screenshots, forms, scraping, Browserbase/cloud browsers, and Electron when real Chrome cookies are not required."
+  category: "dev-tools"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[url or task]"
+  keywords: ["browser", "automation", "playwright", "testing", "e2e", "browserbase", "autonomous", "headless", "electron", "slack", "dogfood", "agentcore", "vercel-sandbox"]
+- name: "agentize"
+  path: "agentize/SKILL.md"
+  description: "Convert a codebase, feature, or module into an AI-agent-friendly CLI and/or MCP server. Covers npm packaging, stdio/SSE/Streamable HTTP surfaces, credential resolution, docs, tests, CI, and a companion Claude skill for users who need an existing capability exposed as a reusable agent tool."
+  category: "dev-tools"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[feature-or-module] [--both|--mcp|--cli] [--auto|--ask]"
+  keywords: ["agentize", "mcp", "cli", "monorepo", "npm", "cloudflare", "docker", "agent-tool"]
+- name: "ai-artist"
+  path: "ai-artist/SKILL.md"
+  description: "Generate product mockups, marketing assets, brand visuals, and concept art via Nano Banana with 129 curated prompts. Mandatory validation interview refines style/mood/colors (use --skip to bypass). 3 modes: search, creative, wild. Styles: Ukiyo-e, Bento grid, cyberpunk, cinematic, vintage patent."
+  category: "ai-ml"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[concept] [--mode search|creative|wild|all] [--provider auto|google|openrouter] [--skip]"
+  keywords: ["image", "generation", "prompts", "styles"]
+- name: "ai-multimodal"
+  path: "ai-multimodal/SKILL.md"
+  description: "Analyze images/audio/video with Gemini API (better vision than Claude). Generate images (Imagen 4, Nano Banana 2, MiniMax), videos (Veo 3, Hailuo), speech (MiniMax TTS), music (MiniMax). Use for vision analysis, transcription, OCR, design extraction, multimodal AI."
+  category: "ai-ml"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[file-path] [prompt]"
+  keywords: ["vision", "image", "video", "audio", "Gemini"]
+- name: "ask"
+  path: "ask/SKILL.md"
+  description: "Answer technical and architectural questions with expert analysis. Use for design decisions, best practices evaluation, solution comparison."
+  category: "utilities"
+  has_scripts: false
+  has_references: false
+  argument_hint: "[technical-question]"
+  keywords: ["questions", "consultation", "architecture"]
+- name: "backend-development"
+  path: "backend-development/SKILL.md"
+  description: "Build backends with Node.js, Python, Go (NestJS, FastAPI, Django). Use for REST/GraphQL/gRPC APIs, auth (OAuth, JWT), databases, microservices, security (OWASP), Docker/K8s."
+  category: "backend"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[framework] [task]"
+  keywords: ["nodejs", "python", "go", "api", "rest", "graphql"]
+- name: "better-auth"
+  path: "better-auth/SKILL.md"
+  description: "Add authentication with Better Auth (TypeScript). Use for email/password, OAuth providers (Google, GitHub), 2FA/MFA, passkeys/WebAuthn, sessions, RBAC, rate limiting."
+  category: "backend"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[auth-method or feature]"
+  keywords: ["auth", "oauth", "2fa", "passkeys", "sessions"]
+- name: "bootstrap"
+  path: "bootstrap/SKILL.md"
+  description: "Bootstrap new projects with research, tech stack, design, planning, and implementation. Modes: full (default interactive), auto (explicit autonomous), fast (skip research), parallel (multi-agent)."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[requirements] [--full|--auto|--fast|--parallel]"
+  keywords: ["scaffold", "project", "setup", "boilerplate"]
+- name: "brainstorm"
+  path: "brainstorm/SKILL.md"
+  description: "Brainstorm solutions with trade-off analysis and brutal honesty. Use for ideation, architecture decisions, technical debates, feature exploration, feasibility assessment, design discussions."
+  category: "utilities"
+  has_scripts: false
+  has_references: false
+  argument_hint: "[topic or problem]"
+  keywords: ["ideation", "tradeoffs", "debate", "decisions"]
+- name: "chrome-profile"
+  path: "chrome-profile/SKILL.md"
+  description: "Target a real Google Chrome profile for browser automation through Chrome DevTools MCP or claude-in-chrome. Provides a chrome-profile CLI, profile discovery, bridge diagnostics, setup playbooks, and the URL-anchor workflow for selecting the correct profile tab."
+  category: "dev-tools"
+  has_scripts: true
+  has_references: true
+  keywords: ["chrome", "browser", "profile", "mcp", "devtools", "automation", "cookies"]
+- name: "ck-autoresearch"
+  path: "ck-autoresearch/SKILL.md"
+  description: "Autoresearch is the upstream meta-framework (Udit Goenka, MIT) for autonomous goal-directed iteration with safety guardrails. Locally split into 4 specialized skills. Start here to learn the pattern, then route to the right specialized skill."
+  category: "utilities"
+  has_scripts: false
+  has_references: false
+  keywords: ["autoresearch", "autonomous", "iteration", "karpathy", "framework", "lineage", "router", "umbrella"]
+  related: ["ck-loop", "ck-predict", "ck-scenario", "ck-security"]
+- name: "ck-code-review"
+  path: "ck-code-review/SKILL.md"
+  description: "Review code quality with evidence-based rigor. Supports input modes: pending changes, PR number, commit hash, and codebase scan. Focuses on bugs, regressions, maintainability, reliability, and verification gaps."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[#PR | COMMIT | --pending | codebase [parallel]]"
+  keywords: ["review", "quality", "verification", "reliability"]
+- name: "ck-debug"
+  path: "ck-debug/SKILL.md"
+  description: "Debug systematically with root cause analysis before fixes. Use for bugs, test failures, unexpected behavior, performance issues, call stack tracing, multi-layer validation, log analysis, CI/CD failures, database diagnostics, system investigation."
+  category: "utilities"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[error or issue description]"
+  keywords: ["debug", "root-cause", "bugs", "test-failures"]
+- name: "ck-graphify"
+  path: "ck-graphify/SKILL.md"
+  description: "Build queryable knowledge graphs from code, docs, papers, and images. Use for codebase understanding, architecture analysis, cross-file relationship discovery, token-efficient navigation."
+  category: "dev-tools"
+  has_scripts: false
+  has_references: false
+  argument_hint: "[path] [--mcp|--report|--watch]"
+  maturity: "beta"
+  keywords: ["knowledge-graph", "code-analysis", "tree-sitter", "codebase-understanding", "ast"]
+  related: ["ck:repomix", "ck:scout", "ck:gkg"]
+- name: "ck-loop"
+  path: "ck-loop/SKILL.md"
+  description: "Autonomous iterative optimization loop — run N iterations against a mechanical metric, learn from git history, auto-keep/discard changes. Use for improving measurable metrics (coverage, performance, bundle size, etc.) through repeated experimentation."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[Goal/Metric description] or inline config block"
+  keywords: ["optimization", "iteration", "metrics", "loop"]
+- name: "ck-plan"
+  path: "ck-plan/SKILL.md"
+  description: "Plan implementations, design architectures, create technical roadmaps with detailed phases. Use for feature planning, system design, solution architecture, implementation strategy, phase documentation."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[task] [--fast|--hard|--deep|--parallel|--two] [--tdd|--no-tasks] OR [archive|red-team|validate]"
+  keywords: ["planning", "architecture", "phases", "roadmap"]
+- name: "ck-predict"
+  path: "ck-predict/SKILL.md"
+  description: "5 expert personas debate proposed changes before implementation. Catches architectural, security, performance, and UX issues early. Use before major features or risky changes."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "<feature description or change proposal> [--files <glob>] [--chain reason|probe]"
+  keywords: ["prediction", "debate", "review", "risk"]
+- name: "ck-scenario"
+  path: "ck-scenario/SKILL.md"
+  description: "Generate comprehensive edge cases and test scenarios by decomposing features across 12 dimensions. Use for pre-implementation risk discovery, QA planning, regression design, and iterative saturation when coverage must be exhaustive."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "<file path or feature description> [--iterations N] [--saturation]"
+  keywords: ["edge-cases", "test-scenarios", "dimensions", "saturation", "iterations"]
+- name: "ck-security"
+  path: "ck-security/SKILL.md"
+  description: "STRIDE + OWASP-based security audit with optional red-team persona discovery loop and auto-fix. Scans code for vulnerabilities from multiple attacker perspectives (auth attacker, supply chain, insider, infrastructure), categorizes by severity, and can iteratively fix findings using ck:autoresearch pattern."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "<scope glob or 'full'> [--fix] [--red-team] [--iterations N]"
+  keywords: ["security", "STRIDE", "OWASP", "audit", "red-team", "penetration-testing", "vulnerability-discovery"]
+- name: "coding-level"
+  path: "coding-level/SKILL.md"
+  description: "Set coding experience level for tailored output. Use for adjusting explanation depth, code complexity, and response format to user expertise."
+  category: "utilities"
+  has_scripts: false
+  has_references: false
+  argument_hint: "[0-5]"
+  keywords: ["experience", "level", "explanation", "format"]
+- name: "context-engineering"
+  path: "context-engineering/SKILL.md"
+  description: "Check context usage limits, monitor time remaining, optimize token consumption, debug context failures. Use when asking about context percentage, rate limits, usage warnings, context optimization, agent architectures, memory systems."
+  category: "utilities"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[topic or question]"
+  keywords: ["context", "tokens", "limits", "memory", "optimization"]
+- name: "cook"
+  path: "cook/SKILL.md"
+  description: "Implement features, plans, and fixes with structured workflow. Use for feature development, plan execution, code implementation pipelines."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[task|plan-path] [--interactive|--fast|--parallel|--auto|--no-test] [--tdd]"
+  keywords: ["implementation", "workflow", "feature", "pipeline"]
+- name: "copywriting"
+  path: "copywriting/SKILL.md"
+  description: "Conversion copywriting formulas, headline templates, email copy patterns, landing page structures, CTA optimization, and writing style extraction. Activate for writing high-converting copy, crafting headlines, email campaigns, landing pages, or applying custom writing styles from assets/writing-styles/ directory."
+  category: "utilities"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[copy-type] [context]"
+  keywords: ["copy", "headlines", "email", "landing-page"]
+- name: "cti-expert"
+  path: "cti-expert/SKILL.md"
+  description: "Analyze cyber threat intelligence and OSINT cases. Use for exposure reviews, domain recon, breach checks, username/email/phone research, image forensics, blockchain tracing, darknet checks, cloud tenant recon, vulnerability lookup, threat modeling, and structured reports."
+  category: "security"
+  has_scripts: true
+  has_references: false
+  argument_hint: "[target] [--yolo] [--case|--sweep|--query|--flow]"
+  keywords: ["osint", "cti", "threat-intelligence", "recon", "investigation", "darknet", "breach", "forensics"]
+- name: "databases"
+  path: "databases/SKILL.md"
+  description: "Design schemas, write queries for MongoDB and PostgreSQL. Use for database design, SQL/NoSQL queries, aggregation pipelines, indexes, migrations, replication, performance optimization, psql CLI."
+  category: "database"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[query or schema task]"
+  keywords: ["mongodb", "postgresql", "sql", "schemas", "queries"]
+- name: "deploy"
+  path: "deploy/SKILL.md"
+  description: "Deploy projects to any platform with auto-detection. Use when user says \"deploy\", \"publish\", \"ship\", \"go live\", \"push to production\", \"host this app\", or mentions any hosting platform (Vercel, Netlify, Cloudflare, Railway, Fly.io, Render, Heroku, TOSE, Github Pages, AWS, GCP, Digital Ocean, Vultr, Coolify, Dokploy). Auto-detects deployment target from config files and docs/deployment.md."
+  category: "infrastructure"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[platform] [environment]"
+  keywords: ["deploy", "hosting", "Vercel", "Netlify", "Cloudflare"]
+- name: "design"
+  path: "design/SKILL.md"
+  description: "Design brand identity, logos, banners, and visual assets. Use for brand systems, design tokens, corporate identity programs. Not for UI code patterns."
+  category: "frontend"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[design-type] [context]"
+  keywords: ["brand", "logo", "CIP", "banners", "identity"]
+- name: "devops"
+  path: "devops/SKILL.md"
+  description: "Deploy to Cloudflare (Workers, R2, D1), Docker, GCP (Cloud Run, GKE), Kubernetes (kubectl, Helm). Use for serverless, containers, CI/CD, GitOps, security audit."
+  category: "infrastructure"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[platform] [task]"
+  keywords: ["cloudflare", "docker", "gcp", "kubernetes", "cicd"]
+- name: "docs"
+  path: "docs/SKILL.md"
+  description: "Analyze codebase and manage project documentation. Use for doc initialization, updates, summaries, codebase analysis."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "init|update|summarize"
+  keywords: ["documentation", "init", "update", "summarize"]
+- name: "docs-seeker"
+  path: "docs-seeker/SKILL.md"
+  description: "Search library/framework documentation via llms.txt (context7.com). Use for API docs, GitHub repository analysis, technical documentation lookup, latest library features."
+  category: "dev-tools"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[library-name] [topic]"
+  keywords: ["docs", "llms-txt", "api", "library", "context7"]
+- name: "document-skills/docx"
+  path: "document-skills/docx/SKILL.md"
+  description: "Create, edit, analyze .docx Word documents. Use for document creation, tracked changes, comments, formatting preservation, text extraction, template modification."
+  category: "multimedia"
+  has_scripts: true
+  has_references: false
+  keywords: ["docx", "word", "document", "office"]
+- name: "document-skills/pdf"
+  path: "document-skills/pdf/SKILL.md"
+  description: "Extract text/tables, create, merge, split PDFs. Fill PDF forms programmatically. Use for PDF processing, generation, form filling, document analysis, batch operations."
+  category: "multimedia"
+  has_scripts: true
+  has_references: false
+  keywords: ["pdf", "extract", "text", "pages"]
+- name: "document-skills/pptx"
+  path: "document-skills/pptx/SKILL.md"
+  description: "Create, edit, analyze .pptx PowerPoint files. Use for presentations, slides, layouts, speaker notes, template modification, content extraction, slide generation."
+  category: "multimedia"
+  has_scripts: true
+  has_references: false
+  keywords: ["pptx", "powerpoint", "slides", "office"]
+- name: "document-skills/xlsx"
+  path: "document-skills/xlsx/SKILL.md"
+  description: "Create, edit, analyze spreadsheets (.xlsx, .csv, .tsv). Use for Excel formulas, data analysis, visualization, formatting, pivot tables, charts, formula recalculation."
+  category: "multimedia"
+  has_scripts: false
+  has_references: false
+  keywords: ["xlsx", "excel", "spreadsheet", "data"]
+- name: "excalidraw"
+  path: "excalidraw/SKILL.md"
+  description: "Create Excalidraw diagrams — architecture, data flow, workflows, system design. Use when user wants to visualize, diagram, draw architecture, show data flow, create flowcharts, map components, or export .excalidraw files to PNG/SVG. Supports two modes: live MCP canvas (real-time) or file-based JSON + Playwright rendering. Also supports zero-config codebase auto-diagramming — just say \"diagram this repo\" or \"visualize the architecture\"."
+  category: "dev-tools"
+  has_scripts: false
+  has_references: true
+  keywords: ["diagrams", "architecture", "flowcharts", "whiteboard", "SVG"]
+- name: "find-skills"
+  path: "find-skills/SKILL.md"
+  description: "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill."
+  category: "dev-tools"
+  has_scripts: false
+  has_references: false
+  argument_hint: "[capability or task description]"
+  keywords: ["discover", "install", "skills", "search"]
+- name: "fix"
+  path: "fix/SKILL.md"
+  description: "Fix bugs, errors, test failures, and CI/CD issues with intelligent routing. Use for type errors, lint issues, log errors, UI bugs, code problems."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[issue] --auto|--review|--quick|--parallel"
+  keywords: ["bugfix", "error", "test-failure", "CI", "lint"]
+- name: "frontend-design"
+  path: "frontend-design/SKILL.md"
+  description: "Create polished frontend interfaces from designs/screenshots/videos. Use for web components, 3D experiences, replicating UI designs, quick prototypes, immersive interfaces, avoiding AI slop."
+  category: "frontend"
+  has_scripts: false
+  has_references: true
+  keywords: ["ui", "design", "screenshots", "prototyping"]
+- name: "frontend-development"
+  path: "frontend-development/SKILL.md"
+  description: "Build React/TypeScript frontends with modern patterns. Use for components, Suspense, lazy loading, useSuspenseQuery, MUI v7 styling, TanStack Router, performance optimization."
+  category: "frontend"
+  has_scripts: false
+  has_references: false
+  argument_hint: "[component or feature]"
+  keywords: ["react", "typescript", "components", "mui"]
+- name: "git"
+  path: "git/SKILL.md"
+  description: "Git operations with conventional commits. Use for staging, committing, pushing, PRs, merges. Auto-splits commits by type/scope. Security scans for secrets."
+  category: "dev-tools"
+  has_scripts: false
+  has_references: true
+  argument_hint: "cm|cp|pr|merge [args]"
+  keywords: ["git", "commits", "staging", "PR", "merge"]
+- name: "gkg"
+  path: "gkg/SKILL.md"
+  description: "Semantic code analysis with GitLab Knowledge Graph. Use for go-to-definition, find-usages, impact analysis, architecture visualization. Supports Ruby, Java, Kotlin, Python, TypeScript/JavaScript."
+  category: "dev-tools"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[symbol or query]"
+  keywords: ["code-analysis", "knowledge-graph", "gitlab"]
+- name: "google-adk-python"
+  path: "google-adk-python/SKILL.md"
+  description: "Build AI agents with Google ADK Python. Multi-agent systems, A2A protocol, MCP tools, workflow agents, state/memory, callbacks/plugins, Vertex AI deployment, evaluation."
+  category: "ai-ml"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[agent or feature]"
+  keywords: ["google-adk", "agents", "a2a", "mcp", "vertex-ai"]
+- name: "journal"
+  path: "journal/SKILL.md"
+  description: "Write technical journal entries analyzing recent changes. Use for session reflections, change analysis, decision documentation."
+  category: "utilities"
+  has_scripts: false
+  has_references: false
+  argument_hint: "[topic or reflection]"
+  keywords: ["journal", "reflection", "changes", "session"]
+- name: "llms"
+  path: "llms/SKILL.md"
+  description: "Generate llms.txt files from docs or codebase scanning. Follows llmstxt.org spec. Use for LLM-friendly site indexes, documentation summaries, AI context optimization."
+  category: "dev-tools"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[path|url] [--full] [--output path]"
+  keywords: ["llms-txt", "documentation", "AI-context"]
+- name: "markdown-novel-viewer"
+  path: "markdown-novel-viewer/SKILL.md"
+  description: "View markdown files in a calm, book-like reader served via HTTP. Use for long-form content review — RFCs, runbooks, design docs, reports, specs, novels — anywhere you want a distraction-free reading mode in the browser."
+  category: "utilities"
+  has_scripts: true
+  has_references: false
+  argument_hint: "[file-or-directory]"
+  keywords: ["markdown", "viewer", "reading", "preview"]
+- name: "mcp-builder"
+  path: "mcp-builder/SKILL.md"
+  description: "Build MCP servers for LLM-external service integration. Use for FastMCP (Python), MCP SDK (Node/TypeScript), tool design, API integration, resource providers."
+  category: "dev-tools"
+  has_scripts: true
+  has_references: false
+  argument_hint: "[service or API to integrate]"
+  keywords: ["MCP", "server", "tools", "integration"]
+- name: "media-processing"
+  path: "media-processing/SKILL.md"
+  description: "Process media with FFmpeg (video/audio), ImageMagick (images), RMBG (AI background removal). Use for encoding, format conversion, filters, thumbnails, batch processing, HLS/DASH streaming."
+  category: "multimedia"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[input-file] [operation]"
+  keywords: ["ffmpeg", "imagemagick", "video", "audio", "images"]
+- name: "mermaidjs-v11"
+  path: "mermaidjs-v11/SKILL.md"
+  description: "Create diagrams with Mermaid.js v11 syntax. Use for flowcharts, sequence diagrams, class diagrams, ER diagrams, Gantt charts, state diagrams, architecture diagrams, timelines, user journeys."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[diagram-type or description]"
+  keywords: ["mermaid", "diagrams", "flowcharts", "charts"]
+- name: "mintlify"
+  path: "mintlify/SKILL.md"
+  description: "Build and maintain Mintlify documentation sites. Covers docs.json, MDX components, navigation, page frontmatter, theming, OpenAPI/AsyncAPI, AI docs assets such as llms.txt and skill.md, deployment targets, and local validation CLI commands."
+  category: "dev-tools"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[task] [path]"
+  keywords: ["docs-site", "API-docs", "MDX", "Mintlify"]
+- name: "mobile-development"
+  path: "mobile-development/SKILL.md"
+  description: "Build mobile apps with React Native, Flutter, Swift/SwiftUI, Kotlin/Jetpack Compose. Use for iOS/Android, mobile UX, performance optimization, offline-first, app store deployment."
+  category: "frameworks"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[platform] [feature]"
+  keywords: ["react-native", "flutter", "swift", "kotlin", "ios"]
+- name: "payment-integration"
+  path: "payment-integration/SKILL.md"
+  description: "Integrate payments with SePay (VietQR), Polar, Stripe, Paddle (MoR subscriptions), Creem.io (licensing). Checkout, webhooks, subscriptions, QR codes, multi-provider orders."
+  category: "backend"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[provider] [task]"
+  keywords: ["payments", "stripe", "polar", "webhooks", "qr"]
+- name: "plans-kanban"
+  path: "plans-kanban/SKILL.md"
+  description: "Open the ClaudeKit plans dashboard in the CLI config UI. Use for plan kanban views, progress tracking, timeline checks, and quick navigation into plan files."
+  category: "dev-tools"
+  has_scripts: true
+  has_references: false
+  argument_hint: "[deprecated flags are accepted with warnings]"
+  keywords: ["plans", "dashboard", "kanban", "progress", "timeline"]
+- name: "preview"
+  path: "preview/SKILL.md"
+  description: "View files or generate visual explanations, slides, and diagrams. Use for code walkthroughs, architecture visualization, HTML/Markdown presentations."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[path] OR [--html] --explain|--slides|--diagram|--ascii [topic] OR --html --diff|--plan-review|--recap"
+  keywords: ["preview", "visual", "slides", "diagrams", "HTML"]
+- name: "problem-solving"
+  path: "problem-solving/SKILL.md"
+  description: "Apply systematic problem-solving techniques when stuck. Use for complexity spirals, innovation blocks, recurring patterns, assumption constraints, simplification cascades, scale uncertainty."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[problem description]"
+  keywords: ["problem-solving", "stuck", "patterns", "simplify"]
+- name: "project-management"
+  path: "project-management/SKILL.md"
+  description: "Track progress, update plan statuses, manage Claude Tasks, generate reports, coordinate docs updates. Use for project oversight, status checks, plan completion, task hydration, cross-session continuity."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[task: status, hydrate, sync, report]"
+  keywords: ["project", "progress", "status", "reports"]
+- name: "project-organization"
+  path: "project-organization/SKILL.md"
+  description: "Organize files, directories, and content structure in any project. Use when creating files, determining output paths, organizing existing assets, or standardizing project layout."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[directories or files to organize]"
+  keywords: ["files", "directories", "structure", "layout"]
+- name: "react-best-practices"
+  path: "react-best-practices/SKILL.md"
+  description: "Apply React and Next.js performance optimization patterns from Vercel Engineering. Use for component optimization, rendering performance, bundle analysis."
+  category: "frontend"
+  has_scripts: false
+  has_references: false
+  argument_hint: "[component or pattern]"
+  keywords: ["react", "nextjs", "performance", "vercel"]
+- name: "remotion"
+  path: "remotion/SKILL.md"
+  description: "Build video content with Remotion in React. Use for programmatic video creation, animated sequences, data-driven video rendering."
+  category: "frontend"
+  has_scripts: false
+  has_references: false
+  argument_hint: "[video or component]"
+  keywords: ["video", "react", "remotion", "rendering"]
+- name: "repomix"
+  path: "repomix/SKILL.md"
+  description: "Pack repositories into AI-friendly files with Repomix (XML, Markdown, plain text). Use for new-project onboarding, codebase snapshots, LLM context preparation, security audits, third-party library analysis."
+  category: "dev-tools"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[path] [--style xml|markdown|plain|json]"
+  keywords: ["codebase", "pack", "snapshot", "llm-context"]
+- name: "research"
+  path: "research/SKILL.md"
+  description: "Research technical solutions, analyze architectures, gather requirements thoroughly. Use for technology evaluation, best practices research, solution design, scalability/security/maintainability analysis."
+  category: "utilities"
+  has_scripts: false
+  has_references: false
+  argument_hint: "[topic]"
+  keywords: ["research", "evaluation", "analysis", "solutions"]
+- name: "retro"
+  path: "retro/SKILL.md"
+  description: "Generate data-driven sprint retrospectives from any git history. Use for sprint reviews, commit analysis, code-health indicators, team-velocity reporting, and quarterly engineering reviews. Works on solo or team repos."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[timeframe] [--compare] [--team] [--format html|md]"
+  keywords: ["retrospective", "sprint", "metrics", "review"]
+- name: "scout"
+  path: "scout/SKILL.md"
+  description: "Fast codebase scouting using parallel agents. Use for file discovery, task context gathering, quick searches across directories. Supports internal (Explore) and external (Gemini/OpenCode) agents."
+  category: "dev-tools"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[search-target] [ext]"
+  keywords: ["codebase", "scouting", "file-discovery", "search"]
+- name: "security-scan"
+  path: "security-scan/SKILL.md"
+  description: "Scan codebase for security vulnerabilities, hardcoded secrets, dependency issues, and OWASP patterns. Use when asked to 'security scan', 'check for secrets', 'audit security', or before major releases."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[scope] [--secrets-only] [--deps-only] [--full]"
+  keywords: ["security", "secrets", "vulnerabilities", "OWASP"]
+- name: "sequential-thinking"
+  path: "sequential-thinking/SKILL.md"
+  description: "Apply step-by-step analysis for complex problems with revision capability. Use for multi-step reasoning, hypothesis verification, adaptive planning, problem decomposition, course correction."
+  category: "utilities"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[problem to analyze step-by-step]"
+  keywords: ["reasoning", "step-by-step", "analysis"]
+- name: "shader"
+  path: "shader/SKILL.md"
+  description: "Write GLSL fragment shaders for procedural graphics. Topics: shapes (SDF), patterns, noise (Perlin/simplex/cellular), fBm, colors (HSB/RGB), matrices, gradients, animations. Use for generative art, textures, visual effects, WebGL, Three.js shaders."
+  category: "frontend"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[effect or pattern]"
+  keywords: ["glsl", "shaders", "procedural", "webgl"]
+- name: "ship"
+  path: "ship/SKILL.md"
+  description: "Ship pipeline: merge main, test, review, commit, push, PR. Single command from feature branch to PR URL. Use for shipping official releases to main/master or beta releases to dev/beta branches."
+  category: "dev-tools"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[official|beta] [--skip-tests] [--skip-review] [--skip-journal] [--skip-docs] [--dry-run]"
+  keywords: ["ship", "PR", "merge", "push", "release"]
+- name: "shopify"
+  path: "shopify/SKILL.md"
+  description: "Build Shopify apps, extensions, themes with Shopify CLI. Use for GraphQL/REST APIs, Polaris UI, Liquid templates, checkout customization, webhooks, billing integration."
+  category: "frameworks"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[extension-type] [feature]"
+  keywords: ["shopify", "polaris", "liquid", "checkout"]
+- name: "show-off"
+  path: "show-off/SKILL.md"
+  description: "Create stunning self-contained HTML pages to showcase work. Use for demos, visual presentations, interactive showcases."
+  category: "other"
+  has_scripts: true
+  has_references: false
+  argument_hint: "[markdown-or-prompt]"
+  keywords: ["HTML", "showcase", "demo", "presentation"]
+- name: "skill-creator"
+  path: "skill-creator/SKILL.md"
+  description: "Create or update Claude skills with eval-driven iteration. Use for new skills, skill scripts, references, benchmark optimization, description optimization, eval testing, extending Claude's capabilities."
+  category: "dev-tools"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[skill-name or description]"
+  keywords: ["skills", "authoring", "eval", "testing", "templates"]
+- name: "stitch"
+  path: "stitch/SKILL.md"
+  description: "AI design generation with Google Stitch. Generate UI designs from text prompts, export Tailwind/HTML/DESIGN.md, orchestrate design-to-code pipeline. Use for rapid prototyping, UI generation, design exploration."
+  category: "frontend"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[design prompt or action]"
+  keywords: ["Stitch", "UI-generation", "prototyping", "Tailwind"]
+- name: "tanstack"
+  path: "tanstack/SKILL.md"
+  description: "Build with TanStack Start (full-stack React framework), TanStack Form (headless form management), and TanStack AI (AI streaming/chat). Use when creating TanStack projects, routes, server functions, forms, validation, or AI chat features."
+  category: "frameworks"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[framework] [feature]"
+  keywords: ["tanstack", "start", "form", "ai", "router"]
+- name: "team"
+  path: "team/SKILL.md"
+  description: "Orchestrate Agent Teams for parallel multi-session collaboration. Use for research, implementation, review, and debug workflows requiring independent teammates."
+  category: "dev-tools"
+  has_scripts: false
+  has_references: true
+  argument_hint: "<template> <context> [--devs|--researchers|--reviewers N] [--delegate]"
+  keywords: ["agents", "parallel", "multi-session", "collaboration"]
+- name: "tech-graph"
+  path: "tech-graph/SKILL.md"
+  description: "Generate production-quality SVG+PNG technical diagrams — architecture, data flow, flowchart, sequence, agent/memory, or concept maps — across 7 visual styles. Use when user wants \"generate diagram\", \"draw diagram\", \"visualize\", \"architecture diagram\", \"flowchart\", or any system/flow they want illustrated. Pairs with /ck:preview --diagram for visual self-review and /ck:mermaidjs-v11 for inline-doc diagrams; this skill is the publish-grade output mode."
+  category: "dev-tools"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[diagram-type or system description]"
+  keywords: ["diagrams", "architecture", "flowchart", "sequence", "svg", "png", "agent", "memory", "visualization"]
+- name: "test"
+  path: "test/SKILL.md"
+  description: "Run unit, integration, e2e, and UI tests. Use for test execution, coverage analysis, build verification, visual regression, and QA reports."
+  category: "utilities"
+  has_scripts: false
+  has_references: true
+  argument_hint: "[context] OR ui [url]"
+  keywords: ["test", "unit", "integration", "e2e", "coverage"]
+- name: "threejs"
+  path: "threejs/SKILL.md"
+  description: "Build 3D web experiences with Three.js. Use for WebGL/WebGPU scenes, GLTF models, animations, physics, VR/XR. Supports 556 searchable examples."
+  category: "frontend"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[3D scene or feature]"
+  keywords: ["threejs", "3d", "webgl", "webgpu", "gltf"]
+- name: "ui-styling"
+  path: "ui-styling/SKILL.md"
+  description: "Style UIs with shadcn/ui components (Radix UI + Tailwind CSS). Use for accessible components, themes, dark mode, responsive layouts, design systems, color customization."
+  category: "frontend"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[component or layout]"
+  keywords: ["shadcn", "radix", "tailwind", "themes"]
+- name: "ui-ux-pro-max"
+  path: "ui-ux-pro-max/SKILL.md"
+  description: "UI/UX design intelligence for web and mobile: style selection, color systems, typography, layout, accessibility, interaction states, responsive behavior, forms, charts, design systems, and code review across React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui, and HTML/CSS."
+  category: "frontend"
+  has_scripts: true
+  has_references: false
+  keywords: ["ui-ux", "styles", "palettes", "fonts"]
+- name: "use-mcp"
+  path: "use-mcp/SKILL.md"
+  description: "Discover and execute MCP server tools. Two execution paths: Gemini CLI (LLM-driven, all tasks) or direct scripts (deterministic, specific tool/server). Use for MCP integrations, tool execution, capability discovery, persistent tool catalog."
+  category: "dev-tools"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[task]"
+  keywords: ["MCP", "tools", "execute", "discovery", "gemini", "mcp-client"]
+- name: "watzup"
+  path: "watzup/SKILL.md"
+  description: "Generate short handoff reports from Git branches, remote refs, worktrees, and unfinished plans. Use when the user asks what's in flight, wants progress/next steps, is in a fresh worktree or detached checkout, or needs end-of-session status."
+  category: "utilities"
+  has_scripts: true
+  has_references: false
+  keywords: ["session", "wrap-up", "changes", "review", "worktree", "branches", "plans"]
+- name: "web-design-guidelines"
+  path: "web-design-guidelines/SKILL.md"
+  description: "Review UI code for Web Interface Guidelines compliance. Use when asked to \"review my UI\", \"check accessibility\", \"audit design\", \"review UX\", or \"check my site against best practices\"."
+  category: "frontend"
+  has_scripts: false
+  has_references: false
+  argument_hint: "[file-or-pattern]"
+  keywords: ["ui-review", "accessibility", "ux-audit"]
+- name: "web-frameworks"
+  path: "web-frameworks/SKILL.md"
+  description: "Build with Next.js (App Router, RSC, SSR, ISR), Turborepo monorepos. Use for React apps, server rendering, build optimization, caching strategies, shared dependencies."
+  category: "frameworks"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[framework] [feature]"
+  keywords: ["nextjs", "turborepo", "ssr", "isr", "rsc"]
+- name: "web-testing"
+  path: "web-testing/SKILL.md"
+  description: "Web testing with Playwright, Vitest, k6. E2E/unit/integration/load/security/visual/a11y testing. Use for test automation, flakiness, Core Web Vitals, mobile gestures, cross-browser."
+  category: "dev-tools"
+  has_scripts: true
+  has_references: true
+  argument_hint: "[test-type] [target]"
+  keywords: ["Playwright", "Vitest", "k6", "e2e", "load-testing"]
+- name: "worktree"
+  path: "worktree/SKILL.md"
+  description: "Create, inspect, and clean isolated git worktrees. Use for feature isolation, worktree health audits, stale cleanup, and monorepo or submodule workflows."
+  category: "dev-tools"
+  has_scripts: true
+  has_references: false
+  argument_hint: "[feature-description] OR [project] [feature]"
+  keywords: ["worktree", "parallel", "monorepo", "isolation"]
+- name: "xia"
+  path: "xia/SKILL.md"
+  description: "Extract, compare, port, or adapt a feature from a GitHub repository or local repo path into the current project. Use when the user wants to copy behavior from another repo, study how another codebase implements something, compare implementations, or rewrite a feature in the local stack. Triggers on: 'port from', 'copy from repo', 'like how X does it', 'clone feature from', 'adapt from', 'bring feature from', 'borrow from', 'take from repo', 'xia', 'xi a', 'xia feature'."
+  category: "dev-tools"
+  has_scripts: false
+  has_references: true
+  argument_hint: "<github-url-or-owner/repo|local-path> [feature] [--compare|--copy|--improve|--port] [--auto|--fast]"
+  keywords: ["port", "extract", "compare", "feature", "repo"]
