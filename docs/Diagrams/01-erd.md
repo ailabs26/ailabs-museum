@@ -19,11 +19,11 @@ erDiagram
     content_reports }o--o| users : "assigned_to"
     audit_logs }o--o| users : "actor_id"
     audit_logs }o--o| exhibit_revisions : "revision_id"
-    users ||--o{ user_roles : ""
-    roles ||--o{ user_roles : ""
-    roles ||--o{ role_permissions : ""
-    permissions ||--o{ role_permissions : ""
-    users ||--o{ refresh_sessions : ""
+    users ||--o{ user_roles : "gán"
+    roles ||--o{ user_roles : "gán"
+    roles ||--o{ role_permissions : "có"
+    permissions ||--o{ role_permissions : "thuộc"
+    users ||--o{ refresh_sessions : "phiên"
     refresh_sessions }o--o| refresh_sessions : "replaced_by_id"
 
     rooms {
@@ -99,13 +99,13 @@ erDiagram
         varchar description "null"
     }
     user_roles {
-        uuid user_id PK_FK
-        uuid role_id PK_FK
+        uuid user_id PK "FK users"
+        uuid role_id PK "FK roles"
         timestamptz assigned_at
     }
     role_permissions {
-        uuid role_id PK_FK
-        uuid permission_id PK_FK
+        uuid role_id PK "FK roles"
+        uuid permission_id PK "FK permissions"
     }
     refresh_sessions {
         uuid id PK
