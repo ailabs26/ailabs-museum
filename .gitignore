@@ -1,5 +1,5 @@
 # Local tooling / editor
-.claude/
+#.claude/
 .codegraph/
 .vscode/
 .idea/
