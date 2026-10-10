@@ -1,8 +1,10 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Public } from '../core/auth/public.decorator';
 import { ExhibitsService } from './exhibits.service';
 
 @ApiTags('Public museum content')
+@Public()
 @Controller('rooms')
 export class ExhibitsController {
   constructor(private readonly service: ExhibitsService) {}

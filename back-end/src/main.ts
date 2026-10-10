@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import { static as expressStatic } from 'express';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './core/http/all-exceptions.filter';
@@ -15,6 +16,9 @@ async function bootstrap() {
 
   // Mọi API dưới /api (xem 06-api-contract.md)
   app.setGlobalPrefix('api');
+
+  // Đọc refresh token từ httpOnly cookie (AuthController).
+  app.use(cookieParser());
 
   app.enableCors({
     origin: config.getOrThrow<string>('FRONTEND_ORIGIN'),
