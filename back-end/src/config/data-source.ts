@@ -1,19 +1,19 @@
 import 'reflect-metadata';
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
-import { AuditLog } from '../audit/audit-log.entity';
-import { ContentReport } from '../content-reports/content-report.entity';
-import { ExhibitRevision } from '../exhibit-revisions/exhibit-revision.entity';
-import { Exhibit } from '../exhibits/exhibit.entity';
-import { Hotspot } from '../hotspots/hotspot.entity';
-import { Media } from '../media/media.entity';
-import { Permission } from '../permissions/permission.entity';
-import { RefreshSession } from '../refresh-sessions/refresh-session.entity';
-import { RolePermission } from '../role-permissions/role-permission.entity';
-import { Role } from '../roles/role.entity';
-import { Room } from '../rooms/room.entity';
-import { UserRole } from '../user-roles/user-role.entity';
-import { User } from '../users/user.entity';
+import { AuditLog } from '../modules/audit/entities/audit-log.entity';
+import { ContentReport } from '../modules/content-reports/entities/content-report.entity';
+import { ExhibitRevision } from '../modules/exhibits/entities/exhibit-revision.entity';
+import { Exhibit } from '../modules/exhibits/entities/exhibit.entity';
+import { Hotspot } from '../modules/exhibits/entities/hotspot.entity';
+import { Media } from '../modules/media/entities/media.entity';
+import { Permission } from '../modules/roles/entities/permission.entity';
+import { RefreshSession } from '../modules/auth/entities/refresh-session.entity';
+import { RolePermission } from '../modules/roles/entities/role-permission.entity';
+import { Role } from '../modules/roles/entities/role.entity';
+import { Room } from '../modules/rooms/entities/room.entity';
+import { UserRole } from '../modules/users/entities/user-role.entity';
+import { User } from '../modules/users/entities/user.entity';
 
 config();
 
@@ -35,6 +35,6 @@ export const dataSource = new DataSource({
     ContentReport,
     AuditLog,
   ],
-  migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+  migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   synchronize: false,
 });

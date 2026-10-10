@@ -64,16 +64,26 @@ Mọi response theo envelope `ApiResponse<T>` (`{ success, data, message, meta? 
 - Mật khẩu hash bằng bcrypt; không trả `passwordHash`/token ra API.
 - Ghi vết tự động: route ghi/sửa đánh `@Audit('resource.action','resource')`; `AuditInterceptor` tạo `AuditLog` append-only sau khi thành công.
 
-## 5. Cấu trúc `src/`
+## 5. Cấu trúc `src/` (chuẩn enterprise)
 
-- `config/` — validation môi trường, TypeORM DataSource (dùng cho app, migration CLI và seed).
-- `core/` — hạ tầng global: `http/` (ApiResponse, ResponseInterceptor, AllExceptionsFilter), `repository/` (BaseRepository), `database/` (TransactionManager), `security/` (PasswordService), `auth/` (JwtAuthGuard, PermissionsGuard, các decorator), `exceptions/`.
-- `common/` — `constants/` (PERMISSIONS), `enums/` (RoleKey...), `dto/`, `types/` (AuthUser, Paginated).
-- Module phân hệ quản trị: `auth/`, `users/`, `roles/` (gồm permissions), `audit/`.
-- Module nội dung: `rooms/`, `exhibits/` (+ revision), `media/`, `hotspots/`, các bảng RBAC (`roles`, `permissions`, `user-roles`, `role-permissions`, `refresh-sessions`, `audit-logs`).
-- `migrations/` — schema 13 bảng MVP (xem [../docs/architecture/04-data-model-erd.md](../docs/architecture/04-data-model-erd.md)).
-- `seed/` — script seed quyền/vai trò/admin.
-- `public/media/` — asset minh họa.
+```
+src/
+├── main.ts, app.module.ts
+├── common/        # hạ tầng dùng chung, global (CommonModule @Global)
+│   ├── decorators/ guards/ filters/ interceptors/ middleware/ exceptions/
+│   ├── dto/ (ApiResponse, PaginationQueryDto…) constants/ enums/ types/
+│   ├── repository/ (BaseRepository)  database/ (TransactionManager)  security/ (PasswordService)
+├── config/        # app.config / database.config / jwt.config (registerAs) + env.validation + data-source + index
+├── database/      # migrations/ + seeds/ + database.module.ts
+└── modules/       # feature theo domain, mỗi module: controllers/ services/ repositories/ entities/ dto/
+    ├── auth/      (refresh_session)   users/ (user, user_role)   roles/ (role, permission, role_permission)
+    ├── audit/ (audit_log + interceptor/decorator)   exhibits/ (exhibit, revision, hotspot)
+    └── rooms/ (room)   media/ (media)   content-reports/ (content_report)   health/
+```
+
+- Entity đặt theo DDD trong `modules/<domain>/entities/`.
+- Tầng dữ liệu đi theo Controller → Service → Repository; chỉ Repository chạm TypeORM.
+- `public/media/` — asset minh họa phục vụ qua HTTP.
 
 ## 6. Migration
 
@@ -84,7 +94,7 @@ Mọi response theo envelope `ApiResponse<T>` (`{ success, data, message, meta? 
 - TypeORM ghi lịch sử ở bảng `public.migrations`; không chỉnh thủ công.
 
 ```sh
-npm run migration:generate -- src/migrations/TenMigration
+npm run migration:generate -- src/database/migrations/TenMigration
 ```
 
 ## 7. Kiểm tra chất lượng
