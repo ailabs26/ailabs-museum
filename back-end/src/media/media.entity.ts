@@ -45,7 +45,12 @@ export class Media {
   @Column({ name: 'checksum_sha256', type: 'char', length: 64 })
   checksumSha256!: string;
 
-  @Column({ name: 'processing_state', type: 'varchar', length: 12 })
+  @Column({
+    name: 'processing_state',
+    type: 'varchar',
+    length: 12,
+    default: MediaProcessingState.PENDING,
+  })
   processingState!: MediaProcessingState;
 
   @Column({ name: 'alt_text', type: 'varchar', length: 240, nullable: true })
