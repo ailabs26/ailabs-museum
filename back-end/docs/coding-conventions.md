@@ -83,7 +83,50 @@ Ví dụ: bảng `exhibits`, property `displayOrder`, khóa ngoại `roomId`.
 
 - Ưu tiên named export.
 - Dùng `import type` khi chỉ import type.
-- Không tạo barrel `index.ts` chỉ để rút ngắn đường dẫn import.
+- Không tạo barrel `index.ts` chỉ để rút ngắn đường dẫn import. **Ngoại lệ:** tầng `core/` có một barrel `core/index.ts` export toàn bộ hạ tầng dùng chung — đây là API công khai của tầng, không phải để rút ngắn đường dẫn.
 - Tên export chính phải khớp vai trò được thể hiện trong tên file.
+
+## Tầng `core/` và `common/`
+
+- `core/` chứa **hạ tầng dùng chung**, không phụ thuộc domain: `http/` (ApiResponse, ResponseInterceptor, AllExceptionsFilter), `repository/` (BaseRepository), `database/` (TransactionManager), `auth/` (guard + decorator), `security/` (PasswordService), `exceptions/`.
+- `CoreModule` là `@Global()`; provider đặt ở đây (vd `TransactionManager`, `PasswordService`) inject được ở mọi module mà không cần import lại. Đặt vào core khi và chỉ khi tiện ích **không phụ thuộc domain** và dùng ở nhiều nơi — tránh phụ thuộc vòng giữa các feature module.
+- `common/` chứa thứ dùng chung **có tính khai báo**: `constants/` (`PERMISSIONS`), `enums/` (`RoleKey`...), `dto/` (`PaginationQueryDto`, `IdParamDto`), `types/` (`AuthUser`, `Paginated`).
+
+## Response chuẩn & phân trang
+
+- Mọi endpoint trả dữ liệu thô (entity-free object, mảng, hoặc `Paginated<T>`); **không** tự bọc `ApiResponse`. `ResponseInterceptor` toàn cục tự bọc thành `{ success, data, message, meta? }`.
+- Endpoint danh sách trả `Paginated<T>` (`{ items, total, page, pageSize }`) từ repository; interceptor tự tách `items` ra `data` và gắn `meta`.
+- Lỗi nghiệp vụ ném exception chuẩn Nest (`NotFoundException`, `ConflictException`, `UnprocessableEntityException`...) hoặc exception trong `core/exceptions`; `AllExceptionsFilter` chuẩn hóa về `ApiResponse` lỗi.
+
+## Repository
+
+- Repository của mỗi feature đặt trong `repositories/` và nên `extends BaseRepository<T>` để có sẵn `findById`, `paginate`, `exists`, `save(entity, manager?)`, `update`... Khởi tạo: `constructor(@InjectRepository(X) repo: Repository<X>) { super(repo); }`.
+- Truy vấn đặc thù (query builder, join, lọc) viết thành method có tên bắt đầu bằng động từ (`listPaginated`, `findByEmailWithAccess`, `findWithPermissions`).
+- Bảng nối (vd `user_roles`, `role_permissions`) có repository riêng quản lý liên kết.
+- Chỉ Repository chạm TypeORM. Service **không** gọi `Repository` của TypeORM trực tiếp.
+
+## Transaction
+
+- Thao tác nhiều bảng cần nguyên tử dùng `TransactionManager.run(async (manager) => { ... })`.
+- Trong transaction, truyền `manager` xuống method repository (`save(entity, manager)`, `getRepository(X)` qua manager) để mọi lệnh chạy cùng một giao dịch; lỗi thì rollback toàn bộ.
+
+## Xác thực, RBAC & nhật ký (decorator)
+
+- `JwtAuthGuard` + `PermissionsGuard` đăng ký **toàn cục** (APP_GUARD) trong `AuthModule`. Mặc định mọi route yêu cầu access token.
+- `@Public()` — bỏ qua xác thực (route công khai: health, nội dung public, login, refresh).
+- `@Permissions(PERMISSIONS.X)` — khai báo quyền `resource:action` cần có; `PermissionsGuard` đối chiếu với `permissions` trong token.
+- `@CurrentUser()` — lấy `AuthUser` (id, email, roles, permissions) đã gắn vào request.
+- `@Audit('resource.action', 'resource')` — route ghi/sửa quản trị; `AuditInterceptor` tự tạo `AuditLog` sau khi thành công.
+- Access token mang sẵn `roles` + `permissions` nên guard không truy vấn DB mỗi request.
+
+## DTO response & dữ liệu nhạy cảm
+
+- Không trả thẳng entity ra API. Mỗi feature có `dto/<entity>-response.dto.ts` khai báo interface `XResponse` + hàm `toXResponse(entity)` ánh xạ.
+- **Không bao giờ** trả trường nhạy cảm (`passwordHash`, `tokenHash`...). Mật khẩu chỉ hash qua `PasswordService`, không log plaintext.
+
+## Enum: vị trí khai báo
+
+- Enum trạng thái gắn liền một entity khai báo **ngay trong file entity** đó (vd `UserStatus` trong `user.entity.ts`, `MediaKind` trong `media.entity.ts`).
+- Enum dùng xuyên nhiều module đặt trong `common/enums/` (vd `RoleKey`).
 
 Nếu bổ sung một kiểu tên mới và dùng lặp lại trong dự án, cập nhật tài liệu này trước khi áp dụng rộng rãi.
