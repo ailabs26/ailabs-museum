@@ -2,6 +2,12 @@
 
 Các hướng dẫn này áp dụng cho toàn bộ kho mã nguồn. Nếu một thư mục con có `AGENTS.md` riêng thì hướng dẫn trong file gần nhất được ưu tiên cho cây thư mục đó.
 
+## Cấu trúc dự án
+
+- Monorepo 2 app: **`back-end/`** (NestJS + TypeORM + PostgreSQL) và **`front-end/`** (React + Vite + Mantine). Tài liệu ở **`docs/`** (`architecture/`, `plans/`, `tasks/`, `Diagrams/`).
+- Back-end theo cấu trúc enterprise: `common/` (hạ tầng global), `config/` (config namespaced + env.validation + data-source), `database/` (migrations, seeds, database.module), `modules/<domain>/` (controllers/services/repositories/entities/dto; entity theo DDD). Phân hệ quản trị đã có: auth, users, roles + permissions, audit (RBAC bằng JwtAuthGuard + PermissionsGuard + @Audit).
+- Front-end: `core/` (api, auth, config), `shared/components/`, `services/`, `app/` (router, theme), `pages/` (admin, client).
+
 ## Quy trình nhánh
 
 - Luôn bắt đầu mỗi nhiệm vụ từ bản `origin/dev` mới nhất.
@@ -33,8 +39,9 @@ Các hướng dẫn này áp dụng cho toàn bộ kho mã nguồn. Nếu một 
 
 ## Backend
 
-- Tuân theo `back-end/docs/coding-conventions.md`.
-- Giữ các endpoint nội dung công khai ở chế độ chỉ đọc, trừ khi nhiệm vụ yêu cầu rõ hành vi quản trị đã xác thực.
+- Tuân theo `back-end/docs/coding-conventions.md`. Giữ luồng Controller → Service → Repository; chỉ Repository chạm TypeORM.
+- Giữ các endpoint nội dung công khai (`/rooms`, `/health`) ở chế độ chỉ đọc + `@Public()`. Route quản trị bảo vệ bằng guard toàn cục + `@Permissions('resource:action')`; thao tác ghi/sửa đánh `@Audit(...)`.
+- Endpoint trả `ApiResponse` (qua ResponseInterceptor); không trả Entity thô / `passwordHash`.
 - Luôn tắt TypeORM `synchronize`.
 - Không tạo, chạy, hoàn tác, chỉnh sửa hoặc xóa database migration nếu chưa có phê duyệt rõ ràng từ người phụ trách database.
 - Với thay đổi backend, chạy các bước kiểm tra liên quan từ `back-end/`:
