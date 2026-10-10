@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
-import { AuditLog } from '../audit-logs/audit-log.entity';
+import { AuditLog } from '../audit/audit-log.entity';
 import { ContentReport } from '../content-reports/content-report.entity';
 import { ExhibitRevision } from '../exhibit-revisions/exhibit-revision.entity';
 import { Exhibit } from '../exhibits/exhibit.entity';

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Paginated } from '../common/types/paginated.type';
-import { AuditLog } from '../audit-logs/audit-log.entity';
+import { AuditLog } from './audit-log.entity';
 import { ListAuditQueryDto } from './dto/list-audit-query.dto';
 import { AuditRepository } from './repositories/audit.repository';
 

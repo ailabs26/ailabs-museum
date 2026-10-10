@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuditLog } from '../audit-logs/audit-log.entity';
+import { AuditLog } from './audit-log.entity';
 import { AuditController } from './audit.controller';
 import { AuditInterceptor } from './audit.interceptor';
 import { AuditRepository } from './repositories/audit.repository';

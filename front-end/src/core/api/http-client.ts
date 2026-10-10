@@ -3,6 +3,7 @@ import { env } from '../config/env';
 import { tokenStore } from '../auth/token-store';
 import type { ApiResponse, Page } from './api-response';
 import { toApiException } from './api-error';
+import { loadingStore } from './loading-store';
 
 /** Axios instance dùng chung: gắn token, gửi cookie refresh, tự refresh khi 401. */
 const client = axios.create({
@@ -12,6 +13,7 @@ const client = axios.create({
 });
 
 client.interceptors.request.use((config) => {
+  loadingStore.start();
   const token = tokenStore.get();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -38,8 +40,12 @@ async function refreshAccessToken(): Promise<string | null> {
 }
 
 client.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    loadingStore.done();
+    return response;
+  },
   async (error) => {
+    loadingStore.done();
     const original = error.config as AxiosRequestConfig & { _retried?: boolean };
     const status = error.response?.status;
     const isAuthEndpoint = original?.url?.includes('/auth/');

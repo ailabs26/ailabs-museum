@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuditModule } from './audit/audit.module';
@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { dataSource } from './config/data-source';
 import { validateEnvironment } from './config/env';
 import { CoreModule } from './core/core.module';
+import { RequestIdMiddleware } from './core/http/request-id.middleware';
 import { ExhibitsModule } from './exhibits/exhibits.module';
 import { HealthController } from './health.controller';
 import { RolesModule } from './roles/roles.module';
@@ -26,4 +27,8 @@ import { UsersModule } from './users/users.module';
   ],
   controllers: [HealthController],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}

@@ -7,7 +7,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { theme } from '@/app/theme';
 import { queryClient } from '@/core/api/query-client';
 import { AuthProvider } from '@/core/auth/auth.context';
-import { ErrorBoundary } from '@/shared/components/feedback';
+import { ErrorBoundary, GlobalLoadingBar } from '@/shared/components/feedback';
 
 /** Gộp toàn bộ provider cấp ứng dụng theo đúng thứ tự. */
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -18,6 +18,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
           <AuthProvider>
             <ModalsProvider>
               <Notifications position="top-right" />
+              <GlobalLoadingBar />
               <BrowserRouter>{children}</BrowserRouter>
             </ModalsProvider>
           </AuthProvider>
