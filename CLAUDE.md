@@ -23,19 +23,34 @@ rõ ràng (ví dụ: "xem thử .agents/rules/code-rules.md đang nói gì").
 
 ## Stack
 
-<!-- Ngôn ngữ, framework, database -->
+- **Back-end:** NestJS 10 + TypeScript, PostgreSQL + TypeORM 0.3 (migration, `synchronize` luôn tắt). Auth: JWT access + refresh token (bcryptjs), RBAC. Swagger ở `/api/docs`.
+- **Front-end:** React 18 + TypeScript + Vite, Mantine 7 (UI) + `@tabler/icons-react`, React Router 6, TanStack Query 5, axios.
+- Monorepo 2 app: `back-end/`, `front-end/`. Tài liệu kiến trúc ở `docs/`.
 
 ## Cấu trúc
 
-<!-- Các thư mục chính và vai trò -->
+- **`back-end/src/`** (chuẩn enterprise):
+  - `common/` — hạ tầng global: `decorators/ guards/ filters/ interceptors/ middleware/ exceptions/ dto/ constants/ enums/ types/ repository/ database/ security/` + `CommonModule` (@Global).
+  - `config/` — `app/database/jwt.config.ts` (registerAs) + `env.validation.ts` + `data-source.ts` + `index.ts`.
+  - `database/` — `migrations/ seeds/ database.module.ts`.
+  - `modules/<domain>/` — `controllers/ services/ repositories/ entities/ dto/` (auth, users, roles, audit, exhibits, rooms, media, content-reports, health). Entity đặt theo DDD trong từng module.
+- **`front-end/src/`**: `core/` (api, auth, config), `shared/components/` (data, form, feedback, layout), `services/` (gọi API theo domain), `app/` (router, theme), `pages/` (admin, client), `layouts/`.
+- **`docs/`**: `architecture/`, `plans/`, `tasks/`, `Diagrams/` (ERD/RBAC/auth-flow + bản vẽ gốc).
 
 ## Lệnh
 
-<!-- build / test / lint / run -->
+- Back-end (trong `back-end/`): `npm run dev` (watch), `npm run build`, `npm run typecheck`, `npm run lint`, `npm run migration:run`, `npm run seed`.
+- Front-end (trong `front-end/`): `npm run dev`, `npm run build`, `npm run typecheck`, `npm run lint`.
 
 ## Quy ước
 
-<!-- Naming, format response, error handling -->
+- **Luồng BE:** Controller → Service → Repository; chỉ Repository chạm TypeORM. Repository nên `extends BaseRepository`. Thao tác nhiều bảng dùng `TransactionManager`.
+- **Response:** không tự bọc — `ResponseInterceptor` bọc `ApiResponse<T>`; list trả `Paginated<T>`. Lỗi ném exception chuẩn, `AllExceptionsFilter` chuẩn hóa.
+- **RBAC:** guard toàn cục; `@Public()` cho route công khai, `@Permissions('resource:action')` cho route quản trị, `@Audit('resource.action','resource')` để ghi vết. Không trả `passwordHash`/token.
+- **Config:** truy cập key namespaced (`config.getOrThrow('jwt.accessSecret')`, `'app.port'`...).
+- **FE:** mọi API qua `core/api/http-client` + service layer + react-query; RBAC bằng `RequireAuth`/`RequirePermission` (chốt chặn thật ở BE); dùng `shared/components`.
+- Chi tiết: `back-end/docs/coding-conventions.md`, `front-end/docs/coding-conventions.md`.
+- **Git:** nhánh từ `dev`, commit nhỏ & chi tiết, luôn PR vào `dev` rồi merge; không merge thẳng `main`.
 
 <!-- CODEGRAPH_START -->
 ## CodeGraph (BẮT BUỘC / MANDATORY)
