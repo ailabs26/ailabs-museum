@@ -3,9 +3,9 @@
 **Document:** `requirements.md`  
 **Project:** Aura Museum — WebXR Interactive Museum  
 **Vietnamese name:** Bảo tàng WebXR có hướng dẫn tương tác  
-**Version:** v0.1  
-**Status:** Initial Baseline  
-**Date:** 2026-10-08  
+**Version:** v0.2  
+**Status:** Requirements Baseline
+**Date:** 2026-10-10  
 **Repository path:** `/docs/requirements.md`  
 
 ---
@@ -16,7 +16,7 @@
 
 Tài liệu Software Requirements Specification (SRS) này mô tả các yêu cầu của hệ thống **Aura Museum — WebXR Interactive Museum**.
 
-Các nội dung dưới đây là yêu cầu của sản phẩm mục tiêu, không phải báo cáo tính năng đã triển khai hoặc kết quả kiểm thử. Tài liệu được chốt làm bản yêu cầu đầu tiên v0.1, dùng làm cơ sở thiết kế và phát triển; khi cần, yêu cầu sẽ được cập nhật ở phiên bản tiếp theo và truy vết qua Git/PR.
+Các nội dung dưới đây là yêu cầu của sản phẩm mục tiêu, không phải báo cáo tính năng đã triển khai hoặc kết quả kiểm thử. Bản v0.2 là Revised Draft dùng để review thay đổi scope trước khi chốt baseline mới; các ngưỡng kỹ thuật vẫn phải được kiểm chứng bằng Test/Performance Plan.
 
 Hệ thống cung cấp một môi trường bảo tàng số trên nền web, cho phép Visitor:
 
@@ -29,7 +29,7 @@ Hệ thống cung cấp một môi trường bảo tàng số trên nền web, c
 - sử dụng giao diện 2D fallback khi trải nghiệm 3D không khả dụng;
 - sẵn sàng mở rộng WebXR trong tương lai mà không xem immersive VR/headset là điều kiện nghiệm thu của MVP hiện tại.
 
-Hệ thống đồng thời cung cấp CMS cho Admin để quản lý nội dung triển lãm mà không cần chỉnh sửa source code frontend đối với các thay đổi nội dung thông thường.
+Hệ thống đồng thời cung cấp **Admin Portal** gồm Content Management, Content Governance và System Administration. Người dùng quản trị được phân quyền theo vai trò để quản lý nội dung, kiểm duyệt/xuất bản, tài khoản, vai trò, quyền và nhật ký hệ thống.
 
 Tài liệu này là cơ sở cho:
 
@@ -71,7 +71,7 @@ Tài liệu này dành cho:
 
 WebXR Interactive Museum là một hệ thống triển lãm số cho phép Visitor truy cập bảo tàng thông qua trình duyệt.
 
-Hệ thống gồm hai khu vực chính:
+Hệ thống gồm hai khu vực lớn: **Public Museum** và **Admin Portal**.
 
 #### Public Museum
 
@@ -83,24 +83,44 @@ Dành cho Visitor, bao gồm:
 - audio guide;
 - guided tour;
 - giao diện 2D fallback;
-- WebXR extension point cho giai đoạn sau MVP.
+- WebXR capability detection/extension point cho giai đoạn sau MVP.
 
-#### Content Management System
+#### Admin Portal — Content Management
 
-Dành cho Admin, bao gồm:
+Dành cho người dùng quản trị có permission phù hợp, bao gồm:
 
-- quản lý hiện vật;
+- quản lý metadata phòng trưng bày;
+- quản lý hiện vật và revision nội dung;
 - quản lý nội dung song ngữ;
-- quản lý model 3D;
-- quản lý image/audio;
+- quản lý model 3D, image, audio và captions;
 - quản lý hotspot;
 - cấu hình transform;
-- Draft;
-- Preview;
-- Publish/Unpublish;
+- Draft/Preview;
+- gửi revision để duyệt;
+- Publish/Reject/Hide theo quyền;
 - cấu hình thứ tự guided tour.
 
----
+#### Admin Portal — System Administration
+
+Dành chủ yếu cho vai trò `admin`, bao gồm:
+
+- quản lý tài khoản quản trị;
+- kích hoạt/vô hiệu hóa tài khoản;
+- quản lý role;
+- quản lý permission và permission matrix;
+- xem audit log;
+- xem dashboard/trạng thái quản trị.
+
+#### Content Governance
+
+MVP sử dụng workflow biên tập tối thiểu:
+
+```text
+Editor → tạo/sửa Draft Revision → Submit Review
+Moderator/Admin → Review → Publish hoặc Reject
+```
+
+Một revision đang được biên tập hoặc review không được tự động thay thế revision đang công khai. Public Museum chỉ đọc revision đã được publish hiện hành.
 
 ### 1.5 Product Objectives
 
@@ -128,18 +148,30 @@ Cho phép Admin cập nhật nội dung triển lãm thông qua CMS mà không c
 
 | Term | Definition |
 |---|---|
-| WebXR | Web API hỗ trợ trải nghiệm XR trên trình duyệt; trong MVP hiện tại chỉ được xem là extension point, không phải hạng mục nghiệm thu bằng headset |
+| WebXR | Web API hỗ trợ trải nghiệm XR trên trình duyệt; trong MVP hiện tại chỉ là extension point/capability detection, không phải hạng mục nghiệm thu bằng headset |
 | VR | Virtual Reality |
 | XR | Extended Reality |
 | CMS | Content Management System |
+| Admin Portal | Khu vực web dành cho người dùng quản trị đã xác thực |
 | Visitor | Người sử dụng khu vực tham quan công khai |
-| Admin | Người quản trị nội dung |
+| Administrative User | Tài khoản nội bộ dùng Admin Portal và chịu kiểm soát RBAC |
+| Editor | Vai trò mặc định tạo/sửa nội dung, media và revision, sau đó gửi duyệt |
+| Moderator | Vai trò mặc định duyệt/reject/publish revision, xử lý report và có quyền đọc audit theo cấu hình |
+| Admin | Vai trò quản trị hệ thống mặc định; quản lý user/role/permission và có quyền quản trị nội dung theo permission matrix |
+| RBAC | Role-Based Access Control — phân quyền dựa trên role và permission |
+| Role | Tập hợp các permission có thể gán cho user |
+| Permission | Quyền thao tác ở mức nghiệp vụ, biểu diễn logic theo resource/action trong thiết kế triển khai |
 | Exhibit | Hiện vật trong bảo tàng |
+| Revision | Một phiên bản nội dung của Exhibit phục vụ biên tập/kiểm duyệt/lịch sử |
+| Draft Revision | Revision đang được biên tập, chưa công khai |
+| In Review | Revision đã gửi kiểm duyệt, chờ Moderator/Admin quyết định |
+| Published Revision | Revision hiện hành được Public Museum sử dụng |
+| Rejected Revision | Revision bị từ chối và cần chỉnh sửa lại trước khi submit tiếp |
 | Hotspot | Điểm tương tác gắn với một vị trí trên hiện vật 3D |
 | Guided Tour | Chế độ hướng dẫn theo thứ tự định trước, có lựa chọn tự động hoặc điều khiển từng bước |
-| Draft | Nội dung chưa được công khai |
-| Published | Nội dung đã được công khai |
-| Preview | Thao tác cho Admin xem trước Draft; không phải trạng thái xuất bản |
+| Preview | Thao tác cho người có quyền xem trước revision chưa publish; không tự làm nội dung công khai |
+| Audit Log | Nhật ký append-only ghi vết hành động quản trị quan trọng |
+| Content Report | Báo cáo do Visitor gửi về nội dung cần xem xét |
 | Transcript | Văn bản đầy đủ tương đương với nội dung audio |
 | Captions | Phụ đề đồng bộ theo thời gian của audio, theo ngôn ngữ đang phát |
 | Transform | Position, Rotation và Scale của object 3D |
@@ -147,22 +179,6 @@ Cho phép Admin cập nhật nội dung triển lãm thông qua CMS mà không c
 | WCAG | Web Content Accessibility Guidelines |
 | MVP | Minimum Viable Product |
 | FPS | Frames Per Second |
-
----
-
-### 1.7 References and Document Authority
-
-- [Project README](../README.md): mục tiêu và phạm vi tổng quan của Aura Museum.
-- [Repository instructions](../AGENTS.md): quy trình phát triển và ranh giới giao tiếp frontend/backend.
-- [Frontend README](../front-end/README.md) và [Backend README](../back-end/README.md): công nghệ, kiến trúc đã chốt và trạng thái triển khai hiện tại.
-- [Content schema](../plans/content-schema.md): schema nền tảng hiện có, cần được cập nhật khi thiết kế CMS theo SRS đã duyệt.
-- [Device matrix](../plans/device-matrix.md): danh sách nhóm thiết bị và nơi ghi cấu hình kiểm thử thực tế.
-- [Fallback tests](../plans/fallback-tests.md): kế hoạch kiểm thử các tình huống không hỗ trợ hoặc gặp lỗi.
-- [Performance audit](../plans/performance-audit.md): nơi ghi profile đo và bằng chứng hiệu năng.
-
-SRS v0.1 là nguồn yêu cầu cho phạm vi MVP hiện tại. README và các kế hoạch là tài liệu tham khảo; khi có khác biệt về phạm vi sản phẩm, áp dụng yêu cầu trong SRS này.
-
----
 
 ## 2. Overall Description
 
@@ -178,31 +194,36 @@ Public Web Application
    |
    +-- 2D UI
    +-- 3D Museum
-   +-- WebXR Extension Point (future)
+   +-- WebXR Capability Detection
    |
    v
-Content / API Layer
+NestJS API / Backend-managed Media
    |
-   +-- Exhibit Data
+   +-- Published Content
    +-- Tour Data
    +-- Media Metadata
    |
    v
-Database / Asset Storage
+PostgreSQL / Object Storage
 
 
-Admin
+Editor / Moderator / Admin
    |
    v
-CMS
+Admin Portal
+   |
+   +-- Content Management
+   +-- Moderation
+   +-- System Administration
    |
    v
-Content / API Layer
+Authentication + RBAC + Audit
+   |
+   v
+NestJS API
 ```
 
-Public Museum và CMS sử dụng chung nguồn dữ liệu nội dung đã được quản lý.
-
----
+Public Museum và Admin Portal sử dụng chung domain data nhưng khác trust boundary: public chỉ được đọc nội dung Published; mọi thao tác quản trị phải qua authentication và authorization ở backend.
 
 ### 2.2 Product Functions
 
@@ -217,24 +238,46 @@ Public Museum và CMS sử dụng chung nguồn dữ liệu nội dung đã đư
 - tham gia guided tour;
 - sử dụng teleport;
 - sử dụng 2D fallback;
+- gửi content report;
 - phát hiện capability WebXR để hỗ trợ mở rộng sau MVP.
 
-#### Admin Functions
+#### Content Management Functions
 
-- đăng nhập CMS;
-- CRUD hiện vật;
-- quản lý model 3D;
-- quản lý image;
-- quản lý audio;
+Người có permission phù hợp có thể:
+
+- quản lý metadata phòng;
+- tạo/sửa hiện vật và revision;
+- quản lý model 3D, image, audio, captions;
 - quản lý nội dung tiếng Việt và tiếng Anh;
 - quản lý hotspot;
 - cấu hình Position / Rotation / Scale;
-- lưu Draft;
+- Save Draft;
 - Preview Draft;
-- Publish / Unpublish;
+- submit revision để review;
 - cấu hình thứ tự guided tour.
 
----
+#### Moderation Functions
+
+Moderator/Admin có permission phù hợp có thể:
+
+- xem queue revision chờ duyệt;
+- xem revision cần review;
+- Publish hoặc Reject revision;
+- hide/unhide nội dung công khai khi được phép;
+- xem/xử lý content report;
+- xem audit log theo permission.
+
+#### System Administration Functions
+
+Admin có permission phù hợp có thể:
+
+- tạo/xem/cập nhật/vô hiệu hóa tài khoản quản trị;
+- gán/bỏ role;
+- quản lý role;
+- xem danh mục permission;
+- cập nhật permission matrix;
+- xem audit log;
+- truy cập dashboard quản trị.
 
 ### 2.3 User Classes
 
@@ -246,22 +289,36 @@ Public Museum và CMS sử dụng chung nguồn dữ liệu nội dung đã đư
 - có thể có nhu cầu accessibility;
 - có thể lựa chọn tiếng Việt hoặc tiếng Anh.
 
+#### Editor
+
+- có tài khoản xác thực;
+- quản lý nội dung, media và revision theo permission;
+- có thể submit revision để Moderator/Admin review;
+- không mặc định có quyền quản lý user/role/permission hoặc tự publish.
+
+#### Moderator
+
+- có tài khoản xác thực;
+- review/publish/reject revision theo permission;
+- xử lý content report;
+- có thể đọc audit theo permission;
+- không mặc định có quyền quản lý cấu hình RBAC.
+
 #### Admin
 
 - có tài khoản xác thực;
-- quản lý nội dung bảo tàng;
-- không nhất thiết có kiến thức lập trình;
-- sử dụng CMS để quản trị nội dung;
-- tất cả Admin trong MVP có cùng quyền.
-
----
+- quản lý user/role/permission;
+- có thể có toàn bộ permission nội dung/moderation;
+- chịu trách nhiệm bootstrap/quản trị phân hệ hệ thống;
+- không có public self-registration.
 
 ### 2.4 Operating Environment
 
 #### Client
 
-- browser hiện đại trên desktop;
-- browser hiện đại trên mobile;
+- desktop browser;
+- mobile browser;
+- browser hiện đại trên desktop/mobile;
 - WebXR-capable environment chỉ phục vụ kiểm tra extension point khi có điều kiện, không bắt buộc headset trong MVP.
 
 #### Server
@@ -277,24 +334,28 @@ Public Museum và CMS sử dụng chung nguồn dữ liệu nội dung đã đư
 
 MVP bao gồm:
 
-- 1 không gian/phòng triển lãm cố định;
+- một không gian 3D chính được xây dựng trước; không có editor sửa mesh/geometry phòng;
+- dữ liệu metadata phòng có thể được quản lý qua CMS;
 - tối thiểu 5 hiện vật;
 - Visitor không cần tài khoản;
-- nhiều tài khoản Admin, cùng mức quyền;
+- Admin Portal có RBAC với ba role mặc định `admin`, `moderator`, `editor`;
+- quản lý user, role, permission và permission matrix;
+- audit log cho hành động quản trị quan trọng;
+- revision + moderation workflow cho nội dung;
+- content report và xử lý report;
 - desktop/mobile: tham quan 3D;
 - WebXR/VR không phải điều kiện nghiệm thu của MVP; chỉ giữ capability detection/extension point;
 - hotspot, thông tin và audio;
 - tiếng Việt và tiếng Anh;
-- một guided tour tuyến tính, có chế độ tự động và điều khiển thủ công;
+- một guided tour tuyến tính, có chế độ Auto/Manual;
 - chỉ dẫn đường và teleport;
-- CMS quản lý nội dung, media, hotspot và transform;
-- hai trạng thái Draft / Published và thao tác Preview;
+- CMS quản lý nội dung, media, hotspot, transform, tour và room metadata;
+- Preview revision chưa publish;
+- Public Museum chỉ dùng revision đã được publish;
 - fallback 3D → 2D;
-- accessibility trên giao diện web MVP đáp ứng WCAG 2.1 AA, hỗ trợ transcript, phụ đề và giảm chuyển động.
+- accessibility trên giao diện web MVP đáp ứng WCAG 2.1 A/AA theo phạm vi đã xác định, hỗ trợ transcript, captions và reduced motion.
 
-Bộ nội dung nghiệm thu gồm ít nhất 5 hiện vật Published, mỗi hiện vật có model 3D thật, hình ảnh đại diện, ít nhất một hotspot, nội dung tiếng Việt/Anh và audio kèm transcript/phụ đề cho cả hai ngôn ngữ. Các hiện vật khác có thể thiếu media tùy chọn theo mục 5.2; dữ liệu placeholder hiện có không thay thế bộ nội dung nghiệm thu.
-
----
+Bộ nội dung nghiệm thu gồm ít nhất 5 hiện vật Published, mỗi hiện vật có model 3D thật, hình ảnh đại diện, ít nhất một hotspot, nội dung tiếng Việt/Anh và audio kèm transcript/phụ đề cho cả hai ngôn ngữ. Dữ liệu placeholder hiện có không thay thế bộ nội dung nghiệm thu.
 
 ## 3. External Interface Requirements
 
@@ -367,21 +428,28 @@ Giao diện 2D phải cung cấp:
 
 Transcript phải đọc được ngay cả khi audio không phát; khi phát audio, Visitor có thể bật/tắt phụ đề đồng bộ.
 
-#### 3.1.7 CMS Interface
+#### 3.1.7 Admin Portal Interface
 
-CMS phải cung cấp tối thiểu:
+Admin Portal phải cung cấp tối thiểu các màn hình/chức năng tương ứng với permission của người dùng:
 
 - login;
-- dashboard/list hiện vật;
-- create/edit form;
+- dashboard;
+- room metadata management;
+- exhibit/revision management;
 - media management;
 - hotspot management;
 - transform configuration;
-- Draft/Published status;
-- Preview;
-- Publish/Unpublish.
+- Draft Preview;
+- moderation queue;
+- Publish/Reject/Hide theo quyền;
+- guided-tour configuration;
+- user/account management;
+- role management;
+- permission list/matrix;
+- content reports;
+- audit log.
 
----
+Ẩn/disable control theo permission chỉ hỗ trợ UX; backend vẫn phải là lớp enforcement thực sự.
 
 ### 3.2 Hardware Interfaces
 
@@ -490,71 +558,93 @@ Visitor không thể hoặc không muốn sử dụng giao diện 3D phải có 
 
 ---
 
-### 4.2 Admin Requirements
+### 4.2 Administrative Requirements
 
 **SR-12 — Secure administration access**  
-Admin phải đăng nhập trước khi truy cập các chức năng quản trị.
+Administrative User phải đăng nhập trước khi truy cập Admin Portal.
 
 **SR-13 — Manage exhibit content**  
-Admin phải có thể tạo, xem, chỉnh sửa và xóa nội dung hiện vật.
+Editor/Admin có permission phù hợp phải có thể tạo, xem và chỉnh sửa nội dung hiện vật thông qua revision.
 
 **SR-14 — Manage multilingual content**  
-Admin phải có thể quản lý nội dung tiếng Việt và tiếng Anh cho từng hiện vật.
+Người có quyền biên tập phải có thể quản lý nội dung tiếng Việt và tiếng Anh.
 
 **SR-15 — Manage exhibit media**  
-Admin phải có thể quản lý model 3D, hình ảnh và audio.
+Người có quyền biên tập phải có thể quản lý model 3D, hình ảnh, audio và captions.
 
 **SR-16 — Configure exhibit placement**  
-Admin phải có thể cấu hình vị trí, hướng xoay và kích thước của hiện vật.
+Người có quyền biên tập phải có thể cấu hình vị trí, hướng xoay và kích thước của hiện vật.
 
 **SR-17 — Manage hotspots**  
-Admin phải có thể thêm, chỉnh sửa và xóa hotspot.
+Người có quyền biên tập phải có thể thêm, chỉnh sửa và xóa hotspot trong revision chưa publish.
 
 **SR-18 — Manage publication state**  
-Admin phải có thể lưu hiện vật ở trạng thái Draft hoặc Published.
+Moderator/Admin có permission phù hợp phải có thể review, publish, reject hoặc hide nội dung theo workflow được phép.
 
 **SR-19 — Preview draft content**  
-Admin phải có thể xem trước nội dung Draft trong môi trường 3D trước khi publish.
+Người có permission đọc Draft phải có thể xem trước revision chưa publish trong môi trường Preview.
 
 **SR-20 — Manage guided-tour sequence**  
-Admin phải có thể xác định thứ tự các hiện vật trong guided tour.
+Người có permission phù hợp phải có thể xác định thứ tự hiện vật trong guided tour.
 
----
+**SR-21 — Manage administrative users**  
+Admin có permission phù hợp phải có thể tạo, xem, cập nhật, kích hoạt/vô hiệu hóa tài khoản quản trị.
+
+**SR-22 — Manage roles and permissions**  
+Admin có permission phù hợp phải có thể quản lý role và permission matrix dùng cho RBAC.
+
+**SR-23 — Review content revisions**  
+Moderator/Admin phải có thể xem revision được submit, Publish hoặc Reject revision và lưu quyết định kiểm duyệt.
+
+**SR-24 — Audit administrative actions**  
+Người có permission đọc audit phải có thể truy vết các hành động quản trị quan trọng.
+
+**SR-25 — Manage room metadata**  
+Người có permission phù hợp phải có thể quản lý metadata phòng; việc chỉnh mesh/geometry phòng 3D không thuộc MVP.
+
+**SR-26 — Handle content reports**  
+Visitor phải có thể gửi báo cáo nội dung; Moderator/Admin có permission phù hợp phải có thể xem và xử lý báo cáo.
 
 ## 5. Business Rules
 
 **BR-01 — Visitor authentication**  
 Visitor không cần tài khoản để truy cập bảo tàng.
 
-**BR-02 — Administrative authentication**  
-Chỉ người dùng đã xác thực với tài khoản Admin hợp lệ mới được truy cập CMS.
+**BR-02 — Administrative authentication and authorization**  
+Chỉ Administrative User có phiên xác thực hợp lệ mới được truy cập Admin Portal. Mỗi thao tác còn phải được backend kiểm tra permission tương ứng.
 
-**BR-03 — Equal administrator permissions**  
-Tất cả tài khoản Admin trong MVP có cùng mức quyền.
+**BR-03 — Role-based administrative permissions**  
+MVP sử dụng RBAC. Ba role mặc định là `admin`, `moderator`, `editor`.
+
+- `editor`: biên tập content/media/hotspot/revision và submit review theo permission;
+- `moderator`: review/publish/reject/hide revision, xử lý report và đọc audit theo permission;
+- `admin`: quản lý user/role/permission và có thể được cấp toàn bộ permission hệ thống.
+
+Role chỉ là tập hợp permission; backend authorization dựa trên permission thực tế, không dựa vào việc frontend ẩn/hiện nút.
 
 **BR-04 — Publication visibility**  
-Visitor chỉ nhìn thấy các hiện vật có trạng thái Published. Backend phải loại Draft khỏi mọi phản hồi public, kể cả truy vấn trực tiếp bằng ID; frontend không được là lớp bảo vệ duy nhất. Dữ liệu Preview và media chỉ gắn với Draft phải yêu cầu phiên Admin hợp lệ; media dùng chung với Published được phép công khai.
+Visitor chỉ nhìn thấy revision hiện hành đã được Publish của Exhibit còn public. Draft/In Review/Rejected revision phải bị loại khỏi mọi phản hồi public, kể cả truy vấn trực tiếp bằng ID. Preview và media chỉ gắn với revision chưa publish phải yêu cầu authorization phù hợp.
 
 **BR-05 — Draft preview**  
-Admin được phép xem trước hiện vật Draft; Preview không làm nội dung Draft trở nên công khai.
+Administrative User có permission phù hợp được phép Preview revision chưa publish. Preview không làm revision trở nên công khai.
 
 **BR-06 — Exhibit count**  
-MVP phải hỗ trợ tối thiểu 5 hiện vật.
+MVP phải hỗ trợ tối thiểu 5 hiện vật hoàn chỉnh.
 
-**BR-07 — Fixed museum environment**  
-Không gian/phòng bảo tàng được định nghĩa trước; Admin không chỉnh sửa cấu trúc phòng thông qua CMS.
+**BR-07 — Fixed 3D environment with manageable room metadata**  
+Không gian/geometry phòng 3D được xây dựng trước và không chỉnh mesh/layout bằng CMS trong MVP. CMS được phép CRUD metadata/record phòng phục vụ tổ chức nội dung và API.
 
 **BR-08 — Exhibit placement**  
-Admin được phép cấu hình Position, Rotation và Scale của hiện vật.
+Editor/Admin có permission phù hợp được phép cấu hình Position, Rotation và Scale của hiện vật trong revision editable.
 
 **BR-09 — Exhibit language**  
-Mỗi hiện vật Published phải có nội dung cơ bản bằng tiếng Việt và tiếng Anh.
+Mỗi revision được Publish phải có nội dung cơ bản bằng tiếng Việt và tiếng Anh.
 
 **BR-10 — Audio language**  
-Audio guide có thể được lưu riêng theo từng ngôn ngữ; có audio thì phải có transcript và phụ đề đồng bộ cùng ngôn ngữ trước khi Publish. Nếu thiếu audio thì vẫn phải có tên và mô tả tương ứng, không tự phát audio của ngôn ngữ khác.
+Audio guide có thể được lưu riêng theo từng ngôn ngữ; có audio thì phải có transcript và captions đồng bộ cùng ngôn ngữ trước khi Publish. Không tự phát audio của ngôn ngữ khác khi thiếu audio locale hiện tại.
 
 **BR-11 — Hotspot association**  
-Mỗi hotspot thuộc đúng một hiện vật; một hiện vật có thể có từ 0 đến nhiều hotspot.
+Mỗi hotspot thuộc đúng một revision/exhibit context hợp lệ; một hiện vật có thể có từ 0 đến nhiều hotspot.
 
 **BR-12 — Hotspot placement**  
 Mỗi hotspot phải có thông tin xác định vị trí tương đối với model 3D.
@@ -563,48 +653,89 @@ Mỗi hotspot phải có thông tin xác định vị trí tương đối với 
 Trong MVP chỉ tồn tại một guided tour chính theo thứ tự tuyến tính.
 
 **BR-14 — Guided-tour navigation**  
-Guided tour phải hỗ trợ chỉ dẫn hướng, Next, Previous, Exit Tour và teleport trong 3D. Visitor chọn chế độ Auto hoặc Manual khi bắt đầu; Auto được mô tả tại FR-98. Trong 2D, tour dùng danh sách/nội dung hiện vật, không yêu cầu điều hướng không gian hoặc teleport. Hành vi tour trong XR là future extension.
+Guided tour phải hỗ trợ chỉ dẫn hướng, Next, Previous, Exit Tour và teleport trong 3D. Visitor chọn Auto hoặc Manual; Auto được mô tả tại FR-98. Trong 2D, tour dùng danh sách/nội dung hiện vật. Hành vi tour trong XR là future extension.
 
 **BR-15 — WebXR outside MVP acceptance**  
-Immersive VR không phải chức năng bắt buộc của MVP và không được dùng làm điều kiện chặn nghiệm thu. Nếu triển khai WebXR ở giai đoạn sau, chức năng XR chỉ được cung cấp khi capability detection xác nhận môi trường hỗ trợ.
+Immersive VR không phải chức năng bắt buộc của MVP và không được dùng làm điều kiện chặn nghiệm thu. Capability detection vẫn thuộc MVP.
 
 **BR-16 — Progressive fallback**  
-Trong MVP, hệ thống áp dụng thứ tự trải nghiệm: **Standard 3D → Accessible 2D**. WebXR/VR là extension ngoài MVP và không nằm trong chuỗi fallback bắt buộc.
+Trong MVP, hệ thống áp dụng thứ tự trải nghiệm: **Standard 3D → Accessible 2D**. WebXR/VR là extension ngoài chuỗi fallback bắt buộc.
 
 **BR-17 — Core-content availability**  
-Thông tin cốt lõi của hiện vật không được tồn tại độc quyền trong một tương tác 3D hoặc bất kỳ extension XR tương lai nào.
+Thông tin cốt lõi của hiện vật không được tồn tại độc quyền trong tương tác 3D/XR.
 
 **BR-18 — Accessibility scope**  
-Các giao diện public-facing thuộc MVP, bao gồm 2D fallback và các UI điều khiển ngoài canvas 3D, phải đáp ứng phạm vi WCAG 2.1 AA đã xác định. CMS không bắt buộc đạt toàn bộ WCAG 2.1 AA trong MVP nhưng phải hỗ trợ tối thiểu keyboard navigation, visible focus, semantic controls/labels và không tạo keyboard trap. Accessibility bên trong immersive XR tương lai nằm ngoài phạm vi baseline hiện tại.
+Public-facing UI thuộc MVP phải đáp ứng phạm vi WCAG 2.1 A/AA áp dụng được. CMS phải hỗ trợ tối thiểu keyboard navigation, visible focus, semantic controls/labels và không tạo keyboard trap.
 
 **BR-19 — Content update independence**  
-Admin phải có thể cập nhật nội dung thông thường qua CMS mà không cần sửa hoặc build lại source code frontend.
+Nội dung/metadata thông thường phải được cập nhật qua CMS không cần sửa/build lại source frontend.
 
 **BR-20 — Deletion protection**  
-Thao tác xóa hiện vật phải có bước xác nhận và chỉ thực hiện khi hiện vật là Draft. Xóa thành công phải xóa hotspot liên quan và loại tham chiếu khỏi tour; không tự xóa media đang được hiện vật khác sử dụng.
+Thao tác xóa phải có xác nhận. Draft revision có thể bị xóa theo quyền nếu không phải revision đang public. Xóa Exhibit đang có revision Published phải tuân theo hành động hide/unpublish/archival được thiết kế; không được làm mất media đang được tài nguyên khác tham chiếu hoặc phá tour bằng reference mồ côi.
 
-**BR-21 — Published content editing**  
-Trong MVP, hiện vật Published và các hotspot/media được gắn với nó không được sửa trực tiếp. Admin phải Unpublish trước, chỉnh sửa Draft rồi Publish lại; không duy trì đồng thời bản Published và bản nháp của cùng một hiện vật. Media đang được nội dung Published tham chiếu không được ghi đè hoặc xóa; thay thế media phải tạo tham chiếu mới trên Draft.
+**BR-21 — Published revision immutability**  
+Revision đã Published không được sửa tại chỗ. Khi cần cập nhật, Editor tạo/chỉnh một Draft Revision mới; revision đang Published có thể tiếp tục phục vụ public cho tới khi Moderator/Admin Publish revision mới hoặc Hide/Unpublish exhibit. Media được revision Published tham chiếu không được overwrite trực tiếp.
 
 **BR-22 — Public session consistency**  
-Publish, Unpublish và xóa có hiệu lực với các request public bắt đầu sau khi thao tác được backend xác nhận thành công, kể cả dữ liệu đi qua cache. Phiên tham quan đã tải dữ liệu có thể giữ snapshot đến khi tải lại; MVP không yêu cầu cập nhật realtime. Tour public chỉ chứa các hiện vật Published còn tồn tại theo thứ tự đã lưu; nếu không còn hiện vật, nút Start Tour bị vô hiệu hóa kèm thông báo.
+Publish, thay revision Published, Hide/Unpublish hoặc xóa thành công phải có hiệu lực với các request public bắt đầu sau khi backend xác nhận thành công, kể cả qua cache. Phiên đã tải snapshot có thể giữ dữ liệu đến khi reload; không yêu cầu realtime.
 
-### 5.1 Publication Workflow
+**BR-23 — Server-side authorization**  
+Authentication và permission phải được backend enforce trên từng protected operation. Frontend route guard/RequirePermission chỉ hỗ trợ UX.
+
+**BR-24 — Privilege protection**  
+User không được tự cấp permission/role vượt quá quyền quản trị của mình. Chỉ user có permission quản trị RBAC mới được thay đổi role/permission assignment.
+
+**BR-25 — Append-only audit**  
+Audit Log của hành động quản trị quan trọng là append-only ở mức ứng dụng; không có chức năng CMS sửa/xóa audit record.
+
+**BR-26 — Revision moderation**  
+Editor submit revision để review. Moderator/Admin có permission review có thể Publish hoặc Reject. Reject phải giữ revision/history và lý do đủ để Editor biết cần chỉnh gì; Publish thay revision public hiện hành một cách nhất quán.
+
+**BR-27 — Content report separation**  
+Content Report do Visitor gửi không tự thay đổi trạng thái/publication của Exhibit. Chỉ Moderator/Admin có permission phù hợp được xử lý report và quyết định hành động nội dung.
+
+### 5.1 Revision and Publication Workflow
+
+MVP sử dụng revision để tách biên tập khỏi snapshot đang công khai.
 
 ```text
-Create → Draft → Publish → Published
-           ↑                 |
-           +--- Unpublish ----+
-
-Draft: Edit / Save / Preview / Delete
-Published: View / Unpublish
+Create Exhibit
+     |
+     v
+Draft Revision
+     |
+     +-- Save / Preview / Delete Draft
+     |
+     v
+Submit Review
+     |
+     v
+In Review
+   /     \
+Reject   Publish
+  |         |
+  v         v
+Draft    Published Revision
+            |
+            +-- Public Museum dùng revision này
+            |
+            +-- Editor có thể tạo Draft Revision mới
 ```
 
-Preview không thay đổi trạng thái, không bắt buộc phải mở trước mỗi lần Publish và chỉ dùng dữ liệu Draft đã lưu thành công. Save Draft không xuất bản nội dung; backend phải từ chối sửa trực tiếp Published. Unpublish làm hiện vật vắng mặt khỏi các request public mới trong thời gian chỉnh sửa; quy trình giữ bản cũ công khai trong lúc sửa nằm ngoài MVP.
+Các nguyên tắc:
+
+- `Preview` không thay đổi publication.
+- `Submit Review` không làm nội dung công khai.
+- Revision đang Published là immutable.
+- Có thể tồn tại một Draft/In Review revision mới trong khi revision cũ vẫn Published.
+- Publish phải atomically thay revision public hiện hành của Exhibit.
+- Reject không xóa revision; revision có thể được chỉnh sửa/submit lại theo workflow.
+- Hide/Unpublish loại Exhibit khỏi request public mới nhưng không xóa lịch sử revision.
+- Public API không bao giờ trả Draft/In Review/Rejected revision.
 
 ### 5.2 Content Validation Rules
 
-> **Engineering target status:** Các giới hạn định lượng trong mục này là mục tiêu kỹ thuật của baseline v0.1, không phải ràng buộc từ bên ngoài trừ khi có nguồn yêu cầu riêng. Chúng được áp dụng cho validation và nghiệm thu theo yêu cầu tương ứng; khi cần điều chỉnh, cập nhật phiên bản tài liệu và ghi lý do/tác động qua Git/PR.
+> **Engineering target status:** Các giới hạn định lượng trong mục này (ví dụ kích thước file, timeout, độ dài trường) là mục tiêu kỹ thuật do nhóm đề xuất, không được xem là ràng buộc bên ngoài trừ khi có nguồn yêu cầu riêng. Chúng chỉ trở thành tiêu chí nghiệm thu bắt buộc sau khi Requirement Baseline được nhóm phê duyệt. Việc thay đổi các ngưỡng trước baseline không làm thay đổi mục tiêu nghiệp vụ; sau baseline phải được quản lý như Change Request nếu ảnh hưởng phạm vi hoặc acceptance criteria.
 
 Các giới hạn dưới đây được kiểm tra tại backend trước khi lưu/upload. Save Draft được phép thiếu trường bắt buộc cho Publish, nhưng mọi trường đã nhập vẫn phải đúng kiểu, giới hạn và quan hệ dữ liệu. Publish phải kiểm tra toàn bộ hiện vật, hotspot và media liên quan, không chỉ dữ liệu trên form frontend.
 
@@ -745,7 +876,7 @@ Sau hiện vật cuối cùng, hệ thống phải thông báo hoàn thành và 
 **FR-32 — Detect WebXR capability**  
 Hệ thống phải có khả năng phát hiện WebXR capability của browser để hỗ trợ quyết định mở rộng XR trong tương lai. Việc cung cấp immersive VR session, controller interaction hoặc headset-specific UI không phải requirement bắt buộc của MVP hiện tại.
 
-> **Reserved IDs:** `FR-33` → `FR-38` được giữ trống trong baseline v0.1 để bảo toàn traceability của các requirement đã đánh số sau đó. Các hành vi immersive VR tương ứng được chuyển sang **Future Enhancements — Outside MVP**.
+> **Reserved IDs:** `FR-33` → `FR-38` được giữ trống trong Draft v0.1 để bảo toàn traceability của các requirement đã đánh số sau đó. Các hành vi immersive VR tương ứng được chuyển sang **Future Enhancements — Outside MVP**.
 
 ---
 
@@ -768,38 +899,40 @@ Chế độ 2D phải hỗ trợ tiếng Việt và tiếng Anh.
 
 ---
 
-### 6.8 Admin Authentication
+### 6.8 Administrative Authentication & Authorization
 
-**FR-44 — Admin login**  
-Admin phải có thể đăng nhập CMS bằng email và mật khẩu hợp lệ.
+**FR-44 — Administrative user login**  
+Administrative User phải có thể đăng nhập Admin Portal bằng email và mật khẩu hợp lệ.
 
 **FR-45 — Reject invalid login**  
-Hệ thống phải từ chối thông tin xác thực không hợp lệ.
+Hệ thống phải từ chối credential không hợp lệ hoặc tài khoản disabled/deleted.
 
 **FR-46 — Maintain authenticated session**  
-Admin phải có thể sử dụng CMS trong phiên xác thực hợp lệ.
+Administrative User phải có thể sử dụng Admin Portal trong phiên/credential hợp lệ theo NFR-17.
 
-**FR-47 — Admin logout**  
-Admin phải có thể đăng xuất khỏi CMS; logout làm phiên backend hết hiệu lực và xóa dữ liệu Draft/Preview khỏi bộ nhớ/cache của giao diện quản trị. Việc giữ form khi phiên tự hết hạn được mô tả tại AC-38.
+**FR-47 — Administrative logout**  
+Administrative User phải có thể logout; backend phải revoke refresh/session tương ứng và frontend xóa credential/cache quản trị nhạy cảm thuộc phiên.
 
-**FR-48 — Protect CMS functions**  
-Người dùng chưa xác thực không được truy cập chức năng quản trị.
+**FR-48 — Protect administrative functions**  
+Backend phải phân biệt:
+- chưa xác thực / credential hết hạn → `401`;
+- đã xác thực nhưng thiếu permission → `403`.
 
----
+Không thao tác bị từ chối nào được làm thay đổi dữ liệu.
 
 ### 6.9 Exhibit Management
 
 **FR-49 — View exhibit list**  
-Admin phải có thể xem danh sách hiện vật trong CMS.
+Administrative User có permission phù hợp phải có thể xem danh sách hiện vật trong CMS.
 
 **FR-50 — Create exhibit**  
-Admin phải có thể tạo hiện vật mới.
+Editor/Admin có permission phù hợp phải có thể tạo hiện vật và Draft Revision đầu tiên.
 
-**FR-51 — Edit exhibit**  
-Admin phải có thể chỉnh sửa hiện vật Draft. Với Published, CMS hướng dẫn Unpublish trước khi sửa; backend phải từ chối request sửa hiện vật, hotspot hoặc media liên quan nếu bỏ qua bước này.
+**FR-51 — Edit exhibit revision**  
+Editor/Admin có permission phù hợp phải có thể chỉnh sửa Draft Revision. Revision đã Published không được sửa tại chỗ; khi cần cập nhật nội dung đang public, hệ thống tạo/sử dụng Draft Revision mới theo BR-21.
 
-**FR-52 — Delete exhibit**  
-Admin phải có thể xóa hiện vật Draft sau bước xác nhận, với xử lý hotspot, tour và media theo BR-20. Published phải được Unpublish trước khi xóa.
+**FR-52 — Delete draft/exhibit safely**  
+Administrative User có permission phù hợp phải có thể xóa Draft Revision hoặc Exhibit đủ điều kiện sau xác nhận, tuân theo BR-20 và không phá media dùng chung, tour hoặc revision Published.
 
 **FR-53 — Manage Vietnamese content**  
 Admin phải có thể nhập và chỉnh sửa nội dung tiếng Việt.
@@ -853,36 +986,34 @@ Admin phải có thể nhập nội dung hotspot bằng tiếng Việt và tiế
 
 ---
 
-### 6.12 Draft, Preview & Publishing
+### 6.12 Draft, Preview, Review & Publishing
 
-**FR-67 — Save exhibit as Draft**  
-Admin phải có thể lưu hiện vật ở trạng thái Draft.
+**FR-67 — Save Draft Revision**  
+Editor/Admin có permission phù hợp phải có thể lưu một revision ở trạng thái Draft.
 
-**FR-68 — Exclude Draft from public museum**  
-Hiện vật Draft và dữ liệu hotspot của nó không được trả về bởi API public hoặc xuất hiện trong phiên tham quan công khai. API Preview phải yêu cầu xác thực Admin, kể cả khi người gọi biết ID hoặc URL của Draft.
+**FR-68 — Exclude non-published revisions from public museum**  
+Draft/In Review/Rejected revision và hotspot/media chỉ thuộc các revision đó không được trả về qua API public. Preview phải yêu cầu authentication + permission.
 
-**FR-69 — Preview Draft exhibit**  
-Admin phải có thể xem hiện vật Draft trong môi trường 3D Preview.
+**FR-69 — Preview Draft Revision**  
+Administrative User có permission phù hợp phải có thể xem Draft Revision trong môi trường 3D Preview.
 
 **FR-70 — Preview configured placement**  
-Preview phải hiển thị transform hiện tại của Draft.
+Preview phải hiển thị transform của revision đang xem.
 
 **FR-71 — Preview hotspots and media**  
-Preview phải cho phép kiểm tra hotspot, nội dung song ngữ và audio.
+Preview phải cho phép kiểm tra hotspot, nội dung song ngữ, image/model/audio/captions của revision.
 
-**FR-72 — Publish exhibit**  
-Admin phải có thể chuyển Draft sang Published.
+**FR-72 — Publish reviewed revision**  
+Moderator/Admin có permission `publish` tương ứng phải có thể Publish một revision hợp lệ sau review.
 
-**FR-73 — Make Published content publicly available**  
-Sau publish thành công, hiện vật phải trở thành nội dung công khai trong các request mới theo BR-22, không cần sửa hoặc build lại frontend.
+**FR-73 — Make Published revision publicly available**  
+Sau Publish thành công, revision mới phải trở thành revision public hiện hành trong các request mới theo BR-22, không cần build lại frontend.
 
-**FR-74 — Unpublish exhibit**  
-Admin phải có thể chuyển Published trở lại Draft.
+**FR-74 — Hide or unpublish exhibit**  
+Moderator/Admin có permission phù hợp phải có thể loại Exhibit khỏi public mà không xóa lịch sử revision.
 
-**FR-75 — Remove unpublished exhibit from public museum**  
-Sau unpublish thành công, hiện vật không được trả về trong request public mới hoặc các phiên công khai mới theo BR-22; phiên đã tải dữ liệu không phải cập nhật realtime.
-
----
+**FR-75 — Remove hidden/unpublished exhibit from public museum**  
+Sau Hide/Unpublish thành công, Exhibit không được trả về trong request public mới; phiên đã tải snapshot không bắt buộc cập nhật realtime.
 
 ### 6.13 Guided Tour Management
 
@@ -969,7 +1100,56 @@ Admin phải có thể nhập, lưu và xem nguồn, tác giả/chủ sở hữu
 ### 6.17 Automatic Guided Tour
 
 **FR-98 — Automatically guide visitors through the tour**  
-Visitor phải có thể chọn Auto / Manual và Pause / Resume. Auto đưa Visitor tới điểm xem hiện vật theo thứ tự đã lưu bằng teleport tức thời, mở nội dung rồi phát audio sau khi Visitor đã cho phép; chuyển bước khi audio kết thúc hoặc sau một **dwell time cấu hình được** nếu không có audio hoặc audio lỗi. Giá trị mặc định trong v0.1 là **15 giây**. Nếu trình duyệt chặn playback, tour phải tạm dừng và chờ Visitor Play hoặc chọn Next. Pause tạm dừng cả bộ đếm và audio; Resume tiếp tục bước hiện tại; Next/Previous hoặc đổi sang Manual dừng bộ đếm và audio của Auto. Exit dừng mọi thao tác tự động và audio của tour. Trong 2D, Auto chuyển nội dung hiện vật thay cho vị trí. Không dùng chuyển động camera liên tục. Hành vi Auto Tour trong XR là future extension.
+Visitor phải có thể chọn Auto / Manual và Pause / Resume. Auto đưa Visitor tới điểm xem hiện vật theo thứ tự đã lưu bằng teleport tức thời, mở nội dung rồi phát audio sau khi Visitor đã cho phép; chuyển bước khi audio kết thúc hoặc sau 15 giây nếu không có audio hoặc audio lỗi. Nếu trình duyệt chặn playback, tour phải tạm dừng và chờ Visitor Play hoặc chọn Next. Pause tạm dừng cả bộ đếm và audio; Resume tiếp tục bước hiện tại; Next/Previous hoặc đổi sang Manual dừng bộ đếm và audio của Auto. Exit dừng mọi thao tác tự động và audio của tour. Trong 2D, Auto chuyển nội dung hiện vật thay cho vị trí. Không dùng chuyển động camera liên tục. Hành vi Auto Tour trong XR là future extension.
+
+---
+
+### 6.18 System Administration, RBAC & Governance
+
+**FR-99 — Enforce RBAC permissions**  
+Backend phải kiểm tra permission cho mọi protected administrative operation; frontend không được là lớp enforcement duy nhất.
+
+**FR-100 — View administrative users**  
+Admin có permission `user:read` hoặc tương đương phải có thể xem danh sách/chi tiết Administrative User.
+
+**FR-101 — Create and update administrative users**  
+Admin có permission phù hợp phải có thể tạo và cập nhật Administrative User, bao gồm thông tin hiển thị và credential reset/change theo policy.
+
+**FR-102 — Activate or disable administrative users**  
+Admin có permission phù hợp phải có thể kích hoạt/vô hiệu hóa user; user disabled không được login/refresh.
+
+**FR-103 — Assign and remove roles**  
+Admin có permission phù hợp phải có thể gán/bỏ role của user.
+
+**FR-104 — Manage roles**  
+Admin có permission phù hợp phải có thể xem/tạo/cập nhật/xóa role theo ràng buộc role hệ thống.
+
+**FR-105 — Manage permission matrix**  
+Admin có permission phù hợp phải có thể xem danh mục permission và cập nhật tập permission của role.
+
+**FR-106 — Record administrative audit events**  
+Hệ thống phải ghi Audit Log cho các hành động quản trị quan trọng theo policy, tối thiểu gồm actor, action, resource, thời điểm và request identity phù hợp; không ghi password/token plaintext.
+
+**FR-107 — View and filter audit log**  
+User có permission `audit:read` hoặc tương đương phải có thể xem audit log và lọc theo actor/action/resource/thời gian.
+
+**FR-108 — Manage room metadata**  
+User có permission phù hợp phải có thể CRUD metadata phòng. Chức năng này không bao gồm chỉnh mesh/geometry/layout 3D.
+
+**FR-109 — Submit revision for review**  
+Editor/Admin có permission phù hợp phải có thể submit Draft Revision để Moderator/Admin review.
+
+**FR-110 — Review and decide revision**  
+Moderator/Admin có permission phù hợp phải có thể xem revision chờ duyệt và quyết định Publish hoặc Reject; Reject phải có lý do/feedback.
+
+**FR-111 — Preserve revision history**  
+Hệ thống phải giữ lịch sử revision đủ để truy vết revision đã tạo/review/publish/reject. MVP không bắt buộc rollback tự động.
+
+**FR-112 — Submit content report**  
+Visitor phải có thể gửi báo cáo về nội dung công khai qua endpoint/form chuyên biệt có validation và rate-limit phù hợp.
+
+**FR-113 — Manage content reports**  
+Moderator/Admin có permission phù hợp phải có thể xem, phân loại và resolve/dismiss Content Report; xử lý report phải được audit khi policy yêu cầu.
 
 ---
 
@@ -977,7 +1157,7 @@ Visitor phải có thể chọn Auto / Manual và Pause / Resume. Auto đưa Vis
 
 ### 7.0 Status of Quantitative Targets
 
-Các ngưỡng định lượng trong phần NFR (bao gồm nhưng không giới hạn ở thời gian tải, FPS, response time, asset budget, concurrent visitors, availability và thời hạn session) là **engineering targets của baseline v0.1**. Chúng được dùng để định hướng Architecture, lập Test Plan và nghiệm thu theo NFR/AC tương ứng; NFR-10 là mục tiêu vận hành sau triển khai. Nếu đề bài hoặc stakeholder cung cấp một ngưỡng bắt buộc khác, ghi nguồn và cập nhật yêu cầu ở phiên bản tiếp theo.
+Các ngưỡng định lượng trong phần NFR (bao gồm nhưng không giới hạn ở thời gian tải, FPS, response time, asset budget, concurrent visitors, availability và thời hạn session) là **engineering targets của Draft v0.1**. Chúng được dùng để định hướng Architecture và lập Test Plan, nhưng chỉ trở thành cam kết nghiệm thu bắt buộc sau khi nhóm review và phê duyệt Requirement Baseline. Nếu đề bài hoặc stakeholder cung cấp một ngưỡng bắt buộc khác, ngưỡng bên ngoài đó được ưu tiên và phải được ghi nguồn.
 
 Chi tiết cách đo, network profile, số lần lặp, thiết bị cụ thể và công cụ đo thuộc **Test/Performance Plan**, không phải yêu cầu sản phẩm.
 
@@ -1006,7 +1186,7 @@ Tổng transfer size với cache rỗng từ tải trang public đến khi scene
 
 ### 7.1.1 Measurement and Evidence
 
-Chi tiết về thiết bị cụ thể, network throttling, số lượt đo, kịch bản FPS 3D, cách tính percentile, load test và biểu mẫu bằng chứng sẽ được chốt trong Test/Performance Plan trước nghiệm thu. [`plans/performance-audit.md`](../plans/performance-audit.md) và [`plans/device-matrix.md`](../plans/device-matrix.md) là tài liệu tham khảo hiện có, chưa phải profile nghiệm thu cho baseline v0.1. SRS chỉ quy định **mức chất lượng cần đạt**; Test/Performance Plan quy định **cách chứng minh mức đó đã đạt**. Đo hiệu năng immersive VR thuộc kế hoạch mở rộng sau MVP.
+Chi tiết về thiết bị cụ thể, network throttling, số lượt đo, kịch bản FPS 3D, cách tính percentile, load test và biểu mẫu bằng chứng sẽ được chốt trong Test/Performance Plan trước nghiệm thu. [`plans/performance-audit.md`](../plans/performance-audit.md) và [`plans/device-matrix.md`](../plans/device-matrix.md) là tài liệu tham khảo hiện có, chưa phải profile nghiệm thu đã phê duyệt cho Draft v0.1. SRS chỉ quy định **mức chất lượng cần đạt**; Test/Performance Plan quy định **cách chứng minh mức đó đã đạt**. Đo hiệu năng immersive VR thuộc kế hoạch mở rộng sau MVP.
 
 Không được tuyên bố đạt hiệu năng cho một nhóm thiết bị khi chưa có model/version và bằng chứng đo tương ứng.
 
@@ -1044,27 +1224,33 @@ Các thay đổi CMS được lưu thành công phải tồn tại sau logout ho
 Mọi giao tiếp production client-server phải sử dụng HTTPS.
 
 **NFR-15 — Password storage**  
-Mật khẩu Admin không được lưu plaintext và phải được hash bằng cơ chế phù hợp.
+Mật khẩu Administrative User không được lưu plaintext và phải được hash bằng cơ chế phù hợp như bcrypt/Argon2 với cấu hình được review.
 
-**NFR-16 — Authentication protection**  
-Chức năng quản trị phải yêu cầu phiên xác thực hợp lệ.
+**NFR-16 — Authentication and authorization protection**  
+Admin Portal phải yêu cầu authentication hợp lệ; protected API phải enforce RBAC permission ở backend.
 
-**NFR-17 — Session expiration**  
-Phiên Admin phải hết hiệu lực sau **30 phút không hoạt động**, tối đa **8 giờ từ lúc đăng nhập**, hoặc ngay sau logout; backend phải từ chối request của phiên đã hết hiệu lực. Các thời hạn này là engineering target áp dụng trong baseline v0.1.
+**NFR-17 — Access/refresh credential lifetime and revocation**  
+Baseline auth hiện tại sử dụng access credential ngắn hạn và refresh session có thể revoke/rotate. Mục tiêu triển khai:
+- access token TTL khoảng **15 phút**;
+- refresh session TTL tối đa khoảng **7 ngày**;
+- logout revoke refresh session/family tương ứng;
+- refresh-token reuse detection phải revoke family;
+- user disabled/deleted bị từ chối login/refresh;
+- thay đổi permission/role phải có hiệu lực không muộn hơn lần cấp access token kế tiếp và không vượt quá access-token TTL hiện hành.
+
+Các giá trị định lượng này là engineering target của v0.2 và có thể điều chỉnh qua Change Request nếu nhóm đổi auth strategy.
 
 **NFR-18 — Input validation**  
-Dữ liệu do Admin gửi vào phải được kiểm tra phía hệ thống trước khi lưu hoặc publish.
+Dữ liệu do Administrative User gửi phải được kiểm tra phía backend trước khi lưu, review hoặc publish.
 
 **NFR-19 — File upload validation**  
-Backend phải kiểm tra định dạng/nội dung, MIME và dung lượng thực tế theo mục 5.2; file bị từ chối không được gắn vào nội dung và upload thất bại không được thay thế media đang dùng.
+Backend phải kiểm tra định dạng/nội dung, MIME và dung lượng thực tế theo mục 5.2; upload thất bại không được thay thế media hợp lệ đang dùng.
 
-**NFR-20 — Unauthorized API access**  
-Các thao tác quản trị create/edit/delete/upload/publish/unpublish/cấu hình tour và đọc Draft/Preview phải từ chối request chưa xác thực hoặc có phiên hết hiệu lực.
+**NFR-20 — Unauthorized/forbidden API access**  
+Protected API phải trả `401` khi chưa xác thực/credential hết hạn và `403` khi đã xác thực nhưng thiếu permission. Request bị từ chối không được thay đổi dữ liệu.
 
 **NFR-21 — Sensitive information exposure**  
-Không được gửi password, password hash, secret key hoặc server credential tới Visitor hoặc frontend bundle công khai.
-
----
+Không được gửi password/passwordHash, raw refresh token, secret key hoặc server credential trong API response/log/frontend bundle ngoài nơi bắt buộc theo auth protocol.
 
 ### 7.5 Usability
 
@@ -1088,7 +1274,7 @@ Các thao tác có thể gây mất dữ liệu phải yêu cầu xác nhận.
 ### 7.6 Accessibility
 
 **NFR-27 — WCAG target**  
-Các giao diện public-facing thuộc MVP phải đáp ứng các tiêu chí WCAG 2.1 Level A và AA áp dụng được. Checklist nghiệm thu phải ghi từng tiêu chí, bằng chứng hoặc lý do không áp dụng; chỉ kết quả quét tự động không đủ để kết luận đáp ứng. CMS không bắt buộc đạt toàn bộ WCAG 2.1 AA trong MVP nhưng phải hỗ trợ keyboard navigation, visible focus, semantic controls/labels và không tạo keyboard trap.
+Toàn bộ giao diện public và CMS thuộc MVP phải đáp ứng các tiêu chí WCAG 2.1 Level A và AA áp dụng được. Checklist nghiệm thu phải ghi từng tiêu chí, bằng chứng hoặc lý do không áp dụng; chỉ kết quả quét tự động không đủ để kết luận đáp ứng.
 
 **NFR-28 — Keyboard accessibility**  
 Mọi chức năng chính trên giao diện 2D phải có thể sử dụng không cần chuột.
@@ -1193,6 +1379,19 @@ Không được lưu thông tin xác thực nhạy cảm của Admin trong clien
 
 ---
 
+### 7.12 RBAC, Audit & Administrative Reliability
+
+**NFR-55 — Server-side permission enforcement**  
+Mọi permission quan trọng phải được kiểm tra tại backend; UI permission check chỉ hỗ trợ UX.
+
+**NFR-56 — Audit integrity**  
+Audit log phải append-only qua các chức năng ứng dụng thông thường, có timestamp/request identity phù hợp và không chứa credential bí mật.
+
+**NFR-57 — Authentication abuse protection**  
+Login/refresh và endpoint public report phải có biện pháp rate-limit/abuse protection phù hợp trước production.
+
+---
+
 ## 8. Constraints
 
 ### 8.1 Existing Technical / Organizational Constraints
@@ -1235,18 +1434,18 @@ Immersive VR và AR đều nằm ngoài phạm vi nghiệm thu MVP hiện tại.
 
 ### 8.3 Administrative Constraints
 
-**CON-11 — Admin roles**  
-MVP không triển khai phân quyền nhiều cấp.
+**CON-11 — RBAC administration**  
+MVP triển khai RBAC cho Admin Portal. Ba role mặc định là `admin`, `moderator`, `editor`; hệ thống có mô hình user-role và role-permission để hỗ trợ permission matrix.
 
-**CON-12 — Publication workflow**  
-Trạng thái nội dung chỉ gồm Draft và Published; Preview là thao tác đọc Draft được bảo vệ, không phải trạng thái hoặc bước bắt buộc. Chỉnh sửa Published phải Unpublish trước theo mục 5.1; không duy trì bản nháp song song với bản đang công khai.
+**CON-12 — Revision/moderation workflow**  
+MVP hỗ trợ Draft Revision → In Review → Publish/Reject. Revision Published là immutable; Draft/In Review mới có thể tồn tại song song với revision đang public. Preview là thao tác đọc revision chưa publish và không tự thay đổi publication.
 
----
+Workflow tùy biến nhiều tầng ngoài Editor→Moderator/Admin, rollback tự động và approval engine tổng quát nằm ngoài MVP.
 
 ### 8.4 Accessibility Constraints
 
 **CON-13 — Accessibility scope**  
-WCAG 2.1 AA áp dụng cho các giao diện public-facing thuộc MVP. CMS chỉ bắt buộc mức accessibility cơ bản theo BR-18/NFR-27. Accessibility bên trong XR tương lai nằm ngoài phạm vi hiện tại.
+WCAG 2.1 AA áp dụng cho giao diện web thuộc MVP. Accessibility bên trong XR tương lai nằm ngoài phạm vi hiện tại.
 
 ---
 
@@ -1288,8 +1487,11 @@ Admin chịu trách nhiệm về quyền sử dụng model, ảnh, audio và n�
 **ASM-07 — Prepared assets**  
 Model 3D đưa vào hệ thống phải được chuẩn bị ở định dạng/chất lượng phù hợp cho web theo mục 5.2.
 
-**ASM-08 — Administrator provisioning**  
-Tài khoản Admin được người phụ trách hệ thống cấp và vô hiệu hóa ngoài giao diện CMS MVP; không có đăng ký Admin công khai. Bộ nghiệm thu có ít nhất hai tài khoản Admin khác nhau để kiểm tra cùng mức quyền.
+**ASM-08 — Initial administrator provisioning**  
+Ít nhất một tài khoản `admin` đầu tiên được bootstrap bằng seed/deployment process an toàn; không có public Admin registration. Sau bootstrap, user/role/permission được quản lý qua System Administration theo RBAC.
+
+**ASM-09 — Default administrative roles**  
+Môi trường nghiệm thu có ít nhất một tài khoản cho mỗi role mặc định `admin`, `moderator`, `editor` để kiểm tra permission matrix và 401/403.
 
 ---
 
@@ -1328,7 +1530,7 @@ Given bộ nội dung nghiệm thu theo mục 2.5 đã được cấu hình, whe
 
 **AC-04 — Exhibit information**  
 **Requirements:** FR-08, FR-09, FR-10.  
-Given Visitor đang trong bảo tàng, when chọn một hiện vật, then hệ thống hiển thị tên/mô tả và hình ảnh nếu có; when đóng bảng bằng control đóng hoặc phím Esc, then Visitor tiếp tục tham quan và focus trở lại control đã mở bảng.
+Given Visitor đang trong bảo tàng, when chọn một hiện vật, then hệ thống hiển thị tên/mô tả và hình ảnh nếu có; when đóng bảng bằng control đóng hoặc Esc thuộc MVP, then Visitor tiếp tục tham quan và focus trở lại control đã mở bảng.
 
 **AC-05 — Bilingual content**  
 **Requirements:** FR-11, FR-15, FR-43, NFR-50, NFR-51.  
@@ -1374,35 +1576,33 @@ Given browser không hỗ trợ WebXR nhưng hỗ trợ 3D, when tải ứng d�
 **Requirements:** FR-40, FR-41, FR-42, FR-43, FR-88.  
 Given API nội dung hoạt động và 3D không khả dụng hoặc Visitor chọn 2D, when mở fallback, then Visitor truy cập được danh sách Published, tên/mô tả, hình ảnh nếu có, hotspot dạng văn bản, audio/transcript/phụ đề nếu có và đổi ngôn ngữ. Nếu API lỗi, hệ thống hiển thị trạng thái lỗi theo AC-40, không suy ra fallback 2D tự có nội dung.
 
-**AC-16 — Admin authentication**  
-**Requirements:** FR-44, FR-45, FR-46, BR-03, ASM-08.  
-Given tài khoản Admin hợp lệ, when nhập đúng email/password, then Admin được truy cập CMS.
+**AC-16 — Administrative authentication**  
+**Requirements:** FR-44, FR-45, FR-46, BR-02, ASM-08, ASM-09.  
+Given tài khoản `admin`, `moderator` hoặc `editor` hợp lệ, when nhập đúng email/password, then user được vào Admin Portal với capability phản ánh permission của mình. Credential sai hoặc user disabled/deleted bị từ chối.
 
-Kiểm tra với ít nhất hai tài khoản có cùng quyền; email/password sai hoặc tài khoản đã bị vô hiệu hóa phải bị từ chối.
+**AC-17 — Unauthorized and forbidden Admin access**  
+**Requirements:** FR-48, FR-99, NFR-16, NFR-20, CON-11, CON-16.  
+Given request chưa xác thực, when gọi protected API, then backend trả `401`. Given user đã xác thực nhưng thiếu permission, when gọi trực tiếp cùng API, then backend trả `403`. Cả hai trường hợp đều không thay đổi dữ liệu kể cả khi bỏ qua frontend.
 
-**AC-17 — Unauthorized CMS access**  
-**Requirements:** FR-48, NFR-16, NFR-20, CON-16.  
-Given người dùng chưa đăng nhập, when truy cập CMS hoặc gọi trực tiếp API create/edit/delete/upload/publish/unpublish/tour management, then backend từ chối và không thay đổi dữ liệu, kể cả khi bỏ qua frontend.
-
-**AC-18 — Create Draft**  
+**AC-18 — Create Draft Revision**  
 **Requirements:** FR-49, FR-50, FR-67, FR-68, FR-90.  
-Given Admin đã đăng nhập, when tạo hiện vật và Save Draft với dữ liệu đúng kiểu nhưng chưa đủ nội dung Publish, then dữ liệu được lưu, hiện trong danh sách CMS ở trạng thái Draft và không được API public trả về.
+Given Editor/Admin có permission biên tập, when tạo Exhibit/Draft Revision và Save với dữ liệu đúng kiểu nhưng chưa đủ điều kiện Publish, then revision được lưu trong CMS và không được API public trả về.
 
 **AC-19 — Draft Preview**  
 **Requirements:** FR-69, FR-70, FR-71.  
 Given hiện vật là Draft đã lưu, when Admin chọn Preview, then Admin xem được transform, hotspot, nội dung song ngữ và media đã gắn; model còn thiếu được hiển thị bằng placeholder. Preview không đổi trạng thái hoặc làm dữ liệu công khai.
 
-**AC-20 — Publish**  
-**Requirements:** FR-72, FR-73.  
-Given Draft hợp lệ, when Admin chọn Publish, then trạng thái chuyển thành Published và nội dung trở thành công khai.
+**AC-20 — Publish reviewed revision**  
+**Requirements:** FR-72, FR-73, FR-109, FR-110, BR-26.  
+Given revision hợp lệ đã được submit review và user có permission publish, when Moderator/Admin chọn Publish, then revision đó trở thành revision public hiện hành atomically; request public mới nhận nội dung mới.
 
 **AC-21 — Publish validation**  
 **Requirements:** FR-90, FR-91, NFR-18, NFR-51.  
 Given Draft thiếu một trong các trường bắt buộc hoặc quan hệ/media/transform không hợp lệ theo mục 5.2, when Admin Publish, then backend từ chối, trạng thái vẫn là Draft và CMS chỉ rõ lỗi. Kiểm tra ít nhất tên/mô tả thiếu một ngôn ngữ, audio thiếu transcript/phụ đề, scale không dương và media sai loại; Save Draft được phép thiếu nội dung nhưng không được lưu giá trị sai kiểu/giới hạn.
 
-**AC-22 — Unpublish**  
+**AC-22 — Hide / Unpublish**  
 **Requirements:** FR-74, FR-75, BR-22, NFR-12.  
-Given hiện vật Published, when Admin Unpublish, then hiện vật chuyển về Draft và không còn xuất hiện trong phiên public mới.
+Given Exhibit đang public, when Moderator/Admin có permission Hide/Unpublish và backend xác nhận thành công, then Exhibit không còn xuất hiện trong request public mới; lịch sử revision vẫn được giữ.
 
 **AC-23 — 3D placement**  
 **Requirements:** FR-58, FR-59, FR-60, FR-61.  
@@ -1418,14 +1618,14 @@ Given Admin xem cấu hình tour, when thay đổi và lưu thứ tự các ID h
 
 **AC-26 — Accessibility**  
 **Requirements:** FR-80, FR-81, FR-82, FR-84, FR-85, NFR-27 → NFR-33.  
-Given giao diện public-facing thuộc MVP, when kiểm tra checklist WCAG 2.1 A/AA bằng công cụ và thủ công, then các tiêu chí áp dụng phải đạt và có bằng chứng. Tối thiểu kiểm tra keyboard-only, focus/không kẹt focus, screen reader, alt/label, contrast, zoom 200% và nội dung không phụ thuộc canvas; transcript/phụ đề và reduced motion kiểm chứng thêm ở AC-42/AC-43. Với CMS, kiểm tra tối thiểu keyboard navigation, visible focus, semantic controls/labels và không có keyboard trap.
+Given giao diện public/CMS thuộc MVP, when kiểm tra checklist WCAG 2.1 A/AA bằng công cụ và thủ công, then các tiêu chí áp dụng phải đạt và có bằng chứng. Tối thiểu kiểm tra keyboard-only, focus/không kẹt focus, screen reader, alt/label, contrast, zoom 200% và nội dung không phụ thuộc canvas; transcript/phụ đề và reduced motion kiểm chứng thêm ở AC-42/AC-43.
 
 **AC-27 — Performance**  
 **Requirements:** NFR-01 → NFR-04, NFR-06, NFR-07, NFR-48.  
 Given production build, device matrix và điều kiện đo đã được phê duyệt trong Test/Performance Plan, when thực hiện performance audit, then:
 - trang public ban đầu có thể tương tác trong ≤ 5 giây;
 - tài nguyên từ navigation đến khi scene 3D sẵn sàng có transfer size ≤ 20 MB;
-- FPS của trải nghiệm 3D đạt ≥ 30 trong kịch bản tham quan chuẩn trên thiết bị hỗ trợ 3D;
+- FPS thuộc MVP đạt ≥ 30 trong kịch bản tham quan chuẩn trên thiết bị hỗ trợ 3D;
 - UI response p95 ≤ 500 ms;
 - thời gian scene sẵn sàng, tải media, cấu hình máy/mạng, mức chất lượng và manifest asset được báo cáo riêng trong performance audit.
 
@@ -1436,9 +1636,9 @@ Given model thiếu hoặc không tải được nhưng API nội dung hoạt đ
 **AC-29 — Reserved for future WebXR failure acceptance**  
 Không áp dụng cho MVP hiện tại. Acceptance criterion này chỉ được kích hoạt khi immersive WebXR được đưa vào scope triển khai.
 
-**AC-30 — CMS-driven update**  
-**Requirements:** BR-19, FR-51, FR-73, NFR-40.  
-Given Admin đã Unpublish, sửa Draft và Publish thành công, when mở phiên public mới, then frontend dùng nội dung mới mà không cần developer sửa hoặc build lại source code frontend.
+**AC-30 — CMS-driven revision update**  
+**Requirements:** BR-19, BR-21, FR-51, FR-73, FR-109, FR-110, NFR-40.  
+Given Editor tạo/sửa Draft Revision mới trong CMS và Moderator/Admin Publish thành công, when mở request public mới, then frontend dùng revision mới mà không cần developer sửa/build lại source; revision cũ không bị sửa tại chỗ.
 
 **AC-31 — WebXR extension readiness**  
 **Requirements:** FR-32, NFR-36, CON-10.  
@@ -1456,21 +1656,21 @@ Given file sai định dạng, nội dung không parse/decode được, MIME gi�
 **Requirements:** FR-53, FR-54, FR-66, NFR-49.  
 Given Admin sửa Draft, when nhập tên/mô tả/hotspot có dấu tiếng Việt và tiếng Anh rồi lưu/tải lại, then dữ liệu UTF-8 được giữ chính xác, Preview đổi ngôn ngữ đúng; thiếu một bản dịch bắt buộc thì Save Draft được phép nhưng Publish bị chặn.
 
-**AC-35 — Published editing protection**  
+**AC-35 — Published revision immutability**  
 **Requirements:** FR-51, BR-21, CON-12.  
-Given hiện vật Published, when Admin thử sửa hiện vật/hotspot hoặc ghi đè/xóa media đang được nó tham chiếu bằng API, then backend từ chối; sau Unpublish, chỉnh sửa Draft được phép và chỉ công khai trở lại sau Publish.
+Given revision đang Published, when Editor/Admin thử sửa trực tiếp content/hotspot hoặc overwrite media của chính revision đó, then backend từ chối. Hệ thống cho phép tạo/chỉnh Draft Revision mới trong khi revision Published cũ tiếp tục public cho tới khi revision mới được Publish hoặc Exhibit bị Hide/Unpublish.
 
 **AC-36 — Draft API protection**  
 **Requirements:** FR-68, FR-69, BR-04, BR-05.  
 Given hiện vật Draft có ID đã biết, when người chưa xác thực truy vấn API public theo ID, danh sách phòng, API Preview hoặc media chỉ gắn với Draft, then phản hồi không chứa dữ liệu Draft/hotspot và từ chối Preview/media riêng của Draft. Admin có phiên hợp lệ được đọc Preview; media dùng chung với Published vẫn được công khai, public không nhận Draft kể cả frontend bị bỏ qua.
 
-**AC-37 — Exhibit deletion**  
+**AC-37 — Safe deletion**  
 **Requirements:** FR-52, FR-64, BR-20, NFR-26.  
-Given Draft có hotspot và tham chiếu trong tour, when Admin hủy xác nhận xóa, then không có dữ liệu thay đổi; when xác nhận và backend báo thành công, then Draft/hotspot bị xóa và tour không còn tham chiếu đó. Media dùng chung và các hiện vật khác không bị xóa; Published không thể xóa trực tiếp.
+Given Draft Revision đủ điều kiện xóa, when user hủy xác nhận, then không có dữ liệu thay đổi; when user có permission xác nhận và backend báo thành công, then revision/hotspot liên quan được xử lý nhất quán. Media dùng chung và revision Published không bị xóa ngoài workflow cho phép.
 
-**AC-38 — Logout and session expiration**  
+**AC-38 — Logout, token expiry and refresh revocation**  
 **Requirements:** FR-46, FR-47, NFR-17.  
-Given phiên Admin hợp lệ, when logout, không hoạt động 30 phút hoặc đạt thời hạn 8 giờ, then request tiếp theo của phiên cũ bị backend từ chối, gồm cả API Preview. Khi tự hết hạn, form chưa lưu chỉ giữ trong bộ nhớ của tab và chỉ hiện lại sau khi đăng nhập, không ghi credential hoặc nội dung nhạy cảm vào client storage; logout chủ động xóa dữ liệu Draft/Preview khỏi bộ nhớ/cache giao diện.
+Given user có access/refresh credential hợp lệ, when access token hết hạn, frontend chỉ tiếp tục sau refresh hợp lệ. When logout hoặc refresh-token reuse bị phát hiện, refresh session/family tương ứng bị revoke và credential cũ không thể tiếp tục cấp access token mới. User disabled/deleted bị từ chối login/refresh. Frontend không lưu password/raw refresh token vào client storage.
 
 **AC-39 — Audio playback controls**  
 **Requirements:** FR-18, FR-19, FR-20, FR-22.  
@@ -1490,11 +1690,11 @@ Given audio tiếng Việt/Anh có transcript và phụ đề, when Visitor bậ
 
 **AC-43 — Reduced motion**  
 **Requirements:** FR-95, NFR-27.  
-Given hệ điều hành bật hoặc đổi sang reduced motion trong phiên sử dụng giao diện web, when dùng UI và tour, then animation không thiết yếu/chuyển động camera tự động liên tục bị tắt; teleport/Auto dùng chuyển vị trí tức thời, các chức năng cốt lõi vẫn hoạt động.
+Given hệ điều hành bật hoặc đổi sang reduced motion trong phiên thuộc MVP, when dùng UI và tour, then animation không thiết yếu/chuyển động camera tự động liên tục bị tắt; teleport/Auto dùng chuyển vị trí tức thời, các chức năng cốt lõi vẫn hoạt động.
 
 **AC-44 — Adaptive 3D quality**  
 **Requirements:** FR-96, NFR-03, NFR-11.  
-Given scene 3D đã tải, when hiệu năng duy trì dưới ngưỡng chấp nhận theo Test/Performance Plan, then hệ thống tự động giảm chất lượng rendering không thiết yếu mà không làm mất nội dung hoặc chức năng cốt lõi. Nếu vẫn không đạt ngưỡng ở mức chất lượng thấp nhất, hệ thống thông báo và cung cấp lựa chọn chuyển sang 2D. Ghi bằng chứng mức chất lượng trước/sau.
+Given scene thuộc MVP đã tải, when hiệu năng duy trì dưới ngưỡng chấp nhận theo Test/Performance Plan, then hệ thống tự động giảm chất lượng rendering không thiết yếu mà không làm mất nội dung hoặc chức năng cốt lõi. Nếu vẫn không đạt ngưỡng ở mức chất lượng thấp nhất, hệ thống thông báo và cung cấp lựa chọn chuyển sang 2D. Ghi bằng chứng mức chất lượng trước/sau.
 
 **AC-45 — Media rights metadata**  
 **Requirements:** FR-97, ASM-06.  
@@ -1502,7 +1702,7 @@ Given Draft dùng media, when thiếu nguồn/tác giả/giấy phép hoặc că
 
 **AC-46 — Automatic and manual tour**  
 **Requirements:** FR-23 → FR-31, FR-98.  
-Given tour có nhiều hiện vật, when Visitor chọn Auto và cho phép audio, then tour lần lượt chuyển điểm xem/nội dung, phát audio rồi chuyển bước khi audio kết thúc; nếu không có audio hoặc audio lỗi thì chuyển bước sau dwell time đang được cấu hình. Playback bị chặn phải tạm dừng chờ Play/Next. Kiểm tra Pause/Resume giữ bước/bộ đếm, Next/Previous chuyển về Manual và Exit dừng audio/tự chuyển bước. Manual không tự chuyển bước. Hành vi XR không thuộc AC của MVP.
+Given tour có nhiều hiện vật, when Visitor chọn Auto và cho phép audio, then tour lần lượt chuyển điểm xem/nội dung, phát audio rồi chuyển bước khi audio kết thúc; không có audio/audio lỗi thì chờ 15 giây. Playback bị chặn phải tạm dừng chờ Play/Next. Kiểm tra Pause/Resume giữ bước/bộ đếm, Next/Previous chuyển về Manual và Exit dừng audio/tự chuyển bước. Manual không tự chuyển bước. Hành vi XR không thuộc AC của MVP.
 
 **AC-47 — Tour filtering and empty state**  
 **Requirements:** FR-17, FR-78, BR-22.  
@@ -1535,6 +1735,48 @@ Given Visitor chọn English hoặc Vietnamese, when đổi hiện vật hoặc 
 **AC-54 — Persisted CMS data**  
 **Requirements:** NFR-13, FR-67, FR-77.  
 Given Admin đã Save Draft hoặc lưu cấu hình tour và backend xác nhận thành công, when Admin logout/đăng nhập lại hoặc backend restart, then dữ liệu đã xác nhận lưu vẫn tồn tại và giữ đúng giá trị.
+
+---
+
+**AC-55 — Default RBAC roles**  
+**Requirements:** FR-99, CON-11, ASM-09.  
+Given seed/deployment hoàn tất, when kiểm tra role mặc định, then tồn tại `admin`, `moderator`, `editor` với permission matrix được cấu hình; API authorization sử dụng permission chứ không chỉ tên role.
+
+**AC-56 — Permission enforcement**  
+**Requirements:** FR-99, FR-103 → FR-105, BR-23, BR-24, NFR-55.  
+Given Editor thiếu `user:create`, when gọi trực tiếp API tạo user, then backend trả `403` và không tạo dữ liệu. Given Admin có permission tương ứng, cùng operation thành công.
+
+**AC-57 — Administrative user management**  
+**Requirements:** FR-100 → FR-103.  
+Given Admin có permission quản lý user, when tạo user mới, gán role và sau đó disable user, then dữ liệu được lưu đúng; user disabled không login/refresh được và passwordHash không xuất hiện trong response.
+
+**AC-58 — Role and permission matrix**  
+**Requirements:** FR-104, FR-105.  
+Given Admin có permission quản lý RBAC, when cập nhật permission matrix của một role bằng tập permission hợp lệ, then đọc lại phản ánh đúng tập mới; code permission không tồn tại bị từ chối.
+
+**AC-59 — Revision moderation**  
+**Requirements:** FR-109, FR-110, BR-26, CON-12.  
+Given Editor submit một Draft Revision hợp lệ, when Moderator Reject, then revision không public và lưu feedback; when revision hợp lệ được Publish, then nó trở thành revision public hiện hành.
+
+**AC-60 — Revision history preservation**  
+**Requirements:** FR-111, BR-21.  
+Given Exhibit đã có revision Published và Editor tạo revision mới, when xem lịch sử, then revision cũ vẫn truy vết được; sửa Draft mới không mutate snapshot Published trước đó.
+
+**AC-61 — Audit trail**  
+**Requirements:** FR-106, FR-107, BR-25, NFR-56.  
+Given hành động quản trị được audit thành công, when user có `audit:read` lọc theo actor/action/resource/thời gian, then bản ghi tương ứng xuất hiện. API không cung cấp chức năng sửa/xóa Audit Log qua CMS và log không chứa password/token plaintext.
+
+**AC-62 — Room metadata management**  
+**Requirements:** FR-108, BR-07.  
+Given user có permission room management, when CRUD metadata phòng hợp lệ, then API/CMS phản ánh thay đổi; thao tác này không chỉnh mesh/geometry/layout 3D của không gian cố định.
+
+**AC-63 — Visitor content report**  
+**Requirements:** FR-112, BR-27, NFR-57.  
+Given Visitor đang xem nội dung public, when gửi report hợp lệ, then hệ thống ghi nhận report mà không yêu cầu Visitor account và không tự Hide/Unpublish content.
+
+**AC-64 — Report moderation**  
+**Requirements:** FR-113, BR-27.  
+Given Moderator/Admin có permission xử lý report, when resolve/dismiss report, then trạng thái report được cập nhật và hành động được audit theo policy; user thiếu permission bị `403`.
 
 ---
 
@@ -1584,6 +1826,12 @@ Acceptance Result
 | SR-18 Publication state | FR-67 → FR-75 | AC-18 → AC-22, AC-35, AC-36, AC-51 |
 | SR-19 Draft preview | FR-69 → FR-71 | AC-19 |
 | SR-20 Tour management | FR-76 → FR-79 | AC-25, AC-47, AC-54 |
+| SR-21 Manage administrative users | FR-100 → FR-103 | AC-57 |
+| SR-22 Manage roles and permissions | FR-99, FR-103 → FR-105 | AC-55, AC-56, AC-58 |
+| SR-23 Review content revisions | FR-109 → FR-111 | AC-20, AC-59, AC-60 |
+| SR-24 Audit administrative actions | FR-106, FR-107 | AC-61 |
+| SR-25 Manage room metadata | FR-108 | AC-62 |
+| SR-26 Handle content reports | FR-112, FR-113 | AC-63, AC-64 |
 
 ---
 
@@ -1596,7 +1844,7 @@ Acceptance Result
 | CMS response / concurrency | NFR-05, NFR-08 | AC-48, AC-49; timing/load test |
 | Availability | NFR-10 | Báo cáo probe trong 30 ngày theo NFR-10; mục tiêu vận hành sau triển khai |
 | Content consistency / persistence | NFR-12, NFR-13 | AC-41, AC-51, AC-54 |
-| Secure CMS | NFR-14 → NFR-21 | AC-17, AC-21, AC-33, AC-36, AC-38; kiểm tra HTTPS, password hashing và secret exposure |
+| Secure CMS / RBAC | NFR-14 → NFR-21, NFR-55, NFR-57 | AC-16, AC-17, AC-38, AC-55 → AC-58; kiểm tra HTTPS, password hashing, token lifecycle và permission enforcement |
 | Accessible UI | NFR-27 → NFR-33 | AC-26, AC-42, AC-43; WCAG checklist/manual test |
 | Cross-device usage | NFR-34, NFR-35, NFR-37, NFR-38 | AC-50; device matrix test |
 | WebXR extension readiness | NFR-36, FR-32 | AC-13, AC-31; capability test/architecture review, không nghiệm thu headset |
@@ -1604,6 +1852,7 @@ Acceptance Result
 | Reliable fallback | NFR-11, NFR-47 | AC-08, AC-13, AC-14, AC-15, AC-28, AC-40, AC-41 |
 | Vietnamese/English | NFR-49 → NFR-51 | AC-05, AC-34, AC-53; localization test |
 | Privacy | NFR-52 → NFR-54 | Review dữ liệu/request/client storage; xác nhận không thu dữ liệu Visitor bắt buộc hoặc lộ credential |
+| Audit integrity | NFR-56 | AC-61; review append-only behavior và secret redaction |
 
 ### 11.4 Cross-Cutting Requirements
 
@@ -1612,8 +1861,11 @@ Acceptance Result
 | Asset/rendering errors | FR-86 → FR-88 | AC-08, AC-15, AC-28 |
 | CMS validation / failed operations | FR-90, FR-91, FR-93 | AC-21, AC-33, AC-41 |
 | API trust boundary | FR-92, CON-16 | AC-17, AC-36, AC-40 |
+| RBAC / System Administration | FR-99 → FR-107, CON-11 | AC-55 → AC-58, AC-61 |
+| Revision governance | FR-109 → FR-111, CON-12 | AC-20, AC-35, AC-59, AC-60 |
+| Content reports | FR-112, FR-113 | AC-63, AC-64 |
 
-Bảng trên và mục 11.2 ánh xạ toàn bộ FR đang áp dụng cho MVP tới AC, không bao gồm `FR-33` → `FR-38`, `FR-89` và `AC-29` được reserved cho XR tương lai. Bảng không thay thế test case chi tiết. Mỗi test case phải ghi mã FR/NFR/AC liên quan, thiết bị/môi trường, ngày chạy, kết quả và bằng chứng. Các NFR chưa có AC riêng vẫn phải có bước kiểm chứng phù hợp, như review kiến trúc hoặc checklist bảo mật; không được suy ra đạt chỉ từ chức năng hoạt động.
+Bảng trên và mục 11.2 ánh xạ các nhóm requirement chính của MVP tới AC, bao gồm phần System Administration/RBAC/Governance mới ở FR-99 → FR-113; `FR-33` → `FR-38`, `FR-89` và `AC-29` vẫn reserved cho XR tương lai. Bảng không thay thế test case chi tiết. Mỗi test case phải ghi mã FR/NFR/AC liên quan, thiết bị/môi trường, ngày chạy, kết quả và bằng chứng. Các NFR chưa có AC riêng vẫn phải có bước kiểm chứng phù hợp, như review kiến trúc hoặc checklist bảo mật; không được suy ra đạt chỉ từ chức năng hoạt động.
 
 ---
 
@@ -1635,23 +1887,23 @@ Các chức năng sau không thuộc MVP:
 - payment;
 - ticketing;
 - e-commerce;
-- multi-level content approval;
-- Curator role;
-- Super Admin role;
-- version history;
-- rollback content;
-- giữ bản Published công khai đồng thời chỉnh sửa một bản Draft song song;
-- CMS room editor;
+- workflow approval tùy biến nhiều tầng ngoài `Editor → Moderator/Admin`;
+- Curator role riêng ngoài ba role mặc định;
+- Super Admin role riêng ngoài `admin`;
+- rollback content tự động;
+- chỉnh sửa trực tiếp revision đã Published;
+- 3D room geometry/mesh/layout editor;
 - tự động tạo model 3D;
-- chỉnh sửa mesh/model trực tiếp trong CMS;
+- chỉnh sửa mesh/model hiện vật trực tiếp trong CMS;
 - immersive VR/headset implementation và nghiệm thu trong MVP hiện tại;
-- full WCAG compliance bên trong immersive XR tương lai.
-
----
+- full WCAG compliance bên trong immersive XR tương lai;
+- partner API key/scopes;
+- analytics retention subsystem;
+- bulk import/export và ngôn ngữ ngoài vi/en nếu chưa được Change Request đưa vào MVP.
 
 ## 13. Requirement Prioritization
 
-Mọi FR, BR, CON và NFR có từ “phải” và đang áp dụng cho MVP thuộc Must Have; các mã reserved hoặc yêu cầu có điều kiện dành cho future extension không thuộc nghiệm thu MVP. Các ngưỡng định lượng áp dụng theo mục 5.2 và 7.0; NFR-10 là mục tiêu vận hành sau triển khai. Should/Could bên dưới chỉ là phần nâng cao không thay thế điều kiện nghiệm thu bắt buộc; không có tính năng vừa ngoài MVP vừa là điều kiện hoàn thành MVP.
+Mọi FR/BR/CON/NFR có từ “phải” và đang áp dụng cho MVP thuộc Must Have. Các mã reserved/future extension không thuộc nghiệm thu MVP. Các ngưỡng định lượng áp dụng theo mục 5.2 và 7.0; thay đổi auth/media/performance target sau baseline phải truy vết qua Change Request.
 
 ### Must Have
 
@@ -1661,26 +1913,34 @@ Mọi FR, BR, CON và NFR có từ “phải” và đang áp dụng cho MVP thu
 - exhibit information;
 - hotspot;
 - Vietnamese/English;
-- audio guide, transcript và phụ đề đồng bộ;
+- audio guide, transcript và captions;
 - guided tour Manual/Auto, chỉ dẫn và teleport;
-- WebXR capability detection ở mức extension readiness, không bao gồm immersive VR/headset;
-- progressive fallback;
-- 2D accessible interface;
-- giảm chuyển động và tự động hạ chất lượng 3D khi cần;
+- WebXR capability detection ở mức extension readiness;
+- progressive fallback 3D → 2D;
+- reduced motion và adaptive 3D quality;
 - schema validation, xử lý lỗi API/CMS và giới hạn upload;
-- tối ưu asset để đạt ngân sách/hiệu năng bắt buộc;
-- Admin login;
-- CRUD exhibit;
-- transform configuration;
-- hotspot management;
-- Draft;
-- Preview;
-- Publish/Unpublish và bảo vệ Draft tại API;
-- metadata quyền sử dụng media.
+- metadata quyền sử dụng media;
+- Admin authentication;
+- RBAC server-side;
+- default roles `admin` / `moderator` / `editor`;
+- user management;
+- role management;
+- permission matrix;
+- audit log;
+- room metadata management;
+- exhibit/revision management;
+- Draft Revision + Preview;
+- submit/review/publish/reject revision;
+- Published revision immutability;
+- hotspot/media/transform management;
+- guided-tour configuration;
+- Visitor content report + report moderation;
+- public freshness sau publish/hide/unpublish.
 
 ### Should Have
 
 - feedback loading chi tiết theo tiến độ từng asset, ngoài trạng thái loading/error bắt buộc;
+- dashboard thống kê phong phú ngoài số liệu tối thiểu cần điều hướng;
 - tinh chỉnh mobile controls vượt ngoài khả năng di chuyển/chọn hiện vật bắt buộc.
 
 ### Could Have
@@ -1697,36 +1957,42 @@ Mọi FR, BR, CON và NFR có từ “phải” và đang áp dụng cho MVP thu
 - AI guide;
 - payment;
 - multiplayer;
-- complex CMS workflow và bản nháp song song;
-- multiple tours.
+- multiple tours;
+- arbitrary multi-stage approval workflow;
+- automatic rollback;
+- 3D room geometry editor;
+- immersive headset VR implementation.
 
 ### Future Enhancements — Outside MVP
 
-- Immersive WebXR/VR trên headset thật, gồm controller/teleport, XR UI và performance validation.
-- Nhiều guided tour có cấu hình độc lập.
-- Workflow chỉnh sửa bản nháp trong khi giữ bản Published, khi có nhu cầu biên tập liên tục.
-
----
+- Immersive WebXR/VR trên headset thật.
+- Nhiều guided tour.
+- Partner API key/scopes và analytics.
+- Bulk import/export.
+- Locale ngoài tiếng Việt/Anh.
+- Workflow governance nhiều tầng hơn.
 
 ## 14. Definition of MVP Completion
 
 MVP được coi là hoàn thành khi:
 
-1. Có một không gian bảo tàng 3D hoàn chỉnh.
-2. Có tối thiểu 5 hiện vật Published.
-3. Visitor tham quan được trên desktop và mobile.
-4. Bộ 5 hiện vật nghiệm thu đáp ứng mục 2.5, không chỉ dùng placeholder.
-5. Có audio guide kèm transcript và phụ đề đồng bộ.
-6. Hỗ trợ tiếng Việt và tiếng Anh.
-7. Có một guided tour tuyến tính hoàn chỉnh, hỗ trợ Manual/Auto và Pause/Resume.
-8. Guided tour hỗ trợ chỉ dẫn và teleport.
-9. Core MVP hoạt động độc lập với WebXR; capability detection không làm lỗi luồng desktop/mobile.
-10. Có fallback 3D → 2D.
-11. Có CMS với ít nhất hai tài khoản Admin được cấp trước, cùng quyền, có logout/hết hạn phiên.
-12. CMS hỗ trợ CRUD hiện vật.
-13. CMS hỗ trợ Position / Rotation / Scale.
-14. CMS hỗ trợ hotspot và media.
-15. Có Draft/Published, Preview được bảo vệ tại API và workflow Unpublish trước khi sửa.
-16. Giao diện public-facing thuộc MVP đáp ứng phạm vi WCAG 2.1 A/AA và reduced motion đã đặt ra; CMS đáp ứng mức accessibility cơ bản theo BR-18/NFR-27.
-17. Các test case chính vượt qua, có mapping FR/NFR/AC và bằng chứng.
-18. Performance audit, compatibility và fallback test đạt các AC tương ứng, gồm tải đồng thời, xử lý lỗi API/CMS và hạ chất lượng 3D. Availability 30 ngày là mục tiêu vận hành sau triển khai, không chặn demo MVP.
+1. Có một không gian bảo tàng 3D hoàn chỉnh trên desktop/mobile.
+2. Có tối thiểu 5 hiện vật Published đáp ứng bộ asset nghiệm thu.
+3. Visitor truy cập không cần account và có 2D fallback.
+4. Có hotspot, audio, transcript, captions và nội dung vi/en.
+5. Guided Tour tuyến tính hỗ trợ Manual/Auto, Pause/Resume, chỉ dẫn và teleport.
+6. Core MVP hoạt động độc lập WebXR; capability detection không làm lỗi 2D/3D.
+7. Admin Portal có authentication và RBAC server-side.
+8. Có ít nhất một tài khoản nghiệm thu cho mỗi role mặc định `admin`, `moderator`, `editor`.
+9. Admin có thể quản lý user/role/permission matrix theo permission.
+10. Audit Log ghi được các hành động quản trị bắt buộc và xem/lọc được theo permission.
+11. CMS hỗ trợ room metadata, Exhibit/Revision, Position/Rotation/Scale, hotspot, media và tour.
+12. Editor có thể Save Draft Revision, Preview và Submit Review.
+13. Moderator/Admin có thể Review, Publish hoặc Reject revision.
+14. Revision Published không bị sửa tại chỗ; revision history vẫn truy vết được.
+15. Public API/media không lộ Draft/In Review/Rejected revision.
+16. Publish/Hide/Unpublish có hiệu lực với request public mới theo BR-22.
+17. Visitor có thể gửi Content Report; Moderator/Admin có thể xử lý theo permission.
+18. Media validation/rights metadata, error handling, idempotency/concurrency và persistence đạt AC liên quan.
+19. Public-facing UI đạt phạm vi WCAG 2.1 A/AA đã xác định; CMS đạt accessibility cơ bản theo BR-18.
+20. Performance audit, compatibility, fallback, load, security/RBAC và E2E acceptance chính có bằng chứng truy vết FR/NFR/AC.
