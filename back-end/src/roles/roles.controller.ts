@@ -10,6 +10,7 @@ import {
   Put,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Audit } from '../audit/audit.decorator';
 import { PERMISSIONS } from '../common/constants/permissions.constant';
 import { Permissions } from '../core/auth/permissions.decorator';
 import { CreateRoleDto } from './dto/create-role.dto';
@@ -32,6 +33,7 @@ export class RolesController {
 
   @Post()
   @Permissions(PERMISSIONS.ROLE_CREATE)
+  @Audit('role.create', 'role')
   @ApiOperation({ summary: 'Tạo vai trò' })
   create(@Body() dto: CreateRoleDto) {
     return this.roles.create(dto);
@@ -46,6 +48,7 @@ export class RolesController {
 
   @Put(':id/permissions')
   @Permissions(PERMISSIONS.ROLE_UPDATE)
+  @Audit('role.set_permissions', 'role')
   @ApiOperation({ summary: 'Đặt lại toàn bộ ma trận quyền của vai trò' })
   setPermissions(@Param('id', ParseUUIDPipe) id: string, @Body() dto: SetPermissionsDto) {
     return this.roles.setPermissions(id, dto);
@@ -53,6 +56,7 @@ export class RolesController {
 
   @Patch(':id')
   @Permissions(PERMISSIONS.ROLE_UPDATE)
+  @Audit('role.update', 'role')
   @ApiOperation({ summary: 'Đổi tên vai trò' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateRoleDto) {
     return this.roles.update(id, dto);
@@ -60,6 +64,7 @@ export class RolesController {
 
   @Delete(':id')
   @Permissions(PERMISSIONS.ROLE_DELETE)
+  @Audit('role.delete', 'role')
   @ApiOperation({ summary: 'Xóa vai trò (chặn vai trò hệ thống / đang dùng)' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.roles.remove(id);

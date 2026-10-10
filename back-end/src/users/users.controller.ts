@@ -10,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Audit } from '../audit/audit.decorator';
 import { PERMISSIONS } from '../common/constants/permissions.constant';
 import { Permissions } from '../core/auth/permissions.decorator';
 import { AssignRolesDto } from './dto/assign-roles.dto';
@@ -40,6 +41,7 @@ export class UsersController {
 
   @Post()
   @Permissions(PERMISSIONS.USER_CREATE)
+  @Audit('user.create', 'user')
   @ApiOperation({ summary: 'Tạo người dùng mới' })
   create(@Body() dto: CreateUserDto) {
     return this.users.create(dto);
@@ -47,6 +49,7 @@ export class UsersController {
 
   @Patch(':id')
   @Permissions(PERMISSIONS.USER_UPDATE)
+  @Audit('user.update', 'user')
   @ApiOperation({ summary: 'Cập nhật người dùng' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) {
     return this.users.update(id, dto);
@@ -54,6 +57,7 @@ export class UsersController {
 
   @Delete(':id')
   @Permissions(PERMISSIONS.USER_DELETE)
+  @Audit('user.delete', 'user')
   @ApiOperation({ summary: 'Khóa/xóa mềm người dùng' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.users.remove(id);
@@ -61,6 +65,7 @@ export class UsersController {
 
   @Post(':id/roles')
   @Permissions(PERMISSIONS.ROLE_ASSIGN)
+  @Audit('user.assign_roles', 'user')
   @ApiOperation({ summary: 'Gán vai trò cho người dùng' })
   assignRoles(@Param('id', ParseUUIDPipe) id: string, @Body() dto: AssignRolesDto) {
     return this.users.assignRoles(id, dto.roleIds);
@@ -68,6 +73,7 @@ export class UsersController {
 
   @Delete(':id/roles/:roleId')
   @Permissions(PERMISSIONS.ROLE_ASSIGN)
+  @Audit('user.remove_role', 'user')
   @ApiOperation({ summary: 'Bỏ một vai trò khỏi người dùng' })
   removeRole(
     @Param('id', ParseUUIDPipe) id: string,
