@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { TransactionManager } from './database/transaction.manager';
+import { PasswordService } from './security/password.service';
 
 /**
  * Hạ tầng dùng chung, global để mọi module inject được mà không cần import lại.
@@ -7,7 +8,7 @@ import { TransactionManager } from './database/transaction.manager';
  */
 @Global()
 @Module({
-  providers: [TransactionManager],
-  exports: [TransactionManager],
+  providers: [TransactionManager, PasswordService],
+  exports: [TransactionManager, PasswordService],
 })
 export class CoreModule {}

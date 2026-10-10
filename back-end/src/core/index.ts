@@ -13,3 +13,6 @@ export * from './auth/permissions.decorator';
 export * from './auth/public.decorator';
 export * from './auth/current-user.decorator';
 export * from './auth/permissions.guard';
+export * from './auth/jwt-auth.guard';
+export * from './auth/jwt.payload';
+export * from './security/password.service';
