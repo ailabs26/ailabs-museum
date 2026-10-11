@@ -25,6 +25,8 @@ test('gallery resizes on mobile and caps the drawing buffer', async ({ page }, t
 });
 
 test('zoom stops at both safe boundaries', async ({ page }) => {
+  // Many real clicks + pixel captures can exceed 30s on software WebGL.
+  test.setTimeout(60_000);
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D');
