@@ -1,7 +1,10 @@
+import { GalleryArchitecture } from './GalleryArchitecture';
+
 /** Fixed Day 1 shell. Inner bounds: x ±7, z ±8, floor 0, ceiling 5 metres. */
 export function MuseumRoom() {
   return (
     <group>
+      <GalleryArchitecture />
       <mesh position={[0, -0.12, 0]}>
         <boxGeometry args={[14.4, 0.24, 16.4]} />
         <meshStandardMaterial color="#c9bda5" roughness={0.72} />
