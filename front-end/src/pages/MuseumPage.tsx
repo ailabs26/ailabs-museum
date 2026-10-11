@@ -24,7 +24,7 @@ export function MuseumPage() {
           {isSceneOpen ? (
             <ErrorBoundary fallback={<SceneFallback />}>
               <Suspense fallback={<Stack h="100%" align="center" justify="center"><Text role="status">Đang mở phòng 3D…</Text></Stack>}>
-                <LazyMuseumScene />
+                <LazyMuseumScene displays={SAMPLE_DISPLAYS} />
               </Suspense>
             </ErrorBoundary>
           ) : (
