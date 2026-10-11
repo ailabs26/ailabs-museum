@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { ACESFilmicToneMapping } from 'three';
 import { SceneFallback } from '@/components/museum/SceneFallback';
+import { MuseumRoom } from '@/components/museum/MuseumRoom';
 
 export function MuseumScene() {
   return (
@@ -13,6 +14,8 @@ export function MuseumScene() {
       onCreated={({ camera }) => camera.lookAt(0, 1.35, 0)}
     >
       <color attach="background" args={['#eee9df']} />
+      <hemisphereLight args={['#fff3d6', '#69756f', 2]} />
+      <MuseumRoom />
     </Canvas>
   );
 }
