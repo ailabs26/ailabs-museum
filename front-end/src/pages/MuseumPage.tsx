@@ -37,6 +37,10 @@ export function MuseumPage() {
             </Stack>
           )}
         </div>
+        <Text id="museum-controls-help" size="sm" c="dimmed">
+          Kéo chuột hoặc vuốt để xoay · Cuộn hoặc chụm hai ngón để thu phóng.
+          Khi chọn khung 3D: phím mũi tên / WASD xoay góc nhìn, +/− thu phóng, Home về ban đầu. Tab để rời khung.
+        </Text>
         <MuseumCatalogue displays={SAMPLE_DISPLAYS} />
       </Stack>
     </Container>

@@ -1,14 +1,19 @@
 import { Canvas } from '@react-three/fiber';
+import { useState } from 'react';
+import { Button, Group } from '@mantine/core';
 import { ACESFilmicToneMapping } from 'three';
 import { SceneFallback } from '@/components/museum/SceneFallback';
 import { MuseumRoom } from '@/components/museum/MuseumRoom';
 import { ExhibitionDisplay } from '@/components/museum/ExhibitionDisplay';
 import { MuseumLighting } from '@/components/museum/MuseumLighting';
-import { MuseumControls } from '@/components/museum/MuseumControls';
+import { MuseumControls, type CameraAction, type CameraCommand } from '@/components/museum/MuseumControls';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 
 export function MuseumScene({ displays }: { displays: readonly MuseumDisplay[] }) {
+  const [command, setCommand] = useState<CameraCommand | null>(null);
+  const handleCommand = (action: CameraAction) => setCommand((previous) => ({ action, sequence: (previous?.sequence ?? 0) + 1 }));
   return (
+    <>
     <Canvas
       frameloop="demand"
       dpr={[1, 1.5]}
@@ -19,9 +24,15 @@ export function MuseumScene({ displays }: { displays: readonly MuseumDisplay[] }
     >
       <color attach="background" args={['#eee9df']} />
       <MuseumLighting />
-      <MuseumControls />
+      <MuseumControls command={command} />
       <MuseumRoom />
       {displays.map((display) => <ExhibitionDisplay key={display.id} display={display} />)}
     </Canvas>
+    <Group pos="absolute" bottom={16} left={16} right={16} gap="xs" aria-label="Điều khiển góc nhìn">
+      <Button variant="default" onClick={() => handleCommand('reset')}>Góc nhìn ban đầu</Button>
+      <Button variant="default" onClick={() => handleCommand('in')}>Đến gần</Button>
+      <Button variant="default" onClick={() => handleCommand('out')}>Lùi xa</Button>
+    </Group>
+    </>
   );
 }

@@ -1,17 +1,39 @@
 import { expect, test } from '@playwright/test';
 
+// Compare rendered scene pixels, excluding focus outlines and the DOM toolbar.
+const SCENE_CAPTURE = { style: 'canvas { outline: none !important; } [aria-label="Điều khiển góc nhìn"] { visibility: hidden !important; }' };
+
+test('focused keyboard navigation and reset work without trapping focus', async ({ page }) => {
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const canvas = page.getByLabel('Phòng trưng bày 3D');
+  await expect(canvas).toBeVisible();
+  await canvas.focus();
+  const initial = await canvas.screenshot(SCENE_CAPTURE);
+  await canvas.press('ArrowLeft');
+  await expect.poll(async () => (await canvas.screenshot(SCENE_CAPTURE)).equals(initial)).toBe(false);
+  await page.getByRole('button', { name: 'Góc nhìn ban đầu' }).click();
+  await expect.poll(async () => (await canvas.screenshot(SCENE_CAPTURE)).equals(initial)).toBe(true);
+  await page.getByRole('button', { name: 'Dừng 3D' }).focus();
+  await page.keyboard.press('ArrowLeft');
+  expect((await canvas.screenshot(SCENE_CAPTURE)).equals(initial)).toBe(true);
+  await canvas.focus();
+  await page.keyboard.press('Tab');
+  await expect(canvas).not.toBeFocused();
+});
+
 test('mouse navigation changes the rendered view', async ({ page }) => {
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.locator('canvas');
   await expect(canvas).toBeVisible();
-  const before = await canvas.screenshot();
+  const before = await canvas.screenshot(SCENE_CAPTURE);
   const box = (await canvas.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 2 + 100, box.y + box.height / 2, { steps: 10 });
   await page.mouse.up();
-  await expect.poll(async () => (await canvas.screenshot()).equals(before)).toBe(false);
+  await expect.poll(async () => (await canvas.screenshot(SCENE_CAPTURE)).equals(before)).toBe(false);
 });
 
 test('sample catalogue stays readable without starting WebGL', async ({ page }) => {
