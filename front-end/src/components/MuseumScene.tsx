@@ -3,6 +3,7 @@ import { ACESFilmicToneMapping } from 'three';
 import { SceneFallback } from '@/components/museum/SceneFallback';
 import { MuseumRoom } from '@/components/museum/MuseumRoom';
 import { ExhibitionDisplay } from '@/components/museum/ExhibitionDisplay';
+import { MuseumLighting } from '@/components/museum/MuseumLighting';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 
 export function MuseumScene({ displays }: { displays: readonly MuseumDisplay[] }) {
@@ -16,7 +17,7 @@ export function MuseumScene({ displays }: { displays: readonly MuseumDisplay[] }
       onCreated={({ camera }) => camera.lookAt(0, 1.35, 0)}
     >
       <color attach="background" args={['#eee9df']} />
-      <hemisphereLight args={['#fff3d6', '#69756f', 2]} />
+      <MuseumLighting />
       <MuseumRoom />
       {displays.map((display) => <ExhibitionDisplay key={display.id} display={display} />)}
     </Canvas>
