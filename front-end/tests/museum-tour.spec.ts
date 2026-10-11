@@ -1,5 +1,19 @@
 import { expect, test } from '@playwright/test';
 
+test('mouse navigation changes the rendered view', async ({ page }) => {
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const canvas = page.locator('canvas');
+  await expect(canvas).toBeVisible();
+  const before = await canvas.screenshot();
+  const box = (await canvas.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 100, box.y + box.height / 2, { steps: 10 });
+  await page.mouse.up();
+  await expect.poll(async () => (await canvas.screenshot()).equals(before)).toBe(false);
+});
+
 test('sample catalogue stays readable without starting WebGL', async ({ page }) => {
   const sceneRequests: string[] = [];
   page.on('request', (request) => {

@@ -4,6 +4,7 @@ import { SceneFallback } from '@/components/museum/SceneFallback';
 import { MuseumRoom } from '@/components/museum/MuseumRoom';
 import { ExhibitionDisplay } from '@/components/museum/ExhibitionDisplay';
 import { MuseumLighting } from '@/components/museum/MuseumLighting';
+import { MuseumControls } from '@/components/museum/MuseumControls';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 
 export function MuseumScene({ displays }: { displays: readonly MuseumDisplay[] }) {
@@ -18,6 +19,7 @@ export function MuseumScene({ displays }: { displays: readonly MuseumDisplay[] }
     >
       <color attach="background" args={['#eee9df']} />
       <MuseumLighting />
+      <MuseumControls />
       <MuseumRoom />
       {displays.map((display) => <ExhibitionDisplay key={display.id} display={display} />)}
     </Canvas>
