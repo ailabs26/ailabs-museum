@@ -1,0 +1,16 @@
+// DISABLED Stop hook — tách ra khỏi .claude/settings.json ngày 2026-06-03.
+// Lý do: hook agent "verify unit tests" chạy mỗi lần kết thúc lượt, nhưng dự án
+// KHÔNG có test project/file nào -> luôn báo "condition not met" -> lặp vô tận, chặn mọi lượt.
+// (settings.json là JSON thuần: không cho comment và không cho key tùy ý, nên lưu tạm ở đây.)
+//
+// KHÔI PHỤC: copy object dưới đây vào lại phần tử ĐẦU của mảng "Stop" trong .claude/settings.json
+// (chỉ nên bật lại sau khi dự án đã có test project + script chạy test).
+{
+  "hooks": [
+    {
+      "type": "agent",
+      "prompt": "Verify that all unit tests pass. Run the test suite and check the results. $ARGUMENTS",
+      "timeout": 120
+    }
+  ]
+}

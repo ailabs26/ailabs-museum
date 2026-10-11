@@ -1,5 +1,5 @@
+import { AppRouter } from '@/app/router';
+
 export default function App() {
-  return (
-    <>Hello, World!</>
-  )
+  return <AppRouter />;
 }

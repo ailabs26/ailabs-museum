@@ -27,6 +27,14 @@ Ví dụ: `exhibits/`, `access-control/`, `dto/`, `repositories/`.
 | Decorator | `<purpose>.decorator.ts` | `current-user.decorator.ts` |
 | Test | `<source>.spec.ts` | `exhibits.service.spec.ts` |
 
+## Luồng xử lý API
+
+- Với chức năng có truy cập dữ liệu, luôn đi theo **Controller → Service → Repository**.
+- Controller nhận request, dùng DTO để kiểm tra dữ liệu đầu vào và gọi Service; không truy cập TypeORM trực tiếp.
+- Service xử lý quy tắc nghiệp vụ, phân quyền và transaction; không viết truy vấn database trực tiếp.
+- Repository chứa truy vấn TypeORM và ánh xạ dữ liệu; không xử lý request HTTP hoặc quyết định nghiệp vụ.
+- Đăng ký các thành phần cần thiết trong Module của chức năng. Ví dụ: `ExhibitsController` → `ExhibitsService` → `ExhibitsRepository`.
+
 ## Class, type và enum
 
 - Dùng **PascalCase**.
@@ -65,11 +73,62 @@ Ví dụ: `MAX_UPLOAD_SIZE`, `DATABASE_URL`, `FRONTEND_ORIGIN`.
 
 Ví dụ: bảng `exhibits`, property `displayOrder`, khóa ngoại `roomId`.
 
+## Thời gian và múi giờ
+
+- Mọi thời điểm (`createdAt`, `expiresAt`, ...) dùng PostgreSQL `timestamptz` và TypeScript `Date`; trường tùy chọn dùng `Date | null`. Không dùng `timestamp` không có múi giờ cho một thời điểm.
+- Trao đổi thời điểm qua API bằng ISO 8601 có `Z` (UTC), ví dụ `2026-10-09T09:00:00.000Z`. Không phụ thuộc múi giờ của máy chạy backend hoặc database.
+- Chỉ đổi sang múi giờ người dùng khi hiển thị. Với giờ theo lịch ở Việt Nam, dùng múi giờ IANA `Asia/Ho_Chi_Minh` để diễn giải trước khi đổi thành thời điểm UTC; ngày thuần túy dùng kiểu `date` riêng.
+
 ## Import và export
 
 - Ưu tiên named export.
 - Dùng `import type` khi chỉ import type.
-- Không tạo barrel `index.ts` chỉ để rút ngắn đường dẫn import.
+- Không tạo barrel `index.ts` chỉ để rút ngắn đường dẫn import. **Ngoại lệ:** `config/index.ts` gom các config (app/database/jwt + validate) — là API công khai của tầng config.
 - Tên export chính phải khớp vai trò được thể hiện trong tên file.
+
+## Cấu trúc thư mục (chuẩn enterprise)
+
+- **`common/`** — hạ tầng dùng chung, không phụ thuộc domain, nhóm theo loại: `decorators/`, `guards/` (JwtAuthGuard, PermissionsGuard), `filters/` (AllExceptionsFilter), `interceptors/` (ResponseInterceptor), `middleware/` (RequestIdMiddleware), `exceptions/`, `dto/` (ApiResponse, PaginationQueryDto, IdParamDto), `constants/` (PERMISSIONS), `enums/` (RoleKey…), `types/` (AuthUser, Paginated, JwtAccessPayload), `repository/` (BaseRepository), `database/` (TransactionManager), `security/` (PasswordService).
+- **`CommonModule`** là `@Global()`; provider đặt ở đây (vd `TransactionManager`, `PasswordService`) inject được ở mọi module. Chỉ đặt vào `common` khi tiện ích **không phụ thuộc domain** và dùng nhiều nơi — tránh phụ thuộc vòng giữa các feature module.
+- **`config/`** — `app.config.ts`, `database.config.ts`, `jwt.config.ts` (`registerAs`), `env.validation.ts` (validate env lúc boot), `data-source.ts`, `index.ts`. Truy cập qua key namespaced: `config.getOrThrow('jwt.accessSecret')`, `'app.port'`...
+- **`database/`** — `migrations/`, `seeds/`, `database.module.ts`.
+- **`modules/<domain>/`** — mỗi feature một module, nhóm con: `controllers/`, `services/`, `repositories/`, `entities/` (đặt theo DDD), `dto/`, (tùy chọn `interceptors/`, `decorators/`, `tests/`).
+
+## Response chuẩn & phân trang
+
+- Mọi endpoint trả dữ liệu thô (entity-free object, mảng, hoặc `Paginated<T>`); **không** tự bọc `ApiResponse`. `ResponseInterceptor` toàn cục tự bọc thành `{ success, data, message, meta? }`.
+- Endpoint danh sách trả `Paginated<T>` (`{ items, total, page, pageSize }`) từ repository; interceptor tự tách `items` ra `data` và gắn `meta`.
+- Lỗi nghiệp vụ ném exception chuẩn Nest (`NotFoundException`, `ConflictException`, `UnprocessableEntityException`...) hoặc exception trong `common/exceptions`; `AllExceptionsFilter` chuẩn hóa về `ApiResponse` lỗi.
+
+## Repository
+
+- Repository của mỗi feature đặt trong `repositories/` và nên `extends BaseRepository<T>` để có sẵn `findById`, `paginate`, `exists`, `save(entity, manager?)`, `update`... Khởi tạo: `constructor(@InjectRepository(X) repo: Repository<X>) { super(repo); }`.
+- Truy vấn đặc thù (query builder, join, lọc) viết thành method có tên bắt đầu bằng động từ (`listPaginated`, `findByEmailWithAccess`, `findWithPermissions`).
+- Bảng nối (vd `user_roles`, `role_permissions`) có repository riêng quản lý liên kết.
+- Chỉ Repository chạm TypeORM. Service **không** gọi `Repository` của TypeORM trực tiếp.
+
+## Transaction
+
+- Thao tác nhiều bảng cần nguyên tử dùng `TransactionManager.run(async (manager) => { ... })`.
+- Trong transaction, truyền `manager` xuống method repository (`save(entity, manager)`, `getRepository(X)` qua manager) để mọi lệnh chạy cùng một giao dịch; lỗi thì rollback toàn bộ.
+
+## Xác thực, RBAC & nhật ký (decorator)
+
+- `JwtAuthGuard` + `PermissionsGuard` đăng ký **toàn cục** (APP_GUARD) trong `AuthModule`. Mặc định mọi route yêu cầu access token.
+- `@Public()` — bỏ qua xác thực (route công khai: health, nội dung public, login, refresh).
+- `@Permissions(PERMISSIONS.X)` — khai báo quyền `resource:action` cần có; `PermissionsGuard` đối chiếu với `permissions` trong token.
+- `@CurrentUser()` — lấy `AuthUser` (id, email, roles, permissions) đã gắn vào request.
+- `@Audit('resource.action', 'resource')` — route ghi/sửa quản trị; `AuditInterceptor` tự tạo `AuditLog` sau khi thành công.
+- Access token mang sẵn `roles` + `permissions` nên guard không truy vấn DB mỗi request.
+
+## DTO response & dữ liệu nhạy cảm
+
+- Không trả thẳng entity ra API. Mỗi feature có `dto/<entity>-response.dto.ts` khai báo interface `XResponse` + hàm `toXResponse(entity)` ánh xạ.
+- **Không bao giờ** trả trường nhạy cảm (`passwordHash`, `tokenHash`...). Mật khẩu chỉ hash qua `PasswordService`, không log plaintext.
+
+## Enum: vị trí khai báo
+
+- Enum trạng thái gắn liền một entity khai báo **ngay trong file entity** đó (vd `UserStatus` trong `user.entity.ts`, `MediaKind` trong `media.entity.ts`).
+- Enum dùng xuyên nhiều module đặt trong `common/enums/` (vd `RoleKey`).
 
 Nếu bổ sung một kiểu tên mới và dùng lặp lại trong dự án, cập nhật tài liệu này trước khi áp dụng rộng rãi.

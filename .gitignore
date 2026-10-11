@@ -1,0 +1,10 @@
+
+# Claude Code - local/generated state
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/agent-memory/
+.claude/worktrees/
+.claude/hooks/.logs/
+.claude/.freeze-state
+.agent-kit/
+.codegraph/

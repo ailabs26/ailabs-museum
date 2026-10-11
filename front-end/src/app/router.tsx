@@ -1,0 +1,102 @@
+import { Route, Routes } from 'react-router-dom';
+import { Container, Text, Title, Stack } from '@mantine/core';
+import { PublicLayout } from '@/layouts/PublicLayout';
+import { AdminLayout } from '@/layouts/AdminLayout';
+import { RequireAuth } from '@/core/auth/RequireAuth';
+import { HomePage } from '@/pages/client/HomePage';
+import { LoginPage } from '@/pages/admin/LoginPage';
+import { DashboardPage } from '@/pages/admin/DashboardPage';
+import { PlaceholderPage } from '@/pages/admin/PlaceholderPage';
+import { UsersPage } from '@/pages/admin/UsersPage';
+import { RolesPage } from '@/pages/admin/RolesPage';
+import { PermissionMatrixPage } from '@/pages/admin/PermissionMatrixPage';
+import { AuditPage } from '@/pages/admin/AuditPage';
+import { RequirePermission } from '@/core/auth/RequirePermission';
+import { PERMISSIONS } from '@/core/auth/permissions';
+import { NotFoundPage } from '@/pages/NotFoundPage';
+
+function ClientComingSoon({ title }: { title: string }) {
+  return (
+    <Container size="md" py={80}>
+      <Stack align="center" ta="center">
+        <Title order={2}>{title}</Title>
+        <Text c="dimmed">Phần này sẽ được dựng ở các PR client (task 16–20).</Text>
+      </Stack>
+    </Container>
+  );
+}
+
+/** Hiển thị khi tài khoản đăng nhập nhưng thiếu quyền xem màn hình quản trị. */
+function NoAccess() {
+  return (
+    <Container size="md" py={80}>
+      <Stack align="center" ta="center">
+        <Title order={3}>Không đủ quyền</Title>
+        <Text c="dimmed">Tài khoản của bạn không có quyền truy cập mục này.</Text>
+      </Stack>
+    </Container>
+  );
+}
+
+/** Bảng định tuyến toàn ứng dụng (public + admin). */
+export function AppRouter() {
+  return (
+    <Routes>
+      {/* Client công khai */}
+      <Route element={<PublicLayout />}>
+        <Route index element={<HomePage />} />
+        <Route path="collection" element={<ClientComingSoon title="Bộ sưu tập 2D" />} />
+        <Route path="tour" element={<ClientComingSoon title="Tham quan 3D / VR" />} />
+      </Route>
+
+      {/* Đăng nhập CMS (ngoài guard) */}
+      <Route path="/admin/login" element={<LoginPage />} />
+
+      {/* Khu vực quản trị (yêu cầu đăng nhập) */}
+      <Route path="/admin" element={<RequireAuth />}>
+        <Route element={<AdminLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="rooms" element={<PlaceholderPage title="Phòng trưng bày" pr="PR CMS (task 6)" />} />
+          <Route path="exhibits" element={<PlaceholderPage title="Hiện vật" pr="PR CMS (task 7)" />} />
+          <Route path="media" element={<PlaceholderPage title="Media" pr="PR CMS (task 8)" />} />
+          <Route path="moderation" element={<PlaceholderPage title="Kiểm duyệt" pr="PR (task 22)" />} />
+          <Route path="reports" element={<PlaceholderPage title="Báo cáo vi phạm" pr="PR (task 23)" />} />
+          <Route
+            path="users"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.USER_READ]} fallback={<NoAccess />}>
+                <UsersPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="roles"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.ROLE_READ]} fallback={<NoAccess />}>
+                <RolesPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="permissions"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.PERMISSION_READ]} fallback={<NoAccess />}>
+                <PermissionMatrixPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="audit"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.AUDIT_READ]} fallback={<NoAccess />}>
+                <AuditPage />
+              </RequirePermission>
+            }
+          />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
+}
