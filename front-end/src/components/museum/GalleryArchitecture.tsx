@@ -12,7 +12,7 @@ export function GalleryArchitecture() {
             <boxGeometry args={[0.14, 0.12, 15.8]} />
             <meshStandardMaterial color="#605949" />
           </mesh>
-          <mesh position={[0, -0.065, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <mesh position={[0, -0.065, 0]} rotation={[Math.PI / 2, 0, 0]}>
             <planeGeometry args={[0.075, 14.5]} />
             <meshStandardMaterial color="#fff0cb" emissive="#fff0cb" emissiveIntensity={2} />
           </mesh>
