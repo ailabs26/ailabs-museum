@@ -3,6 +3,21 @@ import { expect, test } from '@playwright/test';
 // Compare rendered scene pixels, excluding focus outlines and the DOM toolbar.
 const SCENE_CAPTURE = { style: 'canvas { outline: none !important; } [aria-label="Điều khiển góc nhìn"] { visibility: hidden !important; }' };
 
+test('reduced motion stops camera inertia when the drag ends', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const canvas = page.getByLabel('Phòng trưng bày 3D');
+  await expect(canvas).toBeVisible();
+  const box = (await canvas.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + 100);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 150, box.y + 100);
+  await page.mouse.up();
+  const first = await canvas.screenshot(SCENE_CAPTURE);
+  expect((await canvas.screenshot(SCENE_CAPTURE)).equals(first)).toBe(true);
+});
+
 test('context loss exits the renderer and focuses a readable fallback', async ({ page }) => {
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Spherical } from 'three';
+import { useReducedMotion } from '@mantine/hooks';
 
 export type CameraAction = 'left' | 'right' | 'up' | 'down' | 'in' | 'out' | 'reset';
 export interface CameraCommand { action: CameraAction; sequence: number }
@@ -13,6 +14,7 @@ const KEY_ACTIONS: Record<string, CameraAction> = {
 
 export function MuseumControls({ command }: { command: CameraCommand | null }) {
   const { camera, gl, invalidate } = useThree();
+  const prefersReducedMotion = useReducedMotion();
   const controlsRef = useRef<OrbitControls | null>(null);
   const actionRef = useRef<((action: CameraAction) => void) | null>(null);
 
@@ -25,7 +27,7 @@ export function MuseumControls({ command }: { command: CameraCommand | null }) {
     controls.minPolarAngle = 1.25;
     controls.maxPolarAngle = 1.55;
     controls.enablePan = false;
-    controls.enableDamping = true;
+    controls.enableDamping = !prefersReducedMotion;
     controls.dampingFactor = 0.12;
     controls.rotateSpeed = 0.55;
     controls.zoomSpeed = 0.65;
@@ -79,7 +81,7 @@ export function MuseumControls({ command }: { command: CameraCommand | null }) {
       controlsRef.current = null;
       actionRef.current = null;
     };
-  }, [camera, gl, invalidate]);
+  }, [camera, gl, invalidate, prefersReducedMotion]);
 
   useEffect(() => {
     if (command) actionRef.current?.(command.action);
