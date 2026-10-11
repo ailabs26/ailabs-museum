@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Button, Group } from '@mantine/core';
 import { ACESFilmicToneMapping } from 'three';
 import { SceneFallback } from '@/components/museum/SceneFallback';
@@ -8,10 +8,14 @@ import { ExhibitionDisplay } from '@/components/museum/ExhibitionDisplay';
 import { MuseumLighting } from '@/components/museum/MuseumLighting';
 import { MuseumControls, type CameraAction, type CameraCommand } from '@/components/museum/MuseumControls';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
+import { SceneLifecycle } from '@/components/museum/SceneLifecycle';
 
 export function MuseumScene({ displays }: { displays: readonly MuseumDisplay[] }) {
   const [command, setCommand] = useState<CameraCommand | null>(null);
+  const [isContextLost, setIsContextLost] = useState(false);
+  const handleContextLost = useCallback(() => setIsContextLost(true), []);
   const handleCommand = (action: CameraAction) => setCommand((previous) => ({ action, sequence: (previous?.sequence ?? 0) + 1 }));
+  if (isContextLost) return <SceneFallback />;
   return (
     <>
     <Canvas
@@ -24,6 +28,7 @@ export function MuseumScene({ displays }: { displays: readonly MuseumDisplay[] }
     >
       <color attach="background" args={['#eee9df']} />
       <MuseumLighting />
+      <SceneLifecycle onContextLost={handleContextLost} />
       <MuseumControls command={command} />
       <MuseumRoom />
       {displays.map((display) => <ExhibitionDisplay key={display.id} display={display} />)}
