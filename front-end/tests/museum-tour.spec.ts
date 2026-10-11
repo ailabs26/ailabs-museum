@@ -1,5 +1,29 @@
 import { expect, test } from '@playwright/test';
 
+test('sample catalogue stays readable without starting WebGL', async ({ page }) => {
+  const sceneRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('MuseumScene')) sceneRequests.push(request.url());
+  });
+  await page.goto('/tour.html');
+  await expect(page.getByRole('heading', { name: 'Trong phòng trưng bày' })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Các hình khối mẫu' }).getByRole('listitem')).toHaveCount(5);
+  await expect(page.locator('canvas')).toHaveCount(0);
+  expect(sceneRequests).toEqual([]);
+});
+
+test('scene starts on demand and releases canvas when stopped', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/tour.html');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  await expect(page.locator('canvas')).toBeVisible();
+  await page.getByRole('button', { name: 'Dừng 3D' }).click();
+  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Trong phòng trưng bày' })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('HTML entry and SPA route expose the museum with public navigation', async ({ page }) => {
   for (const path of ['/tour.html', '/tour']) {
     await page.goto(path);
