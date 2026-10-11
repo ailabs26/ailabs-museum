@@ -3,6 +3,40 @@ import { expect, test } from '@playwright/test';
 // Compare rendered scene pixels, excluding focus outlines and the DOM toolbar.
 const SCENE_CAPTURE = { style: 'canvas { outline: none !important; } [aria-label="Điều khiển góc nhìn"] { visibility: hidden !important; }' };
 
+test('opening and stopping the scene keep keyboard focus in the tour', async ({ page }) => {
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  await expect(page.getByLabel('Phòng trưng bày 3D')).toBeFocused();
+  await page.getByRole('button', { name: 'Dừng 3D' }).click();
+  await expect(page.getByRole('button', { name: 'Mở phòng 3D' })).toBeFocused();
+});
+
+test('gallery resizes on mobile and caps the drawing buffer', async ({ page }, testInfo) => {
+  await page.goto('/tour.html');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const canvas = page.getByLabel('Phòng trưng bày 3D');
+  await expect(canvas).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('gallery-desktop.png'), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.width / element.clientWidth)).toBeLessThanOrEqual(1.5);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await expect(page.getByRole('button', { name: 'Góc nhìn ban đầu' })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('gallery-mobile.png'), fullPage: true });
+});
+
+test('zoom stops at both safe boundaries', async ({ page }) => {
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const canvas = page.getByLabel('Phòng trưng bày 3D');
+  await expect(canvas).toBeVisible();
+  for (const label of ['Đến gần', 'Lùi xa']) {
+    for (let i = 0; i < 12; i++) await page.getByRole('button', { name: label }).click();
+    const boundary = await canvas.screenshot(SCENE_CAPTURE);
+    await page.getByRole('button', { name: label }).click();
+    expect((await canvas.screenshot(SCENE_CAPTURE)).equals(boundary)).toBe(true);
+  }
+});
+
 test('reduced motion stops camera inertia when the drag ends', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/tour');

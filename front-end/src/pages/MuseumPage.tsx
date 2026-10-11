@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Button, Container, Group, Stack, Text, Title } from '@mantine/core';
 import { MuseumCatalogue } from '@/components/museum/MuseumCatalogue';
 import { SAMPLE_DISPLAYS } from '@/components/museum/sampleDisplays';
@@ -10,6 +10,12 @@ const LazyMuseumScene = lazy(() => import('@/components/MuseumScene').then((modu
 
 export function MuseumPage() {
   const [isSceneOpen, setIsSceneOpen] = useState(false);
+  const startButtonRef = useRef<HTMLButtonElement>(null);
+  const wasSceneOpenRef = useRef(false);
+  useEffect(() => {
+    if (wasSceneOpenRef.current && !isSceneOpen) startButtonRef.current?.focus({ preventScroll: true });
+    wasSceneOpenRef.current = isSceneOpen;
+  }, [isSceneOpen]);
   return (
     <Container size="xl" py="xl">
       <Stack>
@@ -32,7 +38,7 @@ export function MuseumPage() {
               <Text size="xs" tt="uppercase" fw={700}>Một góc nhìn khác về hình khối</Text>
               <Title order={2}>Bước vào phòng trưng bày</Title>
               <Text maw={420}>Khám phá năm nghiên cứu điêu khắc trong không gian kiến trúc và ánh sáng ấm.</Text>
-              <Button color="teal" size="lg" onClick={() => setIsSceneOpen(true)}>Mở phòng 3D</Button>
+              <Button ref={startButtonRef} color="teal" size="lg" onClick={() => setIsSceneOpen(true)}>Mở phòng 3D</Button>
               <Text size="sm">Bạn cũng có thể đọc toàn bộ nội dung ngay bên dưới.</Text>
             </Stack>
           )}

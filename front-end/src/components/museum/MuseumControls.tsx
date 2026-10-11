@@ -39,6 +39,7 @@ export function MuseumControls({ command }: { command: CameraCommand | null }) {
     canvas.tabIndex = 0;
     canvas.setAttribute('aria-label', 'Phòng trưng bày 3D');
     canvas.setAttribute('aria-describedby', 'museum-controls-help');
+    canvas.focus({ preventScroll: true });
 
     const handleAction = (action: CameraAction) => {
       // Flush remaining mouse inertia so keyboard/reset have a precise endpoint.
