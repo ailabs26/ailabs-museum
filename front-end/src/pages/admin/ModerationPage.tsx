@@ -1,14 +1,29 @@
 import { useState } from 'react';
 import {
   Badge,
+  Button,
+  Divider,
   Drawer,
   Group,
+  Modal,
   Stack,
   Table,
   Tabs,
   Text,
+  Textarea,
 } from '@mantine/core';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useDisclosure } from '@mantine/hooks';
+import { IconCheck, IconEyeOff, IconX } from '@tabler/icons-react';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { ApiException } from '@/core/api/api-error';
+import { useAuth } from '@/core/auth/use-auth';
+import { PERMISSIONS } from '@/core/auth/permissions';
+import { notify } from '@/shared/components/feedback';
 import { Column, DataTable } from '@/shared/components/data';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { moderationService, Revision } from '@/services/moderation.service';
@@ -32,8 +47,16 @@ function formatTime(iso: string): string {
 }
 
 export function ModerationPage() {
+  const { hasPermission } = useAuth();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [rejectOpened, rejectModal] = useDisclosure(false);
+  const [rejectReason, setRejectReason] = useState('');
+
+  const canPublish = hasPermission(PERMISSIONS.REVISION_PUBLISH);
+  const canReject = hasPermission(PERMISSIONS.REVISION_REJECT);
+  const canHide = hasPermission(PERMISSIONS.REVISION_HIDE);
 
   const queueQuery = useQuery({
     queryKey: ['moderation', 'queue', page],
@@ -59,6 +82,58 @@ export function ModerationPage() {
     queryKey: ['moderation', 'history', detail?.exhibitId],
     queryFn: () => moderationService.history(detail!.exhibitId),
     enabled: !!detail?.exhibitId,
+  });
+
+  const refreshAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['moderation', 'queue'] });
+    queryClient.invalidateQueries({ queryKey: ['moderation', 'revision', detailId] });
+    queryClient.invalidateQueries({ queryKey: ['moderation', 'diff', detailId] });
+  };
+
+  /** Chuẩn hóa thông báo lỗi; 409 = sửa đồng thời → cảnh báo reload + refetch. */
+  const handleError = (err: unknown) => {
+    if (err instanceof ApiException) {
+      notify.error(err.message);
+      if (err.status === 409) {
+        refreshAll();
+        setDetailId(null);
+      }
+      return;
+    }
+    notify.error('Có lỗi xảy ra, vui lòng thử lại');
+  };
+
+  const publishMutation = useMutation({
+    mutationFn: () => moderationService.publish(detail!.id, detail!.exhibit!.version),
+    onSuccess: () => {
+      notify.success('Đã xuất bản phiên bản nội dung');
+      refreshAll();
+      setDetailId(null);
+    },
+    onError: handleError,
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: () =>
+      moderationService.reject(detail!.id, detail!.exhibit!.version, rejectReason.trim()),
+    onSuccess: () => {
+      notify.success('Đã từ chối phiên bản nội dung');
+      rejectModal.close();
+      setRejectReason('');
+      refreshAll();
+      setDetailId(null);
+    },
+    onError: handleError,
+  });
+
+  const hideMutation = useMutation({
+    mutationFn: () => moderationService.hide(detail!.exhibit!.id, detail!.exhibit!.version),
+    onSuccess: () => {
+      notify.success('Đã tạm ẩn hiện vật');
+      refreshAll();
+      setDetailId(null);
+    },
+    onError: handleError,
   });
 
   const columns: Column<Revision>[] = [
@@ -186,7 +261,70 @@ export function ModerationPage() {
             </Tabs.Panel>
           </Tabs>
         )}
+
+        {detail && (
+          <>
+            <Divider my="md" />
+            <Group justify="flex-end">
+              {canHide && detail.exhibit && (
+                <Button
+                  variant="default"
+                  leftSection={<IconEyeOff size={16} />}
+                  loading={hideMutation.isPending}
+                  onClick={() => hideMutation.mutate()}
+                >
+                  Tạm ẩn hiện vật
+                </Button>
+              )}
+              {detail.state === 'in_review' && canReject && (
+                <Button
+                  color="red"
+                  variant="light"
+                  leftSection={<IconX size={16} />}
+                  onClick={rejectModal.open}
+                >
+                  Từ chối
+                </Button>
+              )}
+              {detail.state === 'in_review' && canPublish && (
+                <Button
+                  leftSection={<IconCheck size={16} />}
+                  loading={publishMutation.isPending}
+                  onClick={() => publishMutation.mutate()}
+                >
+                  Xuất bản
+                </Button>
+              )}
+            </Group>
+          </>
+        )}
       </Drawer>
+
+      <Modal opened={rejectOpened} onClose={rejectModal.close} title="Từ chối phiên bản">
+        <Stack>
+          <Textarea
+            label="Lý do từ chối"
+            placeholder="Nêu rõ lý do để người gửi chỉnh sửa..."
+            rows={4}
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.currentTarget.value)}
+            required
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={rejectModal.close}>
+              Hủy
+            </Button>
+            <Button
+              color="red"
+              loading={rejectMutation.isPending}
+              disabled={rejectReason.trim().length === 0}
+              onClick={() => rejectMutation.mutate()}
+            >
+              Xác nhận từ chối
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </>
   );
 }
