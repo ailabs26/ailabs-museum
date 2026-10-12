@@ -141,4 +141,8 @@ async (page) => {
 - Tên component, route, selector và palette nhất quán với code đã triển khai.
 - Đây là kế hoạch được bổ sung sau triển khai; không có bằng chứng test-first và không dựng lại lịch sử giả.
 - Ảnh đã được chụp nhưng phiên không đọc được; HOME-04 còn mở.
-- Tài liệu plan/task được commit riêng theo yêu cầu; code frontend chưa commit. Chưa push/tạo PR. Không coi review hay merge đã hoàn thành.
+- Commit plan/task: `43abd5a`. HOME-01: `4e51d41`; HOME-02: `e210b14`. Chưa push/tạo PR. Không coi review hay merge đã hoàn thành.
+
+## HOME-03 — kiểm tra trước khi commit theo task
+
+Đã chạy lại frontend typecheck, lint và build trước khi commit HOME-01/02: cả ba đạt. Bundle JS 628.71 kB (197.70 kB gzip); cảnh báo >500 kB còn tồn tại. Diff staged của từng task được review và kiểm tra whitespace; không có file môi trường, credential hoặc build output trong commit. Các assertions browser ở mục HOME-03 là bằng chứng từ phiên triển khai trước, không phải một lần chạy browser mới. HOME-04 vẫn chờ người dùng duyệt.

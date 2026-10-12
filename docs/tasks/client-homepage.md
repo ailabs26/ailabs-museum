@@ -56,4 +56,15 @@ Kiểm tra Edge bằng Playwright CLI trong phiên triển khai: assertions đi�
 
 Console còn 401 từ `/api/auth/me` của luồng khôi phục phiên sẵn có. Không có cơ sở tuyên bố console hoàn toàn sạch. Build có cảnh báo bundle lớn hơn 500 kB.
 
-Kế hoạch chi tiết được bổ sung sau triển khai để khắc phục thiếu sót quy trình; không có bằng chứng chu kỳ RED/GREEN. Tài liệu plan/task được commit riêng theo yêu cầu; code frontend chưa commit. Chưa push hoặc tạo PR. Chỉ thực hiện các thao tác Git tiếp theo khi có yêu cầu.
+Kế hoạch chi tiết được bổ sung sau triển khai để khắc phục thiếu sót quy trình; không có bằng chứng chu kỳ RED/GREEN. Chưa push hoặc tạo PR. Chỉ thực hiện các thao tác Git tiếp theo khi có yêu cầu.
+
+## Commit theo task
+
+| Task | Commit | Nội dung |
+|---|---|---|
+| Plan/task | `43abd5a` | Tài liệu phạm vi và kế hoạch |
+| HOME-01 | `4e51d41` | Public layout, navigation, skip link, footer và CSS |
+| HOME-02 | `e210b14` | Nội dung trang chủ, CSS và metadata |
+| HOME-03 | Commit cập nhật tài liệu kiểm chứng này | Ghi kết quả quality gates chạy lại trước commit |
+
+Typecheck/lint/build đã chạy lại và đạt trước commit HOME-01/02; build tiếp tục cảnh báo bundle >500 kB. Không chạy lại browser vì không có thay đổi runtime kể từ lần kiểm chứng trước. HOME-04 chưa hoàn thành; commit code không thay thế duyệt trực quan hoặc review PR.
