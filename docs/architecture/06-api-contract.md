@@ -89,10 +89,24 @@ POST   /exhibits/:id/attach-media         # gắn model/image/audio
 ### Kiểm duyệt & báo cáo
 ```
 GET    /moderation/queue                  # revision chờ duyệt
+GET    /moderation/revisions/:id          # chi tiết 1 revision
 GET    /moderation/revisions/:id/diff     # so sánh phiên bản cũ/mới
+GET    /exhibits/:id/revisions            # lịch sử revision của hiện vật
+POST   /revisions/:id/publish             # in_review -> approved (moderator)
+POST   /revisions/:id/reject              # kèm lý do (bắt buộc)
+POST   /exhibits/:id/hide  |  /unhide     # tạm ẩn/hiện hiện vật
 GET/POST /reports                         # Admin xem; Client gửi (public, rate-limited)
 POST   /reports/:id/resolve  | /dismiss
 ```
+
+#### Moderation (Task 22) — optimistic concurrency
+
+- `POST /revisions/:id/publish` body `{ version }`, `/reject` body `{ version, reason }`,
+  `/exhibits/:id/hide|unhide` body `{ version }`. `version` là phiên bản hiện vật phía client đang xem.
+- Cập nhật nguyên tử `UPDATE ... WHERE id=? AND version=?`; lệch version → **409 Conflict**
+  (message "Nội dung đã bị thay đổi... tải lại"). Publish tăng `version`, đặt `publishedRevisionId`, `visibility=visible`.
+- Quyền: queue `revision:publish`; đọc chi tiết/diff/lịch sử `exhibit:read`; publish/reject/hide theo `revision:publish|reject|hide`.
+- Mọi hành động ghi vết qua `@Audit` (revision.publish/reject, exhibit.hide/unhide).
 
 ### Public (client — chỉ đọc nội dung published)
 ```
