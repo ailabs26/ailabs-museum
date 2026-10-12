@@ -17,6 +17,8 @@ export interface DataTableProps<T> {
   loading?: boolean;
   onRowClick?: (row: T) => void;
   emptyText?: string;
+  /** Độ rộng tối thiểu của bảng trong ScrollArea (mặc định 720px để tránh vỡ cột trên mobile) */
+  minWidth?: number | string;
   /** phân trang (tùy chọn) */
   page?: number;
   pageSize?: number;
@@ -32,6 +34,7 @@ export function DataTable<T>({
   loading = false,
   onRowClick,
   emptyText = 'Chưa có dữ liệu',
+  minWidth = 720,
   page,
   pageSize,
   total,
@@ -42,7 +45,13 @@ export function DataTable<T>({
   return (
     <Box pos="relative">
       <ScrollArea>
-        <Table highlightOnHover={!!onRowClick} verticalSpacing="sm" striped stickyHeader>
+        <Table
+          highlightOnHover={!!onRowClick}
+          verticalSpacing="sm"
+          striped
+          stickyHeader
+          style={{ minWidth }}
+        >
           <Table.Thead>
             <Table.Tr>
               {columns.map((col) => (

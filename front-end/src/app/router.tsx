@@ -7,6 +7,7 @@ import { HomePage } from '@/pages/client/HomePage';
 import { LoginPage } from '@/pages/admin/LoginPage';
 import { DashboardPage } from '@/pages/admin/DashboardPage';
 import { PlaceholderPage } from '@/pages/admin/PlaceholderPage';
+import { RoomsPage } from '@/pages/admin/RoomsPage';
 import { UsersPage } from '@/pages/admin/UsersPage';
 import { RolesPage } from '@/pages/admin/RolesPage';
 import { PermissionMatrixPage } from '@/pages/admin/PermissionMatrixPage';
@@ -58,7 +59,14 @@ export function AppRouter() {
       <Route path="/admin" element={<RequireAuth />}>
         <Route element={<AdminLayout />}>
           <Route index element={<DashboardPage />} />
-          <Route path="rooms" element={<PlaceholderPage title="Phòng trưng bày" pr="PR CMS (task 6)" />} />
+          <Route
+            path="rooms"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.ROOM_READ]} fallback={<NoAccess />}>
+                <RoomsPage />
+              </RequirePermission>
+            }
+          />
           <Route path="exhibits" element={<PlaceholderPage title="Hiện vật" pr="PR CMS (task 7)" />} />
           <Route path="media" element={<PlaceholderPage title="Media" pr="PR CMS (task 8)" />} />
           <Route path="moderation" element={<PlaceholderPage title="Kiểm duyệt" pr="PR (task 22)" />} />
