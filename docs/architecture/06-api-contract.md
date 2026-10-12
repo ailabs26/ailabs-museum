@@ -45,7 +45,33 @@ GET    /roles                 POST /roles           PATCH /roles/:id     DELETE 
 GET    /roles/:id/permissions PUT  /roles/:id/permissions        # set ma trận quyền
 GET    /permissions                                              # danh mục permission
 GET    /audit                 GET  /audit/:id                    # nhật ký (lọc theo actor/action/thời gian)
+GET    /admin/stats/overview                                     # số liệu tổng quan Dashboard
+GET    /admin/stats/charts                                       # dữ liệu biểu đồ Dashboard
 ```
+
+#### Stats (Dashboard Admin) — Task 21
+
+`GET /admin/stats/overview` → `OverviewStatsDto`:
+```json
+{
+  "rooms":     { "total": 12, "active": 9, "archived": 3 },
+  "exhibits":  { "total": 48, "visible": 40, "hidden": 8 },
+  "revisions": { "inReview": 5, "draft": 11 },
+  "reports":   { "open": 4, "inProgress": 2 },
+  "system":    { "api": "up", "db": "up", "uptimeSec": 38124, "serverTime": "2026-10-12T08:30:00.000Z" }
+}
+```
+
+`GET /admin/stats/charts` → `StatsChartsDto` (dữ liệu đã GROUP BY để FE vẽ ApexCharts):
+```json
+{
+  "reportsByStatus":    [ { "label": "open", "count": 4 } ],
+  "exhibitsByRoom":     [ { "label": "Phòng A", "count": 12 } ],
+  "revisionsByState":   [ { "label": "in_review", "count": 5 } ],
+  "activityLast14Days": [ { "date": "2026-10-12", "revisions": 3, "reports": 1 } ]
+}
+```
+> Chỉ đọc (count/GROUP BY), không đổi schema. Yêu cầu đăng nhập; mọi role quản trị xem được.
 
 ### CMS nội dung
 ```
