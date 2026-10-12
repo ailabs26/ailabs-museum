@@ -6,6 +6,7 @@ import {
   ExhibitRevision,
   RevisionState,
 } from '../../exhibits/entities/exhibit-revision.entity';
+import { Exhibit } from '../../exhibits/entities/exhibit.entity';
 import { ListQueueQueryDto } from '../dto/list-queue-query.dto';
 
 @Injectable()
@@ -13,7 +14,14 @@ export class ModerationRepository {
   constructor(
     @InjectRepository(ExhibitRevision)
     private readonly revisions: Repository<ExhibitRevision>,
+    @InjectRepository(Exhibit)
+    private readonly exhibits: Repository<Exhibit>,
   ) {}
+
+  /** Lấy hiện vật (kể cả đang ẩn) theo id, bỏ bản đã xóa mềm. */
+  findExhibit(id: string): Promise<Exhibit | null> {
+    return this.exhibits.findOne({ where: { id, isDeleted: false } });
+  }
 
   /** Hàng chờ kiểm duyệt: revision in_review, cũ nhất lên trước (FIFO). */
   async queue(query: ListQueueQueryDto): Promise<Paginated<ExhibitRevision>> {

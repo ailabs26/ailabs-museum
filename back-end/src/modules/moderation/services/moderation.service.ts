@@ -1,12 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { TransactionManager } from '../../../common/database/transaction.manager';
+import { AuthUser } from '../../../common/types/auth-user.type';
 import { Paginated } from '../../../common/types/paginated.type';
 import { User } from '../../users/entities/user.entity';
 import {
   ExhibitRevision,
   ExhibitRevisionContent,
+  RevisionState,
 } from '../../exhibits/entities/exhibit-revision.entity';
-import { Exhibit } from '../../exhibits/entities/exhibit.entity';
+import { Exhibit, ExhibitVisibility } from '../../exhibits/entities/exhibit.entity';
+import { HideExhibitDto } from '../dto/hide-exhibit.dto';
 import { ListQueueQueryDto } from '../dto/list-queue-query.dto';
+import { PublishRevisionDto } from '../dto/publish-revision.dto';
+import { RejectRevisionDto } from '../dto/reject-revision.dto';
 import { DiffFieldDto, RevisionDiffDto } from '../dto/revision-diff.dto';
 import {
   ExhibitBriefDto,
@@ -25,9 +35,16 @@ const DIFF_FIELDS: { field: string; label: string }[] = [
   { field: 'placeholderColor', label: 'Màu placeholder' },
 ];
 
+/** Thông báo xung đột sửa đồng thời (409) cho FE hiện cảnh báo reload. */
+const VERSION_CONFLICT =
+  'Nội dung đã bị thay đổi bởi người khác, vui lòng tải lại trang';
+
 @Injectable()
 export class ModerationService {
-  constructor(private readonly repo: ModerationRepository) {}
+  constructor(
+    private readonly repo: ModerationRepository,
+    private readonly tx: TransactionManager,
+  ) {}
 
   /** Hàng chờ kiểm duyệt (revision in_review). */
   async queue(query: ListQueueQueryDto): Promise<Paginated<RevisionResponseDto>> {
@@ -70,6 +87,111 @@ export class ModerationService {
       targetRevisionNo: revision.revisionNo,
       fields,
     };
+  }
+
+  /**
+   * Xuất bản revision: in_review → approved, đặt làm bản published của hiện vật,
+   * tăng version, hiện hiện vật. Atomic + optimistic lock theo version.
+   */
+  async publish(
+    id: string,
+    dto: PublishRevisionDto,
+    actor: AuthUser,
+  ): Promise<RevisionResponseDto> {
+    const revision = await this.repo.findDetail(id);
+    if (!revision) throw new NotFoundException('Không tìm thấy phiên bản nội dung');
+    if (revision.state !== RevisionState.IN_REVIEW) {
+      throw new ConflictException('Phiên bản không ở trạng thái chờ duyệt');
+    }
+
+    await this.tx.run(async (m) => {
+      const res = await m.update(
+        Exhibit,
+        { id: revision.exhibitId, version: dto.version },
+        {
+          publishedRevisionId: revision.id,
+          visibility: ExhibitVisibility.VISIBLE,
+          version: () => '"version" + 1',
+        },
+      );
+      if (!res.affected) throw new ConflictException(VERSION_CONFLICT);
+
+      await m.update(
+        ExhibitRevision,
+        { id: revision.id, state: RevisionState.IN_REVIEW },
+        { state: RevisionState.APPROVED, reviewedById: actor.id, reviewedAt: new Date() },
+      );
+    });
+
+    return this.getRevision(id);
+  }
+
+  /** Từ chối revision: in_review → rejected, bắt buộc lý do. Optimistic lock. */
+  async reject(
+    id: string,
+    dto: RejectRevisionDto,
+    actor: AuthUser,
+  ): Promise<RevisionResponseDto> {
+    const revision = await this.repo.findDetail(id);
+    if (!revision) throw new NotFoundException('Không tìm thấy phiên bản nội dung');
+    if (revision.state !== RevisionState.IN_REVIEW) {
+      throw new ConflictException('Phiên bản không ở trạng thái chờ duyệt');
+    }
+    if (!revision.exhibit || revision.exhibit.version !== dto.version) {
+      throw new ConflictException(VERSION_CONFLICT);
+    }
+
+    const res = await this.tx.run((m) =>
+      m.update(
+        ExhibitRevision,
+        { id: revision.id, state: RevisionState.IN_REVIEW },
+        {
+          state: RevisionState.REJECTED,
+          reason: dto.reason,
+          reviewedById: actor.id,
+          reviewedAt: new Date(),
+        },
+      ),
+    );
+    if (!res.affected) throw new ConflictException(VERSION_CONFLICT);
+
+    return this.getRevision(id);
+  }
+
+  /** Tạm ẩn hiện vật khỏi public. Optimistic lock + tăng version. */
+  hide(exhibitId: string, dto: HideExhibitDto): Promise<ExhibitBriefDto> {
+    return this.setVisibility(exhibitId, dto.version, ExhibitVisibility.HIDDEN);
+  }
+
+  /** Hiện lại hiện vật. Optimistic lock + tăng version. */
+  unhide(exhibitId: string, dto: HideExhibitDto): Promise<ExhibitBriefDto> {
+    return this.setVisibility(exhibitId, dto.version, ExhibitVisibility.VISIBLE);
+  }
+
+  /** Dùng chung cho hide/unhide: cập nhật nguyên tử theo (id, version). */
+  private async setVisibility(
+    exhibitId: string,
+    version: number,
+    visibility: ExhibitVisibility,
+  ): Promise<ExhibitBriefDto> {
+    const exhibit = await this.repo.findExhibit(exhibitId);
+    if (!exhibit) throw new NotFoundException('Không tìm thấy hiện vật');
+
+    const res = await this.tx.run((m) =>
+      m.update(
+        Exhibit,
+        { id: exhibitId, version, isDeleted: false },
+        {
+          visibility,
+          archivedAt: visibility === ExhibitVisibility.HIDDEN ? new Date() : null,
+          version: () => '"version" + 1',
+        },
+      ),
+    );
+    if (!res.affected) throw new ConflictException(VERSION_CONFLICT);
+
+    const updated = await this.repo.findExhibit(exhibitId);
+    return this.toExhibitBrief(updated)!;
   }
 
   /** Lấy giá trị 1 field dưới dạng chuỗi để so sánh/hiển thị. */
