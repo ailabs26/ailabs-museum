@@ -93,3 +93,4 @@ export class RoomsRepository extends BaseRepository<Room> {
     return { items, total, page, pageSize };
   }
 }
+
