@@ -13,10 +13,11 @@
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/config/data-source.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/config/data-source.ts",
     "seed": "ts-node src/database/seeds/seed.ts",
-    "test": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/*.spec.ts src/modules/stats/tests/*.spec.ts src/modules/moderation/tests/*.spec.ts",
+    "test": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/*.spec.ts src/modules/stats/tests/*.spec.ts src/modules/moderation/tests/*.spec.ts src/modules/content-reports/tests/*.spec.ts",
     "test:rooms": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/*.spec.ts",
     "test:stats": "node -r reflect-metadata -r ts-node/register --test src/modules/stats/tests/*.spec.ts",
     "test:moderation": "node -r reflect-metadata -r ts-node/register --test src/modules/moderation/tests/*.spec.ts",
+    "test:reports": "node -r reflect-metadata -r ts-node/register --test src/modules/content-reports/tests/*.spec.ts",
     "test:service": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/rooms-service*.spec.ts",
     "test:extended": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/rooms-service-extended.spec.ts"
   },
