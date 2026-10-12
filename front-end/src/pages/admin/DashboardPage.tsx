@@ -1,5 +1,6 @@
 import { IconBuildingArch, IconArtboard, IconFlag, IconChecklist } from '@tabler/icons-react';
-import { SimpleGrid, Skeleton, useComputedColorScheme } from '@mantine/core';
+import { Badge, Group, Paper, SimpleGrid, Skeleton, Text, useComputedColorScheme } from '@mantine/core';
+import { IconServer } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { StatCard } from '@/shared/components/data';
@@ -20,6 +21,14 @@ const REVISION_STATE_VI: Record<string, string> = {
   approved: 'Đã duyệt',
   rejected: 'Từ chối',
 };
+
+/** Định dạng uptime (giây) sang "Xd Yh Zm". */
+function formatUptime(sec: number): string {
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  return [d && `${d}d`, h && `${h}h`, `${m}m`].filter(Boolean).join(' ');
+}
 
 /** Dashboard tổng quan Admin CMS: số liệu thật + trạng thái hệ thống + biểu đồ. */
 export function DashboardPage() {
@@ -82,6 +91,30 @@ export function DashboardPage() {
           </>
         )}
       </SimpleGrid>
+
+      <Paper withBorder radius="md" p="md" mt="lg">
+        <Group justify="space-between" wrap="wrap">
+          <Group gap="xs">
+            <IconServer size={20} />
+            <Text fw={600}>Trạng thái hệ thống</Text>
+          </Group>
+          <Group gap="lg" wrap="wrap">
+            <Badge color="green" variant="light">
+              API: {o?.system.api ?? '—'}
+            </Badge>
+            <Badge color={o?.system.db === 'down' ? 'red' : 'green'} variant="light">
+              Database: {o?.system.db ?? '—'}
+            </Badge>
+            <Text size="sm" c="dimmed">
+              Uptime: {o ? formatUptime(o.system.uptimeSec) : '—'}
+            </Text>
+            <Text size="sm" c="dimmed">
+              Giờ máy chủ:{' '}
+              {o ? new Date(o.system.serverTime).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '—'}
+            </Text>
+          </Group>
+        </Group>
+      </Paper>
 
       <SimpleGrid cols={{ base: 1, md: 2 }} mt="lg">
         <ChartCard
