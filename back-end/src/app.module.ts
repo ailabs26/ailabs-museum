@@ -10,6 +10,7 @@ import { ExhibitsModule } from './modules/exhibits/exhibits.module';
 import { HealthController } from './modules/health/health.controller';
 import { RolesModule } from './modules/roles/roles.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
+import { StatsModule } from './modules/stats/stats.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -29,6 +30,8 @@ import { UsersModule } from './modules/users/users.module';
     // Phân hệ nội dung (rooms, exhibits).
     RoomsModule,
     ExhibitsModule,
+    // Số liệu tổng quan cho Dashboard Admin.
+    StatsModule,
   ],
   controllers: [HealthController],
 })
