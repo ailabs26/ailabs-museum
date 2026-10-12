@@ -1,14 +1,28 @@
 import { useState } from 'react';
 import {
   Badge,
+  Button,
   Divider,
   Drawer,
   Group,
+  Modal,
   Select,
   Stack,
   Text,
+  Textarea,
 } from '@mantine/core';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useDisclosure } from '@mantine/hooks';
+import { IconCheck, IconUserCheck, IconX } from '@tabler/icons-react';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { ApiException } from '@/core/api/api-error';
+import { useAuth } from '@/core/auth/use-auth';
+import { PERMISSIONS } from '@/core/auth/permissions';
+import { notify } from '@/shared/components/feedback';
 import { Column, DataTable } from '@/shared/components/data';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { ContentReport, reportsService, ReportStatus } from '@/services/reports.service';
@@ -39,10 +53,19 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
 }
 
+type CloseKind = 'resolve' | 'dismiss';
+
 export function ReportsPage() {
+  const { hasPermission } = useAuth();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('all');
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [closeKind, setCloseKind] = useState<CloseKind>('resolve');
+  const [resolution, setResolution] = useState('');
+  const [closeOpened, closeModal] = useDisclosure(false);
+
+  const canResolve = hasPermission(PERMISSIONS.REPORT_RESOLVE);
 
   const queryStatus = status !== 'all' ? (status as ReportStatus) : undefined;
 
@@ -59,6 +82,54 @@ export function ReportsPage() {
   });
 
   const detail = detailQuery.data;
+
+  const refreshAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['reports'] });
+  };
+
+  const handleError = (err: unknown) => {
+    if (err instanceof ApiException) {
+      notify.error(err.message);
+      if (err.status === 409) {
+        refreshAll();
+        setDetailId(null);
+      }
+      return;
+    }
+    notify.error('Có lỗi xảy ra, vui lòng thử lại');
+  };
+
+  const assignMutation = useMutation({
+    mutationFn: () => reportsService.assign(detail!.id),
+    onSuccess: () => {
+      notify.success('Đã tiếp nhận báo cáo');
+      refreshAll();
+    },
+    onError: handleError,
+  });
+
+  const closeMutation = useMutation({
+    mutationFn: () =>
+      closeKind === 'resolve'
+        ? reportsService.resolve(detail!.id, resolution.trim())
+        : reportsService.dismiss(detail!.id, resolution.trim()),
+    onSuccess: () => {
+      notify.success(closeKind === 'resolve' ? 'Đã xử lý báo cáo' : 'Đã đóng báo cáo');
+      closeModal.close();
+      setResolution('');
+      refreshAll();
+      setDetailId(null);
+    },
+    onError: handleError,
+  });
+
+  const openClose = (kind: CloseKind) => {
+    setCloseKind(kind);
+    setResolution('');
+    closeModal.open();
+  };
+
+  const isOpen = detail?.status === 'open' || detail?.status === 'in_progress';
 
   const columns: Column<ContentReport>[] = [
     {
@@ -168,9 +239,71 @@ export function ReportsPage() {
                 Báo cáo không gắn với phiên bản cụ thể.
               </Text>
             )}
+
+            {canResolve && isOpen && (
+              <>
+                <Divider my="xs" />
+                <Group justify="flex-end">
+                  {detail.status === 'open' && (
+                    <Button
+                      variant="default"
+                      leftSection={<IconUserCheck size={16} />}
+                      loading={assignMutation.isPending}
+                      onClick={() => assignMutation.mutate()}
+                    >
+                      Tiếp nhận
+                    </Button>
+                  )}
+                  <Button
+                    color="gray"
+                    variant="light"
+                    leftSection={<IconX size={16} />}
+                    onClick={() => openClose('dismiss')}
+                  >
+                    Đóng/bác
+                  </Button>
+                  <Button
+                    leftSection={<IconCheck size={16} />}
+                    onClick={() => openClose('resolve')}
+                  >
+                    Xử lý xong
+                  </Button>
+                </Group>
+              </>
+            )}
           </Stack>
         )}
       </Drawer>
+
+      <Modal
+        opened={closeOpened}
+        onClose={closeModal.close}
+        title={closeKind === 'resolve' ? 'Xử lý xong báo cáo' : 'Đóng/bác báo cáo'}
+      >
+        <Stack>
+          <Textarea
+            label="Kết luận xử lý"
+            placeholder="Mô tả cách xử lý hoặc lý do đóng báo cáo..."
+            rows={4}
+            value={resolution}
+            onChange={(e) => setResolution(e.currentTarget.value)}
+            required
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={closeModal.close}>
+              Hủy
+            </Button>
+            <Button
+              color={closeKind === 'resolve' ? 'aura' : 'gray'}
+              loading={closeMutation.isPending}
+              disabled={resolution.trim().length === 0}
+              onClick={() => closeMutation.mutate()}
+            >
+              Xác nhận
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </>
   );
 }
