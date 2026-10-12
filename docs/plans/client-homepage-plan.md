@@ -131,18 +131,18 @@ async (page) => {
 
 **Interfaces:** consumes giao diện tại `http://localhost:5173`; produces xác nhận của người dùng về bố cục, màu và khoảng trống.
 
-- [ ] **Bước 1 — Người dùng duyệt desktop/mobile.** Kiểm tra typography, minh họa kiến trúc, CTA, header/footer, màu light/dark và khoảng trống dưới `Hiện vật nổi bật`.
-- [ ] **Bước 2 — Sửa theo feedback và kiểm tra lại phần thay đổi.** Nếu đổi mã frontend, chạy lại ba quality gate; nếu đổi bố cục, kiểm chứng lại viewport liên quan.
-- [ ] **Bước 3 — Ghi kết quả review.** Cập nhật task khi có bằng chứng; không tự coi DOM assertions là review trực quan.
+- [x] **Bước 1 — Người dùng duyệt giao diện.** Người dùng báo lỗi font tiếng Việt rồi xác nhận OK sau khi sửa. Chưa có thông tin thiết bị duyệt, không tuyên bố đã duyệt mọi viewport/light-dark trực quan.
+- [x] **Bước 2 — Sửa theo feedback và kiểm tra lại phần thay đổi.** Đổi font tiêu đề sang Times New Roman; assertions Edge về font và bốn viewport đạt; chạy lại ba quality gate đạt.
+- [x] **Bước 3 — Ghi kết quả review.** Ghi xác nhận của người dùng trong task, phân biệt với DOM assertions và review PR.
 
 ## Self-review và tình trạng bàn giao
 
 - Phạm vi người dùng đã chốt được ánh xạ tới HOME-01/02; kiểm chứng tới HOME-03; duyệt trực quan tới HOME-04.
 - Tên component, route, selector và palette nhất quán với code đã triển khai.
 - Đây là kế hoạch được bổ sung sau triển khai; không có bằng chứng test-first và không dựng lại lịch sử giả.
-- Ảnh đã được chụp nhưng phiên không đọc được; HOME-04 còn mở.
+- Ảnh đã được chụp nhưng phiên không đọc được; người dùng đã xác nhận giao diện OK sau sửa font, HOME-04 hoàn thành theo xác nhận đó.
 - Commit plan/task: `43abd5a`. HOME-01: `4e51d41`; HOME-02: `e210b14`. Chưa push/tạo PR. Không coi review hay merge đã hoàn thành.
 
 ## HOME-03 — kiểm tra trước khi commit theo task
 
-Đã chạy lại frontend typecheck, lint và build trước khi commit HOME-01/02: cả ba đạt. Bundle JS 628.71 kB (197.70 kB gzip); cảnh báo >500 kB còn tồn tại. Diff staged của từng task được review và kiểm tra whitespace; không có file môi trường, credential hoặc build output trong commit. Các assertions browser ở mục HOME-03 là bằng chứng từ phiên triển khai trước, không phải một lần chạy browser mới. HOME-04 vẫn chờ người dùng duyệt.
+Đã chạy lại frontend typecheck, lint và build trước khi commit HOME-01/02: cả ba đạt. Bundle JS 628.71 kB (197.70 kB gzip); cảnh báo >500 kB còn tồn tại. Diff staged của từng task được review và kiểm tra whitespace; không có file môi trường, credential hoặc build output trong commit. Các assertions browser ở mục HOME-03 là bằng chứng từ phiên triển khai trước. Sau feedback font, đã chạy lại kiểm chứng font/viewport và ba quality gate; người dùng xác nhận OK.

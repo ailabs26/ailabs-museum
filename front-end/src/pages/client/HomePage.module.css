@@ -1,7 +1,7 @@
 .hero { display: grid; grid-template-columns: 1.15fr 1fr; gap: 48px; align-items: center; padding-block: 64px; }
 .heroContent { padding-block: 24px; }
 .eyebrow { color: var(--public-accent); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; margin: 0 0 24px; }
-.title { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 400; line-height: 1.12; letter-spacing: -0.04em; }
+.title { font-family: 'Times New Roman', serif; font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 400; line-height: 1.12; letter-spacing: -0.04em; }
 .introduction { max-width: 440px; color: var(--public-muted); font-size: 17px; line-height: 1.8; margin-block: 24px 32px; }
 .heroNote { color: var(--public-ink); font-size: 13px; margin-top: 24px; }
 .heroNote span { color: var(--public-muted); }
@@ -11,7 +11,7 @@
 .plinth { position: absolute; bottom: 48px; width: 72%; height: 28px; background: #e4d9c2; border-bottom: 10px solid #c6b797; }
 .visualCaption { position: absolute; bottom: 20px; color: var(--public-muted); font-size: 9px; letter-spacing: 0.15em; }
 .about { display: grid; grid-template-columns: 1fr 1.3fr; gap: 64px; padding-block: 56px; border-top: 1px solid var(--public-border); }
-.sectionTitle { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(2rem, 3vw, 2.75rem); font-weight: 400; line-height: 1.2; letter-spacing: -0.02em; }
+.sectionTitle { font-family: 'Times New Roman', serif; font-size: clamp(2rem, 3vw, 2.75rem); font-weight: 400; line-height: 1.2; letter-spacing: -0.02em; }
 .aboutContent p { color: var(--public-muted); font-size: 16px; line-height: 1.8; margin: 0 0 20px; }
 .textLink { display: inline-flex; align-items: center; gap: 12px; padding-block: 12px; font-weight: 600; font-size: 14px; }
 .featured { padding-block: 48px 32px; border-top: 1px solid var(--public-border); }
