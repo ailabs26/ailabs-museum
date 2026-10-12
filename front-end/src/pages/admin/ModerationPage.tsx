@@ -20,7 +20,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { ApiException } from '@/core/api/api-error';
+import { handleCmsError } from '@/core/api/cms-error';
 import { useAuth } from '@/core/auth/use-auth';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { notify } from '@/shared/components/feedback';
@@ -91,17 +91,13 @@ export function ModerationPage() {
   };
 
   /** Chuẩn hóa thông báo lỗi; 409 = sửa đồng thời → cảnh báo reload + refetch. */
-  const handleError = (err: unknown) => {
-    if (err instanceof ApiException) {
-      notify.error(err.message);
-      if (err.status === 409) {
+  const handleError = (err: unknown) =>
+    handleCmsError(err, {
+      onConflict: () => {
         refreshAll();
         setDetailId(null);
-      }
-      return;
-    }
-    notify.error('Có lỗi xảy ra, vui lòng thử lại');
-  };
+      },
+    });
 
   const publishMutation = useMutation({
     mutationFn: () => moderationService.publish(detail!.id, detail!.exhibit!.version),
