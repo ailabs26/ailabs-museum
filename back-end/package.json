@@ -12,7 +12,8 @@
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/config/data-source.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/config/data-source.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/config/data-source.ts",
-    "seed": "ts-node src/database/seeds/seed.ts"
+    "seed": "ts-node src/database/seeds/seed.ts",
+    "test": "ts-node src/modules/rooms/tests/rooms-dto.spec.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",
