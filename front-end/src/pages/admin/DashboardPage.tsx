@@ -3,7 +3,7 @@ import { SimpleGrid, Skeleton, useComputedColorScheme } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { StatCard } from '@/shared/components/data';
-import { ChartCard, reportStatusColor } from '@/shared/components/charts';
+import { ChartCard, categorical, reportStatusColor } from '@/shared/components/charts';
 import { useAuth } from '@/core/auth/use-auth';
 import { statsService } from '@/services/stats.service';
 
@@ -34,6 +34,8 @@ export function DashboardPage() {
   const chartsLoading = charts.isLoading;
 
   const reportsByStatus = c?.reportsByStatus ?? [];
+  const exhibitsByRoom = c?.exhibitsByRoom ?? [];
+  const ramp = categorical(scheme);
 
   return (
     <>
@@ -86,6 +88,24 @@ export function DashboardPage() {
             legend: { position: 'bottom' },
             plotOptions: { pie: { donut: { size: '62%' } } },
             dataLabels: { enabled: true, formatter: (v: number) => `${Math.round(v)}%` },
+          }}
+        />
+
+        <ChartCard
+          title="Hiện vật theo phòng"
+          description="Số hiện vật đang có ở mỗi phòng trưng bày"
+          type="bar"
+          loading={chartsLoading}
+          empty={exhibitsByRoom.length === 0}
+          series={[{ name: 'Hiện vật', data: exhibitsByRoom.map((e) => e.count) }]}
+          options={{
+            colors: [ramp[0]],
+            plotOptions: {
+              bar: { horizontal: true, borderRadius: 4, borderRadiusApplication: 'end', barHeight: '60%' },
+            },
+            dataLabels: { enabled: true },
+            xaxis: { categories: exhibitsByRoom.map((e) => e.label) },
+            legend: { show: false },
           }}
         />
       </SimpleGrid>
