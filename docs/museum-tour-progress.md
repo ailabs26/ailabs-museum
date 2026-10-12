@@ -1,4 +1,4 @@
-# Museum tour — Day 1 of 4
+# Museum tour — Days 1–2 of 4
 
 ACTIVE_DAY = 1. Branch: `feat/museum-scene-day1`. Base: `ca7a334` (`origin/dev`).
 
@@ -112,3 +112,49 @@ Review boundaries/rulings: main agent owns final gate evidence and PR state; phy
 - One pull request targeting `dev`; its URL is included in the delivery message after publishing.
 - No merge performed, no direct push to `dev`/`main`, no force push, empty commit, timestamp change or history rewrite.
 - 16 code/test/planning commits listed above, followed by the final documentation commit. Total 17 meaningful commits; no artificial split to reach 20.
+
+## Day 2 — verified contracts and implementation plan
+
+ACTIVE_DAY = 2. Branch: `feat/museum-api-day2`. Base: `994c896` (fresh `origin/dev`). Day 1 was restored via merge PR #26; its 17 original commits remain ancestors. Day 2 will have one PR into `dev`, without automatic merge or squash.
+
+### Contract discovery (source is authoritative)
+
+- `ExhibitsController` is `@Public()` and read-only. `GET /api/rooms` returns an **unpaginated array** of active, non-deleted rooms: `id` (UUID), `slug`, `name`, nullable `description`, plus entity metadata. It is not `Page<T>`.
+- `GET /api/rooms/:slug` returns `{ id, slug, name, description, exhibits }`. There is no separate public exhibit-list endpoint. Select by slug, not room UUID.
+- `ExhibitsService` + `ExhibitsRepository` include only visible/non-deleted exhibits with an APPROVED published revision, sorted by `displayOrder`, then `id`. Public fields: UUID `id/roomId`, integer `displayOrder`, `name/description`, finite numeric `positionX/Y/Z`, nullable `transcript`, `placeholderShape/Color`, sorted `hotspots`, and **`model/image/audio: null`**.
+- The write DTO enumerates `box/sphere/cylinder/cone/torus`; color is hex. Revision content owns position, name and description. Public responses expose no rotation, scale, room dimensions or media URLs. Existing room shell and default sculpture sizes remain; do not invent missing transforms.
+- Media entities store `storageKey`, kind and processing state, but the public mapper deliberately returns null even when relations exist. `main.ts` serves `/media` from `back-end/public/media`; this is not a public media DTO. No guessed URLs, GLB loader, audio or storage connection.
+- `ResponseInterceptor` wraps data as `{ success, data, message, meta? }`; not-found slug is HTTP 404 through the global exception filter. Guards bypass these public routes. Existing Axios instance supplies base URL, auth/cookies, timeout and error handling.
+- Frontend default: `VITE_API_BASE_URL=http://localhost:3001/api`. Reuse `http.raw` from the shared client to validate both success envelope and payload without changing the shared unwrap/auth behavior. Strip unknown entity fields at this boundary.
+- Graphify `list_workspaces` again returned 403 `no_workspace`. Traced `tour.html → main.tsx → AppRouter → MuseumPage → MuseumScene` and public controller/service/repository/revision/media source using `rg` and direct reads.
+
+### Design and invariants
+
+Bounded integration into the existing tour flow. `museum.service.ts` validates responses using Zod before application code consumes them. `useMuseumRooms` owns React Query list/detail requests, consumes AbortSignal and caches by slug. `MuseumPage` owns URL selection (`?room=slug`), accessible status/retry/refresh, and explicit scene start/stop. `mapRoomDisplays` converts validated exhibits into shared DOM/scene data with stable IDs.
+
+- No requests for unselected rooms, no asset preloading, no demo fallback. A room response must match the requested slug and room identity; exhibit room IDs and identifiers must be consistent/unique.
+- Missing all three coordinates uses a deterministic layout ordered by displayOrder + ID. Partial/malformed coordinates fail validation. Supplied coordinates are preserved, including zero; they anchor the existing display group in metres (Y up). No clamp or guessed scale.
+- Both API identity errors and request errors hide previous room content. Switching keys cancels obsolete requests and resets the Canvas/fallback boundary by room ID; late responses cannot replace current-room data.
+- Missing media stays labelled “hình khối thay thế”; catalogue remains readable without WebGL. Empty room list and empty exhibits are distinct. Valid empty rooms can still open the room shell.
+- Stop condition: source-compatible frontend integration, focused tests and required FE gates, progress evidence and one PR; **no Day 3 interactions/GLB/audio/WebXR, no backend/migration changes**.
+
+### Tasks (executing-plans inline; TDD for behavior)
+
+1. [ ] **Validate/map public content.** Create `validations/roomSchema.ts`, `helpers/mapRoomDisplays.ts`; extend `interfaces/museumScene.ts` and existing display cylinder support. Tests `tests/room-contract.spec.ts`: envelope/payload validity, duplicate/cross-room identity, nullable descriptions/media, complete or absent transforms, finite values, exact supplied coordinates, deterministic layout/order and backend shapes. RED → implement → GREEN; commit independently verified schema/mapping units.
+2. [ ] **Fetch and select rooms.** Create `services/museum.service.ts`, `hooks/useMuseumRooms.ts`; modify `MuseumPage.tsx` and `museum/MuseumCatalogue.tsx`. Consumes validated `RoomSummary/RoomDetail`, produces `MuseumDisplay[]` props. `tests/museum-api.spec.ts` first verifies API room names/exhibits, only selected detail fetched, encoded slug, refresh/error/empty/404 and runtime validation. Use the existing Axios client; `retry: false` permits explicit retry without automatic request storms. RED → implement → GREEN; split only coherent units.
+3. [ ] **Switching and lifecycle proof.** Test rapid switches with delayed responses, cancellation on switch/route exit, no stale catalogue/Canvas after invalid/failed selection, reuse of cached room requests, missing media labelling and multiple shapes. Update existing Day 1 browser tests with explicit API fixtures; keep camera/lifecycle/fallback assertions. Run production test suite after build completes.
+4. [ ] **Verify and deliver.** Run FE typecheck/lint/build and all browser tests. Inspect screenshots and full diff; one fresh-context review; record commit SHAs, evidence and live blockers; push task branch and create PR with base `dev`. Do not merge automatically.
+
+Review focus: large/out-of-shell backend positions; null media contract versus future URL payloads; cancellation transformed by the existing error interceptor; cached data after a refresh failure; changing room selection while a refresh is in progress. Required invariants take precedence over convenience.
+
+### Initial live evidence / blockers
+
+- Read-only probes for `/api/health` and `/api/rooms` failed to connect at localhost:3001, both inside and outside sandbox. `back-end/.env` does not exist. No live backend/database credentials were supplied; no migrations, seeds or DB writes run.
+- Fixtures in tests will mirror the observed public contract and be explicitly identified as test inputs. Passing them proves frontend handling, not a live database integration.
+- Media URLs are unavailable in the current public response. Preserve the null contract and label placeholders; public media exposure belongs to a separately authorized backend task.
+
+### Day 2 execution ledger
+
+Pre-flight: existing HTTP/auth/query-client interfaces remain unchanged; public room list is unpaginated and detail includes exhibits. Work in the prepared clean task checkout (as Day 1), without creating another worktree. The user's explicit immediate-implementation instruction supersedes additional skill approval handoffs; this requested progress document carries design/plan/ledger.
+
+Actual task results and commits will be appended after verification. Final documentation commit cannot contain its own SHA; discover it in the branch log.
