@@ -1,6 +1,6 @@
 import { IconBuildingArch, IconArtboard, IconFlag, IconChecklist } from '@tabler/icons-react';
-import { Badge, Group, Paper, SimpleGrid, Skeleton, Text, useComputedColorScheme } from '@mantine/core';
-import { IconServer } from '@tabler/icons-react';
+import { Alert, Badge, Group, Paper, SimpleGrid, Skeleton, Text, useComputedColorScheme } from '@mantine/core';
+import { IconAlertTriangle, IconServer } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { StatCard } from '@/shared/components/data';
@@ -58,6 +58,18 @@ export function DashboardPage() {
   return (
     <>
       <PageHeader title="Dashboard" description={`Xin chào, ${user?.displayName ?? 'Admin'}`} />
+
+      {(overview.isError || charts.isError) && (
+        <Alert
+          color="red"
+          variant="light"
+          icon={<IconAlertTriangle size={18} />}
+          title="Không tải được số liệu"
+          mb="md"
+        >
+          Đã xảy ra lỗi khi lấy số liệu Dashboard. Vui lòng thử tải lại trang.
+        </Alert>
+      )}
 
       <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
         {loading ? (
