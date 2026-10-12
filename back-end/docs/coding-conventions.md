@@ -83,20 +83,22 @@ Ví dụ: bảng `exhibits`, property `displayOrder`, khóa ngoại `roomId`.
 
 - Ưu tiên named export.
 - Dùng `import type` khi chỉ import type.
-- Không tạo barrel `index.ts` chỉ để rút ngắn đường dẫn import. **Ngoại lệ:** tầng `core/` có một barrel `core/index.ts` export toàn bộ hạ tầng dùng chung — đây là API công khai của tầng, không phải để rút ngắn đường dẫn.
+- Không tạo barrel `index.ts` chỉ để rút ngắn đường dẫn import. **Ngoại lệ:** `config/index.ts` gom các config (app/database/jwt + validate) — là API công khai của tầng config.
 - Tên export chính phải khớp vai trò được thể hiện trong tên file.
 
-## Tầng `core/` và `common/`
+## Cấu trúc thư mục (chuẩn enterprise)
 
-- `core/` chứa **hạ tầng dùng chung**, không phụ thuộc domain: `http/` (ApiResponse, ResponseInterceptor, AllExceptionsFilter), `repository/` (BaseRepository), `database/` (TransactionManager), `auth/` (guard + decorator), `security/` (PasswordService), `exceptions/`.
-- `CoreModule` là `@Global()`; provider đặt ở đây (vd `TransactionManager`, `PasswordService`) inject được ở mọi module mà không cần import lại. Đặt vào core khi và chỉ khi tiện ích **không phụ thuộc domain** và dùng ở nhiều nơi — tránh phụ thuộc vòng giữa các feature module.
-- `common/` chứa thứ dùng chung **có tính khai báo**: `constants/` (`PERMISSIONS`), `enums/` (`RoleKey`...), `dto/` (`PaginationQueryDto`, `IdParamDto`), `types/` (`AuthUser`, `Paginated`).
+- **`common/`** — hạ tầng dùng chung, không phụ thuộc domain, nhóm theo loại: `decorators/`, `guards/` (JwtAuthGuard, PermissionsGuard), `filters/` (AllExceptionsFilter), `interceptors/` (ResponseInterceptor), `middleware/` (RequestIdMiddleware), `exceptions/`, `dto/` (ApiResponse, PaginationQueryDto, IdParamDto), `constants/` (PERMISSIONS), `enums/` (RoleKey…), `types/` (AuthUser, Paginated, JwtAccessPayload), `repository/` (BaseRepository), `database/` (TransactionManager), `security/` (PasswordService).
+- **`CommonModule`** là `@Global()`; provider đặt ở đây (vd `TransactionManager`, `PasswordService`) inject được ở mọi module. Chỉ đặt vào `common` khi tiện ích **không phụ thuộc domain** và dùng nhiều nơi — tránh phụ thuộc vòng giữa các feature module.
+- **`config/`** — `app.config.ts`, `database.config.ts`, `jwt.config.ts` (`registerAs`), `env.validation.ts` (validate env lúc boot), `data-source.ts`, `index.ts`. Truy cập qua key namespaced: `config.getOrThrow('jwt.accessSecret')`, `'app.port'`...
+- **`database/`** — `migrations/`, `seeds/`, `database.module.ts`.
+- **`modules/<domain>/`** — mỗi feature một module, nhóm con: `controllers/`, `services/`, `repositories/`, `entities/` (đặt theo DDD), `dto/`, (tùy chọn `interceptors/`, `decorators/`, `tests/`).
 
 ## Response chuẩn & phân trang
 
 - Mọi endpoint trả dữ liệu thô (entity-free object, mảng, hoặc `Paginated<T>`); **không** tự bọc `ApiResponse`. `ResponseInterceptor` toàn cục tự bọc thành `{ success, data, message, meta? }`.
 - Endpoint danh sách trả `Paginated<T>` (`{ items, total, page, pageSize }`) từ repository; interceptor tự tách `items` ra `data` và gắn `meta`.
-- Lỗi nghiệp vụ ném exception chuẩn Nest (`NotFoundException`, `ConflictException`, `UnprocessableEntityException`...) hoặc exception trong `core/exceptions`; `AllExceptionsFilter` chuẩn hóa về `ApiResponse` lỗi.
+- Lỗi nghiệp vụ ném exception chuẩn Nest (`NotFoundException`, `ConflictException`, `UnprocessableEntityException`...) hoặc exception trong `common/exceptions`; `AllExceptionsFilter` chuẩn hóa về `ApiResponse` lỗi.
 
 ## Repository
 

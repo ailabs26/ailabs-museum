@@ -7,21 +7,21 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { static as expressStatic } from 'express';
 import { AppModule } from './app.module';
-import { AllExceptionsFilter } from './core/http/all-exceptions.filter';
-import { ResponseInterceptor } from './core/http/response.interceptor';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
 
   // Mọi API dưới /api (xem 06-api-contract.md)
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix(config.getOrThrow<string>('app.apiPrefix'));
 
   // Đọc refresh token từ httpOnly cookie (AuthController).
   app.use(cookieParser());
 
   app.enableCors({
-    origin: config.getOrThrow<string>('FRONTEND_ORIGIN'),
+    origin: config.getOrThrow<string>('app.frontendOrigin'),
     credentials: true,
   });
 
@@ -44,7 +44,7 @@ async function bootstrap() {
     .build();
   SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swagger));
 
-  await app.listen(config.getOrThrow<number>('PORT'));
+  await app.listen(config.getOrThrow<number>('app.port'));
 }
 
 void bootstrap();
