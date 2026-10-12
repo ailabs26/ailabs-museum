@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
+  ContentReport,
+  ContentReportStatus,
+} from '../../content-reports/entities/content-report.entity';
+import {
   ExhibitRevision,
   RevisionState,
 } from '../../exhibits/entities/exhibit-revision.entity';
@@ -20,21 +24,24 @@ export class StatsService {
     @InjectRepository(Exhibit) private readonly exhibits: Repository<Exhibit>,
     @InjectRepository(ExhibitRevision)
     private readonly revisions: Repository<ExhibitRevision>,
+    @InjectRepository(ContentReport)
+    private readonly reports: Repository<ContentReport>,
   ) {}
 
   /** Số liệu tổng quan cho các thẻ StatCard + trạng thái hệ thống. */
   async overview(): Promise<OverviewStatsDto> {
-    const [rooms, exhibits, revisions] = await Promise.all([
+    const [rooms, exhibits, revisions, reports] = await Promise.all([
       this.roomsStats(),
       this.exhibitsStats(),
       this.revisionsStats(),
+      this.reportsStats(),
     ]);
 
     return {
       rooms,
       exhibits,
       revisions,
-      reports: { open: 0, inProgress: 0 },
+      reports,
       system: { api: 'up', db: 'up', uptimeSec: 0, serverTime: new Date().toISOString() },
     };
   }
@@ -66,5 +73,14 @@ export class StatsService {
       this.revisions.count({ where: { state: RevisionState.DRAFT } }),
     ]);
     return { inReview, draft };
+  }
+
+  /** Đếm báo cáo vi phạm chưa đóng phục vụ cột "báo cáo mở". */
+  private async reportsStats(): Promise<OverviewStatsDto['reports']> {
+    const [open, inProgress] = await Promise.all([
+      this.reports.count({ where: { status: ContentReportStatus.OPEN } }),
+      this.reports.count({ where: { status: ContentReportStatus.IN_PROGRESS } }),
+    ]);
+    return { open, inProgress };
   }
 }
