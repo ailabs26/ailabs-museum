@@ -6,6 +6,7 @@ import { appConfig, databaseConfig, jwtConfig, validateEnvironment } from './con
 import { DatabaseModule } from './database/database.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ContentReportsModule } from './modules/content-reports/content-reports.module';
 import { ExhibitsModule } from './modules/exhibits/exhibits.module';
 import { HealthController } from './modules/health/health.controller';
 import { ModerationModule } from './modules/moderation/moderation.module';
@@ -33,6 +34,8 @@ import { UsersModule } from './modules/users/users.module';
     ExhibitsModule,
     // Kiểm duyệt nội dung (duyệt/từ chối/ẩn revision + diff).
     ModerationModule,
+    // Báo cáo vi phạm (Client gửi + Admin xử lý).
+    ContentReportsModule,
     // Số liệu tổng quan cho Dashboard Admin.
     StatsModule,
   ],
