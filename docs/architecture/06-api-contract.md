@@ -117,6 +117,21 @@ POST   /reports/:id/resolve  | /dismiss
 - `POST /public/reports` **@Public** body `{ exhibitId, reportedRevisionId?, category, message }`, rate-limit 5 lần/phút.
 - Chuyển trạng thái chỉ hợp lệ khi báo cáo còn mở (open/in_progress) → sai → **409**. Ghi vết `@Audit` report.assign/resolve/dismiss.
 
+#### Audit (Task 24)
+
+`GET /audit?page&pageSize&actorId&action&resourceType&from&to` + `GET /audit/:id` (`audit:read`). Append-only, không có endpoint sửa/xóa.
+Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. Ánh xạ hành động CMS:
+
+| action | resourceType | revisionId | Nguồn |
+|---|---|---|---|
+| room.create/update/delete | room | — | AdminRoomsController |
+| revision.publish | revision | = resourceId | RevisionsController |
+| revision.reject | revision | = resourceId | RevisionsController |
+| exhibit.hide / exhibit.unhide | exhibit | — | ExhibitRevisionsController |
+| report.assign/resolve/dismiss | report | — | ReportsController |
+
+> Với `resourceType='revision'`, interceptor lưu thêm FK `revisionId` để join `audit_logs → exhibit_revisions`.
+
 ### Public (client — chỉ đọc nội dung published)
 ```
 GET    /public/rooms/:slug                # phòng + danh sách hiện vật published
