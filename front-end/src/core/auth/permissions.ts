@@ -13,6 +13,8 @@ export const PERMISSIONS = {
   PERMISSION_READ: 'permission:read',
   ROOM_READ: 'room:read',
   ROOM_CREATE: 'room:create',
+  ROOM_UPDATE: 'room:update',
+  ROOM_DELETE: 'room:delete',
   EXHIBIT_READ: 'exhibit:read',
   EXHIBIT_CREATE: 'exhibit:create',
   REVISION_PUBLISH: 'revision:publish',
