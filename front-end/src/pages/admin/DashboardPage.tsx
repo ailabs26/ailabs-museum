@@ -14,6 +14,13 @@ const REPORT_STATUS_VI: Record<string, string> = {
   dismissed: 'Đã đóng',
 };
 
+const REVISION_STATE_VI: Record<string, string> = {
+  draft: 'Nháp',
+  in_review: 'Chờ duyệt',
+  approved: 'Đã duyệt',
+  rejected: 'Từ chối',
+};
+
 /** Dashboard tổng quan Admin CMS: số liệu thật + trạng thái hệ thống + biểu đồ. */
 export function DashboardPage() {
   const { user } = useAuth();
@@ -35,6 +42,7 @@ export function DashboardPage() {
 
   const reportsByStatus = c?.reportsByStatus ?? [];
   const exhibitsByRoom = c?.exhibitsByRoom ?? [];
+  const revisionsByState = c?.revisionsByState ?? [];
   const ramp = categorical(scheme);
 
   return (
@@ -105,6 +113,26 @@ export function DashboardPage() {
             },
             dataLabels: { enabled: true },
             xaxis: { categories: exhibitsByRoom.map((e) => e.label) },
+            legend: { show: false },
+          }}
+        />
+      </SimpleGrid>
+
+      <SimpleGrid cols={{ base: 1, md: 2 }} mt="lg">
+        <ChartCard
+          title="Revision theo trạng thái"
+          description="Phân bố phiên bản nội dung theo trạng thái duyệt"
+          type="bar"
+          loading={chartsLoading}
+          empty={revisionsByState.length === 0}
+          series={[{ name: 'Revision', data: revisionsByState.map((r) => r.count) }]}
+          options={{
+            colors: revisionsByState.map((_, i) => ramp[i % ramp.length]),
+            plotOptions: {
+              bar: { columnWidth: '50%', borderRadius: 4, borderRadiusApplication: 'end', distributed: true },
+            },
+            dataLabels: { enabled: true },
+            xaxis: { categories: revisionsByState.map((r) => REVISION_STATE_VI[r.label] ?? r.label) },
             legend: { show: false },
           }}
         />
