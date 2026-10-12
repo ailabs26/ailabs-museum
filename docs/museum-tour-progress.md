@@ -158,3 +158,7 @@ Review focus: large/out-of-shell backend positions; null media contract versus f
 Pre-flight: existing HTTP/auth/query-client interfaces remain unchanged; public room list is unpaginated and detail includes exhibits. Work in the prepared clean task checkout (as Day 1), without creating another worktree. The user's explicit immediate-implementation instruction supersedes additional skill approval handoffs; this requested progress document carries design/plan/ledger.
 
 Actual task results and commits will be appended after verification. Final documentation commit cannot contain its own SHA; discover it in the branch log.
+
+- Task 1 validation: RED missing schema → GREEN 4 contract tests; FE typecheck/lint passed. `dcb6b41 feat(tour): validate public room and exhibit responses`.
+- Task 1 mapping: RED missing mapper → GREEN 7/7 contract + mapping tests; FE typecheck/lint passed. Backend cylinder is supported; box maps to cube; supplied zero/nonzero coordinates preserved, missing coordinates use deterministic sorted grid. New shape extends only scene view data; no shared HTTP/auth changes.
+- Live setup: user supplied local configuration and authorized backend startup. Both `.env` files are Git-ignored. Existing BE node_modules lacked lockfile dependencies; restored with `npm.cmd ci`, without package/lock changes. No migration/seed execution. Install reports pre-existing audit findings; no dependency upgrades made in this scope.

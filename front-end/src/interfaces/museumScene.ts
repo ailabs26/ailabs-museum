@@ -4,6 +4,6 @@ export interface MuseumDisplay {
   title: string;
   description: string;
   position: [number, number, number];
-  shape: 'sphere' | 'torus' | 'cone' | 'cube' | 'icosahedron';
+  shape: 'sphere' | 'torus' | 'cone' | 'cube' | 'icosahedron' | 'cylinder';
   color: string;
 }

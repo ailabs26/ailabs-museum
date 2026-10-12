@@ -22,6 +22,7 @@ export function ExhibitionDisplay({ display }: { display: MuseumDisplay }) {
         {display.shape === 'sphere' && <sphereGeometry args={[0.57, 24, 16]} />}
         {display.shape === 'cube' && <boxGeometry args={[0.9, 0.9, 0.9]} />}
         {display.shape === 'cone' && <coneGeometry args={[0.52, 1.2, 24]} />}
+        {display.shape === 'cylinder' && <cylinderGeometry args={[0.45, 0.45, 1.1, 24]} />}
         {display.shape === 'icosahedron' && <icosahedronGeometry args={[0.64, 0]} />}
         <meshStandardMaterial color={display.color} roughness={isCenterpiece ? 0.32 : 0.6} metalness={isCenterpiece ? 0.65 : 0.12} />
       </mesh>
