@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import {
+  ExhibitRevision,
+  RevisionState,
+} from '../../exhibits/entities/exhibit-revision.entity';
 import { Exhibit, ExhibitVisibility } from '../../exhibits/entities/exhibit.entity';
 import { Room, RoomStatus } from '../../rooms/entities/room.entity';
 import { OverviewStatsDto } from '../dto/overview-stats.dto';
@@ -14,19 +18,22 @@ export class StatsService {
   constructor(
     @InjectRepository(Room) private readonly rooms: Repository<Room>,
     @InjectRepository(Exhibit) private readonly exhibits: Repository<Exhibit>,
+    @InjectRepository(ExhibitRevision)
+    private readonly revisions: Repository<ExhibitRevision>,
   ) {}
 
   /** Số liệu tổng quan cho các thẻ StatCard + trạng thái hệ thống. */
   async overview(): Promise<OverviewStatsDto> {
-    const [rooms, exhibits] = await Promise.all([
+    const [rooms, exhibits, revisions] = await Promise.all([
       this.roomsStats(),
       this.exhibitsStats(),
+      this.revisionsStats(),
     ]);
 
     return {
       rooms,
       exhibits,
-      revisions: { inReview: 0, draft: 0 },
+      revisions,
       reports: { open: 0, inProgress: 0 },
       system: { api: 'up', db: 'up', uptimeSec: 0, serverTime: new Date().toISOString() },
     };
@@ -50,5 +57,14 @@ export class StatsService {
       this.exhibits.count({ where: { isDeleted: false, visibility: ExhibitVisibility.HIDDEN } }),
     ]);
     return { total, visible, hidden };
+  }
+
+  /** Đếm revision theo trạng thái phục vụ cột "chờ duyệt". */
+  private async revisionsStats(): Promise<OverviewStatsDto['revisions']> {
+    const [inReview, draft] = await Promise.all([
+      this.revisions.count({ where: { state: RevisionState.IN_REVIEW } }),
+      this.revisions.count({ where: { state: RevisionState.DRAFT } }),
+    ]);
+    return { inReview, draft };
   }
 }
