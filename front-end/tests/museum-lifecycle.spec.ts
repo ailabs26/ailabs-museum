@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { installMuseumApi } from './fixtures/museumApi';
+
+test.beforeEach(async ({ page }) => { await installMuseumApi(page); });
 
 test.use({ deviceScaleFactor: 3 });
 
