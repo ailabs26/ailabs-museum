@@ -5,11 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "preview": "vite preview",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
-    "lint": "eslint .",
-    "test": "playwright test"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@mantine/core": "^7.15.2",
@@ -31,7 +29,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
-    "@playwright/test": "^1.64.0",
     "@types/node": "^22.10.5",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
