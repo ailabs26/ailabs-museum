@@ -18,8 +18,11 @@ export const PERMISSIONS = {
   EXHIBIT_READ: 'exhibit:read',
   EXHIBIT_CREATE: 'exhibit:create',
   REVISION_PUBLISH: 'revision:publish',
+  REVISION_REJECT: 'revision:reject',
+  REVISION_HIDE: 'revision:hide',
   MEDIA_UPLOAD: 'media:upload',
   REPORT_READ: 'report:read',
+  REPORT_RESOLVE: 'report:resolve',
   AUDIT_READ: 'audit:read',
 } as const;
 

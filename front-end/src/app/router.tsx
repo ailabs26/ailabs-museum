@@ -12,6 +12,7 @@ import { UsersPage } from '@/pages/admin/UsersPage';
 import { RolesPage } from '@/pages/admin/RolesPage';
 import { PermissionMatrixPage } from '@/pages/admin/PermissionMatrixPage';
 import { AuditPage } from '@/pages/admin/AuditPage';
+import { ModerationPage } from '@/pages/admin/ModerationPage';
 import { RequirePermission } from '@/core/auth/RequirePermission';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -69,7 +70,14 @@ export function AppRouter() {
           />
           <Route path="exhibits" element={<PlaceholderPage title="Hiện vật" pr="PR CMS (task 7)" />} />
           <Route path="media" element={<PlaceholderPage title="Media" pr="PR CMS (task 8)" />} />
-          <Route path="moderation" element={<PlaceholderPage title="Kiểm duyệt" pr="PR (task 22)" />} />
+          <Route
+            path="moderation"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.REVISION_PUBLISH]} fallback={<NoAccess />}>
+                <ModerationPage />
+              </RequirePermission>
+            }
+          />
           <Route path="reports" element={<PlaceholderPage title="Báo cáo vi phạm" pr="PR (task 23)" />} />
           <Route
             path="users"

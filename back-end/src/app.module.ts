@@ -8,6 +8,7 @@ import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ExhibitsModule } from './modules/exhibits/exhibits.module';
 import { HealthController } from './modules/health/health.controller';
+import { ModerationModule } from './modules/moderation/moderation.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
 import { StatsModule } from './modules/stats/stats.module';
@@ -30,6 +31,8 @@ import { UsersModule } from './modules/users/users.module';
     // Phân hệ nội dung (rooms, exhibits).
     RoomsModule,
     ExhibitsModule,
+    // Kiểm duyệt nội dung (duyệt/từ chối/ẩn revision + diff).
+    ModerationModule,
     // Số liệu tổng quan cho Dashboard Admin.
     StatsModule,
   ],
