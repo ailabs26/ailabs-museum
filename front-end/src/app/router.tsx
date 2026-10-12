@@ -14,7 +14,6 @@ import { AuditPage } from '@/pages/admin/AuditPage';
 import { RequirePermission } from '@/core/auth/RequirePermission';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { NotFoundPage } from '@/pages/NotFoundPage';
-import { MuseumPage } from '@/pages/MuseumPage';
 
 function ClientComingSoon({ title }: { title: string }) {
   return (
@@ -47,8 +46,7 @@ export function AppRouter() {
       <Route element={<PublicLayout />}>
         <Route index element={<HomePage />} />
         <Route path="collection" element={<ClientComingSoon title="Bộ sưu tập 2D" />} />
-        <Route path="tour" element={<MuseumPage />} />
-        <Route path="tour.html" element={<MuseumPage />} />
+        <Route path="tour" element={<ClientComingSoon title="Tham quan 3D / VR" />} />
       </Route>
 
       {/* Đăng nhập CMS (ngoài guard) */}
