@@ -14,6 +14,7 @@ export interface AuditRow {
   action: string;
   resourceType: string;
   resourceId: string;
+  revisionId: string | null;
   reason: string | null;
   requestId: string;
   occurredAt: string;

@@ -41,6 +41,8 @@ export class AuditInterceptor implements NestInterceptor {
               action: meta.action,
               resourceType: meta.resourceType,
               resourceId,
+              // Với hành động trên revision, lưu thêm FK revisionId để truy vết chéo.
+              revisionId: meta.resourceType === 'revision' ? resourceId : null,
               requestId: this.resolveRequestId(request),
             });
           }
