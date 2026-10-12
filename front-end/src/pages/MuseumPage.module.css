@@ -1,0 +1,19 @@
+.viewport {
+  height: clamp(360px, 64svh, 740px);
+  position: relative;
+  overflow: hidden;
+  background: #eee9df;
+  color: #243e3f;
+  border: 1px solid #cdc5b7;
+  border-radius: 16px;
+}
+
+.viewport canvas:focus-visible {
+  outline: 3px solid #2b6865;
+  outline-offset: -5px;
+}
+
+.intro {
+  height: 100%;
+  background: radial-gradient(ellipse at 50% 100%, #d0bc97 0%, transparent 65%);
+}
