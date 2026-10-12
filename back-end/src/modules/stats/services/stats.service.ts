@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import {
   ContentReport,
   ContentReportStatus,
@@ -26,23 +26,35 @@ export class StatsService {
     private readonly revisions: Repository<ExhibitRevision>,
     @InjectRepository(ContentReport)
     private readonly reports: Repository<ContentReport>,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
   /** Số liệu tổng quan cho các thẻ StatCard + trạng thái hệ thống. */
   async overview(): Promise<OverviewStatsDto> {
-    const [rooms, exhibits, revisions, reports] = await Promise.all([
+    const [rooms, exhibits, revisions, reports, system] = await Promise.all([
       this.roomsStats(),
       this.exhibitsStats(),
       this.revisionsStats(),
       this.reportsStats(),
+      this.systemStatus(),
     ]);
 
+    return { rooms, exhibits, revisions, reports, system };
+  }
+
+  /** Trạng thái hệ thống: API luôn up (đang phản hồi), DB check SELECT 1, uptime tiến trình. */
+  private async systemStatus(): Promise<OverviewStatsDto['system']> {
+    let db: 'up' | 'down' = 'up';
+    try {
+      await this.dataSource.query('SELECT 1');
+    } catch {
+      db = 'down';
+    }
     return {
-      rooms,
-      exhibits,
-      revisions,
-      reports,
-      system: { api: 'up', db: 'up', uptimeSec: 0, serverTime: new Date().toISOString() },
+      api: 'up',
+      db,
+      uptimeSec: Math.floor(process.uptime()),
+      serverTime: new Date().toISOString(),
     };
   }
 
