@@ -1,6 +1,8 @@
 # Museum tour — Days 1–2 of 4
 
-ACTIVE_DAY = 1. Branch: `feat/museum-scene-day1`. Base: `ca7a334` (`origin/dev`).
+ACTIVE_DAY = 2. Branch: `feat/museum-api-day2`. Base: `994c896` (`origin/dev`).
+
+Day 1 historical record: branch `feat/museum-scene-day1`, base `ca7a334`. The following Day 1 sections record the implementation and evidence at that time.
 
 ## Verified architecture and design
 
@@ -16,7 +18,7 @@ ACTIVE_DAY = 1. Branch: `feat/museum-scene-day1`. Base: `ca7a334` (`origin/dev`)
 ## Four-day roadmap
 
 1. **Day 1:** HTML/route mount, accessible shell, lightweight room, camera, lights, lazy lifecycle, fallback, browser smoke checks.
-2. **Day 2 (not implemented):** agree public room/exhibit DTOs; service + Zod validation; loading/error/empty states; replace sample view data with API data.
+2. **Day 2 (frontend implemented; populated live acceptance pending):** public room/exhibit DTOs verified; validated service, query selection and loading/error/empty handling replace production sample data.
 3. **Day 3 (not implemented):** artifact assets and interactions according to agreed scope; preserve DOM equivalents.
 4. **Day 4 (not implemented):** measured performance tuning, device QA and final polish.
 
@@ -142,8 +144,8 @@ Bounded integration into the existing tour flow. `museum.service.ts` validates r
 
 1. [x] **Validate/map public content.** Create `validations/roomSchema.ts`, `helpers/mapRoomDisplays.ts`; extend `interfaces/museumScene.ts` and existing display cylinder support. Tests `tests/room-contract.spec.ts`: envelope/payload validity, duplicate/cross-room identity, nullable descriptions/media, complete or absent transforms, finite values, exact supplied coordinates, deterministic layout/order and backend shapes. RED → implement → GREEN; commit independently verified schema/mapping units.
 2. [x] **Fetch and select rooms.** Create `services/museum.service.ts`, `hooks/useMuseumRooms.ts`; modify `MuseumPage.tsx` and `museum/MuseumCatalogue.tsx`. Consumes validated `RoomSummary/RoomDetail`, produces `MuseumDisplay[]` props. `tests/museum-api.spec.ts` first verifies API room names/exhibits, only selected detail fetched, encoded slug, refresh/error/empty/404 and runtime validation. Use the existing Axios client; `retry: false` permits explicit retry without automatic request storms. RED → implement → GREEN; split only coherent units.
-3. [ ] **Switching and lifecycle proof.** Test rapid switches with delayed responses, cancellation on switch/route exit, no stale catalogue/Canvas after invalid/failed selection, reuse of cached room requests, missing media labelling and multiple shapes. Update existing Day 1 browser tests with explicit API fixtures; keep camera/lifecycle/fallback assertions. Run production test suite after build completes.
-4. [ ] **Verify and deliver.** Run FE typecheck/lint/build and all browser tests. Inspect screenshots and full diff; one fresh-context review; record commit SHAs, evidence and live blockers; push task branch and create PR with base `dev`. Do not merge automatically.
+3. [x] **Switching and lifecycle proof.** Test rapid switches with delayed responses, cancellation on switch/route exit, no stale catalogue/Canvas after invalid/failed selection, reuse of cached room requests, missing media labelling and multiple shapes. Update existing Day 1 browser tests with explicit API fixtures; keep camera/lifecycle/fallback assertions. Run production test suite after build completes.
+4. [x] **Verify and deliver.** Run FE typecheck/lint/build and all browser tests. Inspect screenshots and full diff; one fresh-context review; record commit SHAs, evidence and live blockers; push task branch and create PR with base `dev`. Do not merge automatically.
 
 Review focus: large/out-of-shell backend positions; null media contract versus future URL payloads; cancellation transformed by the existing error interceptor; cached data after a refresh failure; changing room selection while a refresh is in progress. Required invariants take precedence over convenience.
 
@@ -169,3 +171,32 @@ Actual task results and commits will be appended after verification. Final docum
 - Live browser: `$env:MUSEUM_LIVE_TEST='1'; $env:CI='1'; npm.cmd test -- museum-live.spec.ts` → 1 passed (3.4s). Uses real localhost:3001 API with no interception; frontend on localhost:5173 matches existing BE CORS. Observed empty-list state, no sample content or start button, no API alert. This does not prove populated live rooms/exhibits. Normal fixture gates explicitly skip this external-dependency test.
 - Initial final review (`994c896..922e504`): no Critical; one Important — finite backend positions can place accepted exhibits outside the opaque fixed room, silently hiding them. Ruling: preserve supplied coordinates, mark these displays for DOM reading, omit their geometry from the bounded scene, and visibly identify affected catalogue entries. Share fixed room dimensions with shell/bounds checks; no coordinate clamp, guessed room size or new camera mode. RED mapping/UI regressions → GREEN 11 mapping/API tests; FE typecheck/lint passed.
 - Review Minor coverage: added delayed list + detail refresh followed by room switch, cancellation observation, late-response completion, retained chosen room and safe return; 1 focused test passed (3.7s). No runtime race identified. Visitor labels now use plain Vietnamese rather than implementation API/media terms.
+
+### Day 2 final evidence and delivery
+
+- **Status:** source-compatible frontend integration implemented; live empty-list integration verified. Full populated-room/exhibit live acceptance is **pending public content**, and asset integration is **blocked by null public media**. Neither limitation is concealed by sample content.
+- **Data flow:** `tour.html / /tour → MuseumPage → useMuseumRooms → museumService → shared http.raw → NestJS ExhibitsController → ExhibitsService → room table / ExhibitsRepository → APPROVED publishedRevision → success envelope → Zod identity/content validation → mapRoomDisplays → MuseumCatalogue + lazy MuseumScene`. The pre-existing backend service accesses the Room repository directly; Day 2 makes no backend architecture changes.
+- **Final gates:** FE `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build` passed. Dedicated production preview: **36 passed (25.5s), 1 intentionally skipped** external live test. Separate final live run: **1 passed (3.4s)** with no network interceptions and real API on localhost:3001. All final code tests ran after the review fix; build completed before the preview tests started.
+- **Visual proof:** desktop and 390 × 844 screenshot inspection passed for room selector, fixed gallery and catalogue; no horizontal overflow. Software Edge/SwiftShader and emulated DPR only; no physical-device/VR/screen-reader/profiling claims.
+- **Build:** both HTML entries emitted. Main 690.41 kB (212.96 kB gzip), lazy scene 846.01 kB (226.41 kB gzip); Vite large-chunk warning remains. No new dependencies. Scene remains demand-rendered with DPR cap and is not requested before explicit start.
+- **Review:** fresh-context whole-branch review found one Important bounds-notice gap, fixed with RED→GREEN regression proof. Follow-up review of `922e504..8997e67` found no remaining Critical/Important issues. Minor concurrent-refresh coverage and README corrections were completed. Future URL contracts, populated live data, Day 3–4 features and physical GPU evidence were explicitly outside review proof.
+- **Scope:** all tracked changes are frontend/tests and task documentation. Local user-provided BE/FE `.env` files remain ignored; no credentials committed. Backend was only started/read, with no migrations, seeds, database writes, auth changes or package-lock changes.
+- **Git:** [PR #28](https://github.com/ailabs26/ailabs-museum/pull/28), base `dev`, task branch `feat/museum-api-day2`. **Open, not merged** at delivery. Preserve atomic commits with **Create a merge commit** after human testing/review; no squash, rebase or force push performed. Seven coherent commits including final docs, rather than artificial splits to reach 25.
+
+```text
+077733f docs(tour): trace Day 2 public API contracts and plan
+dcb6b41 feat(tour): validate public room and exhibit responses
+f8c2298 feat(tour): map public exhibits to stable scene displays
+07f3f4a feat(tour): load and switch public rooms through validated API
+922e504 test(tour): prove API switching cancellation and scene lifecycle
+8997e67 fix(tour): identify exhibits outside the bounded 3D room
+<final documentation SHA in git log> docs(tour): record Day 2 verification and live limitations
+```
+
+### Remaining acceptance / Day 3 handoff
+
+- The configured real database currently exposes **zero active public rooms**. A database/content owner must publish approved content before real populated-room selection, exhibit placement and live detail responses can be verified. No test fixtures or seed writes were inserted into that database.
+- Public `model/image/audio` fields are always null in current backend source. Day 3 needs a reviewed public media contract and usable URLs before assets/interactions can consume them. Do not derive storage URLs from entity keys or call Supabase from the frontend.
+- Backend room dimensions/rotation/scale are not exposed. The fixed Day 1 shell and view sizes remain. Bounds checks conservatively include current sculpture/plinth extents; changing geometry requires checking those extents alongside camera/room constraints. Deterministic fallback layout is ordered by displayOrder + ID, stable for the same exhibit set.
+- No Day 3/4 implementation: no GLB, selection/hotspots, audio, guided tour, walking or WebXR. Existing scene chunk-failure/context-loss limitations from Day 1 remain; room changes reset the scene boundary.
+- Read `front-end/README.md` for fixture versus live commands; stop the previous server on the configured test port. `CI=1` prevents accidentally reusing an old preview server.
