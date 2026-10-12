@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Exhibit, ExhibitVisibility } from '../../exhibits/entities/exhibit.entity';
 import { Room, RoomStatus } from '../../rooms/entities/room.entity';
 import { OverviewStatsDto } from '../dto/overview-stats.dto';
 
@@ -12,15 +13,19 @@ import { OverviewStatsDto } from '../dto/overview-stats.dto';
 export class StatsService {
   constructor(
     @InjectRepository(Room) private readonly rooms: Repository<Room>,
+    @InjectRepository(Exhibit) private readonly exhibits: Repository<Exhibit>,
   ) {}
 
   /** Số liệu tổng quan cho các thẻ StatCard + trạng thái hệ thống. */
   async overview(): Promise<OverviewStatsDto> {
-    const rooms = await this.roomsStats();
+    const [rooms, exhibits] = await Promise.all([
+      this.roomsStats(),
+      this.exhibitsStats(),
+    ]);
 
     return {
       rooms,
-      exhibits: { total: 0, visible: 0, hidden: 0 },
+      exhibits,
       revisions: { inReview: 0, draft: 0 },
       reports: { open: 0, inProgress: 0 },
       system: { api: 'up', db: 'up', uptimeSec: 0, serverTime: new Date().toISOString() },
@@ -35,5 +40,15 @@ export class StatsService {
       this.rooms.count({ where: { isDeleted: false, status: RoomStatus.ARCHIVED } }),
     ]);
     return { total, active, archived };
+  }
+
+  /** Đếm hiện vật theo khả năng hiển thị (bỏ qua bản đã xóa mềm). */
+  private async exhibitsStats(): Promise<OverviewStatsDto['exhibits']> {
+    const [total, visible, hidden] = await Promise.all([
+      this.exhibits.count({ where: { isDeleted: false } }),
+      this.exhibits.count({ where: { isDeleted: false, visibility: ExhibitVisibility.VISIBLE } }),
+      this.exhibits.count({ where: { isDeleted: false, visibility: ExhibitVisibility.HIDDEN } }),
+    ]);
+    return { total, visible, hidden };
   }
 }
