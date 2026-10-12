@@ -13,6 +13,7 @@ import { RolesPage } from '@/pages/admin/RolesPage';
 import { PermissionMatrixPage } from '@/pages/admin/PermissionMatrixPage';
 import { AuditPage } from '@/pages/admin/AuditPage';
 import { ModerationPage } from '@/pages/admin/ModerationPage';
+import { ReportsPage } from '@/pages/admin/ReportsPage';
 import { RequirePermission } from '@/core/auth/RequirePermission';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -78,7 +79,14 @@ export function AppRouter() {
               </RequirePermission>
             }
           />
-          <Route path="reports" element={<PlaceholderPage title="Báo cáo vi phạm" pr="PR (task 23)" />} />
+          <Route
+            path="reports"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.REPORT_READ]} fallback={<NoAccess />}>
+                <ReportsPage />
+              </RequirePermission>
+            }
+          />
           <Route
             path="users"
             element={

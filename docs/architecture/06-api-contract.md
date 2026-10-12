@@ -108,6 +108,15 @@ POST   /reports/:id/resolve  | /dismiss
 - Quyền: queue `revision:publish`; đọc chi tiết/diff/lịch sử `exhibit:read`; publish/reject/hide theo `revision:publish|reject|hide`.
 - Mọi hành động ghi vết qua `@Audit` (revision.publish/reject, exhibit.hide/unhide).
 
+#### Reports (Task 23)
+
+- `GET /reports?page&pageSize&status` (`report:read`) → danh sách; `GET /reports/:id` (`report:read`) → chi tiết kèm phiên bản bị báo cáo.
+- `POST /reports/:id/assign` (`report:resolve`): open → in_progress, gán người tiếp nhận.
+- `POST /reports/:id/resolve` body `{ resolution }` (`report:resolve`): → resolved.
+- `POST /reports/:id/dismiss` body `{ resolution }` (`report:resolve`): → dismissed.
+- `POST /public/reports` **@Public** body `{ exhibitId, reportedRevisionId?, category, message }`, rate-limit 5 lần/phút.
+- Chuyển trạng thái chỉ hợp lệ khi báo cáo còn mở (open/in_progress) → sai → **409**. Ghi vết `@Audit` report.assign/resolve/dismiss.
+
 ### Public (client — chỉ đọc nội dung published)
 ```
 GET    /public/rooms/:slug                # phòng + danh sách hiện vật published
