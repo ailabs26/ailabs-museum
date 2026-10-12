@@ -43,6 +43,7 @@ export function DashboardPage() {
   const reportsByStatus = c?.reportsByStatus ?? [];
   const exhibitsByRoom = c?.exhibitsByRoom ?? [];
   const revisionsByState = c?.revisionsByState ?? [];
+  const activity = c?.activityLast14Days ?? [];
   const ramp = categorical(scheme);
 
   return (
@@ -134,6 +135,27 @@ export function DashboardPage() {
             dataLabels: { enabled: true },
             xaxis: { categories: revisionsByState.map((r) => REVISION_STATE_VI[r.label] ?? r.label) },
             legend: { show: false },
+          }}
+        />
+
+        <ChartCard
+          title="Hoạt động 14 ngày"
+          description="Revision tạo mới và báo cáo gửi về mỗi ngày"
+          type="line"
+          loading={chartsLoading}
+          empty={activity.every((a) => a.revisions === 0 && a.reports === 0)}
+          series={[
+            { name: 'Revision', type: 'column', data: activity.map((a) => a.revisions) },
+            { name: 'Báo cáo', type: 'line', data: activity.map((a) => a.reports) },
+          ]}
+          options={{
+            colors: [ramp[0], ramp[1]],
+            stroke: { width: [0, 3], curve: 'smooth', lineCap: 'round' },
+            plotOptions: { bar: { columnWidth: '55%', borderRadius: 3, borderRadiusApplication: 'end' } },
+            markers: { size: [0, 4] },
+            xaxis: { categories: activity.map((a) => a.date.slice(5).replace('-', '/')) },
+            yaxis: { labels: { formatter: (v: number) => `${Math.round(v)}` } },
+            legend: { position: 'bottom' },
           }}
         />
       </SimpleGrid>
