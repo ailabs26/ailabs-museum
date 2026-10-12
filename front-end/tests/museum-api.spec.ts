@@ -7,7 +7,7 @@ test('loads only selected public room, renders API exhibits and switches without
   await page.goto('/tour.html');
   await expect(page.getByLabel('Chọn phòng trưng bày')).toBeVisible();
   await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);
-  await expect(page.getByText('Nội dung từ API bảo tàng', { exact: true })).toBeVisible();
+  await expect(page.getByText('Nội dung bảo tàng đã xuất bản', { exact: true })).toBeVisible();
   expect(requests.filter((path) => path !== '/api/rooms')).toEqual(['/api/rooms/sculpture']);
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.locator('canvas')).toBeVisible();
@@ -42,7 +42,7 @@ test('empty selected room keeps the room shell available and labels missing medi
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.locator('canvas')).toBeVisible();
   await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
-  await expect(page.getByText('Chưa có model hoặc ảnh từ API; đang hiển thị hình khối thay thế.', { exact: true })).toBeVisible();
+  await expect(page.getByText('Chưa có ảnh hoặc mô hình 3D; đang hiển thị hình khối thay thế.', { exact: true })).toBeVisible();
 });
 
 test('list error exposes manual retry and never substitutes sample content', async ({ page }) => {
@@ -87,4 +87,17 @@ test('invalid API payload or wrong room identity fails before scene rendering', 
     await expect(page.getByRole('button', { name: 'Mở phòng 3D' })).toHaveCount(0);
     await expect(page.getByRole('listitem')).toHaveCount(0);
   }
+});
+
+test('out-of-room exhibits stay readable and explicitly identify unavailable 3D placement', async ({ page }) => {
+  await installMuseumApi(page);
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({
+    ...roomA, exhibits: [{ ...roomA.exhibits[0], name: 'Hiện vật ngoài phòng', positionX: 20 }],
+  })));
+  await page.goto('/tour');
+  await expect(page.getByText('Hiện vật này nằm ngoài phạm vi phòng 3D. Bạn có thể đọc thông tin tại đây.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Hiện vật ngoài phòng' })).toBeVisible();
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
 });

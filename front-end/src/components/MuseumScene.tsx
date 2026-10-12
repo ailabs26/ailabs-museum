@@ -31,7 +31,7 @@ export function MuseumScene({ displays }: { displays: readonly MuseumDisplay[] }
       <SceneLifecycle onContextLost={handleContextLost} />
       <MuseumControls command={command} />
       <MuseumRoom />
-      {displays.map((display) => <ExhibitionDisplay key={display.id} display={display} />)}
+      {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} />)}
     </Canvas>
     <Group pos="absolute" bottom={16} left={16} right={16} gap="xs" aria-label="Điều khiển góc nhìn">
       <Button variant="default" onClick={() => handleCommand('reset')}>Góc nhìn ban đầu</Button>

@@ -6,7 +6,7 @@ import { exhibit, roomA } from './fixtures/museumContent';
 test('display mapping preserves backend identity, coordinates, colors and every supported shape', () => {
   const displays = mapRoomDisplays(roomDetailSchema.parse(roomA));
   expect(displays.map((item) => item.shape)).toEqual(['torus', 'sphere', 'cube', 'cone', 'cylinder']);
-  expect(displays[0]).toEqual({ id: '10000000-0000-4000-8000-000000000001', title: 'Hiện vật 1', description: 'Mô tả hiện vật 1', position: [0, 0, 0], shape: 'torus', color: '#8b7355' });
+  expect(displays[0]).toEqual({ id: '10000000-0000-4000-8000-000000000001', title: 'Hiện vật 1', description: 'Mô tả hiện vật 1', position: [0, 0, 0], shape: 'torus', color: '#8b7355', isOutsideRoom: false });
   expect(displays[1].position).toEqual([-5.3, 0, -5.1]);
   const offset = mapRoomDisplays(roomDetailSchema.parse({ ...roomA, exhibits: [{ ...exhibit(), positionX: 2, positionY: 3, positionZ: -4 }] }));
   expect(offset[0].position).toEqual([2, 3, -4]);
@@ -27,4 +27,18 @@ test('equal display order uses identity to keep layout stable', () => {
   expect(mapRoomDisplays(roomDetailSchema.parse({ ...roomA, exhibits: items })).map((item) => item.id)).toEqual([
     '10000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002',
   ]);
+});
+
+test('outside-room displays retain supplied coordinates and are explicitly marked for DOM reading', () => {
+  const items = [
+    { ...exhibit(1), positionX: 20 },
+    { ...exhibit(2), positionY: 3 },
+    { ...exhibit(3), positionY: -1 },
+    { ...exhibit(4), positionZ: -20 },
+    { ...exhibit(5), positionX: 0, positionY: 0, positionZ: 0 },
+  ];
+  const displays = mapRoomDisplays(roomDetailSchema.parse({ ...roomA, exhibits: items }));
+  expect(displays.map((item) => item.isOutsideRoom)).toEqual([true, true, true, true, false]);
+  expect(displays[0].position).toEqual([20, 0, 0]);
+  expect(displays[1].position).toEqual([0, 3, 0]);
 });

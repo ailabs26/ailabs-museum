@@ -108,3 +108,47 @@ test('room slugs are URL-encoded and never become query or path instructions', a
   await expect(page.getByRole('heading', { name: 'Bình gốm' })).toBeVisible();
   expect(requestedPath).toBe('/api/rooms/g%E1%BB%91m%20%2F%2001%3Fname%3Dtest');
 });
+
+test('switching during refresh cancels old detail and keeps the chosen room through list completion', async ({ page }) => {
+  await installMuseumApi(page);
+  await page.goto('/tour');
+  await expect(page.getByRole('heading', { name: 'Hiện vật 1', exact: true })).toBeVisible();
+  let releaseList!: () => void;
+  const delayedList = new Promise<void>((resolve) => { releaseList = resolve; });
+  let releaseDetail!: () => void;
+  const delayedDetail = new Promise<void>((resolve) => { releaseDetail = resolve; });
+  let listStarted = false;
+  let detailStarted = false;
+  let listFinished = false;
+  let detailFinished = false;
+  let wasCancelled = false;
+  page.on('requestfailed', (request) => {
+    if (new URL(request.url()).pathname === '/api/rooms/sculpture') wasCancelled = true;
+  });
+  await page.route('**/api/rooms', async (route) => {
+    listStarted = true;
+    await delayedList;
+    await fulfillMuseum(route, envelope(roomSummaries));
+    listFinished = true;
+  });
+  await page.route('**/api/rooms/sculpture', async (route) => {
+    detailStarted = true;
+    await delayedDetail;
+    await fulfillMuseum(route, envelope({ ...roomA, name: 'Phòng sau cập nhật' }));
+    detailFinished = true;
+  });
+  await page.getByRole('button', { name: 'Làm mới' }).click();
+  await expect.poll(() => listStarted && detailStarted).toBe(true);
+  await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
+  await expect.poll(() => wasCancelled).toBe(true);
+  await expect(page.getByRole('heading', { name: 'Bình gốm' })).toBeVisible();
+  releaseDetail();
+  releaseList();
+  await expect.poll(() => listFinished && detailFinished).toBe(true);
+  await expect(page.getByLabel('Chọn phòng trưng bày')).toHaveValue('ceramics');
+  await expect(page.getByRole('heading', { name: 'Bình gốm' })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await page.getByLabel('Chọn phòng trưng bày').selectOption('sculpture');
+  await expect(page.getByRole('heading', { name: 'Phòng sau cập nhật', exact: true })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});

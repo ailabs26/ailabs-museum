@@ -33,7 +33,7 @@ export function MuseumPage() {
       <Stack>
         <Text size="xs" tt="uppercase" c="dimmed" fw={700}>Aura / Tham quan bảo tàng</Text>
         <Title order={1}>{detail?.name ?? 'Tham quan bảo tàng'}</Title>
-        <Text>Nội dung từ API bảo tàng</Text>
+        <Text>Nội dung bảo tàng đã xuất bản</Text>
         <Group justify="space-between">
           {rooms.data && rooms.data.length > 0 && (
             <NativeSelect label="Chọn phòng trưng bày" value={selectedSlug ?? ''} onChange={(event) => handleSelectRoom(event.currentTarget.value)}
@@ -57,7 +57,7 @@ export function MuseumPage() {
           </Alert> : null}
         {detail && <>
         {detail.description && <Text>{detail.description}</Text>}
-        <Text size="sm" c="dimmed">{displays.length} hiện vật · Hình khối thay thế cho media chưa khả dụng</Text>
+        <Text size="sm" c="dimmed">{displays.length} hiện vật · Hình khối thay thế cho ảnh hoặc mô hình chưa khả dụng</Text>
         {room.isFetching && <Text role="status">Đang cập nhật phòng…</Text>}
         <div className={classes.viewport}>
           {isSceneOpen ? (
