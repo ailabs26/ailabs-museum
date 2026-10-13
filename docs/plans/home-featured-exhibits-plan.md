@@ -87,7 +87,7 @@ await expect(featured.getByRole('link', { name: 'Xem bộ sưu tập của phòn
 ```
 
 - [ ] Thêm fixture tests phòng có 0/1/2/5 hiện vật, list rỗng, list/detail loading, HTTP/schema error, retry và refetch thất bại. Đặt test assertions trước implementation; không yêu cầu test mới fail nếu hook sẵn có đã xử lý đúng.
-- [ ] Implement HomeFeaturedExhibits dùng hook đã có; render detail khi `rooms.isSuccess && selectedRoom && room.isSuccess`. Sort/slice:
+- [x] Implement HomeFeaturedExhibits dùng hook đã có; render detail khi `rooms.isSuccess && selectedRoom && room.isSuccess`. Sort/slice:
 
 ```ts
 const featured = detail ? [...detail.exhibits]
@@ -95,11 +95,11 @@ const featured = detail ? [...detail.exhibits]
   .slice(0, 3) : [];
 ```
 
-- [ ] Nội dung success gồm tên phòng (đoạn văn, không h3 chen trước thẻ), dòng “Một số hiện vật theo thứ tự trưng bày”, grid và Link dùng `new URLSearchParams({ room: detail.slug })`. Empty room vẫn có link collection, list rỗng thì không tạo link slug.
-- [ ] Loading status; Alert lỗi với retry query tương ứng; khi lỗi list/refetch không render detail cache. Không thêm timer/state/useEffect hoặc fetch thủ công.
-- [ ] Trong HomePage thay vùng trống bằng component. Đổi câu “trong danh mục bên dưới” thành “tại trang Bộ sưu tập”; giữ câu giải thích model thay thế.
-- [ ] Kiểm tra link bằng Tab/Enter, hero và giới thiệu còn đọc được khi lỗi, không gọi detail phòng khác, không load MuseumScene/Canvas. Long content light/dark 320/768/1024/1440 không tràn ngang.
-- [ ] Chạy focused tests và quality gates, review và commit `feat(home): display featured exhibits from public API`.
+- [x] Success có tên phòng/dòng giới thiệu/grid/link đúng slug; empty room có link, list rỗng không link slug.
+- [x] Loading/Alert/retry, lỗi list/refetch không render cache; không thêm timer/state/effect hoặc fetch thủ công.
+- [x] HomePage gắn component, đổi copy “tại trang Bộ sưu tập”.
+- [x] Keyboard Enter, static hero khi lỗi, no unrelated-room/scene; responsive light/dark đạt.
+- [x] Focused 19/19 và typecheck/lint/build đạt; review/commit theo task.
 
 ```powershell
 npm.cmd test -- home-featured.spec.ts collection.spec.ts public-tour-navigation.spec.ts

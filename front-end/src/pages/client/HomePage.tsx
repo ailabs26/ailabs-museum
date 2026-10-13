@@ -1,6 +1,7 @@
 import { Button, Container, Title } from '@mantine/core';
 import { IconArrowRight } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
+import { HomeFeaturedExhibits } from './HomeFeaturedExhibits';
 import classes from './HomePage.module.css';
 
 export function HomePage() {
@@ -37,8 +38,8 @@ export function HomePage() {
         <div className={classes.aboutContent}>
           <p>Aura Museum được xây dựng với mong muốn đưa không gian bảo tàng đến gần hơn với mọi người.
             Nghệ thuật và di sản mở ra những cuộc đối thoại — về quá khứ, về sáng tạo và về cách chúng ta nhìn thế giới.</p>
-          <p>Khám phá phòng trưng bày trong không gian 3D hoặc đọc thông tin hiện vật
-            trong danh mục bên dưới. Với hiện vật chưa có mô hình, phòng sử dụng hình khối thay thế.</p>
+          <p>Khám phá phòng trưng bày trong không gian 3D hoặc đọc câu chuyện của từng hiện vật
+            tại trang Bộ sưu tập. Với hiện vật chưa có mô hình, phòng sử dụng hình khối thay thế.</p>
           <Link to="/collection" className={classes.textLink}>Tìm hiểu bộ sưu tập <IconArrowRight size={18} aria-hidden="true" /></Link>
         </div>
       </section>
@@ -46,8 +47,7 @@ export function HomePage() {
       <section className={classes.featured} aria-labelledby="featured-title">
         <p className={classes.eyebrow}>Từ bộ sưu tập</p>
         <Title order={2} id="featured-title" className={classes.sectionTitle}>Hiện vật nổi bật</Title>
-        {/* Vùng hiện vật để trống theo phạm vi lượt đầu; sẽ bổ sung từ API. */}
-        <div className={classes.featuredSpace} aria-hidden="true" />
+        <HomeFeaturedExhibits />
       </section>
     </Container>
   );

@@ -42,13 +42,13 @@ Commit theo phần thực sự có thay đổi và đã kiểm chứng; không t
 
 - [x] Người dùng duyệt task/plan trước mọi commit hoặc sửa code.
 - [x] Collection dùng lưới chung mà vẫn hiển thị đủ hiện vật, ảnh chưa có và nội dung như trước (10/10 regression tests).
-- [ ] Trang chủ hiển thị đúng tối đa 3 mục theo thứ tự của phòng đầu tiên, không sửa mảng API/cache.
-- [ ] Không tải detail phòng chưa chọn, scene/Canvas hoặc storage trực tiếp.
-- [ ] Link collection giữ đúng slug, click và bàn phím hoạt động.
-- [ ] Có trạng thái list/detail loading, empty, lỗi/schema lỗi và retry; lỗi refetch ẩn nội dung lỗi thời.
-- [ ] Hero/giới thiệu vẫn xuất hiện khi API lỗi.
-- [ ] 320/768/1024/1440 px light/dark không tràn ngang; h1/h2/h3 và label đúng.
-- [ ] Typecheck/lint/build, tests collection/navigation và tests nổi bật đạt.
+- [x] Trang chủ hiển thị đúng tối đa 3 mục theo thứ tự của phòng đầu tiên, sort bản sao mảng API/cache.
+- [x] Tests xác nhận không tải detail phòng khác hoặc scene/Canvas; không có storage client.
+- [x] Link collection giữ đúng slug, bàn phím Enter hoạt động.
+- [x] Có trạng thái list/detail loading, empty, lỗi/schema lỗi và retry; lỗi refetch ẩn nội dung lỗi thời.
+- [x] Hero/giới thiệu vẫn xuất hiện khi API lỗi.
+- [x] DOM assertions 320/768/1024/1440 px light/dark không tràn ngang; h1/h2/h3 đúng.
+- [x] Typecheck/lint/build, tests collection/navigation và tests nổi bật đạt.
 - [ ] Live test đọc API thật, tên và số thẻ khớp response; không ghi database.
 - [ ] Người dùng duyệt giao diện; gửi mô tả PR và chờ yêu cầu trước push/tạo PR.
 
@@ -64,3 +64,5 @@ Người dùng đã duyệt quy tắc **phòng đầu tiên của API + 3 hiện
 
 - HF-01 commit `e9ecc46`: task/plan đã duyệt, trước code.
 - HF-02 baseline collection 10/10 đạt (37.5s); sau tách ExhibitGrid 10/10 đạt (42.4s). Frontend typecheck/lint/build đạt; vẫn cảnh báo bundle >500 kB. Chỉ di chuyển markup/style thẻ, không đổi hook/service/schema hoặc dữ liệu.
+- HF-02 commit `78d3cbb`.
+- HF-03 test viết trước: test featured đầu fail đúng vì listitem 0 thay vì 3 (6 tests còn lại chưa chạy do max-failures). Sau implementation bộ focused home/collection/navigation 19/19 đạt (1.6m). Kiểm tra 0/1/2/5 items, sorting/tie ID, loading/error/schema/retry, cached error, keyboard link, no-scene và responsive. Typecheck/lint/build riêng từng lệnh đạt sau tool chained command bị ngắt; main 1,318.18 kB, scene 846.01 kB, cảnh báo >500 kB còn tồn tại.

@@ -14,7 +14,10 @@
 .aboutContent p { color: var(--public-muted); font-size: 16px; line-height: 1.8; margin: 0 0 20px; }
 .textLink { display: inline-flex; align-items: center; gap: 12px; padding-block: 12px; font-weight: 600; font-size: 14px; }
 .featured { padding-block: 48px 32px; border-top: 1px solid var(--public-border); }
-.featuredSpace { min-height: 96px; }
+.featuredContent { margin-top: 24px; }
+.featuredRoom { color: var(--public-ink); font-weight: 600; margin: 0 0 8px; overflow-wrap: anywhere; }
+.featuredDescription { color: var(--public-muted); font-size: 14px; margin: 0 0 24px; }
+.featuredContent > a { margin-top: 16px; }
 
 @media (max-width: 62em) {
   .hero { gap: 32px; }
