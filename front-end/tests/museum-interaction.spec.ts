@@ -52,3 +52,18 @@ test('room changes and failed refresh remove selected details', async ({ page })
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);
 });
+
+test('real scene picking selects the plinth and hover gives pointer feedback', async ({ page }) => {
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const canvas = page.getByLabel('Phòng trưng bày 3D');
+  await expect(canvas).toBeVisible();
+  const box = (await canvas.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.64);
+  await expect(canvas).toHaveCSS('cursor', 'pointer');
+  await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.64);
+  await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText('Hiện vật 1');
+  await expect(page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Đóng chi tiết hiện vật' }).click();
+  await expect(canvas).toBeFocused();
+});

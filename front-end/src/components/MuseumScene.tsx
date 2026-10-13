@@ -10,7 +10,9 @@ import { MuseumControls, type CameraAction, type CameraCommand } from '@/compone
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { SceneLifecycle } from '@/components/museum/SceneLifecycle';
 
-export function MuseumScene({ displays }: { displays: readonly MuseumDisplay[] }) {
+export function MuseumScene({ displays, selectedId, onSelect }: {
+  displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void;
+}) {
   const [command, setCommand] = useState<CameraCommand | null>(null);
   const [isContextLost, setIsContextLost] = useState(false);
   const handleContextLost = useCallback(() => setIsContextLost(true), []);
@@ -31,7 +33,7 @@ export function MuseumScene({ displays }: { displays: readonly MuseumDisplay[] }
       <SceneLifecycle onContextLost={handleContextLost} />
       <MuseumControls command={command} />
       <MuseumRoom />
-      {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} />)}
+      {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={onSelect} />)}
     </Canvas>
     <Group pos="absolute" bottom={16} left={16} right={16} gap="xs" aria-label="Điều khiển góc nhìn">
       <Button variant="default" onClick={() => handleCommand('reset')}>Góc nhìn ban đầu</Button>

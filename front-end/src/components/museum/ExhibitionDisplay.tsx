@@ -1,10 +1,24 @@
 import type { MuseumDisplay } from '@/interfaces/museumScene';
+import { useEffect, useState } from 'react';
+import { useThree } from '@react-three/fiber';
 
-export function ExhibitionDisplay({ display }: { display: MuseumDisplay }) {
+export function ExhibitionDisplay({ display, isSelected, onSelect }: {
+  display: MuseumDisplay; isSelected: boolean; onSelect: (id: string) => void;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const canvas = useThree((state) => state.gl.domElement);
+  useEffect(() => {
+    if (!isHovered) return;
+    canvas.style.cursor = 'pointer';
+    return () => { canvas.style.cursor = ''; };
+  }, [canvas, isHovered]);
   const isCenterpiece = display.shape === 'torus';
   const isRoundPlinth = isCenterpiece || display.shape === 'sphere' || display.shape === 'cylinder';
   return (
-    <group position={display.position}>
+    <group position={display.position}
+      onPointerOver={(event) => { event.stopPropagation(); setIsHovered(true); }}
+      onPointerOut={() => setIsHovered(false)}
+      onClick={(event) => { if (event.delta > 5) return; event.stopPropagation(); onSelect(display.id); }}>
       {/* A flat contact patch anchors the plinth without dynamic shadows. */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.007, 0]}>
         <circleGeometry args={[isCenterpiece ? 1.3 : 0.84, 32]} />
@@ -12,7 +26,7 @@ export function ExhibitionDisplay({ display }: { display: MuseumDisplay }) {
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.009, 0]}>
         <ringGeometry args={[isCenterpiece ? 1.3 : 0.84, isCenterpiece ? 1.5 : 0.95, 32]} />
-        <meshBasicMaterial color="#fff3d6" transparent opacity={0.22} depthWrite={false} />
+        <meshBasicMaterial color={isSelected ? '#25645c' : isHovered ? '#b69761' : '#fff3d6'} transparent opacity={isSelected ? 0.9 : isHovered ? 0.7 : 0.22} depthWrite={false} />
       </mesh>
       <mesh position={[0, 0.04, 0]}>
         {isRoundPlinth ? <cylinderGeometry args={[isCenterpiece ? 1.22 : 0.76, isCenterpiece ? 1.22 : 0.76, 0.08, 32]} /> : <boxGeometry args={[1.15, 0.08, 1.15]} />}
@@ -33,7 +47,8 @@ export function ExhibitionDisplay({ display }: { display: MuseumDisplay }) {
         {display.shape === 'cone' && <coneGeometry args={[0.52, 1.2, 24]} />}
         {display.shape === 'cylinder' && <cylinderGeometry args={[0.45, 0.45, 1.1, 24]} />}
         {display.shape === 'icosahedron' && <icosahedronGeometry args={[0.64, 0]} />}
-        <meshStandardMaterial color={display.color} roughness={isCenterpiece ? 0.44 : display.shape === 'cylinder' ? 0.55 : 0.7} metalness={isCenterpiece ? 0.48 : 0.06} />
+        <meshStandardMaterial color={display.color} roughness={isCenterpiece ? 0.44 : display.shape === 'cylinder' ? 0.55 : 0.7} metalness={isCenterpiece ? 0.48 : 0.06}
+          emissive={isSelected ? '#25645c' : '#b69761'} emissiveIntensity={isSelected ? 0.15 : isHovered ? 0.12 : 0} />
       </mesh>
     </group>
   );
