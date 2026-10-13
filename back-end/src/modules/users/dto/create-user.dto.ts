@@ -2,14 +2,16 @@ import {
   ArrayUnique,
   IsArray,
   IsEmail,
-  IsOptional,
   IsString,
   IsUUID,
   MaxLength,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateUserDto {
+  @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value)
   @IsEmail({}, { message: 'Email không hợp lệ' })
   email!: string;
 
@@ -21,10 +23,11 @@ export class CreateUserDto {
   @IsString()
   @MinLength(1)
   @MaxLength(160)
+  @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value)
   displayName!: string;
 
   /** Danh sách roleId gán khi tạo (tùy chọn). */
-  @IsOptional()
+  @ValidateIf((_object, value) => value !== undefined)
   @IsArray()
   @ArrayUnique()
   @IsUUID('4', { each: true })

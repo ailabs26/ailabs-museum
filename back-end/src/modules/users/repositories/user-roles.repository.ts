@@ -15,11 +15,18 @@ export class UserRolesRepository {
   ) {}
 
   /** Lọc ra các roleId không tồn tại (để báo lỗi 422). */
-  async findMissingRoleIds(roleIds: string[]): Promise<string[]> {
+  async findMissingRoleIds(roleIds: string[], manager?: EntityManager): Promise<string[]> {
     if (roleIds.length === 0) return [];
-    const found = await this.roles.find({ where: { id: In(roleIds) } });
+    const repository = manager ? manager.getRepository(Role) : this.roles;
+    const found = await repository.find({ where: { id: In(roleIds) } });
     const foundIds = new Set(found.map((role) => role.id));
     return roleIds.filter((id) => !foundIds.has(id));
+  }
+
+  async findCodes(roleIds: string[], manager: EntityManager): Promise<string[]> {
+    if (roleIds.length === 0) return [];
+    const roles = await manager.getRepository(Role).find({ where: { id: In(roleIds) } });
+    return roles.map((role) => role.code);
   }
 
   assign(userId: string, roleId: string, manager?: EntityManager): Promise<UserRole> {
@@ -29,12 +36,24 @@ export class UserRolesRepository {
 
   async assignMany(userId: string, roleIds: string[], manager: EntityManager): Promise<void> {
     const repo = manager.getRepository(UserRole);
-    const rows = roleIds.map((roleId) => repo.create({ userId, roleId }));
+    const current = await repo.find({ where: { userId } });
+    const assignedIds = new Set(current.map((row) => row.roleId));
+    const rows = roleIds.filter((roleId) => !assignedIds.has(roleId))
+      .map((roleId) => repo.create({ userId, roleId }));
     if (rows.length > 0) await repo.save(rows);
   }
 
-  async remove(userId: string, roleId: string): Promise<void> {
-    await this.userRoles.delete({ userId, roleId });
+  async replace(userId: string, roleIds: string[], manager: EntityManager): Promise<void> {
+    const repo = manager.getRepository(UserRole);
+    const current = await repo.find({ where: { userId } });
+    const next = new Set(roleIds);
+    const removedIds = current.filter((row) => !next.has(row.roleId)).map((row) => row.roleId);
+    if (removedIds.length > 0) await repo.delete({ userId, roleId: In(removedIds) });
+    await this.assignMany(userId, roleIds, manager);
+  }
+
+  async remove(userId: string, roleId: string, manager: EntityManager): Promise<void> {
+    await manager.getRepository(UserRole).delete({ userId, roleId });
   }
 
   async has(userId: string, roleId: string): Promise<boolean> {

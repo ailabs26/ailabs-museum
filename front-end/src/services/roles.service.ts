@@ -1,4 +1,6 @@
 import { http } from '@/core/api/http-client';
+import { z } from 'zod';
+import { ApiException } from '@/core/api/api-error';
 
 export interface RoleRow {
   id: string;
@@ -18,9 +20,22 @@ export interface CreateRoleInput {
   name: string;
 }
 
+const roleListResponseSchema = z.object({
+  success: z.literal(true),
+  data: z.array(z.object({
+    id: z.string().uuid(),
+    code: z.string().min(1),
+    name: z.string(),
+    permissions: z.array(z.string()),
+  })),
+});
+
 export const rolesService = {
-  list(): Promise<RoleRow[]> {
-    return http.get<RoleRow[]>('/roles');
+  async list(): Promise<RoleRow[]> {
+    const response = await http.raw.get<unknown>('/roles');
+    const result = roleListResponseSchema.safeParse(response.data);
+    if (!result.success) throw new ApiException('Danh sách vai trò từ máy chủ không hợp lệ', 502);
+    return result.data.data;
   },
   create(input: CreateRoleInput): Promise<RoleRow> {
     return http.post<RoleRow>('/roles', input);

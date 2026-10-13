@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, EntityManager, Repository } from 'typeorm';
+import { Brackets, EntityManager, QueryFailedError, Repository } from 'typeorm';
+import { RoleKey } from '../../../common/enums/role.enum';
 import { Paginated } from '../../../common/types/paginated.type';
 import { BaseRepository } from '../../../common/repository/base.repository';
 import { User, UserStatus } from '../entities/user.entity';
@@ -47,15 +48,50 @@ export class UsersRepository extends BaseRepository<User> {
   }
 
   /** Nạp user kèm role (cho response), không nạp permission. */
-  findDetail(id: string): Promise<User | null> {
-    return this.repo.findOne({
+  findDetail(id: string, manager?: EntityManager): Promise<User | null> {
+    return this.scoped(manager).findOne({
       where: { id, isDeleted: false },
       relations: ['userRoles', 'userRoles.role'],
     });
   }
 
   existsByEmail(email: string): Promise<boolean> {
-    return this.exists({ email, isDeleted: false });
+    // Email unique toàn bảng, gồm cả tài khoản đã xóa mềm.
+    return this.exists({ email });
+  }
+
+  async saveNew(user: User, manager: EntityManager): Promise<User> {
+    try {
+      return await this.scoped(manager).save(user);
+    } catch (error: unknown) {
+      if (error instanceof QueryFailedError) {
+        const driverError = error.driverError as { code?: string; constraint?: string };
+        const emailConstraint = this.repo.metadata.uniques.find((unique) =>
+          unique.columns.length === 1 && unique.columns[0].propertyName === 'email');
+        if (driverError.code === '23505' && driverError.constraint === emailConstraint?.name) {
+          throw new ConflictException('Email đã được sử dụng, kể cả tài khoản đã xóa');
+        }
+      }
+      throw error;
+    }
+  }
+
+  /** Tuần tự hóa các thay đổi tài khoản/Role để bảo vệ Admin cuối cùng. */
+  async lockManagement(manager: EntityManager): Promise<void> {
+    await manager.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
+      'aura:admin-user-management',
+    ]);
+  }
+
+  countActiveAdmins(manager: EntityManager): Promise<number> {
+    return this.scoped(manager)
+      .createQueryBuilder('user')
+      .innerJoin('user.userRoles', 'userRole')
+      .innerJoin('userRole.role', 'role')
+      .where('user.isDeleted = false')
+      .andWhere('user.status = :status', { status: UserStatus.ACTIVE })
+      .andWhere('role.code = :code', { code: RoleKey.ADMIN })
+      .getCount();
   }
 
   /** Danh sách user có lọc theo từ khóa + trạng thái, phân trang, kèm role. */
