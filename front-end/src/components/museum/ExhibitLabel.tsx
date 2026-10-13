@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { CanvasTexture, SRGBColorSpace } from 'three';
+import { EXHIBIT_LABEL_SIZE } from '@/interfaces/museumScene';
 
 /** System-font plaque: no font download, DOM overlay or external texture. */
 export function ExhibitLabel({ title, isSelected, isCenterpiece }: { title: string; isSelected: boolean; isCenterpiece: boolean }) {
@@ -29,7 +30,7 @@ export function ExhibitLabel({ title, isSelected, isCenterpiece }: { title: stri
     return label;
   }, [title, isSelected]);
   useEffect(() => () => texture.dispose(), [texture]);
-  return <sprite position={[0, 0.78, isCenterpiece ? 1.24 : 0.75]} scale={[1.25, 0.3125, 1]}>
+  return <sprite position={[0, 0.78, isCenterpiece ? EXHIBIT_LABEL_SIZE.centerpieceDepth : EXHIBIT_LABEL_SIZE.depth]} scale={[EXHIBIT_LABEL_SIZE.width, EXHIBIT_LABEL_SIZE.height, 1]}>
     <spriteMaterial map={texture} toneMapped={false} />
   </sprite>;
 }

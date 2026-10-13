@@ -53,3 +53,17 @@ test('outside-room displays retain supplied coordinates and are explicitly marke
   expect(displays[0].position).toEqual([20, 0, 0]);
   expect(displays[1].position).toEqual([0, 3, 0]);
 });
+
+test('a rotating plaque near the front wall is covered by placement bounds', () => {
+  const items = [
+    { ...exhibit(1), placeholderShape: 'sphere', positionZ: 6.7 },
+    { ...exhibit(2), placeholderShape: 'sphere', positionZ: 6.5 },
+    { ...exhibit(3), placeholderShape: 'sphere', positionZ: -7 },
+    { ...exhibit(4), placeholderShape: 'torus', positionZ: 6.4 },
+    { ...exhibit(5), placeholderShape: 'torus', positionZ: 6 },
+    { ...exhibit(6), placeholderShape: 'torus', positionZ: -6.4 },
+  ];
+  const displays = mapRoomDisplays(roomDetailSchema.parse({ ...roomA, exhibits: items }));
+  expect(displays.map((item) => item.isOutsideRoom)).toEqual([true, false, false, true, false, false]);
+  expect(displays.map((item) => item.position[2])).toEqual([6.7, 6.5, -7, 6.4, 6, -6.4]);
+});
