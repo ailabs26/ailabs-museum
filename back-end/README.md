@@ -39,6 +39,29 @@ npm run dev              # chạy watch mode (tương đương npm run start)
 - Bản production: `npm run build` rồi `npm run start:prod`.
 - Lùi migration cuối: `npm run migration:revert`.
 
+### Seed nội dung demo vào phòng hiện có
+
+```sh
+npm run test:seed
+npm run seed:demo
+```
+
+`seed:demo` ghi vào PostgreSQL được chỉ định bởi `DATABASE_URL` (kể cả Supabase),
+thêm 5 hiện vật `[Mẫu]` cùng revision approved/public vào phòng có slug
+`phong-lich-su-quan-su-viet-nam`. Phòng phải active/chưa xóa; tài khoản
+`SEED_ADMIN_EMAIL` phải tồn tại, active/chưa xóa và có role admin. Không cần
+`SEED_ADMIN_PASSWORD`, không tự tạo phòng/admin hoặc chạy migration.
+
+Seed chạy trong transaction, khóa phòng và dùng ID cố định. Chạy lại bỏ qua bộ
+exhibit/revision đã có, giữ cả nội dung đã sửa và trạng thái ẩn/xóa mềm; ID thuộc
+phòng khác hoặc bộ đôi không nhất quán gây lỗi và rollback. Không sửa quyền,
+metadata phòng hoặc dữ liệu ngoài bộ demo. Lệnh không tự xóa demo.
+
+Kiểm tra `GET /api/rooms/phong-lich-su-quan-su-viet-nam` sau seed. Ảnh/model/audio
+vẫn null, hotspot rỗng; hình khối là placeholder. Đây là dữ liệu phát triển,
+không thay thế hồ sơ và asset nghiệm thu đã được thẩm định. Không chạy lại seed
+quản trị chỉ để thêm nội dung. Task/design/plan tại `../docs/tasks/demo-content-seed.md`.
+
 ## 3. API
 
 - **Tiền tố toàn cục `/api`.** Swagger UI: `http://localhost:3001/api/docs` (có ô nhập Bearer token).
