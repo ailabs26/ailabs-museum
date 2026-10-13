@@ -4,7 +4,6 @@
 .title { font-family: 'Times New Roman', serif; font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 400; line-height: 1.12; letter-spacing: -0.04em; }
 .introduction { max-width: 440px; color: var(--public-muted); font-size: 17px; line-height: 1.8; margin-block: 24px 32px; }
 .heroNote { color: var(--public-ink); font-size: 13px; margin-top: 24px; }
-.heroNote span { color: var(--public-muted); }
 .heroVisual { position: relative; min-height: 440px; background: var(--public-surface); overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .arch { width: 60%; height: 320px; border-radius: 160px 160px 0 0; background: #d5c6aa; padding: 32px 28px 0; border: 1px solid #c7b898; box-shadow: 16px 12px 0 #c5b899; }
 .innerArch { height: 100%; border-radius: 140px 140px 0 0; background: #24534d; border: 16px solid #b7a484; border-bottom: 0; }

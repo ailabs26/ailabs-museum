@@ -20,7 +20,7 @@ export function HomePage() {
             rightSection={<IconArrowRight size={20} aria-hidden="true" />}>
             Khám phá bộ sưu tập
           </Button>
-          <p className={classes.heroNote}>Tham quan 3D <span>· Sắp ra mắt</span></p>
+          <p className={classes.heroNote}><Link to="/tour" className={classes.textLink}>Tham quan 3D <IconArrowRight size={18} aria-hidden="true" /></Link></p>
         </div>
         <div className={classes.heroVisual} aria-hidden="true">
           <div className={classes.arch}><div className={classes.innerArch} /></div>
@@ -37,8 +37,8 @@ export function HomePage() {
         <div className={classes.aboutContent}>
           <p>Aura Museum được xây dựng với mong muốn đưa không gian bảo tàng đến gần hơn với mọi người.
             Nghệ thuật và di sản mở ra những cuộc đối thoại — về quá khứ, về sáng tạo và về cách chúng ta nhìn thế giới.</p>
-          <p>Bắt đầu từ bộ sưu tập 2D, nơi hình ảnh và câu chuyện được đặt ở trung tâm.
-            Trải nghiệm không gian 3D sẽ là bước tiếp theo trong hành trình khám phá.</p>
+          <p>Khám phá phòng trưng bày trong không gian 3D hoặc đọc thông tin hiện vật
+            trong danh mục bên dưới. Với hiện vật chưa có mô hình, phòng sử dụng hình khối thay thế.</p>
           <Link to="/collection" className={classes.textLink}>Tìm hiểu bộ sưu tập <IconArrowRight size={18} aria-hidden="true" /></Link>
         </div>
       </section>
