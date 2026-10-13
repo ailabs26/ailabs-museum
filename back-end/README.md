@@ -73,11 +73,26 @@ quản trị chỉ để thêm nội dung. Task/design/plan tại `../docs/tasks
 
 ### Phân hệ quản trị (cần access token, trừ login/refresh)
 - **Auth:** `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`, `GET /api/auth/me`.
-- **Users:** `GET/POST /api/users`, `GET/PATCH/DELETE /api/users/:id`, `POST /api/users/:id/roles`, `DELETE /api/users/:id/roles/:roleId`.
+- **Users:** `GET/POST /api/users`, `GET/PATCH/DELETE /api/users/:id`, `POST/PUT /api/users/:id/roles`, `DELETE /api/users/:id/roles/:roleId`.
 - **Roles & Permissions:** `GET/POST /api/roles`, `PATCH/DELETE /api/roles/:id`, `GET|PUT /api/roles/:id/permissions`, `GET /api/permissions`.
 - **Audit:** `GET /api/audit`, `GET /api/audit/:id`.
 
 Mọi response theo envelope `ApiResponse<T>` (`{ success, data, message, meta? }`); endpoint list kèm `meta` phân trang.
+
+Quản lý tài khoản:
+
+- `POST /users` cần `user:create`; nếu gán `roleIds` khác rỗng, cần thêm `role:assign`.
+- `PATCH /users/:id` cần `user:update`; có `roleIds` (kể cả `[]`) thì cần thêm `role:assign`.
+  Thông tin và toàn bộ vai trò được lưu trong cùng transaction; bỏ trường `roleIds` để giữ nguyên.
+- `PUT /users/:id/roles` chỉ cần `role:assign`, thay toàn bộ vai trò; `[]` bỏ mọi vai trò.
+  `POST` gán thêm và `DELETE .../:roleId` bỏ một vai trò vẫn được hỗ trợ.
+- Không cho khóa/xóa mềm/bỏ role `admin` của Admin active, chưa xóa cuối cùng. Các thao tác
+  tài khoản/Role dùng chung advisory transaction lock để hai request không cùng loại bỏ Admin cuối.
+- Khóa tạm thời bằng `PATCH status=disabled`, mở khóa bằng `active`; `DELETE` là xóa mềm.
+  Email của tài khoản đã xóa vẫn được giữ theo unique hiện có; tạo trùng trả 409.
+- JWT vẫn dùng quyền tại lúc cấp: khóa/xóa/bỏ quyền không vô hiệu access token cũ ngay.
+  Login/refresh kiểm tra tài khoản và cấp quyền mới; menu frontend cập nhật khi tải lại/đăng nhập lại.
+  Chưa có cơ chế thu hồi tức thì access token hoặc khôi phục tài khoản đã xóa.
 
 ## 4. Xác thực & RBAC
 
