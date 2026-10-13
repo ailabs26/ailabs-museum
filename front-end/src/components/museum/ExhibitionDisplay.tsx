@@ -1,6 +1,7 @@
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { useEffect, useState } from 'react';
 import { useThree } from '@react-three/fiber';
+import { ExhibitLabel } from './ExhibitLabel';
 
 export function ExhibitionDisplay({ display, isSelected, onSelect }: {
   display: MuseumDisplay; isSelected: boolean; onSelect: (id: string) => void;
@@ -50,6 +51,7 @@ export function ExhibitionDisplay({ display, isSelected, onSelect }: {
         <meshStandardMaterial color={display.color} roughness={isCenterpiece ? 0.44 : display.shape === 'cylinder' ? 0.55 : 0.7} metalness={isCenterpiece ? 0.48 : 0.06}
           emissive={isSelected ? '#25645c' : '#b69761'} emissiveIntensity={isSelected ? 0.15 : isHovered ? 0.12 : 0} />
       </mesh>
+      <ExhibitLabel title={display.title} isSelected={isSelected} isCenterpiece={isCenterpiece} />
     </group>
   );
 }
