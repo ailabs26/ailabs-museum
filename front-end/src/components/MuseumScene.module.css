@@ -1,0 +1,5 @@
+.scene { display: flex; flex-direction: column; height: 100%; }
+.canvasFrame { flex: 1; min-height: 0; }
+.toolbar { flex-shrink: 0; padding: 12px; border-top: 1px solid #d3c7b1; background: #f7f3ea; }
+.toolbar button { min-height: 44px; height: auto; padding-block: 10px; max-width: 100%; }
+.toolbar :global(.mantine-Button-label) { white-space: normal; }

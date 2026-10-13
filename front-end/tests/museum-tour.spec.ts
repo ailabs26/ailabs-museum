@@ -19,11 +19,13 @@ test('gallery resizes on mobile and caps the drawing buffer', async ({ page }, t
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D');
   await expect(canvas).toBeVisible();
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.screenshot({ path: testInfo.outputPath('gallery-desktop.png'), fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect.poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.width / element.clientWidth)).toBeLessThanOrEqual(1.5);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect(page.getByRole('button', { name: 'Góc nhìn ban đầu' })).toBeVisible();
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.screenshot({ path: testInfo.outputPath('gallery-mobile.png'), fullPage: true });
 });
 
@@ -93,7 +95,7 @@ test('failed scene chunk leaves navigation and catalogue available', async ({ pa
   await page.goto('/tour.html');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Aura Museum' })).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true })).toBeVisible();
   await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);
 });
 
@@ -158,10 +160,10 @@ test('HTML entry and SPA route expose the museum with public navigation', async 
   for (const path of ['/tour.html', '/tour']) {
     await page.goto(path);
     await expect(page.getByRole('heading', { name: 'Không gian của hình khối' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Aura Museum' })).toBeVisible();
+    await expect(page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true })).toBeVisible();
   }
-  await page.getByRole('link', { name: 'Aura Museum' }).click();
-  await expect(page.getByRole('heading', { name: 'Bảo tàng WebXR Aura' })).toBeVisible();
+  await page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /Mỗi hiện vật,.*một câu chuyện/ })).toBeVisible();
   await page.goto('/admin/login');
   await expect(page.locator('input[type="password"]')).toBeVisible();
 });

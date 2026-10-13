@@ -1,4 +1,4 @@
-import { Canvas } from '@react-three/fiber';
+import { Canvas, events } from '@react-three/fiber';
 import { useCallback, useState } from 'react';
 import { Button, Group } from '@mantine/core';
 import { ACESFilmicToneMapping } from 'three';
@@ -9,35 +9,52 @@ import { MuseumLighting } from '@/components/museum/MuseumLighting';
 import { MuseumControls, type CameraAction, type CameraCommand } from '@/components/museum/MuseumControls';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { SceneLifecycle } from '@/components/museum/SceneLifecycle';
+import { INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET } from '@/helpers/museumCamera';
+import classes from './MuseumScene.module.css';
 
-export function MuseumScene({ displays }: { displays: readonly MuseumDisplay[] }) {
+// Labels render over solid geometry. Picking follows that same visual order;
+// intersecting labels still use nearest-first ordering within their layer.
+const createMuseumEvents: typeof events = (store) => ({
+  ...events(store),
+  filter: (hits) => [...hits].sort((left, right) =>
+    Number(right.object.userData.museumLabel === true) - Number(left.object.userData.museumLabel === true) || left.distance - right.distance),
+});
+
+export function MuseumScene({ displays, selectedId, onSelect }: {
+  displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void;
+}) {
   const [command, setCommand] = useState<CameraCommand | null>(null);
   const [isContextLost, setIsContextLost] = useState(false);
+  const selectedDisplay = displays.find((display) => display.id === selectedId);
   const handleContextLost = useCallback(() => setIsContextLost(true), []);
   const handleCommand = (action: CameraAction) => setCommand((previous) => ({ action, sequence: (previous?.sequence ?? 0) + 1 }));
   if (isContextLost) return <SceneFallback />;
   return (
-    <>
+    <div className={classes.scene}>
+    <div className={classes.canvasFrame}>
     <Canvas
+      events={createMuseumEvents}
       frameloop="demand"
       dpr={[1, 1.5]}
-      camera={{ position: [0, 2.6, 5.8], fov: 60, near: 0.1, far: 40 }}
-      gl={{ antialias: true, alpha: false, powerPreference: 'low-power', toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+      camera={{ position: INITIAL_CAMERA_POSITION, fov: 60, near: 0.1, far: 40 }}
+      gl={{ antialias: true, alpha: false, powerPreference: 'low-power', toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1 }}
       fallback={<SceneFallback />}
-      onCreated={({ camera }) => camera.lookAt(0, 1.35, 0)}
+      onCreated={({ camera }) => camera.lookAt(...INITIAL_CAMERA_TARGET)}
     >
       <color attach="background" args={['#eee9df']} />
       <MuseumLighting />
       <SceneLifecycle onContextLost={handleContextLost} />
-      <MuseumControls command={command} />
+      <MuseumControls command={command} selectedDisplay={selectedDisplay} />
       <MuseumRoom />
-      {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} />)}
+      {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={onSelect} />)}
     </Canvas>
-    <Group pos="absolute" bottom={16} left={16} right={16} gap="xs" aria-label="Điều khiển góc nhìn">
+    </div>
+    <Group className={classes.toolbar} gap="xs" aria-label="Điều khiển góc nhìn">
       <Button variant="default" onClick={() => handleCommand('reset')}>Góc nhìn ban đầu</Button>
       <Button variant="default" onClick={() => handleCommand('in')}>Đến gần</Button>
       <Button variant="default" onClick={() => handleCommand('out')}>Lùi xa</Button>
+      <Button color="teal.9" disabled={!selectedDisplay || selectedDisplay.isOutsideRoom} onClick={() => handleCommand('focus')}>Tập trung hiện vật</Button>
     </Group>
-    </>
+    </div>
   );
 }

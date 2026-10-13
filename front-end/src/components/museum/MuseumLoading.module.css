@@ -1,0 +1,4 @@
+.loading { display: flex; flex-direction: column; gap: 16px; align-items: center; justify-content: center; min-height: 160px; height: 100%; padding: 24px; border-radius: 12px; background: #eee8dc; color: #40534a; text-align: center; }
+.marker { width: 28px; height: 28px; border: 2px solid #d1c5af; border-top-color: #786344; border-radius: 50%; animation: rotate 1.2s linear infinite; }
+@keyframes rotate { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .marker { animation: none; } }
