@@ -1,15 +1,23 @@
 import { http } from '@/core/api/http-client';
 import type { AuthUser, LoginPayload, LoginResult } from '@/core/auth/types';
+import {
+  authUserSchema,
+  loginResultSchema,
+  logoutResultSchema,
+  parseAuthResponse,
+} from '@/core/auth/authSchema';
 
-/** Gọi API xác thực (endpoint hoàn thiện ở BE PR #D). */
+/** Gọi và kiểm tra phản hồi từ API xác thực. */
 export const authService = {
-  login(payload: LoginPayload): Promise<LoginResult> {
-    return http.post<LoginResult>('/auth/login', payload);
+  async login(payload: LoginPayload): Promise<LoginResult> {
+    return parseAuthResponse(loginResultSchema, await http.post<unknown>('/auth/login', payload));
   },
-  logout(): Promise<void> {
-    return http.post<void>('/auth/logout');
+  async logout(): Promise<void> {
+    // Đợi cookie xoay vòng về trước khi yêu cầu backend thu hồi phiên đó.
+    await http.waitForRefresh();
+    parseAuthResponse(logoutResultSchema, await http.post<unknown>('/auth/logout'));
   },
-  me(): Promise<AuthUser> {
-    return http.get<AuthUser>('/auth/me');
+  async me(): Promise<AuthUser> {
+    return parseAuthResponse(authUserSchema, await http.get<unknown>('/auth/me'));
   },
 };

@@ -1,27 +1,34 @@
 import { useState } from 'react';
-import { Button, Center, Paper, Stack, Text, Title } from '@mantine/core';
+import { Button, Center, Loader, Paper, Stack, Text, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { FormPassword, FormTextField } from '@/shared/components/form';
 import { notify } from '@/shared/components/feedback';
 import { useAuth } from '@/core/auth/use-auth';
 import { ApiException } from '@/core/api/api-error';
 
 interface LocationState {
-  from?: { pathname: string };
+  from?: { pathname: string; search?: string; hash?: string };
 }
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
+  const from = (location.state as LocationState | null)?.from;
+  const canReturnToAdmin = from
+    && (from.pathname === '/admin' || from.pathname.startsWith('/admin/'))
+    && from.pathname !== '/admin/login';
+  const destination = canReturnToAdmin
+    ? `${from.pathname}${from.search ?? ''}${from.hash ?? ''}`
+    : '/admin';
 
   const form = useForm({
     initialValues: { email: '', password: '' },
     validate: {
       email: (v) => (/^\S+@\S+\.\S+$/.test(v) ? null : 'Email không hợp lệ'),
-      password: (v) => (v.length >= 6 ? null : 'Mật khẩu tối thiểu 6 ký tự'),
+      password: (v) => (v.length >= 8 ? null : 'Mật khẩu tối thiểu 8 ký tự'),
     },
   });
 
@@ -29,8 +36,7 @@ export function LoginPage() {
     setLoading(true);
     try {
       await login(values);
-      const to = (location.state as LocationState)?.from?.pathname ?? '/admin';
-      navigate(to, { replace: true });
+      navigate(destination, { replace: true });
     } catch (err) {
       const message = err instanceof ApiException ? err.message : 'Đăng nhập thất bại';
       notify.error(message);
@@ -38,6 +44,18 @@ export function LoginPage() {
       setLoading(false);
     }
   });
+
+  if (isLoading) {
+    return (
+      <Center mih="100vh" aria-label="Đang khôi phục phiên đăng nhập">
+        <Loader />
+      </Center>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to={destination} replace />;
+  }
 
   return (
     <Center mih="100vh" p="md">
