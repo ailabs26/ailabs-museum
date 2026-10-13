@@ -1,8 +1,6 @@
 # Museum tour — Days 1–3 of 4
 
-ACTIVE_DAY = 2. Branch: `feat/museum-api-day2`. Base: `994c896` (`origin/dev`).
-
-Current work: ACTIVE_DAY = 3, branch `feat/museum-visual-day3`, fresh base `929f6c8`. Historical Day 1/2 records below are retained. Day 2 was merged through PR #28 at `801ef6d`, preserving its seven original commits.
+ACTIVE_DAY = 3. Branch: `feat/museum-visual-day3`. Fresh base: `929f6c8` (`origin/dev`). Historical Day 1/2 records below are retained. Day 2 was merged through PR #28 at `801ef6d`, preserving its seven original commits.
 
 Day 1 historical record: branch `feat/museum-scene-day1`, base `ca7a334`. The following Day 1 sections record the implementation and evidence at that time.
 
@@ -227,27 +225,122 @@ f8c2298 feat(tour): map public exhibits to stable scene displays
 
 ### Atomic work / verification
 
-- [ ] 1. Record current contracts/design and prove baseline; docs commit.
-- [ ] 2. Refine room shell/floor materials; typecheck, scene inspection.
-- [ ] 3. Add architectural depth/coffers/wall panels; typecheck, scene inspection.
-- [ ] 4. Shape-appropriate exhibition plinths; typecheck, scene inspection.
-- [ ] 5. Balance sculpture PBR finishes; typecheck, scene inspection.
-- [ ] 6. Soft gallery key/fill/exposure; typecheck, scene inspection.
-- [ ] 7. Cheap local accent/contact lighting; typecheck, scene inspection.
-- [ ] 8. Preserve published transcript/hotspot text in display mapping; room-mapping RED/GREEN.
-- [ ] 9. Room-scoped catalogue selection with keyboard pressed state; interaction RED/GREEN.
-- [ ] 10. Nonmodal backend detail panel and focus return; interaction RED/GREEN.
-- [ ] 11. Scene pointer selection/hover highlight; real WebGL picking RED/GREEN.
-- [ ] 12. Readable billboard exhibit labels; scene visual check, texture cleanup.
-- [ ] 13. Safe focus viewpoint/bounds helper; literal edge/corner cases RED/GREEN.
-- [ ] 14. Camera focus transition and cancellation; real rendered camera RED/GREEN.
-- [ ] 15. Accessible explicit focus/close controls and reduced-motion handling; focused browser proof.
-- [ ] 16. Museum page/selector/catalogue visual polish; typecheck, screenshots.
-- [ ] 17. Consistent museum loading/empty/error presentation; existing API regression tests.
-- [ ] 18. Mobile panel/toolbar/layout touch targets; narrow/zoom browser checks.
-- [ ] 19. Interaction/lifecycle regression and visual evidence; complete FE gates, production tests, independent review.
+- [x] 1. Record current contracts/design and prove baseline; docs commit.
+- [x] 2. Refine room shell/floor materials; typecheck, scene inspection.
+- [x] 3. Add architectural depth/coffers/wall panels; typecheck, scene inspection.
+- [x] 4. Shape-appropriate exhibition plinths; typecheck, scene inspection.
+- [x] 5. Balance sculpture PBR finishes; typecheck, scene inspection.
+- [x] 6. Soft gallery key/fill/exposure; typecheck, scene inspection.
+- [x] 7. Cheap local accent/contact lighting; typecheck, scene inspection.
+- [x] 8. Preserve published transcript/hotspot text in display mapping; room-mapping RED/GREEN.
+- [x] 9. Room-scoped catalogue selection with keyboard pressed state; interaction RED/GREEN.
+- [x] 10. Nonmodal backend detail panel and focus return; interaction RED/GREEN.
+- [x] 11. Scene pointer selection/hover highlight; real WebGL picking RED/GREEN.
+- [x] 12. Readable billboard exhibit labels; scene visual check, texture cleanup.
+- [x] 13. Safe focus viewpoint/bounds helper; literal edge/corner cases RED/GREEN.
+- [x] 14. Camera focus transition and cancellation; real rendered camera RED/GREEN.
+- [x] 15. Accessible explicit focus/close controls and reduced-motion handling; focused browser proof.
+- [x] 16. Museum page/selector/catalogue visual polish; typecheck, screenshots.
+- [x] 17. Consistent museum loading/empty/error presentation; existing API regression tests.
+- [x] 18. Mobile panel/toolbar/layout touch targets; narrow/zoom browser checks.
+- [x] 19. Interaction/lifecycle regression and visual evidence; complete FE gates, production tests, independent review.
 - [ ] 20. Final progress/README, real commit ledger and one PR into dev; no merge.
 
 Review focus: near-wall focus positions; rapid selection while transition runs; room switches/refresh removal must hide old detail; selection/fallback without WebGL; reduced-motion changes, pointer drag versus click and cleanup during pending motion. Keep Day 1/2 cancellation and identity tests. Final FE commands: npm.cmd run typecheck, npm.cmd run lint, npm.cmd run build, npm.cmd run test:unit, CI=1 PLAYWRIGHT_PREVIEW=1 npm.cmd test. Screenshots from actual software WebGL at desktop/mobile sizes; no physical-device/FPS/GPU certification. Deep performance optimization, GLB/audio/guided-tour/WebXR and final Day 4 device QA remain outside scope.
 
 Baseline: production build/typecheck passed; initial dev suite 50 passed, 3 live skipped, 5 failed (one first-load timeout, four stale navigation locators from upstream header/footer redesign). Updated only tour regression locators to banner and current homepage heading; all assertions retained. Initial desktop screenshot inspected: flat ceiling, uniform cylindrical plinths and no interaction/labels. Mapping RED passed four old cases and failed the new published-text case as expected.
+
+### Day 3 execution ledger
+
+- Baseline production rerun: 55 passed (2.1m), 3 external live tests skipped. Updated stale tour locators after upstream public-layout change; no product navigation modified. Lockfile install unchanged; no new dependency.
+- Tasks 2–7: room/material/coffer/plinth/lighting/contact units each passed typecheck. Actual desktop/mobile screenshots in front-end/tmp/day3-architecture inspected; no rendering/layout errors. No shadow maps, texture downloads or additional per-exhibit dynamic lights.
+- Task 8: new published transcript/hotspot mapping assertion RED (missing fields) → GREEN 5 mapping cases; null/empty details remain explicit. Coordinates/identity/order retained.
+- Tasks 9–11: catalogue selection RED → GREEN; detail panel RED → GREEN 3 cases (backend text, escaped HTML, focus return, refresh failure/room switch); real scene picking/hover RED → GREEN 4 interaction cases. Nonmodal panel and DOM catalogue remain independent of renderer availability.
+- Task 12: system-font plaque textures are 512×128 and explicitly disposed on replacement/unmount. Desktop/mobile screenshot inspection passed. Radius check updated to include plaque envelope without moving backend coordinates.
+- Task 13: camera helper assertions RED against an unconstrained stub → GREEN 7 camera/mapping cases. Ruling: inset the orbit anchor for near-wall exhibits, not their backend positions, so the entire allowed orbit fits. This costs slight off-centre framing near walls but preserves usable navigation and the room shell.
+- Task 14: real pixel camera-focus assertion RED (reset did not differ) → GREEN 17 interaction/tour tests (55.1s). 550ms demand-rendered focus, instant reduced motion, cancel on manual input; dynamic spherical distance bounds keep every orbit inside the shell. Typecheck/lint passed. Controls/listeners/transitions disposed on scene exit.
+- Tasks 15–18: button/F refocus and outside-room disable RED → GREEN 6 interaction cases; catalogue/API polish 13 passed; museum loading/pending/cancellation 7 passed. Narrow layout RED identified controls overlaying the canvas; GREEN 320px test checks controls below canvas, 44px targets, panel below scene and doubled text reflow. Real touch event picking, drag without selection, normal focus settling/idle draws, manual cancellation, reduced-motion change and unmount are covered by browser tests.
+- Independent whole-branch review: no Critical, two Important. Rotating plaque exceeded +z wall despite old radius check; focused detail could be offscreen after choosing a lower card. Both reproduced by assertions against production build (RED), fixed in responsible placement/focus layers (GREEN 3 cases including camera bounds). Shared billboard dimensions now define asymmetric front-wall extent; browser focus reveals panel and returning trigger. Follow-up review: no remaining Critical/Important findings.
+- Dev-server limitation observed, not concealed: several 5s scene-ready assertions failed while outer Suspense still showed loading. Trace recorded MuseumScene transform 3.77s and optimized dependencies pending; a separate concurrent live dev run recorded three.js taking 17.7s. Production all-suite first run had 70 passes and one pre-existing home loading test total-timeout (main JS request 6.5s, room fixture response 11.6s) under concurrent dev testing. No app workaround or assertion/time budget weakening. Separate production suite rerun: 71 passed (2.0m), 4 external tests skipped; live compiled-build checks: 2 passed (6.6s). Playwright now honours PLAYWRIGHT_PREVIEW for live mode too, retaining localhost:5173 for existing CORS.
+- Live local API: one public room `phong-lich-su-quan-su-viet-nam`, five APPROVED published development exhibits labelled `[Mẫu]` by their actual backend content. Read-only health/list/detail probes and browser checks; no interception, inserted fixtures, seed, migration, schema/auth/backend edits. BE dependency installation synchronized the latest dev lockfile after missing dev packages blocked initial compile. BE/FE manifests and locks remain unchanged; local env files and logs are ignored.
+- Visual inspection of the populated live gallery found a selected plaque partially hidden by the plinth at an oblique focus angle. Selected billboard annotations need a legible rendering layer; final visual refinement and verification recorded below. Full-page screenshots are captured at document top so fixed offscreen skip links do not appear as misleading screenshot artifacts; keyboard functionality is retained.
+- Final annotation refinement: billboards draw over plinth geometry with no depth writes; R3F's default event manager filter gives marked label hits the same visual priority, retaining nearest-first ordering inside each layer. Review reproduced a far-label/near-plinth mismatch; real WebGL regression RED selected the wrong ID → GREEN selected the visible label ID. Default event/listener cleanup remains unchanged; follow-up review found no Critical/Important issues.
+- Auto dark-mode review: the new page ink initially had H1 contrast 1.36 on dark background (RED). Reused existing public theme variables at page root and warm-surface ink for intro/cards/panel. Actual DOM H1/intro/detail contrast case GREEN; screenshot inspected. This targeted check is not a full WCAG certification; full screen-reader/contrast audit remains device QA.
+
+### Day 3 final evidence
+
+- **Implemented:** consistent inset/coffer gallery, limestone/plaster/bronze finishes, shape-appropriate stepped plinths, soft key/fill/one broad accent, cheap contact patches, system-font annotations, pointer hover/selection, keyboard catalogue selection and published detail panel. Room identity/coordinates/query cancellation/cache/error semantics preserved.
+- **Camera:** safe room-contained orbit/focus; 550ms eased demand transition, immediate reduced motion, manual-input cancellation, F/button refocus and Home/reset. Listeners, controls, transition references and label textures release on unmount. No walking, guided tour, GLB/audio or XR added.
+- **UX:** desktop panel beside scene, mobile panel beneath it, controls outside canvas, 44px touch targets, short instructions, museum loading and accessible DOM fallback; offscreen selection/return focus reveals its target. Dark-page and warm-card text retained.
+- **Required FE gates:** npm.cmd run typecheck, npm.cmd run lint, npm.cmd run build passed after final code changes. npm.cmd run test:unit: 6 passed. New production build emitted both HTML entries. Sequential dedicated production preview: **73 passed (2.4m), 4 intentionally skipped external live cases**. Separate real-API production preview: **2 passed (6.6s)**, no interceptions or DB setup. Final code commit fe3c55e; tests were run on the exact eventual committed code/test tree before staging.
+- **Visual artifacts (local, ignored):** front-end/tmp/day3-final/museum-tour-gallery-resize-ff3c0-and-caps-the-drawing-buffer/gallery-desktop.png and gallery-mobile.png; museum-interaction-narrow--5b517-e-scene-and-detail-below-it/day3-mobile-detail.png; museum-interaction-touch-i-e0b72-ile-detail-remains-readable/day3-touch-detail.png; museum-interaction-desktop-4e2b1-d-long-published-text-wraps/day3-desktop-detail.png; museum-interaction-automat-b18fd-ur-and-warm-detail-surfaces/day3-dark-detail.png. Populated real-API image: front-end/tmp/day3-live-final/museum-live-live-published-f8f98--use-actual-backend-content/day3-live-gallery.png. Logs: front-end/tmp/day3-final.log and day3-live-final.log. Desktop/mobile/touch/dark/live inspected; Edge/SwiftShader and touch emulation only.
+- **Build size:** main 1,322.71 kB / 383.29 kB gzip; lazy scene 851.30 kB / 228.11 kB gzip. Existing Vite large-chunk warning remains; the added scene delta is about 5.3 kB raw over Day 2. Day 3 preserves lazy start, on-demand rendering, DPR cap and no shadow maps/postprocessing; these are implementation facts, not an FPS/memory guarantee.
+- **Review:** whole-branch review plus narrow follow-ups. Room plaque bounds, visible-focus return and annotation picking gaps fixed with RED/GREEN proof. No remaining Critical/Important findings at final follow-up; tests/gates confirmed by main executor.
+- **Scope/invariants:** only frontend, focused tests/tooling and task docs changed. Back-end and both app dependency manifests/locks match origin/dev; ignored env files were not read into commits. No seeds/migrations/database writes, history rewrite, squash, direct dev/main pushes, or merges. All seven original Day 2 SHAs and Day 1 history remain ancestors.
+- **Remaining for Day 4:** real-device/browser/GPU and screen-reader QA; full contrast audit including small badges; measured FPS/memory/bundle/load budgets and density stress with larger content sets. API media is still null, so no image/GLB/audio asset claim. Development exhibits remain visibly `[Mẫu]`; no authenticity/curation claim. Deep optimization and final platform certification were not done early.
+
+### Day 3 files changed
+
+Entry/API query/auth code unchanged. Changed files:
+- docs/museum-tour-progress.md
+- front-end/README.md
+- front-end/playwright.config.ts
+- front-end/src/components/MuseumScene.module.css
+- front-end/src/components/MuseumScene.tsx
+- front-end/src/components/museum/ExhibitDetailPanel.module.css
+- front-end/src/components/museum/ExhibitDetailPanel.tsx
+- front-end/src/components/museum/ExhibitLabel.tsx
+- front-end/src/components/museum/ExhibitionDisplay.tsx
+- front-end/src/components/museum/GalleryArchitecture.tsx
+- front-end/src/components/museum/MuseumCatalogue.module.css
+- front-end/src/components/museum/MuseumCatalogue.tsx
+- front-end/src/components/museum/MuseumControls.tsx
+- front-end/src/components/museum/MuseumLighting.tsx
+- front-end/src/components/museum/MuseumLoading.module.css
+- front-end/src/components/museum/MuseumLoading.tsx
+- front-end/src/components/museum/MuseumRoom.tsx
+- front-end/src/helpers/isDisplayOutsideRoom.ts
+- front-end/src/helpers/mapRoomDisplays.ts
+- front-end/src/helpers/museumCamera.ts
+- front-end/src/interfaces/museumScene.ts
+- front-end/src/pages/MuseumPage.module.css
+- front-end/src/pages/MuseumPage.tsx
+- front-end/tests/museum-camera.spec.ts
+- front-end/tests/museum-interaction.spec.ts
+- front-end/tests/museum-lifecycle.spec.ts
+- front-end/tests/museum-live.spec.ts
+- front-end/tests/museum-switching.spec.ts
+- front-end/tests/museum-tour.spec.ts
+- front-end/tests/room-mapping.spec.ts
+
+### Day 3 commit ledger
+
+```text
+ef0d0ad docs(tour): plan Day 3 gallery and interaction work
+23fc104 test(tour): align navigation regressions with current dev
+f367dfc feat(tour): refine limestone and plaster room finishes
+163020f feat(tour): add inset wall panels and ceiling coffers
+15e1c59 feat(tour): match stepped exhibition plinths to sculpture forms
+4f4dbe2 feat(tour): balance matte and bronze sculpture finishes
+d8dde94 feat(tour): soften gallery lighting and balance exposure
+5a72723 feat(tour): anchor exhibits with cheap contact and accent patches
+07e7178 feat(tour): carry published detail text into shared displays
+78c3925 feat(tour): select catalogue exhibits with keyboard feedback
+416923a feat(tour): show published exhibit details in an accessible side panel
+7ad6749 feat(tour): connect scene picking and exhibit selection feedback
+820a35d feat(tour): label exhibits with lightweight local plaques
+6f5562b feat(tour): derive room-safe camera focus destinations
+58ed2da feat(tour): focus selected exhibits with bounded camera transitions
+fc41ffc feat(tour): expose keyboard and button camera refocus controls
+4f2185f style(tour): refine gallery typography and room selector layout
+6a15333 style(tour): present catalogue as selectable gallery cards
+c40bca8 style(tour): unify museum loading indicators with reduced motion
+7f10837 fix(tour): keep touch controls and mobile details clear of the canvas
+0c865ee fix(tour): include rotating exhibit plaques in room bounds
+d2d5002 fix(tour): reveal selected details and returning keyboard focus
+6eca7f3 test(tour): verify populated live gallery against production build
+1100fb0 fix(tour): keep exhibit annotations legible and correctly selectable
+fe3c55e fix(tour): preserve readable gallery text in automatic dark mode
+```
+
+The final verification/README documentation commit and PR publication record follow these 25 code/planning/test commits; their SHAs are discoverable in git log. Total stays below 30 meaningful commits. One task branch/one PR into dev; no automatic merge. Publication URL/status is recorded once GitHub confirms it.

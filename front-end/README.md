@@ -84,8 +84,11 @@ Live test chạy frontend trên `http://localhost:5173` để khớp CORS local 
 
 - Mở `/tour.html`, chọn phòng rồi **Mở phòng 3D**. Scene chỉ tải sau thao tác này; **Dừng 3D** tháo Canvas. `?room=<slug>` hỗ trợ mở trực tiếp một phòng; **Làm mới** cập nhật danh sách/chi tiết, **Thử lại** xử lý lỗi.
 - Kéo chuột/vuốt để orbit, cuộn/chụm hai ngón để zoom. Khi Canvas có focus: mũi tên hoặc WASD xoay, +/− zoom, Home reset; Tab ra ngoài. Có nút reset/zoom bằng DOM.
-- Shell kín 14 × 16 × 5 m chưa có kích thước riêng từ backend. Số hiện vật, tên, mô tả, hình khối, màu và vị trí đến từ phòng đang chọn. Camera orbit có giới hạn; chưa có đi bộ tự do hay tương tác hiện vật.
-- Geometry nhẹ, không tải model/texture bên ngoài, render theo nhu cầu, DPR tối đa 1.5. Không bật shadow maps/postprocessing. Giảm chuyển động tắt quán tính camera.
+- Shell kín 14 × 16 × 5 m chưa có kích thước riêng từ backend. Gallery có tường inset, ceiling coffers, đá/plaster/bronze và bệ tròn/vuông theo hình khối. Số hiện vật, tên, mô tả, hình khối, màu và vị trí đến từ phòng đang chọn; không suy đoán hình dáng thật của hiện vật từ tên.
+- Day 3: chọn hiện vật trực tiếp trong scene hoặc bằng **Xem chi tiết** trong catalogue (Enter/Space). Nhãn/hover/selection liên kết cùng ID với panel không modal; tên, mô tả, transcript và điểm chú ý là text backend đã xuất bản. Escape/Đóng trở về trigger và đưa focus vào vùng nhìn thấy. Nội dung DOM vẫn dùng được khi chưa mở 3D hoặc renderer lỗi.
+- Camera orbit có giới hạn, chưa có đi bộ tự do. Chọn hiện vật tập trung camera trong 550ms; **Tập trung hiện vật** hoặc F khi focus canvas để xem lại, Home/reset về toàn cảnh. Điều khiển tay hủy chuyển động đang chạy; giảm chuyển động chuyển tức thời. Giới hạn orbit phụ thuộc anchor và room bounds; không đổi tọa độ hiện vật. Hiện vật ngoài bounds chỉ đọc trong DOM, nút focus bị disable.
+- Panel nằm cạnh scene ở desktop, bên dưới trên màn hình hẹp. Controls ở dưới canvas, vùng chạm tối thiểu 44px. Tour dùng màu public theme ở phần trang; các card/panel/intro có palette ấm và ink riêng để đọc được trong auto dark mode.
+- Geometry nhẹ, không tải model/texture bên ngoài, render theo nhu cầu, DPR tối đa 1.5. Nhãn dùng system font với canvas texture 512×128, dispose khi đổi/unmount; layer vẽ và thứ tự picking thống nhất. Ánh sáng key/fill dịu, một spotlight rộng và contact/accent patch rẻ; không bật shadow maps/postprocessing. Giảm chuyển động tắt quán tính camera.
 - Scene lỗi hoặc mất context vẫn giữ catalogue DOM. Sau lỗi tải chunk, tải lại trang nếu muốn thử tải module lại.
 - `GET /api/rooms` là array không phân trang; `GET /api/rooms/:slug` trả chi tiết kèm `exhibits`. `museum.service.ts` dùng Axios client chung và Zod kiểm tra envelope/payload/identity; `useMuseumRooms` dùng React Query + AbortSignal. Chỉ tải phòng đang chọn, cache theo ID/slug; không preload phòng/asset khác hoặc thay lỗi API bằng mẫu.
 - Vị trí backend giữ nguyên; thiếu toàn bộ tọa độ dùng layout xác định theo displayOrder + ID. Hiện vật nằm ngoài shell giữ thông tin trong DOM, có thông báo riêng và không dựng geometry ngoài phòng. Tọa độ sai/thiếu một phần bị từ chối.
@@ -110,3 +113,23 @@ Xem [coding-conventions.md](docs/coding-conventions.md) để biết quy tắc �
 - Nội dung hiện vật đến từ CMS qua API.
 - DOM accessible/fallback là phần bắt buộc song song với scene 3D và WebXR.
 - Không tuyên bố tính năng hoặc kết quả kiểm thử đã hoàn thành nếu code/bằng chứng chưa tồn tại.
+
+### Kiểm chứng Day 3 và ảnh
+
+```powershell
+npm.cmd run typecheck
+npm.cmd run lint
+npm.cmd run build
+npm.cmd run test:unit
+$env:CI = '1'
+$env:PLAYWRIGHT_PREVIEW = '1'
+npm.cmd test -- --output=tmp/day3-final --reporter=line
+# Backend localhost:3001 đang chạy; chỉ đọc nội dung đã xuất bản, không seed.
+$env:MUSEUM_LIVE_TEST = '1'
+npm.cmd test -- museum-live.spec.ts --output=tmp/day3-live-final --reporter=line
+Remove-Item Env:MUSEUM_LIVE_TEST
+Remove-Item Env:PLAYWRIGHT_PREVIEW
+Remove-Item Env:CI
+```
+
+Live preview dùng localhost:5173 để khớp CORS backend. Chạy suite production và live tuần tự; không reuse server cũ. Dev server phải transform module nên có thể chậm trên máy local; production tests là gate cho build. Ảnh desktop/mobile/touch/dark và live nằm trong `tmp/day3-final/` / `tmp/day3-live-final/` (ignored, chỉ có trên máy chạy tests). Chứng cứ là Edge/SwiftShader và touch emulation, không phải GPU/điện thoại/VR thật. Day 4 giữ phần profiling, bundle tuning và device QA; không có GLB/audio/WebXR mới trong Day 3.
