@@ -15,6 +15,7 @@ import { PERMISSIONS } from '../../../common/constants/permissions.constant';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
 import { CreateRoleDto } from '../dto/create-role.dto';
 import { SetPermissionsDto } from '../dto/set-permissions.dto';
+import { SetPermissionMatrixDto } from '../dto/set-permission-matrix.dto';
 import { UpdateRoleDto } from '../dto/update-role.dto';
 import { RolesService } from '../services/roles.service';
 
@@ -37,6 +38,14 @@ export class RolesController {
   @ApiOperation({ summary: 'Tạo vai trò' })
   create(@Body() dto: CreateRoleDto) {
     return this.roles.create(dto);
+  }
+
+  @Put('permission-matrix')
+  @Permissions(PERMISSIONS.ROLE_UPDATE)
+  @Audit('role.set_permission_matrix', 'role')
+  @ApiOperation({ summary: 'Cập nhật nhiều vai trò trong ma trận quyền theo một transaction' })
+  setPermissionMatrix(@Body() dto: SetPermissionMatrixDto) {
+    return this.roles.setPermissionMatrix(dto);
   }
 
   @Get(':id/permissions')
