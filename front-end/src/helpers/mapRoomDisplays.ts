@@ -13,6 +13,9 @@ export function mapRoomDisplays(room: RoomDetail): MuseumDisplay[] {
       id: exhibit.id,
       title: exhibit.name,
       description: exhibit.description,
+      transcript: exhibit.transcript,
+      hotspots: [...exhibit.hotspots].sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
+        .map(({ id, label, body }) => ({ id, label, body })),
       position: exhibit.positionX !== undefined && exhibit.positionY !== undefined && exhibit.positionZ !== undefined
         ? [exhibit.positionX, exhibit.positionY, exhibit.positionZ]
         : [columns === 1 ? 0 : -5.3 + (index % columns) * 10.6 / (columns - 1), 0,

@@ -6,6 +6,8 @@ export interface MuseumDisplay {
   id: string;
   title: string;
   description: string;
+  transcript?: string | null;
+  hotspots?: readonly { id: string; label: string; body: string }[];
   position: [number, number, number];
   shape: 'sphere' | 'torus' | 'cone' | 'cube' | 'icosahedron' | 'cylinder';
   color: string;
