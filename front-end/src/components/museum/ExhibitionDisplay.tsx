@@ -7,8 +7,12 @@ export function ExhibitionDisplay({ display }: { display: MuseumDisplay }) {
     <group position={display.position}>
       {/* A flat contact patch anchors the plinth without dynamic shadows. */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.007, 0]}>
-        <circleGeometry args={[isCenterpiece ? 1.5 : 0.95, 32]} />
-        <meshBasicMaterial color="#6c6251" transparent opacity={0.16} depthWrite={false} />
+        <circleGeometry args={[isCenterpiece ? 1.3 : 0.84, 32]} />
+        <meshBasicMaterial color="#5e584d" transparent opacity={0.13} depthWrite={false} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.009, 0]}>
+        <ringGeometry args={[isCenterpiece ? 1.3 : 0.84, isCenterpiece ? 1.5 : 0.95, 32]} />
+        <meshBasicMaterial color="#fff3d6" transparent opacity={0.22} depthWrite={false} />
       </mesh>
       <mesh position={[0, 0.04, 0]}>
         {isRoundPlinth ? <cylinderGeometry args={[isCenterpiece ? 1.22 : 0.76, isCenterpiece ? 1.22 : 0.76, 0.08, 32]} /> : <boxGeometry args={[1.15, 0.08, 1.15]} />}
