@@ -102,3 +102,27 @@ test('outside-room exhibits retain detail but cannot focus the camera outside th
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText('ngoài phạm vi');
   await expect(page.getByRole('button', { name: 'Tập trung hiện vật', exact: true })).toBeDisabled();
 });
+
+test('narrow screens keep touch controls outside the scene and detail below it', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const canvas = page.getByLabel('Phòng trưng bày 3D');
+  await expect(canvas).toBeVisible();
+  const frame = (await canvas.boundingBox())!;
+  const toolbar = page.getByLabel('Điều khiển góc nhìn');
+  const toolbarBox = (await toolbar.boundingBox())!;
+  expect(toolbarBox.y).toBeGreaterThanOrEqual(frame.y + frame.height - 1);
+  for (const button of await toolbar.getByRole('button').all()) expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true }).click();
+  const panel = page.getByRole('complementary', { name: 'Chi tiết hiện vật' });
+  const panelBox = (await panel.boundingBox())!;
+  const selectedFrame = (await canvas.boundingBox())!;
+  expect(panelBox.y).toBeGreaterThan(selectedFrame.y + selectedFrame.height);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('day3-mobile-detail.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Đóng chi tiết hiện vật' }).click();
+  // Reflow with doubled text size; this is not a physical-device/native zoom claim.
+  await page.addStyleTag({ content: 'html { font-size: 200%; }' });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
