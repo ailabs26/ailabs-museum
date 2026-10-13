@@ -31,8 +31,6 @@
 .navigation { display: flex; align-items: center; flex-wrap: wrap; gap: 24px; font-size: 14px; }
 .navLink { padding-block: 12px; }
 .navLink[aria-current='page'] { color: var(--public-accent); text-decoration: underline; text-underline-offset: 8px; }
-.comingSoon { color: var(--public-muted); }
-.comingSoon span { display: block; font-size: 11px; }
 .main { flex: 1; }
 .skipLink { position: fixed; top: 8px; left: 8px; z-index: 1000; padding: 12px 20px; background: var(--public-background); transform: translateY(-150%); }
 .skipLink:focus { transform: translateY(0); }

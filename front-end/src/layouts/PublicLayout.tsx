@@ -17,7 +17,7 @@ export function PublicLayout() {
           <nav aria-label="Điều hướng chính" className={classes.navigation}>
             <NavLink to="/" end className={classes.navLink}>Trang chủ</NavLink>
             <NavLink to="/collection" className={classes.navLink}>Bộ sưu tập</NavLink>
-            <span className={classes.comingSoon}>Tham quan 3D <span>Sắp ra mắt</span></span>
+            <NavLink to="/tour" className={classes.navLink}>Tham quan 3D</NavLink>
           </nav>
         </Container>
       </header>
