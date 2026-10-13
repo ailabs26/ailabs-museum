@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { installMuseumApi, fulfillMuseum } from './fixtures/museumApi';
 import { envelope, roomA } from './fixtures/museumContent';
+import { PerspectiveCamera, Vector3 } from 'three';
 
 test.beforeEach(async ({ page }) => { await installMuseumApi(page); });
 
@@ -120,6 +121,7 @@ test('narrow screens keep touch controls outside the scene and detail below it',
   const selectedFrame = (await canvas.boundingBox())!;
   expect(panelBox.y).toBeGreaterThan(selectedFrame.y + selectedFrame.height);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.screenshot({ path: testInfo.outputPath('day3-mobile-detail.png'), fullPage: true });
   await page.getByRole('button', { name: 'Đóng chi tiết hiện vật' }).click();
   // Reflow with doubled text size; this is not a physical-device/native zoom claim.
@@ -187,6 +189,7 @@ test.describe('touch interaction', () => {
     const box = (await canvas.boundingBox())!;
     await page.touchscreen.tap(box.x + box.width * 0.5, box.y + box.height * 0.64);
     await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText('Mô tả hiện vật 1');
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
     await page.screenshot({ path: testInfo.outputPath('day3-touch-detail.png'), fullPage: true });
   });
 });
@@ -209,6 +212,7 @@ test('desktop detail leaves the scene visible and long published text wraps', as
   expect(sceneBox.width).toBeGreaterThan(600);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.waitForTimeout(700);
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.screenshot({ path: testInfo.outputPath('day3-desktop-detail.png'), fullPage: true });
 });
 
@@ -224,4 +228,23 @@ test('selecting a lower catalogue card reveals focused detail and closing reveal
   await page.keyboard.press('Escape');
   await expect(trigger).toBeFocused();
   await expect(trigger).toBeInViewport();
+});
+
+test('clicking a visible annotation selects its exhibit above nearer geometry', async ({ page }) => {
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: [
+    { ...roomA.exhibits[0], placeholderShape: 'sphere', positionX: 0, positionZ: 0 },
+    { ...roomA.exhibits[1], placeholderShape: 'sphere', positionX: 0, positionZ: -2 },
+  ] })));
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const canvas = page.getByLabel('Phòng trưng bày 3D');
+  await expect(canvas).toBeVisible();
+  const box = (await canvas.boundingBox())!;
+  const camera = new PerspectiveCamera(60, box.width / box.height, 0.1, 40);
+  camera.position.set(0, 2.6, 5.8);
+  camera.lookAt(0, 1.35, 0);
+  camera.updateMatrixWorld();
+  const plaqueCentre = new Vector3(0, 0.78, -1.25).project(camera);
+  await page.mouse.click(box.x + (plaqueCentre.x + 1) * box.width / 2, box.y + (1 - plaqueCentre.y) * box.height / 2);
+  await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' }).getByRole('heading', { name: 'Hiện vật 2', exact: true })).toBeVisible();
 });

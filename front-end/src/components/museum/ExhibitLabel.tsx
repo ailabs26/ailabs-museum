@@ -30,7 +30,8 @@ export function ExhibitLabel({ title, isSelected, isCenterpiece }: { title: stri
     return label;
   }, [title, isSelected]);
   useEffect(() => () => texture.dispose(), [texture]);
-  return <sprite position={[0, 0.78, isCenterpiece ? EXHIBIT_LABEL_SIZE.centerpieceDepth : EXHIBIT_LABEL_SIZE.depth]} scale={[EXHIBIT_LABEL_SIZE.width, EXHIBIT_LABEL_SIZE.height, 1]}>
-    <spriteMaterial map={texture} toneMapped={false} />
+  return <sprite renderOrder={1} userData={{ museumLabel: true }} position={[0, 0.78, isCenterpiece ? EXHIBIT_LABEL_SIZE.centerpieceDepth : EXHIBIT_LABEL_SIZE.depth]} scale={[EXHIBIT_LABEL_SIZE.width, EXHIBIT_LABEL_SIZE.height, 1]}>
+    {/* Billboard annotations stay legible when the view crosses the plinth. */}
+    <spriteMaterial map={texture} toneMapped={false} depthTest={false} depthWrite={false} />
   </sprite>;
 }

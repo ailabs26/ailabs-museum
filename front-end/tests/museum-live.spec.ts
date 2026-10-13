@@ -51,6 +51,7 @@ test('live published exhibit selection, details and gallery use actual backend c
   if (display.transcript) await expect(panel.getByText(display.transcript, { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Tập trung hiện vật', exact: true })).toBeEnabled({ enabled: !display.isOutsideRoom });
   await page.waitForTimeout(700);
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.screenshot({ path: testInfo.outputPath('day3-live-gallery.png'), fullPage: true });
   await page.keyboard.press('Escape');
   await expect(panel).toHaveCount(0);

@@ -19,11 +19,13 @@ test('gallery resizes on mobile and caps the drawing buffer', async ({ page }, t
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D');
   await expect(canvas).toBeVisible();
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.screenshot({ path: testInfo.outputPath('gallery-desktop.png'), fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect.poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.width / element.clientWidth)).toBeLessThanOrEqual(1.5);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect(page.getByRole('button', { name: 'Góc nhìn ban đầu' })).toBeVisible();
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.screenshot({ path: testInfo.outputPath('gallery-mobile.png'), fullPage: true });
 });
 

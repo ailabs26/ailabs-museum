@@ -1,4 +1,4 @@
-import { Canvas } from '@react-three/fiber';
+import { Canvas, events } from '@react-three/fiber';
 import { useCallback, useState } from 'react';
 import { Button, Group } from '@mantine/core';
 import { ACESFilmicToneMapping } from 'three';
@@ -11,6 +11,14 @@ import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { SceneLifecycle } from '@/components/museum/SceneLifecycle';
 import { INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET } from '@/helpers/museumCamera';
 import classes from './MuseumScene.module.css';
+
+// Labels render over solid geometry. Picking follows that same visual order;
+// intersecting labels still use nearest-first ordering within their layer.
+const createMuseumEvents: typeof events = (store) => ({
+  ...events(store),
+  filter: (hits) => [...hits].sort((left, right) =>
+    Number(right.object.userData.museumLabel === true) - Number(left.object.userData.museumLabel === true) || left.distance - right.distance),
+});
 
 export function MuseumScene({ displays, selectedId, onSelect }: {
   displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void;
@@ -25,6 +33,7 @@ export function MuseumScene({ displays, selectedId, onSelect }: {
     <div className={classes.scene}>
     <div className={classes.canvasFrame}>
     <Canvas
+      events={createMuseumEvents}
       frameloop="demand"
       dpr={[1, 1.5]}
       camera={{ position: INITIAL_CAMERA_POSITION, fov: 60, near: 0.1, far: 40 }}
