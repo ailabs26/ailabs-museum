@@ -1,0 +1,13 @@
+.card { background: #fcfaf5; border-color: #d8d0c0; display: flex; flex-direction: column; min-width: 0; }
+.card[data-selected='true'] { background: #edf2ec; border-color: #30665c; }
+.card h3 { font-family: Georgia, serif; font-weight: 500; overflow-wrap: anywhere; }
+.card p { overflow-wrap: anywhere; }
+.card button { margin-top: auto; color: #305f56; min-height: 44px; }
+.card[data-selected='true'] button { color: white; }
+.preview { height: 96px; display: grid; place-items: center; margin: -8px -8px 20px; background: #efe9de; border-radius: 8px; }
+.shape { width: 42px; height: 42px; border: 1px solid #0002; }
+.shape[data-shape='sphere'], .shape[data-shape='torus'] { border-radius: 50%; }
+.shape[data-shape='torus'] { background: transparent !important; border: 10px solid var(--exhibit-color); }
+.shape[data-shape='cone'] { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.shape[data-shape='cylinder'] { border-radius: 50% / 15%; }
+.shape[data-shape='icosahedron'] { clip-path: polygon(50% 0, 100% 38%, 80% 100%, 20% 100%, 0 38%); }
