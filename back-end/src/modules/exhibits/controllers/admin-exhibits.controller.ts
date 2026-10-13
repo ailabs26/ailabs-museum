@@ -48,6 +48,15 @@ export class AdminExhibitsController {
     return this.exhibitsService.getAdminDetail(id);
   }
 
+  @Get(':id/preview')
+  @Permissions(PERMISSIONS.EXHIBIT_READ)
+  @ApiOperation({
+    summary: 'Xem trước (preview) bản nháp hiện vật kèm 3D transform và hotspots (SRS FR-69)',
+  })
+  getPreview(@Param('id', ParseUUIDPipe) id: string) {
+    return this.exhibitsService.getAdminDetail(id);
+  }
+
   @Get(':id/revisions')
   @Permissions(PERMISSIONS.EXHIBIT_READ)
   @ApiOperation({

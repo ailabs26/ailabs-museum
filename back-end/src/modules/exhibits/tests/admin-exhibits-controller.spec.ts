@@ -361,6 +361,7 @@ describe('Task 7.4 & 7.5 — AdminExhibitsController Comprehensive Test Suite (1
       const handlers = [
         AdminExhibitsController.prototype.list,
         AdminExhibitsController.prototype.getById,
+        AdminExhibitsController.prototype.getPreview,
         AdminExhibitsController.prototype.getRevisionsHistory,
         AdminExhibitsController.prototype.getRevisionDetail,
         AdminExhibitsController.prototype.create,
