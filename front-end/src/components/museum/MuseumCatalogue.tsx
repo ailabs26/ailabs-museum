@@ -1,8 +1,12 @@
-import { Badge, Card, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Badge, Button, Card, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { EmptyState } from '@/shared/components/data/EmptyState';
 
-export function MuseumCatalogue({ displays }: { displays: readonly MuseumDisplay[] }) {
+export function MuseumCatalogue({ displays, selectedId, onSelect }: {
+  displays: readonly MuseumDisplay[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
   return (
     <section aria-labelledby="catalogue-title" id="museum-catalogue" tabIndex={-1}>
       <Stack gap="md">
@@ -16,6 +20,9 @@ export function MuseumCatalogue({ displays }: { displays: readonly MuseumDisplay
               <Badge variant="light" color="gray" mb="md">Hiện vật {String(index + 1).padStart(2, '0')}</Badge>
               <Title order={3} size="h4" mb="xs">{display.title}</Title>
               <Text size="sm" c="dimmed">{display.description}</Text>
+              <Button mt="md" variant={selectedId === display.id ? 'filled' : 'light'} color="teal.9"
+                aria-label={`Xem chi tiết ${display.title}`} aria-pressed={selectedId === display.id}
+                onClick={() => onSelect(display.id)}>Xem chi tiết</Button>
               {display.isOutsideRoom && <Text size="sm" c="orange.8" mt="sm">Hiện vật này nằm ngoài phạm vi phòng 3D. Bạn có thể đọc thông tin tại đây.</Text>}
             </Card>
           ))}

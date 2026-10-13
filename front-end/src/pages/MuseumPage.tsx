@@ -17,6 +17,12 @@ export function MuseumPage() {
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const displays = useMemo(() => detail ? mapRoomDisplays(detail) : [], [detail]);
   const [isSceneOpen, setIsSceneOpen] = useState(false);
+  const [selection, setSelection] = useState<{ roomId: string; id: string } | null>(null);
+  const selectedDisplay = detail && selection?.roomId === detail.id ? displays.find((display) => display.id === selection.id) : undefined;
+  useEffect(() => setSelection(null), [selectedSlug]);
+  const handleSelectDisplay = (id: string) => {
+    if (detail) setSelection({ roomId: detail.id, id });
+  };
   const startButtonRef = useRef<HTMLButtonElement>(null);
   const wasSceneOpenRef = useRef(false);
   useEffect(() => {
@@ -79,7 +85,7 @@ export function MuseumPage() {
           Kéo chuột hoặc vuốt để xoay · Cuộn hoặc chụm hai ngón để thu phóng.
           Khi chọn khung 3D: phím mũi tên / WASD xoay góc nhìn, +/− thu phóng, Home về ban đầu. Tab để rời khung.
         </Text>
-        <MuseumCatalogue displays={displays} />
+        <MuseumCatalogue displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay} />
         </>}
       </Stack>
     </Container>
