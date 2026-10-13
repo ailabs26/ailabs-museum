@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Container, Group, NativeSelect, Stack, Text, Title } from '@mantine/core';
 import { useSearchParams } from 'react-router-dom';
 import { MuseumCatalogue } from '@/components/museum/MuseumCatalogue';
+import { ExhibitDetailPanel } from '@/components/museum/ExhibitDetailPanel';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { mapRoomDisplays } from '@/helpers/mapRoomDisplays';
 import { EmptyState } from '@/shared/components/data/EmptyState';
@@ -20,8 +21,14 @@ export function MuseumPage() {
   const [selection, setSelection] = useState<{ roomId: string; id: string } | null>(null);
   const selectedDisplay = detail && selection?.roomId === detail.id ? displays.find((display) => display.id === selection.id) : undefined;
   useEffect(() => setSelection(null), [selectedSlug]);
+  const selectionTriggerRef = useRef<HTMLElement | null>(null);
   const handleSelectDisplay = (id: string) => {
+    selectionTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (detail) setSelection({ roomId: detail.id, id });
+  };
+  const handleCloseDetail = () => {
+    setSelection(null);
+    if (selectionTriggerRef.current?.isConnected) selectionTriggerRef.current.focus({ preventScroll: true });
   };
   const startButtonRef = useRef<HTMLButtonElement>(null);
   const wasSceneOpenRef = useRef(false);
@@ -35,7 +42,9 @@ export function MuseumPage() {
     setSearchParams(next);
   };
   return (
-    <Container size="xl" py="xl">
+    <Container size="xl" py="xl" onKeyDown={(event) => {
+      if (event.key === 'Escape' && selectedDisplay) { event.preventDefault(); handleCloseDetail(); }
+    }}>
       <Stack>
         <Text size="xs" tt="uppercase" c="dimmed" fw={700}>Aura / Tham quan bảo tàng</Text>
         <Title order={1}>{detail?.name ?? 'Tham quan bảo tàng'}</Title>
@@ -65,6 +74,7 @@ export function MuseumPage() {
         {detail.description && <Text>{detail.description}</Text>}
         <Text size="sm" c="dimmed">{displays.length} hiện vật · Hình khối thay thế cho ảnh hoặc mô hình chưa khả dụng</Text>
         {room.isFetching && <Text role="status">Đang cập nhật phòng…</Text>}
+        <div className={`${classes.stage} ${selectedDisplay ? classes.stageDetails : ''}`}>
         <div className={classes.viewport}>
           {isSceneOpen ? (
             <ErrorBoundary key={detail.id} fallback={<SceneFallback />}>
@@ -80,6 +90,8 @@ export function MuseumPage() {
               <Text size="sm">Bạn cũng có thể đọc toàn bộ nội dung ngay bên dưới.</Text>
             </Stack>
           )}
+        </div>
+        {selectedDisplay && <ExhibitDetailPanel display={selectedDisplay} onClose={handleCloseDetail} />}
         </div>
         <Text id="museum-controls-help" size="sm" c="dimmed">
           Kéo chuột hoặc vuốt để xoay · Cuộn hoặc chụm hai ngón để thu phóng.

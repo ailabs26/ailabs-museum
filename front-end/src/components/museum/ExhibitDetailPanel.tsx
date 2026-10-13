@@ -1,0 +1,42 @@
+import { useEffect, useRef } from 'react';
+import { Badge, Button, Stack, Text, Title } from '@mantine/core';
+import type { MuseumDisplay } from '@/interfaces/museumScene';
+import classes from './ExhibitDetailPanel.module.css';
+
+/** Published text only; nonmodal so the scene and room selector stay usable. */
+export function ExhibitDetailPanel({ display, onClose }: { display: MuseumDisplay; onClose: () => void }) {
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => titleRef.current?.focus({ preventScroll: true }), [display.id]);
+  return (
+    <aside aria-label="Chi tiết hiện vật" className={classes.panel}>
+      <Stack gap="lg">
+        <div className={classes.header}>
+          <Badge color="teal.9" variant="light">Đang xem</Badge>
+          <Button variant="subtle" color="dark" onClick={onClose} aria-label="Đóng chi tiết hiện vật">Đóng ×</Button>
+        </div>
+        <Title ref={titleRef} tabIndex={-1} order={2} size="h3" className={classes.title}>{display.title}</Title>
+        <div className={classes.mediaFallback}>
+          <Text size="sm">Chưa có ảnh hoặc mô hình 3D.</Text>
+          <Text size="xs" c="dimmed">Hình khối trong phòng là hình thay thế.</Text>
+        </div>
+        <section aria-label="Mô tả hiện vật">
+          <Title order={3} size="h5" mb="xs">Câu chuyện hiện vật</Title>
+          <Text size="sm" className={classes.body}>{display.description || 'Chưa có mô tả.'}</Text>
+        </section>
+        {display.transcript && <section aria-label="Bản thuyết minh">
+          <Title order={3} size="h5" mb="xs">Bản thuyết minh</Title>
+          <Text size="sm" className={classes.body}>{display.transcript}</Text>
+        </section>}
+        {!!display.hotspots?.length && <section aria-label="Điểm chú ý">
+          <Title order={3} size="h5" mb="sm">Điểm chú ý</Title>
+          <Stack gap="md">{display.hotspots.map((hotspot, index) => <div key={`${hotspot.id}-${index}`}>
+            <Text fw={600} size="sm" className={classes.body}>{hotspot.label}</Text>
+            <Text size="sm" className={classes.body}>{hotspot.body}</Text>
+          </div>)}</Stack>
+        </section>}
+        {display.isOutsideRoom && <Text size="sm">Hiện vật nằm ngoài phạm vi phòng 3D. Thông tin vẫn có thể đọc tại đây.</Text>}
+        <Text size="xs" c="dimmed">Escape để đóng · Chọn hiện vật khác để tiếp tục khám phá</Text>
+      </Stack>
+    </aside>
+  );
+}

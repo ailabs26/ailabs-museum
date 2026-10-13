@@ -1,3 +1,7 @@
+.stage { display: grid; gap: 16px; min-width: 0; }
+.stageDetails { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); }
+@media (max-width: 800px) { .stageDetails { grid-template-columns: minmax(0, 1fr); } }
+
 .viewport {
   height: clamp(360px, 64svh, 740px);
   position: relative;
