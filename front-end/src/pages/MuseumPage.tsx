@@ -3,6 +3,7 @@ import { Alert, Button, Container, Group, NativeSelect, Stack, Text, Title } fro
 import { useSearchParams } from 'react-router-dom';
 import { MuseumCatalogue } from '@/components/museum/MuseumCatalogue';
 import { ExhibitDetailPanel } from '@/components/museum/ExhibitDetailPanel';
+import { MuseumLoading } from '@/components/museum/MuseumLoading';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { mapRoomDisplays } from '@/helpers/mapRoomDisplays';
 import { EmptyState } from '@/shared/components/data/EmptyState';
@@ -62,13 +63,13 @@ export function MuseumPage() {
             {isSceneOpen && <Button variant="default" onClick={() => setIsSceneOpen(false)}>Dừng 3D</Button>}
           </Group>
         </Group>
-        {rooms.isPending ? <Text role="status">Đang tải danh sách phòng…</Text>
+        {rooms.isPending ? <MuseumLoading text="Đang tải danh sách phòng…" />
           : rooms.isError ? <Alert color="red" role="alert" title="Không tải được danh sách phòng">
             <Text>{rooms.error.message}</Text><Button mt="sm" onClick={() => void rooms.refetch()}>Thử lại</Button>
           </Alert>
           : rooms.data.length === 0 ? <EmptyState text="Chưa có phòng trưng bày công khai." />
           : !selectedRoom ? <Alert role="alert" color="red">Phòng được chọn không có trong danh sách công khai. Hãy chọn phòng khác.</Alert>
-          : room.isPending ? <Text role="status">Đang tải phòng trưng bày…</Text>
+          : room.isPending ? <MuseumLoading text="Đang tải phòng trưng bày…" />
           : room.isError ? <Alert color="red" role="alert" title="Không tải được phòng trưng bày">
             <Text>{room.error.message}</Text><Button mt="sm" onClick={() => void room.refetch()}>Thử lại</Button>
           </Alert> : null}
@@ -80,7 +81,7 @@ export function MuseumPage() {
         <div className={classes.viewport}>
           {isSceneOpen ? (
             <ErrorBoundary key={detail.id} fallback={<SceneFallback />}>
-              <Suspense fallback={<Stack h="100%" align="center" justify="center"><Text role="status">Đang mở phòng 3D…</Text></Stack>}>
+              <Suspense fallback={<MuseumLoading text="Đang mở phòng 3D…" />}>
                 <LazyMuseumScene displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay} />
               </Suspense>
             </ErrorBoundary>
