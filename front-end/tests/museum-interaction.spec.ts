@@ -202,15 +202,19 @@ test('desktop detail leaves the scene visible and long published text wraps', as
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D');
-  await expect(canvas).toBeVisible();
+  // Cold production imports and software WebGL can take longer than 5 seconds.
+  await expect(canvas).toBeVisible({ timeout: 15_000 });
   await page.getByRole('list', { name: 'Các hiện vật' }).getByRole('button').first().click();
   const panel = page.getByRole('complementary', { name: 'Chi tiết hiện vật' });
   await expect(panel).toBeVisible();
-  const sceneBox = (await canvas.boundingBox())!;
-  const panelBox = (await panel.boundingBox())!;
-  expect(panelBox.x).toBeGreaterThan(sceneBox.x + sceneBox.width);
-  expect(sceneBox.width).toBeGreaterThan(600);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  // Canvas follows the grid resize asynchronously through ResizeObserver.
+  await expect(async () => {
+    const sceneBox = (await canvas.boundingBox())!;
+    const panelBox = (await panel.boundingBox())!;
+    expect(panelBox.x).toBeGreaterThan(sceneBox.x + sceneBox.width);
+    expect(sceneBox.width).toBeGreaterThan(600);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }).toPass({ timeout: 5_000 });
   await page.waitForTimeout(700);
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.screenshot({ path: testInfo.outputPath('day3-desktop-detail.png'), fullPage: true });
