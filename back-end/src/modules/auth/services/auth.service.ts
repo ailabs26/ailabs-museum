@@ -73,7 +73,10 @@ export class AuthService {
   }
 
   logout(rawToken: string | undefined): Promise<void> {
-    if (!rawToken) return Promise.resolve();
+    if (!rawToken) {
+      return Promise.resolve();
+    }
+
     return this.tokens.revokeByRaw(rawToken);
   }
 }

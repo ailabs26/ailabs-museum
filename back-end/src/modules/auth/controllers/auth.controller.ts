@@ -1,12 +1,23 @@
-import { Body, Controller, Get, Post, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
-import { AuthUser } from '../../../common/types/auth-user.type';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { CookieOptions, Request, Response } from 'express';
+import type { AuthUser } from '../../../common/types/auth-user.type';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Public } from '../../../common/decorators/public.decorator';
 import { AuthService } from '../services/auth.service';
 import { LoginDto } from '../dto/login.dto';
+import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard';
 import { TokenService } from '../services/token.service';
 
 type RequestWithCookies = Request & { cookies?: Record<string, string> };
@@ -22,7 +33,11 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng nhập, trả access token + set cookie refresh' })
+  @ApiOkResponse({
+    description: 'Access token và user trong ApiResponse; refresh token qua cookie HttpOnly.',
+  })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -34,7 +49,11 @@ export class AuthController {
 
   @Public()
   @Post('refresh')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Làm mới access token bằng refresh cookie (xoay vòng)' })
+  @ApiOkResponse({
+    description: 'Access token mới trong ApiResponse và refresh cookie đã xoay vòng.',
+  })
   async refresh(
     @Req() req: RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
@@ -44,19 +63,35 @@ export class AuthController {
     return { accessToken: result.accessToken };
   }
 
+  @Public()
   @Post('logout')
+  @UseGuards(RefreshCookieOriginGuard)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng xuất: thu hồi refresh session và xóa cookie' })
+  @ApiOkResponse({
+    description: 'Không cần access token còn hạn. Thu hồi refresh session nếu có và xóa cookie; có thể gọi lại.',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: { type: 'object', nullable: true, example: null },
+        message: { type: 'string', nullable: true, example: null },
+      },
+    },
+  })
   async logout(
     @Req() req: RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ success: boolean }> {
+  ): Promise<null> {
     await this.auth.logout(this.readRefreshCookie(req));
     this.clearRefreshCookie(res);
-    return { success: true };
+    return null;
   }
 
   @Get('me')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Thông tin phiên hiện tại (roles + permissions)' })
+  @ApiOkResponse({ description: 'User hiện tại trong ApiResponse.' })
   me(@CurrentUser() user: AuthUser): Promise<AuthUser> {
     return this.auth.me(user.id);
   }
@@ -71,15 +106,21 @@ export class AuthController {
 
   private setRefreshCookie(res: Response, token: string): void {
     res.cookie(this.cookieName(), token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      ...this.refreshCookieOptions(),
       maxAge: this.tokens.refreshCookieMaxAgeMs(),
-      path: '/',
     });
   }
 
   private clearRefreshCookie(res: Response): void {
-    res.clearCookie(this.cookieName(), { path: '/' });
+    res.clearCookie(this.cookieName(), this.refreshCookieOptions());
+  }
+
+  private refreshCookieOptions(): CookieOptions {
+    return {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    };
   }
 }
