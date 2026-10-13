@@ -41,7 +41,7 @@ Không sửa `useMuseumRooms` hoặc query keys vì đã giải quyết cancella
 
 - [x] Khảo sát route/hook/schema, fixtures và live test pattern.
 - [x] Ghi design đã duyệt vào plan và task.
-- [ ] Review/stage hai tài liệu, commit `docs(collection): plan API-backed 2D collection`.
+- [x] Review/stage hai tài liệu, commit `c96dc8c`.
 
 ## COL-02: Slice danh mục hoạt động
 
@@ -55,11 +55,11 @@ await expect(page.getByRole('link', { name: 'Tham quan phòng này trong 3D' }))
 await expect(page.locator('canvas')).toHaveCount(0);
 ```
 
-- [ ] Chạy `npm.cmd test -- collection.spec.ts` và ghi failure đúng do placeholder chưa có page.
-- [ ] Implement page dưới 200 dòng, dùng `NativeSelect`, `Alert`, `Button` và semantic sections/list. URL select giữ các query khác; dùng validated detail, sort copy array `(a,b)=>a.displayOrder-b.displayOrder||a.id.localeCompare(b.id)`.
-- [ ] CSS dùng `--public-*`, 1 cột mobile, 2 cột sm và 3 lg, wrap tên dài; native focus/labels. Placeholder text thật thay vì ảnh giả.
-- [ ] Thay route và bỏ hàm placeholder không còn caller; giữ Container/Text/Title/Stack dùng bởi NoAccess.
-- [ ] Test GREEN và `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build`.
+- [x] Chạy `npm.cmd test -- collection.spec.ts`: hai tests fail vì thiếu page h1/select.
+- [x] Implement page dưới 200 dòng, dùng `NativeSelect`, `Alert`, `Button` và semantic sections/list. URL select giữ các query khác; dùng validated detail, sort copy array `(a,b)=>a.displayOrder-b.displayOrder||a.id.localeCompare(b.id)`.
+- [x] CSS dùng `--public-*`, 1 cột mobile, 2 cột sm và 3 lg, wrap tên dài; native focus/labels. Placeholder text thật thay vì ảnh giả.
+- [x] Thay route và bỏ hàm placeholder không còn caller; giữ Container/Text/Title/Stack dùng bởi NoAccess.
+- [x] Test GREEN (2/2) và `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build` đạt.
 - [ ] Review/stage page/CSS/route/tests, task update; commit `feat(collection): render public exhibits with room selection`.
 
 ## COL-03: Edge cases và chứng minh API thật
