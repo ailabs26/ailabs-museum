@@ -17,6 +17,8 @@ export const PERMISSIONS = {
   ROOM_DELETE: 'room:delete',
   EXHIBIT_READ: 'exhibit:read',
   EXHIBIT_CREATE: 'exhibit:create',
+  EXHIBIT_UPDATE: 'exhibit:update',
+  REVISION_SUBMIT: 'revision:submit',
   REVISION_PUBLISH: 'revision:publish',
   REVISION_REJECT: 'revision:reject',
   REVISION_HIDE: 'revision:hide',
