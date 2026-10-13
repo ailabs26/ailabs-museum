@@ -45,7 +45,7 @@ Không sửa `useMuseumRooms` hoặc query keys vì đã giải quyết cancella
 
 ## COL-02: Slice danh mục hoạt động
 
-- [ ] Test trước với fixture: vào `/collection`, mong đợi 5 listitem, tên/mô tả và 5 “Chưa có ảnh”, link tour đúng slug; scene/canvas không tải. Đảo order fixture để chứng minh sort theo displayOrder/id. Select đổi sang ceramics, URL và list tương ứng; reload giữ lựa chọn.
+- [x] Test trước với fixture: 5 listitem, tên/mô tả và 5 “Chưa có ảnh”, link tour đúng slug; scene/canvas không tải. Đảo order fixture chứng minh sort; chọn ceramics và reload giữ lựa chọn.
 
 ```ts
 await page.goto('/collection');
@@ -60,14 +60,14 @@ await expect(page.locator('canvas')).toHaveCount(0);
 - [x] CSS dùng `--public-*`, 1 cột mobile, 2 cột sm và 3 lg, wrap tên dài; native focus/labels. Placeholder text thật thay vì ảnh giả.
 - [x] Thay route và bỏ hàm placeholder không còn caller; giữ Container/Text/Title/Stack dùng bởi NoAccess.
 - [x] Test GREEN (2/2) và `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build` đạt.
-- [ ] Review/stage page/CSS/route/tests, task update; commit `feat(collection): render public exhibits with room selection`.
+- [x] Review/stage page/CSS/route/tests, task update; commit `73c6eed`.
 
 ## COL-03: Edge cases và chứng minh API thật
 
-- [ ] Thêm tests trước cho list/detail loading, rỗng, malformed response, invalid room, retry và refresh error. Dùng fixtures hiện có và route override; không mock production service.
-- [ ] Tests chuyển phòng pending response: content cũ không hiện trong phòng mới; hook đã có abort/correct key, xác minh page không lộ stale.
-- [ ] Keyboard: select bằng ArrowDown/Enter và tour link bằng Enter; active nav collection. Light/dark tại 320/768/1024/1440 không tràn ngang.
-- [ ] Live test opt-in với `MUSEUM_LIVE_TEST=1`: API thật list/detail được parse bằng schema; assert 5 tên seed và số listitems khớp API, media null labelled, không sample fallback/no scene. Không sửa Supabase, không interception.
+- [x] Thêm tests list/detail loading, rỗng, malformed response, invalid room, retry và refresh error. Dùng fixtures/route override; không mock service. Các tests này kiểm chứng hành vi có sẵn sau COL-02, không có RED trước code mới.
+- [x] Tests chuyển phòng pending response: content cũ không hiện trong phòng mới; hook đã có abort/correct key, page không lộ stale.
+- [x] Keyboard select ArrowDown/Enter và tour link Enter; active nav collection. Light/dark 320/768/1024/1440 không tràn ngang.
+- [x] Live test `MUSEUM_LIVE_TEST=1`: 1/1 đạt, API thật schema parse và 5 tên seed hiển thị, không Supabase write/interception/Canvas.
 
 ```powershell
 npm.cmd test -- collection.spec.ts public-tour-navigation.spec.ts
@@ -77,8 +77,8 @@ npm.cmd test -- collection-live.spec.ts
 Remove-Item Env:MUSEUM_LIVE_TEST
 ```
 
-- [ ] Chạy lại quality gates nếu code sửa; docs README/task ghi kết quả thật, giới hạn visual review và warnings.
-- [ ] Commit `test(collection): verify states and live API content` gồm edge tests/docs, không commit test artifacts hoặc .env.
+- [x] Focused Playwright 12/12, unit tests 6/6, typecheck/lint/build đạt; README/task ghi giới hạn review và warnings.
+- [ ] Review/commit `test(collection): verify states and live API content` gồm edge tests/docs, không artifacts/.env.
 
 ## Self-review và bàn giao
 
