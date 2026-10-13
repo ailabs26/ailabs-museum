@@ -4,6 +4,8 @@ import { defineConfig } from '@playwright/test';
 // stay on a separate port; enabling live checks never starts or seeds the DB.
 const isLiveApi = process.env.MUSEUM_LIVE_TEST === '1';
 const baseURL = isLiveApi ? 'http://localhost:5173' : 'http://127.0.0.1:4173';
+const host = isLiveApi ? 'localhost' : '127.0.0.1';
+const port = isLiveApi ? 5173 : 4173;
 
 export default defineConfig({
   testDir: './tests',
@@ -17,11 +19,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: isLiveApi
-      ? 'npm run dev -- --host localhost --port 5173 --strictPort'
-      : process.env.PLAYWRIGHT_PREVIEW === '1'
-      ? 'npm run preview -- --host 127.0.0.1 --port 4173 --strictPort'
-      : 'npm run dev -- --host 127.0.0.1 --port 4173 --strictPort',
+    command: `npm run ${process.env.PLAYWRIGHT_PREVIEW === '1' ? 'preview' : 'dev'} -- --host ${host} --port ${port} --strictPort`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
   },
