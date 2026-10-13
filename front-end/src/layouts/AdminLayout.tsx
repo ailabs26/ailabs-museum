@@ -27,6 +27,8 @@ import { useDisclosure } from '@mantine/hooks';
 import { NavLink as RouterNavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/auth/use-auth';
 import { PERMISSIONS } from '@/core/auth/permissions';
+import { ApiException } from '@/core/api/api-error';
+import { notify } from '@/shared/components/feedback';
 
 interface NavItem {
   label: string;
@@ -69,6 +71,18 @@ export function AdminLayout() {
 
   const canSee = (item: NavItem) => !item.anyOf || hasAnyPermission(item.anyOf);
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      notify.success('Đã đăng xuất khỏi CMS');
+    } catch (error) {
+      const message = error instanceof ApiException ? error.message : 'Không hoàn tất được đăng xuất trên máy chủ';
+      notify.error(message);
+    } finally {
+      navigate('/admin/login', { replace: true });
+    }
+  };
+
   return (
     <AppShell
       header={{ height: 56 }}
@@ -102,7 +116,7 @@ export function AdminLayout() {
             <Menu.Dropdown>
               <Menu.Item
                 leftSection={<IconLogout size={16} />}
-                onClick={() => logout().then(() => navigate('/admin/login'))}
+                onClick={handleLogout}
               >
                 Đăng xuất
               </Menu.Item>

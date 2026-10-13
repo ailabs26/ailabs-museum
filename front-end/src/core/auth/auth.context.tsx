@@ -1,4 +1,5 @@
-import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { authService } from '@/services/auth.service';
 import { tokenStore } from './token-store';
 import type { AuthUser, LoginPayload } from './types';
@@ -16,17 +17,44 @@ export interface AuthContextValue {
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const initialSession = useRef<Promise<AuthUser> | null>(null);
+  const isLoggingOutRef = useRef(false);
+
+  useEffect(() => {
+    return tokenStore.subscribe((token) => {
+      if (token === null) {
+        setUser(null);
+        void queryClient.cancelQueries();
+        queryClient.clear();
+      }
+    });
+  }, [queryClient]);
 
   // Khôi phục phiên: nếu có refresh cookie, /auth/me sẽ trả user (qua auto-refresh ở http-client).
   useEffect(() => {
     let active = true;
-    authService
-      .me()
-      .then((u) => active && setUser(u))
-      .catch(() => active && setUser(null))
-      .finally(() => active && setIsLoading(false));
+    // Dùng lại request khi StrictMode chạy lại effect trong môi trường dev.
+    initialSession.current ??= authService.me();
+    initialSession.current
+      .then((restoredUser) => {
+        if (active && tokenStore.get() !== null) {
+          setUser(restoredUser);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          tokenStore.clear();
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoading(false);
+        }
+      });
     return () => {
       active = false;
     };
@@ -39,11 +67,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    if (isLoggingOutRef.current) {
+      return;
+    }
+
+    isLoggingOutRef.current = true;
+    setIsLoggingOut(true);
+    tokenStore.clear();
+    setUser(null);
+
     try {
       await authService.logout();
     } finally {
-      tokenStore.clear();
-      setUser(null);
+      isLoggingOutRef.current = false;
+      setIsLoggingOut(false);
     }
   }, []);
 
@@ -52,13 +89,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {
       user,
       isAuthenticated: !!user,
-      isLoading,
+      isLoading: isLoading || isLoggingOut,
       login,
       logout,
       hasPermission: (permission) => granted.has(permission),
       hasAnyPermission: (permissions) => permissions.some((p) => granted.has(p)),
     };
-  }, [user, isLoading, login, logout]);
+  }, [user, isLoading, isLoggingOut, login, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
