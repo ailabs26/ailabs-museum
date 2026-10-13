@@ -244,7 +244,7 @@ f8c2298 feat(tour): map public exhibits to stable scene displays
 - [x] 17. Consistent museum loading/empty/error presentation; existing API regression tests.
 - [x] 18. Mobile panel/toolbar/layout touch targets; narrow/zoom browser checks.
 - [x] 19. Interaction/lifecycle regression and visual evidence; complete FE gates, production tests, independent review.
-- [ ] 20. Final progress/README, real commit ledger and one PR into dev; no merge.
+- [x] 20. Final progress/README, real commit ledger and one PR into dev; no merge.
 
 Review focus: near-wall focus positions; rapid selection while transition runs; room switches/refresh removal must hide old detail; selection/fallback without WebGL; reduced-motion changes, pointer drag versus click and cleanup during pending motion. Keep Day 1/2 cancellation and identity tests. Final FE commands: npm.cmd run typecheck, npm.cmd run lint, npm.cmd run build, npm.cmd run test:unit, CI=1 PLAYWRIGHT_PREVIEW=1 npm.cmd test. Screenshots from actual software WebGL at desktop/mobile sizes; no physical-device/FPS/GPU certification. Deep performance optimization, GLB/audio/guided-tour/WebXR and final Day 4 device QA remain outside scope.
 
@@ -344,3 +344,9 @@ fe3c55e fix(tour): preserve readable gallery text in automatic dark mode
 ```
 
 The final verification/README documentation commit and PR publication record follow these 25 code/planning/test commits; their SHAs are discoverable in git log. Total stays below 30 meaningful commits. One task branch/one PR into dev; no automatic merge. Publication URL/status is recorded once GitHub confirms it.
+
+### Day 3 Git delivery (13 October 2026)
+
+- PR [#43 — Day 3 gallery and exhibit interaction](https://github.com/ailabs26/ailabs-museum/pull/43), base `dev`, head `feat/museum-visual-day3`. GitHub confirmed OPEN / MERGEABLE / CLEAN. **Not merged**; no push into dev/main. Human testing/review comes before any integration; use Create a merge commit when explicitly authorized.
+- Documentation/evidence commit: `9f3fd39 docs(tour): record Day 3 verification and visual evidence`. The final publication-record commit contains this confirmed URL/status and is the branch HEAD in git log. **27 meaningful commits total**, within the maximum 30; all original Day 1/2 ancestors retained, without squash/rebase/force push.
+- Local handoff: production preview at http://localhost:5173/tour.html (HTTP 200 confirmed) and read-only API at http://localhost:3001/api. One public room/five published `[Mẫu]` exhibits available. Preview and backend left running for manual testing; no database content created by Day 3 work.
