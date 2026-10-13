@@ -63,6 +63,14 @@ Remove-Item Env:CI
 
 Live test chạy frontend trên `http://localhost:5173` để khớp CORS local hiện có. Nếu API trả `[]`, test chỉ chứng minh trạng thái rỗng; cần nội dung đã xuất bản để kiểm chứng phòng/hiện vật live.
 
+## Hiện vật nổi bật trên trang chủ
+
+- Trang `/` lấy phòng đầu tiên theo danh sách API, sắp xếp hiện vật theo `displayOrder` rồi ID và hiển thị tối đa 3 mục. Đây là quy tắc giới thiệu tạm thời, chưa phải cờ nổi bật trong CMS.
+- Phòng đầu rỗng thì báo rỗng; không tải các phòng khác để điền đủ 3 thẻ. Có 1–2 mục thì hiển thị đúng số lượng; giữ nguyên nhãn mẫu và nội dung từ API.
+- Thẻ dùng chung `ExhibitGrid` với collection; media null hiển thị **Chưa có ảnh**. Link **Xem bộ sưu tập của phòng này** giữ slug qua URL. Hero/giới thiệu vẫn đọc được khi API lỗi; có trạng thái tải/lỗi/rỗng và thử lại, không thay bằng demo fallback.
+- Tests: `npm.cmd test -- home-featured.spec.ts collection.spec.ts public-tour-navigation.spec.ts`. Live API: bật `MUSEUM_LIVE_TEST=1`, chạy `npm.cmd test -- home-featured-live.spec.ts`, rồi bỏ biến. Test live không interception/seed/database writes; khi API rỗng chỉ chứng minh trạng thái rỗng.
+- Task/plan: [home-featured-exhibits.md](../docs/tasks/home-featured-exhibits.md), [home-featured-exhibits-plan.md](../docs/plans/home-featured-exhibits-plan.md).
+
 ## Bộ sưu tập 2D
 
 - Mở `/collection` hoặc `/collection?room=<slug>`. Chọn phòng để đọc tên/mô tả hiện vật đã xuất bản qua cùng API public của tour.

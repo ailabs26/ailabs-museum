@@ -11,7 +11,7 @@
 ## Trạng thái và gate người dùng
 
 Task nguồn: [home-featured-exhibits.md](../tasks/home-featured-exhibits.md).
-Khảo sát trên bản `8f320c8`; đang ở nhánh riêng `feat/home-featured-exhibits`, tạo từ `origin/dev`. Các bước triển khai bên dưới chưa thực hiện.
+Khảo sát trên bản `8f320c8`; đang ở nhánh riêng `feat/home-featured-exhibits`, tạo từ `origin/dev`. Đã duyệt và triển khai; checkbox ghi bằng chứng thực tế.
 
 **DỪNG sau khi viết/rà soát tài liệu trên nhánh riêng.** Chỉ khi người dùng xác nhận OK mới commit tài liệu và triển khai; không làm nhiệm vụ trên `dev`.
 
@@ -71,7 +71,7 @@ git commit -m "docs(home): plan API-backed featured exhibits"
 
 **Consumes:** `useMuseumRooms(null)` chọn phòng đầu tiên; ExhibitGrid. **Produces:** phần dữ liệu bên trong section `aria-labelledby="featured-title"` có sẵn và link `/collection?room=<slug>`.
 
-- [ ] Viết fixture test trước: route roomA có dữ liệu đảo thứ tự, mong đợi 3 mục đầu theo displayOrder/id, 3 placeholder ảnh và link collection đúng phòng; ghi nhận RED trên mục còn trống.
+- [x] Viết test trước; đầu tiên fail vì 0 listitems thay vì 3 trên mục trống. Sau sửa GREEN.
 
 ```ts
 await installMuseumApi(page);
@@ -86,7 +86,7 @@ await expect(featured.getByRole('link', { name: 'Xem bộ sưu tập của phòn
   .toHaveAttribute('href', '/collection?room=sculpture');
 ```
 
-- [ ] Thêm fixture tests phòng có 0/1/2/5 hiện vật, list rỗng, list/detail loading, HTTP/schema error, retry và refetch thất bại. Đặt test assertions trước implementation; không yêu cầu test mới fail nếu hook sẵn có đã xử lý đúng.
+- [x] Thêm tests 0/1/2/5 items, list rỗng, loading, HTTP/schema/retry và cached error trước implementation; chỉ chạy RED test đầu, không tuyên bố mỗi test đều đã fail trước.
 - [x] Implement HomeFeaturedExhibits dùng hook đã có; render detail khi `rooms.isSuccess && selectedRoom && room.isSuccess`. Sort/slice:
 
 ```ts
@@ -110,17 +110,17 @@ npm.cmd run build
 
 ## HF-04: Live API và bàn giao
 
-- [ ] Tạo opt-in live test theo pattern `collection-live.spec.ts`, chỉ bật khi `MUSEUM_LIVE_TEST=1`. Chờ list/detail response thật và parse schema, xác nhận số thẻ `min(3, exhibits.length)` và tên khớp danh sách đã sort. Nếu không có phòng/content thì kiểm tra trạng thái thật và báo không đủ bằng chứng populated; không tự seed.
-- [ ] Khi seed hiện tại còn public, so sánh 3 thẻ trang chủ với 3 hiện vật đầu response; không hardcode tên seed làm dữ liệu production.
-- [ ] Test link collection bằng Enter và đúng slug; dùng locator scoped trong region tránh trùng link/heading ở hero/nav. Không mount Canvas hoặc sửa database.
+- [x] Live test 1/1 đạt: parse list/detail và so sánh count/name theo response thật; trạng thái rỗng có annotation riêng, không seed.
+- [x] 3 thẻ khớp 3 mẫu đầu trong phòng lịch sử quân sự; không hardcode dữ liệu production.
+- [x] Link Enter tới collection cùng slug, đủ 5 thẻ; không Canvas hoặc database write.
 
 ```powershell
 $env:MUSEUM_LIVE_TEST='1'
 try { npm.cmd test -- home-featured-live.spec.ts } finally { Remove-Item Env:MUSEUM_LIVE_TEST }
 ```
 
-- [ ] Chạy unit tests hiện có; quality gates chỉ chạy lại nếu thêm thay đổi code/failure. Ghi bằng chứng fixture/live riêng và warnings thực tế vào README/task.
-- [ ] Review diff/test artifacts/secrets, commit `test(home): verify live featured content and navigation` nếu có thay đổi độc lập.
+- [x] Unit tests 6/6, typecheck/lint đạt sau live test; README/task ghi bằng chứng và cảnh báo bundle.
+- [x] Review diff, chuẩn bị commit live test/docs; commit cuối tra qua git log. Không stage artifacts/.env.
 - [ ] Gửi URL local và chờ người dùng duyệt hình ảnh/bố cục. Không suy ra visual review từ DOM assertions.
 - [ ] Soạn mô tả PR gửi trước, chờ người dùng cho phép push/tạo PR vào `dev`.
 

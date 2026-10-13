@@ -1,6 +1,6 @@
 # Task T-HOME-FEATURED: Hiện vật nổi bật trên trang chủ
 
-**Trạng thái:** Người dùng đã duyệt task/plan và yêu cầu triển khai trên nhánh riêng.
+**Trạng thái:** Đã triển khai và kiểm chứng kỹ thuật/API thật; chờ người dùng duyệt giao diện và nội dung PR.
 **Bản code khảo sát:** `dev` tại `8f320c8`.
 **Nhánh:** `feat/home-featured-exhibits`, đã tạo từ `origin/dev` tại `8f320c8`.
 **Plan:** [home-featured-exhibits-plan.md](../plans/home-featured-exhibits-plan.md).
@@ -49,7 +49,7 @@ Commit theo phần thực sự có thay đổi và đã kiểm chứng; không t
 - [x] Hero/giới thiệu vẫn xuất hiện khi API lỗi.
 - [x] DOM assertions 320/768/1024/1440 px light/dark không tràn ngang; h1/h2/h3 đúng.
 - [x] Typecheck/lint/build, tests collection/navigation và tests nổi bật đạt.
-- [ ] Live test đọc API thật, tên và số thẻ khớp response; không ghi database.
+- [x] Live test đọc API thật, tên và số thẻ khớp response; không ghi database.
 - [ ] Người dùng duyệt giao diện; gửi mô tả PR và chờ yêu cầu trước push/tạo PR.
 
 ## Ngoài phạm vi
@@ -66,3 +66,7 @@ Người dùng đã duyệt quy tắc **phòng đầu tiên của API + 3 hiện
 - HF-02 baseline collection 10/10 đạt (37.5s); sau tách ExhibitGrid 10/10 đạt (42.4s). Frontend typecheck/lint/build đạt; vẫn cảnh báo bundle >500 kB. Chỉ di chuyển markup/style thẻ, không đổi hook/service/schema hoặc dữ liệu.
 - HF-02 commit `78d3cbb`.
 - HF-03 test viết trước: test featured đầu fail đúng vì listitem 0 thay vì 3 (6 tests còn lại chưa chạy do max-failures). Sau implementation bộ focused home/collection/navigation 19/19 đạt (1.6m). Kiểm tra 0/1/2/5 items, sorting/tie ID, loading/error/schema/retry, cached error, keyboard link, no-scene và responsive. Typecheck/lint/build riêng từng lệnh đạt sau tool chained command bị ngắt; main 1,318.18 kB, scene 846.01 kB, cảnh báo >500 kB còn tồn tại.
+- HF-03 commit `942e054`.
+- HF-04 live test 1/1 đạt (9.2s), không interception: room list/detail được parse schema; 3 thẻ khớp API thật và link Enter tới collection cùng phòng, collection có đủ 5 mục. Probe chỉ đọc xác nhận phòng đầu là “Phòng Lịch Sử Quân Sự Việt Nam”; 3 mục đầu: `[Mẫu] Mũ bảo hộ`, `[Mẫu] Bình nước dã chiến`, `[Mẫu] Ba lô hành quân`.
+- Unit tests hiện có 6/6 đạt; typecheck/lint đạt sau thêm live test. Runtime không đổi sau build cuối; không chạy lại build chỉ vì docs/tests. Không thêm dependency, không đổi backend/database/hook/service/schema.
+- Chưa có visual audit, axe hoặc full tour-suite evidence; phiên không đọc được ảnh. Một số tour tests cũ còn kỳ vọng heading trang chủ trước tích hợp. Bằng chứng DOM responsive không thay cho người dùng duyệt trực quan. Chưa push/PR.
