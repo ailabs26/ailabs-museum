@@ -6,7 +6,7 @@ import classes from './ExhibitDetailPanel.module.css';
 /** Published text only; nonmodal so the scene and room selector stay usable. */
 export function ExhibitDetailPanel({ display, onClose }: { display: MuseumDisplay; onClose: () => void }) {
   const titleRef = useRef<HTMLHeadingElement>(null);
-  useEffect(() => titleRef.current?.focus({ preventScroll: true }), [display.id]);
+  useEffect(() => titleRef.current?.focus(), [display.id]);
   return (
     <aside aria-label="Chi tiết hiện vật" className={classes.panel}>
       <Stack gap="lg">

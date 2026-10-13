@@ -126,3 +126,102 @@ test('narrow screens keep touch controls outside the scene and detail below it',
   await page.addStyleTag({ content: 'html { font-size: 200%; }' });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('dragging a display navigates without selecting it', async ({ page }) => {
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const canvas = page.getByLabel('Phòng trưng bày 3D');
+  await expect(canvas).toBeVisible();
+  const box = (await canvas.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.64);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.64, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);
+});
+
+test('focus settles, manual input cancels motion and unmount stays usable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Reflect.set(window, '__museumDraws', 0);
+    const draw = WebGL2RenderingContext.prototype.drawElements;
+    WebGL2RenderingContext.prototype.drawElements = function (...args: Parameters<typeof draw>) {
+      Reflect.set(window, '__museumDraws', Reflect.get(window, '__museumDraws') + 1);
+      return draw.apply(this, args);
+    };
+  });
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const canvas = page.getByLabel('Phòng trưng bày 3D');
+  await expect(canvas).toBeVisible();
+  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
+  await page.waitForTimeout(800); // Observe beyond the 550ms transition.
+  const settled = await page.evaluate(() => Reflect.get(window, '__museumDraws'));
+  await page.waitForTimeout(350);
+  expect(await page.evaluate(() => Reflect.get(window, '__museumDraws'))).toBe(settled);
+  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true }).click();
+  await canvas.press('ArrowLeft');
+  await page.waitForTimeout(100);
+  const cancelled = await page.evaluate(() => Reflect.get(window, '__museumDraws'));
+  await page.waitForTimeout(650);
+  expect(await page.evaluate(() => Reflect.get(window, '__museumDraws'))).toBe(cancelled);
+  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 4', exact: true }).click();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByRole('button', { name: 'Dừng 3D' }).click();
+  await expect(page.locator('canvas')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  await expect(canvas).toBeVisible();
+  await page.getByRole('button', { name: 'Dừng 3D' }).click();
+  expect(errors).toEqual([]);
+});
+
+test.describe('touch interaction', () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
+  test('a real touch tap selects the display and mobile detail remains readable', async ({ page }, testInfo) => {
+    await page.goto('/tour');
+    await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+    const canvas = page.getByLabel('Phòng trưng bày 3D');
+    await expect(canvas).toBeVisible();
+    await canvas.scrollIntoViewIfNeeded();
+    const box = (await canvas.boundingBox())!;
+    await page.touchscreen.tap(box.x + box.width * 0.5, box.y + box.height * 0.64);
+    await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText('Mô tả hiện vật 1');
+    await page.screenshot({ path: testInfo.outputPath('day3-touch-detail.png'), fullPage: true });
+  });
+});
+
+test('desktop detail leaves the scene visible and long published text wraps', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: [{
+    ...roomA.exhibits[0], name: 'Hiện vật có tên dài '.repeat(9), description: 'Mô tả đã xuất bản '.repeat(80), transcript: 'Thuyết minh '.repeat(160),
+  }, ...roomA.exhibits.slice(1)] })));
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const canvas = page.getByLabel('Phòng trưng bày 3D');
+  await expect(canvas).toBeVisible();
+  await page.getByRole('list', { name: 'Các hiện vật' }).getByRole('button').first().click();
+  const panel = page.getByRole('complementary', { name: 'Chi tiết hiện vật' });
+  await expect(panel).toBeVisible();
+  const sceneBox = (await canvas.boundingBox())!;
+  const panelBox = (await panel.boundingBox())!;
+  expect(panelBox.x).toBeGreaterThan(sceneBox.x + sceneBox.width);
+  expect(sceneBox.width).toBeGreaterThan(600);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.waitForTimeout(700);
+  await page.screenshot({ path: testInfo.outputPath('day3-desktop-detail.png'), fullPage: true });
+});
+
+test('selecting a lower catalogue card reveals focused detail and closing reveals the trigger', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 740 });
+  await page.goto('/tour');
+  const trigger = page.getByRole('button', { name: 'Xem chi tiết Hiện vật 5', exact: true });
+  await trigger.scrollIntoViewIfNeeded();
+  await trigger.press('Enter');
+  const heading = page.getByRole('complementary', { name: 'Chi tiết hiện vật' }).getByRole('heading', { name: 'Hiện vật 5', exact: true });
+  await expect(heading).toBeFocused();
+  await expect(heading).toBeInViewport();
+  await page.keyboard.press('Escape');
+  await expect(trigger).toBeFocused();
+  await expect(trigger).toBeInViewport();
+});
