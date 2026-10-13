@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 import { BaseRepository } from '../../../common/repository/base.repository';
 import { Role } from '../entities/role.entity';
 
@@ -30,5 +30,10 @@ export class RolesRepository extends BaseRepository<Role> {
       where: { id },
       relations: ['rolePermissions', 'rolePermissions.permission'],
     });
+  }
+
+  findManyByIds(ids: string[], manager: EntityManager): Promise<Role[]> {
+    if (ids.length === 0) return Promise.resolve([]);
+    return manager.getRepository(Role).find({ where: { id: In(ids) } });
   }
 }

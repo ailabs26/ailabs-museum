@@ -35,6 +35,7 @@ interface NavItem {
   to: string;
   icon: typeof IconLayoutDashboard;
   anyOf?: string[];
+  allOf?: string[];
 }
 
 const NAV: { section: string; items: NavItem[] }[] = [
@@ -57,7 +58,13 @@ const NAV: { section: string; items: NavItem[] }[] = [
     items: [
       { label: 'Tài khoản', to: '/admin/users', icon: IconUsers, anyOf: [PERMISSIONS.USER_READ] },
       { label: 'Vai trò', to: '/admin/roles', icon: IconShieldLock, anyOf: [PERMISSIONS.ROLE_READ] },
-      { label: 'Phân quyền', to: '/admin/permissions', icon: IconKey, anyOf: [PERMISSIONS.PERMISSION_READ] },
+      { label: 'Danh sách quyền', to: '/admin/permissions', icon: IconKey, anyOf: [PERMISSIONS.PERMISSION_READ] },
+      {
+        label: 'Ma trận phân quyền',
+        to: '/admin/permission-matrix',
+        icon: IconShieldLock,
+        allOf: [PERMISSIONS.PERMISSION_READ, PERMISSIONS.ROLE_READ],
+      },
       { label: 'Nhật ký hệ thống', to: '/admin/audit', icon: IconHistory, anyOf: [PERMISSIONS.AUDIT_READ] },
     ],
   },
@@ -65,11 +72,15 @@ const NAV: { section: string; items: NavItem[] }[] = [
 
 export function AdminLayout() {
   const [opened, { toggle }] = useDisclosure();
-  const { user, logout, hasAnyPermission } = useAuth();
+  const { user, logout, hasAnyPermission, hasPermission } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const canSee = (item: NavItem) => !item.anyOf || hasAnyPermission(item.anyOf);
+  const canSee = (item: NavItem) => {
+    const matchesAny = !item.anyOf?.length || hasAnyPermission(item.anyOf);
+    const matchesAll = !item.allOf?.length || item.allOf.every(hasPermission);
+    return matchesAny && matchesAll;
+  };
 
   const handleLogout = async () => {
     try {
