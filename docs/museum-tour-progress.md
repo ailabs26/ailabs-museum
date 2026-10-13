@@ -1,6 +1,8 @@
-# Museum tour — Days 1–2 of 4
+# Museum tour — Days 1–3 of 4
 
 ACTIVE_DAY = 2. Branch: `feat/museum-api-day2`. Base: `994c896` (`origin/dev`).
+
+Current work: ACTIVE_DAY = 3, branch `feat/museum-visual-day3`, fresh base `929f6c8`. Historical Day 1/2 records below are retained. Day 2 was merged through PR #28 at `801ef6d`, preserving its seven original commits.
 
 Day 1 historical record: branch `feat/museum-scene-day1`, base `ca7a334`. The following Day 1 sections record the implementation and evidence at that time.
 
@@ -208,3 +210,42 @@ f8c2298 feat(tour): map public exhibits to stable scene displays
 - Merged `origin/dev` into the existing Day 2 task branch without rewriting history. Resolved 12 conflicted paths and the cleanly deleted Day 1 dependencies by retaining exactly those 23 paths from `d60c749`. Before this integration note, both index and working tree were byte-for-byte identical to the reviewed Day 2 tree. Backend remains identical to newest `origin/dev`; no unrelated upstream change is discarded.
 - Fresh gates after resolution: FE typecheck, lint and build passed; dedicated production preview **36 passed (34.8s), 1 intentionally skipped live test**. Separate live check **1 passed (3.9s)** using the existing local FE/BE servers, with no interceptions. Populated live room/media limitations remain as described above.
 - Independent read-only resolution review confirmed the exact tree/index match, preserved upstream backend, no unresolved entries/conflict markers, and no Critical/Important findings. PR must use **Create a merge commit**; all seven original Day 2 SHAs and the Day 1 history are retained. Final merge SHA/status is recorded in the delivery message after GitHub confirms it.
+
+## Day 3 — visual quality and interaction plan (13 October 2026)
+
+**Goal:** polish the existing public tour as a warm modern gallery, with selectable exhibits, real published detail and bounded camera focus. Implement Day 3 only; stop at one PR into dev, without merging.
+
+**Architecture:** keep the validated API/query layer intact. MuseumPage owns room-scoped selection shared by catalogue, scene and a nonmodal detail panel. MuseumControls owns navigation/transition/listener cleanup. Existing room dimensions, backend coordinates, renderer lifecycle and explicit lazy start remain invariants. No runtime dependencies are needed.
+
+**Preparation:** clean checkout; fetched origin/dev at 929f6c8. Graphify graph_stats/list_workspaces returned 403 no_workspace; dependencies traced from current source. Reference demo README reviewed for gallery layout/interaction direction only; no source copied. Public mapper still returns model/image/audio null. No backend, auth, migration, seed or database changes authorized by this task.
+
+**Design:** warm plaster and limestone, bronze accents, inset wall panels, coffered ceiling, restrained floor joints; round vitrines for vessel forms and square plinths for angular sculptures. Soft key/fill lighting with no shadow maps or postprocessing. Local canvas-texture labels and one cheap contact/accent patch per exhibit; no external fonts/textures/assets. A selected item has explicit DOM pressed state and visible 3D highlight. Detail uses backend name, description, transcript and hotspot text, never fabricated curatorial data. Side-by-side panel on desktop, below scene on narrow screens; catalogue remains usable without WebGL.
+
+**Camera:** orbit remains the existing navigation mode. Focus an in-room exhibit using a safe target/viewpoint; constrain every orbit/zoom frame to the room interior. Short demand-rendered transition, instant under reduced motion; user input cancels transition. Outside-room items retain DOM details but cannot move the camera outside the shell. Escape closes detail and focus returns to its surviving trigger.
+
+**Execution:** using writing-plans and executing-plans inline; user explicitly requests immediate implementation, so no additional design approval round. Reuse the clean local checkout on the single task branch (no secondary worktree). This requested progress file is the persistent plan/ledger. Behavioral additions follow RED → GREEN browser/pure tests. Reversible visual material/layout units use typecheck and screenshot inspection rather than tests that mirror constants.
+
+### Atomic work / verification
+
+- [ ] 1. Record current contracts/design and prove baseline; docs commit.
+- [ ] 2. Refine room shell/floor materials; typecheck, scene inspection.
+- [ ] 3. Add architectural depth/coffers/wall panels; typecheck, scene inspection.
+- [ ] 4. Shape-appropriate exhibition plinths; typecheck, scene inspection.
+- [ ] 5. Balance sculpture PBR finishes; typecheck, scene inspection.
+- [ ] 6. Soft gallery key/fill/exposure; typecheck, scene inspection.
+- [ ] 7. Cheap local accent/contact lighting; typecheck, scene inspection.
+- [ ] 8. Preserve published transcript/hotspot text in display mapping; room-mapping RED/GREEN.
+- [ ] 9. Room-scoped catalogue selection with keyboard pressed state; interaction RED/GREEN.
+- [ ] 10. Nonmodal backend detail panel and focus return; interaction RED/GREEN.
+- [ ] 11. Scene pointer selection/hover highlight; real WebGL picking RED/GREEN.
+- [ ] 12. Readable billboard exhibit labels; scene visual check, texture cleanup.
+- [ ] 13. Safe focus viewpoint/bounds helper; literal edge/corner cases RED/GREEN.
+- [ ] 14. Camera focus transition and cancellation; real rendered camera RED/GREEN.
+- [ ] 15. Accessible explicit focus/close controls and reduced-motion handling; focused browser proof.
+- [ ] 16. Museum page/selector/catalogue visual polish; typecheck, screenshots.
+- [ ] 17. Consistent museum loading/empty/error presentation; existing API regression tests.
+- [ ] 18. Mobile panel/toolbar/layout touch targets; narrow/zoom browser checks.
+- [ ] 19. Interaction/lifecycle regression and visual evidence; complete FE gates, production tests, independent review.
+- [ ] 20. Final progress/README, real commit ledger and one PR into dev; no merge.
+
+Review focus: near-wall focus positions; rapid selection while transition runs; room switches/refresh removal must hide old detail; selection/fallback without WebGL; reduced-motion changes, pointer drag versus click and cleanup during pending motion. Keep Day 1/2 cancellation and identity tests. Final FE commands: npm.cmd run typecheck, npm.cmd run lint, npm.cmd run build, npm.cmd run test:unit, CI=1 PLAYWRIGHT_PREVIEW=1 npm.cmd test. Screenshots from actual software WebGL at desktop/mobile sizes; no physical-device/FPS/GPU certification. Deep performance optimization, GLB/audio/guided-tour/WebXR and final Day 4 device QA remain outside scope.
