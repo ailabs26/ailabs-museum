@@ -2,6 +2,7 @@ import type { MuseumDisplay } from '@/interfaces/museumScene';
 
 export function ExhibitionDisplay({ display }: { display: MuseumDisplay }) {
   const isCenterpiece = display.shape === 'torus';
+  const isRoundPlinth = isCenterpiece || display.shape === 'sphere' || display.shape === 'cylinder';
   return (
     <group position={display.position}>
       {/* A flat contact patch anchors the plinth without dynamic shadows. */}
@@ -9,13 +10,17 @@ export function ExhibitionDisplay({ display }: { display: MuseumDisplay }) {
         <circleGeometry args={[isCenterpiece ? 1.5 : 0.95, 32]} />
         <meshBasicMaterial color="#6c6251" transparent opacity={0.16} depthWrite={false} />
       </mesh>
-      <mesh position={[0, 0.55, 0]}>
-        <cylinderGeometry args={[isCenterpiece ? 1.15 : 0.7, isCenterpiece ? 1.2 : 0.74, 1.1, 32]} />
-        <meshStandardMaterial color="#ece5d8" roughness={0.8} />
+      <mesh position={[0, 0.04, 0]}>
+        {isRoundPlinth ? <cylinderGeometry args={[isCenterpiece ? 1.22 : 0.76, isCenterpiece ? 1.22 : 0.76, 0.08, 32]} /> : <boxGeometry args={[1.15, 0.08, 1.15]} />}
+        <meshStandardMaterial color="#736a5b" roughness={0.86} />
+      </mesh>
+      <mesh position={[0, 0.58, 0]}>
+        {isRoundPlinth ? <cylinderGeometry args={[isCenterpiece ? 1.1 : 0.66, isCenterpiece ? 1.16 : 0.7, 1.04, 32]} /> : <boxGeometry args={[1.05, 1.04, 1.05]} />}
+        <meshStandardMaterial color="#e7dfd0" roughness={0.88} metalness={0.02} />
       </mesh>
       <mesh position={[0, 1.12, 0]}>
-        <cylinderGeometry args={[isCenterpiece ? 1.17 : 0.72, isCenterpiece ? 1.17 : 0.72, 0.04, 32]} />
-        <meshStandardMaterial color="#9a7b50" metalness={0.4} roughness={0.48} />
+        {isRoundPlinth ? <cylinderGeometry args={[isCenterpiece ? 1.13 : 0.7, isCenterpiece ? 1.13 : 0.7, 0.04, 32]} /> : <boxGeometry args={[1.09, 0.04, 1.09]} />}
+        <meshStandardMaterial color="#85745b" metalness={0.28} roughness={0.62} />
       </mesh>
       <mesh position={[0, isCenterpiece ? 2.16 : 1.73, 0]} rotation={[0, 0, display.shape === 'cube' ? 0.12 : 0]}>
         {display.shape === 'torus' && <torusGeometry args={[0.8, 0.2, 16, 48]} />}
