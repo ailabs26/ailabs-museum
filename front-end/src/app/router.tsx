@@ -9,6 +9,7 @@ import { LoginPage } from '@/pages/admin/LoginPage';
 import { DashboardPage } from '@/pages/admin/DashboardPage';
 import { PlaceholderPage } from '@/pages/admin/PlaceholderPage';
 import { RoomsPage } from '@/pages/admin/RoomsPage';
+import { ExhibitsPage } from '@/pages/admin/ExhibitsPage';
 import { UsersPage } from '@/pages/admin/UsersPage';
 import { RolesPage } from '@/pages/admin/RolesPage';
 import { PermissionMatrixPage } from '@/pages/admin/PermissionMatrixPage';
@@ -59,7 +60,14 @@ export function AppRouter() {
               </RequirePermission>
             }
           />
-          <Route path="exhibits" element={<PlaceholderPage title="Hiện vật" pr="PR CMS (task 7)" />} />
+          <Route
+            path="exhibits"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.EXHIBIT_READ]} fallback={<NoAccess />}>
+                <ExhibitsPage />
+              </RequirePermission>
+            }
+          />
           <Route path="media" element={<PlaceholderPage title="Media" pr="PR CMS (task 8)" />} />
           <Route
             path="moderation"
