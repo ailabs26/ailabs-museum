@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, EntityManager, Repository } from 'typeorm';
 import { Paginated } from '../../../common/types/paginated.type';
 import { BaseRepository } from '../../../common/repository/base.repository';
 import { User, UserStatus } from '../entities/user.entity';
@@ -34,8 +34,9 @@ export class UsersRepository extends BaseRepository<User> {
     });
   }
 
-  findByIdWithAccess(id: string): Promise<User | null> {
-    return this.repo.findOne({
+  findByIdWithAccess(id: string, manager?: EntityManager): Promise<User | null> {
+    const repository = manager ? manager.getRepository(User) : this.repo;
+    return repository.findOne({
       where: { id, isDeleted: false },
       relations: ACCESS_RELATIONS,
     });

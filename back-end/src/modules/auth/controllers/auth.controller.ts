@@ -5,12 +5,19 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  UnauthorizedException,
   Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import type { CookieOptions, Request, Response } from 'express';
 import type { AuthUser } from '../../../common/types/auth-user.type';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
@@ -35,6 +42,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng nhập, trả access token + set cookie refresh' })
+  @ApiUnauthorizedResponse({ description: 'Sai thông tin đăng nhập hoặc tài khoản bị khóa.' })
   @ApiOkResponse({
     description: 'Access token và user trong ApiResponse; refresh token qua cookie HttpOnly.',
   })
@@ -49,8 +57,12 @@ export class AuthController {
 
   @Public()
   @Post('refresh')
+  @UseGuards(RefreshCookieOriginGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Làm mới access token bằng refresh cookie (xoay vòng)' })
+  @ApiUnauthorizedResponse({
+    description: 'Cookie bị xóa khi phiên không hợp lệ, hết hạn hoặc bị tái sử dụng.',
+  })
   @ApiOkResponse({
     description: 'Access token mới trong ApiResponse và refresh cookie đã xoay vòng.',
   })
@@ -58,9 +70,16 @@ export class AuthController {
     @Req() req: RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ accessToken: string }> {
-    const result = await this.auth.refresh(this.readRefreshCookie(req));
-    this.setRefreshCookie(res, result.refreshToken);
-    return { accessToken: result.accessToken };
+    try {
+      const result = await this.auth.refresh(this.readRefreshCookie(req));
+      this.setRefreshCookie(res, result.refreshToken);
+      return { accessToken: result.accessToken };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        this.clearRefreshCookie(res);
+      }
+      throw error;
+    }
   }
 
   @Public()

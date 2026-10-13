@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Button, Center, Loader, Paper, Stack, Text, Title } from '@mantine/core';
+import { Alert, Button, Center, Loader, Paper, Stack, Text, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { FormPassword, FormTextField } from '@/shared/components/form';
-import { notify } from '@/shared/components/feedback';
 import { useAuth } from '@/core/auth/use-auth';
 import { ApiException } from '@/core/api/api-error';
 
@@ -16,6 +15,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const from = (location.state as LocationState | null)?.from;
   const canReturnToAdmin = from
     && (from.pathname === '/admin' || from.pathname.startsWith('/admin/'))
@@ -33,13 +33,17 @@ export function LoginPage() {
   });
 
   const handleSubmit = form.onSubmit(async (values) => {
+    if (loading) {
+      return;
+    }
     setLoading(true);
+    setErrorMessage(null);
     try {
       await login(values);
       navigate(destination, { replace: true });
     } catch (err) {
       const message = err instanceof ApiException ? err.message : 'Đăng nhập thất bại';
-      notify.error(message);
+      setErrorMessage(message);
     } finally {
       setLoading(false);
     }
@@ -68,6 +72,11 @@ export function LoginPage() {
         </Stack>
         <form onSubmit={handleSubmit}>
           <Stack>
+            {errorMessage && (
+              <Alert color="red" role="alert" title="Đăng nhập thất bại">
+                {errorMessage}
+              </Alert>
+            )}
             <FormTextField
               label="Email"
               placeholder="admin@aura.museum"
