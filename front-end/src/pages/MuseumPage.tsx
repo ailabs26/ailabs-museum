@@ -42,23 +42,25 @@ export function MuseumPage() {
     setSearchParams(next);
   };
   return (
-    <Container size="xl" py="xl" onKeyDown={(event) => {
+    <Container size="xl" py="xl" className={classes.page} onKeyDown={(event) => {
       if (event.key === 'Escape' && selectedDisplay) { event.preventDefault(); handleCloseDetail(); }
     }}>
       <Stack>
-        <Text size="xs" tt="uppercase" c="dimmed" fw={700}>Aura / Tham quan bảo tàng</Text>
-        <Title order={1}>{detail?.name ?? 'Tham quan bảo tàng'}</Title>
-        <Text>Nội dung bảo tàng đã xuất bản</Text>
-        <Group justify="space-between">
+        <Text size="xs" tt="uppercase" className={classes.eyebrow} fw={700}>Aura / Tham quan bảo tàng</Text>
+        <Title order={1} className={classes.heading}>{detail?.name ?? 'Tham quan bảo tàng'}</Title>
+        <Text className={classes.lead}>Nội dung bảo tàng đã xuất bản</Text>
+        <Group justify="space-between" align="flex-end" className={classes.toolbar}>
           {rooms.data && rooms.data.length > 0 && (
-            <NativeSelect label="Chọn phòng trưng bày" value={selectedSlug ?? ''} onChange={(event) => handleSelectRoom(event.currentTarget.value)}
+            <NativeSelect className={classes.roomSelect} label="Chọn phòng trưng bày" value={selectedSlug ?? ''} onChange={(event) => handleSelectRoom(event.currentTarget.value)}
               data={[
                 ...(!selectedRoom ? [{ value: selectedSlug ?? '', label: 'Phòng không khả dụng', disabled: true }] : []),
                 ...rooms.data.map((item) => ({ value: item.slug, label: item.name })),
               ]} />
           )}
-          <Button variant="default" disabled={rooms.isFetching || room.isFetching} onClick={() => void refresh()}>Làm mới</Button>
-          {isSceneOpen && <Button variant="default" onClick={() => setIsSceneOpen(false)}>Dừng 3D</Button>}
+          <Group gap="sm">
+            <Button variant="default" disabled={rooms.isFetching || room.isFetching} onClick={() => void refresh()}>Làm mới</Button>
+            {isSceneOpen && <Button variant="default" onClick={() => setIsSceneOpen(false)}>Dừng 3D</Button>}
+          </Group>
         </Group>
         {rooms.isPending ? <Text role="status">Đang tải danh sách phòng…</Text>
           : rooms.isError ? <Alert color="red" role="alert" title="Không tải được danh sách phòng">
@@ -84,9 +86,10 @@ export function MuseumPage() {
             </ErrorBoundary>
           ) : (
             <Stack className={classes.intro} align="center" justify="center" p="xl" ta="center">
-              <Title order={2}>Bước vào phòng trưng bày</Title>
+              <Text className={classes.eyebrow} size="xs" fw={700}>KHÔNG GIAN KHÁM PHÁ</Text>
+              <Title order={2} className={classes.introTitle}>Bước vào phòng trưng bày</Title>
               <Text maw={420}>Khám phá {detail.name} trong không gian 3D.</Text>
-              <Button ref={startButtonRef} color="teal" size="lg" onClick={() => setIsSceneOpen(true)}>Mở phòng 3D</Button>
+              <Button ref={startButtonRef} color="teal.9" size="lg" onClick={() => setIsSceneOpen(true)}>Mở phòng 3D</Button>
               <Text size="sm">Bạn cũng có thể đọc toàn bộ nội dung ngay bên dưới.</Text>
             </Stack>
           )}
