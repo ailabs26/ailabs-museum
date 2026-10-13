@@ -29,6 +29,33 @@ export interface ExhibitAdminResponse {
   updatedAt: Date;
 }
 
+export interface ExhibitAdminDetailResponse extends ExhibitAdminResponse {
+  room: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
+  hotspots: Array<{
+    id: string;
+    label: unknown;
+    body: unknown;
+    position: { x: number; y: number; z: number };
+    displayOrder: number;
+  }>;
+  revisions: Array<{
+    id: string;
+    revisionNo: number;
+    state: RevisionState;
+    createdById: string;
+    createdBy: { id: string; name: string; email: string } | null;
+    reviewedById: string | null;
+    reviewedBy: { id: string; name: string; email: string } | null;
+    reason: string | null;
+    createdAt: Date;
+    reviewedAt: Date | null;
+  }>;
+}
+
 export class ExhibitResponseDto implements ExhibitAdminResponse {
   id!: string;
   roomId!: string;

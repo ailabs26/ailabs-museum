@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Room } from '../rooms/entities/room.entity';
+import { RoomsModule } from '../rooms/rooms.module';
 import { Exhibit } from './entities/exhibit.entity';
 import { ExhibitRevision } from './entities/exhibit-revision.entity';
 import { Hotspot } from './entities/hotspot.entity';
@@ -9,9 +9,13 @@ import { ExhibitsService } from './services/exhibits.service';
 import { ExhibitsRepository } from './repositories/exhibits.repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Room, Exhibit, ExhibitRevision, Hotspot])],
+  imports: [
+    TypeOrmModule.forFeature([Exhibit, ExhibitRevision, Hotspot]),
+    RoomsModule,
+  ],
   controllers: [ExhibitsController],
   providers: [ExhibitsService, ExhibitsRepository],
-  exports: [ExhibitsRepository],
+  exports: [ExhibitsService, ExhibitsRepository],
 })
 export class ExhibitsModule {}
+

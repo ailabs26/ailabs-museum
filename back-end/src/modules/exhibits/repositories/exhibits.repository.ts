@@ -253,6 +253,27 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
   }
 
   /**
+   * Xóa một revision cụ thể theo ID.
+   */
+  async deleteRevisionById(
+    revisionId: string,
+    manager?: EntityManager,
+  ): Promise<void> {
+    await this.scopedRevision(manager).delete(revisionId);
+  }
+
+  /**
+   * Cập nhật thứ tự hiển thị display_order của hiện vật.
+   */
+  async updateDisplayOrder(
+    id: string,
+    displayOrder: number,
+    manager?: EntityManager,
+  ): Promise<void> {
+    await this.scoped(manager).update(id, { displayOrder });
+  }
+
+  /**
    * Xóa liên hoàn một hiện vật Draft (BR-20):
    * Trong cùng 1 transaction: Xóa hotspots -> Xóa revisions -> Xóa exhibit.
    */
