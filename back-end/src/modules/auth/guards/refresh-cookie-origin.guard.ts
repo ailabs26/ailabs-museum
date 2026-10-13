@@ -23,7 +23,7 @@ export class RefreshCookieOriginGuard implements CanActivate {
     const apiOrigin = `${request.protocol}://${request.get('host')}`;
 
     if (origin !== frontendOrigin && origin !== apiOrigin) {
-      throw new ForbiddenException('Origin không được phép đăng xuất');
+      throw new ForbiddenException('Origin không được phép thực hiện xác thực');
     }
 
     return true;
