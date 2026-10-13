@@ -38,7 +38,7 @@ Exports: `DEMO_ROOM_SLUG: string`, `DEMO_EXHIBITS` chứa `id/revisionId/display
 - [x] Đọc entity/config/seed/API và schema Day 2, xác minh phòng/admin tồn tại bằng truy vấn chỉ đọc.
 - [x] Người dùng duyệt dùng phòng hiện có, bộ 5 nội dung và thiết kế idempotent.
 - [x] Ghi task, design, kế hoạch và quyền commit theo phần.
-- [ ] Review diff và commit ba tài liệu:
+- [x] Review diff và commit ba tài liệu (`ce47621`):
 
 ```powershell
 git add -- docs/tasks/demo-content-seed.md docs/plans/demo-content-seed-design.md docs/plans/demo-content-seed-plan.md
@@ -49,7 +49,7 @@ git commit -m "docs(seed): plan demo content for existing museum room"
 
 ## SEED-02: Script có kiểm tra hành vi
 
-- [ ] Tạo test trước implementation, dùng `node:test`, `node:assert/strict` và mock tối thiểu TypeORM transaction/manager theo convention test hiện có. Kiểm tra lần đầu, chạy lại bảo toàn bản sửa/ẩn, xung đột ID, room/admin không hợp lệ, lỗi đóng kết nối.
+- [x] Tạo test trước implementation, dùng `node:test`, `node:assert/strict` và mock tối thiểu TypeORM transaction/manager theo convention test hiện có. Kiểm tra lần đầu, chạy lại bảo toàn bản sửa/ẩn, xung đột ID, room/admin không hợp lệ, lỗi đóng kết nối.
 
 Ví dụ assertion chống ghi đè, dùng kết quả hai lần seed và dữ liệu đã sửa trong test:
 
@@ -64,23 +64,23 @@ assert.deepEqual(await seedDemoContent(source, 'admin@example.test'), { created:
 assert.deepEqual([...exhibits.values()], before);
 ```
 
-- [ ] Chạy test trực tiếp để quan sát RED thiếu implementation:
+- [x] Chạy test trực tiếp: thất bại TS2307 do module implementation chưa tồn tại; không phải assertion RED runtime:
 
 ```powershell
 node -r reflect-metadata -r ts-node/register --test src/database/seeds/seed-demo-content.spec.ts
 ```
 
-- [ ] Tạo data module 5 mẫu theo design; UUID v4 riêng, shape/color hợp lệ, position y=0 và trong phòng; mô tả rõ demo. Không phụ thuộc mẫu frontend hoặc import entity runtime vào data thuần.
-- [ ] Triển khai transaction: lock phòng bằng `pessimistic_write`, admin active/chưa xóa và có role admin, kiểm tra toàn bộ 5 bộ đôi trước ghi. Khi ID revision không thuộc exhibit hoặc ID exhibit thuộc phòng khác thì throw. Với bộ đôi đã có, không kiểm tra/khôi phục trạng thái publish hiện hành.
-- [ ] Tạo exhibit hidden trước revision vì khóa ngoại; tạo revision approved/createdBy/reviewedBy/reviewedAt; cập nhật exhibit visible/publishedRevisionId/version=1. Có lỗi thì transaction rollback toàn bộ; finally đóng kết nối CLI. Log chỉ count/thông báo kiểm soát; không dump exception có credential.
-- [ ] Lệnh npm và README:
+- [x] Tạo data module 5 mẫu theo design; UUID v4 riêng, shape/color hợp lệ, position y=0 và trong phòng; mô tả rõ demo. Không phụ thuộc mẫu frontend hoặc import entity runtime vào data thuần.
+- [x] Triển khai transaction: lock phòng bằng `pessimistic_write`, admin active/chưa xóa và có role admin, kiểm tra toàn bộ 5 bộ đôi trước ghi. Khi ID revision không thuộc exhibit hoặc ID exhibit thuộc phòng khác thì throw. Với bộ đôi đã có, không kiểm tra/khôi phục trạng thái publish hiện hành.
+- [x] Tạo exhibit hidden trước revision vì khóa ngoại; tạo revision approved/createdBy/reviewedBy/reviewedAt; cập nhật exhibit visible/publishedRevisionId/version=1. Có lỗi thì transaction rollback toàn bộ; finally đóng kết nối CLI. Log chỉ count/thông báo kiểm soát; không dump exception có credential.
+- [x] Lệnh npm và README:
 
 ```json
 "seed:demo": "ts-node src/database/seeds/seed-demo-content.ts",
 "test:seed": "node -r reflect-metadata -r ts-node/register --test src/database/seeds/seed-demo-content.spec.ts"
 ```
 
-- [ ] GREEN và quality gates từ `back-end/`:
+- [x] GREEN (6/6 tests) và quality gates từ `back-end/`:
 
 ```powershell
 npm.cmd run test:seed

@@ -22,8 +22,8 @@ Thêm 5 hiện vật demo vào phòng `phong-lich-su-quan-su-viet-nam` trên Pos
 
 | Task | Deliverable | Trạng thái |
 |---|---|---|
-| SEED-01 | Duyệt thiết kế, bộ 5 nội dung và viết kế hoạch triển khai | Đã duyệt và viết plan |
-| SEED-02 | Script seed, lệnh npm, hướng dẫn chạy và kiểm tra hành vi | Chưa triển khai |
+| SEED-01 | Duyệt thiết kế, bộ 5 nội dung và viết kế hoạch triển khai | Commit `ce47621` |
+| SEED-02 | Script seed, lệnh npm, hướng dẫn chạy và kiểm tra hành vi | Đã triển khai; 6 tests và quality gates đạt |
 | SEED-03 | Chạy trên Supabase đã chỉ định, kiểm tra lần hai và API | Chưa chạy |
 
 ## Điều kiện nghiệm thu
@@ -40,3 +40,7 @@ Thêm 5 hiện vật demo vào phòng `phong-lich-su-quan-su-viet-nam` trên Pos
 ## Giới hạn
 
 Danh mục `/collection`, media thật và hiện vật nổi bật trên trang chủ là công việc tiếp theo. Không có thao tác migration trong task này. Với thay đổi dữ liệu, PR cần human review trước merge. Người dùng đã cho phép commit theo phần hợp lý sau kiểm chứng; push/PR vẫn cần yêu cầu riêng.
+
+## Bằng chứng SEED-02
+
+Test được viết trước. Lần đầu test command thất bại do thiếu `demo-content.ts` và `seed-demo-content.ts` (TS2307, kèm implicit-any do mất type import); đây là lỗi module chưa tồn tại, chưa phải assertion RED runtime. Sau implementation: 6/6 tests đạt, backend typecheck/lint/build đạt. Tests dùng fake transaction/manager để kiểm tra tạo mới, giữ bản đã chỉnh sửa/ẩn/xóa mềm, xung đột/bộ đôi thiếu, điều kiện phòng/admin và đóng kết nối. Không coi fake rollback là bằng chứng PostgreSQL rollback thật; SEED-03 chứng minh tích hợp với database/API.
