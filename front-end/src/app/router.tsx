@@ -13,6 +13,7 @@ import { ExhibitsPage } from '@/pages/admin/ExhibitsPage';
 import { UsersPage } from '@/pages/admin/UsersPage';
 import { RolesPage } from '@/pages/admin/RolesPage';
 import { PermissionMatrixPage } from '@/pages/admin/PermissionMatrixPage';
+import { PermissionsPage } from '@/pages/admin/PermissionsPage';
 import { AuditPage } from '@/pages/admin/AuditPage';
 import { ModerationPage } from '@/pages/admin/ModerationPage';
 import { ReportsPage } from '@/pages/admin/ReportsPage';
@@ -105,6 +106,17 @@ export function AppRouter() {
             path="permissions"
             element={
               <RequirePermission anyOf={[PERMISSIONS.PERMISSION_READ]} fallback={<NoAccess />}>
+                <PermissionsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="permission-matrix"
+            element={
+              <RequirePermission
+                allOf={[PERMISSIONS.PERMISSION_READ, PERMISSIONS.ROLE_READ]}
+                fallback={<NoAccess />}
+              >
                 <PermissionMatrixPage />
               </RequirePermission>
             }
