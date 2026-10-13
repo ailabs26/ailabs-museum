@@ -57,5 +57,7 @@ Script kiểm chứng tạm `verify-demo-seed.cjs` chạy từ backend, sử d�
 - API list/detail HTTP 200; đủ 5 ID demo theo displayOrder 0–4. Parse bằng `roomResponseSchema(roomListSchema)` và `roomResponseSchema(roomDetailSchema)` thật của frontend đạt. Import schema ESM vào kiểm chứng CommonJS cần `ts-node moduleTypes` với absolute path; không sửa source/config frontend.
 - Slug không tồn tại trả HTTP 404.
 - Không fault-injection, ẩn/xóa hoặc chỉnh sửa thử dữ liệu trên DB dùng chung. Test bảo toàn bản chỉnh sửa dùng fake DB riêng.
+- Kiểm tra chốt nhánh: `npm.cmd run test:seed` đạt 6/6 và `npm.cmd test` backend đạt 471/471.
+- Người dùng xác nhận đã kiểm chứng trực tiếp trên web sau seed. Đây là xác nhận thủ công của người dùng; không suy ra đã kiểm tra mọi thiết bị/trình duyệt hoặc model/ảnh thật.
 
 Đây là nội dung demo: image/model/audio null, hotspots rỗng; chưa là dataset nghiệm thu hiện vật thật. Không sửa UI `/collection` trong nhánh này. Chưa push hoặc tạo PR; cần human review trước merge vì có thay đổi dữ liệu.
