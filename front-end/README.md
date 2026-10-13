@@ -63,6 +63,15 @@ Remove-Item Env:CI
 
 Live test chạy frontend trên `http://localhost:5173` để khớp CORS local hiện có. Nếu API trả `[]`, test chỉ chứng minh trạng thái rỗng; cần nội dung đã xuất bản để kiểm chứng phòng/hiện vật live.
 
+## Bộ sưu tập 2D
+
+- Mở `/collection` hoặc `/collection?room=<slug>`. Chọn phòng để đọc tên/mô tả hiện vật đã xuất bản qua cùng API public của tour.
+- Lựa chọn được giữ trong URL; liên kết **Tham quan phòng này trong 3D** mở tour đúng phòng. Trang collection không tải scene hoặc Canvas.
+- API chưa trả ảnh: thẻ hiển thị **Chưa có ảnh**, không đoán URL storage hoặc tạo ảnh giả. Danh sách, số lượng và thứ tự lấy từ API, không giới hạn cứng 5.
+- Đang tải, không có phòng/hiện vật, lỗi/schema không hợp lệ và retry có trạng thái riêng; **Làm mới** cập nhật nội dung. API lỗi không được thay bằng mẫu.
+- Focused tests: `npm.cmd test -- collection.spec.ts public-tour-navigation.spec.ts`. API thật (cần backend đang chạy và dữ liệu seed): đặt `MUSEUM_LIVE_TEST=1`, chạy `npm.cmd test -- collection-live.spec.ts`, rồi bỏ biến môi trường. Live collection test không mock hoặc ghi database, yêu cầu phòng lịch sử quân sự và 5 hiện vật mẫu đã seed.
+- Task/plan: [client-collection.md](../docs/tasks/client-collection.md), [client-collection-plan.md](../docs/plans/client-collection-plan.md).
+
 ## Tham quan Day 2
 
 - Mở `/tour.html`, chọn phòng rồi **Mở phòng 3D**. Scene chỉ tải sau thao tác này; **Dừng 3D** tháo Canvas. `?room=<slug>` hỗ trợ mở trực tiếp một phòng; **Làm mới** cập nhật danh sách/chi tiết, **Thử lại** xử lý lỗi.

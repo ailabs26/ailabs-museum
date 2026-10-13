@@ -4,6 +4,7 @@ import { PublicLayout } from '@/layouts/PublicLayout';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { RequireAuth } from '@/core/auth/RequireAuth';
 import { HomePage } from '@/pages/client/HomePage';
+import { CollectionPage } from '@/pages/client/CollectionPage';
 import { LoginPage } from '@/pages/admin/LoginPage';
 import { DashboardPage } from '@/pages/admin/DashboardPage';
 import { PlaceholderPage } from '@/pages/admin/PlaceholderPage';
@@ -18,17 +19,6 @@ import { RequirePermission } from '@/core/auth/RequirePermission';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { MuseumPage } from '@/pages/MuseumPage';
-
-function ClientComingSoon({ title }: { title: string }) {
-  return (
-    <Container size="md" py={80}>
-      <Stack align="center" ta="center">
-        <Title order={2}>{title}</Title>
-        <Text c="dimmed">Phần này sẽ được dựng ở các PR client (task 16–20).</Text>
-      </Stack>
-    </Container>
-  );
-}
 
 /** Hiển thị khi tài khoản đăng nhập nhưng thiếu quyền xem màn hình quản trị. */
 function NoAccess() {
@@ -49,7 +39,7 @@ export function AppRouter() {
       {/* Client công khai */}
       <Route element={<PublicLayout />}>
         <Route index element={<HomePage />} />
-        <Route path="collection" element={<ClientComingSoon title="Bộ sưu tập 2D" />} />
+        <Route path="collection" element={<CollectionPage />} />
         <Route path="tour" element={<MuseumPage />} />
         <Route path="tour.html" element={<MuseumPage />} />
       </Route>
