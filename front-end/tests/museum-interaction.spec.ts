@@ -67,3 +67,19 @@ test('real scene picking selects the plinth and hover gives pointer feedback', a
   await page.getByRole('button', { name: 'Đóng chi tiết hiện vật' }).click();
   await expect(canvas).toBeFocused();
 });
+
+test('selecting an exhibit focuses the camera and reset retains published detail', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const canvas = page.getByLabel('Phòng trưng bày 3D');
+  await expect(canvas).toBeVisible();
+  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
+  const panel = page.getByRole('complementary', { name: 'Chi tiết hiện vật' });
+  await expect(panel).toContainText('Hiện vật 2');
+  const capture = { style: 'canvas { outline: none !important; } [aria-label="Điều khiển góc nhìn"] { visibility: hidden !important; }' };
+  const focused = await canvas.screenshot(capture);
+  await page.getByRole('button', { name: 'Góc nhìn ban đầu' }).click();
+  await expect.poll(async () => (await canvas.screenshot(capture)).equals(focused)).toBe(false);
+  await expect(panel).toContainText('Mô tả hiện vật 2');
+});

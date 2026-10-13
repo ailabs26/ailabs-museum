@@ -9,6 +9,7 @@ import { MuseumLighting } from '@/components/museum/MuseumLighting';
 import { MuseumControls, type CameraAction, type CameraCommand } from '@/components/museum/MuseumControls';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { SceneLifecycle } from '@/components/museum/SceneLifecycle';
+import { INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET } from '@/helpers/museumCamera';
 
 export function MuseumScene({ displays, selectedId, onSelect }: {
   displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void;
@@ -23,15 +24,15 @@ export function MuseumScene({ displays, selectedId, onSelect }: {
     <Canvas
       frameloop="demand"
       dpr={[1, 1.5]}
-      camera={{ position: [0, 2.6, 5.8], fov: 60, near: 0.1, far: 40 }}
+      camera={{ position: INITIAL_CAMERA_POSITION, fov: 60, near: 0.1, far: 40 }}
       gl={{ antialias: true, alpha: false, powerPreference: 'low-power', toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1 }}
       fallback={<SceneFallback />}
-      onCreated={({ camera }) => camera.lookAt(0, 1.35, 0)}
+      onCreated={({ camera }) => camera.lookAt(...INITIAL_CAMERA_TARGET)}
     >
       <color attach="background" args={['#eee9df']} />
       <MuseumLighting />
       <SceneLifecycle onContextLost={handleContextLost} />
-      <MuseumControls command={command} />
+      <MuseumControls command={command} selectedDisplay={displays.find((display) => display.id === selectedId)} />
       <MuseumRoom />
       {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={onSelect} />)}
     </Canvas>
