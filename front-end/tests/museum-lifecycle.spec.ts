@@ -43,7 +43,7 @@ test('leaving the tour releases its canvas and returning starts in DOM mode', as
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible();
-  await page.getByRole('link', { name: 'Aura Museum' }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true }).click();
   await expect(page.locator('canvas')).toHaveCount(0);
   await page.getByRole('banner').getByRole('link', { name: 'Tham quan 3D', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Mở phòng 3D' })).toBeVisible();

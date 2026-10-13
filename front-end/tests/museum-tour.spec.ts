@@ -93,7 +93,7 @@ test('failed scene chunk leaves navigation and catalogue available', async ({ pa
   await page.goto('/tour.html');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Aura Museum' })).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true })).toBeVisible();
   await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);
 });
 
@@ -158,10 +158,10 @@ test('HTML entry and SPA route expose the museum with public navigation', async 
   for (const path of ['/tour.html', '/tour']) {
     await page.goto(path);
     await expect(page.getByRole('heading', { name: 'Không gian của hình khối' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Aura Museum' })).toBeVisible();
+    await expect(page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true })).toBeVisible();
   }
-  await page.getByRole('link', { name: 'Aura Museum' }).click();
-  await expect(page.getByRole('heading', { name: 'Bảo tàng WebXR Aura' })).toBeVisible();
+  await page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /Mỗi hiện vật,.*một câu chuyện/ })).toBeVisible();
   await page.goto('/admin/login');
   await expect(page.locator('input[type="password"]')).toBeVisible();
 });

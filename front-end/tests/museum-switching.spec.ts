@@ -60,10 +60,10 @@ test('leaving the page aborts active detail requests', async ({ page }) => {
   await page.route('**/api/rooms/ceramics', async (route) => { started = true; await delayed; await fulfillMuseum(route, envelope(roomB)); });
   await page.goto('/tour?room=ceramics');
   await expect.poll(() => started).toBe(true);
-  await page.getByRole('link', { name: 'Aura Museum' }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true }).click();
   await expect.poll(() => wasCancelled).toBe(true);
   release();
-  await expect(page.getByRole('heading', { name: 'Bảo tàng WebXR Aura' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Mỗi hiện vật,.*một câu chuyện/ })).toBeVisible();
   await expect(page.locator('canvas')).toHaveCount(0);
 });
 
