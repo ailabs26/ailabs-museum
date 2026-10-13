@@ -49,7 +49,7 @@ Type `RoomDetail` nhập từ `@/validations/roomSchema`. Không tạo barrel ex
 - [x] Người dùng đọc và duyệt task/plan, đặc biệt quy tắc chọn phòng và trường hợp phòng rỗng.
 - [x] Kiểm tra git status, fetch origin; base `origin/dev` tại `8f320c8`. Hai file tài liệu chưa commit được giữ nguyên.
 - [x] Tạo và chuyển sang nhánh `feat/home-featured-exhibits` trước bước duyệt/commit; không triển khai trên `dev`.
-- [ ] Sau khi người dùng duyệt: rà soát/stage chỉ hai tài liệu.
+- [x] Sau khi người dùng duyệt: rà soát/stage hai tài liệu, commit `e9ecc46`.
 
 ```powershell
 git add -- docs/tasks/home-featured-exhibits.md docs/plans/home-featured-exhibits-plan.md
@@ -62,10 +62,10 @@ git commit -m "docs(home): plan API-backed featured exhibits"
 
 **Consumes:** danh sách validated/sorted trong CollectionPage. **Produces:** ExhibitGrid nhận danh sách readonly và giữ nhãn `Hiện vật trong bộ sưu tập`, các thẻ h3/mô tả/ảnh chưa có; dùng được dưới h2 ở cả hai page.
 
-- [ ] Chạy baseline `npm.cmd test -- collection.spec.ts` từ frontend để xác nhận trạng thái trước refactor.
-- [ ] Di chuyển nguyên khối ul/li sang ExhibitGrid, giữ `exhibit.id` làm key, icon `aria-hidden`, text “Chưa có ảnh”, đánh số theo vị trí trong danh sách đầu vào. Lưới không tự sort/fetch hoặc xử lý empty.
-- [ ] Chuyển CSS thẻ/grid và responsive breakpoints 48em/62em; CollectionPage thay khối bằng `<ExhibitGrid exhibits={exhibits} />`, bỏ import icon ảnh và CSS đã di chuyển.
-- [ ] Chạy collection tests, typecheck/lint/build; review diff không thay hành vi; commit `refactor(collection): share public exhibit grid`.
+- [x] Baseline collection 10/10 đạt.
+- [x] Di chuyển nguyên khối ul/li sang ExhibitGrid, giữ key/icon/text/number; lưới không sort/fetch hoặc xử lý empty.
+- [x] Chuyển CSS và breakpoints 48em/62em; CollectionPage dùng ExhibitGrid.
+- [x] Sau refactor collection 10/10, typecheck/lint/build đạt; review và commit theo task.
 
 ## HF-03: Trang chủ lấy API và cập nhật copy
 

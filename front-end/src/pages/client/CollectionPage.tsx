@@ -1,7 +1,8 @@
 import { Alert, Button, Container, NativeSelect, Text, Title } from '@mantine/core';
-import { IconArrowRight, IconPhotoOff } from '@tabler/icons-react';
+import { IconArrowRight } from '@tabler/icons-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
+import { ExhibitGrid } from '@/shared/components/data/ExhibitGrid';
 import classes from './CollectionPage.module.css';
 
 export function CollectionPage() {
@@ -65,21 +66,7 @@ export function CollectionPage() {
           </div>
           {room.isFetching && <p role="status">Đang cập nhật hiện vật…</p>}
           {exhibits.length === 0 ? <p role="status" className={classes.empty}>Phòng này chưa có hiện vật được xuất bản.</p> : (
-            <ul className={classes.grid} aria-label="Hiện vật trong bộ sưu tập">
-              {exhibits.map((exhibit, index) => (
-                <li key={exhibit.id} className={classes.card}>
-                  <div className={classes.noImage}>
-                    <IconPhotoOff size={28} stroke={1.25} aria-hidden="true" />
-                    <span>Chưa có ảnh</span>
-                  </div>
-                  <div className={classes.cardBody}>
-                    <p className={classes.number}>Hiện vật {String(index + 1).padStart(2, '0')}</p>
-                    <Title order={3} className={classes.exhibitTitle}>{exhibit.name}</Title>
-                    <p className={classes.exhibitDescription}>{exhibit.description}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <ExhibitGrid exhibits={exhibits} />
           )}
         </section>
       )}

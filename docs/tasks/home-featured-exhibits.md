@@ -41,7 +41,7 @@ Commit theo phần thực sự có thay đổi và đã kiểm chứng; không t
 ## Điều kiện nghiệm thu
 
 - [x] Người dùng duyệt task/plan trước mọi commit hoặc sửa code.
-- [ ] Collection dùng lưới chung mà vẫn hiển thị đủ hiện vật, ảnh chưa có và nội dung như trước.
+- [x] Collection dùng lưới chung mà vẫn hiển thị đủ hiện vật, ảnh chưa có và nội dung như trước (10/10 regression tests).
 - [ ] Trang chủ hiển thị đúng tối đa 3 mục theo thứ tự của phòng đầu tiên, không sửa mảng API/cache.
 - [ ] Không tải detail phòng chưa chọn, scene/Canvas hoặc storage trực tiếp.
 - [ ] Link collection giữ đúng slug, click và bàn phím hoạt động.
@@ -59,3 +59,8 @@ Không chỉnh backend, database, seed, schema media hoặc dependency. Chưa th
 ## Điểm cần duyệt
 
 Người dùng đã duyệt quy tắc **phòng đầu tiên của API + 3 hiện vật đầu theo thứ tự trưng bày**, gồm cách xử lý phòng đó rỗng.
+
+## Ledger và bằng chứng
+
+- HF-01 commit `e9ecc46`: task/plan đã duyệt, trước code.
+- HF-02 baseline collection 10/10 đạt (37.5s); sau tách ExhibitGrid 10/10 đạt (42.4s). Frontend typecheck/lint/build đạt; vẫn cảnh báo bundle >500 kB. Chỉ di chuyển markup/style thẻ, không đổi hook/service/schema hoặc dữ liệu.
