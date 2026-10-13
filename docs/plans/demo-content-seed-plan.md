@@ -89,16 +89,16 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-- [ ] Review, stage đúng 5 file implementation/README/package và task update; commit `feat(seed): add idempotent demo content seed with checks`. Không stage `.env`, dist hoặc dependency lock vì không thêm dependency.
+- [x] Review và commit `e4a5091`: data/script/test, README/package và task/plan update. Không stage `.env`, dist hoặc dependency lock vì không thêm dependency.
 
 ## SEED-03: Chạy và chứng minh tích hợp
 
-- [ ] Chụp snapshot chỉ đọc metadata phòng và các cột exhibit/revision demo liên quan để so sánh. Không in credential hoặc passwordHash.
-- [ ] Chạy `npm.cmd run seed:demo` trên Supabase đã chỉ định; xác minh 5 cặp approved/public và liên kết cùng phòng.
-- [ ] Chụp dữ liệu demo sau lần đầu, chạy lần hai, so sánh count/content/version/publishedRevisionId/timestamps; không giả lập thay đổi nội dung trên DB dùng chung để test.
-- [ ] Gọi public list/detail ở `/api/rooms`, kiểm tra đủ 5 UUID demo theo displayOrder 0–4; dùng frontend `roomResponseSchema(roomDetailSchema).parse(response)` qua ts-node với config CommonJS tạm/inline để xác minh contract. Không dùng endpoint metadata `/api/public/rooms/:slug` để chứng minh có exhibits.
-- [ ] Kiểm tra API room không tồn tại trả 404; kiểm tra phạm vi thay đổi phòng và dữ liệu quản trị không bị ảnh hưởng.
-- [ ] Ghi bằng chứng thật, giới hạn media null và không phải dataset nghiệm thu. Commit docs `docs(seed): record Supabase seed and API verification`.
+- [x] Chụp snapshot chỉ đọc metadata phòng và exhibit/revision liên quan để so sánh. Không in credential hoặc passwordHash.
+- [x] Chạy `npm.cmd run seed:demo` trên Supabase đã chỉ định; xác minh 5 cặp approved/public và liên kết cùng phòng.
+- [x] Chạy lần hai: tạo 0/bỏ qua 5; snapshot không đổi. Không giả lập thay đổi nội dung trên DB dùng chung để test.
+- [x] API list/detail ở `/api/rooms` trả đủ 5 UUID demo theo displayOrder 0–4 và parse Zod schema frontend đạt. Dùng ts-node CommonJS override theo absolute path; không đổi config/source frontend.
+- [x] API room không tồn tại trả 404; metadata phòng và dữ liệu quản trị không bị ảnh hưởng.
+- [x] Ghi bằng chứng thật, giới hạn media null và không phải dataset nghiệm thu trong task. Commit docs bàn giao tra qua `git log`.
 
 ## Commit ledger
 
