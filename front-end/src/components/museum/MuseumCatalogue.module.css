@@ -1,4 +1,4 @@
-.card { background: #fcfaf5; border-color: #d8d0c0; display: flex; flex-direction: column; min-width: 0; }
+.card { background: #fcfaf5; color: #263b36; --mantine-color-dimmed: #60695f; border-color: #d8d0c0; display: flex; flex-direction: column; min-width: 0; }
 .card[data-selected='true'] { background: #edf2ec; border-color: #30665c; }
 .card h3 { font-family: Georgia, serif; font-weight: 500; overflow-wrap: anywhere; }
 .card p { overflow-wrap: anywhere; }

@@ -230,6 +230,32 @@ test('selecting a lower catalogue card reveals focused detail and closing reveal
   await expect(trigger).toBeInViewport();
 });
 
+test('automatic dark scheme preserves contrast in the tour and warm detail surfaces', async ({ page }, testInfo) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/tour');
+  await expect(page.locator('html')).toHaveAttribute('data-mantine-color-scheme', 'dark');
+  const contrast = (element: HTMLElement) => {
+    const luminance = (color: string) => {
+      const channels = color.match(/[\d.]+/g)!.slice(0, 3).map(Number).map((value) => {
+        const unit = value / 255;
+        return unit <= 0.04045 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
+      });
+      return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+    };
+    let surface: HTMLElement | null = element;
+    while (surface && getComputedStyle(surface).backgroundColor === 'rgba(0, 0, 0, 0)') surface = surface.parentElement;
+    const foreground = luminance(getComputedStyle(element).color);
+    const background = luminance(surface ? getComputedStyle(surface).backgroundColor : 'rgb(255, 255, 255)');
+    return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+  };
+  expect(await page.getByRole('heading', { level: 1 }).evaluate(contrast)).toBeGreaterThanOrEqual(4.5);
+  expect(await page.getByRole('heading', { name: 'Bước vào phòng trưng bày' }).evaluate(contrast)).toBeGreaterThanOrEqual(4.5);
+  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true }).click();
+  expect(await page.getByRole('complementary', { name: 'Chi tiết hiện vật' }).getByRole('heading', { name: 'Hiện vật 1', exact: true }).evaluate(contrast)).toBeGreaterThanOrEqual(4.5);
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await page.screenshot({ path: testInfo.outputPath('day3-dark-detail.png'), fullPage: true });
+});
+
 test('clicking a visible annotation selects its exhibit above nearer geometry', async ({ page }) => {
   await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: [
     { ...roomA.exhibits[0], placeholderShape: 'sphere', positionX: 0, positionZ: 0 },

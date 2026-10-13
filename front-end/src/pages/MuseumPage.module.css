@@ -1,11 +1,11 @@
-.page { --mantine-color-dimmed: #60695f; color: #263b36; }
+.page { --mantine-color-dimmed: var(--public-muted, #60695f); color: var(--public-ink, #263b36); }
 .page :global(.mantine-Button-root) { min-height: 44px; }
 .heading { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 500; line-height: 1.2; overflow-wrap: anywhere; }
-.eyebrow { color: #786344; letter-spacing: 0.14em; }
-.lead { color: #60695f; }
-.toolbar { padding: 18px 0; border-block: 1px solid #ddd5c6; }
+.eyebrow { color: var(--public-muted, #786344); letter-spacing: 0.14em; }
+.lead { color: var(--public-muted, #60695f); }
+.toolbar { padding: 18px 0; border-block: 1px solid var(--public-border, #ddd5c6); }
 .roomSelect { width: min(100%, 360px); }
-.roomSelect select { min-height: 44px; background: #fcfaf5; border-color: #c6bcaa; color: #263b36; }
+.roomSelect select { min-height: 44px; background: #fcfaf5; border-color: #c6bcaa; color: #263b36; color-scheme: light; }
 .introTitle { font-family: Georgia, serif; font-size: clamp(1.7rem, 3vw, 2.5rem); font-weight: 500; }
 .stage { display: grid; gap: 16px; min-width: 0; }
 .stageDetails { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); }
@@ -30,6 +30,8 @@
 }
 
 .intro {
+  --public-muted: #60695f;
+  color: #263b36;
   height: 100%;
   background: radial-gradient(ellipse at 50% 100%, #d4c3a5 0%, transparent 70%), linear-gradient(135deg, #f3eee2, #e9e1d1);
 }
