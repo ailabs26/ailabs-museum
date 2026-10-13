@@ -19,6 +19,7 @@
     "test:moderation": "node -r reflect-metadata -r ts-node/register --test src/modules/moderation/tests/*.spec.ts",
     "test:reports": "node -r reflect-metadata -r ts-node/register --test src/modules/content-reports/tests/*.spec.ts",
     "test:audit": "node -r reflect-metadata -r ts-node/register --test src/modules/audit/tests/*.spec.ts",
+    "test:exhibits": "node -r reflect-metadata -r ts-node/register --test src/modules/exhibits/tests/*.spec.ts",
     "test:service": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/rooms-service*.spec.ts",
     "test:extended": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/rooms-service-extended.spec.ts"
   },
