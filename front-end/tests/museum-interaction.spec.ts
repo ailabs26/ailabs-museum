@@ -82,4 +82,23 @@ test('selecting an exhibit focuses the camera and reset retains published detail
   await page.getByRole('button', { name: 'Góc nhìn ban đầu' }).click();
   await expect.poll(async () => (await canvas.screenshot(capture)).equals(focused)).toBe(false);
   await expect(panel).toContainText('Mô tả hiện vật 2');
+  const reset = await canvas.screenshot(capture);
+  await expect(page.getByRole('button', { name: 'Tập trung hiện vật', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Tập trung hiện vật', exact: true }).click();
+  await expect.poll(async () => (await canvas.screenshot(capture)).equals(focused)).toBe(true);
+  await canvas.press('ArrowLeft');
+  await expect.poll(async () => (await canvas.screenshot(capture)).equals(focused)).toBe(false);
+  await canvas.press('f');
+  await expect.poll(async () => (await canvas.screenshot(capture)).equals(focused)).toBe(true);
+  expect(focused.equals(reset)).toBe(false);
+});
+
+test('outside-room exhibits retain detail but cannot focus the camera outside the gallery', async ({ page }) => {
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: [{ ...roomA.exhibits[0], positionX: 20 }] })));
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible();
+  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true }).click();
+  await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText('ngoài phạm vi');
+  await expect(page.getByRole('button', { name: 'Tập trung hiện vật', exact: true })).toBeDisabled();
 });

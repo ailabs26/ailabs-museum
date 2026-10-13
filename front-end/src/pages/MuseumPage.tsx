@@ -95,7 +95,8 @@ export function MuseumPage() {
         </div>
         <Text id="museum-controls-help" size="sm" c="dimmed">
           Kéo chuột hoặc vuốt để xoay · Cuộn hoặc chụm hai ngón để thu phóng.
-          Khi chọn khung 3D: phím mũi tên / WASD xoay góc nhìn, +/− thu phóng, Home về ban đầu. Tab để rời khung.
+          Chọn hiện vật để xem chi tiết. Khi chọn khung 3D: mũi tên / WASD xoay, +/− thu phóng,
+          F tập trung hiện vật đã chọn, Home về ban đầu. Escape đóng chi tiết · Tab để rời khung.
         </Text>
         <MuseumCatalogue displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay} />
         </>}

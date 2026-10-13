@@ -16,6 +16,7 @@ export function MuseumScene({ displays, selectedId, onSelect }: {
 }) {
   const [command, setCommand] = useState<CameraCommand | null>(null);
   const [isContextLost, setIsContextLost] = useState(false);
+  const selectedDisplay = displays.find((display) => display.id === selectedId);
   const handleContextLost = useCallback(() => setIsContextLost(true), []);
   const handleCommand = (action: CameraAction) => setCommand((previous) => ({ action, sequence: (previous?.sequence ?? 0) + 1 }));
   if (isContextLost) return <SceneFallback />;
@@ -32,7 +33,7 @@ export function MuseumScene({ displays, selectedId, onSelect }: {
       <color attach="background" args={['#eee9df']} />
       <MuseumLighting />
       <SceneLifecycle onContextLost={handleContextLost} />
-      <MuseumControls command={command} selectedDisplay={displays.find((display) => display.id === selectedId)} />
+      <MuseumControls command={command} selectedDisplay={selectedDisplay} />
       <MuseumRoom />
       {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={onSelect} />)}
     </Canvas>
@@ -40,6 +41,7 @@ export function MuseumScene({ displays, selectedId, onSelect }: {
       <Button variant="default" onClick={() => handleCommand('reset')}>Góc nhìn ban đầu</Button>
       <Button variant="default" onClick={() => handleCommand('in')}>Đến gần</Button>
       <Button variant="default" onClick={() => handleCommand('out')}>Lùi xa</Button>
+      <Button color="teal.9" disabled={!selectedDisplay || selectedDisplay.isOutsideRoom} onClick={() => handleCommand('focus')}>Tập trung hiện vật</Button>
     </Group>
     </>
   );
