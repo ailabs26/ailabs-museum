@@ -1,12 +1,12 @@
 import {
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
 import { PERMISSIONS } from '../../../common/constants/permissions.constant';
+import { PermissionDeniedException } from '../../../common/exceptions/permission-denied.exception';
 import { RoleKey } from '../../../common/enums/role.enum';
 import type { AuthUser } from '../../../common/types/auth-user.type';
 import type { Paginated } from '../../../common/types/paginated.type';
@@ -122,7 +122,10 @@ export class UsersService {
 
   private requireRoleAssignment(actor: AuthUser): void {
     if (!actor.permissions.includes(PERMISSIONS.ROLE_ASSIGN)) {
-      throw new ForbiddenException('Thiếu quyền: role:assign');
+      throw new PermissionDeniedException(
+        [PERMISSIONS.ROLE_ASSIGN],
+        [PERMISSIONS.ROLE_ASSIGN],
+      );
     }
   }
 

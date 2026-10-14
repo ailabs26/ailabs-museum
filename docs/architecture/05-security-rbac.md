@@ -65,6 +65,13 @@ publish(@Param('id') id: string, @CurrentUser() user: AuthUser) { ... }
 
 ## 5.3 Luồng kiểm quyền trên 1 endpoint
 
+Thiếu quyền RBAC được biểu diễn bằng `PermissionDeniedException`. Filter toàn cục ghi
+`access.denied` vào `audit_logs` với actor, request ID và JSON trong `reason` gồm method,
+route pattern, quyền yêu cầu/quyền thiếu. `resourceType=access`; `resourceId` là UUID của
+sự kiện, không đại diện một bản ghi nội dung. Không lưu token/cookie/body/query.
+Nếu ghi audit thất bại, ghi cảnh báo theo request ID và vẫn trả 403. Lỗi 401 hoặc
+403 do Origin của refresh/logout không thuộc loại sự kiện này.
+
 ```mermaid
 flowchart LR
     req[Request + Bearer] --> jwt{JwtAuthGuard<br/>token hợp lệ?}
