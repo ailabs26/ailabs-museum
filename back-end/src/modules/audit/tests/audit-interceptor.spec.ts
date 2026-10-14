@@ -1,10 +1,13 @@
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { CallHandler, ExecutionContext } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import { CallHandler, Controller, ExecutionContext, INestApplication, Post } from '@nestjs/common';
+import { APP_INTERCEPTOR, Reflector } from '@nestjs/core';
+import { Test } from '@nestjs/testing';
 import { lastValueFrom, of } from 'rxjs';
-import { AuditMeta } from '../decorators/audit.decorator';
+import request from 'supertest';
+import { ResponseInterceptor } from '../../../common/interceptors/response.interceptor';
+import { Audit, AuditMeta } from '../decorators/audit.decorator';
 import { AuditInterceptor } from '../interceptors/audit.interceptor';
 import { AuditService, RecordAuditInput } from '../services/audit.service';
 
@@ -53,5 +56,75 @@ describe('AuditInterceptor', () => {
     const input = await run({ action: 'exhibit.hide', resourceType: 'exhibit' }, 'ex-3');
     assert.equal(input.resourceId, 'ex-3');
     assert.equal(input.revisionId, null);
+  });
+
+  it('đọc id bên trong envelope ApiResponse khi route không có param :id', async () => {
+    const recorded: RecordAuditInput[] = [];
+    const audit = { record: async (input: RecordAuditInput) => void recorded.push(input) } as unknown as AuditService;
+    const interceptor = new AuditInterceptor(fakeReflector({ action: 'room.create', resourceType: 'room' }), audit);
+    const context = buildContext('');
+    (context.switchToHttp().getRequest() as { params: object }).params = {};
+    const next: CallHandler = { handle: () => of({ success: true, data: { id: 'room-7' }, message: null }) };
+    await lastValueFrom(interceptor.intercept(context, next));
+    assert.deepEqual(recorded.map((entry) => entry.resourceId), ['room-7']);
+  });
+});
+
+/**
+ * Chạy cùng thứ tự đăng ký như production: AuditInterceptor qua APP_INTERCEPTOR và
+ * ResponseInterceptor qua app.useGlobalInterceptors (main.ts). Nest đặt APP_INTERCEPTOR
+ * ở lớp ngoài, nên AuditInterceptor nhận kết quả ĐÃ bọc envelope.
+ */
+describe('AuditInterceptor trong chuỗi interceptor thật', () => {
+  @Controller('things')
+  class ThingsController {
+    @Post()
+    @Audit('thing.create', 'thing')
+    create() {
+      return { id: 'thing-1', name: 'mới' };
+    }
+
+    @Post(':id/roles')
+    @Audit('thing.assign', 'thing')
+    assign() {
+      return { roleIds: ['role-1', 'role-2'] };
+    }
+  }
+
+  async function startApp(recorded: RecordAuditInput[]): Promise<INestApplication> {
+    const moduleRef = await Test.createTestingModule({
+      controllers: [ThingsController],
+      providers: [
+        { provide: AuditService, useValue: { record: async (input: RecordAuditInput) => void recorded.push(input) } },
+        { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
+      ],
+    }).compile();
+    const app = moduleRef.createNestApplication();
+    app.useGlobalInterceptors(new ResponseInterceptor());
+    await app.init();
+    return app;
+  }
+
+  it('route tạo mới (POST không có :id) vẫn ghi audit với id vừa tạo', async () => {
+    const recorded: RecordAuditInput[] = [];
+    const app = await startApp(recorded);
+    try {
+      const res = await request(app.getHttpServer()).post('/things').expect(201);
+      assert.equal(res.body.data.id, 'thing-1');
+      assert.deepEqual(recorded.map((entry) => [entry.action, entry.resourceId]), [['thing.create', 'thing-1']]);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('danh sách roleIds bên trong envelope được ghi từng dòng', async () => {
+    const recorded: RecordAuditInput[] = [];
+    const app = await startApp(recorded);
+    try {
+      await request(app.getHttpServer()).post('/things/thing-1/roles').expect(201);
+      assert.deepEqual(recorded.map((entry) => entry.resourceId), ['role-1', 'role-2']);
+    } finally {
+      await app.close();
+    }
   });
 });
