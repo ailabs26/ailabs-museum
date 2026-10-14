@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-import { join } from 'node:path';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -9,6 +8,10 @@ import { static as expressStatic } from 'express';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import {
+  DEFAULT_MEDIA_STORAGE_ROOTS,
+  PUBLIC_MEDIA_URL_PREFIX,
+} from './modules/media/services/media-storage.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -32,8 +35,16 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // Media tĩnh (không chịu prefix /api)
-  app.use('/media', expressStatic(join(process.cwd(), 'public', 'media')));
+  // Media tĩnh (không chịu prefix /api). nosniff: trình duyệt không được "đoán" lại
+  // Content-Type — file upload luôn được phục vụ đúng kiểu đã kiểm tra.
+  app.use(
+    PUBLIC_MEDIA_URL_PREFIX,
+    expressStatic(DEFAULT_MEDIA_STORAGE_ROOTS.publicRoot, {
+      index: false,
+      dotfiles: 'deny',
+      setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
+    }),
+  );
 
   // Swagger tại /api/docs, có ô nhập Bearer token (dùng từ PR #D)
   const swagger = new DocumentBuilder()
