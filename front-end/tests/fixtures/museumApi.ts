@@ -11,6 +11,7 @@ export async function fulfillMuseum(route: Route, data: unknown, status = 200) {
 export async function installMuseumApi(page: Page) {
   const requests: string[] = [];
   await page.route('**/api/auth/me', (route) => fulfillMuseum(route, { success: false, data: null, message: 'Unauthenticated' }, 401));
+  await page.route('**/api/auth/refresh', (route) => fulfillMuseum(route, { success: false, data: null, message: 'Unauthenticated' }, 401));
   await page.route('**/api/rooms**', async (route) => {
     const path = new URL(route.request().url()).pathname;
     requests.push(path);
