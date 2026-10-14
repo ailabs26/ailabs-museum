@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Badge, Button, Stack, Text, Title } from '@mantine/core';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
+import { ExhibitPreview } from '@/shared/components/data/ExhibitPreview';
 import classes from './ExhibitDetailPanel.module.css';
 
 /** Published text only; nonmodal so the scene and room selector stay usable. */
@@ -15,10 +16,7 @@ export function ExhibitDetailPanel({ display, onClose }: { display: MuseumDispla
           <Button variant="subtle" color="dark" onClick={onClose} aria-label="Đóng chi tiết hiện vật">Đóng ×</Button>
         </div>
         <Title ref={titleRef} tabIndex={-1} order={2} size="h3" className={classes.title}>{display.title}</Title>
-        <div className={classes.mediaFallback}>
-          <Text size="sm">Chưa có ảnh hoặc mô hình 3D.</Text>
-          <Text size="xs" c="dimmed">Hình khối trong phòng là hình thay thế.</Text>
-        </div>
+        <ExhibitPreview shape={display.shape} color={display.color} className={classes.preview} />
         <section aria-label="Mô tả hiện vật">
           <Title order={3} size="h5" mb="xs">Câu chuyện hiện vật</Title>
           <Text size="sm" className={classes.body}>{display.description || 'Chưa có mô tả.'}</Text>

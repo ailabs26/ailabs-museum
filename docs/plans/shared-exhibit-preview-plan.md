@@ -52,7 +52,7 @@ Type là presentation union nhỏ, không import Three.js. Trong component dùng
 ## PREVIEW-01: Duyệt và commit tài liệu
 
 - [x] Người dùng đọc task/plan và duyệt phạm vi minh họa chung/caption.
-- [ ] Review status/diff/log, commit chỉ hai tài liệu:
+- [x] Review và commit tài liệu `79785bf`:
 
 ```powershell
 git add -- docs/tasks/shared-exhibit-preview.md docs/plans/shared-exhibit-preview-plan.md
@@ -63,7 +63,7 @@ git commit -m "docs(preview): plan shared 2D exhibit illustration"
 
 ## PREVIEW-02: Component và bốn consumer
 
-- [ ] Viết Playwright test trước, dùng fixture API hiện có. `/collection` có 5 preview với shape/color của fixture và 5 caption; homepage chỉ 3. Assertions mới fail khi preview chưa tồn tại, không bỏ assertions tên/mô tả cũ.
+- [x] Test trước; collection chưa có data-shape nên fail đúng. Home/collection assertions tên/mô tả giữ nguyên.
 
 ```ts
 await page.goto('/collection');
@@ -73,14 +73,14 @@ await expect(list.locator('[data-shape="torus"]')).toHaveCount(1);
 await expect(list.getByText('Chưa có ảnh', { exact: true })).toHaveCount(5);
 ```
 
-- [ ] Test `/tour` catalogue nhận mapper `box→cube` nhưng preview chuẩn hóa về box; chọn item thì panel có shape/color cùng item. Fixture bổ sung ico chỉ ở test component/legacy nếu cần; không nới Zod API enum.
-- [ ] Chạy test RED với `npm.cmd test -- exhibit-preview.spec.ts --max-failures=1`.
-- [ ] Tạo component với container, shape aria-hidden và hai caption. Reuse shape CSS hiện có: sphere tròn, box vuông, torus vòng, cone tam giác, cylinder ellipse và icosahedron đa giác. Màu dùng custom property, không phụ thuộc chỉ màu để phân biệt khối.
-- [ ] Consumer grid truyền `exhibit.placeholderShape`/`placeholderColor`; tour catalogue/panel truyền `display.shape`/`color`. Dùng className để giữ kích thước/margin; không thêm state hoặc image prop.
-- [ ] Xóa CSS/import shape cũ khi không còn caller. Panel vẫn hiển thị mô tả/transcript/hotspot, Close/Escape và focus giữ nguyên.
-- [ ] Chặn WebGL bằng init script test: collection/home không mount Canvas; tour lỗi vẫn có preview catalogue và mở panel bằng DOM. Không thay fallback navigation trong task này.
-- [ ] Kiểm tra shape/color khác nhau, box alias, 0 items, API error, responsive light/dark với panel mở. Không cần test snapshots pixel phụ thuộc GPU.
-- [ ] Chạy focused regression và quality gates từ frontend:
+- [x] Test tour cube alias→box và panel cùng shape/color đạt; không nới Zod enum.
+- [x] RED test đầu thiếu data-shape trước code.
+- [x] Component CSS shape/aria-hidden/caption tạo từ kỹ thuật sẵn có.
+- [x] Cả bốn consumer truyền shape/color/className; không state/image prop.
+- [x] Bỏ CSS/import trùng; panel text/focus giữ hành vi.
+- [x] WebGL blocked test giữ preview catalogue/panel, collection/home không Canvas.
+- [x] Tests shape/color/alias/empty/error và responsive đạt; chưa có direct legacy ico test.
+- [x] Focused 37/37 và typecheck/lint/build đạt:
 
 ```powershell
 npm.cmd test -- exhibit-preview.spec.ts collection.spec.ts home-featured.spec.ts museum-interaction.spec.ts museum-font.spec.ts
