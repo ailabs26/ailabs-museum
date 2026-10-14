@@ -65,8 +65,11 @@ Day 1: 17 original commits (restored through PR #26). Day 2: seven original task
 | `858a54f` | perf(tour): instance repeated gallery geometry and finishes |
 | `e27b7ec` | fix(tour): preserve public queries during anonymous session recovery |
 | `9d705af` | perf(tour): defer admin chart engine until a chart is rendered |
+| `bb6c93f` | docs(tour): record Day 4 measurements and final verification |
 
 Final evidence/publication commits follow this ledger; retrieve their SHAs with `git log --oneline 777b583..HEAD`. Fewer than the aspirational 20 commits are intentional: no padding or invented optimization to reach a count; maximum 30 respected.
+
+Publication: [PR #52](https://github.com/ailabs26/ailabs-museum/pull/52), base `dev`, head `feat/museum-performance-day4`. **Open, not merged** at delivery. Eight implementation/evidence commits plus this publication record total **nine meaningful Day 4 commits**. Human review/testing precedes any merge; preserve original commits when integration is later authorized.
 
 ## Run and demo
 

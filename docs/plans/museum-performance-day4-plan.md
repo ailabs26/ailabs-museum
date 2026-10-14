@@ -65,7 +65,7 @@
 - [x] Repeat the same profile and lifecycle conditions; report measured results and limits (software GPU, emulated touch; heap observations do not prove physical GPU memory or all-device leak freedom).
 - [x] FE typecheck/lint/build/unit, complete production browser suite, real API integration (no interception/database writes), and targeted StrictMode lifecycle.
 - [x] Independent full-branch review, fix blockers with regression proof, review final diff, commit evidence and update `docs/museum-tour-progress.md` with four-day architecture/endpoints/commits/demo/limitations.
-- [ ] Push task branch, open one PR with base dev, confirm publication. Stop before merge for user testing/review.
+- [x] Push task branch, open one PR with base dev, confirm publication. PR #52: https://github.com/ailabs26/ailabs-museum/pull/52. Stop before merge for user testing/review.
 
 ## Final decisions and evidence
 
