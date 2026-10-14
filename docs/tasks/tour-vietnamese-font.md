@@ -1,7 +1,7 @@
 # Task: Sửa font tiếng Việt trong tour 3D
 
 **Nhánh:** `fix/tour-vietnamese-font`, từ `origin/dev` tại `806ebcf`.
-**Trạng thái:** Người dùng đã duyệt tài liệu và yêu cầu triển khai trên nhánh riêng.
+**Trạng thái:** Đã sửa và kiểm chứng kỹ thuật, chờ người dùng xác nhận hiển thị trực quan.
 **Plan:** [tour-vietnamese-font-plan.md](../plans/tour-vietnamese-font-plan.md).
 
 ## Lỗi và bằng chứng
@@ -22,13 +22,21 @@ Thử style tạm trong browser (đã tháo bỏ sau kiểm tra): Times New Roma
 ## Điều kiện nghiệm thu
 
 - [x] Người dùng duyệt tài liệu trước commit/triển khai.
-- [ ] Tiêu đề “Bình nước dã chiến” không trộn Georgia với font fallback ở catalogue/panel trên môi trường Edge đã khảo sát.
-- [ ] Bảng tên canvas dùng cùng font stack đã chốt, vẫn giữ nguyên chữ đầu vào.
-- [ ] Chọn/đóng chi tiết và render scene hoạt động; mobile không tràn ngang.
-- [ ] Typecheck/lint/build và kiểm tra hồi quy liên quan đạt.
+- [x] Tiêu đề “Bình nước dã chiến” không trộn Georgia với font fallback ở catalogue/panel trên môi trường Edge đã khảo sát (CDP).
+- [x] Canvas2D fillText dùng font stack đã chốt và chuỗi tiêu đề nguyên vẹn; không thay cho visual review texture.
+- [x] Chọn/đóng chi tiết và render scene hoạt động; panel không tràn ngang 320/768/1024/1440 px.
+- [x] Typecheck/lint/build và kiểm tra hồi quy liên quan đạt.
 - [ ] Người dùng xác nhận hiển thị trực quan OK, mô tả PR được duyệt trước tạo.
 
 ## Commit dự kiến
 
 1. `docs(tour): plan Vietnamese typography fix` — task/plan sau duyệt.
 2. `fix(tour): use consistent serif font for Vietnamese titles` — thay đổi font và kiểm tra hồi quy, sau verification.
+
+## Bằng chứng triển khai
+
+- Commit tài liệu `f43573f`, sau khi người dùng duyệt.
+- Tests font viết trước: 2/2 thất bại đúng vì catalogue trả `Georgia, serif` và canvas fillText trả `30px Georgia, serif`. Lần chạy đầu tool bị ngắt; lần chạy lại cho failure assertion đầy đủ.
+- Sau sửa `npm.cmd test -- museum-font.spec.ts museum-interaction.spec.ts`: 16/16 đạt (1.0m). CDP kiểm tra font thực tế catalogue/panel/heading/intro dùng Times New Roman trên Windows Edge, NFC text nguyên vẹn. Canvas2D instrumentation xác nhận title/font string. Tests interaction chứng minh selection, đóng/focus, camera/picking/touch và responsive giữ hành vi.
+- Frontend typecheck/lint/build đạt, không thay đổi dependency. Build cảnh báo bundle >500 kB vẫn tồn tại; main 1,378.74 kB và scene 851.31 kB trước gzip.
+- Không sửa backend, API hoặc Supabase. Tests dùng fixture; chưa có xác nhận visual sau sửa của người dùng, không tuyên bố mọi OS hoặc GPU thật đã được kiểm tra. Chưa push/PR.

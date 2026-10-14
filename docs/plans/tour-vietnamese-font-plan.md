@@ -34,12 +34,12 @@ Giữ interfaces `MuseumCatalogue`, `ExhibitDetailPanel`, `ExhibitLabel` hiện 
 ## FONT-01: Duyệt và commit tài liệu
 
 - [x] Người dùng duyệt task/plan.
-- [ ] Rà soát git status/diff/log; stage chỉ hai tài liệu; commit `docs(tour): plan Vietnamese typography fix`.
+- [x] Rà soát và commit tài liệu `f43573f`.
 
 ## FONT-02: Kiểm tra trước, sửa và kiểm chứng
 
-- [ ] Test trước: override item 2.name thành `[Mẫu] Bình nước dã chiến`, vào tour, chọn từ DOM catalogue; kiểm tra text NFC và stack/font thực tế của catalogue/panel.
-- [ ] Dùng CDP lấy fonts của node; Windows Edge assert chỉ có Times New Roman (regular/bold cùng family), trước sửa dự kiến fail vì Georgia. Platform khác kiểm tra CSS font stack thay vì kỳ vọng font Windows.
+- [x] Test trước với tên item 2, NFC/CSS/CDP kiểm tra catalogue/panel và heading/intro.
+- [x] Windows Edge CDP kiểm tra Times New Roman, OS khác chỉ assert CSS stack.
 
 ```ts
 const cdp = await page.context().newCDPSession(page);
@@ -53,10 +53,10 @@ const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId });
 expect(fonts.map(font => font.familyName)).toEqual(['Times New Roman']);
 ```
 
-- [ ] Capture Canvas2D `fillText`/font bằng init script test, mở scene, xác nhận bảng tên item 2 dùng `30px "Times New Roman", serif`; kiểm tra text còn nguyên nếu không vượt chiều rộng. Không coi đo font string là kiểm chứng trực quan canvas.
-- [ ] Chạy `npm.cmd test -- museum-font.spec.ts`, ghi failure nguyên nhân font trước sửa.
-- [ ] Đổi các CSS stack thành `font-family: 'Times New Roman', serif;`, canvas thành `context.font = '30px "Times New Roman", serif';`. Không chạm input text hoặc spacing.
-- [ ] Chạy test GREEN, test interaction phù hợp và quality gates:
+- [x] Capture fillText/font chứng minh title nguyên vẹn và font stack canvas; không phải visual review.
+- [x] Trước sửa hai tests fail đúng vì Georgia DOM/canvas.
+- [x] Đổi font CSS/canvas theo plan, không chạm text/spacing.
+- [x] Test GREEN 16/16 và typecheck/lint/build đạt:
 
 ```powershell
 npm.cmd test -- museum-font.spec.ts museum-interaction.spec.ts
@@ -65,10 +65,10 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-- [ ] Kiểm tra DOM không tràn ngang khi panel mở ở 320/768/1024/1440; đóng panel và focus trigger giữ hành vi.
-- [ ] Ghi bằng chứng, review/stage đúng file và commit `fix(tour): use consistent serif font for Vietnamese titles`.
+- [x] Panel mở không tràn ngang bốn viewport; đóng/focus giữ hành vi.
+- [x] Ghi bằng chứng và review/stage cho commit fix; SHA cuối tra git log.
 - [ ] Người dùng kiểm tra lại trực quan; gửi mô tả PR trước push/tạo PR.
 
 ## Self-review
 
-Title item 2, panel, room/intro và canvas cùng lỗi stack Georgia được bao phủ. Không giải quyết symptom bằng đổi ký tự/NFC vì nguồn text đã đúng. Test font DOM và canvas instrumentation phân biệt rõ; không thêm font global gây thay đổi admin hoặc data. Hiện chỉ tài liệu, chưa thực hiện FONT-01/02.
+Title item 2, panel, room/intro và canvas cùng lỗi stack Georgia được bao phủ. Không đổi ký tự/NFC vì nguồn text đã đúng. Test font DOM và canvas instrumentation phân biệt rõ; không thêm font global gây thay đổi admin hoặc data. FONT-01/02 đã triển khai/kiểm chứng; chờ người dùng duyệt trực quan và PR.
