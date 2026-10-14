@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Paginated } from '../../../common/types/paginated.type';
 import { AuditLog } from '../entities/audit-log.entity';
 import { ListAuditQueryDto } from '../dto/list-audit-query.dto';
 import { AuditRepository } from '../repositories/audit.repository';
+import type { RecordAccessDeniedInput } from '../dto/record-access-denied.dto';
 
 export interface RecordAuditInput {
   actorId: string | null;
@@ -16,6 +18,8 @@ export interface RecordAuditInput {
 
 @Injectable()
 export class AuditService {
+  private readonly logger = new Logger(AuditService.name);
+
   constructor(private readonly audit: AuditRepository) {}
 
   /** Ghi 1 bản ghi nhật ký (append-only). */
@@ -31,6 +35,33 @@ export class AuditService {
         requestId: input.requestId,
       }),
     );
+  }
+
+  /** Ghi sự kiện bảo mật; lỗi lưu audit không được thay đổi kết quả từ chối 403. */
+  async recordAccessDenied(input: RecordAccessDeniedInput): Promise<void> {
+    try {
+      await this.record({
+        actorId: input.actorId,
+        action: 'access.denied',
+        resourceType: 'access',
+        // Request list/create chưa có tài nguyên: dùng UUID sự kiện, không dùng id giả.
+        resourceId: randomUUID(),
+        requestId: input.requestId,
+        reason: JSON.stringify({
+          status: 403,
+          method: input.method,
+          route: input.route,
+          requiredPermissions: input.requiredPermissions,
+          missingPermissions: input.missingPermissions,
+        }),
+      });
+    } catch {
+      this.logger.warn(JSON.stringify({
+        action: 'access.denied',
+        requestId: input.requestId,
+        message: 'Không ghi được audit cho truy cập bị từ chối',
+      }));
+    }
   }
 
   list(query: ListAuditQueryDto): Promise<Paginated<AuditLog>> {

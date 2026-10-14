@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuditLog } from './entities/audit-log.entity';
 import { AuditController } from './controllers/audit.controller';
 import { AuditInterceptor } from './interceptors/audit.interceptor';
+import { PermissionDeniedFilter } from './filters/permission-denied.filter';
 import { AuditRepository } from './repositories/audit.repository';
 import { AuditService } from './services/audit.service';
 
@@ -13,6 +14,7 @@ import { AuditService } from './services/audit.service';
   providers: [
     AuditService,
     AuditRepository,
+    PermissionDeniedFilter,
     // Ghi vết tự động cho mọi route có @Audit(...). Chỉ hoạt động khi có metadata,
     // nên đăng ký global là an toàn.
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
