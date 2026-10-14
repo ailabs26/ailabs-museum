@@ -2,6 +2,7 @@ import { useLayoutEffect, useState } from 'react';
 import { useThree } from '@react-three/fiber';
 import { CanvasTexture, SRGBColorSpace } from 'three';
 import { EXHIBIT_LABEL_SIZE } from '@/interfaces/museumScene';
+import { fitLabelTitle } from '@/helpers/fitLabelTitle';
 
 /** System-font plaque: no font download, DOM overlay or external texture. */
 export function ExhibitLabel({ title, isSelected, isCenterpiece }: { title: string; isSelected: boolean; isCenterpiece: boolean }) {
@@ -30,9 +31,8 @@ export function ExhibitLabel({ title, isSelected, isCenterpiece }: { title: stri
       context.textAlign = 'center';
       context.textBaseline = 'middle';
       context.font = '30px "Times New Roman", serif';
-      let line = title;
-      while (line.length > 1 && context.measureText(line).width > 450) line = line.slice(0, -1);
-      context.fillText(line.length < title.length ? `${line}…` : line, 260, 52);
+      const line = fitLabelTitle(title, (text) => context.measureText(text).width, 450);
+      context.fillText(line, 260, 52);
       context.font = '18px sans-serif';
       context.fillStyle = '#5e6258';
       context.fillText(isSelected ? 'ĐANG XEM' : 'CHỌN ĐỂ KHÁM PHÁ', 260, 92);
