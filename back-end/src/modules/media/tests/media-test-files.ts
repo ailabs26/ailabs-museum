@@ -31,6 +31,15 @@ export interface PngOptions {
 
 export const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
+/** Dữ liệu điểm ảnh thô (không interlace), mỗi dòng có byte filter = 0. */
+function rawPixels(width: number, height: number, colorType: number, bitDepth: number): Buffer {
+  const channels = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 }[colorType] ?? 4;
+  const rowBytes = 1 + Math.ceil((width * channels * bitDepth) / 8);
+  const raw = Buffer.alloc(rowBytes * height, 0x7f);
+  for (let row = 0; row < height; row++) raw[row * rowBytes] = 0;
+  return raw;
+}
+
 export function buildPng(options: PngOptions = {}): Buffer {
   const width = options.width ?? 4;
   const height = options.height ?? 3;
@@ -45,11 +54,7 @@ export function buildPng(options: PngOptions = {}): Buffer {
   ihdr[11] = 0;
   ihdr[12] = options.interlace ?? 0;
 
-  const channels = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 }[colorType] ?? 4;
-  const rowBytes = 1 + Math.ceil((width * channels * bitDepth) / 8);
-  const raw = Buffer.alloc(rowBytes * height, 0x7f);
-  for (let row = 0; row < height; row++) raw[row * rowBytes] = 0; // filter type None
-  const idat = options.idat ?? deflateSync(raw);
+  const idat = options.idat ?? deflateSync(rawPixels(width, height, colorType, bitDepth));
 
   return Buffer.concat([
     PNG_SIGNATURE,

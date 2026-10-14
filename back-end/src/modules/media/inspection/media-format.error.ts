@@ -5,6 +5,7 @@ export enum MediaErrorCode {
   UNSUPPORTED_TYPE = 'media_unsupported_type',
   MARKUP_REJECTED = 'media_markup_rejected',
   CORRUPTED = 'media_corrupted',
+  EXTERNAL_RESOURCE = 'media_external_resource',
   KIND_MISMATCH = 'media_kind_mismatch',
   TOO_LARGE = 'media_too_large',
   QUARANTINED = 'media_quarantined',

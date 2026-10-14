@@ -75,6 +75,15 @@ export const MEDIA_FORMAT_SPECS: Readonly<Record<MediaFormat, MediaFormatSpec>> 
   },
 };
 
+/**
+ * Cạnh tối đa (pixel) của ảnh. File nén nhỏ vẫn có thể bung thành ảnh khổng lồ
+ * (decompression bomb) làm treo backend khi kiểm tra và trình duyệt khi hiển thị.
+ */
+export const MAX_IMAGE_DIMENSION = 8192;
+
+/** Trần dung lượng dữ liệu điểm ảnh sau giải nén khi kiểm tra PNG. */
+export const MAX_DECODED_IMAGE_BYTES = 100 * MEGABYTE;
+
 /** Trần dung lượng cho tầng nhận file (multer) — bằng giới hạn lớn nhất trong các định dạng. */
 export const MAX_UPLOAD_BYTES = Math.max(
   ...Object.values(MEDIA_FORMAT_SPECS).map((spec) => spec.maxBytes),
