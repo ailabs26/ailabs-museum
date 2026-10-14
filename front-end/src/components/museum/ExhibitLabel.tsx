@@ -17,7 +17,7 @@ export function ExhibitLabel({ title, isSelected, isCenterpiece }: { title: stri
       context.fillStyle = '#253a36';
       context.textAlign = 'center';
       context.textBaseline = 'middle';
-      context.font = '30px Georgia, serif';
+      context.font = '30px "Times New Roman", serif';
       let line = title;
       while (line.length > 1 && context.measureText(line).width > 450) line = line.slice(0, -1);
       context.fillText(line.length < title.length ? `${line}…` : line, 260, 52);
