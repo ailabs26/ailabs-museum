@@ -89,22 +89,22 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-- [ ] Review diff và commit implementation/tests cùng bằng chứng `feat(preview): share CSS exhibit illustration across public views`. Không stage artifacts/.env.
+- [x] Review và commit `35b88e1`, không stage artifacts/.env.
 
 ## PREVIEW-03: API thật và bàn giao
 
-- [ ] Tạo live test bật `MUSEUM_LIVE_TEST=1`: đọc list/detail schema thật, so sánh preview shape/color với phản hồi API ở collection và tour; panel item đã chọn có cùng preview. Không tạo/sửa database.
-- [ ] Giữ media null và caption thiếu ảnh; không nói các hình CSS là file ảnh đã seed. Chỉ kiểm chứng populated nếu phòng có nội dung.
+- [x] Live test 1/1 đạt với API thật, kiểm tra cả bốn vị trí; không database write/interception.
+- [x] Media null/caption giữ đúng nghĩa, populated data có 5 items từ seed.
 
 ```powershell
 $env:MUSEUM_LIVE_TEST='1'
 try { npm.cmd test -- exhibit-preview-live.spec.ts } finally { Remove-Item Env:MUSEUM_LIVE_TEST }
 ```
 
-- [ ] Unit tests hiện có; nếu runtime sửa thêm thì chạy lại quality gates phù hợp. Ghi rõ fixture/live, DOM assertions và visual review chưa làm.
-- [ ] README cập nhật minh họa chung, ảnh thật cần contract API/schema/mapper sau này; commit độc lập tests/docs `test(preview): verify shared illustrations with public API`.
+- [x] Unit tests 6/6, typecheck/lint đạt; runtime không sửa thêm, giữ build evidence cuối. Fixture/live/visual giới hạn ghi trong task.
+- [x] README cập nhật và chuẩn bị commit live tests/docs; SHA cuối tra git log.
 - [ ] Gửi URL local để người dùng duyệt trực quan. Sau đó gửi mô tả PR và chờ yêu cầu push/tạo PR vào `dev`.
 
 ## Self-review
 
-Hai cách render khác nhau (DOM/CSS và Three.js) cùng thông số API, không ép dùng component DOM trong Canvas. Lượt này chưa có ảnh thật nên không xây loader speculative. Mọi consumer 2D được bao phủ, markup shape trang trí có caption rõ nghĩa; nội dung/focus không thay đổi. Quy trình gate người dùng được giữ: hiện chỉ tài liệu và dừng.
+Hai cách render khác nhau cùng thông số API, không ép component DOM trong Canvas. Chưa có ảnh thật nên không xây loader speculative. Bốn consumer được kiểm tra, shape trang trí/caption rõ nghĩa; nội dung/focus giữ hành vi. Đã triển khai sau duyệt task/plan; chờ visual và PR approval.

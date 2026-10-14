@@ -63,6 +63,15 @@ Remove-Item Env:CI
 
 Live test chạy frontend trên `http://localhost:5173` để khớp CORS local hiện có. Nếu API trả `[]`, test chỉ chứng minh trạng thái rỗng; cần nội dung đã xuất bản để kiểm chứng phòng/hiện vật live.
 
+## Minh họa hiện vật 2D dùng chung
+
+- `ExhibitPreview` dựng hình bằng DOM/CSS từ shape/color API, dùng ở collection, featured, catalogue tour và panel. Caption **Hình minh họa thay thế** / **Chưa có ảnh** phân biệt rõ với ảnh hiện vật thật.
+- Hình không cần WebGL/Canvas hoặc file ảnh; không seed/upload thêm. Renderer Three.js vẫn dựng khối 3D riêng từ cùng dữ liệu. API box và mapper cube hiển thị cùng minh họa hộp.
+- API/schema hiện vẫn media null. Khi có ảnh thật cần media public contract, cập nhật schema/mapper và component preview để render ảnh/lỗi tải; lượt này chưa thêm image loader speculative.
+- Focused tests: `npm.cmd test -- exhibit-preview.spec.ts collection.spec.ts home-featured.spec.ts museum-interaction.spec.ts museum-font.spec.ts`. API thật: bật `MUSEUM_LIVE_TEST=1`, chạy `npm.cmd test -- exhibit-preview-live.spec.ts`, rồi bỏ biến; không mock/DB writes.
+- Fixtures nội dung public dùng auth response test không quyền để cô lập race cache cancellation khi hết phiên; không chứng minh anonymous auth behavior. Live test chạy luồng thực tế riêng.
+- Task/plan: [shared-exhibit-preview.md](../docs/tasks/shared-exhibit-preview.md), [shared-exhibit-preview-plan.md](../docs/plans/shared-exhibit-preview-plan.md).
+
 ## Hiện vật nổi bật trên trang chủ
 
 - Trang `/` lấy phòng đầu tiên theo danh sách API, sắp xếp hiện vật theo `displayOrder` rồi ID và hiển thị tối đa 3 mục. Đây là quy tắc giới thiệu tạm thời, chưa phải cờ nổi bật trong CMS.

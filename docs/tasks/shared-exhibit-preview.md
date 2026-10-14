@@ -1,7 +1,7 @@
 # Task T-PREVIEW: Minh họa hiện vật 2D dùng chung
 
 **Nhánh:** `feat/shared-exhibit-preview`, base `c814655` từ `origin/dev`.
-**Trạng thái:** Người dùng đã duyệt task/plan và yêu cầu triển khai trên nhánh riêng.
+**Trạng thái:** Đã triển khai và kiểm chứng kỹ thuật/API thật; chờ người dùng duyệt trực quan và PR.
 **Plan:** [shared-exhibit-preview-plan.md](../plans/shared-exhibit-preview-plan.md).
 
 ## Mục tiêu và quyết định
@@ -44,7 +44,7 @@ Commit theo thay đổi có thể kiểm chứng; không tạo commit rỗng. Pu
 - [x] Tests API lỗi/rỗng giữ trạng thái, không dùng demo fallback.
 - [x] Selection, đóng panel/focus, tên/mô tả/transcript/hotspot giữ hành vi.
 - [x] DOM reflow 320/768/1024/1440 px light/dark đạt; hình khác nhau và caption không phụ thuộc màu.
-- [ ] Typecheck/lint/build, focused tests và live API check đạt.
+- [x] Typecheck/lint/build, focused tests và live API check đạt.
 - [ ] Người dùng duyệt trực quan; gửi mô tả PR trước tạo.
 
 ## Ngoài phạm vi
@@ -58,4 +58,11 @@ Không thay backend/schema/query hooks/database/seed/dependency, model 3D thật
 - Typecheck/lint/build đạt. Build cuối main 1,378.32 kB, scene 851.31 kB; cảnh báo bundle >500 kB còn tồn tại.
 - Các lỗi chờ dữ liệu home trong regression liên quan AuthProvider mới cancel/clear queries khi auth hết phiên; fixture nội dung cũ trả 401 /auth/me, dẫn tới race với fetch public. Chỉ sửa fixture nội dung trả auth response hợp lệ không quyền để cô lập tests presentation, không đổi production auth hoặc tuyên bố anonymous auth đã sửa. Lần thử mock refresh 401 không giải quyết được race; đã thay bằng fixture hợp lệ. Test reflow có 16 navigation cần timeout 60s.
 - Minh họa không tải asset, không render Canvas. Tour CSS surface giữ palette warm để caption có tương phản ở dark mode; DOM shape aria-hidden nhưng caption đọc được.
-- API thật và review trực quan chưa kiểm tra trong task này; tiếp tục PREVIEW-03.
+- PREVIEW-02 commit `35b88e1`. Visual review chưa thực hiện trong phiên.
+
+## Bằng chứng PREVIEW-03
+
+- `MUSEUM_LIVE_TEST=1`, `npm.cmd test -- exhibit-preview-live.spec.ts`: 1/1 đạt (9.6s), không interception/DB writes. API/schema response thật khớp shape/color ở cả bốn vị trí, không Canvas khi đọc DOM.
+- Probe chỉ đọc xác nhận phòng đầu `phong-lich-su-quan-su-viet-nam` có 5 items, image null: sphere/cylinder/box/torus/box với màu seed tương ứng. Không đổi dữ liệu hoặc renderer 3D.
+- Unit tests 6/6, typecheck/lint đạt sau thêm live test. Build runtime cuối đạt trước khi thêm docs/tests; không chạy lại build không cần thiết.
+- Tests preview responsive/caption/panel đã đạt, nhưng phiên không đọc ảnh chụp; chờ người dùng duyệt trực quan. Không có full-suite/axe/physical-device claims. Chưa push/PR.
