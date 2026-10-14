@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ContentReportsModule } from './modules/content-reports/content-reports.module';
 import { ExhibitsModule } from './modules/exhibits/exhibits.module';
 import { HealthController } from './modules/health/health.controller';
+import { MediaModule } from './modules/media/media.module';
 import { ModerationModule } from './modules/moderation/moderation.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
@@ -29,9 +30,10 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
     RolesModule,
     AuditModule,
-    // Phân hệ nội dung (rooms, exhibits).
+    // Phân hệ nội dung (rooms, exhibits, media).
     RoomsModule,
     ExhibitsModule,
+    MediaModule,
     // Kiểm duyệt nội dung (duyệt/từ chối/ẩn revision + diff).
     ModerationModule,
     // Báo cáo vi phạm (Client gửi + Admin xử lý).
