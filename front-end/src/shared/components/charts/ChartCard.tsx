@@ -1,8 +1,12 @@
-import ReactApexChart from 'react-apexcharts';
+import { lazy, Suspense } from 'react';
 import type { ApexOptions } from 'apexcharts';
 import { Paper, Skeleton, Stack, Text } from '@mantine/core';
 import { useComputedColorScheme } from '@mantine/core';
 import { baseChartOptions } from './chart-theme';
+import { ErrorBoundary } from '@/shared/components/feedback/ErrorBoundary';
+
+// Public routes import the dashboard module but never need its chart engine.
+const ReactApexChart = lazy(() => import('react-apexcharts'));
 
 export interface ChartCardProps {
   title: string;
@@ -58,6 +62,8 @@ export function ChartCard({
           </Text>
         </Stack>
       ) : (
+        <ErrorBoundary fallback={<Text role="alert">Không tải được biểu đồ. Hãy tải lại trang để thử lại.</Text>}>
+        <Suspense fallback={<Skeleton height={height} radius="md" />}>
         <ReactApexChart
           key={scheme}
           type={type}
@@ -65,6 +71,8 @@ export function ChartCard({
           options={merged}
           height={height}
         />
+        </Suspense>
+        </ErrorBoundary>
       )}
     </Paper>
   );

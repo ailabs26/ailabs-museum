@@ -1,4 +1,85 @@
-# Museum tour — Days 1–3 of 4
+# Museum tour — four-day delivery
+
+ACTIVE_DAY = 4. Current branch: `feat/museum-performance-day4`; base `777b583` from origin/dev. Day 3 PR #43 was subsequently merged at `cf32dd4`. Day 4 stops at one PR into dev, without merge or history rewriting. Earlier sections below are historical records, including their then-current statuses.
+
+## Day 4 final architecture and implementation
+
+`tour.html` and `/tour` mount the same SPA → MuseumPage → useMuseumRooms → museumService → shared HTTP client → Zod validation → display mapping. The selected room feeds both accessible DOM catalogue/detail and explicitly started, lazy MuseumScene (R3F/Three). NestJS owns database access; frontend never connects directly to storage or PostgreSQL.
+
+Day 1 established the room/camera/lights/HTML entry/fallback. Day 2 replaced sample content with validated published room/exhibit data. Day 3 added gallery finishes, picking, linked detail panel, camera focus and responsive accessible controls. Day 4 preserves those behaviors while reducing resource and startup costs:
+
+- Batch repeated gallery geometry with component-owned InstancedMesh; R3F disposes declarative geometry/materials, Three releases instance buffers. No global GPU cache.
+- Allocate plaque CanvasTexture in a committed layout effect, redraw/invalidate on selection instead of replacing textures, and dispose on unmount. Binary-search title fitting bounds long-title measurement while preserving Unicode and ellipsis width.
+- Defer the existing admin chart library until a chart renders; fixed-height skeleton and local error fallback preserve dashboard usability.
+- Preserve explicitly public queries when anonymous session recovery fails, preventing duplicate room requests. Private requests are cancelled/removed; ending an existing session still clears all queries and mutations. **Human auth review required before merge.**
+- Correct mobile CSS rule order so 320×568 retains a 440px gallery viewport.
+- Reuse existing lazy scene start, demand rendering, DPR cap 1.5, bounded camera controls, no shadow maps/postprocessing, AbortSignal cancellation and query staleTime 30s/gcTime 5min. No speculative memo/cache/loader subsystem.
+
+Actual read endpoints: `GET /api/rooms`, `GET /api/rooms/:slug` (includes exhibits), and `GET /api/health`. There is no separate public artifact fetch for this tour. Public `model/image/audio` remain null, so the UI explicitly presents geometric placeholders. There are no external model/texture downloads to progressively load or deduplicate; missing-media DOM feedback remains available.
+
+## Day 4 measurements
+
+Same production fixture, 1280×720, Edge 155.0.4283.45 with SwiftShader. Baseline `777b583`; final production source `9d705af`. Counts are from the same settled initial view; resource uploads depend on visibility.
+
+| Measurement | Baseline | Final |
+| --- | ---: | ---: |
+| Draw calls | 77 | 39 |
+| Uploaded geometries | 75 | 37 |
+| Materials / scene objects | 95 / 119 | 53 / 66 |
+| Uploaded textures | 3 | 3 |
+| Submitted triangles | 4624 | 4672 |
+| Initial public room requests | 4 | 2 |
+| Main JS, minified kB | 1378.74 | 826.97 |
+| Main JS, gzip kB | 400.24 | 252.91 |
+| Lazy scene, minified kB | 851.31 | 851.97 |
+| Observed click-to-canvas ms | 819 | 341 |
+| Observed interaction FPS | 32.72 | 37.50 |
+| Heap before / mounted bytes | 5705204 / 9931932 | 5080212 / 8751664 |
+
+The new deferred chart chunk is 543.94 kB (143.80 kB gzip). Group culling explains slightly more submitted triangles despite fewer draw calls. Timing/FPS/heap are single observations, not benchmark guarantees: an earlier optimized run measured 300ms and 25.94 FPS under different machine load. No physical GPU RAM measurements or device performance claims.
+
+Released JS heap over four cycles: baseline 9621644, 10029964, 10336784, 10557204 bytes; final 9005900, 9470816, 9738160, 9957728 bytes. These increase, so they do **not** establish JS heap leak freedom. Each stop released the live WebGL context; seven alternating room selections retained stable per-room resource counts, one live context while open and zero after close. Idle frames stopped; interaction resumed rendering; selection retained plaque texture identity. No known GPU resource leak was found in this scope.
+
+Local ignored evidence: `front-end/tmp/day4-baseline-red/` and `day4-full-production/` contain profile JSON and scene screenshots. Final mobile/detail, desktop and live screenshots were inspected; geometry appearance, typography and DOM detail layout remain intact. Evidence is local, not committed binary artifacts.
+
+## Day 4 verification and limitations
+
+- Required frontend typecheck, lint and production build passed; unit tests **13 passed**. Vite still warns about chunks over 500 kB.
+- Full production browser suite: **84 passed, 4 intentionally skipped live tests** (4.0m). Covers startup, charts and failure fallback, API contracts/races/refresh/cancellation, camera, selection, fonts, mobile/touch, missing media, context loss, resource budgets and lifecycle.
+- Separate actual-backend museum suite: **2 passed (6.6s)**, no API interceptions, seeds, migrations or database writes. API returned two public rooms; populated first-room interaction was verified. Repeated two-room stress uses deterministic fixtures, not a claim of repeated live switching.
+- Regression RED/GREEN: short mobile viewport, selection texture replacement, long-title fitting, resource budget, duplicate anonymous-bootstrap requests and initial bundle size. Two initial dashboard tests had incorrect label selectors; corrected selectors passed.
+- Earlier broad dev runs hit 15s canvas readiness limits while Vite transformed modules (individual requests took 7–9s); corresponding production tests passed. Initial sandbox live/dev runners stalled after workers exited and were terminated. Outside-sandbox reruns passed: live **2/2**, focused dev/StrictMode **2/2 (50.2s)** with the existing 15s readiness assertions, covering idle rendering, four mount/stop cycles and stable selection textures. Evidence: `tmp/day4-live-verified/`, `tmp/day4-strict-verified/`.
+- Independent whole-branch source/dependency review through `9d705af`: no Critical/Important issues. Minor remaining coverage gap: helper tests cover full logout cache removal, but no provider integration assertion specifically verifies authenticated-to-logout public-cache removal. Human auth review remains required.
+- Graphify returned 403 no_workspace for both ranking and workspace discovery; source and installed-dependency tracing substituted. No physical phone/GPU/VR QA, GLB/audio/WebXR features or production asset-service validation. Backend source/config/dependencies and ignored credentials are unchanged.
+
+## Four-day commit summary and Day 4 ledger
+
+Day 1: 17 original commits (restored through PR #26). Day 2: seven original task commits (PR #28, integration history preserved). Day 3: 28 task commits including premerge verification fix (PR #43). All original histories remain ancestors; no squash, rebase or force push.
+
+| Day 4 SHA | Message |
+| --- | --- |
+| `89c5d6c` | docs(tour): plan measured Day 4 optimization |
+| `188d01d` | fix(tour): preserve gallery height on short mobile screens |
+| `d50e910` | perf(tour): reuse effect-owned plaque textures with lifecycle probes |
+| `510afe2` | perf(tour): bound long plaque title measurement work |
+| `858a54f` | perf(tour): instance repeated gallery geometry and finishes |
+| `e27b7ec` | fix(tour): preserve public queries during anonymous session recovery |
+| `9d705af` | perf(tour): defer admin chart engine until a chart is rendered |
+| `bb6c93f` | docs(tour): record Day 4 measurements and final verification |
+
+Final evidence/publication commits follow this ledger; retrieve their SHAs with `git log --oneline 777b583..HEAD`. Fewer than the aspirational 20 commits are intentional: no padding or invented optimization to reach a count; maximum 30 respected.
+
+Publication: [PR #52](https://github.com/ailabs26/ailabs-museum/pull/52), base `dev`, head `feat/museum-performance-day4`. **Open, not merged** at delivery. Eight implementation/evidence commits plus this publication record total **nine meaningful Day 4 commits**. Human review/testing precedes any merge; preserve original commits when integration is later authorized.
+
+## Run and demo
+
+Use existing ignored local env files. In `back-end/`, `npm.cmd run dev` starts port 3001; do not seed/migrate. In `front-end/`, `npm.cmd run dev` starts port 5173. Open `http://localhost:5173/tour.html`, select a published room, open 3D, drag/zoom or use keyboard, select an exhibit, inspect its details, switch rooms and stop 3D. DOM content stays usable before starting or after renderer failure.
+
+Reproduction commands and environment separation are in the frontend README. Run production and live browser suites sequentially with fresh servers; profile JSON is emitted by `museum-performance.spec.ts`. Source artifacts/test tools are committed; ignored screenshots/logs must be regenerated on other machines.
+
+---
+
+## Historical Days 1–3 record
 
 ACTIVE_DAY = 3. Branch: `feat/museum-visual-day3`. Fresh base: `929f6c8` (`origin/dev`). Historical Day 1/2 records below are retained. Day 2 was merged through PR #28 at `801ef6d`, preserving its seven original commits.
 
