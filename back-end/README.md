@@ -101,6 +101,13 @@ Quản lý tài khoản:
 - `JwtAuthGuard` + `PermissionsGuard` đăng ký **toàn cục**. Route công khai đánh `@Public()`; route quản trị đánh `@Permissions('resource:action')`.
 - Mật khẩu hash bằng bcrypt; không trả `passwordHash`/token ra API.
 - Ghi vết tự động: route ghi/sửa đánh `@Audit('resource.action','resource')`; `AuditInterceptor` tạo `AuditLog` append-only sau khi thành công.
+- Thiếu quyền RBAC ở guard hoặc kiểm tra `role:assign` trong service trả `403` và ghi
+  `access.denied` qua `PermissionDeniedFilter`, kể cả route đọc không có `@Audit`.
+  `resourceType=access`, `resourceId` là UUID của sự kiện (không phải ID tài nguyên bị thao tác).
+  `reason` lưu JSON: status, method, route pattern, quyền yêu cầu và quyền thiếu; `actorId`
+  lấy từ JWT đã xác thực, `requestId` khớp header `X-Request-Id`.
+  Không lưu token, cookie, body hoặc query string. Nếu lưu audit thất bại, vẫn trả `403`
+  và ghi cảnh báo theo request ID. `401` và lỗi Origin của refresh/logout không thuộc sự kiện RBAC này.
 
 ## 5. Cấu trúc `src/` (chuẩn enterprise)
 

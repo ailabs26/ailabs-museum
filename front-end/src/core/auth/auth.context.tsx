@@ -2,6 +2,7 @@ import { createContext, useCallback, useEffect, useMemo, useRef, useState, type 
 import { useQueryClient } from '@tanstack/react-query';
 import { authService } from '@/services/auth.service';
 import { tokenStore } from './token-store';
+import { clearSessionCache } from './clearSessionCache';
 import type { AuthUser, LoginPayload } from './types';
 
 export interface AuthContextValue {
@@ -25,12 +26,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isLoggingOutRef = useRef(false);
 
   useEffect(() => {
+    let hadSession = tokenStore.get() !== null;
     return tokenStore.subscribe((token) => {
       if (token === null) {
         setUser(null);
-        void queryClient.cancelQueries();
-        queryClient.clear();
+        // Failed anonymous bootstrap must not restart published room requests.
+        // Ending an existing session still cancels and removes every query.
+        clearSessionCache(queryClient, !hadSession);
       }
+      hadSession = token !== null;
     });
   }, [queryClient]);
 

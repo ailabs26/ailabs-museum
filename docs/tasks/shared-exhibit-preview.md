@@ -1,7 +1,7 @@
 # Task T-PREVIEW: Minh họa hiện vật 2D dùng chung
 
 **Nhánh:** `feat/shared-exhibit-preview`, base `c814655` từ `origin/dev`.
-**Trạng thái:** Đã triển khai và kiểm chứng kỹ thuật/API thật; chờ người dùng duyệt trực quan và PR.
+**Trạng thái:** PR #53 đã mở; đã xử lý conflict với Day 4, kiểm chứng bản tích hợp và chuẩn bị push để review/merge.
 **Plan:** [shared-exhibit-preview-plan.md](../plans/shared-exhibit-preview-plan.md).
 
 ## Mục tiêu và quyết định
@@ -66,3 +66,14 @@ Không thay backend/schema/query hooks/database/seed/dependency, model 3D thật
 - Probe chỉ đọc xác nhận phòng đầu `phong-lich-su-quan-su-viet-nam` có 5 items, image null: sphere/cylinder/box/torus/box với màu seed tương ứng. Không đổi dữ liệu hoặc renderer 3D.
 - Unit tests 6/6, typecheck/lint đạt sau thêm live test. Build runtime cuối đạt trước khi thêm docs/tests; không chạy lại build không cần thiết.
 - Tests preview responsive/caption/panel đã đạt, nhưng phiên không đọc ảnh chụp; chờ người dùng duyệt trực quan. Không có full-suite/axe/physical-device claims. Chưa push/PR.
+
+## Tích hợp dev mới và giải quyết conflict PR #53
+
+- Merge `origin/dev` tại `fe19212` (Day 4 + audit) vào nhánh nhiệm vụ, giữ nguyên lịch sử ba commit preview.
+- Conflict duy nhất: `front-end/tests/fixtures/museumApi.ts`. Giữ fixture 401 cho `/auth/me` và `/auth/refresh` từ dev thay cho auth response thành công của nhánh preview. Day 4 đã sửa production để bootstrap ẩn danh giữ query public; không còn cần workaround fixture của PREVIEW-02.
+- Giữ component và tích hợp preview, cùng cải tiến geometry/texture/chart/session của dev. Không thêm hành vi production mới khi resolve.
+- Focused preview/collection/home/session: 22/22 đạt (2.4m).
+- Toàn bộ Playwright mặc định trên bản tích hợp: 86 đạt, 7 opt-in bỏ qua (7.4m); không coi tests bỏ qua là đã chạy. Unit tests: 13/13 đạt.
+- Frontend và backend typecheck/lint/build đạt. Frontend main 826.55 kB, lazy scene 851.97 kB, lazy chart 543.94 kB trước gzip; cảnh báo >500 kB vẫn tồn tại.
+- Một số lệnh qua harness bị ngắt không có kết quả; các bước được chạy lại với output hoàn chỉnh trước commit. Không chạy lại live tests trong lượt resolve; bằng chứng live PREVIEW-03 là của phiên trước tích hợp.
+- Chưa merge PR vào dev; cần review và xác nhận trạng thái GitHub sau push.

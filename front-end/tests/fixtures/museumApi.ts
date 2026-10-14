@@ -10,12 +10,8 @@ export async function fulfillMuseum(route: Route, data: unknown, status = 200) {
 
 export async function installMuseumApi(page: Page) {
   const requests: string[] = [];
-  // Keep public-content fixtures independent of session-expiry cache cancellation.
-  // Anonymous login/refresh behavior is covered separately, not by these fixtures.
-  await page.route('**/api/auth/me', (route) => fulfillMuseum(route, envelope({
-    id: '30000000-0000-4000-8000-000000000001', email: 'visitor@example.test',
-    displayName: 'Public content test', roles: [], permissions: [],
-  })));
+  await page.route('**/api/auth/me', (route) => fulfillMuseum(route, { success: false, data: null, message: 'Unauthenticated' }, 401));
+  await page.route('**/api/auth/refresh', (route) => fulfillMuseum(route, { success: false, data: null, message: 'Unauthenticated' }, 401));
   await page.route('**/api/rooms**', async (route) => {
     const path = new URL(route.request().url()).pathname;
     requests.push(path);

@@ -119,6 +119,9 @@ Ví dụ: bảng `exhibits`, property `displayOrder`, khóa ngoại `roomId`.
 - `@Permissions(PERMISSIONS.X)` — khai báo quyền `resource:action` cần có; `PermissionsGuard` đối chiếu với `permissions` trong token.
 - `@CurrentUser()` — lấy `AuthUser` (id, email, roles, permissions) đã gắn vào request.
 - `@Audit('resource.action', 'resource')` — route ghi/sửa quản trị; `AuditInterceptor` tự tạo `AuditLog` sau khi thành công.
+- Service từ chối vì thiếu quyền dùng `PermissionDeniedException(required, missing)`;
+  `PermissionDeniedFilter` toàn cục ghi `access.denied` và giữ response 403. Không tự ghi audit
+  trong service nghiệp vụ để tránh ghi trùng. Lỗi 403 không liên quan RBAC dùng `ForbiddenException`.
 - Access token mang sẵn `roles` + `permissions` nên guard không truy vấn DB mỗi request.
 
 ## DTO response & dữ liệu nhạy cảm

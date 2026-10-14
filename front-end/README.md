@@ -69,7 +69,7 @@ Live test chạy frontend trên `http://localhost:5173` để khớp CORS local 
 - Hình không cần WebGL/Canvas hoặc file ảnh; không seed/upload thêm. Renderer Three.js vẫn dựng khối 3D riêng từ cùng dữ liệu. API box và mapper cube hiển thị cùng minh họa hộp.
 - API/schema hiện vẫn media null. Khi có ảnh thật cần media public contract, cập nhật schema/mapper và component preview để render ảnh/lỗi tải; lượt này chưa thêm image loader speculative.
 - Focused tests: `npm.cmd test -- exhibit-preview.spec.ts collection.spec.ts home-featured.spec.ts museum-interaction.spec.ts museum-font.spec.ts`. API thật: bật `MUSEUM_LIVE_TEST=1`, chạy `npm.cmd test -- exhibit-preview-live.spec.ts`, rồi bỏ biến; không mock/DB writes.
-- Fixtures nội dung public dùng auth response test không quyền để cô lập race cache cancellation khi hết phiên; không chứng minh anonymous auth behavior. Live test chạy luồng thực tế riêng.
+- Fixtures nội dung public dùng 401 cho `/auth/me` và `/auth/refresh`, theo bản sửa khôi phục phiên ẩn danh của Day 4. Regression kiểm tra query public không bị khởi động lại khi bootstrap ẩn danh thất bại; live test chạy luồng thực tế riêng.
 - Task/plan: [shared-exhibit-preview.md](../docs/tasks/shared-exhibit-preview.md), [shared-exhibit-preview-plan.md](../docs/plans/shared-exhibit-preview-plan.md).
 
 ## Hiện vật nổi bật trên trang chủ
@@ -89,7 +89,7 @@ Live test chạy frontend trên `http://localhost:5173` để khớp CORS local 
 - Focused tests: `npm.cmd test -- collection.spec.ts public-tour-navigation.spec.ts`. API thật (cần backend đang chạy và dữ liệu seed): đặt `MUSEUM_LIVE_TEST=1`, chạy `npm.cmd test -- collection-live.spec.ts`, rồi bỏ biến môi trường. Live collection test không mock hoặc ghi database, yêu cầu phòng lịch sử quân sự và 5 hiện vật mẫu đã seed.
 - Task/plan: [client-collection.md](../docs/tasks/client-collection.md), [client-collection-plan.md](../docs/plans/client-collection-plan.md).
 
-## Tham quan Day 2
+## Tham quan Day 1–4
 
 - Mở `/tour.html`, chọn phòng rồi **Mở phòng 3D**. Scene chỉ tải sau thao tác này; **Dừng 3D** tháo Canvas. `?room=<slug>` hỗ trợ mở trực tiếp một phòng; **Làm mới** cập nhật danh sách/chi tiết, **Thử lại** xử lý lỗi.
 - Kéo chuột/vuốt để orbit, cuộn/chụm hai ngón để zoom. Khi Canvas có focus: mũi tên hoặc WASD xoay, +/− zoom, Home reset; Tab ra ngoài. Có nút reset/zoom bằng DOM.
@@ -97,7 +97,7 @@ Live test chạy frontend trên `http://localhost:5173` để khớp CORS local 
 - Day 3: chọn hiện vật trực tiếp trong scene hoặc bằng **Xem chi tiết** trong catalogue (Enter/Space). Nhãn/hover/selection liên kết cùng ID với panel không modal; tên, mô tả, transcript và điểm chú ý là text backend đã xuất bản. Escape/Đóng trở về trigger và đưa focus vào vùng nhìn thấy. Nội dung DOM vẫn dùng được khi chưa mở 3D hoặc renderer lỗi.
 - Camera orbit có giới hạn, chưa có đi bộ tự do. Chọn hiện vật tập trung camera trong 550ms; **Tập trung hiện vật** hoặc F khi focus canvas để xem lại, Home/reset về toàn cảnh. Điều khiển tay hủy chuyển động đang chạy; giảm chuyển động chuyển tức thời. Giới hạn orbit phụ thuộc anchor và room bounds; không đổi tọa độ hiện vật. Hiện vật ngoài bounds chỉ đọc trong DOM, nút focus bị disable.
 - Panel nằm cạnh scene ở desktop, bên dưới trên màn hình hẹp. Controls ở dưới canvas, vùng chạm tối thiểu 44px. Tour dùng màu public theme ở phần trang; các card/panel/intro có palette ấm và ink riêng để đọc được trong auto dark mode.
-- Geometry nhẹ, không tải model/texture bên ngoài, render theo nhu cầu, DPR tối đa 1.5. Nhãn dùng system font với canvas texture 512×128, dispose khi đổi/unmount; layer vẽ và thứ tự picking thống nhất. Ánh sáng key/fill dịu, một spotlight rộng và contact/accent patch rẻ; không bật shadow maps/postprocessing. Giảm chuyển động tắt quán tính camera.
+- Geometry nhẹ, không tải model/texture bên ngoài, render theo nhu cầu, DPR tối đa 1.5. Nhãn dùng font Times New Roman với canvas texture 512×128, tái sử dụng khi đổi selection và dispose khi unmount; layer vẽ và thứ tự picking thống nhất. Day 4 dùng instancing cho chi tiết gallery lặp lại. Ánh sáng key/fill dịu, một spotlight rộng và contact/accent patch rẻ; không bật shadow maps/postprocessing. Giảm chuyển động tắt quán tính camera.
 - Scene lỗi hoặc mất context vẫn giữ catalogue DOM. Sau lỗi tải chunk, tải lại trang nếu muốn thử tải module lại.
 - `GET /api/rooms` là array không phân trang; `GET /api/rooms/:slug` trả chi tiết kèm `exhibits`. `museum.service.ts` dùng Axios client chung và Zod kiểm tra envelope/payload/identity; `useMuseumRooms` dùng React Query + AbortSignal. Chỉ tải phòng đang chọn, cache theo ID/slug; không preload phòng/asset khác hoặc thay lỗi API bằng mẫu.
 - Vị trí backend giữ nguyên; thiếu toàn bộ tọa độ dùng layout xác định theo displayOrder + ID. Hiện vật nằm ngoài shell giữ thông tin trong DOM, có thông báo riêng và không dựng geometry ngoài phòng. Tọa độ sai/thiếu một phần bị từ chối.
@@ -123,7 +123,7 @@ Xem [coding-conventions.md](docs/coding-conventions.md) để biết quy tắc �
 - DOM accessible/fallback là phần bắt buộc song song với scene 3D và WebXR.
 - Không tuyên bố tính năng hoặc kết quả kiểm thử đã hoàn thành nếu code/bằng chứng chưa tồn tại.
 
-### Kiểm chứng Day 3 và ảnh
+### Kiểm chứng Day 4 và profiling
 
 ```powershell
 npm.cmd run typecheck
@@ -132,13 +132,17 @@ npm.cmd run build
 npm.cmd run test:unit
 $env:CI = '1'
 $env:PLAYWRIGHT_PREVIEW = '1'
-npm.cmd test -- --output=tmp/day3-final --reporter=line
+npm.cmd test -- --output=tmp/day4-final --reporter=line
 # Backend localhost:3001 đang chạy; chỉ đọc nội dung đã xuất bản, không seed.
 $env:MUSEUM_LIVE_TEST = '1'
-npm.cmd test -- museum-live.spec.ts --output=tmp/day3-live-final --reporter=line
+npm.cmd test -- museum-live.spec.ts --output=tmp/day4-live-final --reporter=line
 Remove-Item Env:MUSEUM_LIVE_TEST
 Remove-Item Env:PLAYWRIGHT_PREVIEW
 Remove-Item Env:CI
 ```
 
-Live preview dùng localhost:5173 để khớp CORS backend. Chạy suite production và live tuần tự; không reuse server cũ. Dev server phải transform module nên có thể chậm trên máy local; production tests là gate cho build. Ảnh desktop/mobile/touch/dark và live nằm trong `tmp/day3-final/` / `tmp/day3-live-final/` (ignored, chỉ có trên máy chạy tests). Chứng cứ là Edge/SwiftShader và touch emulation, không phải GPU/điện thoại/VR thật. Day 4 giữ phần profiling, bundle tuning và device QA; không có GLB/audio/WebXR mới trong Day 3.
+Live preview dùng localhost:5173 để khớp CORS backend. Chạy suite production và live tuần tự; không reuse server cũ. Dev server phải transform module nên có thể chậm trên máy local; production tests là gate cho build. Ảnh và profile JSON nằm trong output `tmp/` đã chọn (ignored, chỉ có trên máy chạy tests). Chứng cứ là Edge/SwiftShader và touch emulation, không phải GPU/điện thoại/VR thật.
+
+Để đo riêng, giữ `CI=1`, `PLAYWRIGHT_PREVIEW=1` và chạy `npm.cmd test -- museum-performance.spec.ts museum-resource-budget.spec.ts museum-startup.spec.ts --output=tmp/day4-profile --reporter=line`. Bỏ `PLAYWRIGHT_PREVIEW` để chạy `museum-performance.spec.ts` trong dev/React StrictMode. Probe chỉ nằm trong test, thu draw calls, geometry/texture/material/object counts, idle frames, FPS quan sát và CDP heap; không đo RAM GPU vật lý.
+
+Day 4 xác nhận 84 production tests pass (4 live tests skip), 13 unit tests, 2 live museum tests và 2 focused StrictMode tests pass. Main bundle giảm 1378.74 → 826.97 kB; draw calls cùng góc nhìn giảm 77 → 39. Heap còn tăng qua các chu kỳ nên chưa có bằng chứng tuyệt đối về leak RAM. Chart engine chỉ tải khi dashboard render chart; public room cache không bị xóa khi anonymous refresh thất bại. Thay đổi cache phiên cần người review trước merge. Không thêm GLB/audio/WebXR; xem báo cáo tiến độ để biết số đo, ledger và giới hạn đầy đủ.
