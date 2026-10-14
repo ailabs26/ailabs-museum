@@ -65,6 +65,15 @@ export function buildPng(options: PngOptions = {}): Buffer {
   ]);
 }
 
+/** PNG hợp lệ có tổng dung lượng đúng `totalBytes` (đệm bằng chunk phụ tEXt). */
+export function buildPngOfSize(totalBytes: number): Buffer {
+  const fillerLength = totalBytes - buildPng().length - 12;
+  if (fillerLength < 2) throw new Error('totalBytes quá nhỏ');
+  const text = Buffer.alloc(fillerLength, 0x61);
+  text.write('k\0', 0, 'latin1');
+  return buildPng({ extraChunks: [pngChunk('tEXt', text)] });
+}
+
 // ---------------------------------------------------------------- JPEG
 
 function jpegSegment(marker: number, payload: Buffer): Buffer {
@@ -240,6 +249,24 @@ export function buildGlb(options: GlbOptions = {}): Buffer {
   header.writeUInt32LE(options.version ?? 2, 4);
   header.writeUInt32LE(12 + body.length + (options.lengthDelta ?? 0), 8);
   return Buffer.concat([header, body]);
+}
+
+/** GLB hợp lệ có tổng dung lượng đúng `totalBytes` (bội số của 4), đệm bằng chunk lạ được bỏ qua. */
+export function buildGlbOfSize(totalBytes: number): Buffer {
+  const base = buildGlb({ json: { asset: { version: '2.0' } }, bin: null });
+  const paddingLength = totalBytes - base.length - 8;
+  if (paddingLength < 0 || paddingLength % 4 !== 0) throw new Error('totalBytes không hợp lệ');
+  const header = Buffer.alloc(8);
+  header.writeUInt32LE(paddingLength, 0);
+  header.write('XTRA', 4, 'latin1');
+  const glb = Buffer.concat([base, header, Buffer.alloc(paddingLength, 0)]);
+  glb.writeUInt32LE(glb.length, 8);
+  return glb;
+}
+
+/** MP3 hợp lệ gồm số khung vừa đủ để vượt (hoặc chạm) `minBytes`. */
+export function buildMp3OfAtLeast(minBytes: number): Buffer {
+  return buildMp3({ frames: Math.ceil(minBytes / MP3_FRAME_LENGTH) });
 }
 
 // ---------------------------------------------------------------- WebVTT & khác
