@@ -35,7 +35,7 @@
 - [x] 6. Extend camera focus with normalized bounds, FOV/aspect framing, room-safe positions and interruption; unit/browser verification; commit.
 - [x] 7. Inspect all five real binaries, calculate checksums and create verified additive media/exhibit mapping in a dedicated room using a repeatable seed (no schema change). Preserve old records. Commit seed and verification evidence.
 - [x] 8. Run both applications' required checks and relevant/full browser regressions. Inspect real scene screenshots, each GLB selection/focus, reset, mobile, mount/room cleanup, idle frames and renderer resource counts. Fix task regressions; commit.
-- [ ] 9. Whole-branch review, update `docs/museum-tour-progress.md` with honest evidence, limitations and commit ledger; commit and open one PR into dev. Stop for human review, no merge.
+- [x] 9. Whole-branch review, update `docs/museum-tour-progress.md` with honest evidence, limitations and commit ledger; commit and open one PR into dev. Stop for human review, no merge.
 
 ## Execution ledger
 
@@ -52,3 +52,4 @@
 - Broad browser regression after fixes: 108 passed, 8 opt-in live tests skipped. Earlier 5-second lazy-scene readiness failure was diagnosed from trace (3.5-second chunk request); aligned that test with the existing 15-second scene readiness convention. Expanded actual live and dev/StrictMode checks remain the final gate.
 - Task 8 final: actual Supabase five-model/mobile/touch/full-bounds and two complete resource cycles 2/2 passed; dev/StrictMode cancellation and delayed real GLB reset/drag 3/3 passed. Initial cold-dev queue case measured before scene readiness; explicit existing readiness gate fixes the test precondition. All six final scene screenshots and mobile image inspected. Settled real model resources stable over two mounts; no live context after stop. Full actual numbers/limits in museum-tour-progress.md; SwiftShader scripted keyboard cadence 2.48 frames/s is not a physical GPU performance guarantee.
 - Ruling: Independent reviewer declined live/browser judgments because parent owns those checks; parent completed actual browser, visual, lifecycle and StrictMode evidence. Cost if wrong: device-specific rendering/performance can still differ; physical GPU/phone/VR QA remains explicitly unverified.
+- Publication: PR https://github.com/ailabs26/ailabs-museum/pull/55 opened into `dev`, verified base SHA `9c14548`, head `feat/dynamic-glb-tour`; not merged. Human review required by AGENTS.md for Storage authorization and database content mapping. Local backend and frontend left running for review; ignored `.env` and GLB binaries were never staged.

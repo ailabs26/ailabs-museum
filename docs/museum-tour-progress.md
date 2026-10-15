@@ -148,6 +148,8 @@ front-end/vitest.config.ts
 
 Final verification/runbook and publication commits follow this table; obtain the complete current ledger with `git log --reverse --oneline 9c14548..HEAD` or the PR commits tab. Fewer than the aspirational 50 commits is intentional: no empty commits or artificial splitting.
 
+Verification/runbook commit: `e6ecb97` — `docs(tour): record verified GLB delivery and operational runbook`. Publication: [PR #55](https://github.com/ailabs26/ailabs-museum/pull/55), **open into dev**, base confirmed `9c14548`, not merged. [Complete commit history](https://github.com/ailabs26/ailabs-museum/pull/55/commits) includes this final publication record. AGENTS.md requires human review of Storage authorization/database mapping before merge. Backend and frontend were left running locally for the demo; no external deployment was performed.
+
 ---
 
 # Historical four-day delivery
