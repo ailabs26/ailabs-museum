@@ -5,6 +5,15 @@ import { PerspectiveCamera, Vector3 } from 'three';
 
 test.beforeEach(async ({ page }) => { await installMuseumApi(page); });
 
+test('short mobile viewport keeps the gallery and touch controls at the intended height', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible({ timeout: 15_000 });
+  expect((await page.locator('[class*="_viewport_"]').boundingBox())!.height).toBeGreaterThanOrEqual(440);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test('keyboard catalogue selection has one pressed item and clears on room change', async ({ page }) => {
   await page.goto('/tour');
   const first = page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true });

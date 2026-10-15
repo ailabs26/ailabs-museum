@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { static as expressStatic } from 'express';
 import { AppModule } from './app.module';
+import { PermissionDeniedFilter } from './modules/audit/filters/permission-denied.filter';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import {
@@ -33,7 +34,8 @@ async function bootstrap() {
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );
   app.useGlobalInterceptors(new ResponseInterceptor());
-  app.useGlobalFilters(new AllExceptionsFilter());
+  // Nest xét filter từ cuối: lỗi RBAC phải được audit trước filter lỗi tổng quát.
+  app.useGlobalFilters(new AllExceptionsFilter(), app.get(PermissionDeniedFilter));
 
   // Media tĩnh (không chịu prefix /api). nosniff: trình duyệt không được "đoán" lại
   // Content-Type — file upload luôn được phục vụ đúng kiểu đã kiểm tra.

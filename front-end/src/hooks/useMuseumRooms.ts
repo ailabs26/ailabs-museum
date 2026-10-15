@@ -5,6 +5,7 @@ export function useMuseumRooms(requestedSlug: string | null) {
   const client = useQueryClient();
   const rooms = useQuery({
     queryKey: ['museum-tour', 'rooms'],
+    meta: { public: true },
     queryFn: ({ signal }) => museumService.listRooms(signal),
     retry: false,
   });
@@ -12,6 +13,7 @@ export function useMuseumRooms(requestedSlug: string | null) {
   const selectedRoom = rooms.isSuccess ? rooms.data.find((room) => room.slug === selectedSlug) : undefined;
   const room = useQuery({
     queryKey: ['museum-tour', 'room', selectedRoom?.id, selectedRoom?.slug],
+    meta: { public: true },
     queryFn: ({ signal }) => {
       if (!selectedRoom) throw new Error('No public room selected');
       return museumService.getRoom(selectedRoom, signal);
