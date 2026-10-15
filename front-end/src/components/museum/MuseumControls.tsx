@@ -1,11 +1,11 @@
 ﻿import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { MathUtils, PerspectiveCamera, Spherical, Vector3 } from 'three';
+import { PerspectiveCamera, Spherical, Vector3 } from 'three';
 import type { ModelFocusBounds } from '@/helpers/museumCamera';
 import { useReducedMotion } from '@mantine/hooks';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
-import { CAMERA_MAX_POLAR, CAMERA_MIN_POLAR, getExhibitView, getOrbitLimit, INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET } from '@/helpers/museumCamera';
+import { CAMERA_MAX_POLAR, CAMERA_MIN_POLAR, constrainCameraToRoom, getExhibitView, getOrbitLimit, INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET } from '@/helpers/museumCamera';
 
 export type CameraAction = 'left' | 'right' | 'up' | 'down' | 'in' | 'out' | 'reset' | 'focus';
 export interface CameraCommand { action: CameraAction; sequence: number }
@@ -25,6 +25,7 @@ export function MuseumControls({ command, selectedDisplay, focusBounds }: { comm
   const motionRef = useRef(prefersReducedMotion);
   const selectedRef = useRef(selectedDisplay);
   const boundsRef = useRef(focusBounds);
+  const autoFocusRef = useRef({ id: selectedDisplay?.id, allowed: true });
   const aspectRef = useRef(size.width / size.height);
   aspectRef.current = size.width / size.height;
   const transitionRef = useRef<FocusTransition | null>(null);
@@ -43,15 +44,15 @@ export function MuseumControls({ command, selectedDisplay, focusBounds }: { comm
     controls.dampingFactor = 0.12;
     controls.rotateSpeed = 0.55;
     controls.zoomSpeed = 0.65;
+    const lastSafePosition = camera.position.clone();
     const handleChange = () => {
-      camera.position.x = MathUtils.clamp(camera.position.x, -6.59, 6.59);
-      camera.position.y = MathUtils.clamp(camera.position.y, 0.41, 4.59);
-      camera.position.z = MathUtils.clamp(camera.position.z, -7.59, 7.59);
+      constrainCameraToRoom(camera.position, lastSafePosition);
       camera.lookAt(controls.target);
       invalidate();
     };
     const handleStart = () => {
       transitionRef.current = null;
+      autoFocusRef.current.allowed = false;
       controls.enableDamping = !motionRef.current;
     };
     controls.addEventListener('change', handleChange);
@@ -66,6 +67,7 @@ export function MuseumControls({ command, selectedDisplay, focusBounds }: { comm
 
     const handleAction = (action: CameraAction) => {
       transitionRef.current = null;
+      autoFocusRef.current.allowed = action === 'focus';
       // Flush inertia before precise keyboard/reset/focus endpoints.
       controls.enableDamping = false;
       controls.update();
@@ -151,7 +153,8 @@ export function MuseumControls({ command, selectedDisplay, focusBounds }: { comm
   useEffect(() => {
     selectedRef.current = selectedDisplay;
     boundsRef.current = focusBounds;
-    if (selectedDisplay) actionRef.current?.('focus');
+    if (autoFocusRef.current.id !== selectedDisplay?.id) autoFocusRef.current = { id: selectedDisplay?.id, allowed: true };
+    if (selectedDisplay && autoFocusRef.current.allowed) actionRef.current?.('focus');
     else {
       transitionRef.current = null;
       if (controlsRef.current) controlsRef.current.enableDamping = !motionRef.current;

@@ -1,9 +1,10 @@
 import type { Page } from '@playwright/test';
-import type { Object3D, WebGLRenderer, Mesh, Sprite } from 'three';
+import type { Camera, Object3D, WebGLRenderer, Mesh, Sprite } from 'three';
 
 interface ObservedRenderer {
   renderer: WeakRef<WebGLRenderer>;
   scene?: WeakRef<Object3D>;
+  camera?: WeakRef<Camera>;
   frames: number;
   times: number[];
 }
@@ -26,6 +27,7 @@ export async function installRendererProbe(page: Page) {
       renderer.render = function (scene, camera) {
         render.call(this, scene, camera);
         record.scene = new WeakRef(scene);
+        record.camera = new WeakRef(camera);
         record.frames++;
         record.times.push(performance.now());
         if (record.times.length > 300) record.times.shift();

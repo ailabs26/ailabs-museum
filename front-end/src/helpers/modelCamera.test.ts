@@ -1,6 +1,8 @@
 import { expect, it } from 'vitest';
 import { PerspectiveCamera, Vector3 } from 'three';
 import { getExhibitView } from './museumCamera';
+import { constrainCameraToRoom } from './museumCamera';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { MuseumDisplay } from '../interfaces/museumScene';
 
 it('frames actual normalized bounds in landscape and portrait inside the walls', () => {
@@ -19,4 +21,28 @@ it('frames actual normalized bounds in landscape and portrait inside the walls',
     expect(camera.position.y).toBeGreaterThan(0.4);
     expect(camera.position.y).toBeLessThan(4.6);
   }
+});
+
+it('wall-constrained model orbit preserves distance and stops emitting change events', () => {
+  const camera = new PerspectiveCamera();
+  camera.position.set(3.6, 2.5, 0);
+  const listeners = { addEventListener() {}, removeEventListener() {} };
+  const element = { ...listeners, style: {}, getRootNode: () => listeners } as unknown as HTMLElement;
+  const controls = new OrbitControls(camera, element);
+  controls.target.set(5.4, 2.24, 0);
+  controls.minDistance = 1.8;
+  controls.minPolarAngle = 1.25; controls.maxPolarAngle = 1.55;
+  controls.update();
+  const lastSafe = camera.position.clone();
+  let changes = 0;
+  controls.addEventListener('change', () => {
+    constrainCameraToRoom(camera.position, lastSafe);
+    camera.lookAt(controls.target); changes++;
+  });
+  camera.position.set(8, 2.6, 0);
+  for (let step = 0; step < 1000; step++) controls.update();
+  expect(camera.position.x).toBeLessThan(6.6);
+  expect(camera.position.distanceTo(controls.target)).toBeGreaterThanOrEqual(1.8);
+  expect(changes).toBeLessThan(5);
+  controls.dispose();
 });

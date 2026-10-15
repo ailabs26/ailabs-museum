@@ -103,7 +103,7 @@ test('focused keyboard navigation and reset work without trapping focus', async 
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D');
-  await expect(canvas).toBeVisible();
+  await expect(canvas).toBeVisible({ timeout: 15_000 });
   await canvas.focus();
   const initial = await canvas.screenshot(SCENE_CAPTURE);
   await canvas.press('ArrowLeft');

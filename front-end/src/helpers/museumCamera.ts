@@ -1,6 +1,7 @@
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { MUSEUM_ROOM_SIZE } from '@/interfaces/museumScene';
 import { isDisplayOutsideRoom } from './isDisplayOutsideRoom';
+import type { Vector3 } from 'three';
 
 type Point = [number, number, number];
 export interface MuseumCameraView { target: Point; position: Point }
@@ -10,6 +11,13 @@ export const INITIAL_CAMERA_TARGET: Point = [0, 1.35, 0];
 export const CAMERA_MIN_POLAR = 1.25;
 export const CAMERA_MAX_POLAR = 1.55;
 const WALL_MARGIN = 0.4;
+
+/** Reject a wall-crossing orbit step; never shorten it below controls.minDistance. */
+export function constrainCameraToRoom(position: Vector3, lastSafe: Vector3): void {
+  if (Math.abs(position.x) > 6.59 || Math.abs(position.z) > 7.59 || position.y < 0.41 || position.y > 4.59) {
+    position.copy(lastSafe);
+  } else lastSafe.copy(position);
+}
 
 /** A full orbit must fit, so mouse, touch and keyboard share the same envelope. */
 export function getOrbitLimit(target: Point): number {
