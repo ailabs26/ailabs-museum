@@ -51,6 +51,7 @@ export function ExhibitDetailPage() {
         {isError && <Button mt="md" onClick={() => void (rooms.isError ? rooms.refetch() : room.refetch())}>Thử lại</Button>}
         {!isLoading && <p><Link to="/collection">Về bộ sưu tập</Link></p>}
       </> : detail && exhibit ? <article aria-labelledby="exhibit-title">
+        <Link className={classes.backLink} to={`/collection?${new URLSearchParams({ room: detail.slug })}`}>Quay lại bộ sưu tập của phòng này</Link>
         <header className={classes.header}>
           <p className={classes.roomName}>{detail.name}</p>
           <Title order={1} id="exhibit-title" className={classes.title}>{exhibit.name}</Title>

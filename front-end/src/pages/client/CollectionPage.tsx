@@ -66,7 +66,7 @@ export function CollectionPage() {
           </div>
           {room.isFetching && <p role="status">Đang cập nhật hiện vật…</p>}
           {exhibits.length === 0 ? <p role="status" className={classes.empty}>Phòng này chưa có hiện vật được xuất bản.</p> : (
-            <ExhibitGrid exhibits={exhibits} />
+            <ExhibitGrid exhibits={exhibits} roomSlug={detail.slug} />
           )}
         </section>
       )}

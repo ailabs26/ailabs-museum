@@ -154,3 +154,36 @@ test('[D04] failed refresh hides cached detail until successful retry', async ({
   await page.getByRole('button', { name: 'Thử lại', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(roomA.exhibits[0].name);
 });
+
+test('[D05] collection and featured card links open details and return to the correct room', async ({ page }) => {
+  for (const source of ['/collection?room=ceramics', '/']) {
+    const item = source === '/' ? roomA.exhibits[0] : roomB.exhibits[0];
+    const slug = source === '/' ? 'sculpture' : 'ceramics';
+    await page.goto(source);
+    const link = page.getByRole('link', { name: `Xem chi tiết ${item.name}`, exact: true });
+    await expect(link).toHaveAttribute('href', `/collection/${slug}/exhibits/${item.id}`);
+    await link.focus();
+    await link.press('Enter');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(item.name);
+    await page.reload();
+    const back = page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true });
+    await expect(back).toHaveAttribute('href', `/collection?room=${slug}`);
+    await back.click();
+    await expect(page.getByLabel('Chọn phòng trưng bày')).toHaveValue(slug);
+    await page.goBack();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(item.name);
+  }
+});
+
+test('[D05] card detail URLs encode the room slug as a path segment', async ({ page }) => {
+  const slug = 'phòng & gốm';
+  const room = { ...roomB, slug };
+  await page.route('**/api/rooms', (route) => fulfillMuseum(route, envelope([room])));
+  await page.route('**/api/rooms/**', (route) => fulfillMuseum(route, envelope(room)));
+  await page.goto('/collection');
+  const link = page.getByRole('link', { name: `Xem chi tiết ${room.exhibits[0].name}`, exact: true });
+  await expect(link).toHaveAttribute('href', `/collection/${encodeURIComponent(slug)}/exhibits/${room.exhibits[0].id}`);
+  await link.click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(room.exhibits[0].name);
+  await expect(page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true })).toHaveAttribute('href', `/collection?${new URLSearchParams({ room: slug })}`);
+});

@@ -34,7 +34,7 @@ export function HomeFeaturedExhibits() {
       <p className={classes.featuredRoom}>{detail.name}</p>
       {featured.length > 0 ? <>
         <p className={classes.featuredDescription}>Một số hiện vật theo thứ tự trưng bày</p>
-        <ExhibitGrid exhibits={featured} />
+        <ExhibitGrid exhibits={featured} roomSlug={detail.slug} />
       </> : <p role="status">Phòng này chưa có hiện vật được xuất bản.</p>}
       <Link to={`/collection?${new URLSearchParams({ room: detail.slug })}`} className={classes.textLink}>
         Xem bộ sưu tập của phòng này <IconArrowRight size={18} aria-hidden="true" />

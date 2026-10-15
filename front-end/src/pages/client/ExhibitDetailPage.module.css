@@ -1,5 +1,6 @@
 .page { padding-block: 48px 64px; }
 .header { margin-bottom: 32px; }
+.backLink { display: inline-block; padding-block: 12px; margin-bottom: 20px; font-size: 14px; font-weight: 600; }
 .roomName { color: var(--public-accent); font-size: 14px; font-weight: 600; margin: 0 0 16px; overflow-wrap: anywhere; }
 .title { font-family: 'Times New Roman', serif; font-weight: 400; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.2; overflow-wrap: anywhere; }
 .content { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 40px; align-items: start; }

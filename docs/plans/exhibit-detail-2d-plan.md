@@ -143,17 +143,17 @@ await expect(page.locator('main b')).toHaveCount(0);
 
 **Phụ thuộc:** 04. **Files:** grid/CSS nếu cần, collection, featured, page và tests D05. **Produces:** route vào từ hai consumer/back cùng slug.
 
-- [ ] D05 test trước: link `Xem chi tiết <tên>` trên collection và featured, href đúng, click/Enter mở đúng h1; back link không phụ thuộc history; reload/Browser Back giữ URL và room.
-- [ ] Grid thêm roomSlug bắt buộc; update hai consumer `roomSlug={detail.slug}`. Thêm explicit Link:
+- [x] Tests D05 RED thiếu link, GREEN sau sửa; collection/featured/back/reload/history và encoded slug đạt.
+- [x] Grid/consumers có roomSlug bắt buộc và explicit Link:
 
 ```tsx
 <Link to={`/collection/${encodeURIComponent(roomSlug)}/exhibits/${encodeURIComponent(exhibit.id)}`}
   aria-label={`Xem chi tiết ${exhibit.name}`}>Xem chi tiết</Link>
 ```
 
-- [ ] Page link back ở success dùng `/collection?${new URLSearchParams({ room: detail.slug })}`, tên “Quay lại bộ sưu tập của phòng này”. Missing room dùng link `/collection`, không lấy slug sai làm phòng thành công.
-- [ ] Không bọc cả card/preview, không tạo nested links hoặc cắt mô tả. Use palette/focus native của PublicLayout.
-- [ ] D05 + tests detail/collection/home GREEN, gates. Commit **`feat(detail): link public exhibit cards to detail pages`**.
+- [x] Back link success đúng slug, error/not-found collection chung.
+- [x] Không nested links/cắt mô tả; focus native palette public.
+- [x] D05/detail/collection/home 28/28 và gates đạt; commit task 05.
 
 ## DETAIL-06 — Focus/reflow/không WebGL
 

@@ -78,9 +78,9 @@ Mỗi task có một commit sau khi kiểm chứng đạt. Code, tests và cập
 ### DETAIL-05 — Đường vào và quay lại
 
 **Nghiệm thu:**
-- [ ] Thẻ collection/featured có explicit link với tên tiếp cận chứa tên hiện vật, encode path params.
-- [ ] Back link từ detail tới collection đúng slug, độc lập history; không bọc cả thẻ/nested link.
-- [ ] Click, Enter, reload và Browser Back giữ đúng room/exhibit trong URL.
+- [x] Thẻ collection/featured có explicit link chứa tên, encode path params.
+- [x] Back link đúng slug và không nested links.
+- [x] Click/Enter/reload/Browser Back giữ room/exhibit.
 
 **Kiểm tra:** Playwright D05, collection và home-featured + frontend typecheck/lint/build.
 
@@ -144,3 +144,5 @@ Chưa đổi SceneFallback/panel tour, chưa tự chuyển route khi WebGL lỗi
 - DETAIL-03: tests viết trước, test rich content fail vì thiếu heading Bản thuyết minh; sau sửa 5/5 D02/D03 đạt (13.1s), typecheck/lint/build đạt. Sort hotspot đồng displayOrder theo ID; text HTML-like không tạo thẻ HTML. Người dùng đã yêu cầu tiếp tục tất cả 03–07; không mở rộng sang fallback tour.
 - DETAIL-03 commit `58a4f8b`.
 - DETAIL-04: test đầu RED thiếu nút Thử lại; sau bổ sung retry/back-to-collection ở trạng thái lỗi/not-found, 9/9 D02–04 đạt (16.2s), typecheck/lint/build đạt. Guards nền đã có từ D02; tests mới chứng minh loading/cross-room/stale refresh/obsolete request, không tuyên bố mỗi test đều RED.
+- DETAIL-04 commit `6812ae2`.
+- DETAIL-05: test đầu RED thiếu link card; sau sửa detail/collection/home regressions 28/28 đạt (52.7s), typecheck/lint/build đạt. Test slug Unicode và ký tự query được encode path, back link dùng URLSearchParams. Chưa focus effect; task 06 tiếp theo.
