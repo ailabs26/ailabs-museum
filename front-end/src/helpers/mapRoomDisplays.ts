@@ -22,6 +22,7 @@ export function mapRoomDisplays(room: RoomDetail): MuseumDisplay[] {
           rows === 1 ? 0 : -5.1 + Math.floor(index / columns) * 10.2 / (rows - 1)],
       shape: exhibit.placeholderShape === 'box' ? 'cube' : exhibit.placeholderShape,
       color: exhibit.placeholderColor,
+      model: exhibit.model,
     };
     return { ...display, isOutsideRoom: isDisplayOutsideRoom(display) };
   });

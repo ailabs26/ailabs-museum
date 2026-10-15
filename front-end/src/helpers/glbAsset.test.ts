@@ -24,7 +24,7 @@ it('accepts self-contained GLB 2 and rejects corrupt headers, external resources
 
 it('disposes shared geometry, material, texture and bitmap exactly once', () => {
   const geometry = new BoxGeometry(); const material = new MeshStandardMaterial();
-  const close = vi.fn(); const texture = new Texture({ close }); material.map = texture; material.normalMap = texture;
+  const close = vi.fn(); const texture = new Texture(); texture.source.data = { close }; material.map = texture; material.normalMap = texture;
   const root = new Group(); root.add(new Mesh(geometry, material), new Mesh(geometry, material));
   const disposedGeometry = vi.spyOn(geometry, 'dispose'); const disposedMaterial = vi.spyOn(material, 'dispose');
   const disposedTexture = vi.spyOn(texture, 'dispose');

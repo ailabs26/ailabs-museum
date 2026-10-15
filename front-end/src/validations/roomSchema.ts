@@ -7,6 +7,15 @@ const roomSummarySchema = z.object({
   description: z.string().nullable(),
 });
 
+export const publicModelSchema = z.object({
+  id: z.string().uuid(),
+  storageKey: z.string().min(1).max(512).regex(/^[a-zA-Z0-9_/-]+\.glb$/),
+  sizeBytes: z.number().int().positive().max(128 * 1024 * 1024),
+  checksumSha256: z.string().regex(/^[a-f0-9]{64}$/),
+  url: z.string().regex(/^\/rooms\/[a-zA-Z0-9_-]+\/exhibits\/[a-f0-9-]+\/model\?version=[a-f0-9]{64}$/),
+});
+export type PublicModel = z.infer<typeof publicModelSchema>;
+
 const exhibitSchema = z.object({
   id: z.string().uuid(),
   roomId: z.string().uuid(),
@@ -19,8 +28,7 @@ const exhibitSchema = z.object({
   transcript: z.string().nullable(),
   placeholderShape: z.enum(['box', 'sphere', 'cylinder', 'cone', 'torus']),
   placeholderColor: z.string().regex(/^#(?:[\da-f]{3}|[\da-f]{6})$/i),
-  // The public service currently exposes no media DTO. Do not guess URL fields.
-  model: z.null(), image: z.null(), audio: z.null(),
+  model: publicModelSchema.nullable(), image: z.null(), audio: z.null(),
   hotspots: z.array(z.object({
     id: z.string().uuid(), label: z.string(), body: z.string(),
     positionX: z.number().finite(), positionY: z.number().finite(), positionZ: z.number().finite(),
