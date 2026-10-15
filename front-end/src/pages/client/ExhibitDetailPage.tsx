@@ -1,5 +1,5 @@
-import { Container, Title } from '@mantine/core';
-import { useParams } from 'react-router-dom';
+import { Button, Container, Title } from '@mantine/core';
+import { Link, useParams } from 'react-router-dom';
 import { z } from 'zod';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitPreview } from '@/shared/components/data/ExhibitPreview';
@@ -48,6 +48,8 @@ export function ExhibitDetailPage() {
       {statusTitle ? <>
         <Title order={1} className={classes.title}>{statusTitle}</Title>
         <p role={isError ? 'alert' : isLoading ? 'status' : undefined} className={classes.body}>{statusMessage}</p>
+        {isError && <Button mt="md" onClick={() => void (rooms.isError ? rooms.refetch() : room.refetch())}>Thử lại</Button>}
+        {!isLoading && <p><Link to="/collection">Về bộ sưu tập</Link></p>}
       </> : detail && exhibit ? <article aria-labelledby="exhibit-title">
         <header className={classes.header}>
           <p className={classes.roomName}>{detail.name}</p>

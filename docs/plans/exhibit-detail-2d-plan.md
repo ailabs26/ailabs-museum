@@ -120,10 +120,10 @@ await expect(page.locator('main b')).toHaveCount(0);
 
 **Phụ thuộc:** 02, 03. **Files:** page và tests D04. **Produces:** state/retry hoàn chỉnh, dữ liệu cũ không lộ sau lỗi/đổi URL.
 
-- [ ] D04 tests gates loading list/detail, list/detail HTTP/schema error và retry, unknown slug không tải detail lạ; malformed UUID, valid absent/cross-room ID báo rõ.
-- [ ] D04 tests đổi URL khi request cũ pending, hiện vật khác cùng phòng, refresh fail hide cache. Trigger refetch bằng Làm mới ở collection trước quay lại detail để tận dụng query keys, không thêm refresh riêng ngoài phạm vi.
-- [ ] ID invalid ưu tiên thông báo “Đường dẫn hiện vật không hợp lệ” dù hook vẫn có thể tải phòng; list pending/error ưu tiên trước kết luận room-not-found; detail pending/error trước kết luận exhibit-not-found.
-- [ ] Retry query đang lỗi (`rooms.refetch()` hoặc `room.refetch()`), stale success guard chỉ render nội dung khi query success. API error title “Không tải được nội dung”; not-found dùng title riêng và link collection chung `/collection` để thoát, không giả dữ liệu.
+- [x] D04 loading/error/schema/retry và cross-room tests đạt cùng guards D02.
+- [x] Đổi URL/obsolete request và cache refresh lỗi giữ danh tính, 9/9 tests đạt.
+- [x] Thứ tự guard ID/list/detail/not-found đúng.
+- [x] Retry query lỗi và link collection chung, không demo fallback.
 
 ```tsx
 <Alert role="alert" title="Không tải được nội dung">
@@ -132,7 +132,7 @@ await expect(page.locator('main b')).toHaveCount(0);
 </Alert>
 ```
 
-- [ ] Run D02–D04; không giả assertion RED cho cases task 02/hook đã xử lý. Gates và commit **`fix(detail): handle unavailable content and request failures`**.
+- [x] D02–04 và gates đạt, commit task 04 theo kế hoạch.
 
 ### Checkpoint B — Nội dung và trạng thái hoàn thiện
 

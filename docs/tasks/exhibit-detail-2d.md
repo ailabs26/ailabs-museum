@@ -69,9 +69,9 @@ Mỗi task có một commit sau khi kiểm chứng đạt. Code, tests và cập
 ### DETAIL-04 — Trạng thái và danh tính
 
 **Nghiệm thu:**
-- [ ] Tải list/detail, API/schema error và Thử lại có phản hồi rõ ràng; không nhầm lỗi API thành not-found.
-- [ ] Phân biệt UUID sai, phòng không public và ID không thuộc phòng; không chuyển sang phòng đầu tiên.
-- [ ] Chuyển URL hoặc refresh lỗi không lộ nội dung cũ; request cũ không thay nội dung hiện tại.
+- [x] Tải/lỗi API/schema và retry rõ ràng, không nhầm not-found.
+- [x] UUID/room/cross-room ID guards đúng, không chọn phòng đầu tiên.
+- [x] Chuyển URL/refresh lỗi và response cũ không lộ sai nội dung.
 
 **Kiểm tra:** Playwright D02–D04 + frontend typecheck/lint/build. Hoàn thiện guard có từ 02, không để trang thiếu an toàn chỉ để có task mới.
 
@@ -142,3 +142,5 @@ Chưa đổi SceneFallback/panel tour, chưa tự chuyển route khi WebGL lỗi
 
 - DETAIL-02 commit `dcfb99d`.
 - DETAIL-03: tests viết trước, test rich content fail vì thiếu heading Bản thuyết minh; sau sửa 5/5 D02/D03 đạt (13.1s), typecheck/lint/build đạt. Sort hotspot đồng displayOrder theo ID; text HTML-like không tạo thẻ HTML. Người dùng đã yêu cầu tiếp tục tất cả 03–07; không mở rộng sang fallback tour.
+- DETAIL-03 commit `58a4f8b`.
+- DETAIL-04: test đầu RED thiếu nút Thử lại; sau bổ sung retry/back-to-collection ở trạng thái lỗi/not-found, 9/9 D02–04 đạt (16.2s), typecheck/lint/build đạt. Guards nền đã có từ D02; tests mới chứng minh loading/cross-room/stale refresh/obsolete request, không tuyên bố mỗi test đều RED.

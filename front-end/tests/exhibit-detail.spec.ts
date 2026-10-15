@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
-import { envelope, roomA } from './fixtures/museumContent';
+import { envelope, roomA, roomB, roomSummaries } from './fixtures/museumContent';
 
 test.beforeEach(async ({ page }) => { await installMuseumApi(page); });
 
@@ -75,4 +75,82 @@ test('[D03] absent or empty optional content does not create empty sections', as
     await expect(page.getByRole('heading', { name: 'Điểm chú ý' })).toHaveCount(0);
     await page.unroute('**/api/rooms/sculpture');
   }
+});
+
+test('[D04] HTTP and schema failures expose retry instead of not-found or stale content', async ({ page }) => {
+  let failList = true;
+  let badDetail = true;
+  await page.route('**/api/rooms', (route) => fulfillMuseum(route,
+    failList ? { success: false, data: null, message: 'Unavailable' } : envelope(roomSummaries), failList ? 503 : 200));
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({
+    ...roomA, exhibits: badDetail ? [{ ...roomA.exhibits[0], name: 42 }] : roomA.exhibits,
+  })));
+  await page.goto(`/collection/sculpture/exhibits/${roomA.exhibits[0].id}`);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Không tải được nội dung');
+  await expect(page.getByRole('alert')).toBeVisible();
+  failList = false;
+  await page.getByRole('button', { name: 'Thử lại', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Dữ liệu phòng không hợp lệ');
+  await expect(page.getByText('Hình minh họa thay thế')).toHaveCount(0);
+  badDetail = false;
+  await page.getByRole('button', { name: 'Thử lại', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(roomA.exhibits[0].name);
+});
+
+test('[D04] loading guards precede not-found and invalid identity never selects another room', async ({ page }) => {
+  let releaseList!: () => void;
+  let releaseDetail!: () => void;
+  const listGate = new Promise<void>((resolve) => { releaseList = resolve; });
+  const detailGate = new Promise<void>((resolve) => { releaseDetail = resolve; });
+  await page.route('**/api/rooms', async (route) => { await listGate; await fulfillMuseum(route, envelope(roomSummaries)); });
+  await page.route('**/api/rooms/sculpture', async (route) => { await detailGate; await fulfillMuseum(route, envelope(roomA)); });
+  await page.goto(`/collection/sculpture/exhibits/${roomA.exhibits[0].id}`);
+  await expect(page.getByRole('status')).toHaveText('Đang tải danh sách phòng…');
+  releaseList();
+  await expect(page.getByRole('status')).toHaveText('Đang tải hiện vật…');
+  releaseDetail();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(roomA.exhibits[0].name);
+  await page.goto(`/collection/ceramics/exhibits/${roomA.exhibits[0].id}`);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Không tìm thấy hiện vật');
+  await expect(page.getByRole('link', { name: 'Về bộ sưu tập', exact: true })).toHaveAttribute('href', '/collection');
+});
+
+test('[D04] obsolete detail response cannot replace the exhibit selected in a new URL', async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  await page.route('**/api/rooms/sculpture', async (route) => {
+    await gate;
+    await fulfillMuseum(route, envelope(roomA)).catch(() => undefined);
+  });
+  await page.goto(`/collection/sculpture/exhibits/${roomA.exhibits[0].id}`);
+  await expect(page.getByRole('status')).toHaveText('Đang tải hiện vật…');
+  await page.evaluate((path) => {
+    history.pushState(null, '', path);
+    dispatchEvent(new PopStateEvent('popstate'));
+  }, `/collection/ceramics/exhibits/${roomB.exhibits[0].id}`);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(roomB.exhibits[0].name);
+  release();
+  await expect(page.getByText(roomA.exhibits[0].description, { exact: true })).toHaveCount(0);
+  await page.evaluate((path) => {
+    history.pushState(null, '', path);
+    dispatchEvent(new PopStateEvent('popstate'));
+  }, `/collection/ceramics/exhibits/${roomA.exhibits[0].id}`);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Không tìm thấy hiện vật');
+});
+
+test('[D04] failed refresh hides cached detail until successful retry', async ({ page }) => {
+  const path = `/collection/sculpture/exhibits/${roomA.exhibits[0].id}`;
+  await page.goto(path);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(roomA.exhibits[0].name);
+  await page.locator('header').getByRole('link', { name: 'Bộ sưu tập', exact: true }).click();
+  await expect(page.getByRole('listitem')).toHaveCount(5);
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, { success: false, data: null, message: 'Unavailable' }, 503));
+  await page.getByRole('button', { name: 'Làm mới', exact: true }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Không tải được nội dung');
+  await expect(page.getByText('Hình minh họa thay thế')).toHaveCount(0);
+  await page.unroute('**/api/rooms/sculpture');
+  await page.getByRole('button', { name: 'Thử lại', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(roomA.exhibits[0].name);
 });
