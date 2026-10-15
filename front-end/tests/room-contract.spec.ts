@@ -37,3 +37,16 @@ test('public room contract permits absent coordinates but rejects a partial tran
   expect(roomDetailSchema.safeParse({ ...roomA, exhibits: [withoutPosition] }).success).toBe(true);
   expect(roomDetailSchema.safeParse({ ...roomA, exhibits: [{ ...withoutPosition, positionX: 0 }] }).success).toBe(false);
 });
+
+test('public GLB descriptors bind the model URL and version to the actual room and exhibit', () => {
+  const item = exhibit();
+  const hash = 'a'.repeat(64);
+  const model = { id: '20000000-0000-4000-8000-000000000001', storageKey: 'models/real.glb', sizeBytes: 100,
+    checksumSha256: hash, url: `/rooms/sculpture/exhibits/${item.id}/model?version=${hash}` };
+  const parse = (patch: Partial<typeof model>) => roomDetailSchema.safeParse({ ...roomA, exhibits: [{ ...item, model: { ...model, ...patch } }] });
+  expect(parse({}).success).toBe(true);
+  for (const change of [{ storageKey: '../private.glb' }, { url: 'https://outside.example/model.glb' },
+    { checksumSha256: 'b'.repeat(64) }, { url: `/rooms/another/exhibits/${item.id}/model?version=${hash}` }, { sizeBytes: 0 }]) {
+    expect(parse(change).success).toBe(false);
+  }
+});

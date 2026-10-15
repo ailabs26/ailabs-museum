@@ -23,14 +23,14 @@ export class ModelStorageService {
     try {
       const signed = await fetch(new URL(`/storage/v1/object/sign/${path}`, base), {
         method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ expiresIn: 120 }), signal: requestSignal,
+        body: JSON.stringify({ expiresIn: 120 }), signal: requestSignal, redirect: 'error',
       });
       if (!signed.ok) { await signed.body?.cancel(); throw new Error('sign failed'); }
       const data: unknown = await signed.json();
       if (!data || typeof data !== 'object' || !('signedURL' in data) || typeof data.signedURL !== 'string') throw new Error('invalid sign response');
       const url = new URL(`/storage/v1${data.signedURL}`, base);
       if (url.origin !== new URL(base).origin || url.pathname !== `/storage/v1/object/sign/${path}`) throw new Error('invalid sign path');
-      const response = await fetch(url, { headers, signal: requestSignal });
+      const response = await fetch(url, { headers, signal: requestSignal, redirect: 'error' });
       if (!response.ok || !response.body || Number(response.headers.get('content-length')) !== expectedBytes) {
         await response.body?.cancel(); throw new Error('download failed');
       }

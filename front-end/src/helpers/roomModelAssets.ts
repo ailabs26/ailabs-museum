@@ -52,7 +52,9 @@ export class RoomModelAssets {
     while (!this.closed && this.active < 2 && this.queue.length) {
       const key = this.queue.shift()!; const model = this.models.get(key)!;
       this.active++; this.update(key, { status: 'loading', progress: 0 });
-      void this.load(model, this.controller.signal, progress => this.update(key, { status: 'loading', progress }))
+      void this.load(model, this.controller.signal, progress => {
+        if (this.snapshot[key]?.status === 'loading') this.update(key, { status: 'loading', progress });
+      })
         .then(asset => {
           if (this.closed) disposeModel(asset.scenes);
           else this.update(key, { status: 'ready', asset });

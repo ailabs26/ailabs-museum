@@ -33,3 +33,16 @@ it('aborts active work and disposes models which finish parsing after room teard
   finish(value); await vi.waitFor(() => expect(dispose).toHaveBeenCalledTimes(1));
   expect(assets.snapshot).toEqual({});
 });
+
+it('late download progress cannot replace a ready model or lose its disposal ownership', async () => {
+  let progress!: (ratio: number) => void;
+  const value = loaded();
+  const dispose = vi.spyOn((value.scene.children[0] as Mesh).geometry, 'dispose');
+  const assets = new RoomModelAssets(async (_descriptor, _signal, onProgress) => { progress = onProgress; return value; }, () => {});
+  assets.start([model('a')]);
+  await vi.waitFor(() => expect(assets.snapshot['a'.repeat(64)].status).toBe('ready'));
+  progress(1);
+  expect(assets.snapshot['a'.repeat(64)].status).toBe('ready');
+  assets.dispose();
+  await vi.waitFor(() => expect(dispose).toHaveBeenCalledTimes(1));
+});

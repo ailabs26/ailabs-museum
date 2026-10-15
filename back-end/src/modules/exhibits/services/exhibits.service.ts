@@ -64,11 +64,9 @@ export class ExhibitsService {
         }
 
         const content = revision.content as unknown as Record<string, unknown> | undefined;
-        const position = (content?.position as { x: number; y: number; z: number }) ?? {
-          x: 0,
-          y: 0,
-          z: 0,
-        };
+        const candidate = content?.position as { x?: unknown; y?: unknown; z?: unknown } | undefined;
+        const position = candidate && [candidate.x, candidate.y, candidate.z].every(value => typeof value === 'number' && Number.isFinite(value))
+          ? candidate as { x: number; y: number; z: number } : undefined;
 
         return [
           {
@@ -77,9 +75,9 @@ export class ExhibitsService {
             displayOrder: exhibit.displayOrder,
             name: content?.name,
             description: content?.description,
-            positionX: position.x,
-            positionY: position.y,
-            positionZ: position.z,
+            positionX: position?.x,
+            positionY: position?.y,
+            positionZ: position?.z,
             transcript: content?.transcript ?? null,
             placeholderShape: content?.placeholderShape ?? 'box',
             placeholderColor: content?.placeholderColor ?? '#8b7355',

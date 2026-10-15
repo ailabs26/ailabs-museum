@@ -9,7 +9,8 @@ const roomSummarySchema = z.object({
 
 export const publicModelSchema = z.object({
   id: z.string().uuid(),
-  storageKey: z.string().min(1).max(512).regex(/^[a-zA-Z0-9_/-]+\.glb$/),
+  storageKey: z.string().min(1).max(512).regex(/^[a-zA-Z0-9_/-]+\.glb$/)
+    .refine(key => key.split('/').every(part => part.length > 0 && part !== '..' && part !== '.')),
   sizeBytes: z.number().int().positive().max(128 * 1024 * 1024),
   checksumSha256: z.string().regex(/^[a-f0-9]{64}$/),
   url: z.string().regex(/^\/rooms\/[a-zA-Z0-9_-]+\/exhibits\/[a-f0-9-]+\/model\?version=[a-f0-9]{64}$/),
@@ -47,7 +48,8 @@ export const roomListSchema = z.array(roomSummarySchema).refine((rooms) =>
 export const roomDetailSchema = roomSummarySchema.extend({
   exhibits: z.array(exhibitSchema),
 }).refine((room) =>
-  room.exhibits.every((exhibit) => exhibit.roomId === room.id) &&
+  room.exhibits.every((exhibit) => exhibit.roomId === room.id && (!exhibit.model
+    || exhibit.model.url === `/rooms/${encodeURIComponent(room.slug)}/exhibits/${exhibit.id}/model?version=${exhibit.model.checksumSha256}`)) &&
   new Set(room.exhibits.map((exhibit) => exhibit.id)).size === room.exhibits.length,
 'Exhibits must belong to this room and have unique identities');
 
