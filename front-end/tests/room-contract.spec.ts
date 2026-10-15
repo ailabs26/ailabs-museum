@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { roomDetailSchema, roomListSchema, roomResponseSchema } from '../src/validations/roomSchema';
 import { envelope, exhibit, roomA, roomSummaries } from './fixtures/museumContent';
+import { publicRoomWithMediaResponse } from './fixtures/publicRoomWithMedia';
 
 test('public room contract accepts source response and strips entity metadata', () => {
   const rooms = roomListSchema.parse(roomSummaries);
@@ -36,4 +37,44 @@ test('public room contract permits absent coordinates but rejects a partial tran
   const withoutPosition = { ...exhibit(), positionX: undefined, positionY: undefined, positionZ: undefined };
   expect(roomDetailSchema.safeParse({ ...roomA, exhibits: [withoutPosition] }).success).toBe(true);
   expect(roomDetailSchema.safeParse({ ...roomA, exhibits: [{ ...withoutPosition, positionX: 0 }] }).success).toBe(false);
+});
+
+test('public room contract accepts the real Task 9 response with published media', () => {
+  const parsed = roomResponseSchema(roomDetailSchema).parse(publicRoomWithMediaResponse);
+  const [item] = parsed.data.exhibits;
+  expect(item.model?.url).toMatch(/^https?:\/\/.+\/media\/uploads\/models\/.+\.glb$/);
+  expect(item.image?.altText.en).toBeTruthy();
+  expect(item.audio?.vi?.subtitle?.mimeType).toBe('text/vtt');
+  expect(item.audio?.en?.transcript).toBeTruthy();
+  expect(item.i18n?.en.name).toBeTruthy();
+  expect(item.hotspots[0].i18n?.en.label).toBeTruthy();
+});
+
+test('public room contract rejects unsafe or malformed media', () => {
+  const real = publicRoomWithMediaResponse.data;
+  const base = real.exhibits[0];
+  const media = base.model!;
+  const withExhibit = (change: Record<string, unknown>) => ({ ...real, exhibits: [{ ...base, ...change }] });
+  for (const change of [
+    { model: { ...media, url: '/media/uploads/models/x.glb' } },
+    { model: { ...media, url: 'javascript:alert(1)' } },
+    { model: { ...media, url: 'data:model/gltf-binary;base64,AAAA' } },
+    { model: { ...media, id: 'not-a-uuid' } },
+    { model: { ...media, sizeBytes: 0 } },
+    { model: { ...media, sizeBytes: 1.5 } },
+    { model: { ...media, rights: undefined } },
+    { image: { ...base.image!, altText: undefined } },
+    { audio: { vi: { ...base.audio!.vi!, audio: null }, en: null } },
+    { audio: { vi: undefined, en: null } },
+    { scale: { x: 0, y: 1, z: 1 } },
+    { rotation: { x: NaN, y: 0, z: 0 } },
+  ]) {
+    expect(roomDetailSchema.safeParse(withExhibit(change)).success, JSON.stringify(Object.keys(change))).toBe(false);
+  }
+});
+
+test('public room contract keeps older payloads without i18n/transform valid', () => {
+  const real = publicRoomWithMediaResponse.data;
+  const legacy = { ...real.exhibits[0], i18n: undefined, rotation: undefined, scale: undefined, model: null, image: null, audio: null };
+  expect(roomDetailSchema.safeParse({ ...real, exhibits: [legacy] }).success).toBe(true);
 });

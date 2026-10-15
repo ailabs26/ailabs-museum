@@ -7,6 +7,33 @@ const roomSummarySchema = z.object({
   description: z.string().nullable(),
 });
 
+/** Absolute http(s) URL issued by the API's managed media route; never a relative or script URL. */
+const mediaUrlSchema = z.string().url().refine((value) => /^https?:\/\//i.test(value), 'Media URL must be absolute http(s)');
+
+const mediaSchema = z.object({
+  id: z.string().uuid(),
+  url: mediaUrlSchema,
+  mimeType: z.string().min(1),
+  sizeBytes: z.number().int().positive(),
+  rights: z.object({ source: z.string().nullable(), author: z.string().nullable(), license: z.string().nullable() }),
+});
+
+const bilingualSchema = z.object({ vi: z.string().nullable(), en: z.string().nullable() });
+
+const audioTrackSchema = z.object({
+  audio: mediaSchema,
+  subtitle: mediaSchema.nullable(),
+  transcript: z.string().nullable(),
+});
+
+const localizedTextSchema = z.object({
+  name: z.string().nullable(),
+  description: z.string().nullable(),
+  transcript: z.string().nullable(),
+});
+
+const vector3Schema = z.object({ x: z.number().finite(), y: z.number().finite(), z: z.number().finite() });
+
 const exhibitSchema = z.object({
   id: z.string().uuid(),
   roomId: z.string().uuid(),
@@ -17,12 +44,22 @@ const exhibitSchema = z.object({
   positionY: z.number().finite().optional(),
   positionZ: z.number().finite().optional(),
   transcript: z.string().nullable(),
+  // Bilingual copy and full transform (Task 9); optional so older payloads stay valid.
+  i18n: z.object({ vi: localizedTextSchema, en: localizedTextSchema }).optional(),
+  rotation: vector3Schema.optional(),
+  scale: vector3Schema.refine(({ x, y, z }) => x > 0 && y > 0 && z > 0, 'Scale must be positive').optional(),
   placeholderShape: z.enum(['box', 'sphere', 'cylinder', 'cone', 'torus']),
   placeholderColor: z.string().regex(/^#(?:[\da-f]{3}|[\da-f]{6})$/i),
-  // The public service currently exposes no media DTO. Do not guess URL fields.
-  model: z.null(), image: z.null(), audio: z.null(),
+  // Media of the current published revision only; per-locale audio never falls back to another language.
+  model: mediaSchema.nullable(),
+  image: mediaSchema.extend({ altText: bilingualSchema }).nullable(),
+  audio: z.object({ vi: audioTrackSchema.nullable(), en: audioTrackSchema.nullable() }).nullable(),
   hotspots: z.array(z.object({
     id: z.string().uuid(), label: z.string(), body: z.string(),
+    i18n: z.object({
+      vi: z.object({ label: z.string().nullable(), body: z.string().nullable() }),
+      en: z.object({ label: z.string().nullable(), body: z.string().nullable() }),
+    }).optional(),
     positionX: z.number().finite(), positionY: z.number().finite(), positionZ: z.number().finite(),
     displayOrder: z.number().int().nonnegative(),
   })),
