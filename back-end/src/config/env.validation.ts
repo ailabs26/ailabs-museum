@@ -49,6 +49,23 @@ class Environment {
   @Max(15)
   BCRYPT_ROUNDS: number = 12;
 
+  // --- Phân phối media (Task 9) ---
+
+  /** Origin công khai của API, dùng dựng URL media tuyệt đối (không có dấu / cuối). */
+  @IsUrl({ require_tld: false, require_protocol: true, protocols: ['http', 'https'] })
+  MEDIA_PUBLIC_BASE_URL: string = 'http://localhost:3001';
+
+  /** Khóa HMAC ký URL xem trước media chưa công khai. Bắt buộc đặt ở môi trường thật. */
+  @IsString()
+  @MinLength(32)
+  MEDIA_URL_SIGNING_SECRET: string = 'dev-media-url-signing-secret-change-me-please';
+
+  /** Thời hạn URL media đã ký (giây). */
+  @IsInt()
+  @Min(60)
+  @Max(86400)
+  MEDIA_SIGNED_URL_TTL_SECONDS: number = 900;
+
   // --- Seed (chỉ dùng khi chạy script seed) ---
 
   @IsOptional()
