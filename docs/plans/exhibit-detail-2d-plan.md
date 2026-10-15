@@ -1,6 +1,6 @@
 # Exhibit Detail 2D — Implementation Plan (7 task nhỏ)
 
-> **For agentic workers:** Người dùng đã duyệt bản chia nhỏ. Dùng Superpowers `executing-plans` trên `feat/exhibit-detail-2d`, không subagent; lượt hiện tại chỉ DETAIL-01/02 và dừng ở checkpoint A. Mỗi task một commit sau kiểm chứng.
+> **For agentic workers:** Người dùng đã duyệt và yêu cầu hoàn thành DETAIL-01–07 trên `feat/exhibit-detail-2d`, không subagent. Mỗi task một commit sau kiểm chứng; chờ người dùng duyệt giao diện/mô tả trước push/PR.
 
 **Goal:** Đọc chi tiết hiện vật public bằng DOM độc lập WebGL, có link từ collection/featured và quay lại đúng phòng.
 
@@ -171,16 +171,16 @@ npm.cmd test -- exhibit-detail.spec.ts collection.spec.ts home-featured.spec.ts 
 
 ### Checkpoint C — Luồng frontend hoàn chỉnh
 
-- [ ] Link vào/back/focus/status/text và no-WebGL regression đạt; người dùng có thể xem giao diện.
-- [ ] Chưa coi live content/visual review hoàn thành trước task 07.
+- [x] Link/back/focus/status/no-WebGL regressions và gates đạt, người dùng có thể xem giao diện.
+- [x] Live content kiểm chứng riêng ở 07; visual review vẫn chờ người dùng.
 
 ## DETAIL-07 — Live API và tài liệu bàn giao
 
 **Phụ thuộc:** 06. **Files:** live test, README, task/plan. **Produces:** evidence read-only và hướng dẫn route/limits.
 
-- [ ] Live opt-in theo pattern hiện có: list/detail API thật được parse schema; chọn ID từ response, không hardcode. Không có content thì annotation “populated acceptance chưa chứng minh”, không seed.
-- [ ] Direct URL/reload và card link đọc đúng name/description; transcript/hotspots so sánh nếu response có. Dữ liệu seed hiện optional content thiếu nên fixture D03 chứng minh các trường đó, không bịa live content.
-- [ ] Live back link đúng room, không interception/Canvas/database write:
+- [x] Live test 1/1 đạt, schema parse và ID từ response; empty content annotation, không seed.
+- [x] Direct/reload/card name/description đúng; live item không transcript/hotspots, rich optional evidence là fixture.
+- [x] Live back link đúng room, không interception/Canvas/database write:
 
 ```powershell
 $env:MUSEUM_LIVE_TEST='1'
@@ -188,12 +188,12 @@ try { npm.cmd test -- exhibit-detail-live.spec.ts } finally { Remove-Item Env:MU
 npm.cmd run test:unit
 ```
 
-- [ ] README/task ghi kết quả thật/giới hạn/SHA tasks trước. Tests/docs không đòi lặp build nếu runtime không đổi; runtime sửa thêm chạy lại gates.
-- [ ] Review diff/secrets; commit **`test(detail): verify live exhibit content and navigation`**. SHA chính commit tra git log, không thêm commit chỉ để ghi SHA.
+- [x] README/task ghi bằng chứng thật/giới hạn/ledger, unit tests 13/13; runtime không đổi sau build D06.
+- [x] Review tests/docs và chuẩn bị commit D07; SHA tra git log.
 - [ ] Chờ người dùng duyệt trực quan, gửi mô tả PR trước push/tạo PR vào dev. Không tự chuyển 3D→2D khi lỗi trong nhánh này.
 
 ## Rà soát phạm vi và dependencies
 
 01→02→03→04→05→06→07; trang luôn có safe guard từ 02, task 04 không trì hoãn bảo toàn dữ liệu. Các task có tối đa ba nghiệm thu trong task nguồn; mỗi task có test focused/gates và một commit. Tách test nội dung rich khỏi test state, link và focus giúp review/revert riêng. Checkpoint A/B/C cho phép dừng sau phần được chỉ định; không tạo thêm nhánh/PR cho mỗi task trong cùng nhiệm vụ.
 
-Đã được duyệt để bắt đầu DETAIL-01/02. Lượt 2 sau này dùng route này để chuyển từ panel/SceneFallback với room/exhibit đang chọn, quản lý focus và tháo renderer; không thực hiện trong lượt hiện tại.
+Đã hoàn thành triển khai/kiểm chứng DETAIL-01–07 theo yêu cầu tiếp tục của người dùng. Lượt 2 sau này dùng route này để chuyển từ panel/SceneFallback với room/exhibit đang chọn, quản lý focus và tháo renderer; không thực hiện trong nhánh này. Chưa visual review hoặc push/PR.

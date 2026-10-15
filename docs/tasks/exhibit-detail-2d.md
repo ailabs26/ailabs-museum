@@ -1,7 +1,7 @@
 # Task T-DETAIL-2D: Trang chi tiết hiện vật 2D — lượt 1
 
 **Nhánh:** `feat/exhibit-detail-2d`, từ `origin/dev` tại `41c846e`.
-**Trạng thái:** Người dùng cho phép triển khai toàn bộ DETAIL-03–07; đang thực hiện từng task/commit trên nhánh hiện tại.
+**Trạng thái:** DETAIL-01–07 đã triển khai và kiểm chứng kỹ thuật/API thật; chờ duyệt trực quan và nội dung PR.
 **Plan:** [exhibit-detail-2d-plan.md](../plans/exhibit-detail-2d-plan.md).
 
 ## Mục tiêu
@@ -96,8 +96,8 @@ Mỗi task có một commit sau khi kiểm chứng đạt. Code, tests và cập
 ### DETAIL-07 — API thật và bàn giao
 
 **Nghiệm thu:**
-- [ ] Live read-only test so sánh DOM với API/schema thật và link/reload đúng; dữ liệu rỗng được báo rõ thay vì coi là populated pass.
-- [ ] README/task ghi kết quả, giới hạn, SHA các task trước; unit tests hiện có đạt.
+- [x] Live read-only so sánh DOM với API/schema thật và link/reload đúng; empty response có annotation.
+- [x] README/task ghi bằng chứng/SHA/giới hạn; unit tests 13/13 đạt.
 - [ ] Gửi giao diện để người dùng duyệt và mô tả PR trước push/tạo PR; không tự triển khai fallback lượt 2.
 
 **Kiểm tra:** `MUSEUM_LIVE_TEST=1` + `exhibit-detail-live.spec.ts`, unit tests và review diff. Nếu chỉ thêm tests/docs thì không lặp build runtime đã đạt; nếu sửa runtime phải chạy lại gates. SHA commit 07 tra bằng git log, không tạo commit chỉ để ghi SHA của chính nó.
@@ -114,14 +114,14 @@ Các checkpoint là nơi có thể dừng theo yêu cầu người dùng, không
 ## Điều kiện nghiệm thu
 
 - [x] Người dùng duyệt task/plan trước commit/implementation.
-- [ ] Direct URL/reload hiển thị đúng hiện vật thuộc đúng phòng public, không hardcode data/ID.
-- [ ] Tên, mô tả, transcript/hotspot nếu có; shared preview; không giả vờ có ảnh/model/audio thật.
-- [ ] ID/slug sai, room không public, ID không thuộc room, lỗi HTTP/schema và retry có trạng thái đúng.
-- [ ] Không leak nội dung cũ khi chuyển URL/refresh lỗi; không request admin hoặc detail phòng khác.
-- [ ] Explicit links từ collection/featured và quay lại collection giữ đúng slug; bàn phím/focus đúng.
-- [ ] WebGL bị chặn vẫn đọc đủ nội dung trả bởi API; không load scene/Canvas.
-- [ ] DOM reflow 320/768/1024/1440 light/dark và font tiếng Việt phù hợp.
-- [ ] Typecheck/lint/build, regression tests và live read-only evidence đạt.
+- [x] Direct URL/reload đúng hiện vật/phòng public, không hardcode data/ID.
+- [x] Tên/mô tả, optional transcript/hotspots và preview rõ minh họa.
+- [x] URL/room/ID/error/schema/retry được kiểm chứng.
+- [x] Không lộ nội dung cũ khi đổi URL/refresh lỗi; không admin API hoặc detail phòng khác.
+- [x] Card/back links đúng slug, keyboard/focus được kiểm chứng.
+- [x] WebGL blocked đọc nội dung API, không scene/Canvas.
+- [x] DOM reflow light/dark bốn viewport và font tiếng Việt đạt.
+- [x] Gates, regression và live read-only evidence đạt.
 - [ ] Người dùng duyệt trực quan, nhận mô tả PR trước khi yêu cầu tạo.
 
 ## Ngoài phạm vi
@@ -148,3 +148,19 @@ Chưa đổi SceneFallback/panel tour, chưa tự chuyển route khi WebGL lỗi
 - DETAIL-05: test đầu RED thiếu link card; sau sửa detail/collection/home regressions 28/28 đạt (52.7s), typecheck/lint/build đạt. Test slug Unicode và ký tự query được encode path, back link dùng URLSearchParams. Chưa focus effect; task 06 tiếp theo.
 - DETAIL-05 commit `4df2274`.
 - DETAIL-06: test focus đầu RED h1 inactive, sau bổ sung focus effect theo route/status primitive và tabindex, 50/50 regressions detail/collection/home/preview/tour interaction đạt (2.6m). Test cached background refresh giữ focus back link, error→success nhận focus, WebGL blocked giữ rich text, reflow 320/768/1024/1440 light/dark đạt. Typecheck/lint/build đạt; main 830.44 kB, scene 851.97 kB và lazy chart 543.94 kB, cảnh báo >500 kB còn tồn tại.
+- DETAIL-06 commit `f645d84`.
+- DETAIL-07 live test 1/1 đạt (7.4s), không interception hoặc database write: room/exhibit chọn từ API/schema thật, direct URL/reload/name/description/preview/focus đúng; collection→card→detail→back đúng slug. Probe xác nhận hiện vật đầu là `[Mẫu] Mũ bảo hộ`, transcript null và hotspots rỗng; nội dung optional giàu thông tin được kiểm chứng bằng D03/D06 fixtures, không phải live data.
+- Unit tests hiện có 13/13 đạt; typecheck/lint đạt sau thêm live test. Build runtime cuối đã đạt ở D06, không lặp chỉ vì tests/docs mới.
+- Chưa visual review, screen reader/axe hoặc full tour suite trong nhánh này. Bằng chứng DOM/reflow không thay thế người dùng duyệt giao diện. Không backend/database/dependency/hook/schema changes, chưa push/PR, chưa làm chuyển tour/WebGL lỗi sang 2D.
+
+## Ledger commit theo task
+
+| Task | Commit |
+|---|---|
+| DETAIL-01 | `2f943a3` |
+| DETAIL-02 | `dcfb99d` |
+| DETAIL-03 | `58a4f8b` |
+| DETAIL-04 | `6812ae2` |
+| DETAIL-05 | `4df2274` |
+| DETAIL-06 | `f645d84` |
+| DETAIL-07 | Commit tests/docs bàn giao này, tra `git log` |

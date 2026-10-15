@@ -89,6 +89,16 @@ Live test chạy frontend trên `http://localhost:5173` để khớp CORS local 
 - Focused tests: `npm.cmd test -- collection.spec.ts public-tour-navigation.spec.ts`. API thật (cần backend đang chạy và dữ liệu seed): đặt `MUSEUM_LIVE_TEST=1`, chạy `npm.cmd test -- collection-live.spec.ts`, rồi bỏ biến môi trường. Live collection test không mock hoặc ghi database, yêu cầu phòng lịch sử quân sự và 5 hiện vật mẫu đã seed.
 - Task/plan: [client-collection.md](../docs/tasks/client-collection.md), [client-collection-plan.md](../docs/plans/client-collection-plan.md).
 
+## Chi tiết hiện vật 2D
+
+- Thẻ collection và hiện vật nổi bật có **Xem chi tiết**, mở `/collection/:roomSlug/exhibits/:exhibitId`. URL mở trực tiếp/reload được, đọc hiện vật public trong chi tiết phòng API hiện có, không gọi endpoint admin.
+- Trang DOM hiển thị tên/phòng, minh họa CSS, mô tả đầy đủ và transcript/điểm chú ý nếu có. Hotspots sắp xếp displayOrder/ID; nội dung render text, không chèn HTML. Không có ảnh/model/audio thật thì không dựng player hoặc đoán URL.
+- Link **Quay lại bộ sưu tập của phòng này** giữ slug; URL sai/phòng không công khai/ID không thuộc phòng có thông báo riêng. HTTP/schema lỗi có **Thử lại**, không dùng dữ liệu mẫu/cache lỗi thời thay lỗi.
+- Heading nhận focus khi chuyển route hoặc trạng thái lỗi/phục hồi; background refetch thành công không giành focus khỏi link người dùng. Không cần WebGL và không tải scene/Canvas.
+- Tests: `npm.cmd test -- exhibit-detail.spec.ts`. Live read-only: bật `MUSEUM_LIVE_TEST=1`, chạy `npm.cmd test -- exhibit-detail-live.spec.ts`, rồi bỏ biến. Live rỗng được annotate, không tự seed; rich transcript/hotspots được chứng minh bằng fixture nếu API thật chưa có nội dung đó.
+- Lượt này chưa chuyển tour/SceneFallback sang trang 2D; đường chuyển giữ selected exhibit sẽ triển khai riêng.
+- Task/plan: [exhibit-detail-2d.md](../docs/tasks/exhibit-detail-2d.md), [exhibit-detail-2d-plan.md](../docs/plans/exhibit-detail-2d-plan.md).
+
 ## Tham quan Day 1–4
 
 - Mở `/tour.html`, chọn phòng rồi **Mở phòng 3D**. Scene chỉ tải sau thao tác này; **Dừng 3D** tháo Canvas. `?room=<slug>` hỗ trợ mở trực tiếp một phòng; **Làm mới** cập nhật danh sách/chi tiết, **Thử lại** xử lý lỗi.
