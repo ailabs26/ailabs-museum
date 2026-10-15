@@ -8,6 +8,8 @@ import { AdminExhibitsController } from './controllers/admin-exhibits.controller
 import { ExhibitsController } from './controllers/exhibits.controller';
 import { ExhibitsService } from './services/exhibits.service';
 import { ExhibitsRepository } from './repositories/exhibits.repository';
+import { PublicModelsService } from './services/public-models.service';
+import { ModelStorageService } from '../media/services/model-storage.service';
 
 @Module({
   imports: [
@@ -15,7 +17,7 @@ import { ExhibitsRepository } from './repositories/exhibits.repository';
     RoomsModule,
   ],
   controllers: [ExhibitsController, AdminExhibitsController],
-  providers: [ExhibitsService, ExhibitsRepository],
+  providers: [ExhibitsService, ExhibitsRepository, PublicModelsService, ModelStorageService],
   exports: [ExhibitsService, ExhibitsRepository],
 })
 export class ExhibitsModule {}
