@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
+import { Brackets, EntityManager, In, IsNull, Not, Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseRepository } from '../../../common/repository/base.repository';
 import { Paginated } from '../../../common/types/paginated.type';
 import { ListExhibitsQueryDto } from '../dto/list-exhibits-query.dto';
 import { Exhibit, ExhibitVisibility } from '../entities/exhibit.entity';
-import { ExhibitRevision } from '../entities/exhibit-revision.entity';
+import { REVISION_MEDIA_RELATIONS } from '../constants/revision-media-slots';
+import { ExhibitRevision, RevisionState } from '../entities/exhibit-revision.entity';
 import { Hotspot } from '../entities/hotspot.entity';
 
 @Injectable()
@@ -32,8 +33,10 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
   }
 
   /**
-   * Truy vấn danh sách hiện vật công khai theo phòng trưng bày.
-   * Chỉ lấy hiện vật có visibility = 'visible', chưa bị xóa mềm và nạp bản published.
+   * Truy vấn danh sách hiện vật công khai theo phòng trưng bày (FR-68).
+   * Chỉ lấy hiện vật visible, chưa xóa mềm, chưa lưu trữ, có revision published đã APPROVED;
+   * nạp đủ các slot media của revision đó. Điều kiện phải khớp với
+   * `MediaRepository.isPubliclyReferenced` (phân phối file media).
    */
   async findByRoom(roomId: string): Promise<Exhibit[]> {
     return this.repo.find({
@@ -41,12 +44,13 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
         roomId,
         visibility: ExhibitVisibility.VISIBLE,
         isDeleted: false,
+        archivedAt: IsNull(),
+        publishedRevisionId: Not(IsNull()),
+        publishedRevision: { state: RevisionState.APPROVED },
       },
       relations: {
         publishedRevision: {
-          modelMedia: true,
-          imageMedia: true,
-          audioMedia: true,
+          ...REVISION_MEDIA_RELATIONS,
           hotspots: true,
         },
       },
@@ -64,15 +68,11 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
       relations: {
         room: true,
         publishedRevision: {
-          modelMedia: true,
-          imageMedia: true,
-          audioMedia: true,
+          ...REVISION_MEDIA_RELATIONS,
           hotspots: true,
         },
         revisions: {
-          modelMedia: true,
-          imageMedia: true,
-          audioMedia: true,
+          ...REVISION_MEDIA_RELATIONS,
           hotspots: true,
           createdBy: true,
           reviewedBy: true,
@@ -89,9 +89,7 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
     return this.revisionRepo.find({
       where: { exhibitId },
       relations: {
-        modelMedia: true,
-        imageMedia: true,
-        audioMedia: true,
+        ...REVISION_MEDIA_RELATIONS,
         hotspots: true,
         createdBy: true,
         reviewedBy: true,
@@ -111,9 +109,7 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
       where: { id: revisionId },
       relations: {
         exhibit: true,
-        modelMedia: true,
-        imageMedia: true,
-        audioMedia: true,
+        ...REVISION_MEDIA_RELATIONS,
         hotspots: true,
         createdBy: true,
         reviewedBy: true,
@@ -147,9 +143,7 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
     return this.scopedRevision(manager).findOne({
       where: { exhibitId },
       relations: {
-        modelMedia: true,
-        imageMedia: true,
-        audioMedia: true,
+        ...REVISION_MEDIA_RELATIONS,
         hotspots: true,
       },
       order: { revisionNo: 'DESC' },

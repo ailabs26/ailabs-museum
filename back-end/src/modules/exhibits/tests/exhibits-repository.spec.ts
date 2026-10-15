@@ -202,6 +202,9 @@ describe('Task 7.2 — ExhibitsRepository Comprehensive Test Suite (105 Test Cas
           modelMedia: true,
           imageMedia: true,
           audioMedia: true,
+          audioEnMedia: true,
+          subtitleViMedia: true,
+          subtitleEnMedia: true,
           hotspots: true,
         },
       });

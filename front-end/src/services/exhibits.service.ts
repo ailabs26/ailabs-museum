@@ -37,7 +37,12 @@ export interface ExhibitRow {
     transcript?: unknown;
     modelId?: string | null;
     imageId?: string | null;
+    /** @deprecated Trùng `audioViId`. */
     audioId?: string | null;
+    audioViId?: string | null;
+    audioEnId?: string | null;
+    subtitleViId?: string | null;
+    subtitleEnId?: string | null;
   };
   hotspotsCount: number;
   createdAt: string;
@@ -93,7 +98,12 @@ export interface CreateExhibitInput {
   placeholderColor?: string;
   modelId?: string | null;
   imageId?: string | null;
+  /** @deprecated Dùng `audioViId`. */
   audioId?: string | null;
+  audioViId?: string | null;
+  audioEnId?: string | null;
+  subtitleViId?: string | null;
+  subtitleEnId?: string | null;
 }
 
 export interface UpdateExhibitInput {
@@ -108,7 +118,12 @@ export interface UpdateExhibitInput {
   placeholderColor?: string;
   modelId?: string | null;
   imageId?: string | null;
+  /** @deprecated Dùng `audioViId`. */
   audioId?: string | null;
+  audioViId?: string | null;
+  audioEnId?: string | null;
+  subtitleViId?: string | null;
+  subtitleEnId?: string | null;
 }
 
 export const exhibitsService = {
