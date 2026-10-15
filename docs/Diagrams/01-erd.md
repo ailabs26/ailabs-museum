@@ -10,7 +10,7 @@ erDiagram
     exhibits ||--o{ exhibit_revisions : "có phiên bản"
     exhibits }o--o| exhibit_revisions : "published_revision_id"
     exhibit_revisions ||--o{ hotspots : "có"
-    exhibit_revisions }o--o| media : "model/image/audio"
+    exhibit_revisions }o--o| media : "model/image/audio vi-en/subtitle vi-en"
     exhibit_revisions }o--|| users : "created_by"
     exhibit_revisions }o--o| users : "reviewed_by"
     media }o--o| users : "created_by"
@@ -53,7 +53,10 @@ erDiagram
         jsonb content
         uuid model_media_id FK "null"
         uuid image_media_id FK "null"
-        uuid audio_media_id FK "null"
+        uuid audio_media_id FK "null (audio vi)"
+        uuid audio_en_media_id FK "null"
+        uuid subtitle_vi_media_id FK "null"
+        uuid subtitle_en_media_id FK "null"
         uuid created_by FK
         uuid reviewed_by FK "null"
         timestamptz created_at

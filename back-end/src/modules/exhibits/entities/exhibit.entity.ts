@@ -21,6 +21,9 @@ export enum ExhibitVisibility {
 
 @Entity('exhibits')
 @Index('IDX_exhibits_room_order_id', ['roomId', 'displayOrder', 'id'])
+@Index('IDX_exhibits_published_revision', ['publishedRevisionId'], {
+  where: '"published_revision_id" IS NOT NULL',
+})
 @Check('CHK_exhibits_visibility', '"visibility" IN (\'visible\', \'hidden\')')
 @Check('CHK_exhibits_version', '"version" >= 0')
 @Check('CHK_exhibits_display_order', '"display_order" >= 0')
