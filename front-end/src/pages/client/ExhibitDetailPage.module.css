@@ -1,0 +1,14 @@
+.page { padding-block: 48px 64px; }
+.header { margin-bottom: 32px; }
+.roomName { color: var(--public-accent); font-size: 14px; font-weight: 600; margin: 0 0 16px; overflow-wrap: anywhere; }
+.title { font-family: 'Times New Roman', serif; font-weight: 400; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.2; overflow-wrap: anywhere; }
+.content { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 40px; align-items: start; }
+.preview { min-height: 240px; border: 1px solid var(--public-border); }
+.sectionTitle { font-size: 22px; line-height: 1.4; overflow-wrap: anywhere; }
+.body { color: var(--public-muted); line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; margin-block: 16px 0; }
+
+@media (max-width: 48em) {
+  .page { padding-block: 32px 48px; }
+  .content { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .preview { min-height: 192px; }
+}

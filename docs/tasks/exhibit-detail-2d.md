@@ -1,7 +1,7 @@
 # Task T-DETAIL-2D: Trang chi tiết hiện vật 2D — lượt 1
 
 **Nhánh:** `feat/exhibit-detail-2d`, từ `origin/dev` tại `41c846e`.
-**Trạng thái:** Người dùng đã duyệt bản chia nhỏ; lượt triển khai hiện tại chỉ DETAIL-01/02, dừng ở checkpoint A.
+**Trạng thái:** DETAIL-01/02 đã triển khai và kiểm chứng; dừng ở checkpoint A, chờ người dùng xem trang cơ bản trước task tiếp theo.
 **Plan:** [exhibit-detail-2d-plan.md](../plans/exhibit-detail-2d-plan.md).
 
 ## Mục tiêu
@@ -51,9 +51,9 @@ Mỗi task có một commit sau khi kiểm chứng đạt. Code, tests và cập
 ### DETAIL-02 — Trang cơ bản qua URL trực tiếp
 
 **Nghiệm thu:**
-- [ ] Direct URL/reload hiển thị đúng tên h1, preview, mô tả và phòng từ API public.
-- [ ] Tái dùng hook/schema; có guard tải/lỗi/không tìm thấy tối thiểu để không crash hoặc hiện sai hiện vật.
-- [ ] Không Canvas/scene, không hardcode ID hoặc dữ liệu production.
+- [x] Direct URL/reload hiển thị đúng tên h1, preview, mô tả và phòng từ API public qua tests fixture.
+- [x] Tái dùng hook/schema; có guard tải/lỗi/không tìm thấy tối thiểu để không crash hoặc hiện sai hiện vật.
+- [x] Tests xác nhận không Canvas/scene/admin API/phòng khác; không hardcode ID hoặc dữ liệu production.
 
 **Kiểm tra:** Playwright nhóm D02 + frontend typecheck/lint/build. Phạm vi: page/CSS, router, test và trạng thái tài liệu.
 
@@ -127,3 +127,13 @@ Các checkpoint là nơi có thể dừng theo yêu cầu người dùng, không
 ## Ngoài phạm vi
 
 Chưa đổi SceneFallback/panel tour, chưa tự chuyển route khi WebGL lỗi hoặc chọn hiện vật trong 3D theo URL. Không thêm media contract/upload/audio/subtitles/i18n, backend/database/dependency. Ảnh minh họa CSS không thay bộ asset thật. Lượt 2 sẽ xử lý chuyển 3D→2D giữ room/exhibit và focus dựa trên page lượt 1.
+
+## Ledger và checkpoint A
+
+- DETAIL-01 commit `2f943a3`: task/plan bản chia nhỏ đã được duyệt trước code.
+- DETAIL-02 tests viết trước. Lần chạy đầu harness bị ngắt; chạy lại ghi RED đúng: h1 là `404` thay vì `Hiện vật 2` do route chưa có. Chỉ test đầu chạy RED vì max-failures; không tuyên bố cả ba tests đều đã fail trước.
+- Sau implementation D02 3/3 đạt (11.3s): direct URL/reload đúng dữ liệu, mô tả rỗng có text, unknown room/invalid UUID/missing ID không render preview hoặc hiện vật khác.
+- Frontend typecheck/lint/build đạt. Build vẫn cảnh báo >500 kB; main 828.75 kB, scene 851.97 kB, lazy chart 543.94 kB trước gzip.
+- Probe API thật chỉ đọc tìm được URL mẫu dưới đây; chưa chạy browser live test hoặc review trực quan trong DETAIL-02. Full live evidence thuộc DETAIL-07.
+- URL để người dùng xem: `http://localhost:5173/collection/phong-lich-su-quan-su-viet-nam/exhibits/c8a43701-5f82-4cb1-9d60-a82170000001`.
+- Chưa transcript/hotspots, retry hoàn chỉnh, card/back links, focus management hoặc luồng tour fallback. Không sửa backend/database/hook/schema. Chưa push/PR; dừng checkpoint A.

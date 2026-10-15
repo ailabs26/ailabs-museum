@@ -5,6 +5,7 @@ import { AdminLayout } from '@/layouts/AdminLayout';
 import { RequireAuth } from '@/core/auth/RequireAuth';
 import { HomePage } from '@/pages/client/HomePage';
 import { CollectionPage } from '@/pages/client/CollectionPage';
+import { ExhibitDetailPage } from '@/pages/client/ExhibitDetailPage';
 import { LoginPage } from '@/pages/admin/LoginPage';
 import { DashboardPage } from '@/pages/admin/DashboardPage';
 import { PlaceholderPage } from '@/pages/admin/PlaceholderPage';
@@ -42,6 +43,7 @@ export function AppRouter() {
       <Route element={<PublicLayout />}>
         <Route index element={<HomePage />} />
         <Route path="collection" element={<CollectionPage />} />
+        <Route path="collection/:roomSlug/exhibits/:exhibitId" element={<ExhibitDetailPage />} />
         <Route path="tour" element={<MuseumPage />} />
         <Route path="tour.html" element={<MuseumPage />} />
       </Route>

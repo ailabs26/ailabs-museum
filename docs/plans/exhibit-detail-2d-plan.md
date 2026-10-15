@@ -72,7 +72,7 @@ git commit -m "docs(detail): plan standalone public exhibit page"
 
 **Phụ thuộc:** 01. **Files:** page/CSS/router + tests D02. **Produces:** route mở/reload được, tên/phòng/preview/mô tả từ API.
 
-- [ ] Test `[D02]`: direct URL room sculpture/ID 1, mong h1 tên item, tên phòng, preview và mô tả đúng; reload vẫn đúng. Theo dõi network không admin API/scene.
+- [x] Test D02 direct URL/reload và preview/text; network không admin API/scene.
 
 ```ts
 await installMuseumApi(page);
@@ -83,22 +83,22 @@ await expect(page.getByText('Hình minh họa thay thế', { exact: true })).toB
 await expect(page.locator('canvas')).toHaveCount(0);
 ```
 
-- [ ] Run `npm.cmd test -- exhibit-detail.spec.ts --grep D02`: RED do route/page chưa có.
-- [ ] Tạo page với `useParams`, `useMuseumRooms(roomSlug ?? '')`, UUID validation qua `z.string().uuid().safeParse(exhibitId)`. Success guard và selection:
+- [x] D02 test đầu RED đúng do route trả 404; sau implementation 3/3 GREEN.
+- [x] Page params/hook/UUID guard và selection:
 
 ```ts
 const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
 const exhibit = detail && isValidId ? detail.exhibits.find((item) => item.id === exhibitId) : undefined;
 ```
 
-- [ ] Render loading/error/not-found tối thiểu có văn bản rõ, không truy cập `exhibit` undefined. Không tìm item từ cache phòng khác hoặc đổi sang phòng đầu tiên. Retry/state refinements thuộc 04.
-- [ ] Success có h1/name, room text, ExhibitPreview và h2 “Câu chuyện hiện vật”, description text pre-wrap; mô tả rỗng ghi “Chưa có mô tả.”. CSS layout cơ bản responsive để không xuất bản markup vỡ; chưa focus effect.
-- [ ] Thêm route dưới PublicLayout; D02 GREEN + gates. Commit **`feat(detail): add basic public exhibit detail page`**.
+- [x] Guard tối thiểu loading/error/not-found; không render sai identity. Retry refinements chờ 04.
+- [x] Success h1/room/preview/h2/mô tả; empty description có text, CSS cơ bản, chưa focus effect.
+- [x] Route/D02/gates đạt; review và chuẩn bị commit task 02.
 
 ### Checkpoint A — Có thể xem trang cơ bản
 
-- [ ] D02/gates đạt và task 02 có commit; không coi optional content/navigation/fallback hoàn thành.
-- [ ] Gửi direct URL mẫu cho người dùng nếu dừng ở lượt A. Không tự mở rộng phạm vi lượt đã được yêu cầu.
+- [x] D02/gates đạt, ghi bằng chứng để commit 02; optional content/navigation/fallback còn pending.
+- [x] API probe tìm direct URL mẫu trong task để gửi người dùng; dừng ở A, không triển khai 03–07.
 
 ## DETAIL-03 — Transcript/hotspot và văn bản an toàn
 
