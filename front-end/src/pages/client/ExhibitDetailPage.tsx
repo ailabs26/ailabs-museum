@@ -1,4 +1,5 @@
 import { Button, Container, Title } from '@mantine/core';
+import { useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { z } from 'zod';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
@@ -43,10 +44,15 @@ export function ExhibitDetailPage() {
     statusMessage = 'Hiện vật không có trong bộ sưu tập công khai của phòng này.';
   }
 
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (!isLoading) titleRef.current?.focus();
+  }, [roomSlug, exhibitId, statusTitle, isLoading]);
+
   return (
     <Container size="lg" className={classes.page}>
       {statusTitle ? <>
-        <Title order={1} className={classes.title}>{statusTitle}</Title>
+        <Title ref={titleRef} tabIndex={-1} order={1} className={classes.title}>{statusTitle}</Title>
         <p role={isError ? 'alert' : isLoading ? 'status' : undefined} className={classes.body}>{statusMessage}</p>
         {isError && <Button mt="md" onClick={() => void (rooms.isError ? rooms.refetch() : room.refetch())}>Thử lại</Button>}
         {!isLoading && <p><Link to="/collection">Về bộ sưu tập</Link></p>}
@@ -54,7 +60,7 @@ export function ExhibitDetailPage() {
         <Link className={classes.backLink} to={`/collection?${new URLSearchParams({ room: detail.slug })}`}>Quay lại bộ sưu tập của phòng này</Link>
         <header className={classes.header}>
           <p className={classes.roomName}>{detail.name}</p>
-          <Title order={1} id="exhibit-title" className={classes.title}>{exhibit.name}</Title>
+          <Title ref={titleRef} tabIndex={-1} order={1} id="exhibit-title" className={classes.title}>{exhibit.name}</Title>
         </header>
         <div className={classes.content}>
           <ExhibitPreview shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />

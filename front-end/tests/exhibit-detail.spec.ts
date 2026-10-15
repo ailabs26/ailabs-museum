@@ -187,3 +187,92 @@ test('[D05] card detail URLs encode the room slug as a path segment', async ({ p
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(room.exhibits[0].name);
   await expect(page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true })).toHaveAttribute('href', `/collection?${new URLSearchParams({ room: slug })}`);
 });
+
+test('[D06] route changes focus the destination title and error recovery focuses the exhibit', async ({ page }) => {
+  await page.goto('/collection');
+  const first = roomA.exhibits[0];
+  const second = roomA.exhibits[1];
+  await page.getByRole('link', { name: `Xem chi tiết ${first.name}`, exact: true }).press('Enter');
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+  await page.evaluate((path) => {
+    history.pushState(null, '', path);
+    dispatchEvent(new PopStateEvent('popstate'));
+  }, `/collection/sculpture/exhibits/${second.id}`);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(second.name);
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+  await page.evaluate(() => {
+    history.pushState(null, '', '/collection/sculpture/exhibits/invalid');
+    dispatchEvent(new PopStateEvent('popstate'));
+  });
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Đường dẫn hiện vật không hợp lệ');
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+  let fail = true;
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route,
+    fail ? { success: false, data: null, message: 'Unavailable' } : envelope(roomA), fail ? 503 : 200));
+  await page.goto(`/collection/sculpture/exhibits/${first.id}`);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Không tải được nội dung');
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+  fail = false;
+  await page.getByRole('button', { name: 'Thử lại', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(first.name);
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+});
+
+test('[D06] background refresh does not steal focus from the back link', async ({ page }) => {
+  const item = roomA.exhibits[0];
+  await page.goto(`/collection/sculpture/exhibits/${item.id}`);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(item.name);
+  await page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true }).click();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  await page.route('**/api/rooms/sculpture', async (route) => {
+    await gate;
+    await fulfillMuseum(route, envelope({ ...roomA, exhibits: roomA.exhibits.map((exhibit) => ({ ...exhibit, description: 'Mô tả đã cập nhật' })) }));
+  });
+  await page.getByRole('button', { name: 'Làm mới', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText('Đang cập nhật hiện vật…');
+  // Navigate in the SPA so the same cache/request stays active.
+  await page.getByRole('link', { name: `Xem chi tiết ${item.name}`, exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+  const back = page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true });
+  await back.focus();
+  release();
+  await expect(page.getByText('Mô tả đã cập nhật', { exact: true })).toBeVisible();
+  await expect(back).toBeFocused();
+});
+
+test('[D06] complete detail remains readable without WebGL and reflows in both color schemes', async ({ page }) => {
+  test.setTimeout(60_000);
+  const item = { ...roomA.exhibits[0], name: '[Mẫu] Bình nước dã chiến', description: 'Câu chuyện tiếng Việt dài '.repeat(30),
+    transcript: 'Bản thuyết minh độc lập WebGL', hotspots: [
+      { id: '20000000-0000-4000-8000-000000000001', label: 'Nét khắc', body: 'Chi tiết vẫn đọc được', positionX: 0, positionY: 1, positionZ: 0, displayOrder: 0 },
+    ] };
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: [item] })));
+  await page.addInitScript(() => {
+    const getContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (type: string, ...args: unknown[]) {
+      if (type.startsWith('webgl') || type === 'experimental-webgl') return null;
+      return Reflect.apply(getContext, this, [type, ...args]);
+    } as typeof getContext;
+  });
+  const unwanted: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/components/MuseumScene') || request.url().includes('/media/')) unwanted.push(request.url());
+  });
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    for (const width of [320, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`/collection/sculpture/exhibits/${item.id}`);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(item.name);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveCSS('font-family', '"Times New Roman", serif');
+      await expect(page.getByRole('heading', { level: 2 })).toHaveText(['Câu chuyện hiện vật', 'Bản thuyết minh', 'Điểm chú ý']);
+      await expect(page.getByText(item.transcript, { exact: true })).toBeVisible();
+      await expect(page.getByText('Chi tiết vẫn đọc được', { exact: true })).toBeVisible();
+      await expect(page.getByText('Hình minh họa thay thế', { exact: true })).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await expect(page.locator('canvas')).toHaveCount(0);
+    }
+  }
+  expect(unwanted).toEqual([]);
+});

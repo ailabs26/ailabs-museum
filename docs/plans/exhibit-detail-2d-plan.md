@@ -136,8 +136,8 @@ await expect(page.locator('main b')).toHaveCount(0);
 
 ### Checkpoint B — Nội dung và trạng thái hoàn thiện
 
-- [ ] D02–D04/gates đạt; đúng identity/không HTML injection; chưa có card navigation/focus đầy đủ.
-- [ ] Có thể dừng để người dùng duyệt trước lượt C, theo phạm vi đã yêu cầu.
+- [x] D02–D04/gates đạt, identity/text an toàn.
+- [x] Người dùng yêu cầu toàn bộ tasks còn lại; tiếp tục lượt C.
 
 ## DETAIL-05 — Link thẻ và quay lại phòng
 
@@ -159,11 +159,11 @@ await expect(page.locator('main b')).toHaveCount(0);
 
 **Phụ thuộc:** 05. **Files:** page/CSS và tests D06. **Produces:** focus xác định không giành khi refetch, DOM độc lập renderer.
 
-- [ ] D06 tests: link Enter focus h1 khi data sẵn sàng; đổi URL focus đúng title; not-found/error có title nhận focus; refetch cùng trạng thái success giữ focus ở back link. Viết tests trước effect.
-- [ ] Thêm ref title `tabIndex={-1}` + effect dựa trên route identity và trạng thái sẵn sàng, không toàn DTO. Dùng ref nhớ lần focus của route/state để không gọi focus lại khi payload mới nhưng cùng trang/state. Không trap focus.
-- [ ] Chặn WebGL ở init script; direct URL và link flow vẫn text/preview/transcript/hotspots, không scene/Canvas hoặc storage. Heading h1=1, sections h2; không full WCAG claim.
-- [ ] Test tiếng Việt dài và reflow light/dark tại bốn widths. Basic CSS task 02 đã có, chỉ sửa gap/overflow/focus khi test chứng minh cần; nếu style đã đạt thì tests/evidence vẫn là deliverable, không đổi CSS cho đủ commit.
-- [ ] D06 + toàn bộ regressions liên quan/gates đạt; commit **`fix(detail): preserve accessible navigation without WebGL`**.
+- [x] D06 viết trước effect, test đầu RED h1 inactive; route/status/error/recovery/background focus GREEN.
+- [x] Title ref/tabindex và effect chỉ dựa roomSlug/exhibitId/statusTitle/isLoading; primitives đã tránh refocus khi DTO đổi, không cần ref nhớ bổ sung hoặc trap focus.
+- [x] WebGL blocked giữ rich text/preview, không scene/Canvas; heading phù hợp, không full WCAG claim.
+- [x] Bốn viewport light/dark, tiếng Việt dài đạt; chỉ thêm focus-visible CSS, không đổi bố cục không cần thiết.
+- [x] 50/50 regressions và gates đạt; commit task 06.
 
 ```powershell
 npm.cmd test -- exhibit-detail.spec.ts collection.spec.ts home-featured.spec.ts exhibit-preview.spec.ts museum-interaction.spec.ts

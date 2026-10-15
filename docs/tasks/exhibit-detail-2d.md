@@ -87,9 +87,9 @@ Mỗi task có một commit sau khi kiểm chứng đạt. Code, tests và cập
 ### DETAIL-06 — Khả năng tiếp cận và không WebGL
 
 **Nghiệm thu:**
-- [ ] Khi route/nội dung đích sẵn sàng, focus title phù hợp; background refetch không giành focus người dùng.
-- [ ] WebGL bị chặn vẫn đọc tên/mô tả/transcript/hotspots/preview; không tải scene hoặc Canvas.
-- [ ] Heading/bàn phím/reflow 320/768/1024/1440 light/dark và tiếng Việt không mất nội dung.
+- [x] Route/nội dung đích focus title; refetch background không giành focus.
+- [x] WebGL blocked vẫn đọc đầy đủ text/preview; không scene/Canvas.
+- [x] Heading/bàn phím/reflow bốn viewport light/dark và text tiếng Việt đạt qua assertions.
 
 **Kiểm tra:** Playwright D06 + tất cả tests detail và regression liên quan + frontend typecheck/lint/build. Không tuyên bố audit WCAG đầy đủ chỉ từ các assertions này.
 
@@ -146,3 +146,5 @@ Chưa đổi SceneFallback/panel tour, chưa tự chuyển route khi WebGL lỗi
 - DETAIL-04: test đầu RED thiếu nút Thử lại; sau bổ sung retry/back-to-collection ở trạng thái lỗi/not-found, 9/9 D02–04 đạt (16.2s), typecheck/lint/build đạt. Guards nền đã có từ D02; tests mới chứng minh loading/cross-room/stale refresh/obsolete request, không tuyên bố mỗi test đều RED.
 - DETAIL-04 commit `6812ae2`.
 - DETAIL-05: test đầu RED thiếu link card; sau sửa detail/collection/home regressions 28/28 đạt (52.7s), typecheck/lint/build đạt. Test slug Unicode và ký tự query được encode path, back link dùng URLSearchParams. Chưa focus effect; task 06 tiếp theo.
+- DETAIL-05 commit `4df2274`.
+- DETAIL-06: test focus đầu RED h1 inactive, sau bổ sung focus effect theo route/status primitive và tabindex, 50/50 regressions detail/collection/home/preview/tour interaction đạt (2.6m). Test cached background refresh giữ focus back link, error→success nhận focus, WebGL blocked giữ rich text, reflow 320/768/1024/1440 light/dark đạt. Typecheck/lint/build đạt; main 830.44 kB, scene 851.97 kB và lazy chart 543.94 kB, cảnh báo >500 kB còn tồn tại.
