@@ -13,5 +13,6 @@ export interface MuseumDisplay {
   position: [number, number, number];
   shape: 'sphere' | 'torus' | 'cone' | 'cube' | 'icosahedron' | 'cylinder';
   color: string;
+  model?: import('@/validations/roomSchema').PublicModel | null;
   isOutsideRoom?: boolean;
 }

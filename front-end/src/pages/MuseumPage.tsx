@@ -75,14 +75,14 @@ export function MuseumPage() {
           </Alert> : null}
         {detail && <>
         {detail.description && <Text>{detail.description}</Text>}
-        <Text size="sm" c="dimmed">{displays.length} hiện vật · Hình khối thay thế cho ảnh hoặc mô hình chưa khả dụng</Text>
+        <Text size="sm" c="dimmed">{displays.length} hiện vật · {displays.some(display => display.model) ? 'Mở phòng 3D để khám phá mô hình hiện vật' : 'Hình khối thay thế cho ảnh hoặc mô hình chưa khả dụng'}</Text>
         {room.isFetching && <Text role="status">Đang cập nhật phòng…</Text>}
         <div className={`${classes.stage} ${selectedDisplay ? classes.stageDetails : ''}`}>
         <div className={classes.viewport}>
           {isSceneOpen ? (
             <ErrorBoundary key={detail.id} fallback={<SceneFallback />}>
               <Suspense fallback={<MuseumLoading text="Đang mở phòng 3D…" />}>
-                <LazyMuseumScene displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay} />
+                <LazyMuseumScene displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay} onClear={handleCloseDetail} />
               </Suspense>
             </ErrorBoundary>
           ) : (

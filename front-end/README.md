@@ -1,5 +1,22 @@
 # Aura Museum Web
 
+## Phòng GLB từ Storage private
+
+Sau khi backend được cấu hình Storage và seed bộ model đã xác minh (xem `../back-end/README.md`), chạy `npm run dev` và mở `http://localhost:5173/tour.html?room=bo-suu-tap-glb`. Nhấn **Mở phòng 3D**; chờ **Đã tải 5/5 mô hình 3D**, click/tap vào hiện vật hoặc chọn từ danh mục. Dùng **Tập trung hiện vật**, **Góc nhìn ban đầu**, chuột/chụm ngón và các phím theo hướng dẫn dưới scene.
+
+Frontend chỉ tải binary qua NestJS bằng http-client. GLTFLoader nằm trong lazy scene chunk; không có Supabase SDK/key/signed URL ở frontend. Chỉ tải model của phòng đang mở, tối đa hai lượt đồng thời, cache chung theo checksum trong vòng đời phòng. Đóng 3D/chuyển phòng hủy tải và dispose tài nguyên; mở lại sẽ tải mới để không giữ vô hạn model cũ. Model lỗi có retry và trạng thái DOM; model lỗi/hình khối thay thế không được tính vào số model tải thành công.
+
+Kiểm thử bản build với backend thật:
+
+```powershell
+npm.cmd run build
+$env:MUSEUM_LIVE_TEST = '1'
+$env:PLAYWRIGHT_PREVIEW = '1'
+npm.cmd test -- museum-glb-live.spec.ts --output=tmp/glb-live
+```
+
+`museum-glb-live` không intercept API/Storage: kiểm tra năm GLB thật, geometry/PBR, ground/center/dimensions, nested picking, focus toàn bounds, touch/mobile, reset, idle frames và hai vòng resource cleanup. Hai ca delayed-load trong `museum-glb.spec.ts` dùng bản GLB thật đã tải ở `back-end/tmp/glb-assets/`; nếu chưa có file, chúng skip rõ ràng. Các ca permission/corruption/queue/background luôn chạy bằng fixture lỗi, không được tính làm bằng chứng năm model thật. Báo cáo và giới hạn tại `../docs/museum-tour-progress.md`.
+
 Frontend của bảo tàng WebXR, dùng React, TypeScript và Vite. Three.js được tích hợp qua React Three Fiber để scene 3D có thể chia thành component React; Three.js trực tiếp chỉ dùng ở nơi cần API renderer, loader hoặc WebXR cấp thấp.
 
 ## Trạng thái hiện tại

@@ -14,6 +14,8 @@
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/config/data-source.ts",
     "seed": "ts-node src/database/seeds/seed.ts",
     "seed:demo": "ts-node src/database/seeds/seed-demo-content.ts",
+    "seed:models": "ts-node src/database/seeds/seed-storage-models.ts",
+    "test:models": "node -r reflect-metadata -r ts-node/register --test src/modules/exhibits/tests/public-models.spec.ts src/database/seeds/seed-storage-models.spec.ts",
     "test:seed": "node -r reflect-metadata -r ts-node/register --test src/database/seeds/seed-demo-content.spec.ts",
     "test": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/*.spec.ts src/modules/stats/tests/*.spec.ts src/modules/moderation/tests/*.spec.ts src/modules/content-reports/tests/*.spec.ts src/modules/audit/tests/*.spec.ts",
     "test:rooms": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/*.spec.ts",

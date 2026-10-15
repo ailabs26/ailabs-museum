@@ -1,10 +1,11 @@
 ﻿import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Spherical, Vector3 } from 'three';
+import { PerspectiveCamera, Spherical, Vector3 } from 'three';
+import type { ModelFocusBounds } from '@/helpers/museumCamera';
 import { useReducedMotion } from '@mantine/hooks';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
-import { CAMERA_MAX_POLAR, CAMERA_MIN_POLAR, getExhibitView, getOrbitLimit, INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET } from '@/helpers/museumCamera';
+import { CAMERA_MAX_POLAR, CAMERA_MIN_POLAR, constrainCameraToRoom, getExhibitView, getOrbitLimit, INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET } from '@/helpers/museumCamera';
 
 export type CameraAction = 'left' | 'right' | 'up' | 'down' | 'in' | 'out' | 'reset' | 'focus';
 export interface CameraCommand { action: CameraAction; sequence: number }
@@ -15,13 +16,18 @@ const KEY_ACTIONS: Record<string, CameraAction> = {
 };
 interface FocusTransition {
   fromPosition: Vector3; fromTarget: Vector3; toPosition: Vector3; toTarget: Vector3; startedAt: number;
+  isModel: boolean;
 }
 
-export function MuseumControls({ command, selectedDisplay }: { command: CameraCommand | null; selectedDisplay?: MuseumDisplay }) {
-  const { camera, gl, invalidate } = useThree();
+export function MuseumControls({ command, selectedDisplay, focusBounds }: { command: CameraCommand | null; selectedDisplay?: MuseumDisplay; focusBounds?: ModelFocusBounds }) {
+  const { camera, gl, invalidate, size } = useThree();
   const prefersReducedMotion = useReducedMotion();
   const motionRef = useRef(prefersReducedMotion);
   const selectedRef = useRef(selectedDisplay);
+  const boundsRef = useRef(focusBounds);
+  const autoFocusRef = useRef({ id: selectedDisplay?.id, allowed: true });
+  const aspectRef = useRef(size.width / size.height);
+  aspectRef.current = size.width / size.height;
   const transitionRef = useRef<FocusTransition | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const actionRef = useRef<((action: CameraAction) => void) | null>(null);
@@ -38,9 +44,15 @@ export function MuseumControls({ command, selectedDisplay }: { command: CameraCo
     controls.dampingFactor = 0.12;
     controls.rotateSpeed = 0.55;
     controls.zoomSpeed = 0.65;
-    const handleChange = () => invalidate();
+    const lastSafePosition = camera.position.clone();
+    const handleChange = () => {
+      constrainCameraToRoom(camera.position, lastSafePosition);
+      camera.lookAt(controls.target);
+      invalidate();
+    };
     const handleStart = () => {
       transitionRef.current = null;
+      autoFocusRef.current.allowed = false;
       controls.enableDamping = !motionRef.current;
     };
     controls.addEventListener('change', handleChange);
@@ -55,21 +67,24 @@ export function MuseumControls({ command, selectedDisplay }: { command: CameraCo
 
     const handleAction = (action: CameraAction) => {
       transitionRef.current = null;
+      autoFocusRef.current.allowed = action === 'focus';
       // Flush inertia before precise keyboard/reset/focus endpoints.
       controls.enableDamping = false;
       controls.update();
       if (action === 'focus') {
-        const view = selectedRef.current && getExhibitView(selectedRef.current);
+        const view = selectedRef.current && getExhibitView(selectedRef.current, boundsRef.current, aspectRef.current,
+          camera instanceof PerspectiveCamera ? camera.fov : 60);
         if (!view) { controls.enableDamping = !motionRef.current; return; }
-        controls.minDistance = 2.2;
+        controls.minDistance = boundsRef.current ? Math.max(0.5, boundsRef.current.radius * 1.2) : 2.2;
+        controls.maxDistance = boundsRef.current ? 12 : getOrbitLimit(view.target);
         if (motionRef.current) {
           controls.target.fromArray(view.target);
-          controls.maxDistance = getOrbitLimit(view.target);
           camera.position.fromArray(view.position);
         } else {
           transitionRef.current = {
             fromPosition: camera.position.clone(), fromTarget: controls.target.clone(),
             toPosition: new Vector3(...view.position), toTarget: new Vector3(...view.target), startedAt: performance.now(),
+            isModel: !!boundsRef.current,
           };
           invalidate();
           return;
@@ -127,7 +142,7 @@ export function MuseumControls({ command, selectedDisplay }: { command: CameraCo
     if (prefersReducedMotion && transition) {
       camera.position.copy(transition.toPosition);
       controls.target.copy(transition.toTarget);
-      controls.maxDistance = getOrbitLimit(controls.target.toArray());
+      controls.maxDistance = transition.isModel ? 12 : getOrbitLimit(controls.target.toArray());
       transitionRef.current = null;
       controls.update();
       invalidate();
@@ -137,12 +152,14 @@ export function MuseumControls({ command, selectedDisplay }: { command: CameraCo
 
   useEffect(() => {
     selectedRef.current = selectedDisplay;
-    if (selectedDisplay) actionRef.current?.('focus');
+    boundsRef.current = focusBounds;
+    if (autoFocusRef.current.id !== selectedDisplay?.id) autoFocusRef.current = { id: selectedDisplay?.id, allowed: true };
+    if (selectedDisplay && autoFocusRef.current.allowed) actionRef.current?.('focus');
     else {
       transitionRef.current = null;
       if (controlsRef.current) controlsRef.current.enableDamping = !motionRef.current;
     }
-  }, [selectedDisplay]);
+  }, [selectedDisplay, focusBounds, size.width, size.height]);
   useEffect(() => { if (command) actionRef.current?.(command.action); }, [command]);
 
   useFrame(() => {
@@ -154,7 +171,7 @@ export function MuseumControls({ command, selectedDisplay }: { command: CameraCo
       const eased = progress * progress * (3 - 2 * progress);
       camera.position.lerpVectors(transition.fromPosition, transition.toPosition, eased);
       controls.target.lerpVectors(transition.fromTarget, transition.toTarget, eased);
-      controls.maxDistance = getOrbitLimit(controls.target.toArray());
+      controls.maxDistance = transition.isModel ? 12 : getOrbitLimit(controls.target.toArray());
       controls.update();
       if (progress < 1) invalidate();
       else { transitionRef.current = null; controls.enableDamping = !motionRef.current; }

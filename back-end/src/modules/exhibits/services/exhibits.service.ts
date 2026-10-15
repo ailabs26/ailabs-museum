@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { Paginated } from '../../../common/types/paginated.type';
-import { Room, RoomStatus } from '../../rooms/entities/room.entity';
+import { RoomStatus } from '../../rooms/entities/room.entity';
 import { RoomsRepository } from '../../rooms/repositories/rooms.repository';
 import { CreateExhibitDto } from '../dto/create-exhibit.dto';
 import { ListExhibitsQueryDto } from '../dto/list-exhibits-query.dto';
@@ -22,6 +22,7 @@ import {
   RevisionState,
 } from '../entities/exhibit-revision.entity';
 import { Hotspot } from '../entities/hotspot.entity';
+import { toPublicModel } from '../../media/dto/public-model.dto';
 import { ExhibitsRepository } from '../repositories/exhibits.repository';
 
 @Injectable()
@@ -39,8 +40,9 @@ export class ExhibitsService {
   /**
    * Danh sách phòng trưng bày công khai đang hoạt động (active).
    */
-  async roomsList(): Promise<Room[]> {
-    return this.roomsRepo.findPublicRooms();
+  async roomsList() {
+    const rooms = await this.roomsRepo.findPublicRooms();
+    return rooms.map(({ id, slug, name, description }) => ({ id, slug, name, description }));
   }
 
   /**
@@ -62,11 +64,9 @@ export class ExhibitsService {
         }
 
         const content = revision.content as unknown as Record<string, unknown> | undefined;
-        const position = (content?.position as { x: number; y: number; z: number }) ?? {
-          x: 0,
-          y: 0,
-          z: 0,
-        };
+        const candidate = content?.position as { x?: unknown; y?: unknown; z?: unknown } | undefined;
+        const position = candidate && [candidate.x, candidate.y, candidate.z].every(value => typeof value === 'number' && Number.isFinite(value))
+          ? candidate as { x: number; y: number; z: number } : undefined;
 
         return [
           {
@@ -75,9 +75,9 @@ export class ExhibitsService {
             displayOrder: exhibit.displayOrder,
             name: content?.name,
             description: content?.description,
-            positionX: position.x,
-            positionY: position.y,
-            positionZ: position.z,
+            positionX: position?.x,
+            positionY: position?.y,
+            positionZ: position?.z,
             transcript: content?.transcript ?? null,
             placeholderShape: content?.placeholderShape ?? 'box',
             placeholderColor: content?.placeholderColor ?? '#8b7355',
@@ -92,7 +92,7 @@ export class ExhibitsService {
                 displayOrder: hotspot.displayOrder,
               }))
               .sort((left, right) => left.displayOrder - right.displayOrder),
-            model: null,
+            model: toPublicModel(revision.modelMedia, room.slug, exhibit.id),
             image: null,
             audio: null,
           },
