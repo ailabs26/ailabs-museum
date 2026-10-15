@@ -2,7 +2,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CommonModule } from './common/common.module';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
-import { appConfig, databaseConfig, jwtConfig, validateEnvironment } from './config';
+import { appConfig, databaseConfig, jwtConfig, mediaConfig, validateEnvironment } from './config';
 import { DatabaseModule } from './database/database.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -20,7 +20,7 @@ import { UsersModule } from './modules/users/users.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, jwtConfig],
+      load: [appConfig, databaseConfig, jwtConfig, mediaConfig],
       validate: validateEnvironment,
     }),
     DatabaseModule,
