@@ -1,4 +1,156 @@
-# Museum tour — four-day delivery
+# Museum tour — dynamic GLB delivery
+
+## Current GLB implementation (2026-10-15–16)
+
+Branch `feat/dynamic-glb-tour` started from fresh `origin/dev` commit `9c14548` after fetch. One PR targets `dev`; no merge, force push, migration or policy change. Earlier Day 1–4 sections below are historical and their null-model statements no longer describe the current tour.
+
+### Data and asset pipeline
+
+`GET /api/rooms/:slug` → approved published revision and ready/undeleted model media → stable NestJS model descriptor → Zod (including room/exhibit/checksum binding) → room display mapping → explicitly opened lazy R3F scene → room-owned two-slot load queue → binary HTTP client → GLB header/self-contained-resource validation + SHA-256 → GLTFLoader → world-bounds normalization → nested-mesh picking → shared selection/details → bounds-based camera focus.
+
+`GET /api/rooms/:slug/exhibits/:id/model?version=<sha256>` rechecks publication on every request. The backend alone uses the configured server key to sign the private object for 120 seconds and stream it with backpressure, size checks, a 90-second upstream deadline and disconnect cancellation. StreamableFile bypasses the JSON success envelope; controlled errors retain the normal envelope. Redirects/unexpected signed paths are refused, upstream error bodies are redacted, and neither credentials nor signed URLs reach the frontend. A retry signs again, so expiring URLs are not stored as model identities. The binary endpoint uses `private, no-store`; loaded GLBs are cached only inside the open room.
+
+Actual project `ailabs-museum` (`bnghfbntegbziyljzazu`), bucket `museum-assets`, **private**. All five GLB 2 files were downloaded completely and hashed. All images/buffers are embedded; no Draco, Meshopt or KTX2 is required. The stake uses `KHR_materials_specular`, supported by the installed GLTFLoader. Keep original PBR materials and textures. Supabase changelog/access-control documentation checked; the announced November 10 CBC TLS cipher retirement needs no legacy cipher workaround in the current Node runtime.
+
+### Verified artifact mapping
+
+All artifacts below belong to room `bo-suu-tap-glb` (`74b719c0-4828-49d1-bb7b-000000000000`). Media is ready and published revisions approved. Paths are relative to `museum-assets`; full SHA-256 values and media/revision IDs are in `back-end/src/database/seeds/storage-model-content.ts`.
+
+| Artifact ID | Name from supplied file | Storage path | Bytes | Actual browser load / normalize / pick / focus |
+| --- | --- | --- | ---: | --- |
+| `74b719c0-4828-49d1-bb7b-000000200001` | Trống đồng Đông Sơn | `models/trong_dong_dong_son.glb` | 16529444 | PASS |
+| `74b719c0-4828-49d1-bb7b-000000200002` | Bình rót men ngọc | `models/binh_rot_men_ngoc.glb` | 22282920 | PASS |
+| `74b719c0-4828-49d1-bb7b-000000200003` | Cọc gỗ Bạch Đằng | `models/coc_go_bach_dang.glb` | 3562172 | PASS |
+| `74b719c0-4828-49d1-bb7b-000000200004` | Tượng thần Shiva Chăm Pa | `models/tuong_than_shiva_champa.glb` | 28901752 | PASS |
+| `74b719c0-4828-49d1-bb7b-000000200005` | Tượng vua Chăm Pa | `models/tuong_vua_champa.glb` | 18291744 | PASS |
+
+The additive transaction seed created a dedicated room + five media + five exhibit/revision pairs; original five sample exhibits remain. A second real run returned `{ created: 0, skipped: 5 }`. Concurrent seeds serialize through an advisory lock; collisions roll back; later edits, hidden/deleted state and publication pointers are preserved. Two task-owned statue placements were moved from X ±2.5 to ±4.3 after inspecting the first overview, with exact ID/media/original-position predicates; no other content was updated. Names are derived from filenames, with explicit unverified historical information in the descriptions. This is a verified technical model mapping, not a curatorial authentication or licensing claim.
+
+### Normalization and layout
+
+Update the complete source world transform hierarchy, then use precise Box3 geometry bounds. Reject empty/nonfinite/zero/unsafe bounds. For dimensions `(w,h,d)`, auto scale uniformly by `min(1.8/(w||1), 2.2/(h||1), 1.8/(d||1))`, within `1e-6..1e6`; a zero extent uses a unit denominator to avoid division by zero. The pure normalizer supports a verified uniform display scale; none of these assets has verified real-size metadata, so all five use auto-fit. Their heights remain proportional to their aspect ratios; no nonuniform geometry deformation occurs.
+
+Hierarchy: exhibit placement → plinth-top wrapper at Y=1.14 → uniform scale → offset `(-centerX,-minY,-centerZ)` → original cloned GLB hierarchy. Original geometry/materials are shared. This centers X/Z and grounds the lowest vertex on the plinth. Focus center is the normalized center transformed by exhibit placement; radius is half the normalized bounding diagonal. API positions are preserved; missing positions use a deterministic grid with 3.6 m spacing for models, derived from the 1.8 m model envelope and 3 m pedestal footprint. Displays outside room capacity remain explicitly accessible in the DOM instead of overlapping or being silently moved.
+
+### Interaction and camera
+
+R3F mesh events bubble to the exhibit root ID through all GLB child meshes. Hover/selection changes the lightweight pedestal ring/plaque, leaving PBR materials untouched. Plaque priority, drag rejection, touch, keyboard catalogue/details and context-loss fallback remain. A background click clears selection; background drags do not. Missing/loading/error markers are never counted as loaded GLBs. DOM progress reports successful models and exposes per-model retry.
+
+Keep OrbitControls, mouse/touch/keyboard bindings, reduced-motion support, bounded zoom/polar angles and demand rendering. Focus derives distance from normalized radius, FOV and viewport aspect, uses a room-facing direction and a 550 ms smooth transition. User input cancels it. Manual navigation/reset also revokes deferred auto-focus for the current selection, so completing a download does not take control back; another selection or explicit focus permits focus again. Wall-crossing orbit steps restore the last valid camera position, avoiding a fight between wall clamping and minimum zoom radius. Camera animation only invalidates while moving; subscriptions and controls are disposed.
+
+### Ownership and performance
+
+- No GLB downloads before opening 3D, and no downloads of other rooms. Two concurrent fetch/parse jobs, deduplicated by checksum; refreshing identical descriptors or selecting another model does not reload the assets.
+- Hierarchies/bones are cloned for instances; shared geometry/material/texture resources have a single room owner. Instance skeletons release their own GPU textures. Late parse success after cancellation is disposed immediately; teardown aborts work and disposes room resources after primitives detach. Late progress cannot replace ready state and lose disposal ownership.
+- Keep DPR 1–1.5, one WebGL context, static lights/contact patches, no shadow maps or postprocessing. Entire original textures are retained; aggregate GLB transfer is 89,568,032 bytes (~85.4 MiB), so this is not a low-bandwidth asset set.
+
+### Verification, review and limitations
+
+- Baseline before implementation: frontend 13 unit tests and backend 485 exhibit tests passed. Required typecheck/lint/build passed for both applications during implementation. Current frontend unit suite: **23 passed**. Backend: **471 general tests**, **492 exhibit tests**, **9 Storage/seed tests** passed (Storage tests overlap with the exhibit count).
+- Actual signed backend streaming verified, then live browser acceptance loaded exactly five successful GLB requests, inspected all five normalized world bounds, selected each via scene coordinates and focused each correctly; repeated selection made no further model requests. Screenshots of overview and all five focused assets inspected. Final expanded mobile/full-bounds/resource-cycle gate is recorded below after it completes.
+- Review independently found two Important camera issues (wall/render loop and deferred focus overriding manual intent). Both reproduced and fixed with installed-OrbitControls and delayed real-GLB browser regressions. The reviewer found no public binary authorization bypass or shared-resource ownership defect. No Critical findings or deferred Minor findings.
+- First broad browser run: 105 passed, eight live tests skipped, one 5-second scene readiness timeout. Trace showed the local lazy scene chunk alone taking 3.5 seconds; the readiness gate now uses the existing project's 15-second convention. Delayed drag comparison initially used exact coordinates; real OrbitControls retains ~4 mm sub-EPS inertia after idle. The test now waits for idle and allows 1 cm, while the original refocus bug moved ~2 m and still fails that gate.
+- Existing public database tables have RLS disabled; Storage bucket/object RLS is enabled with no public policies found. This pre-existing security risk is not remediated here. Database owner must review grants/Data API exposure and RLS separately before production. No schema, RLS or bucket visibility changes were made.
+- No physical phone/GPU/VR QA, no claim of absolute JS heap leak freedom, and no model re-authoring/compression/texture downsampling. Unsupported compression/external glTF resources and unsafe model sizes fail per artifact. Artifacts with no verified real dimensions use display normalization. Physical room capacity is finite. The custom NestJS JWT/RBAC flow is unchanged.
+
+### Run and inspect
+
+Configure backend `.env` server Storage values as described in `back-end/README.md`; run `npm.cmd run seed:models` only when setting up the supplied verified assets. Start backend with `npm.cmd run dev` (or build + `start:prod`) and frontend with `npm.cmd run dev`. Open `http://localhost:5173/tour.html?room=bo-suu-tap-glb`, click **Mở phòng 3D**, wait for **Đã tải 5/5 mô hình 3D**, then select/focus/reset or use the accessible catalogue.
+
+For actual-backend acceptance from `front-end/`: set `MUSEUM_LIVE_TEST=1`, `PLAYWRIGHT_PREVIEW=1`, then `npm.cmd test -- museum-glb-live.spec.ts --output=tmp/glb-live-final`. Screenshots/profile JSON are ignored local evidence, not committed binaries or signed URLs.
+
+### Final gate results (2026-10-16)
+
+| Gate | Result |
+| --- | --- |
+| Frontend typecheck / lint / production build | PASS; existing Vite >500 kB chunk warning remains |
+| Frontend Vitest | 23 passed |
+| Full production browser regression | 108 passed, 8 explicitly opt-in live tests skipped; `tmp/glb-full-final.log` |
+| Actual Supabase five-model + mobile/touch/full-bounds + two resource cycles | 2 passed (1.3m), no API/model interceptions; `tmp/glb-live-final/` |
+| Dev / React StrictMode cancellation + delayed real-GLB drag/reset | 3 passed (14.3s); `tmp/glb-strict-verified/` |
+| Backend typecheck / lint / production build | PASS |
+| Backend general / exhibit / focused Storage+seed suites | 471 / 492 / 9 passed; overlapping focused tests are not added to the exhibit total |
+| Seed idempotence on real DB | created 0, skipped 5 on second run |
+| Source/independent review | 2 Important camera findings fixed; no outstanding Critical/Important findings identified |
+
+Cold dev initially reached the queue assertion before Vite finished opening the scene (zero requests rather than two); the test now awaits scene readiness before measuring the loading queue. The rerun passed all three StrictMode checks. No product change or hidden retry was used to mask that test precondition.
+
+Edge 155 / SwiftShader, desktop 1280×720, actual supplied assets: click-to-all-five-ready **17,731 ms** in this single run. Exactly **five** successful model downloads; no extra requests from five selections. Settled overview: **79 draw calls, 829,343 submitted triangles, 75 uploaded geometries, 19 uploaded textures, 55 materials, 146 scene objects**. Two complete mount/stop cycles both reported **75 geometries / 19 textures / 79 calls / 829,343 triangles**; one live context while open and zero after each stop. Demand frames stopped when idle. Independent vertex traversal confirmed all five lowest vertices at Y≈1.14, centered X/Z at published positions; every selected world-bound box fit the viewport with margin, including mobile, and actual touch picked the statue.
+
+Scripted keyboard-input frame cadence was **2.48 frames/s** on SwiftShader. This includes browser automation pacing and software rendering, is not a hardware GPU benchmark, and does not establish smooth performance on phones or physical GPUs. The original high-resolution assets remain heavy; GPU/device profiling and asset optimization may be needed for low-end devices. We did not measure physical GPU RAM or establish absolute JS heap leak freedom. Resource counts prove bounded uploads for the tested cycles only.
+
+Final main JS **831.88 kB** minified / **254.62 kB** gzip; lazy scene **909.29 kB** / **246.23 kB** gzip. GLTFLoader stays out of initial startup; no new runtime dependency was installed. Overview, all five focused screenshots and full mobile screenshot were visually inspected. Shader/model appearance and labels remain intact; camera orbit can change the default room-facing focus angle.
+
+### Changed files
+
+```text
+back-end/.env.example
+back-end/README.md
+back-end/package.json
+back-end/src/common/interceptors/response.interceptor.ts
+back-end/src/database/seeds/seed-storage-models.spec.ts
+back-end/src/database/seeds/seed-storage-models.ts
+back-end/src/database/seeds/storage-model-content.ts
+back-end/src/modules/exhibits/controllers/exhibits.controller.ts
+back-end/src/modules/exhibits/exhibits.module.ts
+back-end/src/modules/exhibits/services/exhibits.service.ts
+back-end/src/modules/exhibits/services/public-models.service.ts
+back-end/src/modules/exhibits/tests/public-models.spec.ts
+back-end/src/modules/media/dto/public-model.dto.ts
+back-end/src/modules/media/services/model-storage.service.ts
+docs/museum-tour-progress.md
+docs/plans/dynamic-glb-tour-plan.md
+front-end/README.md
+front-end/src/components/MuseumScene.tsx
+front-end/src/components/museum/ArtifactModel.tsx
+front-end/src/components/museum/ExhibitDetailPanel.tsx
+front-end/src/components/museum/ExhibitionDisplay.tsx
+front-end/src/components/museum/ModelLoadingStatus.tsx
+front-end/src/components/museum/MuseumCatalogue.tsx
+front-end/src/components/museum/MuseumControls.tsx
+front-end/src/helpers/glbAsset.test.ts
+front-end/src/helpers/glbAsset.ts
+front-end/src/helpers/isDisplayOutsideRoom.ts
+front-end/src/helpers/loadMuseumModel.ts
+front-end/src/helpers/mapRoomDisplays.ts
+front-end/src/helpers/modelCamera.test.ts
+front-end/src/helpers/modelNormalization.test.ts
+front-end/src/helpers/modelNormalization.ts
+front-end/src/helpers/museumCamera.ts
+front-end/src/helpers/roomModelAssets.test.ts
+front-end/src/helpers/roomModelAssets.ts
+front-end/src/hooks/useRoomModels.ts
+front-end/src/interfaces/museumScene.ts
+front-end/src/pages/MuseumPage.tsx
+front-end/src/services/museum.service.ts
+front-end/src/validations/roomSchema.ts
+front-end/tests/fixtures/museumProbe.ts
+front-end/tests/museum-glb-live.spec.ts
+front-end/tests/museum-glb.spec.ts
+front-end/tests/museum-tour.spec.ts
+front-end/tests/room-contract.spec.ts
+front-end/vitest.config.ts
+```
+
+### GLB commit ledger
+
+| SHA | Message |
+| --- | --- |
+| `3c16612` | docs(tour): analyze storage and plan dynamic GLB pipeline |
+| `3f1d429` | feat(tour): serve published GLBs through private Storage authorization |
+| `5ee3b7d` | feat(tour): validate GLBs and normalize nested model bounds |
+| `0c24aad` | feat(tour): queue and cache GLBs for the active room lifecycle |
+| `4ccd399` | feat(tour): render GLBs with artifact picking and bounds-based camera focus |
+| `a7294c2` | feat(tour): seed verified Storage models into a dedicated gallery |
+| `331023b` | fix(tour): harden model contracts and preserve loading ownership |
+| `45b4379` | fix(tour): preserve camera intent and settle wall-constrained orbits |
+| `ce75224` | test(tour): verify five private GLBs and live resource lifecycle |
+
+Final verification/runbook and publication commits follow this table; obtain the complete current ledger with `git log --reverse --oneline 9c14548..HEAD` or the PR commits tab. Fewer than the aspirational 50 commits is intentional: no empty commits or artificial splitting.
+
+---
+
+# Historical four-day delivery
 
 ACTIVE_DAY = 4. Current branch: `feat/museum-performance-day4`; base `777b583` from origin/dev. Day 3 PR #43 was subsequently merged at `cf32dd4`. Day 4 stops at one PR into dev, without merge or history rewriting. Earlier sections below are historical records, including their then-current statuses.
 

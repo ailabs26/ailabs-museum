@@ -48,6 +48,7 @@ test('switching rooms while two GLBs are loading cancels the queue and keeps the
   await page.route('**/api/rooms/sculpture/exhibits/*/model?*', () => { requests++; });
   await page.goto('/tour.html');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
   await expect.poll(() => requests).toBe(2);
   await page.getByLabel('Chọn phòng trưng bày').selectOption('empty');
   await expect(page.getByText('Phòng này chưa có hiện vật được xuất bản.')).toBeVisible();
