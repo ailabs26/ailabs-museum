@@ -141,9 +141,30 @@ export class UpdateExhibitDto {
   @IsUUID(undefined, { message: 'imageId phải là UUID hợp lệ' })
   imageId?: string | null;
 
+  /** @deprecated Dùng `audioViId`. Giữ để tương thích client cũ (nghĩa: audio tiếng Việt). */
   @IsOptional()
   @IsUUID(undefined, { message: 'audioId phải là UUID hợp lệ' })
   audioId?: string | null;
+
+  /** Audio guide tiếng Việt (MP3). `null` = tháo. */
+  @IsOptional()
+  @IsUUID(undefined, { message: 'audioViId phải là UUID hợp lệ' })
+  audioViId?: string | null;
+
+  /** Audio guide tiếng Anh (MP3). `null` = tháo. */
+  @IsOptional()
+  @IsUUID(undefined, { message: 'audioEnId phải là UUID hợp lệ' })
+  audioEnId?: string | null;
+
+  /** Phụ đề WebVTT tiếng Việt. `null` = tháo. */
+  @IsOptional()
+  @IsUUID(undefined, { message: 'subtitleViId phải là UUID hợp lệ' })
+  subtitleViId?: string | null;
+
+  /** Phụ đề WebVTT tiếng Anh. `null` = tháo. */
+  @IsOptional()
+  @IsUUID(undefined, { message: 'subtitleEnId phải là UUID hợp lệ' })
+  subtitleEnId?: string | null;
 
   @IsOptional()
   @Transform(({ value }: { value: unknown }) => {
