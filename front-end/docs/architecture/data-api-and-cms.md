@@ -66,7 +66,7 @@ Chỉ hiện thành công sau xác nhận BE. Disable submit khi đang gửi đ�
 
 ## Media pipeline
 
-Luồng task 8–10: **chọn file → kiểm tra nhanh FE → upload NestJS → BE kiểm tra/xử lý/quarantine → trả metadata hợp lệ → chọn media ID → Save Draft → Preview → Publish**. Nếu xử lý bất đồng bộ, contract phải có trạng thái và cách kiểm tra kết quả; FE không gắn file còn quarantine/rejected vào nội dung public.
+Luồng task 8–10: **chọn file → kiểm tra nhanh FE → upload NestJS → BE kiểm tra/xử lý/quarantine → trả metadata hợp lệ → chọn media ID → Save Draft → Preview → Publish**. Task 9 đã chốt contract: gắn qua `PATCH /api/admin/exhibits/:id` (`modelId`, `imageId`, `audioViId`, `audioEnId`, `subtitleViId`, `subtitleEnId`; `null` = tháo). Preview dùng `media.<slot>.url` đã ký (TTL 15 phút) trong response admin — dùng nguyên URL, không tự ghép; hết hạn thì tải lại response. Public nhận `model/image/audio.{vi,en}` với URL tuyệt đối, không tự thay audio ngôn ngữ khác (AC-08). Nếu xử lý bất đồng bộ, contract phải có trạng thái và cách kiểm tra kết quả; FE không gắn file còn quarantine/rejected vào nội dung public.
 
 | Loại | Giới hạn baseline SRS 5.2, 1 MB = 1.000.000 byte |
 | --- | --- |
