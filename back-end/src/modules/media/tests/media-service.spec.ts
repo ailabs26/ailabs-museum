@@ -40,6 +40,8 @@ import {
   FailingStorage,
   FakeMediaRepository,
   FakeTransactionManager,
+  signedUrlPattern,
+  testMediaUrlService,
 } from './media-test-doubles';
 
 // ------------------------------------------------------------------ helpers
@@ -112,18 +114,19 @@ describe('MediaService', () => {
       storage,
       inspection,
       tx as unknown as TransactionManager,
+      testMediaUrlService(),
     );
   });
 
   // ---------------------------------------------------------------- upload hợp lệ
   describe('upload — file hợp lệ → READY', () => {
     const cases: Array<[string, () => Buffer, MediaKind, string, RegExp]> = [
-      ['GLB', () => buildGlb(), MediaKind.MODEL, 'model/gltf-binary', /^\/media\/uploads\/models\/.+\.glb$/],
-      ['PNG', () => buildPng(), MediaKind.IMAGE, 'image/png', /^\/media\/uploads\/images\/.+\.png$/],
-      ['JPEG', () => buildJpeg(), MediaKind.IMAGE, 'image/jpeg', /^\/media\/uploads\/images\/.+\.jpg$/],
-      ['WebP', () => buildWebp(), MediaKind.IMAGE, 'image/webp', /^\/media\/uploads\/images\/.+\.webp$/],
-      ['MP3', () => buildMp3({ withId3: true }), MediaKind.AUDIO, 'audio/mpeg', /^\/media\/uploads\/audio\/.+\.mp3$/],
-      ['WebVTT', () => buildVtt(), MediaKind.SUBTITLE, 'text/vtt', /^\/media\/uploads\/subtitles\/.+\.vtt$/],
+      ['GLB', () => buildGlb(), MediaKind.MODEL, 'model/gltf-binary', signedUrlPattern('models', 'glb')],
+      ['PNG', () => buildPng(), MediaKind.IMAGE, 'image/png', signedUrlPattern('images', 'png')],
+      ['JPEG', () => buildJpeg(), MediaKind.IMAGE, 'image/jpeg', signedUrlPattern('images', 'jpg')],
+      ['WebP', () => buildWebp(), MediaKind.IMAGE, 'image/webp', signedUrlPattern('images', 'webp')],
+      ['MP3', () => buildMp3({ withId3: true }), MediaKind.AUDIO, 'audio/mpeg', signedUrlPattern('audio', 'mp3')],
+      ['WebVTT', () => buildVtt(), MediaKind.SUBTITLE, 'text/vtt', signedUrlPattern('subtitles', 'vtt')],
     ];
     for (const [label, build, kind, mime, urlPattern] of cases) {
       it(`${label}: kind=${kind}, mime=${mime}, file lưu đúng nội dung`, async () => {
@@ -361,7 +364,7 @@ describe('MediaService', () => {
       const query = Object.assign(new ListMediaQueryDto(), { kind: MediaKind.IMAGE });
       const result = await service.list(query);
       assert.equal(result.total, 1);
-      assert.match(String(result.items[0].url), /^\/media\/uploads\/images\//);
+      assert.match(String(result.items[0].url), signedUrlPattern('images', 'png'));
       assert.equal(repo.listQueries[0], query);
       assert.equal('storageKey' in result.items[0], false);
     });

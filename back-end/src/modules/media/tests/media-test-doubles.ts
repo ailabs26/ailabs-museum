@@ -8,6 +8,7 @@ import { MediaFormatSpec } from '../inspection/media-formats';
 import { MediaUsage } from '../repositories/media.repository';
 import { MediaInspectionService } from '../services/media-inspection.service';
 import { MediaStorageService } from '../services/media-storage.service';
+import { MediaUrlOptions, MediaUrlService } from '../services/media-url.service';
 
 /** Test double dùng chung cho test media. Không phải *.spec.ts nên node --test không chạy trực tiếp. */
 
@@ -97,4 +98,20 @@ export class FailingStorage extends MediaStorageService {
     if (this.removeError) throw this.removeError;
     return super.remove(key);
   }
+}
+
+/** Cấu hình URL media dùng chung cho test (base URL cố định để assert dễ). */
+export const TEST_MEDIA_URL_OPTIONS: MediaUrlOptions = {
+  publicBaseUrl: 'http://api.test',
+  signingSecret: 'test-media-url-signing-secret-0123456789',
+  signedUrlTtlSeconds: 900,
+};
+
+export function testMediaUrlService(): MediaUrlService {
+  return new MediaUrlService(TEST_MEDIA_URL_OPTIONS);
+}
+
+/** Regex URL đã ký cho file `uploads/<dir>/<uuid>.<ext>`. */
+export function signedUrlPattern(dir: string, extension: string): RegExp {
+  return new RegExp(`^http://api\\.test/media/uploads/${dir}/[0-9a-f-]{36}\\.${extension}\\?exp=\\d+&sig=[0-9a-f]{64}$`);
 }

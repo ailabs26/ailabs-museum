@@ -7,7 +7,7 @@ import { MediaFormatSpec } from '../inspection/media-formats';
 export const MEDIA_STORAGE_ROOTS = Symbol('MEDIA_STORAGE_ROOTS');
 
 export interface MediaStorageRoots {
-  /** Thư mục được phục vụ tĩnh tại `PUBLIC_MEDIA_URL_PREFIX`. */
+  /** Thư mục chứa file được phân phối (có kiểm soát) qua `MediaDeliveryController`. */
   publicRoot: string;
   /** Thư mục cách ly — KHÔNG được phục vụ ra ngoài. */
   quarantineRoot: string;
@@ -18,6 +18,7 @@ export const DEFAULT_MEDIA_STORAGE_ROOTS: MediaStorageRoots = {
   quarantineRoot: join(process.cwd(), 'storage', 'quarantine'),
 };
 
+/** Tiền tố URL phân phối file media (ngoài prefix /api). */
 export const PUBLIC_MEDIA_URL_PREFIX = '/media';
 
 const QUARANTINE_PREFIX = 'quarantine/';
@@ -67,9 +68,17 @@ export class MediaStorageService {
     }
   }
 
-  /** URL công khai của file; `null` với file trong vùng cách ly. */
-  toPublicUrl(key: string): string | null {
-    return this.isQuarantineKey(key) ? null : `${PUBLIC_MEDIA_URL_PREFIX}/${key}`;
+  /**
+   * Đường dẫn tuyệt đối của file trong vùng public để phân phối; `null` nếu key thuộc vùng
+   * cách ly hoặc không hợp lệ (không bao giờ trả đường dẫn ra ngoài thư mục public).
+   */
+  publicFilePath(key: string): string | null {
+    if (this.isQuarantineKey(key)) return null;
+    try {
+      return this.resolvePath(key);
+    } catch {
+      return null;
+    }
   }
 
   private resolvePath(key: string): string {

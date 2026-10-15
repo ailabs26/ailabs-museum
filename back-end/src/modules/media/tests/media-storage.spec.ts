@@ -9,7 +9,6 @@ import { MEDIA_FORMAT_SPECS, MediaFormat } from '../inspection/media-formats';
 import {
   DEFAULT_MEDIA_STORAGE_ROOTS,
   MediaStorageService,
-  PUBLIC_MEDIA_URL_PREFIX,
 } from '../services/media-storage.service';
 
 const UUID_PATTERN = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
@@ -121,14 +120,20 @@ describe('MediaStorageService', () => {
     });
   });
 
-  describe('toPublicUrl', () => {
-    it('file public → /media/<key>', () => {
-      assert.equal(storage.toPublicUrl('uploads/images/a.png'), `${PUBLIC_MEDIA_URL_PREFIX}/uploads/images/a.png`);
+  describe('publicFilePath', () => {
+    it('file public → đường dẫn tuyệt đối nằm trong publicRoot', () => {
+      assert.equal(storage.publicFilePath('uploads/images/a.png'), resolve(publicRoot, 'uploads/images/a.png'));
     });
 
-    it('file quarantine → null (không lộ ra ngoài)', () => {
-      assert.equal(storage.toPublicUrl('quarantine/a.bin'), null);
+    it('file quarantine → null (không bao giờ phân phối)', () => {
+      assert.equal(storage.publicFilePath('quarantine/a.bin'), null);
     });
+
+    for (const key of ['../secret.png', 'uploads/../../etc/passwd', '/etc/passwd', 'uploads\\a.png', 'UPLOADS/A.PNG', '']) {
+      it(`key không an toàn ${JSON.stringify(key)} → null, không ném lỗi`, () => {
+        assert.equal(storage.publicFilePath(key), null);
+      });
+    }
 
     it('isQuarantineKey phân biệt đúng', () => {
       assert.equal(storage.isQuarantineKey('quarantine/a.bin'), true);

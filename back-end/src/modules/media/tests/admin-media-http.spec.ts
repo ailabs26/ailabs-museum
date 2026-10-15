@@ -42,7 +42,8 @@ import {
   buildVtt,
   buildWebp,
 } from './media-test-files';
-import { FakeMediaRepository, FakeTransactionManager } from './media-test-doubles';
+import { FakeMediaRepository, FakeTransactionManager, TEST_MEDIA_URL_OPTIONS } from './media-test-doubles';
+import { MEDIA_URL_OPTIONS, MediaUrlService } from '../services/media-url.service';
 
 const USER: AuthUser = {
   id: 'b0000000-0000-4000-8000-000000000002',
@@ -87,6 +88,8 @@ describe('Admin Media HTTP (multipart thật → pipeline thật)', () => {
         MediaService,
         MediaInspectionService,
         MediaStorageService,
+        MediaUrlService,
+        { provide: MEDIA_URL_OPTIONS, useValue: TEST_MEDIA_URL_OPTIONS },
         { provide: MEDIA_STORAGE_ROOTS, useValue: { publicRoot: join(workDir, 'public'), quarantineRoot: join(workDir, 'quarantine') } },
         { provide: MediaRepository, useValue: repo },
         { provide: TransactionManager, useValue: new FakeTransactionManager() },
