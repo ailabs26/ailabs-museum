@@ -55,10 +55,26 @@ export function ExhibitDetailPage() {
         </header>
         <div className={classes.content}>
           <ExhibitPreview shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
-          <section aria-labelledby="exhibit-description-title">
-            <Title order={2} id="exhibit-description-title" className={classes.sectionTitle}>Câu chuyện hiện vật</Title>
-            <p className={classes.body}>{exhibit.description || 'Chưa có mô tả.'}</p>
-          </section>
+          <div className={classes.sections}>
+            <section aria-labelledby="exhibit-description-title">
+              <Title order={2} id="exhibit-description-title" className={classes.sectionTitle}>Câu chuyện hiện vật</Title>
+              <p className={classes.body}>{exhibit.description || 'Chưa có mô tả.'}</p>
+            </section>
+            {exhibit.transcript && <section aria-labelledby="exhibit-transcript-title">
+              <Title order={2} id="exhibit-transcript-title" className={classes.sectionTitle}>Bản thuyết minh</Title>
+              <p className={classes.body}>{exhibit.transcript}</p>
+            </section>}
+            {exhibit.hotspots.length > 0 && <section aria-labelledby="exhibit-hotspots-title">
+              <Title order={2} id="exhibit-hotspots-title" className={classes.sectionTitle}>Điểm chú ý</Title>
+              <ul className={classes.hotspots} aria-label="Điểm chú ý của hiện vật">
+                {[...exhibit.hotspots].sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
+                  .map((hotspot) => <li key={hotspot.id}>
+                    <p className={classes.hotspotLabel}>{hotspot.label}</p>
+                    <p className={classes.body}>{hotspot.body}</p>
+                  </li>)}
+              </ul>
+            </section>}
+          </div>
         </div>
       </article> : null}
     </Container>

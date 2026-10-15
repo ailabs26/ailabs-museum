@@ -47,3 +47,32 @@ test('[D02] basic guards do not substitute another room or render a missing exhi
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(/không hợp lệ|Không tìm thấy/);
   }
 });
+
+test('[D03] published transcript and ordered hotspots render as plain text', async ({ page }) => {
+  const item = roomA.exhibits[0];
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({
+    ...roomA, exhibits: [{ ...item, description: '<b>Câu chuyện</b>', transcript: '<b>Thuyết minh</b>', hotspots: [
+      { id: '20000000-0000-4000-8000-000000000002', label: 'Điểm sau', body: '<img src=x onerror=alert(1)>', positionX: 0, positionY: 1, positionZ: 0, displayOrder: 1 },
+      { id: '20000000-0000-4000-8000-000000000001', label: 'Điểm trước', body: 'Nội dung tiếng Việt', positionX: 0, positionY: 1, positionZ: 0, displayOrder: 1 },
+    ] }],
+  })));
+  await page.goto(`/collection/sculpture/exhibits/${item.id}`);
+  await expect(page.getByRole('heading', { name: 'Bản thuyết minh', level: 2 })).toBeVisible();
+  await expect(page.getByText('<b>Thuyết minh</b>', { exact: true })).toBeVisible();
+  await expect(page.getByText('<b>Câu chuyện</b>', { exact: true })).toBeVisible();
+  const hotspots = page.getByRole('list', { name: 'Điểm chú ý của hiện vật' }).getByRole('listitem');
+  await expect(hotspots).toHaveText(['Điểm trướcNội dung tiếng Việt', 'Điểm sau<img src=x onerror=alert(1)>']);
+  await expect(page.locator('main b, main img')).toHaveCount(0);
+});
+
+test('[D03] absent or empty optional content does not create empty sections', async ({ page }) => {
+  const item = roomA.exhibits[0];
+  for (const transcript of [null, '']) {
+    await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: [{ ...item, transcript, hotspots: [] }] })));
+    await page.goto(`/collection/sculpture/exhibits/${item.id}`);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(item.name);
+    await expect(page.getByRole('heading', { name: 'Bản thuyết minh' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Điểm chú ý' })).toHaveCount(0);
+    await page.unroute('**/api/rooms/sculpture');
+  }
+});

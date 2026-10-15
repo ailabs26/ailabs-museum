@@ -6,6 +6,10 @@
 .preview { min-height: 240px; border: 1px solid var(--public-border); }
 .sectionTitle { font-size: 22px; line-height: 1.4; overflow-wrap: anywhere; }
 .body { color: var(--public-muted); line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; margin-block: 16px 0; }
+.sections { display: grid; gap: 32px; min-width: 0; }
+.hotspots { padding-left: 24px; margin: 20px 0 0; }
+.hotspots li + li { margin-top: 24px; }
+.hotspotLabel { font-weight: 600; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 @media (max-width: 48em) {
   .page { padding-block: 32px 48px; }

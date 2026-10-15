@@ -1,7 +1,7 @@
 # Task T-DETAIL-2D: Trang chi tiết hiện vật 2D — lượt 1
 
 **Nhánh:** `feat/exhibit-detail-2d`, từ `origin/dev` tại `41c846e`.
-**Trạng thái:** DETAIL-01/02 đã triển khai và kiểm chứng; dừng ở checkpoint A, chờ người dùng xem trang cơ bản trước task tiếp theo.
+**Trạng thái:** Người dùng cho phép triển khai toàn bộ DETAIL-03–07; đang thực hiện từng task/commit trên nhánh hiện tại.
 **Plan:** [exhibit-detail-2d-plan.md](../plans/exhibit-detail-2d-plan.md).
 
 ## Mục tiêu
@@ -60,9 +60,9 @@ Mỗi task có một commit sau khi kiểm chứng đạt. Code, tests và cập
 ### DETAIL-03 — Nội dung bổ sung
 
 **Nghiệm thu:**
-- [ ] Transcript và hotspot label/body xuất hiện nếu API có; hotspot sắp xếp displayOrder rồi ID.
-- [ ] Không hiện section tùy chọn rỗng; mô tả rỗng có thông báo phù hợp.
-- [ ] Text HTML-like được hiển thị nguyên văn, không chèn HTML.
+- [x] Transcript/hotspot xuất hiện nếu có, sort displayOrder/ID.
+- [x] Sections tùy chọn không rỗng, mô tả thiếu có thông báo.
+- [x] HTML-like text render nguyên văn, không chèn HTML.
 
 **Kiểm tra:** Playwright D02/D03 + frontend typecheck/lint/build; không sửa dữ liệu thật để thử nội dung.
 
@@ -137,3 +137,8 @@ Chưa đổi SceneFallback/panel tour, chưa tự chuyển route khi WebGL lỗi
 - Probe API thật chỉ đọc tìm được URL mẫu dưới đây; chưa chạy browser live test hoặc review trực quan trong DETAIL-02. Full live evidence thuộc DETAIL-07.
 - URL để người dùng xem: `http://localhost:5173/collection/phong-lich-su-quan-su-viet-nam/exhibits/c8a43701-5f82-4cb1-9d60-a82170000001`.
 - Chưa transcript/hotspots, retry hoàn chỉnh, card/back links, focus management hoặc luồng tour fallback. Không sửa backend/database/hook/schema. Chưa push/PR; dừng checkpoint A.
+
+## Ledger các task tiếp theo
+
+- DETAIL-02 commit `dcfb99d`.
+- DETAIL-03: tests viết trước, test rich content fail vì thiếu heading Bản thuyết minh; sau sửa 5/5 D02/D03 đạt (13.1s), typecheck/lint/build đạt. Sort hotspot đồng displayOrder theo ID; text HTML-like không tạo thẻ HTML. Người dùng đã yêu cầu tiếp tục tất cả 03–07; không mở rộng sang fallback tour.

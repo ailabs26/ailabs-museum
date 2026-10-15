@@ -104,7 +104,7 @@ const exhibit = detail && isValidId ? detail.exhibits.find((item) => item.id ===
 
 **Phụ thuộc:** 02. **Files:** page, CSS nếu cần, tests D03. **Produces:** nội dung bổ sung theo DTO, không section rỗng/HTML injection.
 
-- [ ] Fixture D03 có transcript `<b>Thuyết minh</b>` và hai hotspot đảo thứ tự. Test mong text literal, thứ tự label/body đúng; fixture null/empty thì không có heading section tùy chọn.
+- [x] D03 fixture transcript/hotspots và empty optional sections được kiểm chứng.
 
 ```ts
 await expect(page.getByRole('heading', { name: 'Bản thuyết minh', level: 2 })).toBeVisible();
@@ -112,9 +112,9 @@ await expect(page.getByText('<b>Thuyết minh</b>', { exact: true })).toBeVisibl
 await expect(page.locator('main b')).toHaveCount(0);
 ```
 
-- [ ] Run `npm.cmd test -- exhibit-detail.spec.ts --grep D03`, quan sát RED missing section trước bổ sung.
-- [ ] Conditional render transcript/hotspots; sort bản sao hotspots bằng displayOrder/ID. Dùng section h2 + list label/body text, không `dangerouslySetInnerHTML`. Không map qua model 3D hoặc tạo shared panel modes.
-- [ ] D02/D03 GREEN + gates. Commit **`feat(detail): show published transcript and hotspots`**.
+- [x] D03 test đầu RED thiếu heading; 5/5 D02/D03 GREEN sau sửa.
+- [x] Sections h2/text, sort bản sao; không HTML injection hoặc mapper 3D.
+- [x] Gates đạt, commit D03 theo kế hoạch. Người dùng đã cho phép toàn bộ 03–07.
 
 ## DETAIL-04 — Lỗi/thử lại và danh tính route
 
