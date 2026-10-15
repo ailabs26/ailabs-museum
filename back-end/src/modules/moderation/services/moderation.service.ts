@@ -24,6 +24,8 @@ import {
   UserBriefDto,
 } from '../dto/revision-response.dto';
 import { ModerationRepository } from '../repositories/moderation.repository';
+import { REVISION_MEDIA_SLOTS } from '../../exhibits/constants/revision-media-slots';
+import { RevisionPublishGate } from '../../exhibits/services/revision-publish.gate';
 
 /** Các field nội dung được so sánh khi diff cũ/mới. */
 const DIFF_FIELDS: { field: string; label: string }[] = [
@@ -44,6 +46,7 @@ export class ModerationService {
   constructor(
     private readonly repo: ModerationRepository,
     private readonly tx: TransactionManager,
+    private readonly publishGate: RevisionPublishGate,
   ) {}
 
   /** Hàng chờ kiểm duyệt (revision in_review). */
@@ -79,6 +82,12 @@ export class ModerationService {
       const newValue = this.pickField(newContent, field);
       return { field, label, oldValue, newValue, changed: oldValue !== newValue };
     });
+    // Media là cột của revision (không nằm trong content): so sánh theo id media từng slot.
+    for (const slot of REVISION_MEDIA_SLOTS) {
+      const oldValue = published ? (published[slot.column] ?? null) : null;
+      const newValue = revision[slot.column] ?? null;
+      fields.push({ field: `media.${slot.key}`, label: slot.label, oldValue, newValue, changed: oldValue !== newValue });
+    }
 
     return {
       revisionId: revision.id,
@@ -105,6 +114,10 @@ export class ModerationService {
     }
 
     await this.tx.run(async (m) => {
+      // §5.1/5.2: kiểm lại toàn bộ nội dung + media trước khi công khai. Media được khóa
+      // FOR SHARE tới hết transaction → không thể bị xóa giữa lúc kiểm tra và lúc publish.
+      await this.publishGate.assertPublishable(revision, m);
+
       const res = await m.update(
         Exhibit,
         { id: revision.exhibitId, version: dto.version },
