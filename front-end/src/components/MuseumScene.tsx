@@ -1,8 +1,7 @@
 import { Canvas, events } from '@react-three/fiber';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button, Group } from '@mantine/core';
 import { ACESFilmicToneMapping } from 'three';
-import { SceneFallback } from '@/components/museum/SceneFallback';
 import { MuseumRoom } from '@/components/museum/MuseumRoom';
 import { ExhibitionDisplay } from '@/components/museum/ExhibitionDisplay';
 import { MuseumLighting } from '@/components/museum/MuseumLighting';
@@ -22,8 +21,9 @@ const createMuseumEvents: typeof events = (store) => ({
     Number(right.object.userData.museumLabel === true) - Number(left.object.userData.museumLabel === true) || left.distance - right.distance),
 });
 
-export function MuseumScene({ displays, selectedId, onSelect, onClear }: {
+export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback }: {
   displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void; onClear: () => void;
+  fallback: ReactNode;
 }) {
   const [command, setCommand] = useState<CameraCommand | null>(null);
   const [isContextLost, setIsContextLost] = useState(false);
@@ -38,7 +38,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear }: {
   } : undefined, [selectedDisplay, selectedAsset]);
   const handleContextLost = useCallback(() => setIsContextLost(true), []);
   const handleCommand = (action: CameraAction) => setCommand((previous) => ({ action, sequence: (previous?.sequence ?? 0) + 1 }));
-  if (isContextLost) return <SceneFallback />;
+  if (isContextLost) return fallback;
   return (
     <div className={classes.scene}>
     <div className={classes.canvasFrame}
@@ -52,7 +52,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear }: {
       dpr={[1, 1.5]}
       camera={{ position: INITIAL_CAMERA_POSITION, fov: 60, near: 0.1, far: 40 }}
       gl={{ antialias: true, alpha: false, powerPreference: 'low-power', toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1 }}
-      fallback={<SceneFallback />}
+      fallback={fallback}
       onPointerMissed={(event) => { if (event.type === 'click' && !pointerRef.current.dragged) onClear(); }}
       onCreated={({ camera }) => camera.lookAt(...INITIAL_CAMERA_TARGET)}
     >

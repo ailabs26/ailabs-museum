@@ -43,9 +43,9 @@ Phụ thuộc 01. Files: MuseumPage, ExhibitDetailPanel, test `tour-2d-fallback.
 
 ### FALLBACK-03 — Fallback có ngữ cảnh ở ba nhánh lỗi
 Phụ thuộc 02. Files: MuseumPage, MuseumScene, SceneFallback, test.
-- [ ] Cả lỗi WebGL/context/chunk có link đúng detail hoặc collection cùng phòng, không redirect tự động.
-- [ ] Danh mục và nội dung DOM tại chỗ vẫn đọc/chọn được; fallback link cập nhật khi chọn/đóng hiện vật sau lỗi.
-- [ ] Link dùng dữ liệu đã validate của phòng hiện tại; API lỗi không dùng lựa chọn cũ.
+- [x] WebGL/context/chunk có link ngữ cảnh, không tự redirect.
+- [x] DOM catalogue và chọn/đóng sau lỗi cập nhật fallback link.
+- [x] URL từ detail/selection đã validate; fallback chỉ render trong nhánh detail hợp lệ.
 
 **Kiểm tra:** tests `[F03]` ba loại lỗi và no-selection/selection; gates. Commit `feat(fallback): preserve room and exhibit context on renderer errors`.
 
@@ -75,3 +75,5 @@ Không backend/database/dependency, media upload/ảnh/audio, tự retry rendere
 
 - FALLBACK-01 commit `5ad4c75`, sau người dùng duyệt.
 - F02 RED thiếu link trước sửa, GREEN sau thêm prop panel/link. Regression detail/interaction/F02: 29 đạt, 1 kiểm tra GPU settle thất bại timing; chạy riêng lại test settle đạt (19.2s), chưa sửa scene. Typecheck/lint/build đạt; bundle >500 kB warning còn tồn tại. Không tuyên bố full-suite sạch từ lần chạy có flaky failure; kiểm tra tích hợp tiếp ở F05.
+- F02 commit `d4c8ba9`.
+- F03 test đầu RED thiếu link fallback; sau sửa 7/7 F02/F03 đạt (37.2s) cho 3 loại lỗi với/có không selection, link đổi theo DOM selection sau lỗi. Typecheck/lint/build đạt; chưa cleanup owner sớm/focus collection, tiếp tục F04.
