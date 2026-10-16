@@ -81,12 +81,13 @@ Phase 5: key hợp lệ → media row → (được published revision tham chi�
 
 ## Definition of Done
 
-- [ ] Tất cả điều kiện nghiệm thu ở Phase 7 (§ Acceptance) đạt, có bằng chứng lệnh + output.
-- [ ] `npm run typecheck && npm run lint && npm run build && npm test` (BE) xanh; `npm run test:exhibits`, `test:media`, `test:moderation` xanh.
-- [ ] Integration PostgreSQL 16 (Docker) xanh; migration up → `migration:generate` không drift → down → up.
-- [ ] FE `npm run typecheck && npm run lint && npm run build` + vitest schema xanh sau khi cập nhật `roomSchema.ts`.
-- [ ] Không còn `express.static` cho uploads; quét `grep -rn "expressStatic" back-end/src` chỉ còn (hoặc không còn) chỗ đã duyệt.
-- [ ] PR vào `dev`, commit nhỏ theo phase, báo Quang review diff ở moderation.
+- [x] Tất cả điều kiện nghiệm thu ở Phase 7 (§ Acceptance) đạt, có bằng chứng lệnh + output.
+- [x] `npm run typecheck && npm run lint && npm run build && npm test` (BE) xanh; `npm run test:exhibits`, `test:media`, `test:moderation` xanh.
+- [x] Integration PostgreSQL 16 (Docker) xanh; migration up → `migration:generate` không drift → down → up.
+- [x] FE `npm run typecheck && npm run lint && npm run build` + vitest schema xanh sau khi cập nhật `roomSchema.ts`.
+- [x] Không còn `express.static` cho uploads; quét `grep -rn "expressStatic" back-end/src` chỉ còn (hoặc không còn) chỗ đã duyệt.
+- [x] Đã hoàn thiện 9 commit nguyên tử, sẵn sàng tạo PR vào `dev` sau khi Task 8 được tích hợp.
+
 
 ## Câu hỏi chưa giải quyết
 

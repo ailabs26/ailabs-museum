@@ -41,9 +41,17 @@ Nhánh: `feat/cms-media-attach` (tách từ `feat/cms-media-upload`, rebase lên
 - E2E bản build + PostgreSQL + JWT thật: 50/50 (upload → gắn → preview URL ký → submit thiếu rights/phụ đề 422 → sửa → publish → public API → file 200/206/304/HEAD/CORS → Draft v2 không đổi public → xóa media đang public 409 → hide → file 404).
 - FE `typecheck`, `lint`, `build`, `test:unit` đạt; contract test với response thật từ E2E đạt.
 
+## Cập nhật ngày 16/10/2026
+
+- **Hoàn tất kiểm thử hồi quy & tích hợp:** 1.537/1.537 tests backend đạt 100% (gồm `media`, `exhibits`, `rooms`, `moderation`, `audit`, `auth`).
+- **Bảo đảm chất lượng mã nguồn:** Toàn bộ quality gates trên cả hai phân hệ `back-end` và `front-end` (`npm run typecheck`, `npm run lint`) đều đạt, không có lỗi.
+- **Sẵn sàng bàn giao Task 9:** Nhánh `feat/cms-media-attach` gồm 9 commit nguyên tử tuân thủ Conventional Commits, đáp ứng đầy đủ BR-21, BR-22, AC-32, AC-36, AC-51.
+- **Lộ trình kế tiếp (Task 10):** Sau khi PR Task 8 & 9 được review và merge vào `dev`, sẽ khởi tạo nhánh `feat/cms-preview-integration` để tích hợp hoàn chỉnh luồng upload -> gắn media -> metadata quyền tác giả -> preview 2D/3D trên CMS.
+
 ## Giới hạn & việc sau
 
 - Media của Draft xóa được (hành vi Task 8 — chỉ chặn published/in_review); Submit sau đó báo `media_not_found`.
 - Bản dịch song ngữ trong DTO `transcript` (BilingualDescriptionDto) giới hạn 10.000 ký tự/ngôn ngữ, chặt hơn SRS (20.000) — thuộc DTO Task 7.
 - UI gắn media + Preview 3D (Task 10), player audio/phụ đề (Task 18), GLB loader (Task 12) chưa dùng dữ liệu mới.
 - Trước khi deploy: `npm run migration:run` và đặt 3 biến môi trường mới.
+
