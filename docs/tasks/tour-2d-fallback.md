@@ -59,8 +59,8 @@ Phụ thuộc 03. Files: MuseumPage, SceneFallback/MuseumScene, CollectionPage n
 
 ### FALLBACK-05 — Tích hợp và API thật
 Phụ thuộc 04. Files: live test, README, task/plan.
-- [ ] Live read-only chuyển từ tour sang detail/collection đúng nội dung API; mô phỏng lỗi WebGL bằng browser, không mock response hoặc ghi DB.
-- [ ] Regression detail/tour/fallback/GLB và unit tests/gates đạt; ghi riêng tests bỏ qua/giới hạn visual.
+- [x] Live read-only chuyển từ tour sang detail đúng nội dung API; F02/F03/F04 mô phỏng lỗi renderer bằng fixture, không mock live response hoặc ghi DB. Empty data có annotation.
+- [x] Regression detail/tour/fallback/GLB và unit tests/gates đạt; 2 GLB asset tests skip vì file thật không có.
 - [ ] Người dùng duyệt UI và mô tả PR trước push/tạo PR.
 
 **Kiểm tra:** `tour-2d-fallback-live.spec.ts` với `MUSEUM_LIVE_TEST=1`; commit `test(fallback): verify renderer failure transitions and live content`.
@@ -79,3 +79,6 @@ Không backend/database/dependency, media upload/ảnh/audio, tự retry rendere
 - F03 test đầu RED thiếu link fallback; sau sửa 7/7 F02/F03 đạt (37.2s) cho 3 loại lỗi với/có không selection, link đổi theo DOM selection sau lỗi. Typecheck/lint/build đạt; chưa cleanup owner sớm/focus collection, tiếp tục F04.
 - F03 commit `c34f620`.
 - F04 tests 15 pass/2 skip (GLB thật thiếu file theo điều kiện). R3F `Canvas.fallback` được xử lý inert vì luôn mount trong canvas khi renderer khỏe; fallback thực sự dùng ở ErrorBoundary/context state. Typecheck/lint/build đạt; commit F04 đang chờ ghi.
+- F04 commit `5d0c0a3`.
+- F05 live test đã thêm; chạy với `MUSEUM_LIVE_TEST=1` trước commit bàn giao để kiểm chứng tour panel → detail 2D bằng dữ liệu thật.
+- F05 live test 1/1 đạt (12.9s), không interception/DB write; API thật có public room/exhibit và link panel mở đúng detail 2D. Unit tests/gates đã đạt ở các task trước; chưa chạy full-suite sau F05 vì chỉ thêm live test/docs, không đổi runtime.

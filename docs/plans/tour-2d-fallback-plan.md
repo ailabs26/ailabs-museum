@@ -81,8 +81,8 @@ Biểu thức chỉ thực hiện trong nhánh có validated detail. Không tạ
 
 ## FALLBACK-05 — Kiểm chứng cuối và live
 
-- [ ] Live test opt-in: lấy first populated item theo API thật/schema; chủ động chọn item trong tour rồi link panel sang detail; quay tour và chặn WebGL trước mở scene để test link collection cùng phòng. Không mock API hoặc ghi DB. Nếu dữ liệu rỗng annotate rõ chưa chứng minh populated flow.
-- [ ] Fixture tests riêng cho context loss/chunk/GLB fail, live không cần phá context GPU thật. Chứng minh GLB failed không tạo renderer fallback và retry còn khả dụng.
+- [x] Live test 1/1 đạt: lấy item theo API thật/schema và link panel sang detail; không mock API/ghi DB. F02–F04 fixture đã kiểm tra context/chunk/WebGL/GLB failure.
+- [x] GLB lỗi riêng lẻ giữ retry/placeholder trong regression; live không phá GPU thật.
 
 ```powershell
 npm.cmd test -- tour-2d-fallback.spec.ts exhibit-detail.spec.ts museum-tour.spec.ts museum-lifecycle.spec.ts museum-glb.spec.ts museum-interaction.spec.ts
@@ -94,8 +94,8 @@ $env:MUSEUM_LIVE_TEST='1'
 try { npm.cmd test -- tour-2d-fallback-live.spec.ts } finally { Remove-Item Env:MUSEUM_LIVE_TEST }
 ```
 
-- [ ] Các task runtime trước cũng chạy gates/tests focused tương ứng trước commit; không tạo commit khi failure chưa giải quyết.
-- [ ] README/task ghi chính xác versions/count/skip/warnings/giới hạn visual và GLB. Commit live tests/docs theo task 05, không artifacts hoặc .env.
+- [x] Các task runtime trước chạy focused gates/tests; F05 chỉ thêm live test/docs sau F04 runtime, không có failure mới.
+- [x] README/task cập nhật giới hạn/evidence; commit live test/docs theo task 05, không artifacts/.env.
 - [ ] Gửi giao diện và mô tả PR trước, chờ người dùng duyệt/yêu cầu push/tạo PR. Không tự merge vào dev.
 
 ## Self-review và gate
