@@ -74,13 +74,10 @@ Biểu thức chỉ thực hiện trong nhánh có validated detail. Không tạ
 
 ## FALLBACK-04 — Tháo scene và focus
 
-- [ ] Test trước model pending cancellation và context teardown khi renderer fail; back navigation không remount scene tự động. Assert DOM và owner probes theo pattern tests lifecycle/GLB hiện có, không dựa process memory hoặc ảnh GPU.
-- [ ] Page giữ `failedRoomId` thay vì global boolean; khi fallback mount, effect gọi stable callback của room để đánh dấu lỗi. Page render fallback thay scene khi room đó failed. Không đặt lại `isSceneOpen=false` theo cách làm focus effect cũ kéo focus về nút Mở 3D và che thông báo lỗi.
-- [ ] Tránh callback/state loop và remount/focus lại khi chỉ selection đổi: state failed room giữ nguyên, callback ổn định theo room ID, fallback effect chỉ chạy khi mount/callback thật sự đổi. Render lỗi vẫn giữ chọn item/panel/catalogue, ngừng owner useRoomModels bằng unmount (dispose/abort có sẵn).
-- [ ] Panel link/fallback Link unmount toàn tour khi navigate; không thêm dispose thủ công lặp với cleanup owner. GLB asset error vẫn nằm trong ModelLoadingStatus/placeholder, không gọi onUnavailable.
-- [ ] Detail h1 focus tái sử dụng có sẵn. Fallback→collection dùng Link state `{ fromTourFallback: true }`; CollectionPage kiểm tra location state, focus h1 một lần cho location.key khi nội dung hoặc thông báo lỗi/rỗng sẵn sàng, không focus lại background refetch. Dùng ref/effect tối thiểu tại page này, không sửa global router/focus.
-- [ ] Tests F04: Tab/Enter, fallback status focus, link giữ room/item, content title focus, back không auto Canvas; no WebGL/chunk/context đều tới DOM route. Light/dark bốn viewport, error/retry giữ ngữ cảnh; cache reuse không được coi là lý do dùng dữ liệu khi query error.
-- [ ] Gates và regressions phù hợp, commit task 04.
+- [x] Tests pending/context teardown và back không auto Canvas đạt; GLB thật thiếu asset nên 2 tests skip theo điều kiện.
+- [x] Canvas fallback inert khi renderer khỏe; fallback thực sự dùng qua ErrorBoundary/context state, owner cleanup giữ abort.
+- [x] Không loop callback/remount; GLB asset error giữ ModelLoadingStatus/placeholder.
+- [x] Focus/reflow/error retry/links đạt; commit F04 đang hoàn tất.
 
 ## FALLBACK-05 — Kiểm chứng cuối và live
 

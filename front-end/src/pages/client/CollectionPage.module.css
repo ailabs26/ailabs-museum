@@ -2,6 +2,7 @@
 .intro { max-width: 640px; margin-bottom: 40px; }
 .eyebrow { color: var(--public-accent); font-size: 12px; letter-spacing: 0.14em; font-weight: 600; text-transform: uppercase; margin: 0 0 16px; }
 .title { font-family: 'Times New Roman', serif; font-weight: 400; font-size: clamp(2.5rem, 5vw, 3.75rem); line-height: 1.15; }
+.title:focus-visible { outline: 3px solid var(--public-accent); outline-offset: 4px; }
 .description, .roomDescription { color: var(--public-muted); line-height: 1.8; }
 .description { margin: 20px 0 0; }
 .toolbar { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; padding-bottom: 32px; margin-bottom: 32px; border-bottom: 1px solid var(--public-border); }

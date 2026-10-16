@@ -52,7 +52,8 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
       dpr={[1, 1.5]}
       camera={{ position: INITIAL_CAMERA_POSITION, fov: 60, near: 0.1, far: 40 }}
       gl={{ antialias: true, alpha: false, powerPreference: 'low-power', toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1 }}
-      fallback={fallback}
+      // R3F mounts this inside <canvas> even when WebGL works; no failure callbacks here.
+      fallback="Trình duyệt không hiển thị được canvas. Nội dung hiện vật vẫn có trong danh mục bên dưới."
       onPointerMissed={(event) => { if (event.type === 'click' && !pointerRef.current.dragged) onClear(); }}
       onCreated={({ camera }) => camera.lookAt(...INITIAL_CAMERA_TARGET)}
     >

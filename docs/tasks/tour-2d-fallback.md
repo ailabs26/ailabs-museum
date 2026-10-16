@@ -51,9 +51,9 @@ Phụ thuộc 02. Files: MuseumPage, MuseumScene, SceneFallback, test.
 
 ### FALLBACK-04 — Lifecycle và focus khi chuyển
 Phụ thuộc 03. Files: MuseumPage, SceneFallback/MuseumScene, CollectionPage nếu cần, test.
-- [ ] Renderer lỗi được tháo khỏi React tree, dừng/cancel owner GLB; catalogue/selection còn nguyên và không lặp mount lỗi.
-- [ ] Fallback nhận focus khi lỗi; người dùng Enter chuyển đúng đích, h1 2D nhận focus. Refetch không giành focus hoặc tự mở scene.
-- [ ] Back về tour không tự mount Canvas; GLB lỗi riêng lẻ vẫn retry/hình thay thế, không bị coi là renderer fail.
+- [x] Renderer lỗi được thay bằng fallback ngoài Canvas; owner GLB unmount/abort theo cleanup, catalogue/selection giữ nguyên.
+- [x] Fallback nhận focus; Enter chuyển đúng đích, h1 2D nhận focus; không tự mở scene.
+- [x] GLB lỗi riêng lẻ vẫn retry/hình thay thế, không bị coi là renderer fail.
 
 **Kiểm tra:** tests `[F04]`, lifecycle/model resource regression và reflow light/dark 320/768/1024/1440. Gates; commit `fix(fallback): release failed scene and preserve accessible transitions`.
 
@@ -77,3 +77,5 @@ Không backend/database/dependency, media upload/ảnh/audio, tự retry rendere
 - F02 RED thiếu link trước sửa, GREEN sau thêm prop panel/link. Regression detail/interaction/F02: 29 đạt, 1 kiểm tra GPU settle thất bại timing; chạy riêng lại test settle đạt (19.2s), chưa sửa scene. Typecheck/lint/build đạt; bundle >500 kB warning còn tồn tại. Không tuyên bố full-suite sạch từ lần chạy có flaky failure; kiểm tra tích hợp tiếp ở F05.
 - F02 commit `d4c8ba9`.
 - F03 test đầu RED thiếu link fallback; sau sửa 7/7 F02/F03 đạt (37.2s) cho 3 loại lỗi với/có không selection, link đổi theo DOM selection sau lỗi. Typecheck/lint/build đạt; chưa cleanup owner sớm/focus collection, tiếp tục F04.
+- F03 commit `c34f620`.
+- F04 tests 15 pass/2 skip (GLB thật thiếu file theo điều kiện). R3F `Canvas.fallback` được xử lý inert vì luôn mount trong canvas khi renderer khỏe; fallback thực sự dùng ở ErrorBoundary/context state. Typecheck/lint/build đạt; commit F04 đang chờ ghi.

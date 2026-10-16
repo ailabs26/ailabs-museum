@@ -1,16 +1,28 @@
 import { Alert, Button, Container, NativeSelect, Text, Title } from '@mantine/core';
 import { IconArrowRight } from '@tabler/icons-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitGrid } from '@/shared/components/data/ExhibitGrid';
 import classes from './CollectionPage.module.css';
 
 export function CollectionPage() {
+  const location = useLocation();
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const focusedLocation = useRef<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { rooms, room, selectedRoom, selectedSlug, refresh } = useMuseumRooms(searchParams.get('room'));
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const exhibits = detail ? [...detail.exhibits].sort((left, right) =>
     left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)) : [];
+  const destinationReady = !rooms.isPending && (!selectedRoom || !room.isPending);
+  const fromTourFallback = location.state?.fromTourFallback === true;
+  useEffect(() => {
+    if (fromTourFallback && destinationReady && focusedLocation.current !== location.key) {
+      titleRef.current?.focus();
+      focusedLocation.current = location.key;
+    }
+  }, [fromTourFallback, destinationReady, location.key]);
   const handleSelectRoom = (slug: string) => {
     const next = new URLSearchParams(searchParams);
     next.set('room', slug);
@@ -21,7 +33,7 @@ export function CollectionPage() {
     <Container size="lg" className={classes.page}>
       <header className={classes.intro}>
         <p className={classes.eyebrow}>Aura Museum / Khám phá hiện vật</p>
-        <Title order={1} className={classes.title}>Bộ sưu tập</Title>
+        <Title ref={titleRef} tabIndex={-1} order={1} className={classes.title}>Bộ sưu tập</Title>
         <p className={classes.description}>Dành một chút thời gian cho mỗi câu chuyện.
           Khám phá nội dung hiện vật trong giao diện 2D, không cần mở không gian 3D.</p>
       </header>
