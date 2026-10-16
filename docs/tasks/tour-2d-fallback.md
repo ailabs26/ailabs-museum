@@ -35,9 +35,9 @@ Link panel ghi **“Đọc chi tiết 2D”**; fallback ghi **“Tiếp tục đ
 
 ### FALLBACK-02 — Link chủ động từ panel
 Phụ thuộc 01. Files: MuseumPage, ExhibitDetailPanel, test `tour-2d-fallback.spec.ts`.
-- [ ] Panel có link đúng ID/slug của lựa chọn hiện tại, đổi selection/phòng không giữ link cũ.
-- [ ] Click/Enter tới detail 2D đúng tên và focus h1, không tự mở Canvas.
-- [ ] Đóng panel/trả focus giữ hành vi.
+- [x] Panel link đúng ID/slug hiện tại, thay selection/phòng cập nhật link.
+- [x] Enter tới detail đúng tên/focus h1, không Canvas.
+- [x] Đóng/focus được kiểm tra qua interaction regression.
 
 **Kiểm tra:** tests `[F02]`, interaction regression và frontend gates; commit `feat(fallback): link selected tour exhibits to 2D details`.
 
@@ -70,3 +70,8 @@ Phụ thuộc 04. Files: live test, README, task/plan.
 Sau 02 đã có đường chủ động đọc 2D; sau 03 có links lỗi; sau 04 lifecycle/focus đầy đủ. Có thể dừng ở từng checkpoint theo yêu cầu, mỗi task hoàn thành có code/tests/evidence trong cùng commit. Không commit rỗng hoặc đẩy nhánh chưa đạt nghiệm thu để merge.
 
 Không backend/database/dependency, media upload/ảnh/audio, tự retry renderer, redesign tour hoặc global ErrorBoundary API. “Mượt” nghĩa là giữ đúng ngữ cảnh, tận dụng cache và focus, không yêu cầu animation.
+
+## Ledger và bằng chứng
+
+- FALLBACK-01 commit `5ad4c75`, sau người dùng duyệt.
+- F02 RED thiếu link trước sửa, GREEN sau thêm prop panel/link. Regression detail/interaction/F02: 29 đạt, 1 kiểm tra GPU settle thất bại timing; chạy riêng lại test settle đạt (19.2s), chưa sửa scene. Typecheck/lint/build đạt; bundle >500 kB warning còn tồn tại. Không tuyên bố full-suite sạch từ lần chạy có flaky failure; kiểm tra tích hợp tiếp ở F05.

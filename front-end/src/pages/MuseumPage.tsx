@@ -95,7 +95,8 @@ export function MuseumPage() {
             </Stack>
           )}
         </div>
-        {selectedDisplay && <ExhibitDetailPanel display={selectedDisplay} onClose={handleCloseDetail} />}
+        {selectedDisplay && <ExhibitDetailPanel display={selectedDisplay} onClose={handleCloseDetail}
+          detail2dHref={`/collection/${encodeURIComponent(detail.slug)}/exhibits/${encodeURIComponent(selectedDisplay.id)}`} />}
         </div>
         <Text id="museum-controls-help" size="sm" c="dimmed">
           Kéo chuột hoặc vuốt để xoay · Cuộn hoặc chụm hai ngón để thu phóng.
