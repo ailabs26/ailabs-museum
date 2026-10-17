@@ -14,7 +14,7 @@
 }
 
 .viewport {
-    min-height: clamp(360px, 64svh, 740px);
+  min-height: clamp(360px, 64svh, 740px);
   position: relative;
   overflow: hidden;
   background: #eee8dc;

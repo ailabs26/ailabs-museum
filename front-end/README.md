@@ -126,6 +126,18 @@ Live test chạy frontend trên `http://localhost:5173` để khớp CORS local 
 
 ## Tham quan Day 1–4
 
+### Hotspots và mô hình không khả dụng
+
+Hotspot 3D dùng cùng ID/selection với mesh, danh mục và panel. Chạm/click marker để đọc chi tiết; Tab tới các nút **Điểm tương tác** bên dưới canvas rồi Enter/Space để chọn bằng bàn phím. Marker có depth test nên bị che bởi vật thể; nút DOM vẫn truy cập được. Hover hiện tên/nhãn từ API; không có animation liên tục.
+
+Tọa độ hotspot GLB được hiểu là **source-model local**, trước scale/pivot normalization; áp dụng offset → uniform scale → đỉnh bệ Y=1.14 → placement hiện vật. Hotspot của hình khối không có GLB dùng display-local mét/Y up. API hiện chưa có trường coordinate-space; đây là quy ước frontend cần dùng khi tác giả bổ sung tọa độ. Chưa có cấu hình thì dùng marker trên normalized bounds. Khi không có bounds hoặc tọa độ ngoài phòng, dùng vị trí an toàn; không suy đoán transform từ GLB hỏng. Metadata đổi qua **Làm mới** cập nhật marker/panel mà không tải lại GLB nếu descriptor không đổi.
+
+Lỗi tải/parse/normalize chỉ thay model đó bằng biểu tượng 3D có nhãn **Mô hình 3D không khả dụng**. Pedestal, hotspot, chi tiết và camera focus vẫn hoạt động. Mesh lỗi sau parse được cách ly trước khi tính bounds; nếu không còn mesh hợp lệ thì fallback cả artifact. Không thể phục hồi mesh từ GLB mà parser không đọc được, và React boundary không bắt mọi lỗi driver/WebGL. Context loss vẫn dùng giao diện 2D hiện có.
+
+**Thử lại** chỉ tải asset lỗi; backend tạo signed URL private mới cho mỗi request, frontend không giữ signed URL hoặc gọi Storage trực tiếp. Mỗi lần mở 3D cho phép ba lần retry thủ công: lần đầu ngay, hai lần sau chờ 1/2 giây nếu lỗi tiếp diễn; không tự lặp request. Lỗi render/clone dùng boundary riêng và retry dựng lại instance từ asset đã tải, không tải lại các model khỏe. Chia sẻ asset checksum vẫn giữ instance/selection riêng; owner của phòng dispose tài nguyên dùng chung sau teardown.
+
+Kiểm chứng: `npm.cmd run test:unit`, `npm.cmd test -- museum-hotspots.spec.ts museum-glb.spec.ts`. Khi backend được cấu hình sẵn và đang chạy, bật `MUSEUM_LIVE_TEST=1` rồi chạy `museum-glb-live.spec.ts museum-hotspots-live.spec.ts`. Live failure test chỉ chặn một request trong browser, không sửa/xóa file Storage. Kết quả thực tế và giới hạn ở [museum-tour-progress.md](../docs/museum-tour-progress.md).
+
 - Mở `/tour.html`, chọn phòng rồi **Mở phòng 3D**. Scene chỉ tải sau thao tác này; **Dừng 3D** tháo Canvas. `?room=<slug>` hỗ trợ mở trực tiếp một phòng; **Làm mới** cập nhật danh sách/chi tiết, **Thử lại** xử lý lỗi.
 - Kéo chuột/vuốt để orbit, cuộn/chụm hai ngón để zoom. Khi Canvas có focus: mũi tên hoặc WASD xoay, +/− zoom, Home reset; Tab ra ngoài. Có nút reset/zoom bằng DOM.
 - Shell kín 14 × 16 × 5 m chưa có kích thước riêng từ backend. Gallery có tường inset, ceiling coffers, đá/plaster/bronze và bệ tròn/vuông theo hình khối. Số hiện vật, tên, mô tả, hình khối, màu và vị trí đến từ phòng đang chọn; không suy đoán hình dáng thật của hiện vật từ tên.
