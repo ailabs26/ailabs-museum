@@ -36,7 +36,8 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
   const { models, retry } = useRoomModels(isContextLost ? [] : displays);
   const selectedDisplay = displays.find((display) => display.id === selectedId);
   const selectedModel = selectedDisplay?.model ? models[selectedDisplay.model.checksumSha256] : undefined;
-  const selectedAsset = selectedModel?.status === 'ready' && !renderStates[selectedDisplay?.id ?? '']?.failed ? selectedModel.asset : undefined;
+  const selectedRenderState = renderStates[selectedDisplay?.id ?? ''];
+  const selectedAsset = selectedModel?.status === 'ready' && !(selectedRenderState?.checksum === selectedDisplay?.model?.checksumSha256 && selectedRenderState?.failed) ? selectedModel.asset : undefined;
   const focusBounds = useMemo(() => selectedDisplay?.model ? getArtifactFocusBounds(selectedDisplay, selectedAsset?.normalization)
     : undefined, [selectedDisplay, selectedAsset]);
   const handleContextLost = useCallback(() => setIsContextLost(true), []);
