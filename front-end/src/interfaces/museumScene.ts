@@ -9,7 +9,8 @@ export interface MuseumDisplay {
   title: string;
   description: string;
   transcript?: string | null;
-  hotspots?: readonly { id: string; label: string; body: string }[];
+  /** GLB source-local coordinates; non-GLB annotations use display-local metres, Y up. */
+  hotspots?: readonly { id: string; label: string; body: string; position?: [number, number, number] }[];
   position: [number, number, number];
   shape: 'sphere' | 'torus' | 'cone' | 'cube' | 'icosahedron' | 'cylinder';
   color: string;
