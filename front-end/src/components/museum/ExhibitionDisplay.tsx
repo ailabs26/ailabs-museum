@@ -4,9 +4,14 @@ import { useThree } from '@react-three/fiber';
 import { ExhibitLabel } from './ExhibitLabel';
 import { ArtifactModel } from './ArtifactModel';
 import type { ModelLoadState } from '@/helpers/roomModelAssets';
+import { getArtifactHotspots } from '@/helpers/artifactHotspots';
+import { ArtifactHotspot } from './ArtifactHotspot';
+import { ArtifactFallback3D } from './ArtifactFallback3D';
+import { ArtifactModelBoundary } from './ArtifactModelBoundary';
 
-export function ExhibitionDisplay({ display, isSelected, onSelect, modelState }: {
+export function ExhibitionDisplay({ display, isSelected, onSelect, modelState, renderAttempt = 0, hasRenderError = false, onRenderError }: {
   display: MuseumDisplay; isSelected: boolean; onSelect: (id: string) => void; modelState?: ModelLoadState;
+  renderAttempt?: number; hasRenderError?: boolean; onRenderError: () => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const canvas = useThree((state) => state.gl.domElement);
@@ -43,11 +48,11 @@ export function ExhibitionDisplay({ display, isSelected, onSelect, modelState }:
         {isRoundPlinth ? <cylinderGeometry args={[isCenterpiece ? 1.13 : 0.7, isCenterpiece ? 1.13 : 0.7, 0.04, 32]} /> : <boxGeometry args={[1.09, 0.04, 1.09]} />}
         <meshStandardMaterial color="#85745b" metalness={0.28} roughness={0.62} />
       </mesh>
-      {display.model ? modelState?.status === 'ready' ? <ArtifactModel asset={modelState.asset} artifactId={display.id} /> :
-        <mesh position={[0, 1.5, 0]}>
-          <torusGeometry args={[0.16, 0.025, 8, 24]} />
-          <meshBasicMaterial color={modelState?.status === 'error' ? '#b23b3b' : '#b69761'} wireframe />
-        </mesh> : <mesh position={[0, isCenterpiece ? 2.16 : 1.73, 0]} rotation={[0, 0, display.shape === 'cube' ? 0.12 : 0]}>
+      {display.model ? modelState?.status === 'ready' ?
+        <ArtifactModelBoundary key={`${display.model.checksumSha256}:${renderAttempt}`} onError={onRenderError} fallback={<ArtifactFallback3D artifactId={display.id} />}>
+          <ArtifactModel asset={modelState.asset} artifactId={display.id} />
+        </ArtifactModelBoundary> :
+        <ArtifactFallback3D artifactId={display.id} isLoading={modelState?.status !== 'error'} /> : <mesh position={[0, isCenterpiece ? 2.16 : 1.73, 0]} rotation={[0, 0, display.shape === 'cube' ? 0.12 : 0]}>
         {display.shape === 'torus' && <torusGeometry args={[0.8, 0.2, 16, 48]} />}
         {display.shape === 'sphere' && <sphereGeometry args={[0.57, 24, 16]} />}
         {display.shape === 'cube' && <boxGeometry args={[0.9, 0.9, 0.9]} />}
@@ -58,6 +63,8 @@ export function ExhibitionDisplay({ display, isSelected, onSelect, modelState }:
           emissive={isSelected ? '#25645c' : '#b69761'} emissiveIntensity={isSelected ? 0.15 : isHovered ? 0.12 : 0} />
       </mesh>}
       <ExhibitLabel title={display.title} isSelected={isSelected} isCenterpiece={isCenterpiece} />
+      {getArtifactHotspots(display, !hasRenderError && modelState?.status === 'ready' ? modelState.asset.normalization : undefined).map(hotspot =>
+        <ArtifactHotspot key={hotspot.id} hotspot={hotspot} artifactTitle={display.title} isSelected={isSelected} onSelect={onSelect} />)}
     </group>
   );
 }
