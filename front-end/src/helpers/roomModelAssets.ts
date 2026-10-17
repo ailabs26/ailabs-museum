@@ -64,7 +64,10 @@ export class RoomModelAssets {
       }))()
         .then(asset => {
           if (this.closed) disposeModel(asset.scenes);
-          else this.update(key, { status: 'ready', asset });
+          else {
+            this.update(key, { status: 'ready', asset });
+            if (asset.quarantinedMeshCount) this.onFailure?.(key, { stage: 'mesh', category: 'mesh' }, attempt);
+          }
         })
         .catch(error => {
           if (this.closed) return;

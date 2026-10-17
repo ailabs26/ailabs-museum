@@ -80,3 +80,12 @@ it('bounds manual retries, ignores duplicate clicks and enforces cooldown withou
   expect(JSON.stringify(assets.snapshot)).not.toContain('PRIVATE');
   now.mockRestore(); assets.dispose();
 });
+
+it('reports a quarantined mesh once without degrading the usable asset', async () => {
+  const onFailure = vi.fn(); const value = { ...loaded(), quarantinedMeshCount: 2 };
+  const assets = new RoomModelAssets(async () => value, () => {}, onFailure);
+  assets.start([model('a')]);
+  await vi.waitFor(() => expect(assets.snapshot['a'.repeat(64)].status).toBe('ready'));
+  expect(onFailure).toHaveBeenCalledWith('a'.repeat(64), { stage: 'mesh', category: 'mesh' }, 1);
+  expect(onFailure).toHaveBeenCalledTimes(1); assets.dispose();
+});
