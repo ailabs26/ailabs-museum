@@ -6,10 +6,12 @@ export const EXHIBIT_LABEL_SIZE = { width: 1.25, height: 0.3125, depth: 0.75, ce
 /** Local display data, not a public API DTO. Positions use metres, Y up. */
 export interface MuseumDisplay {
   id: string;
+  roomId?: string;
   title: string;
   description: string;
   transcript?: string | null;
-  hotspots?: readonly { id: string; label: string; body: string }[];
+  /** GLB source-local coordinates; non-GLB annotations use display-local metres, Y up. */
+  hotspots?: readonly { id: string; label: string; body: string; position?: [number, number, number] }[];
   position: [number, number, number];
   shape: 'sphere' | 'torus' | 'cone' | 'cube' | 'icosahedron' | 'cylinder';
   color: string;

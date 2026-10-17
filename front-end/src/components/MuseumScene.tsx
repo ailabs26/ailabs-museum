@@ -12,6 +12,10 @@ import { INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET } from '@/helpers/museum
 import classes from './MuseumScene.module.css';
 import { useRoomModels } from '@/hooks/useRoomModels';
 import { ModelLoadingStatus } from '@/components/museum/ModelLoadingStatus';
+import { ArtifactHotspotControls } from '@/components/museum/ArtifactHotspotControls';
+import { getArtifactFocusBounds } from '@/helpers/artifactHotspots';
+import type { ArtifactRenderState } from '@/components/museum/ArtifactModelBoundary';
+import { reportModelFailure } from '@/helpers/modelDiagnostics';
 
 // Labels render over solid geometry. Picking follows that same visual order;
 // intersecting labels still use nearest-first ordering within their layer.
@@ -27,16 +31,27 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
 }) {
   const [command, setCommand] = useState<CameraCommand | null>(null);
   const [isContextLost, setIsContextLost] = useState(false);
+  const [renderStates, setRenderStates] = useState<Record<string, ArtifactRenderState>>({});
   const pointerRef = useRef({ x: 0, y: 0, dragged: false });
+  const handleSceneSelect = (id: string) => { if (!pointerRef.current.dragged) onSelect(id); };
   const { models, retry } = useRoomModels(isContextLost ? [] : displays);
   const selectedDisplay = displays.find((display) => display.id === selectedId);
   const selectedModel = selectedDisplay?.model ? models[selectedDisplay.model.checksumSha256] : undefined;
-  const selectedAsset = selectedModel?.status === 'ready' ? selectedModel.asset : undefined;
-  const focusBounds = useMemo(() => selectedDisplay && selectedAsset ? {
-    center: [selectedDisplay.position[0], selectedDisplay.position[1] + 1.14 + selectedAsset.normalization.center[1], selectedDisplay.position[2]] as [number, number, number],
-    radius: selectedAsset.normalization.radius,
-  } : undefined, [selectedDisplay, selectedAsset]);
+  const selectedRenderState = renderStates[selectedDisplay?.id ?? ''];
+  const selectedAsset = selectedModel?.status === 'ready' && !(selectedRenderState?.checksum === selectedDisplay?.model?.checksumSha256 && selectedRenderState?.failed) ? selectedModel.asset : undefined;
+  const focusBounds = useMemo(() => selectedDisplay?.model ? getArtifactFocusBounds(selectedDisplay, selectedAsset?.normalization)
+    : undefined, [selectedDisplay, selectedAsset]);
   const handleContextLost = useCallback(() => setIsContextLost(true), []);
+  const handleRenderError = (display: MuseumDisplay) => {
+    const previous = renderStates[display.id];
+    const attempts = previous?.checksum === display.model?.checksumSha256 ? previous.attempts : 0;
+    setRenderStates(states => ({ ...states, [display.id]: { checksum: display.model!.checksumSha256, attempts, failed: true } }));
+    reportModelFailure({ artifactId: display.id, roomId: display.roomId, attempt: attempts + 1, stage: 'render', category: 'render' });
+  };
+  const handleRetryRender = (id: string) => setRenderStates(states => {
+    const state = states[id];
+    return !state || !state.failed || state.attempts >= 3 ? states : { ...states, [id]: { ...state, failed: false, attempts: state.attempts + 1 } };
+  });
   const handleCommand = (action: CameraAction) => setCommand((previous) => ({ action, sequence: (previous?.sequence ?? 0) + 1 }));
   if (isContextLost) return fallback;
   return (
@@ -62,7 +77,10 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
       <SceneLifecycle onContextLost={handleContextLost} />
       <MuseumControls command={command} selectedDisplay={selectedDisplay} focusBounds={focusBounds} />
       <MuseumRoom />
-      {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={onSelect} modelState={display.model ? models[display.model.checksumSha256] : undefined} />)}
+      {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={handleSceneSelect}
+        modelState={display.model ? models[display.model.checksumSha256] : undefined} renderAttempt={renderStates[display.id]?.attempts}
+        hasRenderError={renderStates[display.id]?.checksum === display.model?.checksumSha256 && renderStates[display.id]?.failed}
+        onRenderError={() => handleRenderError(display)} />)}
     </Canvas>
     </div>
     <Group className={classes.toolbar} gap="xs" aria-label="Điều khiển góc nhìn">
@@ -71,7 +89,8 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
       <Button variant="default" onClick={() => handleCommand('out')}>Lùi xa</Button>
       <Button color="teal.9" disabled={!selectedDisplay || selectedDisplay.isOutsideRoom} onClick={() => handleCommand('focus')}>Tập trung hiện vật</Button>
     </Group>
-    <ModelLoadingStatus displays={displays} models={models} onRetry={retry} />
+    <ArtifactHotspotControls displays={displays} selectedId={selectedId} onSelect={onSelect} />
+    <ModelLoadingStatus displays={displays} models={models} onRetry={retry} renderStates={renderStates} onRetryRender={handleRetryRender} />
     </div>
   );
 }

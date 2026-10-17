@@ -74,6 +74,33 @@ it('signs private objects server-side and streams bytes without exposing credent
   } finally { server.closeAllConnections(); server.close(); }
 });
 
+it('creates a fresh signed request on retry after an expired Storage authorization', async () => {
+  let signatures = 0;
+  const server = createServer((request, response) => {
+    if (request.method === 'POST') {
+      signatures++;
+      response.setHeader('Content-Type', 'application/json');
+      response.end(JSON.stringify({ signedURL: `/object/sign/assets/models/example.glb?attempt=${signatures}` }));
+    } else if (request.url?.endsWith('attempt=1')) {
+      response.statusCode = 403; response.end('Controlled expired authorization');
+    } else {
+      response.setHeader('Content-Length', '4'); response.end('glTF');
+    }
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address(); assert.ok(address && typeof address !== 'string');
+  try {
+    const storage = new ModelStorageService(new ConfigService({
+      SUPABASE_URL: `http://127.0.0.1:${address.port}`, SUPABASE_SECRET_KEY: 'test-server-key', SUPABASE_STORAGE_BUCKET: 'assets',
+    }));
+    await assert.rejects(() => storage.open('models/example.glb', 4), BadGatewayException);
+    const result = await storage.open('models/example.glb', 4);
+    const chunks: Buffer[] = [];
+    for await (const chunk of result.stream) chunks.push(Buffer.from(chunk as Uint8Array));
+    assert.equal(Buffer.concat(chunks).toString(), 'glTF'); assert.equal(signatures, 2);
+  } finally { server.closeAllConnections(); server.close(); }
+});
+
 it('fails closed when Storage is unconfigured or a key is unsafe', async () => {
   const storage = new ModelStorageService(new ConfigService());
   await assert.rejects(() => storage.open('../secret.glb', 4), NotFoundException);
