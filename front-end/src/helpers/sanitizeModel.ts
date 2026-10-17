@@ -1,4 +1,4 @@
-import type { BufferAttribute, InterleavedBufferAttribute, Material, Mesh, Object3D } from 'three';
+import type { BufferAttribute, Color, InterleavedBufferAttribute, Material, Mesh, Object3D } from 'three';
 
 function validAttribute(attribute: BufferAttribute | InterleavedBufferAttribute) {
   if (!Number.isInteger(attribute.count) || attribute.count <= 0 || attribute.itemSize < 1 || attribute.itemSize > 4) return false;
@@ -13,7 +13,7 @@ function validMaterial(material: Material) {
   for (const value of Object.values(material) as unknown[]) {
     if (typeof value === 'number' && !Number.isFinite(value)) return false;
     if (value && typeof value === 'object' && 'isColor' in value) {
-      const color = value as { r: number; g: number; b: number };
+      const color = value as Color;
       if (![color.r, color.g, color.b].every(Number.isFinite)) return false;
     }
   }
