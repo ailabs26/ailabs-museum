@@ -25,7 +25,7 @@
 - [x] Integration: focus uses real or fallback bounds; per-artifact retry remains accessible; metadata-only refresh must not reload GLBs.
 - [x] Browser fixtures: five valid GLBs plus 403/404/5xx/network/corrupt/malformed mesh/render error injections; verify healthy object identity, selection, request counts and restoration.
 - [x] Live scene: existing five-GLB suite plus read-only hotspot/failure/retry acceptance against backend, software WebGL desktop/mobile; no Storage mutations.
-- [ ] Final: frontend unit/typecheck/lint/build + relevant browser regressions, full diff review, progress and commit ledger, one PR into dev; no merge.
+- [x] Final: frontend unit/typecheck/lint/build + relevant browser regressions, full diff review, progress and commit ledger, one PR into dev; no merge. Published as [PR #57](https://github.com/ailabs26/ailabs-museum/pull/57).
 
 ## Review focus
 

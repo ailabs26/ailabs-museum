@@ -73,8 +73,9 @@ Production changes are confined to `front-end/src/components/MuseumScene{.tsx,.m
 | `1fb2318` | test(tour): verify live private GLB failure and isolated recovery |
 | `6a2fdd8` | perf(tour): keep hotspot markers within existing resource budgets |
 | `5cadb7b` | fix(tour): reject returning drags and verify hotspot recovery |
+| `96530db` | docs(tour): record hotspot architecture and acceptance evidence |
 
-Closing commits and PR are recorded after verification. Commit count follows meaningful completed units; no empty commits or artificial splitting to reach the suggested 30.
+Publication: [PR #57](https://github.com/ailabs26/ailabs-museum/pull/57), `feat/interactive-hotspots` → `dev`, opened after verification and left for human review. No merge was performed. Commit count follows meaningful completed units; no empty commits or artificial splitting to reach the suggested 30. This publication record and the completed checklist are included in the same PR.
 
 ### Remaining limits
 
