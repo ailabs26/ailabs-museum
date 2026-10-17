@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { BoxGeometry, BufferAttribute, Group, Mesh, MeshStandardMaterial } from 'three';
+import { BoxGeometry, BufferAttribute, Group, Mesh, MeshStandardMaterial, MeshPhysicalMaterial } from 'three';
 import { sanitizeModel } from './sanitizeModel';
 import { disposeModel } from './glbAsset';
 import { normalizeModel } from './modelNormalization';
@@ -37,4 +37,13 @@ it('rejects an asset with no usable meshes and leaves all resources owned for cl
   bad.geometry.deleteAttribute('position'); scene.add(bad);
   expect(() => sanitizeModel(scene)).toThrow('Mô hình không có mesh hợp lệ');
   expect(scene.children).toEqual([bad]);
+});
+
+it('accepts the physical-material Infinity attenuation sentinel used by real specular GLBs', () => {
+  const scene = new Group(); const material = new MeshPhysicalMaterial();
+  expect(material.attenuationDistance).toBe(Infinity);
+  scene.add(new Mesh(new BoxGeometry(), material));
+  expect(sanitizeModel(scene).quarantined).toEqual([]);
+  material.opacity = Infinity;
+  expect(() => sanitizeModel(scene)).toThrow();
 });

@@ -10,7 +10,9 @@ function validAttribute(attribute: BufferAttribute | InterleavedBufferAttribute)
 
 function validMaterial(material: Material) {
   if (!material?.isMaterial) return false;
-  for (const value of Object.values(material) as unknown[]) {
+  for (const [key, value] of Object.entries(material) as [string, unknown][]) {
+    // Three uses +Infinity to mean no volume attenuation, including KHR_materials_specular.
+    if (key === 'attenuationDistance' && value === Infinity) continue;
     if (typeof value === 'number' && !Number.isFinite(value)) return false;
     if (value && typeof value === 'object' && 'isColor' in value) {
       const color = value as Color;
