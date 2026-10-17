@@ -1,5 +1,17 @@
 # Museum tour — interactive hotspots and dynamic GLB delivery
 
+## Follow-up review and merge request (2026-10-17)
+
+After initial publication, the user explicitly requested review and merge of PR #57 into `dev`. A fresh independent read-only review found one P2 defect: a parsed skinned mesh could reference a nonexistent joint, pass sanitization, then break normalization for its otherwise healthy sibling meshes. Genuine GLB regressions reproduced the failure before the fix.
+
+Fix `635eba6` (`fix(tour): quarantine invalid skin bindings before normalization`) validates joint/weight layouts, skeleton binding, finite inverse/bind matrices, bone/ancestor transforms and joint-index ranges before normalization. Invalid skins are quarantined under the existing resource owner. Real parsed valid-skin controls remain rendered, healthy siblings retain finite bounds, and disposal ownership is preserved. The reviewer independently reproduced both valid and invalid cases against the fix and reported no remaining confirmed blockers.
+
+Fresh review gates: frontend **52/52 unit tests** (including seven additional skin cases), typecheck/lint/build passed; backend typecheck/lint/build and **10/10 model tests** passed. The initial PR-head browser build passed **64/64** regressions. After the skin fix, the unchanged actual-backend five-GLB test passed **1/1** in 1.6 minutes, including normalization, mesh picking, focus and emulated mobile. Logs: frontend `tmp/premerge-skin-{typecheck,lint,unit,build}.log`, `tmp/hotspot-premerge.log`, `tmp/hotspot-premerge-live-final.log`; backend `tmp/premerge-{typecheck,lint,build,models}.log`.
+
+Two trace-recorded live attempts first timed out at 3/5 and 4/5, with incomplete jar binary transfers. A direct request through NestJS then downloaded all 22,282,920 jar bytes in 10.3 seconds with the expected SHA-256; its GLB has no skin and does not use the new validation path. The final browser run disabled trace recording, kept all assertions/timeouts unchanged, and passed with all five models and desktop/mobile screenshots. The failed attempt logs remain at `tmp/hotspot-premerge-live{,-retry}.log`; no production configuration, Storage asset or timeout was changed to obtain a pass.
+
+This follow-up supersedes the initial no-merge instruction below. GitHub has no configured PR checks or protected-branch requirements for `dev`; local verification and independent review are the gates. Merge uses the existing PR and preserves the atomic commits. The final merge result is recorded in GitHub PR #57 and its merge commit.
+
 ## Interactive hotspots and artifact recovery (2026-10-17)
 
 Branch `feat/interactive-hotspots` starts at freshly fetched `origin/dev` commit `7edf335`. This task extends the existing tour; the dynamic-GLB sections below remain historical implementation evidence. No database, schema, migration, Storage object, bucket policy or `.env` was changed. Publication is one pull request into `dev`, with no merge or deployment.
