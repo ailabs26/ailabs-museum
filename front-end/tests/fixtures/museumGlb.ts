@@ -4,13 +4,13 @@ import { installMuseumApi, fulfillMuseum } from './museumApi';
 import { envelope, roomA } from './museumContent';
 
 /** Small self-contained, genuinely parsed GLB. Test fixture only; never a production asset. */
-export function createMuseumGlb(tag: string, invalidMesh = false) {
+export function createMuseumGlb(tag: string, invalidMesh = false, brokenAccessor = false) {
   const vertices = new Float32Array([-0.5, 0, -0.5, 0.5, 0, -0.5, 0, 1, 0, -0.5, 0, 0.5, 0.5, 0, 0.5, 0, 1, 0]);
   const bad = new Float32Array(vertices); bad[0] = NaN;
   const binary = Buffer.concat([Buffer.from(vertices.buffer), ...(invalidMesh ? [Buffer.from(bad.buffer)] : [])]);
   const json = { asset: { version: '2.0', generator: tag }, scene: 0, scenes: [{ name: `source-${tag}`, nodes: invalidMesh ? [0, 1] : [0] }],
     nodes: [{ mesh: 0 }, ...(invalidMesh ? [{ mesh: 1, translation: [0.1, 0, 0] }] : [])],
-    meshes: [{ primitives: [{ attributes: { POSITION: 0 }, material: 0 }] }, ...(invalidMesh ? [{ primitives: [{ attributes: { POSITION: 1 }, material: 0 }] }] : [])],
+    meshes: [{ primitives: [{ attributes: { POSITION: brokenAccessor ? 99 : 0 }, material: 0 }] }, ...(invalidMesh ? [{ primitives: [{ attributes: { POSITION: 1 }, material: 0 }] }] : [])],
     materials: [{ doubleSided: true, pbrMetallicRoughness: { baseColorFactor: [0.25, 0.55, 0.45, 1], metallicFactor: 0, roughnessFactor: 0.8 } }],
     buffers: [{ byteLength: binary.length }],
     bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: vertices.byteLength }, ...(invalidMesh ? [{ buffer: 0, byteOffset: vertices.byteLength, byteLength: bad.byteLength }] : [])],
@@ -23,9 +23,9 @@ export function createMuseumGlb(tag: string, invalidMesh = false) {
   return Buffer.concat([header, padded, binHeader, binary]);
 }
 
-export async function installFiveModels(page: Page, options: { failIndex?: number; failure?: number | 'network' | 'corrupt'; invalidMesh?: boolean; gate?: Promise<void> } = {}) {
+export async function installFiveModels(page: Page, options: { failIndex?: number; failure?: number | 'network' | 'corrupt'; invalidMesh?: boolean; brokenAccessor?: boolean; gate?: Promise<void> } = {}) {
   await installMuseumApi(page);
-  const binaries = roomA.exhibits.map((_, i) => createMuseumGlb(String(i), options.invalidMesh && i === 1));
+  const binaries = roomA.exhibits.map((_, i) => createMuseumGlb(String(i), options.invalidMesh && i === 1, options.brokenAccessor && i === 1));
   const requests = Array<number>(5).fill(0);
   const exhibits = roomA.exhibits.map((item, i) => {
     const checksum = createHash('sha256').update(binaries[i]).digest('hex');

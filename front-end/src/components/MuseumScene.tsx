@@ -33,6 +33,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
   const [isContextLost, setIsContextLost] = useState(false);
   const [renderStates, setRenderStates] = useState<Record<string, ArtifactRenderState>>({});
   const pointerRef = useRef({ x: 0, y: 0, dragged: false });
+  const handleSceneSelect = (id: string) => { if (!pointerRef.current.dragged) onSelect(id); };
   const { models, retry } = useRoomModels(isContextLost ? [] : displays);
   const selectedDisplay = displays.find((display) => display.id === selectedId);
   const selectedModel = selectedDisplay?.model ? models[selectedDisplay.model.checksumSha256] : undefined;
@@ -76,7 +77,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
       <SceneLifecycle onContextLost={handleContextLost} />
       <MuseumControls command={command} selectedDisplay={selectedDisplay} focusBounds={focusBounds} />
       <MuseumRoom />
-      {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={onSelect}
+      {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={handleSceneSelect}
         modelState={display.model ? models[display.model.checksumSha256] : undefined} renderAttempt={renderStates[display.id]?.attempts}
         hasRenderError={renderStates[display.id]?.checksum === display.model?.checksumSha256 && renderStates[display.id]?.failed}
         onRenderError={() => handleRenderError(display)} />)}
