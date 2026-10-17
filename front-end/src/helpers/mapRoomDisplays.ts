@@ -12,6 +12,7 @@ export function mapRoomDisplays(room: RoomDetail): MuseumDisplay[] {
   return exhibits.map((exhibit, index) => {
     const display: MuseumDisplay = {
       id: exhibit.id,
+      roomId: room.id,
       title: exhibit.name,
       description: exhibit.description,
       transcript: exhibit.transcript,

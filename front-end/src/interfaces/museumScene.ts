@@ -6,6 +6,7 @@ export const EXHIBIT_LABEL_SIZE = { width: 1.25, height: 0.3125, depth: 0.75, ce
 /** Local display data, not a public API DTO. Positions use metres, Y up. */
 export interface MuseumDisplay {
   id: string;
+  roomId?: string;
   title: string;
   description: string;
   transcript?: string | null;
