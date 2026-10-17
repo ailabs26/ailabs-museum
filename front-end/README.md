@@ -116,6 +116,14 @@ Live test chạy frontend trên `http://localhost:5173` để khớp CORS local 
 - Lượt này chưa chuyển tour/SceneFallback sang trang 2D; đường chuyển giữ selected exhibit sẽ triển khai riêng.
 - Task/plan: [exhibit-detail-2d.md](../docs/tasks/exhibit-detail-2d.md), [exhibit-detail-2d-plan.md](../docs/plans/exhibit-detail-2d-plan.md).
 
+## Chuyển tour 3D sang 2D khi renderer lỗi
+
+- Khi người dùng đang xem panel của một hiện vật, **Đọc chi tiết 2D** mở đúng `/collection/:roomSlug/exhibits/:exhibitId`. Khi chưa chọn hiện vật, fallback có link **Tiếp tục đọc trong giao diện 2D** tới `/collection?room=<slug>`.
+- Áp dụng cho WebGL không khả dụng, context loss và lỗi tải chunk; không tự redirect, vẫn giữ danh mục DOM và link **Đọc nội dung phòng trưng bày**.
+- Lỗi tải một GLB riêng lẻ không làm hỏng renderer: giữ hình khối thay thế và nút thử lại trong `ModelLoadingStatus`.
+- Tests fallback: `npm.cmd test -- tour-2d-fallback.spec.ts`. Live read-only khi backend đang chạy: bật `MUSEUM_LIVE_TEST=1`, chạy `npm.cmd test -- tour-2d-fallback-live.spec.ts`, rồi bỏ biến. Không seed hoặc ghi database.
+- Nếu fallback chuyển vào collection với state từ tour, trang collection chỉ đưa focus tới h1 khi navigation state báo từ fallback; refetch nền không giành focus.
+
 ## Tham quan Day 1–4
 
 - Mở `/tour.html`, chọn phòng rồi **Mở phòng 3D**. Scene chỉ tải sau thao tác này; **Dừng 3D** tháo Canvas. `?room=<slug>` hỗ trợ mở trực tiếp một phòng; **Làm mới** cập nhật danh sách/chi tiết, **Thử lại** xử lý lỗi.
