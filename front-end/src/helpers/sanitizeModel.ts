@@ -1,4 +1,4 @@
-import type { BufferAttribute, Color, InstancedMesh, InterleavedBufferAttribute, Material, Mesh, Object3D } from 'three';
+import type { BufferAttribute, Color, InstancedMesh, InterleavedBufferAttribute, Material, Mesh, Object3D, SkinnedMesh } from 'three';
 
 function validAttribute(attribute: BufferAttribute | InterleavedBufferAttribute) {
   if (!Number.isInteger(attribute.count) || attribute.count <= 0 || attribute.itemSize < 1 || attribute.itemSize > 4) return false;
@@ -22,8 +22,31 @@ function validMaterial(material: Material) {
   return true;
 }
 
+function validTransform(object: Object3D) {
+  return [...object.position, ...object.quaternion, ...object.scale, ...object.matrix.elements].every(Number.isFinite);
+}
+
+function validSkin(mesh: SkinnedMesh) {
+  const joints = mesh.geometry.getAttribute('skinIndex'); const weights = mesh.geometry.getAttribute('skinWeight');
+  const skeleton = mesh.skeleton;
+  if (!joints || joints.itemSize !== 4 || !weights || weights.itemSize !== 4 || !skeleton?.bones.length
+    || skeleton.boneInverses.length !== skeleton.bones.length
+    || ![...mesh.bindMatrix.elements, ...mesh.bindMatrixInverse.elements].every(Number.isFinite)
+    || skeleton.boneInverses.some(matrix => !matrix.elements.every(Number.isFinite))) return false;
+  for (const bone of skeleton.bones) {
+    if (!bone?.isBone || !bone.matrixWorld.elements.every(Number.isFinite)) return false;
+    // A bone can live outside this mesh's subtree; its ancestors still affect bounds.
+    for (let ancestor: Object3D | null = bone; ancestor; ancestor = ancestor.parent) if (!validTransform(ancestor)) return false;
+  }
+  for (let index = 0; index < joints.count; index++) for (let axis = 0; axis < 4; axis++) {
+    const joint = joints.getComponent(index, axis);
+    if (!Number.isInteger(joint) || joint < 0 || joint >= skeleton.bones.length) return false;
+  }
+  return true;
+}
+
 function validObject(object: Object3D) {
-  if (![...object.position, ...object.quaternion, ...object.scale, ...object.matrix.elements].every(Number.isFinite)) return false;
+  if (!validTransform(object)) return false;
   const mesh = object as Mesh;
   if (!mesh.isMesh) return true;
   const instanced = object as InstancedMesh;
@@ -39,6 +62,7 @@ function validObject(object: Object3D) {
   for (const attributes of Object.values(geometry.morphAttributes)) for (const attribute of attributes ?? []) {
     if (attribute.count !== position.count || !validAttribute(attribute)) return false;
   }
+  if ((mesh as SkinnedMesh).isSkinnedMesh && !validSkin(mesh as SkinnedMesh)) return false;
   const indices = geometry.getIndex();
   if (indices) for (let index = 0; index < indices.count; index++) {
     const value = indices.getX(index);
