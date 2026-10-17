@@ -1,4 +1,84 @@
-# Museum tour — dynamic GLB delivery
+# Museum tour — interactive hotspots and dynamic GLB delivery
+
+## Interactive hotspots and artifact recovery (2026-10-17)
+
+Branch `feat/interactive-hotspots` starts at freshly fetched `origin/dev` commit `7edf335`. This task extends the existing tour; the dynamic-GLB sections below remain historical implementation evidence. No database, schema, migration, Storage object, bucket policy or `.env` was changed. Publication is one pull request into `dev`, with no merge or deployment.
+
+### Architecture and metadata
+
+`MuseumScene → ExhibitionDisplay → ArtifactModel` remains the rendering path. `RoomModelAssets` remains the sole room-scoped loader/cache/resource owner, with two concurrent jobs and checksum deduplication. Selection still uses the existing artifact ID and page state shared by mesh picking, catalogue, details and camera focus. There is no second raycaster, loader, frontend Storage client or selection store.
+
+`mapRoomDisplays` now preserves room identity and the API's ordered hotspot IDs, labels, bodies and positions. Each annotation creates a depth-tested native R3F marker; artifacts without annotations get a stable default derived from their own ID and current title/description. Hover changes only local marker state and creates a short canvas-texture tooltip. Selection changes its color; there is no continuous animation. Native buttons below Canvas provide Enter/Space/touch access when geometry occludes a marker. Stop-propagation and the existing sticky pointer-drag flag prevent bubbling and selection after a camera drag, including an out-and-back drag.
+
+Read-only Supabase verification found private bucket `museum-assets`, five ready published GLB mappings in room `bo-suu-tap-glb`, and **zero authored hotspot rows**. The five real artifacts are the Đông Sơn drum, celadon pouring vessel, Bạch Đằng stake, Chăm Shiva statue and Chăm king statue listed below. Live tests therefore prove computed defaults against actual metadata; multiple configured coordinates are proven with validated API fixtures. Existing image/audio/transcript fields remain available through the current details flow; no invented category, dimensions or media fields were added. Graphify returned no authorized workspaces, so dependencies were traced directly in source.
+
+### Coordinates and bounds
+
+The API has coordinates but no coordinate-space discriminator. The documented authoring convention is **GLB source-model local**: apply normalization offset, uniform scale, pedestal top Y=1.14, then exhibit placement. Primitive annotations use display-local metres, Y up. Metadata refresh updates labels/details without downloading unchanged model descriptors.
+
+Defaults sit above normalized model bounds; missing source bounds use a consistent 0.8 × 1 × 0.8 m envelope with center Y=0.5. Explicit nonfinite/out-of-room coordinates fall back to safe computed positions. Multiple defaults are spaced locally. Failed models never need their invalid geometry to place a marker or focus the camera. Markers use normal depth testing, so walls/models can occlude them; native controls preserve access. There is no per-frame projection/raycast loop or global overlap solver.
+
+### Failure isolation and retry
+
+- Async download, GLB validation/checksum, parse, mesh validation and normalization errors stay in the existing asset owner. State is queued/loading/ready/error, with independent checksum attempts and abort-on-room-teardown. Synchronous loader throws and late completions are contained. Healthy assets are retained during another asset's retry.
+- Each ready model has an `ArtifactModelBoundary` for clone/React-render failures. Pedestal, hotspot and selection remain outside that boundary. Boundary identity includes model version and retry attempt; failure state from an old version cannot poison current focus bounds. React boundaries do not catch arbitrary async, shader, GPU or driver failures; scene-wide context loss still uses the established readable 2D fallback.
+- `sanitizeModel` checks parsed object transforms, vertex/morph/index data, material values/groups and instanced transforms before bounds calculation. Invalid subtrees are quarantined while valid siblings render. Detached resources remain owned until the room owner disposes them once, including shared materials/textures. If no usable mesh remains, the whole artifact falls back. Three's valid physical-material `attenuationDistance = Infinity` sentinel is preserved. A failed GLTF parse cannot yield recoverable individual meshes; partial parser allocations are not exposed for guaranteed cleanup.
+- `ArtifactFallback3D` is a lightweight ring/faceted symbol with an explicit loading or unavailable caption on the existing pedestal. It preserves artifact ID, placement, raycast selection, metadata, hotspot and focus without changing neighboring displays. It is never shown instead of a healthy ready model.
+- Manual load retries are limited to three per open room: first immediately, subsequent failed attempts wait 1/2 seconds. Repeated clicks during loading are ignored; no automatic request loop exists. Render retries remount from the loaded cache without downloading. A binary retry uses the existing NestJS endpoint, which signs a fresh private Storage URL on every request. No signed URL reaches or persists in the browser.
+- Diagnostics whitelist artifact/room identity, stage, category and attempt; partial mesh quarantine reports once per load. Raw errors, request configurations, credentials and signed tokens are excluded.
+
+### Verification and review
+
+| Gate | Evidence |
+| --- | --- |
+| Frontend unit/typecheck/lint/build | **45/45 unit tests passed**; typecheck, lint and production build passed; scene chunk 918.73 kB / 249.40 kB gzip, existing size warning remains |
+| Backend Storage/model tests | **10/10 passed**, including expired authorization followed by fresh server signing; backend typecheck/lint/build passed |
+| Live private GLB acceptance | **3/3 passed** in Edge/SwiftShader through the actual NestJS API and private Storage, with no Storage mutation |
+| Five-model live behavior | All five render/normalize/pick/focus; metadata-bound controls work on desktop and emulated mobile |
+| Live controlled failure | One browser-intercepted request yields four real models and one selectable placeholder; retry restores the fifth, keeps healthy object UUIDs, and requests healthy assets once / failed asset twice |
+| Live reopening/resources | Two cycles release old contexts and each reports 85 geometries, 19 textures, 89 calls and 831383 triangles before the final decorative-marker reduction |
+| Performance/resource closing checks | All four performance/resource cases passed; sample room measured 42 calls, 40 geometries, 58 materials, retaining limits 55/55/60; stable room switches, texture identity and demand rendering checked |
+| Hotspot closing suite | **16/16 passed** in 1.7 minutes (`tmp/hotspot-ready.log`), covering 403/404/5xx/network/header corruption, actual GLTFLoader parser rejection, malformed mesh, render/clone failure, independent retry, mobile/keyboard, multiple coordinates, metadata refresh and demand/texture lifecycle |
+
+Local ignored evidence: `front-end/tmp/hotspot-live-final.log`, `front-end/tmp/hotspot-live-final/` screenshots and JSON, `front-end/tmp/hotspot-ready.log`, `front-end/tmp/hotspot-verified/` resource profile, frontend `tmp/hotspot-final-{typecheck,lint,unit}.log`, `tmp/hotspot-budget-build.log`, and `back-end/tmp/hotspot-storage-renewal.log`. Overview, mobile, final hotspot/tooltip and failed-artifact screenshots were visually inspected. These are test outputs, not committed production assets.
+
+Independent review found two P2 issues: unchecked instance matrices and out-and-back drags selecting a hotspot. Both were reproduced with failing regressions and corrected. The closing browser gate also detected 63 materials against the existing 60-material sample-room budget. Removing each marker's decorative second mesh/material preserves its spherical marker, hover tooltip and selected feedback while saving one draw call and one material per annotation. The original resource budget is retained.
+
+The wide regression run initially passed 63/64, with only that material-budget failure. Closing runs exposed test synchronization issues: a projected click used the old panel-width camera/Canvas bounds, and initial model/retry readiness used a 5-second default while lazy scene startup sometimes exceeded it. The tests now wait for panel removal, stable layout and matching camera aspect, and use the existing 15-second asset-readiness convention. Actual mouse picking subsequently passed three consecutive runs (`tmp/hotspot-picking-final.log`). These test harness corrections do not relax interaction, cooldown, failure-isolation or resource assertions.
+
+### Changed files and commit ledger
+
+Production changes are confined to `front-end/src/components/MuseumScene{.tsx,.module.css}`, museum components `ArtifactCaption`, `ArtifactFallback3D`, `ArtifactHotspot`, `ArtifactHotspotControls`, `ArtifactModelBoundary`, `ExhibitionDisplay`, `ModelLoadingStatus`, helpers `artifactHotspots`, `loadMuseumModel`, `mapRoomDisplays`, `modelDiagnostics`, `roomModelAssets`, `sanitizeModel`, hook `useRoomModels`, interface `museumScene`, and `MuseumPage.module.css`. Tests cover these helpers plus `tests/fixtures/museumGlb.ts`, `museum-hotspots.spec.ts`, `museum-hotspots-live.spec.ts` and the existing backend `public-models.spec.ts`. Documentation is this report, `front-end/README.md` and `docs/plans/interactive-hotspots-plan.md`. No dependency was added.
+
+| Commit | Completed unit |
+| --- | --- |
+| `a3de1a8` | docs(tour): trace hotspot and failure ownership |
+| `1bf1461` | feat(tour): bind hotspot positions to normalized artifact bounds |
+| `add78f3` | feat(tour): quarantine invalid parsed meshes before normalization |
+| `abedefb` | feat(tour): classify asset failures without logging credentials |
+| `5761778` | fix(tour): contain loader throws and bound per-asset retries |
+| `e6c090f` | fix(tour): sanitize parsed assets and retain quarantined resources |
+| `a1f7612` | feat(tour): add interactive three-dimensional model fallback |
+| `c475942` | feat(tour): add depth-tested hotspots and keyboard controls |
+| `a4e9dc8` | feat(tour): isolate model rendering and preserve hotspot selection |
+| `df6b9e1` | feat(tour): report sanitized failures with room and artifact identity |
+| `14d4322` | fix(tour): keep hotspot and retry controls visible on small screens |
+| `c7818eb` | test(tour): prove healthy models survive asset and render failures |
+| `99c4c95` | fix(tour): preserve valid physical-material attenuation defaults |
+| `4e8808d` | fix(tour): scope render failure focus bounds to model version |
+| `3b7ae8b` | fix(tour): quarantine malformed GPU instance transforms |
+| `03188ce` | feat(tour): report partial mesh failures without hiding valid models |
+| `e04e02a` | docs(tour): document hotspot coordinates and artifact recovery |
+| `b547931` | test(tour): verify fresh Storage signing after expired authorization |
+| `1fb2318` | test(tour): verify live private GLB failure and isolated recovery |
+| `6a2fdd8` | perf(tour): keep hotspot markers within existing resource budgets |
+| `5cadb7b` | fix(tour): reject returning drags and verify hotspot recovery |
+
+Closing commits and PR are recorded after verification. Commit count follows meaningful completed units; no empty commits or artificial splitting to reach the suggested 30.
+
+### Remaining limits
+
+No physical GPU/phone/VR or screen-reader certification; browser tests use Edge/SwiftShader and mobile emulation. Explicit authored markers can overlap or be occluded. No claim of recovery from unsuccessful GLB parsing or absolute JS/GPU leak freedom. Existing large scene chunk warning, model transfer size, unverified curatorial metadata/licenses/dimensions and pre-existing database RLS concern in the historical report remain. No database/security-policy change, migration, external deployment or merge was performed.
 
 ## Current GLB implementation (2026-10-15–16)
 

@@ -16,15 +16,15 @@
 
 ## Work and proof
 
-- [ ] Position/metadata binding: unit tests for normalization, explicit coordinates, missing coordinates, floor/room safety and stable IDs; preserve all API hotspot fields in mapper.
-- [ ] Mesh validation: unit tests for bad transforms, geometry/index/attributes/materials and valid siblings; sanitize only parsed scenes before bounds calculation; reject all-invalid scenes.
-- [ ] Error lifecycle: extend owner tests for HTTP/network/parser errors, retry limits/cooldown, sync throws, late promises, shared assets and sanitized diagnostics.
-- [ ] Placeholder: reusable geometry and common fallback bounds; raycast ID remains at exhibit root; show explicit unavailable/loading status.
-- [ ] Artifact boundary: isolate model clone/React render errors, reset by asset attempt; preserve marker/pedestal; report render failures without disposing healthy/shared instances early.
-- [ ] Hotspot UI: depth-tested R3F marker, local hover/selected feedback, real metadata tooltip, shared onSelect, drag guard; matching native keyboard buttons, no animation/render loops.
-- [ ] Integration: focus uses real or fallback bounds; per-artifact retry remains accessible; metadata-only refresh must not reload GLBs.
-- [ ] Browser fixtures: five valid GLBs plus 403/404/5xx/network/corrupt/malformed mesh/render error injections; verify healthy object identity, selection, request counts and restoration.
-- [ ] Live scene: existing five-GLB suite plus read-only hotspot/failure/retry acceptance against backend, software WebGL desktop/mobile; no Storage mutations.
+- [x] Position/metadata binding: unit tests for normalization, explicit coordinates, missing coordinates, floor/room safety and stable IDs; preserve all API hotspot fields in mapper.
+- [x] Mesh validation: unit tests for bad transforms, geometry/index/attributes/materials and valid siblings; sanitize only parsed scenes before bounds calculation; reject all-invalid scenes.
+- [x] Error lifecycle: extend owner tests for HTTP/network/parser errors, retry limits/cooldown, sync throws, late promises, shared assets and sanitized diagnostics.
+- [x] Placeholder: reusable geometry and common fallback bounds; raycast ID remains at exhibit root; show explicit unavailable/loading status.
+- [x] Artifact boundary: isolate model clone/React render errors, reset by asset attempt; preserve marker/pedestal; report render failures without disposing healthy/shared instances early.
+- [x] Hotspot UI: depth-tested R3F marker, local hover/selected feedback, real metadata tooltip, shared onSelect, drag guard; matching native keyboard buttons, no animation/render loops.
+- [x] Integration: focus uses real or fallback bounds; per-artifact retry remains accessible; metadata-only refresh must not reload GLBs.
+- [x] Browser fixtures: five valid GLBs plus 403/404/5xx/network/corrupt/malformed mesh/render error injections; verify healthy object identity, selection, request counts and restoration.
+- [x] Live scene: existing five-GLB suite plus read-only hotspot/failure/retry acceptance against backend, software WebGL desktop/mobile; no Storage mutations.
 - [ ] Final: frontend unit/typecheck/lint/build + relevant browser regressions, full diff review, progress and commit ledger, one PR into dev; no merge.
 
 ## Review focus
