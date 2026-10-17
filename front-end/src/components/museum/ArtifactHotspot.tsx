@@ -18,9 +18,6 @@ export function ArtifactHotspot({ hotspot, artifactTitle, isSelected, onSelect }
     <mesh scale={isHovered ? 1.2 : 1}>
       <sphereGeometry args={[0.12, 12, 8]} /><meshBasicMaterial color={isSelected ? '#25645c' : isHovered ? '#b69761' : '#f7f3ea'} />
     </mesh>
-    <mesh rotation={[-Math.PI / 2, 0, 0]}>
-      <torusGeometry args={[0.17, 0.025, 6, 20]} /><meshBasicMaterial color={isSelected ? '#25645c' : '#b69761'} />
-    </mesh>
     {isHovered && <ArtifactCaption title={artifactTitle} subtitle={hotspot.label === artifactTitle ? 'Chọn để khám phá' : hotspot.label} position={[0, 0.4, 0]} />}
   </group>;
 }
