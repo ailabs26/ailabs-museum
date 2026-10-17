@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { BoxGeometry, BufferAttribute, Group, Mesh, MeshStandardMaterial, MeshPhysicalMaterial } from 'three';
+import { BoxGeometry, BufferAttribute, Group, Mesh, MeshStandardMaterial, MeshPhysicalMaterial, InstancedMesh, Matrix4 } from 'three';
 import { sanitizeModel } from './sanitizeModel';
 import { disposeModel } from './glbAsset';
 import { normalizeModel } from './modelNormalization';
@@ -46,4 +46,12 @@ it('accepts the physical-material Infinity attenuation sentinel used by real spe
   expect(sanitizeModel(scene).quarantined).toEqual([]);
   material.opacity = Infinity;
   expect(() => sanitizeModel(scene)).toThrow();
+});
+
+it('quarantines invalid instance matrices without losing healthy siblings', () => {
+  const scene = new Group(); const good = new Mesh(new BoxGeometry(), new MeshStandardMaterial());
+  const invalid = new InstancedMesh(new BoxGeometry(), new MeshStandardMaterial(), 1);
+  invalid.setMatrixAt(0, new Matrix4().makeTranslation(NaN, 0, 0)); scene.add(good, invalid);
+  expect(sanitizeModel(scene).quarantined).toEqual([invalid]);
+  expect(normalizeModel(scene).size.every(Number.isFinite)).toBe(true);
 });

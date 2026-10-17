@@ -1,4 +1,4 @@
-import type { BufferAttribute, Color, InterleavedBufferAttribute, Material, Mesh, Object3D } from 'three';
+import type { BufferAttribute, Color, InstancedMesh, InterleavedBufferAttribute, Material, Mesh, Object3D } from 'three';
 
 function validAttribute(attribute: BufferAttribute | InterleavedBufferAttribute) {
   if (!Number.isInteger(attribute.count) || attribute.count <= 0 || attribute.itemSize < 1 || attribute.itemSize > 4) return false;
@@ -26,6 +26,12 @@ function validObject(object: Object3D) {
   if (![...object.position, ...object.quaternion, ...object.scale, ...object.matrix.elements].every(Number.isFinite)) return false;
   const mesh = object as Mesh;
   if (!mesh.isMesh) return true;
+  const instanced = object as InstancedMesh;
+  if (instanced.isInstancedMesh) {
+    if (!Number.isInteger(instanced.count) || instanced.count <= 0 || instanced.count > instanced.instanceMatrix.count
+      || (instanced.instanceColor && (instanced.instanceColor.count < instanced.count || !validAttribute(instanced.instanceColor)))) return false;
+    for (const value of instanced.instanceMatrix.array) if (!Number.isFinite(value)) return false;
+  }
   const geometry = mesh.geometry;
   const position = geometry?.getAttribute('position');
   if (!position || position.itemSize !== 3 || !validAttribute(position)) return false;
