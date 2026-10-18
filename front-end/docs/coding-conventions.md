@@ -5,7 +5,7 @@ Phạm vi: `front-end/src/`. Không tạo file rỗng hoặc tên chung chung nh
 ## Cấu trúc thư mục hiện tại
 
 - **`core/`** — hạ tầng không phụ thuộc UI feature: `core/api/` (http-client, api-response, api-error, query-client, loading-store), `core/auth/` (AuthProvider/context, use-auth, RequireAuth, RequirePermission, token-store, permissions, types), `core/config/` (env).
-- **`shared/components/`** — component dùng chung, nhóm theo loại: `data/` (DataTable, StatCard, EmptyState), `form/` (FormTextField, FormPassword, FormSelectField…), `feedback/` (notify, confirm, ErrorBoundary, GlobalLoadingBar), `layout/` (PageHeader).
+- **`shared/components/`** — component dùng chung, nhóm theo loại: `data/` (DataTable, StatCard, EmptyState), `form/` (FormTextField, FormPassword, FormSelectField…), `feedback/` (notify, confirm, ErrorBoundary, GlobalLoadingBar), `layout/` (PageHeader), `media/` (AudioPlayer).
 - **`services/`** — tầng gọi API theo domain (`users.service.ts`, `roles.service.ts`, `audit.service.ts`, `auth.service.ts`); mọi service đi qua `core/api/http-client`.
 - **`app/`** — `router.tsx`, `theme.ts` cấp ứng dụng. `AppProviders.tsx` gộp provider.
 - **`pages/`** — theo khu vực: `pages/admin/`, `pages/client/`. **`layouts/`** — `AdminLayout`, `PublicLayout`, `MuseumLayout`.
