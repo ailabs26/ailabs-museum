@@ -56,6 +56,9 @@ function AudioPlayerInstance({ source, label }: { source: string | null; label: 
   };
 
   const handlePause = () => audioRef.current?.pause();
+  const isPlaying = status === 'playing';
+  const isError = status === 'error';
+  const buttonLabel = isError ? 'Thử lại' : isPlaying ? 'Tạm dừng' : status === 'paused' ? 'Tiếp tục' : 'Phát';
 
   return (
     <Paper component="section" aria-label={label} withBorder p="md" radius="md">
@@ -72,17 +75,14 @@ function AudioPlayerInstance({ source, label }: { source: string | null; label: 
         />
         <Group justify="space-between" align="center" wrap="wrap">
           <Text fw={600}>{label}</Text>
-          {status === 'playing' ? (
-            <Button leftSection={<IconPlayerPause size={18} aria-hidden="true" />} onClick={handlePause} disabled={isPending}>
-              Tạm dừng
-            </Button>
-          ) : status === 'error' ? (
-            <Button onClick={() => void handlePlay()} disabled={isPending}>Thử lại</Button>
-          ) : (
-            <Button leftSection={<IconPlayerPlay size={18} aria-hidden="true" />} onClick={() => void handlePlay()} disabled={!source || isPending}>
-              {status === 'paused' ? 'Tiếp tục' : 'Phát'}
-            </Button>
-          )}
+          <Button
+            styles={{ root: { minHeight: 44 } }}
+            leftSection={isPlaying ? <IconPlayerPause size={18} aria-hidden="true" /> : <IconPlayerPlay size={18} aria-hidden="true" />}
+            onClick={isPlaying ? handlePause : () => void handlePlay()}
+            disabled={!source}
+          >
+            {buttonLabel}
+          </Button>
         </Group>
         <Text role={status === 'error' ? 'alert' : 'status'} aria-live="polite" size="sm" c={status === 'error' ? 'red' : 'dimmed'}>
           {statusText(status)}

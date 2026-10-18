@@ -147,3 +147,40 @@ test('does not let an old pending play request update the replacement source', a
   await expect(page.getByRole('status')).toHaveText('Sẵn sàng phát');
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
+
+test('keeps the player keyboard accessible with a visible target and live status', async ({ page }) => {
+  await page.goto('/tests/fixtures/audio-player.html');
+  await page.getByTestId('load-source').click();
+  const playButton = page.getByRole('button', { name: 'Phát' });
+  await playButton.focus();
+  await expect(playButton).toBeFocused();
+  const box = await playButton.boundingBox();
+  expect(box?.height).toBeGreaterThanOrEqual(44);
+  await playButton.press('Enter');
+  await expect(page.getByRole('status')).toHaveText('Đang phát');
+  await expect(page.getByRole('button', { name: 'Tạm dừng' })).toBeFocused();
+});
+
+test('reflows long labels and multiple independent players in light and dark themes', async ({ page }) => {
+  await page.goto('/tests/fixtures/audio-player.html');
+  await page.getByTestId('long-label').click();
+  await page.getByTestId('show-second-player').click();
+  await page.getByTestId('load-source').click();
+
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    for (const width of [320, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+  }
+
+  const players = page.getByRole('region');
+  await expect(players).toHaveCount(2);
+  await players.nth(0).getByRole('button', { name: 'Phát' }).click();
+  await expect(players.nth(0).getByRole('button', { name: 'Tạm dừng' })).toBeVisible();
+  await expect(players.nth(1).getByRole('button', { name: 'Phát' })).toBeVisible();
+  await players.nth(1).getByRole('button', { name: 'Phát' }).click();
+  await expect(players.nth(1).getByRole('status')).toHaveText('Đang phát');
+  await expect(players.nth(0).getByRole('status')).toHaveText('Đang phát');
+});

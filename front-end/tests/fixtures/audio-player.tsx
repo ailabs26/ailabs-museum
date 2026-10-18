@@ -11,6 +11,8 @@ const ERROR_SRC = '/audio-error.wav';
 function AudioPlayerFixture() {
   const [src, setSrc] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(true);
+  const [showSecond, setShowSecond] = useState(false);
+  const [useLongLabel, setUseLongLabel] = useState(false);
 
   return (
     <MantineProvider theme={theme} defaultColorScheme="light">
@@ -21,8 +23,11 @@ function AudioPlayerFixture() {
           <Button data-testid="load-error-source" variant="default" onClick={() => setSrc(ERROR_SRC)}>Nạp nguồn lỗi</Button>
           <Button data-testid="clear-source" variant="default" onClick={() => setSrc(null)}>Xóa nguồn audio</Button>
           <Button data-testid="unmount-player" variant="default" onClick={() => setIsMounted(false)}>Tháo audio player</Button>
+          <Button data-testid="show-second-player" variant="default" onClick={() => setShowSecond(true)}>Thêm player thứ hai</Button>
+          <Button data-testid="long-label" variant="default" onClick={() => setUseLongLabel(true)}>Dùng nhãn dài</Button>
         </Stack>
-        {isMounted && <AudioPlayer src={src} label="Bản thuyết minh mẫu" />}
+        {isMounted && <AudioPlayer src={src} label={useLongLabel ? 'Bản thuyết minh audio của hiện vật trong phòng trưng bày Aura Museum' : 'Bản thuyết minh mẫu'} />}
+        {showSecond && <AudioPlayer src={src} label="Audio player thứ hai" />}
       </Stack>
     </MantineProvider>
   );
