@@ -56,6 +56,8 @@ test('reports media errors and allows a deliberate retry', async ({ page }) => {
   await page.getByRole('button', { name: 'Phát' }).click();
 
   await expect(page.getByRole('alert')).toHaveText('Không phát được audio. Vui lòng thử lại.');
+  await page.locator('audio').dispatchEvent('playing');
+  await expect(page.getByRole('alert')).toHaveText('Không phát được audio. Vui lòng thử lại.');
   await expect(page.getByRole('button', { name: 'Thử lại' })).toBeVisible();
   await page.getByRole('button', { name: 'Thử lại' }).click();
   await expect.poll(() => page.locator('audio').evaluate((element: HTMLAudioElement) => !element.paused)).toBe(true);

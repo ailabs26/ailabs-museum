@@ -133,6 +133,16 @@ Live test chạy frontend trên `http://localhost:5173` để khớp CORS local 
 - Browser fixture standalone tại `tests/fixtures/audio-player.html` tạo WAV trong test, không phải audio asset sản phẩm. Chạy focused test từ `front-end/` bằng `npm.cmd test -- audio-player.spec.ts`; không cần backend.
 - Task/plan: [audio-player-01.md](../docs/tasks/audio-player-01.md), [audio-player-01-plan.md](../docs/plans/audio-player-01-plan.md).
 
+Ví dụ dùng component trong một page đã có URL audio hợp lệ:
+
+```tsx
+import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
+
+<AudioPlayer src="/audio/exhibit-01.mp3" label="Bản thuyết minh hiện vật" />
+```
+
+Với file local có quyền sử dụng, đặt file trong `front-end/public/audio/` rồi truyền URL root-relative như `/audio/exhibit-01.mp3`. Fixture Playwright tạo WAV trong test và không phải asset sản phẩm.
+
 ## Tham quan Day 1–4
 
 ### Hotspots và mô hình không khả dụng

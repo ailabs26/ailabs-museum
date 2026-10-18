@@ -1,6 +1,6 @@
 # AUDIO-01 — Basic Audio Player Implementation Plan
 
-> **For agentic workers:** Chỉ là kế hoạch chờ người dùng duyệt. Sau khi được duyệt, dùng `executing-plans` triển khai tuần tự theo [task breakdown](../tasks/audio-player-01.md). Người dùng yêu cầu mỗi task hoàn thành/kiểm chứng có một commit riêng trên `feat/audio-player-01`; chưa push hoặc tạo PR.
+> **For agentic workers:** Kế hoạch đã được duyệt và triển khai trên `feat/audio-player-01` theo [task breakdown](../tasks/audio-player-01.md). Người dùng yêu cầu mỗi task hoàn thành/kiểm chứng có một commit riêng; chưa push hoặc tạo PR.
 
 **Goal:** Tạo reusable React component nhận `src`, phát/tạm dừng/tiếp tục audio bằng HTMLAudioElement, độc lập backend và trang hiện vật.
 

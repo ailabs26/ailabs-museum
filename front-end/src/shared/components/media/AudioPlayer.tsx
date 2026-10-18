@@ -26,6 +26,7 @@ function statusText(status: PlayerStatus) {
 function AudioPlayerInstance({ source, label }: { source: string | null; label: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const requestRef = useRef(0);
+  const hasMediaErrorRef = useRef(false);
   const [status, setStatus] = useState<PlayerStatus>(source ? 'ready' : 'empty');
   const [isPending, setIsPending] = useState(false);
 
@@ -43,6 +44,7 @@ function AudioPlayerInstance({ source, label }: { source: string | null; label: 
     if (!audio || isPending || !source) return;
     const request = requestRef.current + 1;
     requestRef.current = request;
+    hasMediaErrorRef.current = false;
     setIsPending(true);
     setStatus('loading');
     try {
@@ -68,10 +70,10 @@ function AudioPlayerInstance({ source, label }: { source: string | null; label: 
           src={source ?? undefined}
           preload="none"
           aria-hidden="true"
-          onPlaying={() => { setIsPending(false); setStatus('playing'); }}
+          onPlaying={() => { if (!hasMediaErrorRef.current) { setIsPending(false); setStatus('playing'); } }}
           onPause={() => { if (status !== 'ended' && status !== 'error') setStatus('paused'); }}
           onEnded={() => { setIsPending(false); setStatus('ended'); }}
-          onError={() => { setIsPending(false); setStatus('error'); }}
+          onError={() => { hasMediaErrorRef.current = true; requestRef.current += 1; setIsPending(false); setStatus('error'); }}
         />
         <Group justify="space-between" align="center" wrap="wrap">
           <Text fw={600}>{label}</Text>

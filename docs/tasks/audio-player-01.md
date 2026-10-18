@@ -5,6 +5,8 @@
 **Source đã khảo sát:** `dev` / `origin/dev` tại `8ffd808`; nhánh chung cho tài liệu và code `feat/audio-player-01`.
 **Execution gate:** Dừng để người dùng review. Sau duyệt, kiểm tra lại origin/dev và tiếp tục trên chính nhánh `feat/audio-player-01`. Mỗi task hoàn thành và kiểm chứng đạt phải có một commit riêng theo yêu cầu người dùng; chưa push/PR.
 
+Các checkbox trong từng task bên dưới là checklist thực thi được giữ lại để truy nguyên kế hoạch; trạng thái nghiệm thu cuối cùng và bằng chứng thực tế nằm ở phần **Evidence sau triển khai** và các commit tương ứng.
+
 ## Quy tắc chung
 
 - Chỉ frontend: reusable `AudioPlayer({ src, label })`, native `<audio>`, Mantine/theme sẵn có.
