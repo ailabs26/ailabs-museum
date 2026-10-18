@@ -10,10 +10,10 @@
 
 ## 1. Trạng thái và căn cứ source
 
-- Trạng thái tài liệu: **Draft — chờ review; chưa triển khai**.
+- Trạng thái tài liệu: **Implemented trên `feat/audio-player-01`; chưa push/PR**.
 - Đã đọc `AGENTS.md`, `front-end/docs/coding-conventions.md`, `front-end/README.md`, `package.json`, theme/provider, shared components và cấu hình test/build.
 - Đã fetch `origin/dev`; `dev` đồng bộ tại `8ffd808`. Nhánh chung cho tài liệu và code AUDIO-01: `feat/audio-player-01`.
-- `src/shared/components/` đang nhóm theo loại: data, feedback, form, layout, charts. Không tìm thấy `AudioPlayer`, `<audio>` hoặc `HTMLAudioElement` trong source.
+- `src/shared/components/` đang nhóm theo loại; AUDIO-01 bổ sung nhóm `media/` với `AudioPlayer`, còn trước triển khai chưa có `<audio>` hoặc `HTMLAudioElement` trong source.
 - `src/validations/roomSchema.ts` vẫn yêu cầu `audio: null`; không đổi contract trong AUDIO-01.
 - `src/app/theme.ts` cung cấp primary color `aura`, radius `md`; `AppProviders.tsx` dùng MantineProvider với auto light/dark. Public layout có token xanh/ấm cục bộ, không phải token global.
 - `vitest.config.ts` chỉ chạy `.test.ts` trên Node, chưa có môi trường DOM/component testing. Playwright có sẵn Chromium/Edge và Vite web server; không cần thêm jsdom hoặc React Testing Library.
@@ -21,7 +21,7 @@
 
 ## 2. Global constraints
 
-- Hiện tại chỉ viết hai tài liệu này; dừng để người dùng review trước khi sửa code.
+- Giai đoạn lập kế hoạch chỉ viết hai tài liệu này; code triển khai sau khi người dùng duyệt phải giữ đúng phạm vi bên dưới.
 - Implementation chỉ thuộc frontend. Không sửa backend/API/database/migration/schema public.
 - Chưa tích hợp vào trang chi tiết hiện vật, collection hoặc tour; không thêm route demo trong router sản phẩm.
 - Không thêm thư viện. Không tự phát, preload toàn bộ, loop hoặc phát lại tự động sau khi đổi nguồn.
@@ -150,7 +150,7 @@ npm test -- audio-player.spec.ts
 | AUDIO-01.4 | Accessibility/theme/multiple instances + fixture typecheck | `test(audio): verify keyboard theme and isolated instances` |
 | AUDIO-01.5 | README và bằng chứng nghiệm thu | `docs(audio): document usage and verification evidence` |
 
-Mỗi commit chỉ stage file thuộc task, đi kèm test liên quan và bằng chứng gate đạt. Review status/diff/recent log và secrets trước commit; không commit RED, không squash các task, không tạo commit rỗng. Chưa triển khai/commit ở phiên sửa kế hoạch này.
+Mỗi commit chỉ stage file thuộc task, đi kèm test liên quan và bằng chứng gate đạt. Review status/diff/recent log và secrets trước commit; không commit RED, không squash các task, không tạo commit rỗng. Các task đã triển khai và commit riêng trên `feat/audio-player-01`.
 
 ## 8. Tự review kế hoạch
 
@@ -161,5 +161,14 @@ Mỗi commit chỉ stage file thuộc task, đi kèm test liên quan và bằng 
 - [x] Có đường test media thật bằng fixture, phân biệt rõ mock promise và decode thật.
 - [x] Không thêm production demo route, dependency, audio API, backend hoặc player trên trang chi tiết.
 - [x] Chỉ thiết kế một component sở hữu native element, không xây abstraction cho tính năng tương lai.
-- [x] Tài liệu và task có file/test/acceptance cụ thể; không ghi test đã pass.
-- [ ] Người dùng review và duyệt trước triển khai.
+- [x] Tài liệu và task có file/test/acceptance cụ thể; bằng chứng test thực tế được ghi ở phần Verification evidence.
+- [x] Người dùng review và duyệt trước triển khai.
+
+### Verification evidence
+
+- `npm.cmd test -- audio-player.spec.ts --reporter=line`: **10 passed**.
+- `npm.cmd run typecheck`: **passed**.
+- `npx.cmd tsc -p tsconfig.audio-fixture.json --pretty false`: **passed**.
+- `npm.cmd run lint`: **passed**.
+- `npm.cmd run build`: **passed**; Vite vẫn báo cảnh báo bundle hiện hữu cho các chunk trên 500 kB.
+- Chưa chạy full Playwright suite, live API test hoặc kiểm thử thiết bị/GPU thật; AUDIO-01 không tích hợp API và không thay backend.

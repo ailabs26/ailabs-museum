@@ -1,6 +1,6 @@
 # AUDIO-01 — Task breakdown: Audio Player cơ bản
 
-**Trạng thái:** Draft — chỉ PLAN/TASK, chưa code/chạy test/commit/push.
+**Trạng thái:** Implemented — các task đã commit riêng trên `feat/audio-player-01`; chưa push/PR.
 **Plan:** [audio-player-01-plan.md](../plans/audio-player-01-plan.md).
 **Source đã khảo sát:** `dev` / `origin/dev` tại `8ffd808`; nhánh chung cho tài liệu và code `feat/audio-player-01`.
 **Execution gate:** Dừng để người dùng review. Sau duyệt, kiểm tra lại origin/dev và tiếp tục trên chính nhánh `feat/audio-player-01`. Mỗi task hoàn thành và kiểm chứng đạt phải có một commit riêng theo yêu cầu người dùng; chưa push/PR.
@@ -10,7 +10,7 @@
 - Chỉ frontend: reusable `AudioPlayer({ src, label })`, native `<audio>`, Mantine/theme sẵn có.
 - Không API/backend/schema/database/migration, không tích hợp trang hiện vật/tour, không thêm dependency.
 - Chưa seek/duration/volume, autoplay, playlist, global playback policy hoặc hook/service dự phòng.
-- Các task chạy tuần tự: **AUDIO-01.0 → AUDIO-01.1 → AUDIO-01.2 → AUDIO-01.3 → AUDIO-01.4 → AUDIO-01.5**; mọi checkbox implementation bên dưới chưa hoàn thành.
+- Các task chạy tuần tự: **AUDIO-01.0 → AUDIO-01.1 → AUDIO-01.2 → AUDIO-01.3 → AUDIO-01.4 → AUDIO-01.5**; mỗi task đã hoàn thành và có commit riêng.
 - Không copy AppProviders vào fixture vì sẽ kéo theo auth/API; chỉ dùng MantineProvider/theme.
 - Mỗi task là một commit gồm thay đổi và test liên quan. Trước commit: xem `git status`, `git diff`, `git log --oneline -10`; review diff, kiểm tra secrets và chỉ stage file thuộc task. Không commit test đang fail, không squash các task hoặc tạo commit rỗng.
 - Với mỗi task sửa frontend, chạy focused tests cùng typecheck/lint/build trước commit; từ khi có fixture config, chạy thêm typecheck fixture. Ghi bằng chứng vào task cùng commit; SHA có thể tra bằng git log, không amend để chèn SHA vào chính commit.
@@ -181,7 +181,18 @@ npm test -- audio-player.spec.ts
 - [x] Đã đọc AGENTS.md/conventions/source dev và xác định vị trí shared media.
 - [x] Đã viết plan và chia task có bước/file/test/acceptance.
 - [x] Đã tự review phạm vi và các failure paths trong kế hoạch.
-- [ ] Người dùng duyệt PLAN/TASK.
-- [ ] Bắt đầu implementation sau duyệt.
+- [x] Người dùng duyệt PLAN/TASK.
+- [x] Bắt đầu implementation sau duyệt.
 
-**Kết thúc phiên lập kế hoạch:** chỉ hai file Markdown này được tạo; không có kết quả chạy frontend tests/build, không commit/push/PR/merge.
+## Evidence sau triển khai
+
+- AUDIO-01.0: `cdcf78e` — `docs(audio): plan basic player implementation`.
+- AUDIO-01.1: `0ef7c6d` — `feat(audio): add basic play pause and resume player`; focused test **2 passed**.
+- AUDIO-01.2: `011854f` — `fix(audio): handle playback errors and replay`; focused suite **5 passed**.
+- AUDIO-01.3: `8a9c99c` — `fix(audio): clean up playback on source changes and unmount`; focused suite **8 passed**.
+- AUDIO-01.4: `f8229dd` — `test(audio): verify keyboard theme and isolated instances`; focused suite **10 passed**, app/fixture typecheck, lint và build đạt.
+- AUDIO-01.5: README/PLAN/TASK và bằng chứng nghiệm thu; commit docs cuối được tạo sau review diff.
+- Build có cảnh báo bundle chunk lớn hơn 500 kB, không phát sinh từ audio player và không chặn build.
+- Chưa chạy full Playwright/live API/thiết bị hoặc GPU thật; component chưa tích hợp trang chi tiết hiện vật.
+
+**Kết thúc phiên AUDIO-01:** component và fixture đã triển khai, mỗi task có commit riêng; chưa push/PR/merge.
