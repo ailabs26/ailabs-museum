@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Button, Group, Paper, Stack, Text } from '@mantine/core';
 import { IconPlayerPause, IconPlayerPlay } from '@tabler/icons-react';
 
@@ -28,6 +28,15 @@ function AudioPlayerInstance({ source, label }: { source: string | null; label: 
   const requestRef = useRef(0);
   const [status, setStatus] = useState<PlayerStatus>(source ? 'ready' : 'empty');
   const [isPending, setIsPending] = useState(false);
+
+  useLayoutEffect(() => () => {
+    requestRef.current += 1;
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+  }, []);
 
   const handlePlay = async () => {
     const audio = audioRef.current;

@@ -5,20 +5,24 @@ import { theme } from '@/app/theme';
 import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
 
 const AUDIO_SRC = '/audio-fixture.wav';
+const SECOND_AUDIO_SRC = '/audio-fixture-2.wav';
 const ERROR_SRC = '/audio-error.wav';
 
 function AudioPlayerFixture() {
   const [src, setSrc] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(true);
 
   return (
     <MantineProvider theme={theme} defaultColorScheme="light">
       <Stack p="md" maw={520}>
         <Stack gap="xs" aria-label="Fixture controls">
           <Button data-testid="load-source" onClick={() => setSrc(AUDIO_SRC)}>Nạp nguồn audio</Button>
+          <Button data-testid="load-second-source" variant="default" onClick={() => setSrc(SECOND_AUDIO_SRC)}>Đổi nguồn audio</Button>
           <Button data-testid="load-error-source" variant="default" onClick={() => setSrc(ERROR_SRC)}>Nạp nguồn lỗi</Button>
           <Button data-testid="clear-source" variant="default" onClick={() => setSrc(null)}>Xóa nguồn audio</Button>
+          <Button data-testid="unmount-player" variant="default" onClick={() => setIsMounted(false)}>Tháo audio player</Button>
         </Stack>
-        <AudioPlayer src={src} label="Bản thuyết minh mẫu" />
+        {isMounted && <AudioPlayer src={src} label="Bản thuyết minh mẫu" />}
       </Stack>
     </MantineProvider>
   );
