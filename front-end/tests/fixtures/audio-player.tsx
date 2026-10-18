@@ -5,6 +5,7 @@ import { theme } from '@/app/theme';
 import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
 
 const AUDIO_SRC = '/audio-fixture.wav';
+const ERROR_SRC = '/audio-error.wav';
 
 function AudioPlayerFixture() {
   const [src, setSrc] = useState<string | null>(null);
@@ -14,6 +15,7 @@ function AudioPlayerFixture() {
       <Stack p="md" maw={520}>
         <Stack gap="xs" aria-label="Fixture controls">
           <Button data-testid="load-source" onClick={() => setSrc(AUDIO_SRC)}>Nạp nguồn audio</Button>
+          <Button data-testid="load-error-source" variant="default" onClick={() => setSrc(ERROR_SRC)}>Nạp nguồn lỗi</Button>
           <Button data-testid="clear-source" variant="default" onClick={() => setSrc(null)}>Xóa nguồn audio</Button>
         </Stack>
         <AudioPlayer src={src} label="Bản thuyết minh mẫu" />

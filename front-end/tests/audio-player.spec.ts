@@ -39,3 +39,54 @@ test('plays, pauses, and resumes the local audio source', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Tạm dừng' })).toBeVisible();
   await expect.poll(() => audio.evaluate((element: HTMLAudioElement) => element.currentTime)).toBeGreaterThan(pausedPosition);
 });
+
+test('reports media errors and allows a deliberate retry', async ({ page }) => {
+  let attempts = 0;
+  await page.route('**/audio-error.wav', async (route) => {
+    attempts += 1;
+    await route.fulfill(attempts === 1
+      ? { status: 404, contentType: 'text/plain', body: 'missing audio' }
+      : { status: 200, contentType: 'audio/wav', body: createWavFixture() });
+  });
+  await page.goto('/tests/fixtures/audio-player.html');
+  await page.getByTestId('load-error-source').click();
+  await page.getByRole('button', { name: 'Phát' }).click();
+
+  await expect(page.getByRole('alert')).toHaveText('Không phát được audio. Vui lòng thử lại.');
+  await expect(page.getByRole('button', { name: 'Thử lại' })).toBeVisible();
+  await page.getByRole('button', { name: 'Thử lại' }).click();
+  await expect.poll(() => page.locator('audio').evaluate((element: HTMLAudioElement) => !element.paused)).toBe(true);
+  expect(attempts).toBe(2);
+});
+
+test('does not report playing when play is rejected', async ({ page }) => {
+  await page.addInitScript(() => {
+    const originalPlay = HTMLMediaElement.prototype.play;
+    HTMLMediaElement.prototype.play = function () {
+      if (this.dataset.rejectPlay === 'true') return Promise.reject(new DOMException('blocked', 'NotAllowedError'));
+      return originalPlay.call(this);
+    };
+  });
+  await page.goto('/tests/fixtures/audio-player.html');
+  await page.getByTestId('load-source').click();
+  await page.locator('audio').evaluate((element) => { element.dataset.rejectPlay = 'true'; });
+  await page.getByRole('button', { name: 'Phát' }).click();
+
+  await expect(page.getByRole('alert')).toHaveText('Không phát được audio. Vui lòng thử lại.');
+  await expect(page.getByRole('button', { name: 'Thử lại' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Tạm dừng' })).toHaveCount(0);
+});
+
+test('shows ended state and can replay from the beginning', async ({ page }) => {
+  await page.goto('/tests/fixtures/audio-player.html');
+  await page.getByTestId('load-source').click();
+  const audio = page.locator('audio');
+  await page.getByRole('button', { name: 'Phát' }).click();
+  await expect.poll(() => audio.evaluate((element: HTMLAudioElement) => !element.paused)).toBe(true);
+  await audio.evaluate((element: HTMLAudioElement) => { element.currentTime = Math.max(0, element.duration - 0.05); });
+
+  await expect(page.getByRole('status')).toHaveText('Đã phát xong', { timeout: 10_000 });
+  await page.getByRole('button', { name: 'Phát' }).click();
+  await expect.poll(() => audio.evaluate((element: HTMLAudioElement) => !element.paused)).toBe(true);
+  await expect(page.getByRole('status')).toHaveText('Đang phát');
+});

@@ -37,6 +37,7 @@ function AudioPlayerInstance({ source, label }: { source: string | null; label: 
     setIsPending(true);
     setStatus('loading');
     try {
+      if (status === 'error') audio.load();
       await audio.play();
     } catch {
       if (requestRef.current === request) setStatus('error');
@@ -66,13 +67,15 @@ function AudioPlayerInstance({ source, label }: { source: string | null; label: 
             <Button leftSection={<IconPlayerPause size={18} aria-hidden="true" />} onClick={handlePause} disabled={isPending}>
               Tạm dừng
             </Button>
+          ) : status === 'error' ? (
+            <Button onClick={() => void handlePlay()} disabled={isPending}>Thử lại</Button>
           ) : (
             <Button leftSection={<IconPlayerPlay size={18} aria-hidden="true" />} onClick={() => void handlePlay()} disabled={!source || isPending}>
               {status === 'paused' ? 'Tiếp tục' : 'Phát'}
             </Button>
           )}
         </Group>
-        <Text role="status" aria-live="polite" size="sm" c={status === 'error' ? 'red' : 'dimmed'}>
+        <Text role={status === 'error' ? 'alert' : 'status'} aria-live="polite" size="sm" c={status === 'error' ? 'red' : 'dimmed'}>
           {statusText(status)}
         </Text>
       </Stack>
