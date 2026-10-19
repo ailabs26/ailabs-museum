@@ -10,6 +10,8 @@ import { ExhibitsController } from './controllers/exhibits.controller';
 import { ExhibitsService } from './services/exhibits.service';
 import { RevisionPublishGate } from './services/revision-publish.gate';
 import { ExhibitsRepository } from './repositories/exhibits.repository';
+import { PublicModelsService } from './services/public-models.service';
+import { ModelStorageService } from '../media/services/model-storage.service';
 
 @Module({
   imports: [
@@ -18,7 +20,7 @@ import { ExhibitsRepository } from './repositories/exhibits.repository';
     MediaModule,
   ],
   controllers: [ExhibitsController, AdminExhibitsController],
-  providers: [ExhibitsService, ExhibitsRepository, RevisionPublishGate],
+  providers: [ExhibitsService, ExhibitsRepository, RevisionPublishGate, PublicModelsService, ModelStorageService],
   exports: [ExhibitsService, ExhibitsRepository, RevisionPublishGate],
 })
 export class ExhibitsModule {}

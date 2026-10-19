@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Container, Group, NativeSelect, Stack, Text, Title } from '@mantine/core';
 import { useSearchParams } from 'react-router-dom';
 import { MuseumCatalogue } from '@/components/museum/MuseumCatalogue';
@@ -19,6 +19,11 @@ export function MuseumPage() {
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const displays = useMemo(() => detail ? mapRoomDisplays(detail) : [], [detail]);
   const [isSceneOpen, setIsSceneOpen] = useState(false);
+  const [failedRoomId, setFailedRoomId] = useState<string | null>(null);
+  const currentRoomId = detail?.id;
+  const handleUnavailable = useCallback(() => {
+    if (currentRoomId) setFailedRoomId(currentRoomId);
+  }, [currentRoomId]);
   const [selection, setSelection] = useState<{ roomId: string; id: string } | null>(null);
   const selectedDisplay = detail && selection?.roomId === detail.id ? displays.find((display) => display.id === selection.id) : undefined;
   useEffect(() => setSelection(null), [selectedSlug]);
@@ -42,6 +47,10 @@ export function MuseumPage() {
     next.set('room', slug);
     setSearchParams(next);
   };
+  const read2dHref = detail ? selectedDisplay
+    ? `/collection/${encodeURIComponent(detail.slug)}/exhibits/${encodeURIComponent(selectedDisplay.id)}`
+    : `/collection?${new URLSearchParams({ room: detail.slug })}` : '/collection';
+  const sceneFallback = <SceneFallback read2dHref={read2dHref} onUnavailable={handleUnavailable} />;
   return (
     <Container size="xl" py="xl" className={classes.page} onKeyDown={(event) => {
       if (event.key === 'Escape' && selectedDisplay) { event.preventDefault(); handleCloseDetail(); }
@@ -60,7 +69,7 @@ export function MuseumPage() {
           )}
           <Group gap="sm">
             <Button variant="default" disabled={rooms.isFetching || room.isFetching} onClick={() => void refresh()}>Làm mới</Button>
-            {isSceneOpen && <Button variant="default" onClick={() => setIsSceneOpen(false)}>Dừng 3D</Button>}
+            {isSceneOpen && failedRoomId !== detail?.id && <Button variant="default" onClick={() => setIsSceneOpen(false)}>Dừng 3D</Button>}
           </Group>
         </Group>
         {rooms.isPending ? <MuseumLoading text="Đang tải danh sách phòng…" />
@@ -75,14 +84,14 @@ export function MuseumPage() {
           </Alert> : null}
         {detail && <>
         {detail.description && <Text>{detail.description}</Text>}
-        <Text size="sm" c="dimmed">{displays.length} hiện vật · Hình khối thay thế cho ảnh hoặc mô hình chưa khả dụng</Text>
+        <Text size="sm" c="dimmed">{displays.length} hiện vật · {displays.some(display => display.model) ? 'Mở phòng 3D để khám phá mô hình hiện vật' : 'Hình khối thay thế cho ảnh hoặc mô hình chưa khả dụng'}</Text>
         {room.isFetching && <Text role="status">Đang cập nhật phòng…</Text>}
         <div className={`${classes.stage} ${selectedDisplay ? classes.stageDetails : ''}`}>
         <div className={classes.viewport}>
-          {isSceneOpen ? (
-            <ErrorBoundary key={detail.id} fallback={<SceneFallback />}>
+          {failedRoomId === detail.id ? sceneFallback : isSceneOpen ? (
+            <ErrorBoundary key={detail.id} fallback={sceneFallback}>
               <Suspense fallback={<MuseumLoading text="Đang mở phòng 3D…" />}>
-                <LazyMuseumScene displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay} />
+                <LazyMuseumScene displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay} onClear={handleCloseDetail} fallback={sceneFallback} />
               </Suspense>
             </ErrorBoundary>
           ) : (
@@ -95,11 +104,12 @@ export function MuseumPage() {
             </Stack>
           )}
         </div>
-        {selectedDisplay && <ExhibitDetailPanel display={selectedDisplay} onClose={handleCloseDetail} />}
+        {selectedDisplay && <ExhibitDetailPanel display={selectedDisplay} onClose={handleCloseDetail}
+          detail2dHref={`/collection/${encodeURIComponent(detail.slug)}/exhibits/${encodeURIComponent(selectedDisplay.id)}`} />}
         </div>
         <Text id="museum-controls-help" size="sm" c="dimmed">
-          Kéo chuột hoặc vuốt để xoay · Cuộn hoặc chụm hai ngón để thu phóng.
-          Chọn hiện vật để xem chi tiết. Khi chọn khung 3D: mũi tên / WASD xoay, +/− thu phóng,
+          Giữ và kéo chuột hoặc vuốt để nhìn · Joystick trái để đi trên thiết bị cảm ứng.
+          Chọn hiện vật để xem chi tiết. Khi chọn khung 3D: WASD di chuyển, Shift đi nhanh, mũi tên xoay, +/− đến gần/lùi xa,
           F tập trung hiện vật đã chọn, Home về ban đầu. Escape đóng chi tiết · Tab để rời khung.
         </Text>
         <MuseumCatalogue displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay} />

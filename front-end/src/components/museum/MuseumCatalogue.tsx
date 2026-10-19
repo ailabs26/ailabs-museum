@@ -13,7 +13,7 @@ export function MuseumCatalogue({ displays, selectedId, onSelect }: {
     <section aria-labelledby="catalogue-title" id="museum-catalogue" tabIndex={-1}>
       <Stack gap="md">
         <Title order={2} id="catalogue-title">Trong phòng trưng bày</Title>
-        <Text c="dimmed">Chưa có ảnh hoặc mô hình 3D; đang hiển thị hình khối thay thế.</Text>
+        <Text c="dimmed">{displays.some(display => display.model) ? 'Các mô hình hiện vật có thể khám phá trong phòng 3D. Danh mục vẫn đọc được khi không dùng 3D.' : 'Chưa có ảnh hoặc mô hình 3D; đang hiển thị hình khối thay thế.'}</Text>
         {displays.some((display) => display.isOutsideRoom) && <Text role="status" c="orange.8">Một số hiện vật chỉ có thể đọc trong danh mục bên dưới vì nằm ngoài phạm vi phòng 3D.</Text>}
         {displays.length === 0 && <EmptyState text="Phòng này chưa có hiện vật được xuất bản." />}
         <SimpleGrid component="ul" aria-label="Các hiện vật" cols={{ base: 1, sm: 2, lg: 3 }} p={0} m={0} style={{ listStyle: 'none' }}>

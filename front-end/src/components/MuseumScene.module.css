@@ -1,5 +1,7 @@
-.scene { display: flex; flex-direction: column; height: 100%; }
-.canvasFrame { flex: 1; min-height: 0; }
+.scene { display: flex; flex-direction: column; }
+.canvasFrame { position: relative; height: clamp(300px, 52svh, 620px); flex-shrink: 0; }
 .toolbar { flex-shrink: 0; padding: 12px; border-top: 1px solid #d3c7b1; background: #f7f3ea; }
 .toolbar button { min-height: 44px; height: auto; padding-block: 10px; max-width: 100%; }
 .toolbar :global(.mantine-Button-label) { white-space: normal; }
+.scene > :global([aria-label="Điểm tương tác hiện vật"]) button { min-height: 44px; height: auto; max-width: 100%; }
+.scene > :global([aria-label="Điểm tương tác hiện vật"]) :global(.mantine-Button-label) { white-space: normal; }

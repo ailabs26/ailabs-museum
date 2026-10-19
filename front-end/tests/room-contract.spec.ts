@@ -42,7 +42,8 @@ test('public room contract permits absent coordinates but rejects a partial tran
 test('public room contract accepts the real Task 9 response with published media', () => {
   const parsed = roomResponseSchema(roomDetailSchema).parse(publicRoomWithMediaResponse);
   const [item] = parsed.data.exhibits;
-  expect(item.model?.url).toMatch(/^https?:\/\/.+\/media\/uploads\/models\/.+\.glb$/);
+  expect(item.model?.url).toMatch(/^\/rooms\/e2e-1792074612\/exhibits\/.+\/model\?version=[a-f0-9]{64}$/);
+  expect(item.image?.url).toMatch(/^https?:\/\/.+\/media\/uploads\/images\/.+\.png$/);
   expect(item.image?.altText.en).toBeTruthy();
   expect(item.audio?.vi?.subtitle?.mimeType).toBe('text/vtt');
   expect(item.audio?.en?.transcript).toBeTruthy();
@@ -53,17 +54,17 @@ test('public room contract accepts the real Task 9 response with published media
 test('public room contract rejects unsafe or malformed media', () => {
   const real = publicRoomWithMediaResponse.data;
   const base = real.exhibits[0];
-  const media = base.model!;
+  const media = base.image!;
   const withExhibit = (change: Record<string, unknown>) => ({ ...real, exhibits: [{ ...base, ...change }] });
   for (const change of [
-    { model: { ...media, url: '/media/uploads/models/x.glb' } },
-    { model: { ...media, url: 'javascript:alert(1)' } },
-    { model: { ...media, url: 'data:model/gltf-binary;base64,AAAA' } },
-    { model: { ...media, id: 'not-a-uuid' } },
-    { model: { ...media, sizeBytes: 0 } },
-    { model: { ...media, sizeBytes: 1.5 } },
-    { model: { ...media, rights: undefined } },
-    { image: { ...base.image!, altText: undefined } },
+    { image: { ...media, url: '/media/uploads/images/x.png' } },
+    { image: { ...media, url: 'javascript:alert(1)' } },
+    { image: { ...media, url: 'data:image/png;base64,AAAA' } },
+    { image: { ...media, id: 'not-a-uuid' } },
+    { image: { ...media, sizeBytes: 0 } },
+    { image: { ...media, sizeBytes: 1.5 } },
+    { image: { ...media, rights: undefined } },
+    { image: { ...media, altText: undefined } },
     { audio: { vi: { ...base.audio!.vi!, audio: null }, en: null } },
     { audio: { vi: undefined, en: null } },
     { scale: { x: 0, y: 1, z: 1 } },
@@ -77,4 +78,17 @@ test('public room contract keeps older payloads without i18n/transform valid', (
   const real = publicRoomWithMediaResponse.data;
   const legacy = { ...real.exhibits[0], i18n: undefined, rotation: undefined, scale: undefined, model: null, image: null, audio: null };
   expect(roomDetailSchema.safeParse({ ...real, exhibits: [legacy] }).success).toBe(true);
+});
+
+test('public GLB descriptors bind the model URL and version to the actual room and exhibit', () => {
+  const item = exhibit();
+  const hash = 'a'.repeat(64);
+  const model = { id: '20000000-0000-4000-8000-000000000001', storageKey: 'models/real.glb', sizeBytes: 100,
+    checksumSha256: hash, url: `/rooms/sculpture/exhibits/${item.id}/model?version=${hash}` };
+  const parse = (patch: Partial<typeof model>) => roomDetailSchema.safeParse({ ...roomA, exhibits: [{ ...item, model: { ...model, ...patch } }] });
+  expect(parse({}).success).toBe(true);
+  for (const change of [{ storageKey: '../private.glb' }, { url: 'https://outside.example/model.glb' },
+    { checksumSha256: 'b'.repeat(64) }, { url: `/rooms/another/exhibits/${item.id}/model?version=${hash}` }, { sizeBytes: 0 }]) {
+    expect(parse(change).success).toBe(false);
+  }
 });

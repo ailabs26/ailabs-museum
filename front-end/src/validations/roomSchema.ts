@@ -34,6 +34,16 @@ const localizedTextSchema = z.object({
 
 const vector3Schema = z.object({ x: z.number().finite(), y: z.number().finite(), z: z.number().finite() });
 
+export const publicModelSchema = z.object({
+  id: z.string().uuid(),
+  storageKey: z.string().min(1).max(512).regex(/^[a-zA-Z0-9_/-]+\.glb$/)
+    .refine(key => key.split('/').every(part => part.length > 0 && part !== '..' && part !== '.')),
+  sizeBytes: z.number().int().positive().max(128 * 1024 * 1024),
+  checksumSha256: z.string().regex(/^[a-f0-9]{64}$/),
+  url: z.string().regex(/^\/rooms\/[a-zA-Z0-9_-]+\/exhibits\/[a-f0-9-]+\/model\?version=[a-f0-9]{64}$/),
+});
+export type PublicModel = z.infer<typeof publicModelSchema>;
+
 const exhibitSchema = z.object({
   id: z.string().uuid(),
   roomId: z.string().uuid(),
@@ -51,7 +61,8 @@ const exhibitSchema = z.object({
   placeholderShape: z.enum(['box', 'sphere', 'cylinder', 'cone', 'torus']),
   placeholderColor: z.string().regex(/^#(?:[\da-f]{3}|[\da-f]{6})$/i),
   // Media of the current published revision only; per-locale audio never falls back to another language.
-  model: mediaSchema.nullable(),
+  // The GLB uses the tour contract: a stable API route bound to this room/exhibit/version.
+  model: publicModelSchema.nullable(),
   image: mediaSchema.extend({ altText: bilingualSchema }).nullable(),
   audio: z.object({ vi: audioTrackSchema.nullable(), en: audioTrackSchema.nullable() }).nullable(),
   hotspots: z.array(z.object({
@@ -76,7 +87,8 @@ export const roomListSchema = z.array(roomSummarySchema).refine((rooms) =>
 export const roomDetailSchema = roomSummarySchema.extend({
   exhibits: z.array(exhibitSchema),
 }).refine((room) =>
-  room.exhibits.every((exhibit) => exhibit.roomId === room.id) &&
+  room.exhibits.every((exhibit) => exhibit.roomId === room.id && (!exhibit.model
+    || exhibit.model.url === `/rooms/${encodeURIComponent(room.slug)}/exhibits/${exhibit.id}/model?version=${exhibit.model.checksumSha256}`)) &&
   new Set(room.exhibits.map((exhibit) => exhibit.id)).size === room.exhibits.length,
 'Exhibits must belong to this room and have unique identities');
 

@@ -1,4 +1,4 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor, StreamableFile } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiResponse, ok } from '../dto/api-response';
@@ -11,10 +11,11 @@ import { isPaginated } from '../types/paginated.type';
  * - Nếu đã là ApiResponse (có 'success') thì giữ nguyên.
  */
 @Injectable()
-export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<unknown>> {
-  intercept(_context: ExecutionContext, next: CallHandler<T>): Observable<ApiResponse<unknown>> {
+export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<unknown> | StreamableFile> {
+  intercept(_context: ExecutionContext, next: CallHandler<T>): Observable<ApiResponse<unknown> | StreamableFile> {
     return next.handle().pipe(
       map((value) => {
+        if (value instanceof StreamableFile) return value;
         if (value && typeof value === 'object' && 'success' in value) {
           return value as unknown as ApiResponse<unknown>;
         }

@@ -1,10 +1,18 @@
 import type { MuseumDisplay } from '@/interfaces/museumScene';
+import { EXHIBIT_PLINTH_SIZE } from '@/interfaces/museumScene';
 import { useEffect, useState } from 'react';
 import { useThree } from '@react-three/fiber';
 import { ExhibitLabel } from './ExhibitLabel';
+import { ArtifactModel } from './ArtifactModel';
+import type { ModelLoadState } from '@/helpers/roomModelAssets';
+import { getArtifactHotspots } from '@/helpers/artifactHotspots';
+import { ArtifactHotspot } from './ArtifactHotspot';
+import { ArtifactFallback3D } from './ArtifactFallback3D';
+import { ArtifactModelBoundary } from './ArtifactModelBoundary';
 
-export function ExhibitionDisplay({ display, isSelected, onSelect }: {
-  display: MuseumDisplay; isSelected: boolean; onSelect: (id: string) => void;
+export function ExhibitionDisplay({ display, isSelected, onSelect, modelState, renderAttempt = 0, hasRenderError = false, onRenderError }: {
+  display: MuseumDisplay; isSelected: boolean; onSelect: (id: string) => void; modelState?: ModelLoadState;
+  renderAttempt?: number; hasRenderError?: boolean; onRenderError: () => void;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const canvas = useThree((state) => state.gl.domElement);
@@ -13,10 +21,10 @@ export function ExhibitionDisplay({ display, isSelected, onSelect }: {
     canvas.style.cursor = 'pointer';
     return () => { canvas.style.cursor = ''; };
   }, [canvas, isHovered]);
-  const isCenterpiece = display.shape === 'torus';
+  const isCenterpiece = !!display.model || display.shape === 'torus';
   const isRoundPlinth = isCenterpiece || display.shape === 'sphere' || display.shape === 'cylinder';
   return (
-    <group position={display.position}
+    <group position={display.position} userData={{ artifactId: display.id }}
       onPointerOver={(event) => { event.stopPropagation(); setIsHovered(true); }}
       onPointerOut={() => setIsHovered(false)}
       onClick={(event) => { if (event.delta > 5) return; event.stopPropagation(); onSelect(display.id); }}>
@@ -30,7 +38,7 @@ export function ExhibitionDisplay({ display, isSelected, onSelect }: {
         <meshBasicMaterial color={isSelected ? '#25645c' : isHovered ? '#b69761' : '#fff3d6'} transparent opacity={isSelected ? 0.9 : isHovered ? 0.7 : 0.22} depthWrite={false} />
       </mesh>
       <mesh position={[0, 0.04, 0]}>
-        {isRoundPlinth ? <cylinderGeometry args={[isCenterpiece ? 1.22 : 0.76, isCenterpiece ? 1.22 : 0.76, 0.08, 32]} /> : <boxGeometry args={[1.15, 0.08, 1.15]} />}
+        {isRoundPlinth ? <cylinderGeometry args={[isCenterpiece ? EXHIBIT_PLINTH_SIZE.centerpieceRadius : EXHIBIT_PLINTH_SIZE.roundRadius, isCenterpiece ? EXHIBIT_PLINTH_SIZE.centerpieceRadius : EXHIBIT_PLINTH_SIZE.roundRadius, 0.08, 32]} /> : <boxGeometry args={[EXHIBIT_PLINTH_SIZE.squareWidth, 0.08, EXHIBIT_PLINTH_SIZE.squareWidth]} />}
         <meshStandardMaterial color="#736a5b" roughness={0.86} />
       </mesh>
       <mesh position={[0, 0.58, 0]}>
@@ -41,7 +49,11 @@ export function ExhibitionDisplay({ display, isSelected, onSelect }: {
         {isRoundPlinth ? <cylinderGeometry args={[isCenterpiece ? 1.13 : 0.7, isCenterpiece ? 1.13 : 0.7, 0.04, 32]} /> : <boxGeometry args={[1.09, 0.04, 1.09]} />}
         <meshStandardMaterial color="#85745b" metalness={0.28} roughness={0.62} />
       </mesh>
-      <mesh position={[0, isCenterpiece ? 2.16 : 1.73, 0]} rotation={[0, 0, display.shape === 'cube' ? 0.12 : 0]}>
+      {display.model ? modelState?.status === 'ready' ?
+        <ArtifactModelBoundary key={`${display.model.checksumSha256}:${renderAttempt}`} onError={onRenderError} fallback={<ArtifactFallback3D artifactId={display.id} />}>
+          <ArtifactModel asset={modelState.asset} artifactId={display.id} />
+        </ArtifactModelBoundary> :
+        <ArtifactFallback3D artifactId={display.id} isLoading={modelState?.status !== 'error'} /> : <mesh position={[0, isCenterpiece ? 2.16 : 1.73, 0]} rotation={[0, 0, display.shape === 'cube' ? 0.12 : 0]}>
         {display.shape === 'torus' && <torusGeometry args={[0.8, 0.2, 16, 48]} />}
         {display.shape === 'sphere' && <sphereGeometry args={[0.57, 24, 16]} />}
         {display.shape === 'cube' && <boxGeometry args={[0.9, 0.9, 0.9]} />}
@@ -50,8 +62,10 @@ export function ExhibitionDisplay({ display, isSelected, onSelect }: {
         {display.shape === 'icosahedron' && <icosahedronGeometry args={[0.64, 0]} />}
         <meshStandardMaterial color={display.color} roughness={isCenterpiece ? 0.44 : display.shape === 'cylinder' ? 0.55 : 0.7} metalness={isCenterpiece ? 0.48 : 0.06}
           emissive={isSelected ? '#25645c' : '#b69761'} emissiveIntensity={isSelected ? 0.15 : isHovered ? 0.12 : 0} />
-      </mesh>
+      </mesh>}
       <ExhibitLabel title={display.title} isSelected={isSelected} isCenterpiece={isCenterpiece} />
+      {getArtifactHotspots(display, !hasRenderError && modelState?.status === 'ready' ? modelState.asset.normalization : undefined).map(hotspot =>
+        <ArtifactHotspot key={hotspot.id} hotspot={hotspot} artifactTitle={display.title} isSelected={isSelected} onSelect={onSelect} />)}
     </group>
   );
 }

@@ -70,6 +70,22 @@ quản trị chỉ để thêm nội dung. Task/design/plan tại `../docs/tasks
 ### Công khai (không cần token)
 - `GET /api/health`
 - `GET /api/rooms`, `GET /api/rooms/:slug` — nội dung đã xuất bản.
+- `GET /api/rooms/:slug/exhibits/:id/model?version=<sha256>` — binary GLB của hiện vật đã xuất bản. Response `model/gltf-binary` không bọc JSON; lỗi vẫn dùng envelope chuẩn. Mỗi request kiểm tra lại phòng active, hiện vật visible/chưa xóa, revision approved và media ready/chưa xóa.
+
+### Storage private và bộ trưng bày GLB
+
+Trong `.env` **chỉ phía backend**, thêm `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (hoặc legacy `SUPABASE_SERVICE_ROLE_KEY`) và `SUPABASE_STORAGE_BUCKET=museum-assets`. Không đưa secret vào `VITE_*`, source hoặc commit. Publishable key không thay thế secret của server; các biến JWKS không thay thế JWT/RBAC hiện có của NestJS.
+
+Backend ký URL private có hạn 120 giây rồi stream GLB qua API với backpressure, timeout và giới hạn kích thước. Frontend chỉ gọi API NestJS, không nhận key hoặc signed URL. Retry tạo URL ký mới; không public hóa bucket. Bucket public cũng có thể dùng luồng server này mà không thay đổi frontend.
+
+```sh
+npm run test:models
+npm run seed:models
+```
+
+`seed:models` tải và kiểm tra SHA-256 của đủ năm object trước khi ghi; tạo riêng phòng `bo-suu-tap-glb`, năm media và năm cặp hiện vật/revision. Không chạy migration, không sửa schema/policy và không sửa năm hiện vật mẫu cũ. Transaction yêu cầu admin active có sẵn từ `SEED_ADMIN_EMAIL`, khóa seed đồng thời, từ chối collision và không ghi đè các bản ghi đã chỉnh sửa/ẩn/xóa khi chạy lại. Tên lấy theo file; hồ sơ lịch sử, kích thước thật và giấy phép chưa được thẩm định. Duyệt nội dung trước khi dùng production.
+
+Mở `http://localhost:5173/tour.html?room=bo-suu-tap-glb` sau khi chạy cả backend và frontend. Báo cáo nghiệm thu: `../docs/museum-tour-progress.md`.
 
 ### Phân hệ quản trị (cần access token, trừ login/refresh)
 - **Auth:** `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`, `GET /api/auth/me`.

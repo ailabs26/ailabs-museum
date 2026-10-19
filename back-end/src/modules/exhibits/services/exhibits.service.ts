@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { Paginated } from '../../../common/types/paginated.type';
-import { Room, RoomStatus } from '../../rooms/entities/room.entity';
+import { RoomStatus } from '../../rooms/entities/room.entity';
 import { RoomsRepository } from '../../rooms/repositories/rooms.repository';
 import { CreateExhibitDto } from '../dto/create-exhibit.dto';
 import { ListExhibitsQueryDto } from '../dto/list-exhibits-query.dto';
@@ -70,8 +70,9 @@ export class ExhibitsService {
   /**
    * Danh sách phòng trưng bày công khai đang hoạt động (active).
    */
-  async roomsList(): Promise<Room[]> {
-    return this.roomsRepo.findPublicRooms();
+  async roomsList() {
+    const rooms = await this.roomsRepo.findPublicRooms();
+    return rooms.map(({ id, slug, name, description }) => ({ id, slug, name, description }));
   }
 
   /**
@@ -92,6 +93,7 @@ export class ExhibitsService {
           (storageKey) => this.mediaUrls.publicUrl(storageKey),
           (exhibitId, mediaId, reason) =>
             this.logger.warn(`Bỏ qua media ${mediaId} của hiện vật ${exhibitId}: ${reason}`),
+          room.slug,
         ) ?? [],
     );
 

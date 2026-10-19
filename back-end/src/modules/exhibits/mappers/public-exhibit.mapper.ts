@@ -1,3 +1,4 @@
+import { PublicModel, toPublicModel } from '../../media/dto/public-model.dto';
 import { Media, MediaKind, MediaProcessingState } from '../../media/entities/media.entity';
 import { Exhibit } from '../entities/exhibit.entity';
 import { ExhibitRevision, RevisionState } from '../entities/exhibit-revision.entity';
@@ -62,15 +63,20 @@ export interface PublicExhibitDto {
   description: string;
   transcript: string | null;
   i18n: { vi: PublicLocalizedText; en: PublicLocalizedText };
-  positionX: number;
-  positionY: number;
-  positionZ: number;
+  /** Vắng mặt khi bản nội dung chưa có vị trí hợp lệ → FE tự xếp theo layout phòng. */
+  positionX?: number;
+  positionY?: number;
+  positionZ?: number;
   rotation: Vector3;
   scale: Vector3;
   placeholderShape: string;
   placeholderColor: string;
   hotspots: PublicHotspotDto[];
-  model: PublicMediaDto | null;
+  /**
+   * GLB theo contract tour 3D: URL ổn định `/rooms/<slug>/exhibits/<id>/model?version=<sha256>`,
+   * file đọc từ Supabase Storage qua `PublicModelsService` (không qua route `/media`).
+   */
+  model: PublicModel | null;
   image: PublicImageDto | null;
   /** Audio theo ngôn ngữ; `null` khi không có audio nào. Không tự thay audio ngôn ngữ khác (AC-08). */
   audio: { vi: PublicAudioTrackDto | null; en: PublicAudioTrackDto | null } | null;
@@ -95,6 +101,15 @@ function finiteOr(value: unknown, fallback: number): number {
 function vector(value: unknown, fallback: number): Vector3 {
   const source = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   return { x: finiteOr(source.x, fallback), y: finiteOr(source.y, fallback), z: finiteOr(source.z, fallback) };
+}
+
+/** Vị trí chỉ được trả khi đủ 3 trục là số hữu hạn; không bịa tọa độ 0 cho hiện vật chưa đặt. */
+function placement(value: unknown): Vector3 | undefined {
+  const source = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  const axes = [source.x, source.y, source.z];
+  return axes.every((axis) => typeof axis === 'number' && Number.isFinite(axis))
+    ? { x: source.x as number, y: source.y as number, z: source.z as number }
+    : undefined;
 }
 
 /** Scale từng trục phải > 0; giá trị không hợp lệ quay về 1 thay vì làm mất hiện vật. */
@@ -132,7 +147,8 @@ function toHotspot(hotspot: Hotspot): PublicHotspotDto | null {
 export function toPublicExhibit(
   exhibit: Exhibit,
   mediaUrl: MediaUrlBuilder,
-  reportSkip: MediaSkipReporter = () => undefined,
+  reportSkip: MediaSkipReporter,
+  roomSlug: string,
 ): PublicExhibitDto | null {
   const revision: ExhibitRevision | null = exhibit.publishedRevision;
   if (
@@ -147,7 +163,7 @@ export function toPublicExhibit(
   const name = resolveBilingual(content.name);
   const description = resolveBilingual(content.description);
   const transcript = resolveBilingual(content.transcript);
-  const position = vector(content.position, 0);
+  const position = placement(content.position);
 
   const media = (value: Media | null | undefined, kind: MediaKind): PublicMediaDto | null => {
     if (!value) return null;
@@ -178,6 +194,10 @@ export function toPublicExhibit(
     return audioDto ? { audio: audioDto, subtitle: media(subtitle, MediaKind.SUBTITLE), transcript: text } : null;
   };
 
+  const model = revision.modelMedia ? toPublicModel(revision.modelMedia, roomSlug, exhibit.id) : null;
+  if (revision.modelMedia && !model) {
+    reportSkip(exhibit.id, revision.modelMedia.id, 'model không hợp lệ cho contract GLB công khai');
+  }
   const imageDto = media(revision.imageMedia, MediaKind.IMAGE);
   const audioVi = track(revision.audioMedia, revision.subtitleViMedia, transcript.vi);
   const audioEn = track(revision.audioEnMedia, revision.subtitleEnMedia, transcript.en);
@@ -195,9 +215,9 @@ export function toPublicExhibit(
       vi: { name: name.vi, description: description.vi, transcript: transcript.vi },
       en: { name: name.en, description: description.en, transcript: transcript.en },
     },
-    positionX: position.x,
-    positionY: position.y,
-    positionZ: position.z,
+    positionX: position?.x,
+    positionY: position?.y,
+    positionZ: position?.z,
     rotation: vector(content.rotation, 0),
     scale: scale(content.scale),
     placeholderShape: PLACEHOLDER_SHAPES.has(placeholderShape) ? placeholderShape : DEFAULT_SHAPE,
@@ -205,7 +225,7 @@ export function toPublicExhibit(
     hotspots: (revision.hotspots ?? [])
       .flatMap((hotspot) => toHotspot(hotspot) ?? [])
       .sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)),
-    model: media(revision.modelMedia, MediaKind.MODEL),
+    model,
     image: imageDto
       ? { ...imageDto, altText: resolveBilingual(content.altText) }
       : null,

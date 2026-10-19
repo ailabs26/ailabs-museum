@@ -73,15 +73,15 @@ function exhibit(rev: ExhibitRevision | null, overrides: Partial<Exhibit> = {}):
 
 describe('toPublicExhibit', () => {
   it('không có revision published / revision không APPROVED / id lệch → null', () => {
-    assert.equal(toPublicExhibit(exhibit(null), url), null);
+    assert.equal(toPublicExhibit(exhibit(null), url, () => undefined, 'room'), null);
     for (const state of [RevisionState.DRAFT, RevisionState.IN_REVIEW, RevisionState.REJECTED]) {
-      assert.equal(toPublicExhibit(exhibit(revision({ state })), url), null, state);
+      assert.equal(toPublicExhibit(exhibit(revision({ state })), url, () => undefined, 'room'), null, state);
     }
-    assert.equal(toPublicExhibit(exhibit(revision(), { publishedRevisionId: 'khac' }), url), null);
+    assert.equal(toPublicExhibit(exhibit(revision(), { publishedRevisionId: 'khac' }), url, () => undefined, 'room'), null);
   });
 
   it('nội dung song ngữ: field cũ là bản vi + i18n đủ', () => {
-    const dto = toPublicExhibit(exhibit(revision()), url)!;
+    const dto = toPublicExhibit(exhibit(revision()), url, () => undefined, 'room')!;
     assert.equal(dto.name, 'Bình');
     assert.equal(dto.description, 'Mô tả');
     assert.equal(dto.transcript, 'Thuyết minh');
@@ -92,26 +92,27 @@ describe('toPublicExhibit', () => {
   });
 
   it('nội dung chuỗi thường (seed) vẫn hoạt động; thiếu vi thì dùng en', () => {
-    const fromSeed = toPublicExhibit(exhibit(revision({}, { name: 'Mũ', description: 'Mô tả', transcript: null })), url)!;
+    const fromSeed = toPublicExhibit(exhibit(revision({}, { name: 'Mũ', description: 'Mô tả', transcript: null })), url, () => undefined, 'room')!;
     assert.equal(fromSeed.name, 'Mũ');
     assert.equal(fromSeed.i18n.en.name, null);
     assert.equal(fromSeed.transcript, null);
-    assert.equal(toPublicExhibit(exhibit(revision({}, { name: { en: 'Only EN' } })), url)!.name, 'Only EN');
+    assert.equal(toPublicExhibit(exhibit(revision({}, { name: { en: 'Only EN' } })), url, () => undefined, 'room')!.name, 'Only EN');
   });
 
-  it('transform: position/rotation/scale; giá trị hỏng → mặc định an toàn', () => {
-    const dto = toPublicExhibit(exhibit(revision()), url)!;
+  it('transform: position/rotation/scale; giá trị hỏng → mặc định an toàn, vị trí hỏng → bỏ trống', () => {
+    const dto = toPublicExhibit(exhibit(revision()), url, () => undefined, 'room')!;
     assert.deepEqual([dto.positionX, dto.positionY, dto.positionZ], [1, 2, 3]);
     assert.deepEqual(dto.rotation, { x: 0.1, y: 0.2, z: 0.3 });
     assert.deepEqual(dto.scale, { x: 2, y: 2, z: 2 });
-    const broken = toPublicExhibit(exhibit(revision({}, { position: { x: 'abc', y: null }, rotation: undefined, scale: { x: 0, y: -1, z: Infinity } })), url)!;
-    assert.deepEqual([broken.positionX, broken.positionY, broken.positionZ], [0, 0, 0]);
+    const broken = toPublicExhibit(exhibit(revision({}, { position: { x: 'abc', y: null }, rotation: undefined, scale: { x: 0, y: -1, z: Infinity } })), url, () => undefined, 'room')!;
+    // Không bịa tọa độ 0: FE dùng layout phòng khi vắng vị trí.
+    assert.deepEqual([broken.positionX, broken.positionY, broken.positionZ], [undefined, undefined, undefined]);
     assert.deepEqual(broken.rotation, { x: 0, y: 0, z: 0 });
     assert.deepEqual(broken.scale, { x: 1, y: 1, z: 1 });
   });
 
   it('placeholder không hợp lệ → mặc định box/#8b7355', () => {
-    const dto = toPublicExhibit(exhibit(revision({}, { placeholderShape: 'pyramid', placeholderColor: 'red' })), url)!;
+    const dto = toPublicExhibit(exhibit(revision({}, { placeholderShape: 'pyramid', placeholderColor: 'red' })), url, () => undefined, 'room')!;
     assert.equal(dto.placeholderShape, 'box');
     assert.equal(dto.placeholderColor, '#8b7355');
   });
@@ -125,7 +126,7 @@ describe('toPublicExhibit', () => {
         hotspot({ id: 'nan', displayOrder: 0, positionX: 'NaN' }),
         hotspot({ id: 'empty', displayOrder: 0, positionY: '' }),
       ],
-    })), url)!;
+    })), url, () => undefined, 'room')!;
     assert.deepEqual(dto.hotspots.map((h) => h.id), ['c', 'a', 'b']);
     const rim = dto.hotspots.find((h) => h.id === 'b')!;
     assert.equal(rim.label, 'Miệng');
@@ -133,7 +134,7 @@ describe('toPublicExhibit', () => {
     assert.deepEqual([rim.positionX, rim.positionY, rim.positionZ], [1, 2, 3]);
   });
 
-  it('media đủ 6 slot: URL tuyệt đối, rights, alt text; không lộ storageKey/checksum/người tạo', () => {
+  it('media đủ 6 slot: model theo contract tour 3D; ảnh/audio URL tuyệt đối, rights, alt text', () => {
     const dto = toPublicExhibit(exhibit(revision({
       modelMedia: media(MediaKind.MODEL, 'm'),
       imageMedia: media(MediaKind.IMAGE, 'i'),
@@ -141,11 +142,12 @@ describe('toPublicExhibit', () => {
       audioEnMedia: media(MediaKind.AUDIO, 'ae'),
       subtitleViMedia: media(MediaKind.SUBTITLE, 'sv'),
       subtitleEnMedia: media(MediaKind.SUBTITLE, 'se'),
-    })), url)!;
+    })), url, () => undefined, 'room')!;
     assert.deepEqual(dto.model, {
-      id: 'm', url: 'http://api.test/media/uploads/model/m.glb', mimeType: 'mime/model', sizeBytes: 1234,
-      rights: { source: 'Nguồn', author: 'Tác giả', license: 'CC BY 4.0' },
+      id: 'm', storageKey: 'uploads/model/m.glb', sizeBytes: 1234, checksumSha256: 'f'.repeat(64),
+      url: `/rooms/room/exhibits/${EXHIBIT_ID}/model?version=${'f'.repeat(64)}`,
     });
+    assert.equal(dto.image?.url, 'http://api.test/media/uploads/image/i.png');
     assert.deepEqual(dto.image?.altText, { vi: 'Ảnh', en: 'Photo' });
     assert.equal(dto.audio?.vi?.audio.id, 'av');
     assert.equal(dto.audio?.vi?.subtitle?.id, 'sv');
@@ -153,21 +155,22 @@ describe('toPublicExhibit', () => {
     assert.equal(dto.audio?.en?.audio.id, 'ae');
     assert.equal(dto.audio?.en?.subtitle?.id, 'se');
     assert.equal(dto.audio?.en?.transcript, 'Narration');
-    const json = JSON.stringify(dto);
+    // Model cố ý mang storageKey/checksum (contract tour 3D); các phần còn lại không được lộ.
+    const json = JSON.stringify({ ...dto, model: undefined });
     for (const secret of ['storageKey', 'checksum', 'createdById', 'originalName', 'goc.png', REVISION_ID]) {
       assert.equal(json.includes(secret), false, secret);
     }
   });
 
   it('chỉ audio en → audio.vi = null (không tự thay ngôn ngữ — AC-08)', () => {
-    const dto = toPublicExhibit(exhibit(revision({ audioEnMedia: media(MediaKind.AUDIO, 'ae') })), url)!;
+    const dto = toPublicExhibit(exhibit(revision({ audioEnMedia: media(MediaKind.AUDIO, 'ae') })), url, () => undefined, 'room')!;
     assert.equal(dto.audio?.vi, null);
     assert.equal(dto.audio?.en?.audio.id, 'ae');
     assert.equal(dto.audio?.en?.subtitle, null);
   });
 
   it('không có audio → audio = null', () => {
-    assert.equal(toPublicExhibit(exhibit(revision()), url)!.audio, null);
+    assert.equal(toPublicExhibit(exhibit(revision()), url, () => undefined, 'room')!.audio, null);
   });
 
   it('media đã xóa / không ready / sai kind / không có URL → null + báo skip, exhibit vẫn trả', () => {
@@ -177,7 +180,7 @@ describe('toPublicExhibit', () => {
       imageMedia: media(MediaKind.IMAGE, 'failed', { processingState: MediaProcessingState.FAILED }),
       audioMedia: media(MediaKind.SUBTITLE, 'wrong-kind'),
       audioEnMedia: media(MediaKind.AUDIO, 'quarantine', { storageKey: 'quarantine/x.bin' }),
-    })), url, (_exhibitId, mediaId) => skipped.push(mediaId))!;
+    })), url, (_exhibitId, mediaId) => skipped.push(mediaId), 'room')!;
     assert.equal(dto.model, null);
     assert.equal(dto.image, null);
     assert.equal(dto.audio, null);
@@ -188,7 +191,7 @@ describe('toPublicExhibit', () => {
     const dto = toPublicExhibit(exhibit(revision({
       audioMedia: media(MediaKind.AUDIO, 'av', { isDeleted: true }),
       subtitleViMedia: media(MediaKind.SUBTITLE, 'sv'),
-    })), url)!;
+    })), url, () => undefined, 'room')!;
     assert.equal(dto.audio, null);
   });
 });

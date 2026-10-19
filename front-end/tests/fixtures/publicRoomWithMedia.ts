@@ -1,5 +1,6 @@
 // Real GET /api/rooms/:slug response captured from the Task 9 E2E run (production build + PostgreSQL).
-// Test input only; never a production fallback.
+// Test input only; never a production fallback. The `model` block follows the GLB tour contract
+// adopted when merging dev (stable /rooms/.../model route); its checksum is a placeholder.
 export const publicRoomWithMediaResponse = {
   "success": true,
   "data": {
@@ -65,14 +66,10 @@ export const publicRoomWithMediaResponse = {
         ],
         "model": {
           "id": "29e7e617-b4d0-48d9-8808-b6db610f1adb",
-          "url": "http://localhost:3911/media/uploads/models/fb9a8de2-db16-4f9c-b658-7fee6aca765c.glb",
-          "mimeType": "model/gltf-binary",
+          "storageKey": "uploads/models/fb9a8de2-db16-4f9c-b658-7fee6aca765c.glb",
           "sizeBytes": 320,
-          "rights": {
-            "source": "Bảo tàng Aura",
-            "author": "Nhóm E2E",
-            "license": "CC BY 4.0"
-          }
+          "checksumSha256": "3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f",
+          "url": "/rooms/e2e-1792074612/exhibits/ddc811c8-4c00-48b4-915a-8cdcbb70f836/model?version=3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f"
         },
         "image": {
           "id": "cc0a5605-c484-4229-a29e-55e7e46e99ad",
