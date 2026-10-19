@@ -86,15 +86,21 @@ class Environment {
   @IsUrl({ require_tld: false, require_protocol: true, protocols: ['http', 'https'] })
   SUPABASE_URL?: string;
 
-  /** Khóa service_role / secret của Supabase — CHỈ để ở back-end. */
-  @ValidateIf((env: Environment) => env.MEDIA_STORAGE_DRIVER === 'supabase')
+  /** Khóa secret (`sb_secret_...`) của Supabase — CHỈ để ở back-end. Bắt buộc 1 trong 2 khóa khi driver = supabase. */
+  @ValidateIf((env: Environment) => env.MEDIA_STORAGE_DRIVER === 'supabase' && !env.SUPABASE_SERVICE_ROLE_KEY)
+  @IsString()
+  @MinLength(20)
+  SUPABASE_SECRET_KEY?: string;
+
+  /** Khóa legacy `service_role`, dùng khi chưa có SUPABASE_SECRET_KEY. */
+  @ValidateIf((env: Environment) => env.MEDIA_STORAGE_DRIVER === 'supabase' && !env.SUPABASE_SECRET_KEY)
   @IsString()
   @MinLength(20)
   SUPABASE_SERVICE_ROLE_KEY?: string;
 
-  /** Bucket PRIVATE chứa media. */
+  /** Bucket PRIVATE chứa media (dùng chung với GLB của tour). */
   @IsString()
-  SUPABASE_STORAGE_BUCKET: string = 'aura-media';
+  SUPABASE_STORAGE_BUCKET: string = 'museum-assets';
 
   // --- Seed (chỉ dùng khi chạy script seed) ---
 

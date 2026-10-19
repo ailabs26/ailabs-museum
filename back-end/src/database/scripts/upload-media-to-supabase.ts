@@ -24,15 +24,16 @@ async function listFiles(dir: string): Promise<string[]> {
 }
 
 async function main(): Promise<void> {
-  const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_STORAGE_BUCKET } = process.env;
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('Thiếu SUPABASE_URL hoặc SUPABASE_SERVICE_ROLE_KEY trong .env');
+  const { SUPABASE_URL, SUPABASE_STORAGE_BUCKET } = process.env;
+  const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!SUPABASE_URL || !serviceKey) {
+    throw new Error('Thiếu SUPABASE_URL hoặc SUPABASE_SECRET_KEY (hay SUPABASE_SERVICE_ROLE_KEY) trong .env');
   }
   const storage = new MediaStorageService(
     new SupabaseStorageDriver({
       url: SUPABASE_URL.replace(/\/+$/, ''),
-      serviceKey: SUPABASE_SERVICE_ROLE_KEY,
-      bucket: SUPABASE_STORAGE_BUCKET ?? 'aura-media',
+      serviceKey,
+      bucket: SUPABASE_STORAGE_BUCKET ?? 'museum-assets',
     }),
   );
 

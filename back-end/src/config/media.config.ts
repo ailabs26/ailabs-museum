@@ -16,7 +16,8 @@ export const mediaConfig = registerAs('media', () => ({
   storageDriver: process.env.MEDIA_STORAGE_DRIVER ?? 'local',
   supabase: {
     url: (process.env.SUPABASE_URL ?? '').replace(/\/+$/, ''),
-    serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
-    bucket: process.env.SUPABASE_STORAGE_BUCKET ?? 'aura-media',
+    // Khóa mới `sb_secret_...` ưu tiên; khóa legacy service_role vẫn dùng được.
+    serviceKey: process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+    bucket: process.env.SUPABASE_STORAGE_BUCKET ?? 'museum-assets',
   },
 }));
