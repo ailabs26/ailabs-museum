@@ -84,6 +84,28 @@ test('neutral viewport resize preserves focus instead of turning it into manual 
   await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'inspect');
 });
 
+test('reduced-motion focus completes without waiting for a future render frame', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' }); await openTour(page);
+  await page.waitForTimeout(200); // Let initial demand frames settle before freezing RAF.
+  const before = await cameraState(page);
+  await page.evaluate(() => {
+    Reflect.set(window, '__navigationRaf', window.requestAnimationFrame);
+    window.requestAnimationFrame = () => 0;
+  });
+  try {
+    // Direct DOM clicks deliberately avoid Playwright's RAF-based stability
+    // wait: this test proves focus does not depend on the next renderer frame.
+    await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).evaluate(button => button.click());
+    await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'inspect');
+    const focused = await cameraState(page); expect(focused!.position).not.toEqual(before!.position);
+    await page.getByRole('button', { name: 'Đóng chi tiết hiện vật' }).evaluate(button => button.click());
+    await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);
+    expect(await cameraState(page)).toEqual(focused);
+  } finally {
+    await page.evaluate(() => { window.requestAnimationFrame = Reflect.get(window, '__navigationRaf'); });
+  }
+});
+
 test('a selected delayed GLB still reframes after resize and remains fully visible in portrait', async ({ page }) => {
   let finish!: () => void;
   const gate = new Promise<void>(resolve => { finish = resolve; });

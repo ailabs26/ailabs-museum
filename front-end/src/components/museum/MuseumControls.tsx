@@ -80,6 +80,12 @@ export function MuseumControls({ command, selectedDisplay, focusBounds, displays
         }
         const path = findNavigationPath({ x: camera.position.x, y: camera.position.z }, { x: destination.x, y: destination.z }, MUSEUM_ROOM_SIZE, collidersRef.current);
         if (!path) { setMode('explore'); return; }
+        // Reduced-motion focus is synchronous, as in the previous controller.
+        // Closing details immediately must not cancel a not-yet-rendered jump.
+        if (reducedRef.current) {
+          camera.position.copy(destination); camera.lookAt(target); syncLook();
+          setMode('inspect'); invalidate(); return;
+        }
         const lengths = [0];
         for (let i = 1; i < path.length; i++) lengths.push(lengths[i - 1] + Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y));
         camera.getWorldDirection(runtime.direction);
