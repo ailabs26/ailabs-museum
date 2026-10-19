@@ -218,8 +218,21 @@ Các checkbox dưới đây là **checklist dự kiến**, chưa phải bằng c
 
 ## Evidence sau triển khai
 
-- **Hiện tại:** A11Y-01 chưa bắt đầu, chưa có commit/PR và chưa chạy test mới.
+- **Hiện tại:** A11Y-01.0 đã bắt đầu trên `feat/a11y-keyboard`; docs duyệt commit `03039c1`. Chưa push/PR.
 - **Baseline source:** `dev` SHA `3f34a6b` ngày 19/10/2026.
-- **Typecheck/Lint/Build/Vitest/Playwright:** NOT RUN (đây là giai đoạn thiết kế).
+- **Playwright baseline:** `audio-player.spec.ts` 10/10 PASS; ca `museum-tour.spec.ts -g "focused keyboard navigation"` 1/1 PASS. Lần chạy cả `museum-tour.spec.ts` có 11 assertion PASS và một lỗi teardown thiếu trace artifact; ca đó chạy riêng PASS nên phân loại runner artifact, không phải product FAIL.
+- **Typecheck/Lint/Build/Vitest:** chưa chạy ở A11Y-01.0 vì chưa sửa source.
 - **Keyboard-only manual audit:** NOT RUN.
 - Khi triển khai, ghi mốc commit và bằng chứng đạt từng task tại đây. Giữ các checkbox của task để truy vết; không đổi status thành Implemented chỉ vì đã viết plan.
+
+### Keyboard baseline matrix
+
+| Route/flow | Key sequence | Expected | Actual | Status | Severity / WCAG | Owner / evidence |
+|---|---|---|---|---|---|---|
+| `/tour` mở/dừng 3D | Enter trên nút mở, Tab khỏi Canvas | Canvas nhận focus có chủ đích; Tab thoát; dừng 3D trả focus trigger | Đúng theo browser test | PASS | 2.1.1, 2.1.2, 2.4.3 | `museum-tour.spec.ts` focused 1/1 |
+| Canvas hotkeys | Canvas focus → Arrow/Home/WASD; blur | Chỉ Canvas nhận hotkeys, blur nhả movement | Source scope theo `activeElement`; focused navigation regression sẽ chạy ở 01.1 | NOT TESTED | P1 / 2.1.1, 2.1.2 | `attachNavigationInput.ts`, `museum-navigation.spec.ts` |
+| Tour catalogue/panel | Enter/Space → heading; Escape | Mở đúng hiện vật, focus heading, đóng và restore trigger | Existing source/tests có contract; chạy regression ở 01.2 | NOT TESTED | P1 / 2.1.1, 2.4.3 | `museum-interaction.spec.ts` |
+| Audio fixture | Tab/Enter trên Play/Pause | Nút hoạt động, focus giữ ổn định | Đúng | PASS | 2.1.1, 2.4.7, 4.1.2 | `audio-player.spec.ts` 10/10 |
+| Public skip link | Tab → Enter | Focus tới `#public-content`, không chỉ scroll | Native anchor + focusable main; chưa có browser test | NOT TESTED | P1 / 2.4.1 | `PublicLayout.tsx` |
+| CMS moderation queue | Tab → action mở revision | Có native control mở đúng record | Chỉ có `<tr onClick>`; không có control keyboard | FAIL | P1 / 2.1.1, 4.1.2 | `ModerationPage.tsx:176-188`, `DataTable.tsx:80-91` |
+| CMS Modal/Drawer nội bộ | Escape/Tab | Mantine overlay behavior | Ngoài phạm vi A11Y-01 | NOT APPLICABLE | A11Y-02 | Theo scope đã duyệt |
