@@ -24,6 +24,7 @@ import { MediaRepository } from '../repositories/media.repository';
 import { MediaInspectionService } from '../services/media-inspection.service';
 import { MediaReferenceValidator } from '../services/media-reference.validator';
 import { MediaStorageService } from '../services/media-storage.service';
+import { LocalStorageDriver } from '../storage/local-storage.driver';
 import { MediaService } from '../services/media.service';
 import { testMediaUrlService } from './media-test-doubles';
 
@@ -148,7 +149,7 @@ describe('Task 9 — media gắn revision (PostgreSQL thật)', { skip }, () => 
     );
     mediaService = new MediaService(
       mediaRepo,
-      new MediaStorageService({ publicRoot: join(workDir, 'public'), quarantineRoot: join(workDir, 'q') }),
+      new MediaStorageService(new LocalStorageDriver({ publicRoot: join(workDir, 'public'), quarantineRoot: join(workDir, 'q') })),
       new MediaInspectionService(),
       tx,
       testMediaUrlService(),

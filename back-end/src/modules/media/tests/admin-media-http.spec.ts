@@ -28,7 +28,9 @@ import { AuditService } from '../../audit/services/audit.service';
 import { AdminMediaController, MEDIA_UPLOAD_LIMITS } from '../controllers/admin-media.controller';
 import { MediaRepository } from '../repositories/media.repository';
 import { MediaInspectionService } from '../services/media-inspection.service';
-import { MEDIA_STORAGE_ROOTS, MediaStorageService } from '../services/media-storage.service';
+import { MediaStorageService } from '../services/media-storage.service';
+import { LocalStorageDriver } from '../storage/local-storage.driver';
+import { MEDIA_STORAGE_DRIVER } from '../storage/media-storage-driver';
 import { MediaService } from '../services/media.service';
 import {
   EXE_FILE,
@@ -90,7 +92,10 @@ describe('Admin Media HTTP (multipart thật → pipeline thật)', () => {
         MediaStorageService,
         MediaUrlService,
         { provide: MEDIA_URL_OPTIONS, useValue: TEST_MEDIA_URL_OPTIONS },
-        { provide: MEDIA_STORAGE_ROOTS, useValue: { publicRoot: join(workDir, 'public'), quarantineRoot: join(workDir, 'quarantine') } },
+        {
+          provide: MEDIA_STORAGE_DRIVER,
+          useValue: new LocalStorageDriver({ publicRoot: join(workDir, 'public'), quarantineRoot: join(workDir, 'quarantine') }),
+        },
         { provide: MediaRepository, useValue: repo },
         { provide: TransactionManager, useValue: new FakeTransactionManager() },
         { provide: AuditService, useValue: audit },

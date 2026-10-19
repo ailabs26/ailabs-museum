@@ -14,7 +14,9 @@ import { MEDIA_DELIVERY_ROUTE, MediaDeliveryController } from '../controllers/me
 import { Media, MediaKind, MediaProcessingState } from '../entities/media.entity';
 import { MediaRepository } from '../repositories/media.repository';
 import { MediaDeliveryService } from '../services/media-delivery.service';
-import { MEDIA_STORAGE_ROOTS, MediaStorageService } from '../services/media-storage.service';
+import { MediaStorageService } from '../services/media-storage.service';
+import { LocalStorageDriver } from '../storage/local-storage.driver';
+import { MEDIA_STORAGE_DRIVER } from '../storage/media-storage-driver';
 import { MEDIA_URL_OPTIONS, MediaUrlService } from '../services/media-url.service';
 import { buildGlb, buildVtt } from './media-test-files';
 import { TEST_MEDIA_URL_OPTIONS } from './media-test-doubles';
@@ -71,7 +73,7 @@ describe('MediaDeliveryController (HTTP thật, file thật)', () => {
         MediaStorageService,
         { provide: MediaUrlService, useValue: urls },
         { provide: MEDIA_URL_OPTIONS, useValue: TEST_MEDIA_URL_OPTIONS },
-        { provide: MEDIA_STORAGE_ROOTS, useValue: { publicRoot, quarantineRoot: join(workDir, 'q') } },
+        { provide: MEDIA_STORAGE_DRIVER, useValue: new LocalStorageDriver({ publicRoot, quarantineRoot: join(workDir, 'q') }) },
         { provide: MediaRepository, useValue: repo },
       ],
     }).compile();

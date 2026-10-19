@@ -9,6 +9,7 @@ import { MediaUsage } from '../repositories/media.repository';
 import { MediaInspectionService } from '../services/media-inspection.service';
 import { MediaStorageService } from '../services/media-storage.service';
 import { MediaUrlOptions, MediaUrlService } from '../services/media-url.service';
+import { LocalStorageDriver, MediaStorageRoots } from '../storage/local-storage.driver';
 
 /** Test double dùng chung cho test media. Không phải *.spec.ts nên node --test không chạy trực tiếp. */
 
@@ -86,6 +87,9 @@ export class ControllableInspection extends MediaInspectionService {
 
 /** Storage thật trên đĩa, có thể "cài lỗi" ghi/xóa. */
 export class FailingStorage extends MediaStorageService {
+  constructor(roots: MediaStorageRoots) {
+    super(new LocalStorageDriver(roots));
+  }
   saveError?: Error;
   removeError?: Error;
   removed: string[] = [];

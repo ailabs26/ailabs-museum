@@ -1,6 +1,8 @@
+import { Readable } from 'node:stream';
 import { Injectable } from '@nestjs/common';
 import { Media } from '../entities/media.entity';
 import { MediaRepository } from '../repositories/media.repository';
+import { ByteRange } from '../storage/media-storage-driver';
 import { MediaStorageService } from './media-storage.service';
 import { MediaUrlService } from './media-url.service';
 
@@ -20,7 +22,6 @@ export interface MediaDeliveryRequest {
 
 export interface MediaDelivery {
   media: Media;
-  filePath: string;
   /** `true` khi được phép nhờ URL đã ký (Preview), không phải vì media đang công khai. */
   viaSignature: boolean;
 }
@@ -62,7 +63,11 @@ export class MediaDeliveryService {
       return null;
     }
 
-    const filePath = this.storage.publicFilePath(storageKey);
-    return filePath ? { media, filePath, viaSignature } : null;
+    return { media, viaSignature };
+  }
+
+  /** Mở luồng đọc file của media đã được `resolve` cho phép; `null` nếu file không còn. */
+  open(media: Media, range?: ByteRange): Promise<Readable | null> {
+    return this.storage.openPublic(media.storageKey, range);
   }
 }

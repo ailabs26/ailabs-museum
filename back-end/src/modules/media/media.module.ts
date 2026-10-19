@@ -6,15 +6,13 @@ import { MediaDeliveryController } from './controllers/media-delivery.controller
 import { Media } from './entities/media.entity';
 import { MediaRepository } from './repositories/media.repository';
 import { MediaInspectionService } from './services/media-inspection.service';
-import {
-  DEFAULT_MEDIA_STORAGE_ROOTS,
-  MEDIA_STORAGE_ROOTS,
-  MediaStorageService,
-} from './services/media-storage.service';
+import { MediaStorageService } from './services/media-storage.service';
 import { MediaService } from './services/media.service';
 import { MediaDeliveryService } from './services/media-delivery.service';
 import { MediaReferenceValidator } from './services/media-reference.validator';
 import { MEDIA_URL_OPTIONS, MediaUrlOptions, MediaUrlService } from './services/media-url.service';
+import { LocalStorageDriver } from './storage/local-storage.driver';
+import { MEDIA_STORAGE_DRIVER } from './storage/media-storage-driver';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Media])],
@@ -27,7 +25,7 @@ import { MEDIA_URL_OPTIONS, MediaUrlOptions, MediaUrlService } from './services/
     MediaUrlService,
     MediaReferenceValidator,
     MediaDeliveryService,
-    { provide: MEDIA_STORAGE_ROOTS, useValue: DEFAULT_MEDIA_STORAGE_ROOTS },
+    { provide: MEDIA_STORAGE_DRIVER, useFactory: () => new LocalStorageDriver() },
     {
       provide: MEDIA_URL_OPTIONS,
       inject: [ConfigService],
