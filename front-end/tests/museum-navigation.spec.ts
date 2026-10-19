@@ -25,8 +25,14 @@ async function openTour(page: Page) {
 test('WASD walks, Shift sprints, focus loss stops input and idle rendering sleeps', async ({ page }) => {
   const canvas = await openTour(page); await canvas.focus();
   const before = (await cameraState(page))!.position;
-  await page.keyboard.down('w'); await page.waitForTimeout(450); await page.keyboard.up('w');
-  await expect.poll(async () => (await cameraState(page))!.position[2]).toBeLessThan(before[2] - 0.3);
+  await page.keyboard.down('w');
+  try {
+    // A throttled software renderer can produce too few capped-delta frames in
+    // 450 ms. Observe real movement while input is held; unit tests cover speed.
+    await expect.poll(async () => (await cameraState(page))!.position[2], { timeout: 5000 }).toBeLessThan(before[2] - 0.3);
+  } finally {
+    await page.keyboard.up('w');
+  }
   const after = (await cameraState(page))!;
   expect(Math.abs(after.position[0] - before[0])).toBeLessThan(0.02);
   await page.waitForTimeout(900);

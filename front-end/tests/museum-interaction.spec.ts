@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { installMuseumApi, fulfillMuseum } from './fixtures/museumApi';
 import { envelope, roomA } from './fixtures/museumContent';
 import { PerspectiveCamera, Vector3 } from 'three';
+import { installRendererProbe } from './fixtures/museumProbe';
 
 test.beforeEach(async ({ page }) => { await installMuseumApi(page); });
 
@@ -79,22 +80,33 @@ test('real scene picking selects the plinth and hover gives pointer feedback', a
 });
 
 test('selecting an exhibit focuses the camera and reset retains published detail', async ({ page }) => {
+  await installRendererProbe(page);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D');
   await expect(canvas).toBeVisible();
+  const initialFrames = await page.evaluate(() => window.museumProbe.at(-1)?.frames ?? 0);
   await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
   const panel = page.getByRole('complementary', { name: 'Chi tiết hiện vật' });
   await expect(panel).toContainText('Hiện vật 2');
+  // Detail DOM can appear before the focus effect and its demand frame finish.
+  await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'inspect');
+  await expect.poll(() => page.evaluate(() => window.museumProbe.at(-1)?.frames ?? 0)).toBeGreaterThan(initialFrames);
   const capture = { style: 'canvas { outline: none !important; } [aria-label="Điều khiển góc nhìn"], [data-navigation-mode] { visibility: hidden !important; }' };
+  const readCamera = () => page.evaluate(() => {
+    const camera = window.museumProbe.at(-1)!.camera!.deref()!;
+    return { position: camera.position.toArray(), rotation: camera.quaternion.toArray(), aspect: (camera as unknown as { aspect: number }).aspect };
+  });
   const focused = await canvas.screenshot(capture);
+  const focusedCamera = await readCamera();
   await page.getByRole('button', { name: 'Góc nhìn ban đầu' }).click();
   await expect.poll(async () => (await canvas.screenshot(capture)).equals(focused)).toBe(false);
   await expect(panel).toContainText('Mô tả hiện vật 2');
   const reset = await canvas.screenshot(capture);
   await expect(page.getByRole('button', { name: 'Tập trung hiện vật', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Tập trung hiện vật', exact: true }).click();
+  await expect.poll(readCamera).toEqual(focusedCamera);
   await expect.poll(async () => (await canvas.screenshot(capture)).equals(focused)).toBe(true);
   await canvas.press('ArrowLeft');
   await expect.poll(async () => (await canvas.screenshot(capture)).equals(focused)).toBe(false);
