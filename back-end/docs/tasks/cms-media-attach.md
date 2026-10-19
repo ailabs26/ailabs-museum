@@ -48,6 +48,12 @@ Nhánh: `feat/cms-media-attach` (tách từ `feat/cms-media-upload`, rebase lên
 - **Sẵn sàng bàn giao Task 9:** Nhánh `feat/cms-media-attach` gồm 9 commit nguyên tử tuân thủ Conventional Commits, đáp ứng đầy đủ BR-21, BR-22, AC-32, AC-36, AC-51.
 - **Lộ trình kế tiếp (Task 10):** Sau khi PR Task 8 & 9 được review và merge vào `dev`, sẽ khởi tạo nhánh `feat/cms-preview-integration` để tích hợp hoàn chỉnh luồng upload -> gắn media -> metadata quyền tác giả -> preview 2D/3D trên CMS.
 
+## Cập nhật ngày 20/10/2026 (merge `dev`)
+
+- Field `model` của `GET /api/rooms/:slug` đổi sang contract tour GLB của `dev`: `{ id, storageKey, sizeBytes, checksumSha256, url }` với `url` tương đối `/rooms/<slug>/exhibits/<id>/model?version=<sha256>`; file phục vụ bởi route đó (Supabase), không qua `/media`. `image`/`audio` giữ nguyên như trên.
+- `positionX/Y/Z` vắng mặt khi revision chưa có vị trí hữu hạn (trước đây mặc định 0).
+- Chi tiết: [supabase-db-storage.md](supabase-db-storage.md#đồng-bộ-dev-ngày-20102026).
+
 ## Giới hạn & việc sau
 
 - Media của Draft xóa được (hành vi Task 8 — chỉ chặn published/in_review); Submit sau đó báo `media_not_found`.
