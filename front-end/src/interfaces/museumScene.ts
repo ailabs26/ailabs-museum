@@ -1,5 +1,7 @@
 /** Fixed Day 1 shell; shared with placement checks. Camera bounds assume this size. */
 export const MUSEUM_ROOM_SIZE = { width: 14, depth: 16, height: 5 } as const;
+/** Physical base footprint shared by rendered plinths and navigation proxies. */
+export const EXHIBIT_PLINTH_SIZE = { centerpieceRadius: 1.22, roundRadius: 0.76, squareWidth: 1.15 } as const;
 /** Shared billboard geometry: placement checks must include every orientation. */
 export const EXHIBIT_LABEL_SIZE = { width: 1.25, height: 0.3125, depth: 0.75, centerpieceDepth: 1.24 } as const;
 

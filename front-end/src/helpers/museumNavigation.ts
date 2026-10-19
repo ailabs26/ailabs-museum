@@ -1,5 +1,6 @@
 import type { Vector3 } from 'three';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
+import { EXHIBIT_PLINTH_SIZE } from '@/interfaces/museumScene';
 
 export const NAVIGATION = {
   walkSpeed: 2, sprintSpeed: 3.6, damping: 12, maxDelta: 0.05,
@@ -34,7 +35,9 @@ export function applyLook(look: NavigationLook, dx: number, dy: number, sensitiv
 export function getDisplayColliders(displays: readonly MuseumDisplay[]): NavigationCollider[] {
   return displays.filter(display => !display.isOutsideRoom).map(display => {
     const isCenterpiece = !!display.model || display.shape === 'torus';
-    const halfSize = isCenterpiece ? 1.22 : display.shape === 'sphere' || display.shape === 'cylinder' ? 0.76 : 0.575;
+    const halfSize = isCenterpiece ? EXHIBIT_PLINTH_SIZE.centerpieceRadius
+      : display.shape === 'sphere' || display.shape === 'cylinder' ? EXHIBIT_PLINTH_SIZE.roundRadius
+        : Math.max(EXHIBIT_PLINTH_SIZE.squareWidth / 2, display.shape === 'icosahedron' ? 0.64 : 0);
     const radius = halfSize + NAVIGATION.bodyRadius;
     return { minX: display.position[0] - radius, maxX: display.position[0] + radius,
       minZ: display.position[2] - radius, maxZ: display.position[2] + radius };

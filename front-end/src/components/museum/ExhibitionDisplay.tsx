@@ -1,4 +1,5 @@
 import type { MuseumDisplay } from '@/interfaces/museumScene';
+import { EXHIBIT_PLINTH_SIZE } from '@/interfaces/museumScene';
 import { useEffect, useState } from 'react';
 import { useThree } from '@react-three/fiber';
 import { ExhibitLabel } from './ExhibitLabel';
@@ -37,7 +38,7 @@ export function ExhibitionDisplay({ display, isSelected, onSelect, modelState, r
         <meshBasicMaterial color={isSelected ? '#25645c' : isHovered ? '#b69761' : '#fff3d6'} transparent opacity={isSelected ? 0.9 : isHovered ? 0.7 : 0.22} depthWrite={false} />
       </mesh>
       <mesh position={[0, 0.04, 0]}>
-        {isRoundPlinth ? <cylinderGeometry args={[isCenterpiece ? 1.22 : 0.76, isCenterpiece ? 1.22 : 0.76, 0.08, 32]} /> : <boxGeometry args={[1.15, 0.08, 1.15]} />}
+        {isRoundPlinth ? <cylinderGeometry args={[isCenterpiece ? EXHIBIT_PLINTH_SIZE.centerpieceRadius : EXHIBIT_PLINTH_SIZE.roundRadius, isCenterpiece ? EXHIBIT_PLINTH_SIZE.centerpieceRadius : EXHIBIT_PLINTH_SIZE.roundRadius, 0.08, 32]} /> : <boxGeometry args={[EXHIBIT_PLINTH_SIZE.squareWidth, 0.08, EXHIBIT_PLINTH_SIZE.squareWidth]} />}
         <meshStandardMaterial color="#736a5b" roughness={0.86} />
       </mesh>
       <mesh position={[0, 0.58, 0]}>

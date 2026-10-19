@@ -68,6 +68,8 @@ it('protects GLB loading/error placeholders and ignores displays outside the she
   expect(getDisplayColliders([{ ...display, isOutsideRoom: true }])).toEqual([]);
   const first = createNavigationInput(), second = createNavigationInput();
   first.keys.add('KeyW'); expect(second.keys.size).toBe(0);
+  const crystal = getDisplayColliders([{ ...display, shape: 'icosahedron' }])[0];
+  expect(crystal.maxX).toBeGreaterThanOrEqual(0.64 + 0.25);
 });
 
 it('routes focus/reset around plinths and leaves unreachable destinations alone', () => {
