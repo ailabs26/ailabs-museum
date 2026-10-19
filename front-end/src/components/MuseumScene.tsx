@@ -1,5 +1,5 @@
 import { Canvas, events } from '@react-three/fiber';
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Button, Group } from '@mantine/core';
 import { ACESFilmicToneMapping } from 'three';
 import { MuseumRoom } from '@/components/museum/MuseumRoom';
@@ -16,6 +16,9 @@ import { ArtifactHotspotControls } from '@/components/museum/ArtifactHotspotCont
 import { getArtifactFocusBounds } from '@/helpers/artifactHotspots';
 import type { ArtifactRenderState } from '@/components/museum/ArtifactModelBoundary';
 import { reportModelFailure } from '@/helpers/modelDiagnostics';
+import { createNavigationInput } from '@/helpers/museumNavigation';
+import { NavigationGestures } from '@/helpers/navigationGestures';
+import { NavigationHud, type NavigationMode } from '@/components/museum/NavigationHud';
 
 // Labels render over solid geometry. Picking follows that same visual order;
 // intersecting labels still use nearest-first ordering within their layer.
@@ -32,8 +35,13 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
   const [command, setCommand] = useState<CameraCommand | null>(null);
   const [isContextLost, setIsContextLost] = useState(false);
   const [renderStates, setRenderStates] = useState<Record<string, ArtifactRenderState>>({});
-  const pointerRef = useRef({ x: 0, y: 0, dragged: false });
-  const handleSceneSelect = (id: string) => { if (!pointerRef.current.dragged) onSelect(id); };
+  const input = useMemo(createNavigationInput, []);
+  const gestures = useMemo(() => new NavigationGestures(), []);
+  const [mode, setMode] = useState<NavigationMode>('explore');
+  const [isActive, setIsActive] = useState(false);
+  const [hasTouch, setHasTouch] = useState(false);
+  useEffect(() => { setHasTouch(navigator.maxTouchPoints > 0 || matchMedia('(any-pointer: coarse)').matches); }, []);
+  const handleSceneSelect = (id: string) => { if (gestures.canSelect) onSelect(id); };
   const { models, retry } = useRoomModels(isContextLost ? [] : displays);
   const selectedDisplay = displays.find((display) => display.id === selectedId);
   const selectedModel = selectedDisplay?.model ? models[selectedDisplay.model.checksumSha256] : undefined;
@@ -57,10 +65,10 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
   return (
     <div className={classes.scene}>
     <div className={classes.canvasFrame}
-      onPointerDownCapture={(event) => { pointerRef.current = { x: event.clientX, y: event.clientY, dragged: !event.isPrimary }; }}
-      onPointerMoveCapture={(event) => {
-        if (Math.hypot(event.clientX - pointerRef.current.x, event.clientY - pointerRef.current.y) > 5) pointerRef.current.dragged = true;
-      }}>
+      onPointerDownCapture={event => { gestures.start(event.pointerId, event.clientX, event.clientY); if (event.pointerType === 'touch') setHasTouch(true); }}
+      onPointerMoveCapture={event => gestures.move(event.pointerId, event.clientX, event.clientY)}
+      onPointerUpCapture={event => gestures.end(event.pointerId)}
+      onPointerCancelCapture={() => gestures.cancel()}>
     <Canvas
       events={createMuseumEvents}
       frameloop="demand"
@@ -69,19 +77,21 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
       gl={{ antialias: true, alpha: false, powerPreference: 'low-power', toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1 }}
       // R3F mounts this inside <canvas> even when WebGL works; no failure callbacks here.
       fallback="Trình duyệt không hiển thị được canvas. Nội dung hiện vật vẫn có trong danh mục bên dưới."
-      onPointerMissed={(event) => { if (event.type === 'click' && !pointerRef.current.dragged) onClear(); }}
+      onPointerMissed={(event) => { if (event.type === 'click' && gestures.canSelect) onClear(); }}
       onCreated={({ camera }) => camera.lookAt(...INITIAL_CAMERA_TARGET)}
     >
       <color attach="background" args={['#eee9df']} />
       <MuseumLighting />
       <SceneLifecycle onContextLost={handleContextLost} />
-      <MuseumControls command={command} selectedDisplay={selectedDisplay} focusBounds={focusBounds} />
+      <MuseumControls command={command} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
+        displays={displays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} />
       <MuseumRoom />
       {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={handleSceneSelect}
         modelState={display.model ? models[display.model.checksumSha256] : undefined} renderAttempt={renderStates[display.id]?.attempts}
         hasRenderError={renderStates[display.id]?.checksum === display.model?.checksumSha256 && renderStates[display.id]?.failed}
         onRenderError={() => handleRenderError(display)} />)}
     </Canvas>
+    <NavigationHud input={input} mode={mode} isActive={isActive} hasTouch={hasTouch} />
     </div>
     <Group className={classes.toolbar} gap="xs" aria-label="Điều khiển góc nhìn">
       <Button variant="default" onClick={() => handleCommand('reset')}>Góc nhìn ban đầu</Button>

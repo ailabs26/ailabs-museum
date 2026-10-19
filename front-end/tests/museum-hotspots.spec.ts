@@ -221,11 +221,13 @@ for (const failure of [403, 404, 502, 'network', 'corrupt'] as const) test(`one 
   await expect(page.getByText('Đã tải 4/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
   const snapshot = () => page.evaluate(() => {
     const models: Record<string, string> = {}; const fallbacks: string[] = [];
-    window.museumProbe.at(-1)!.scene!.deref()!.traverse(object => {
+    window.museumProbe.at(-1)?.scene?.deref()?.traverse(object => {
       if (object.userData.modelLoaded) models[object.userData.artifactId] = object.uuid;
       if (object.userData.artifactFallback) fallbacks.push(object.userData.artifactId);
     }); return { models, fallbacks };
   });
+  // Download status can precede the first canvas frame and probe observation.
+  await expect.poll(async () => Object.keys((await snapshot()).models)).toHaveLength(4);
   const before = await snapshot(); expect(Object.keys(before.models)).toHaveLength(4); expect(before.fallbacks).toEqual([exhibits[1].id]);
   await page.getByRole('button', { name: `Điểm tương tác ${exhibits[1].name}`, exact: true }).click();
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText(exhibits[1].description);
@@ -238,6 +240,7 @@ for (const failure of [403, 404, 502, 'network', 'corrupt'] as const) test(`one 
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText(exhibits[1].description);
   await page.getByRole('button', { name: `Thử lại ${exhibits[1].name}`, exact: true }).click();
   await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect.poll(async () => Object.keys((await snapshot()).models)).toHaveLength(5);
   const after = await snapshot(); expect(after.fallbacks).toEqual([]);
   for (const [id, uuid] of Object.entries(before.models)) expect(after.models[id]).toBe(uuid);
   expect(requests).toEqual([1, 2, 1, 1, 1]); expect(errors).toEqual([]);

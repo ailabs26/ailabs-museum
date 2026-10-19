@@ -2,7 +2,7 @@
 
 ## Phòng GLB từ Storage private
 
-Sau khi backend được cấu hình Storage và seed bộ model đã xác minh (xem `../back-end/README.md`), chạy `npm run dev` và mở `http://localhost:5173/tour.html?room=bo-suu-tap-glb`. Nhấn **Mở phòng 3D**; chờ **Đã tải 5/5 mô hình 3D**, click/tap vào hiện vật hoặc chọn từ danh mục. Dùng **Tập trung hiện vật**, **Góc nhìn ban đầu**, chuột/chụm ngón và các phím theo hướng dẫn dưới scene.
+Sau khi backend được cấu hình Storage và seed bộ model đã xác minh (xem `../back-end/README.md`), chạy `npm run dev` và mở `http://localhost:5173/tour.html?room=bo-suu-tap-glb`. Nhấn **Mở phòng 3D**; chờ **Đã tải 5/5 mô hình 3D**, click/tap vào hiện vật hoặc chọn từ danh mục. Chọn khung 3D rồi dùng **WASD** để đi, **Shift** để đi nhanh; giữ và kéo chuột để nhìn. Trên thiết bị touch, dùng joystick trái và vuốt vùng nhìn bên phải đồng thời. **F / Tập trung hiện vật** để xem gần, **Home / Góc nhìn ban đầu** để đặt lại; mũi tên xoay, **+/−** hoặc cuộn chuột để tiến/lùi. **Escape** đóng chi tiết, **Tab** rời khung. HUD có thể ẩn hướng dẫn. Không cần pointer lock; tap/click vẫn chọn hiện vật/hotspot, drag không chọn.
 
 Frontend chỉ tải binary qua NestJS bằng http-client. GLTFLoader nằm trong lazy scene chunk; không có Supabase SDK/key/signed URL ở frontend. Chỉ tải model của phòng đang mở, tối đa hai lượt đồng thời, cache chung theo checksum trong vòng đời phòng. Đóng 3D/chuyển phòng hủy tải và dispose tài nguyên; mở lại sẽ tải mới để không giữ vô hạn model cũ. Model lỗi có retry và trạng thái DOM; model lỗi/hình khối thay thế không được tính vào số model tải thành công.
 
@@ -21,7 +21,7 @@ Frontend của bảo tàng WebXR, dùng React, TypeScript và Vite. Three.js đ�
 
 ## Trạng thái hiện tại
 
-Ứng dụng đã có router public/admin và các màn hình quản trị. Tour Day 2 chạy tại `/tour` hoặc `/tour.html`: tải phòng và hiện vật đã xuất bản từ NestJS API, chọn phòng, catalogue DOM và scene R3F với camera orbit/ánh sáng/fallback Day 1. Backend hiện trả media null nên scene dùng hình khối thay thế có nhãn. GLB, audio, tương tác và WebXR chưa được triển khai. Một số file museum khác vẫn là scaffold; không dùng file rỗng làm convention.
+Ứng dụng đã có router public/admin và các màn hình quản trị. Tour chạy tại `/tour` hoặc `/tour.html`: tải phòng và hiện vật đã xuất bản từ NestJS API, catalogue DOM, GLB/placeholder, hotspots, chi tiết và scene R3F render theo nhu cầu. Một controller quản lý đi bộ desktop/touch và focus hiện vật; không có orbit controller chạy song song. Collision dùng shell phòng đang render và proxy bảo thủ của bệ/hiện vật; mọi phòng hiện dùng cùng shell 14 × 16 × 5 m vì API chưa có kích thước phòng. Audio/WebXR chưa được triển khai. Một số file museum khác vẫn là scaffold; không dùng file rỗng làm convention.
 
 Quy tắc đặt tên nằm tại [docs/coding-conventions.md](docs/coding-conventions.md). Thành viên và AI agent phải đọc tài liệu đó trước khi thêm code mới.
 
