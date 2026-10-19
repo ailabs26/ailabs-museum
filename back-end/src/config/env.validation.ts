@@ -8,6 +8,7 @@ import {
   Max,
   Min,
   MinLength,
+  ValidateIf,
   validateSync,
 } from 'class-validator';
 
@@ -75,6 +76,25 @@ class Environment {
   @Min(60)
   @Max(86400)
   MEDIA_SIGNED_URL_TTL_SECONDS: number = 900;
+
+  /** Nơi lưu file media: `local` (đĩa, dev) | `supabase` (Supabase Storage). */
+  @IsIn(['local', 'supabase'])
+  MEDIA_STORAGE_DRIVER: string = 'local';
+
+  /** Project URL của Supabase, vd https://<ref>.supabase.co — bắt buộc khi driver = supabase. */
+  @ValidateIf((env: Environment) => env.MEDIA_STORAGE_DRIVER === 'supabase')
+  @IsUrl({ require_tld: false, require_protocol: true, protocols: ['http', 'https'] })
+  SUPABASE_URL?: string;
+
+  /** Khóa service_role / secret của Supabase — CHỈ để ở back-end. */
+  @ValidateIf((env: Environment) => env.MEDIA_STORAGE_DRIVER === 'supabase')
+  @IsString()
+  @MinLength(20)
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+
+  /** Bucket PRIVATE chứa media. */
+  @IsString()
+  SUPABASE_STORAGE_BUCKET: string = 'aura-media';
 
   // --- Seed (chỉ dùng khi chạy script seed) ---
 
