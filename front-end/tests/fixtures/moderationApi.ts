@@ -11,7 +11,7 @@ export const revisions = [1, 2].map(index => ({
   createdAt: '2026-10-19T00:00:00Z',
 }));
 
-export async function installModerationApi(page: Page) {
+export async function installModerationApi(page: Page, { authenticated = true } = {}) {
   const detailRequests: string[] = [];
   const writes: string[] = [];
   const user = { id: '00000000-0000-4000-8000-000000000001', email: 'reviewer@example.test', displayName: 'Reviewer', roles: ['reviewer'], permissions: ['revision:publish'] };
@@ -29,11 +29,16 @@ export async function installModerationApi(page: Page) {
       return;
     }
     if (path === '/auth/me') {
-      const authenticated = !!request.headers().authorization;
-      await fulfillMuseum(route, authenticated ? envelope(user) : { success: false, message: 'Unauthenticated', data: null }, authenticated ? 200 : 401);
+      const hasSession = authenticated && !!request.headers().authorization;
+      await fulfillMuseum(route, hasSession ? envelope(user) : { success: false, message: 'Unauthenticated', data: null }, hasSession ? 200 : 401);
       return;
     }
-    if (path === '/auth/refresh') { await fulfillMuseum(route, envelope({ accessToken: 'keyboard-fixture-token' })); return; }
+    if (path === '/auth/refresh') {
+      await fulfillMuseum(route, authenticated ? envelope({ accessToken: 'keyboard-fixture-token' }) : { success: false, data: null, message: 'Unauthenticated' }, authenticated ? 200 : 401);
+      return;
+    }
+    if (path === '/auth/login') { await fulfillMuseum(route, envelope({ accessToken: 'keyboard-fixture-token', user })); return; }
+    if (path === '/auth/logout') { writes.push(path); await fulfillMuseum(route, envelope(null)); return; }
     if (request.method() !== 'GET') { writes.push(path); await fulfillMuseum(route, envelope({})); return; }
     if (path === '/moderation/queue') {
       const pageNumber = Number(new URL(request.url()).searchParams.get('page') ?? 1);

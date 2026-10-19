@@ -10,7 +10,7 @@
 
 ## 1. Trạng thái và căn cứ source
 
-- **Trạng thái:** **Planned** — chưa implement A11Y-01, chưa chạy test mới cho feature này.
+- **Trạng thái:** **Implemented trên `feat/a11y-keyboard`; chưa push/PR.**
 - **Baseline đã đọc:** `dev` tại `3f34a6bd9f6510316c99957ce2eddcb584989344` (19/10/2026). Agent phải fetch lại `origin/dev` trước khi triển khai và cập nhật SHA nếu đã đổi.
 - Đã tham chiếu `AGENTS.md`, `front-end/docs/coding-conventions.md`, `docs/plans/audio-player-01-plan.md`, `docs/tasks/audio-player-01.md`, các luồng UI và browser tests hiện có.
 - `front-end/src/layouts/PublicLayout.tsx` có skip link `#public-content`, `main` focusable bằng `tabIndex={-1}` và liên kết điều hướng.
@@ -150,7 +150,8 @@ Commit riêng khi task có thay đổi được kiểm chứng, không tạo com
 ### Verification evidence
 
 - Source inspection: `dev` `3f34a6b` (19/10/2026), đã đọc source và test hiện có.
-- Implementation A11Y-01: **NOT STARTED**.
-- Frontend typecheck/lint/unit/build/Playwright cho A11Y-01: **NOT RUN**.
-- Manual keyboard-only QA: **NOT RUN**.
-- Feature branch/commits/PR/merge: **NOT CREATED**.
+- Implementation A11Y-01: hoàn tất trong phạm vi keyboard navigation; không làm A11Y-02/03.
+- Frontend typecheck/lint/unit/build: PASS; focused A11Y Playwright **21/21 PASS**, Audio Player **10/10 PASS**.
+- Manual keyboard-only QA: NOT RUN trên thiết bị thật; browser automation đã kiểm tra keyboard sequence, focus và reflow.
+- Regression batch: final focused batch 65/66 PASS; một lazy scene touch timeout pass khi chạy riêng. Timing-sensitive failures được ghi trong task evidence.
+- Feature branch/commits: đã tạo và commit riêng từng phần; chưa push/PR/merge.

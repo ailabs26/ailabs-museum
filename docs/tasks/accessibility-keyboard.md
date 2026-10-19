@@ -1,6 +1,6 @@
 # A11Y-01 — Task breakdown: Keyboard Navigation
 
-**Trạng thái:** **Planned — chưa implement, chưa commit/PR.**
+**Trạng thái:** **Implemented trên `feat/a11y-keyboard`; chưa push/PR.**
 **Plan:** [accessibility-keyboard-plan.md](../plans/accessibility-keyboard-plan.md).
 **Source đã khảo sát:** `dev` tại `3f34a6b` (19/10/2026); trước triển khai phải fetch lại `origin/dev`.
 **Execution gate:** Người dùng đã duyệt PLAN/TASK. Thực hiện từng task trên **một nhánh** `feat/a11y-keyboard`, commit sau mỗi task hoàn thành/kiểm chứng; không tự tạo PR/merge nếu chưa được yêu cầu.
@@ -214,25 +214,49 @@ Các checkbox dưới đây là **checklist dự kiến**, chưa phải bằng c
 - [x] Mỗi task có file tác động, interface, các bước, test và acceptance criteria.
 - [x] Chỉ có source audit, không ghi testing PASS chưa chạy.
 - [x] Người dùng phê duyệt PLAN/TASK.
-- [ ] Bắt đầu code sau phê duyệt.
+- [x] Bắt đầu code sau phê duyệt.
 
 ## Evidence sau triển khai
 
-- **Hiện tại:** A11Y-01.0 đã bắt đầu trên `feat/a11y-keyboard`; docs duyệt commit `03039c1`. Chưa push/PR.
+- **Hiện tại:** A11Y-01 đã triển khai trên `feat/a11y-keyboard`; chưa push/PR.
 - **Baseline source:** `dev` SHA `3f34a6b` ngày 19/10/2026.
 - **Playwright baseline:** `audio-player.spec.ts` 10/10 PASS; ca `museum-tour.spec.ts -g "focused keyboard navigation"` 1/1 PASS. Lần chạy cả `museum-tour.spec.ts` có 11 assertion PASS và một lỗi teardown thiếu trace artifact; ca đó chạy riêng PASS nên phân loại runner artifact, không phải product FAIL.
-- **Typecheck/Lint/Build/Vitest:** chưa chạy ở A11Y-01.0 vì chưa sửa source.
+- **Quality gates:** typecheck PASS; lint PASS; Vitest **69/69 PASS**; build PASS.
 - **Keyboard-only manual audit:** NOT RUN.
-- Khi triển khai, ghi mốc commit và bằng chứng đạt từng task tại đây. Giữ các checkbox của task để truy vết; không đổi status thành Implemented chỉ vì đã viết plan.
+- Các checkbox từng task được giữ để truy vết kế hoạch; evidence thực tế và giới hạn nằm ở các mục bên dưới.
 
 ### Keyboard baseline matrix
 
 | Route/flow | Key sequence | Expected | Actual | Status | Severity / WCAG | Owner / evidence |
 |---|---|---|---|---|---|---|
 | `/tour` mở/dừng 3D | Enter trên nút mở, Tab khỏi Canvas | Canvas nhận focus có chủ đích; Tab thoát; dừng 3D trả focus trigger | Đúng theo browser test | PASS | 2.1.1, 2.1.2, 2.4.3 | `museum-tour.spec.ts` focused 1/1 |
-| Canvas hotkeys | Canvas focus → Arrow/Home/WASD; blur | Chỉ Canvas nhận hotkeys, blur nhả movement | Source scope theo `activeElement`; focused navigation regression sẽ chạy ở 01.1 | NOT TESTED | P1 / 2.1.1, 2.1.2 | `attachNavigationInput.ts`, `museum-navigation.spec.ts` |
-| Tour catalogue/panel | Enter/Space → heading; Escape | Mở đúng hiện vật, focus heading, đóng và restore trigger | Existing source/tests có contract; chạy regression ở 01.2 | NOT TESTED | P1 / 2.1.1, 2.4.3 | `museum-interaction.spec.ts` |
+| Canvas hotkeys | Canvas focus → Arrow/Home/WASD; blur | Chỉ Canvas nhận hotkeys, blur nhả movement | Đúng theo navigation tests | PASS | P1 / 2.1.1, 2.1.2 | `attachNavigationInput.ts`, `museum-navigation.spec.ts` 10/10 |
+| Tour catalogue/panel | Enter/Space → heading; Escape | Mở đúng hiện vật, focus heading, đóng và restore trigger | Đúng; panel Tab thoát và trigger detached có fallback | PASS | P1 / 2.1.1, 2.4.3 | `accessibility-keyboard.spec.ts`, `museum-interaction.spec.ts` |
 | Audio fixture | Tab/Enter trên Play/Pause | Nút hoạt động, focus giữ ổn định | Đúng | PASS | 2.1.1, 2.4.7, 4.1.2 | `audio-player.spec.ts` 10/10 |
-| Public skip link | Tab → Enter | Focus tới `#public-content`, không chỉ scroll | Native anchor + focusable main; chưa có browser test | NOT TESTED | P1 / 2.4.1 | `PublicLayout.tsx` |
-| CMS moderation queue | Tab → action mở revision | Có native control mở đúng record | Chỉ có `<tr onClick>`; không có control keyboard | FAIL | P1 / 2.1.1, 4.1.2 | `ModerationPage.tsx:176-188`, `DataTable.tsx:80-91` |
+| Public skip link | Tab → Enter | Focus tới `#public-content`, không chỉ scroll | Đúng ở light/dark và 320/768/1440 | PASS | P1 / 2.4.1 | `accessibility-keyboard.spec.ts` |
+| CMS moderation queue | Tab → action mở revision | Có native control mở đúng record | Nút action mở đúng revision bằng Enter/Space | PASS | P1 / 2.1.1, 4.1.2 | `moderation-keyboard.spec.ts` |
 | CMS Modal/Drawer nội bộ | Escape/Tab | Mantine overlay behavior | Ngoài phạm vi A11Y-01 | NOT APPLICABLE | A11Y-02 | Theo scope đã duyệt |
+
+### A11Y-01.1 evidence
+
+- `npm.cmd test -- museum-navigation.spec.ts --reporter=line`: **10/10 PASS**; bao phủ WASD/Shift, focus loss dừng input, touch/joystick, collision, focus/reset và resize.
+- `npm.cmd test -- museum-tour.spec.ts -g "focused keyboard navigation" --reporter=line`: **1/1 PASS**; Canvas nhận focus, hotkeys hoạt động và Tab thoát không trap.
+- Không sửa production code: `attachNavigationInput` đã scope hotkey theo `document.activeElement === canvas`, blur/unmount clear movement/pointer/gesture. Theo quy tắc không tạo commit rỗng; evidence sẽ nằm trong commit docs cuối.
+
+### A11Y-01.2–01.5 evidence
+
+- Panel/fallback focused tests: **25/25 PASS**; test mới Tab/Shift+Tab/Escape và trigger detached PASS.
+- CMS focused tests: **3/3 PASS**; duplicate-name revision Enter/Space, mouse action và pagination empty state.
+- Public/CMS navigation focused tests: **16/16 PASS** ở light/dark, viewport 320/768/1440; skip link, CMS menu, login/logout keyboard flow.
+- A11Y focused suite hiện tại: **21/21 PASS**; Audio Player regression **10/10 PASS**.
+- Regression batch 108 tests trước đó: **104 PASS, 4 FAIL trong batch**; ba scene failures PASS khi chạy riêng. Final focused batch 66 tests: **65 PASS, 1 lazy scene touch timeout**; touch case PASS khi chạy riêng. Idle-render test còn lệch 1 frame khi chạy riêng, phân loại timing-sensitive existing test; không sửa render logic.
+- Chưa chạy live API, screen-reader certification hoặc physical-device/GPU QA; không tuyên bố toàn site đạt WCAG 2.2 AA.
+
+### Commit ledger
+
+- `03039c1` — `docs(a11y): plan keyboard navigation`
+- `54b45ac` — `docs(a11y): record keyboard baseline`
+- `232f1d4` — `fix(a11y): stabilize exhibit focus flow`
+- `8e5dd5a` — `fix(a11y): add moderation keyboard action`
+- `504a1a3` — `fix(a11y): improve navigation focus order`
+- Commit cuối — `test(a11y): verify keyboard navigation` (fixtures/docs/evidence).
