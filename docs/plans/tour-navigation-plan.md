@@ -14,11 +14,11 @@ Goal: complete first-person exploration in the existing R3F tour without competi
 
 ## Implementation checklist
 
-- [ ] Add failing unit tests for planar movement, damping/time, yaw/pitch, joystick and collision; implement shared helpers.
-- [ ] Add lifecycle-tested desktop input and pointer gesture ownership; implement touch joystick and HUD using refs.
-- [ ] Integrate a single camera pipeline with collision-safe focus/reset/interruption and existing selection.
-- [ ] Add real WebGL browser tests for keyboard, drag/tap, simultaneous touch, focus, collision, interruption, room switching and idle cleanup.
-- [ ] Run frontend unit tests, typecheck, lint, build and affected browser regressions; inspect desktop/mobile screenshots; fix demonstrated failures.
+- [x] Add failing unit tests for planar movement, damping/time, yaw/pitch, joystick and collision; implement shared helpers.
+- [x] Add lifecycle-tested desktop input and pointer gesture ownership; implement touch joystick and HUD using refs.
+- [x] Integrate a single camera pipeline with collision-safe focus/reset/interruption and existing selection.
+- [x] Add real WebGL browser tests for keyboard, drag/tap, simultaneous touch, focus, collision, interruption, room switching and idle cleanup.
+- [x] Run frontend unit tests, typecheck, lint, build and affected browser regressions; inspect desktop/mobile screenshots; fix demonstrated failures.
 - [ ] Review full diff, document measured evidence and limitations, commit meaningful units, publish one PR into `dev`; do not merge.
 
 ## Review focus
