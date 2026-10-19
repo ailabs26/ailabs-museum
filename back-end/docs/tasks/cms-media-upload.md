@@ -30,3 +30,8 @@ Nhánh: `feat/cms-media-upload` (từ `dev`). SRS: FR-55–57, FR-90, FR-91, FR-
 - Chưa khóa chéo với luồng publish của moderation: publish đồng thời với xóa có thể lọt (cửa sổ rất nhỏ).
 - Gắn media vào revision và kiểm tra media `ready`/chưa xóa khi attach thuộc Task 9. Lưu trữ cục bộ; Supabase Storage là việc sau.
 - Trước khi deploy: người phụ trách database chạy `npm run migration:run`.
+
+## Cập nhật sau (20/10/2026)
+
+- **Khóa chéo publish ↔ xóa media:** đã đóng ở Task 9 (`RevisionPublishGate` kiểm lại tham chiếu media, khóa `FOR SHARE`) — xem [cms-media-attach.md](cms-media-attach.md).
+- **Lưu trữ:** `/media` không còn dùng `express.static` (Task 9: route phân phối có kiểm tra published/URL ký). File lưu qua driver `local` (đĩa, như trên) hoặc `supabase` (Supabase Storage, bucket private) chọn bằng `MEDIA_STORAGE_DRIVER` — xem [supabase-db-storage.md](supabase-db-storage.md). Luật key do server sinh và không ghi đè (BR-21) giữ nguyên ở cả hai driver.
