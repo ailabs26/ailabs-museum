@@ -58,7 +58,7 @@ graph TB
     end
 
     db[(PostgreSQL<br/>Supabase)]
-    storage[(Media Storage<br/>GLB / ảnh / audio)]
+    storage[(Supabase Storage<br/>bucket private<br/>GLB / ảnh / audio)]
 
     visitor -->|xem hiện vật 2D/3D/VR| web
     staff -->|quản trị nội dung| cms
@@ -66,8 +66,8 @@ graph TB
     web -->|đọc nội dung published| api
     cms -->|CRUD + duyệt| api
     api --> db
-    api --> storage
-    web -->|tải GLB/ảnh/audio| storage
+    api -->|đọc/ghi bằng khóa server| storage
+    web -->|tải GLB/ảnh/audio qua /media<br/>đã kiểm tra published / URL ký| api
 ```
 
 ## 1.6 Sơ đồ C4 — Mức 2: Container
