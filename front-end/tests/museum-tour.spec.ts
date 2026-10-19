@@ -113,7 +113,8 @@ test('focused keyboard navigation and reset work without trapping focus', async 
   await canvas.press('ArrowLeft');
   await expect.poll(async () => (await canvas.screenshot(SCENE_CAPTURE)).equals(initial)).toBe(false);
   await page.getByRole('button', { name: 'Góc nhìn ban đầu' }).click();
-  expect(await readCamera()).toEqual(initialCamera);
+  // Toolbar commands reach the camera through a React effect after the click.
+  await expect.poll(readCamera).toEqual(initialCamera);
   await expect.poll(async () => (await canvas.screenshot(SCENE_CAPTURE)).equals(initial)).toBe(true);
   await page.getByRole('button', { name: 'Dừng 3D' }).focus();
   await page.keyboard.press('ArrowLeft');

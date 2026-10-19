@@ -160,6 +160,9 @@ test.describe('touch exploration', () => {
     await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);
     await expect(joystick).toHaveAttribute('aria-pressed', 'false');
     await page.screenshot({ path: testInfo.outputPath('navigation-mobile.png'), fullPage: true });
+    await page.getByRole('button', { name: 'Ẩn hướng dẫn' }).tap();
+    await expect(page.locator('#navigation-instructions')).toHaveCount(0);
+    expect(await cameraState(page)).toEqual(stopped);
     await session.detach();
   });
   for (const releaseFirst of ['joystick', 'look']) test(`multitouch release ${releaseFirst} keeps the other pointer independent`, async ({ page, context }) => {
