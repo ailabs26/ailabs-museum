@@ -35,6 +35,7 @@ export function MuseumPage() {
   const handleCloseDetail = () => {
     setSelection(null);
     if (selectionTriggerRef.current?.isConnected) selectionTriggerRef.current.focus();
+    else startButtonRef.current?.focus();
   };
   const startButtonRef = useRef<HTMLButtonElement>(null);
   const wasSceneOpenRef = useRef(false);
