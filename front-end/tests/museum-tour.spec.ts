@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { installMuseumApi } from './fixtures/museumApi';
+import { installRendererProbe } from './fixtures/museumProbe';
 
 test.beforeEach(async ({ page }) => { await installMuseumApi(page); });
 
 // Compare rendered scene pixels, excluding focus outlines and the DOM toolbar.
-const SCENE_CAPTURE = { style: 'canvas { outline: none !important; } [aria-label="Điều khiển góc nhìn"] { visibility: hidden !important; }' };
+const SCENE_CAPTURE = { style: 'canvas { outline: none !important; } [aria-label="Điều khiển góc nhìn"], [data-navigation-mode] { visibility: hidden !important; }' };
 
 test('opening and stopping the scene keep keyboard focus in the tour', async ({ page }) => {
   await page.goto('/tour');
@@ -100,19 +101,25 @@ test('failed scene chunk leaves navigation and catalogue available', async ({ pa
 });
 
 test('focused keyboard navigation and reset work without trapping focus', async ({ page }) => {
+  await installRendererProbe(page);
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D');
   await expect(canvas).toBeVisible({ timeout: 15_000 });
   await canvas.focus();
   const initial = await canvas.screenshot(SCENE_CAPTURE);
+  const readCamera = () => page.evaluate(() => { const camera = window.museumProbe.at(-1)!.camera!.deref()!; return [camera.position.toArray(), camera.quaternion.toArray()]; });
+  const initialCamera = await readCamera();
   await canvas.press('ArrowLeft');
   await expect.poll(async () => (await canvas.screenshot(SCENE_CAPTURE)).equals(initial)).toBe(false);
   await page.getByRole('button', { name: 'Góc nhìn ban đầu' }).click();
+  expect(await readCamera()).toEqual(initialCamera);
   await expect.poll(async () => (await canvas.screenshot(SCENE_CAPTURE)).equals(initial)).toBe(true);
   await page.getByRole('button', { name: 'Dừng 3D' }).focus();
   await page.keyboard.press('ArrowLeft');
-  expect((await canvas.screenshot(SCENE_CAPTURE)).equals(initial)).toBe(true);
+  // Focus can scroll the canvas beneath a stationary pointer and change hover
+  // pixels. The outside shortcut invariant is that camera transform stays put.
+  expect(await readCamera()).toEqual(initialCamera);
   await canvas.focus();
   await page.keyboard.press('Tab');
   await expect(canvas).not.toBeFocused();

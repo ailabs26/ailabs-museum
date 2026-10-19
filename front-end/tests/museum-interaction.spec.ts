@@ -87,7 +87,7 @@ test('selecting an exhibit focuses the camera and reset retains published detail
   await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
   const panel = page.getByRole('complementary', { name: 'Chi tiết hiện vật' });
   await expect(panel).toContainText('Hiện vật 2');
-  const capture = { style: 'canvas { outline: none !important; } [aria-label="Điều khiển góc nhìn"] { visibility: hidden !important; }' };
+  const capture = { style: 'canvas { outline: none !important; } [aria-label="Điều khiển góc nhìn"], [data-navigation-mode] { visibility: hidden !important; }' };
   const focused = await canvas.screenshot(capture);
   await page.getByRole('button', { name: 'Góc nhìn ban đầu' }).click();
   await expect.poll(async () => (await canvas.screenshot(capture)).equals(focused)).toBe(false);
