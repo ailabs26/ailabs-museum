@@ -1,5 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import {
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -21,6 +22,15 @@ class Environment {
 
   @IsString()
   DATABASE_URL: string = '';
+
+  /** Bật TLS khi kết nối DB (bắt buộc với Supabase). Chuỗi 'true'/'false'. */
+  @IsIn(['true', 'false'])
+  DATABASE_SSL: string = 'false';
+
+  /** Đường dẫn file CA để xác thực chứng chỉ DB; bỏ trống thì không xác thực chứng chỉ. */
+  @IsOptional()
+  @IsString()
+  DATABASE_SSL_CA?: string;
 
   // --- Xác thực (xem docs/plans/admin-subsystem-plan.md §2) ---
 

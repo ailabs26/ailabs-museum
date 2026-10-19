@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { readFileSync } from 'node:fs';
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { AuditLog } from '../modules/audit/entities/audit-log.entity';
@@ -17,9 +18,20 @@ import { User } from '../modules/users/entities/user.entity';
 
 config();
 
+/**
+ * TLS cho kết nối DB (Supabase bắt buộc). Có `DATABASE_SSL_CA` → xác thực chứng chỉ bằng CA
+ * của Supabase; không có → vẫn mã hóa nhưng không xác thực chứng chỉ (chỉ nên dùng tạm).
+ */
+function sslOptions() {
+  if (process.env.DATABASE_SSL !== 'true') return undefined;
+  const caPath = process.env.DATABASE_SSL_CA;
+  return caPath ? { ca: readFileSync(caPath, 'utf8') } : { rejectUnauthorized: false };
+}
+
 export const dataSource = new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL,
+  ssl: sslOptions(),
   entities: [
     Room,
     Exhibit,
