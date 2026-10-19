@@ -13,10 +13,10 @@ export interface NavigationRoom { width: number; depth: number; height: number }
 export interface NavigationCollider { minX: number; maxX: number; minZ: number; maxZ: number }
 export interface NavigationInput {
   keys: Set<string>; joystick: NavigationVector; look: NavigationVector;
-  wake: () => void; stop: () => void;
+  wake: () => void; invalidate: () => void; stop: () => void;
 }
 export function createNavigationInput(): NavigationInput {
-  return { keys: new Set(), joystick: { x: 0, y: 0 }, look: { x: 0, y: 0 }, wake: () => {}, stop: () => {} };
+  return { keys: new Set(), joystick: { x: 0, y: 0 }, look: { x: 0, y: 0 }, wake: () => {}, invalidate: () => {}, stop: () => {} };
 }
 
 export function getJoystickVector(dx: number, dy: number, radius: number): NavigationVector {

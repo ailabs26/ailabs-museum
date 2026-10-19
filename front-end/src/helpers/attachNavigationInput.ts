@@ -29,7 +29,7 @@ export function attachNavigationInput(canvas: HTMLCanvasElement, input: Navigati
       if (action) { event.preventDefault(); onAction(action); }
     }
   };
-  const keyup = (event: KeyboardEvent) => { if (input.keys.delete(event.code)) input.wake(); };
+  const keyup = (event: KeyboardEvent) => { if (input.keys.delete(event.code)) input.invalidate(); };
   const pointerdown = (event: PointerEvent) => {
     if (event.button !== 0 || pointer) return;
     canvas.focus({ preventScroll: true }); onActive(true);
