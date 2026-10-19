@@ -124,6 +124,25 @@ Live test chạy frontend trên `http://localhost:5173` để khớp CORS local 
 - Tests fallback: `npm.cmd test -- tour-2d-fallback.spec.ts`. Live read-only khi backend đang chạy: bật `MUSEUM_LIVE_TEST=1`, chạy `npm.cmd test -- tour-2d-fallback-live.spec.ts`, rồi bỏ biến. Không seed hoặc ghi database.
 - Nếu fallback chuyển vào collection với state từ tour, trang collection chỉ đưa focus tới h1 khi navigation state báo từ fallback; refetch nền không giành focus.
 
+## Audio Player cơ bản
+
+- `AudioPlayer` là reusable component tại `src/shared/components/media/AudioPlayer.tsx`, nhận `src?: string | null` và `label?: string`; component chỉ dùng `HTMLAudioElement`, không gọi API/backend và chưa tích hợp vào trang chi tiết hiện vật.
+- Component hỗ trợ Phát, Tạm dừng và Tiếp tục trên cùng native audio element; Resume giữ vị trí hiện tại. Nguồn rỗng/thiếu bị disabled, lỗi phát có thông báo và retry thủ công, kết thúc cho phép phát lại.
+- UI dùng Mantine/theme hiện có, có trạng thái live cho screen reader, keyboard focus và target điều khiển tối thiểu 44px. Đổi nguồn hoặc unmount sẽ pause, tháo source và dọn tải nguồn cũ.
+- Chưa có tua, thời lượng, âm lượng, playlist hoặc playback manager. Các tính năng này có thể bổ sung trên native element hiện tại mà không đổi cách consumer truyền `src`.
+- Browser fixture standalone tại `tests/fixtures/audio-player.html` tạo WAV trong test, không phải audio asset sản phẩm. Chạy focused test từ `front-end/` bằng `npm.cmd test -- audio-player.spec.ts`; không cần backend.
+- Task/plan: [audio-player-01.md](../docs/tasks/audio-player-01.md), [audio-player-01-plan.md](../docs/plans/audio-player-01-plan.md).
+
+Ví dụ dùng component trong một page đã có URL audio hợp lệ:
+
+```tsx
+import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
+
+<AudioPlayer src="/audio/exhibit-01.mp3" label="Bản thuyết minh hiện vật" />
+```
+
+Với file local có quyền sử dụng, đặt file trong `front-end/public/audio/` rồi truyền URL root-relative như `/audio/exhibit-01.mp3`. Fixture Playwright tạo WAV trong test và không phải asset sản phẩm.
+
 ## Tham quan Day 1–4
 
 ### Hotspots và mô hình không khả dụng
