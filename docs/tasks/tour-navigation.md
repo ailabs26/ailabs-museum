@@ -68,9 +68,9 @@ The environment prefix above is shell-neutral notation: PowerShell uses `$env:PL
 - Input/movement: `helpers/museumNavigation.ts`, `attachNavigationInput.ts`, `navigationGestures.ts`, and their unit tests.
 - Browser coverage: `front-end/tests/museum-navigation.spec.ts`; camera-only screenshot comparisons updated in `museum-tour.spec.ts` and `museum-interaction.spec.ts`.
 - Usage/build docs: `front-end/src/pages/MuseumPage.tsx`, `front-end/README.md`, `front-end/vite.config.ts`, task plan and progress report.
-- Branch: `feat/tour-navigation`, based on latest fetched `origin/dev`; one PR into `dev`, no automatic merge. Commit/PR ledger is completed after verification.
+- Branch: `feat/tour-navigation`, based on latest fetched `origin/dev` (`8ffd808`). [PR #60](https://github.com/ailabs26/ailabs-museum/pull/60) is **OPEN**, base **dev**, head **feat/tour-navigation**, conflict-free when checked. No merge performed.
 
-Implemented commits (chronological; final evidence/publication commits follow):
+Verified implementation/test/evidence commits, chronological:
 
 ```text
 9e2d841 docs(tour): plan unified desktop and touch navigation
@@ -85,7 +85,10 @@ af5a9ce fix(tour): share plinth footprints and cover sculpture overhangs
 c2883a7 test(tour): verify walking multitouch focus and camera recovery
 046519a fix(tour): complete reduced-motion focus before details can close
 224a5a6 test(tour): synchronize reset and assert touch HUD isolation
+ada947b docs(tour): record navigation controls and verified acceptance
 ```
+
+The final `docs(tour): record navigation PR publication` commit adds this publication record, bringing the task to **14 meaningful commits**. Its SHA is in the PR commit list and final handoff; a commit cannot contain its own SHA. The requested target of 30 was conditional on independent changes; no empty or artificial subdivisions were created. Full diff and `git diff --check` were reviewed before publication. No squash, amend, force push or direct push to `dev`/`main` was used.
 
 ## Limits and running
 

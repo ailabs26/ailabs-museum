@@ -19,7 +19,7 @@ Goal: complete first-person exploration in the existing R3F tour without competi
 - [x] Integrate a single camera pipeline with collision-safe focus/reset/interruption and existing selection.
 - [x] Add real WebGL browser tests for keyboard, drag/tap, simultaneous touch, focus, collision, interruption, room switching and idle cleanup.
 - [x] Run frontend unit tests, typecheck, lint, build and affected browser regressions; inspect desktop/mobile screenshots; fix demonstrated failures.
-- [ ] Review full diff, document measured evidence and limitations, commit meaningful units, publish one PR into `dev`; do not merge.
+- [x] Review full diff, document measured evidence and limitations, commit meaningful units, publish one PR into `dev`; do not merge. [PR #60](https://github.com/ailabs26/ailabs-museum/pull/60) is open with base `dev`.
 
 ## Review focus
 
