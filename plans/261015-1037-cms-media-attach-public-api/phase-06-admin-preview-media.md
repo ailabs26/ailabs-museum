@@ -29,8 +29,8 @@ dependencies: [2, 5]
 3. Chạy app: tạo draft gắn media → GET preview → mở URL ký trong trình duyệt (200) → đợi hết hạn/đổi sig (404).
 
 ## Success Criteria
-- [ ] Preview Draft trả media của Draft trong khi `/api/rooms/:slug` vẫn trả media revision published cũ (AC-32).
-- [ ] Không response admin nào chứa `storageKey`.
+- [x] Preview Draft trả media của Draft trong khi `/api/rooms/:slug` vẫn trả media revision published cũ (AC-32).
+- [x] Không response admin nào chứa `storageKey`.
 
 ## Risk Assessment
 - Ký URL trong list lớn tốn CPU không đáng kể (HMAC). Không ký ở endpoint list (list không cần media).

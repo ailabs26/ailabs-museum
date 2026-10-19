@@ -35,9 +35,9 @@ dependencies: []
 - Dùng phương án đề xuất (người dùng giao triển khai, chưa phản hồi câu hỏi chốt): D1 3 cột FK · D2 giữ chuỗi vi + `i18n` · D3 route kiểm tra + URL ký HMAC (TTL 900s) · D4 `no-cache` + ETag · D5 Save chỉ kiểm tham chiếu, Submit/Publish kiểm đủ · D6 mã lỗi như bảng · D7 cổng dùng chung, sửa moderation tối thiểu.
 
 ## Success Criteria
-- [ ] Baseline xanh, số test được ghi.
-- [ ] Dạng lưu thật của name/description/transcript/altText/hotspot được ghi lại kèm ví dụ JSON.
-- [ ] D1–D7 có quyết định + người đồng ý.
+- [x] Baseline xanh, số test được ghi.
+- [x] Dạng lưu thật của name/description/transcript/altText/hotspot được ghi lại kèm ví dụ JSON.
+- [x] D1–D7 có quyết định + người đồng ý.
 
 ## Risk Assessment
 - Task 8 chưa merge → conflict khi rebase: giữ commit Task 9 không chạm file pipeline upload (chỉ `media.repository.ts countUsage`, `media-storage.service.ts toPublicUrl`, `main.ts`).

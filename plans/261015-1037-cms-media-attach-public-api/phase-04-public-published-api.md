@@ -65,11 +65,11 @@ interface PublicExhibitDto {
 5. Chạy app, gọi `curl /api/rooms/<slug>` với dữ liệu thật đủ 6 slot, đối chiếu JSON.
 
 ## Success Criteria
-- [ ] Revision Draft/In Review/Rejected/Published lịch sử không bao giờ xuất hiện (AC-36) — test có id cụ thể.
-- [ ] Hide/Archive/xóa mềm exhibit → biến mất khỏi request kế tiếp (AC-51).
-- [ ] Publish revision mới đổi media → request kế tiếp trả media mới, không trả media cũ.
-- [ ] Revision CMS song ngữ trả `name` chuỗi + `i18n`; seed chuỗi vẫn chạy.
-- [ ] Media trong DTO là URL tuyệt đối, không có `storageKey`.
+- [x] Revision Draft/In Review/Rejected/Published lịch sử không bao giờ xuất hiện (AC-36) — test có id cụ thể.
+- [x] Hide/Archive/xóa mềm exhibit → biến mất khỏi request kế tiếp (AC-51).
+- [x] Publish revision mới đổi media → request kế tiếp trả media mới, không trả media cũ.
+- [x] Revision CMS song ngữ trả `name` chuỗi + `i18n`; seed chuỗi vẫn chạy.
+- [x] Media trong DTO là URL tuyệt đối, không có `storageKey`.
 
 ## Risk Assessment
 - Đổi `audio/model/image` từ `null` → object làm FE hiện tại fail validate → bắt buộc merge cùng cập nhật `roomSchema.ts` (Phase 8); thông báo Tiến/Thi.

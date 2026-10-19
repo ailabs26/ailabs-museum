@@ -65,10 +65,10 @@ LIMIT 1;
 6. Đo: 200 request tuần tự tới 1 file public → p95 < 20 ms local (ghi PR; phục vụ Task 29).
 
 ## Success Criteria
-- [ ] Media chỉ thuộc Draft → 404 public, 200 với URL ký (AC-36).
-- [ ] Unpublish/Hide exhibit → file 404 ở request kế tiếp (AC-51), media dùng chung với exhibit khác còn public → vẫn 200.
-- [ ] Range 206, 304 với ETag, Content-Type lấy từ DB, nosniff + CSP có mặt.
-- [ ] Không còn `express.static` cho uploads.
+- [x] Media chỉ thuộc Draft → 404 public, 200 với URL ký (AC-36).
+- [x] Unpublish/Hide exhibit → file 404 ở request kế tiếp (AC-51), media dùng chung với exhibit khác còn public → vẫn 200.
+- [x] Range 206, 304 với ETag, Content-Type lấy từ DB, nosniff + CSP có mặt.
+- [x] Không còn `express.static` cho uploads.
 
 ## Risk Assessment
 - Thêm 1 query mỗi lần tải file: có index Phase 1; file lớn chỉ tải một lần nhờ ETag/304.

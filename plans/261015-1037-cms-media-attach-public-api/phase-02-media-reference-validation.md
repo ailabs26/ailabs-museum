@@ -64,10 +64,10 @@ Thứ tự khóa cố định (sort ids tăng dần) để tránh deadlock khi h
 7. Bắt lỗi FK (`23503`) phòng thủ → 422 `media_not_found` thay vì 500 (trường hợp media bị hard-delete ngoài luồng).
 
 ## Success Criteria
-- [ ] Gắn media ready đúng kind → 200/201, tải lại giữ đúng id (AC-32).
-- [ ] Mọi dòng trong bảng lỗi trả đúng code/field; DB không thay đổi khi lỗi (rollback).
-- [ ] Sửa Draft khi exhibit đang published → revision published giữ nguyên media cũ (AC-35).
-- [ ] `null` tháo media, bản ghi media vẫn còn.
+- [x] Gắn media ready đúng kind → 200/201, tải lại giữ đúng id (AC-32).
+- [x] Mọi dòng trong bảng lỗi trả đúng code/field; DB không thay đổi khi lỗi (rollback).
+- [x] Sửa Draft khi exhibit đang published → revision published giữ nguyên media cũ (AC-35).
+- [x] `null` tháo media, bản ghi media vẫn còn.
 
 ## Risk Assessment
 - Lock `FOR SHARE` kéo dài nếu tx chậm → tx hiện ngắn (vài query); chấp nhận.

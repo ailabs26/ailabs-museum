@@ -55,10 +55,10 @@ exhibits/services/revision-publish.gate.ts  (@Injectable, export từ ExhibitsMo
 6. Báo Quang review diff moderation (≤ ~20 dòng).
 
 ## Success Criteria
-- [ ] Submit/Publish thiếu rights/transcript/subtitle/alt → 422 đúng code, DB không đổi (kiểm bằng integration).
-- [ ] Media bị xóa mềm sau khi Save Draft → Submit 422 `media_not_found`.
-- [ ] Publish đồng thời với delete media: một trong hai thắng, trạng thái cuối nhất quán (không có published revision trỏ media đã xóa) — test integration 2 connection.
-- [ ] Toàn bộ test moderation cũ vẫn xanh.
+- [x] Submit/Publish thiếu rights/transcript/subtitle/alt → 422 đúng code, DB không đổi (kiểm bằng integration).
+- [x] Media bị xóa mềm sau khi Save Draft → Submit 422 `media_not_found`.
+- [x] Publish đồng thời với delete media: một trong hai thắng, trạng thái cuối nhất quán (không có published revision trỏ media đã xóa) — test integration 2 connection.
+- [x] Toàn bộ test moderation cũ vẫn xanh.
 
 ## Risk Assessment
 - Bật validate làm hỏng dữ liệu demo/fixture đang có → chạy `test:seed`, `test:moderation` sớm; nếu nhóm cần chuyển tiếp, KHÔNG thêm cờ tắt validate ở production.

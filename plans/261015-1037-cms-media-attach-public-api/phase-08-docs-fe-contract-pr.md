@@ -38,9 +38,9 @@ Cập nhật contract FE tối thiểu để public site không vỡ khi BE tr�
 4. **PR** vào `dev` (report tại `plans/reports/pr-<date>-cms-media-attach-report.md` theo mẫu PR Task 8): tóm tắt, bảng API, mã lỗi, migration + hướng dẫn deploy (`migration:run`, env mới — **thiếu env app không khởi động**), kết quả kiểm thử với số liệu, lưu ý reviewer (diff moderation, đổi contract public), ngoài phạm vi.
 
 ## Success Criteria
-- [ ] FE build/typecheck/lint xanh với response thật.
-- [ ] Reviewer có lệnh tái hiện đầy đủ.
-- [ ] Không merge thẳng `main`.
+- [x] FE build/typecheck/lint xanh với response thật.
+- [x] Reviewer có lệnh tái hiện đầy đủ.
+- [x] Không merge thẳng `main`.
 
 ## Ngoài phạm vi (ghi trong PR)
 - UI chọn/gắn media trong form CMS & Preview 3D (Task 10).

@@ -62,9 +62,9 @@ CREATE INDEX "IDX_exhibits_published_revision" ON exhibits(published_revision_id
 5. `EXPLAIN` truy vấn Phase 5 sau khi seed ~1k revision để xác nhận dùng index (ghi kết quả vào PR).
 
 ## Success Criteria
-- [ ] up/down/up sạch, không drift.
-- [ ] `countUsage` đếm được media ở cả 6 slot (test Phase 7: R-USG-*).
-- [ ] Bản ghi cũ không bị ảnh hưởng (`audio_media_id` giữ nguyên giá trị).
+- [x] up/down/up sạch, không drift.
+- [x] `countUsage` đếm được media ở cả 6 slot (test Phase 7: R-USG-*).
+- [x] Bản ghi cũ không bị ảnh hưởng (`audio_media_id` giữ nguyên giá trị).
 
 ## Risk Assessment
 - Quên `referencesMedia` → xóa được media đang public: chặn bằng test bắt buộc + dùng `REVISION_MEDIA_SLOTS`.
