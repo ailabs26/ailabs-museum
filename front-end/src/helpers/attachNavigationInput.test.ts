@@ -59,3 +59,10 @@ it('removes all installed listeners and releases pointer capture on unmount', ()
     send(s.canvas, 'keydown', { code: 'KeyW' }); expect(s.input.keys.size).toBe(0);
   }
 });
+it('stops look when focus moves to overlay UI during a drag', () => {
+  const s = setup();
+  send(s.canvas, 'pointerdown', { button: 0, pointerId: 2, clientX: 0, clientY: 0 });
+  send(s.canvas, 'blur');
+  send(s.canvas, 'pointermove', { pointerId: 2, clientX: 100, clientY: 100, pointerType: 'mouse' });
+  expect(s.input.look.x).toBe(0); expect(s.capture.size).toBe(0); s.detach();
+});

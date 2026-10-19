@@ -12,8 +12,9 @@ export function attachNavigationInput(canvas: HTMLCanvasElement, input: Navigati
   const doc = canvas.ownerDocument, view = doc.defaultView!;
   let pointer: { id: number; x: number; y: number; startX: number; startY: number; dragged: boolean } | null = null;
   const releasePointer = () => {
-    if (pointer && canvas.hasPointerCapture(pointer.id)) canvas.releasePointerCapture(pointer.id);
+    const id = pointer?.id;
     pointer = null;
+    if (id !== undefined && canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id);
   };
   const clear = () => {
     input.keys.clear(); input.joystick.x = input.joystick.y = input.look.x = input.look.y = 0;
@@ -54,9 +55,9 @@ export function attachNavigationInput(canvas: HTMLCanvasElement, input: Navigati
     gestures.cancel();
     if (pointer?.id === event.pointerId) { input.look.x = input.look.y = 0; releasePointer(); input.stop(); }
   };
-  const lostCapture = (event: PointerEvent) => { if (pointer?.id === event.pointerId) { pointer = null; input.look.x = input.look.y = 0; } };
+  const lostCapture = (event: PointerEvent) => { if (pointer?.id === event.pointerId) { pointer = null; input.look.x = input.look.y = 0; gestures.cancel(); } };
   const focus = () => onActive(true);
-  const blur = () => { input.keys.clear(); input.stop(); onActive(false); };
+  const blur = () => { input.keys.clear(); input.look.x = input.look.y = 0; input.stop(); releasePointer(); gestures.cancel(); onActive(false); };
   const visibility = () => { if (doc.hidden) clear(); };
   const wheel = (event: WheelEvent) => { event.preventDefault(); onAction(event.deltaY < 0 ? 'in' : 'out'); };
   canvas.tabIndex = 0;
