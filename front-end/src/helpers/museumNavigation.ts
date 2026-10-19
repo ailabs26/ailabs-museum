@@ -46,6 +46,62 @@ export function isNavigationPositionSafe(x: number, z: number, room: NavigationR
     && !colliders.some(box => x > box.minX && x < box.maxX && z > box.minZ && z < box.maxZ);
 }
 
+function navigationCorners(room: NavigationRoom, colliders: readonly NavigationCollider[]): NavigationVector[] {
+  const points: NavigationVector[] = [];
+  for (const box of colliders) for (const x of [box.minX - 0.01, box.maxX + 0.01]) for (const y of [box.minZ - 0.01, box.maxZ + 0.01]) {
+    if (isNavigationPositionSafe(x, y, room, colliders)) points.push({ x, y });
+  }
+  return points;
+}
+
+export function findSafeNavigationPoint(point: NavigationVector, room: NavigationRoom, colliders: readonly NavigationCollider[]): NavigationVector | null {
+  const x = Math.max(-room.width / 2 + NAVIGATION.wallMargin, Math.min(room.width / 2 - NAVIGATION.wallMargin, point.x));
+  const y = Math.max(-room.depth / 2 + NAVIGATION.wallMargin, Math.min(room.depth / 2 - NAVIGATION.wallMargin, point.y));
+  if (isNavigationPositionSafe(x, y, room, colliders)) return { x, y };
+  const candidates = navigationCorners(room, colliders);
+  for (const box of colliders) candidates.push({ x: box.minX - 0.01, y }, { x: box.maxX + 0.01, y }, { x, y: box.minZ - 0.01 }, { x, y: box.maxZ + 0.01 });
+  return candidates.filter(candidate => isNavigationPositionSafe(candidate.x, candidate.y, room, colliders))
+    .sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0] ?? null;
+}
+
+/** Visibility graph around expanded proxy corners, computed only on focus.
+ * The slab intersection test rejects every segment through an obstacle. */
+export function findNavigationPath(start: NavigationVector, end: NavigationVector, room: NavigationRoom, colliders: readonly NavigationCollider[]): NavigationVector[] | null {
+  if (!isNavigationPositionSafe(start.x, start.y, room, colliders) || !isNavigationPositionSafe(end.x, end.y, room, colliders)) return null;
+  const clear = (a: NavigationVector, b: NavigationVector) => !colliders.some(box => {
+    let enter = 0, exit = 1;
+    for (const [origin, direction, low, high] of [[a.x, b.x - a.x, box.minX, box.maxX], [a.y, b.y - a.y, box.minZ, box.maxZ]]) {
+      if (Math.abs(direction) < 1e-9) { if (origin <= low || origin >= high) return false; }
+      else {
+        const first = (low - origin) / direction, second = (high - origin) / direction;
+        enter = Math.max(enter, Math.min(first, second)); exit = Math.min(exit, Math.max(first, second));
+        if (enter >= exit) return false;
+      }
+    }
+    return enter < exit;
+  });
+  if (clear(start, end)) return [start, end];
+  const nodes = [start, end, ...navigationCorners(room, colliders)];
+  const distances = nodes.map(() => Infinity), previous = nodes.map(() => -1), visited = new Set<number>(); distances[0] = 0;
+  for (let step = 0; step < nodes.length; step++) {
+    let current = -1;
+    for (let i = 0; i < nodes.length; i++) if (!visited.has(i) && (current < 0 || distances[i] < distances[current])) current = i;
+    if (current < 0 || !Number.isFinite(distances[current])) break;
+    if (current === 1) {
+      const path: NavigationVector[] = [];
+      for (let i = 1; i !== -1; i = previous[i]) path.unshift(nodes[i]);
+      return path;
+    }
+    visited.add(current);
+    for (let next = 0; next < nodes.length; next++) {
+      if (visited.has(next) || !clear(nodes[current], nodes[next])) continue;
+      const distance = distances[current] + Math.hypot(nodes[next].x - nodes[current].x, nodes[next].y - nodes[current].y);
+      if (distance < distances[next]) { distances[next] = distance; previous[next] = current; }
+    }
+  }
+  return null;
+}
+
 /** Small swept steps prevent tunneling; independent axes permit wall sliding. */
 export function moveWithCollisions(position: Vector3, dx: number, dz: number, room: NavigationRoom, colliders: readonly NavigationCollider[]): void {
   const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dz)) / 0.08));

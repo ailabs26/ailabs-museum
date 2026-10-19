@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Vector3 } from 'three';
-import { applyLook, createNavigationInput, getDisplayColliders, getJoystickVector, moveWithCollisions, stepMovement } from './museumNavigation';
+import { applyLook, createNavigationInput, getDisplayColliders, getJoystickVector, moveWithCollisions, stepMovement, findNavigationPath, findSafeNavigationPoint, isNavigationPositionSafe } from './museumNavigation';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 
 const room = { width: 14, depth: 16, height: 5 };
@@ -68,4 +68,22 @@ it('protects GLB loading/error placeholders and ignores displays outside the she
   expect(getDisplayColliders([{ ...display, isOutsideRoom: true }])).toEqual([]);
   const first = createNavigationInput(), second = createNavigationInput();
   first.keys.add('KeyW'); expect(second.keys.size).toBe(0);
+});
+
+it('routes focus/reset around plinths and leaves unreachable destinations alone', () => {
+  const colliders = getDisplayColliders([display]);
+  const path = findNavigationPath({ x: 0, y: 5 }, { x: 0, y: -5 }, room, colliders)!;
+  expect(path.length).toBeGreaterThan(2);
+  expect(path.at(-1)).toEqual({ x: 0, y: -5 });
+  for (let i = 1; i < path.length; i++) for (let sample = 0; sample <= 100; sample++) {
+    const t = sample / 100;
+    expect(isNavigationPositionSafe(path[i - 1].x * (1 - t) + path[i].x * t, path[i - 1].y * (1 - t) + path[i].y * t, room, colliders)).toBe(true);
+  }
+  expect(findNavigationPath({ x: 0, y: 5 }, { x: 0, y: 0 }, room, colliders)).toBeNull();
+});
+it('chooses the nearest free spawn/reset point when published placement occupies it', () => {
+  const colliders = getDisplayColliders([display]);
+  const safe = findSafeNavigationPoint({ x: 0, y: 0 }, room, colliders)!;
+  expect(isNavigationPositionSafe(safe.x, safe.y, room, colliders)).toBe(true);
+  expect(Math.hypot(safe.x, safe.y)).toBeLessThan(2.1);
 });
