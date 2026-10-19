@@ -28,6 +28,7 @@ export function MuseumPage() {
   const selectedDisplay = detail && selection?.roomId === detail.id ? displays.find((display) => display.id === selection.id) : undefined;
   useEffect(() => setSelection(null), [selectedSlug]);
   const selectionTriggerRef = useRef<HTMLElement | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const handleSelectDisplay = (id: string) => {
     selectionTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (detail) setSelection({ roomId: detail.id, id });
@@ -35,7 +36,7 @@ export function MuseumPage() {
   const handleCloseDetail = () => {
     setSelection(null);
     if (selectionTriggerRef.current?.isConnected) selectionTriggerRef.current.focus();
-    else startButtonRef.current?.focus();
+    else (startButtonRef.current ?? headingRef.current)?.focus();
   };
   const startButtonRef = useRef<HTMLButtonElement>(null);
   const wasSceneOpenRef = useRef(false);
@@ -58,7 +59,7 @@ export function MuseumPage() {
     }}>
       <Stack>
         <Text size="xs" tt="uppercase" className={classes.eyebrow} fw={700}>Aura / Tham quan bảo tàng</Text>
-        <Title order={1} className={classes.heading}>{detail?.name ?? 'Tham quan bảo tàng'}</Title>
+        <Title ref={headingRef} tabIndex={-1} order={1} className={classes.heading}>{detail?.name ?? 'Tham quan bảo tàng'}</Title>
         <Text className={classes.lead}>Nội dung bảo tàng đã xuất bản</Text>
         <Group justify="space-between" align="flex-end" className={classes.toolbar}>
           {rooms.data && rooms.data.length > 0 && (

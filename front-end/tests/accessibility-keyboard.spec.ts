@@ -44,3 +44,34 @@ test('closing details after stopping 3D falls back to the start control', async 
   await expect(page.getByRole('complementary')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Mở phòng 3D', exact: true })).toBeFocused();
 });
+
+test('closing details after renderer failure keeps focus in readable tour content', async ({ page }) => {
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'Điểm tương tác Hiện vật 1', exact: true }).press('Enter');
+  await page.getByLabel('Phòng trưng bày 3D', { exact: true }).evaluate(canvas => {
+    canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+  });
+  await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
+  await page.getByRole('button', { name: 'Đóng chi tiết hiện vật' }).press('Enter');
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+});
+
+for (const colorScheme of ['light', 'dark'] as const) {
+  for (const width of [320, 768, 1440]) {
+    test(`public skip link is visible and keyboard operable at ${width}px in ${colorScheme}`, async ({ page }, testInfo) => {
+      await page.emulateMedia({ colorScheme });
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+      await page.keyboard.press('Tab');
+      const skipLink = page.getByRole('link', { name: 'Đến nội dung chính' });
+      await expect(skipLink).toBeFocused();
+      await expect(skipLink).toBeInViewport();
+      await expect(skipLink).toHaveCSS('outline-style', 'solid');
+      await page.screenshot({ path: testInfo.outputPath('public-keyboard-focus.png') });
+      await page.keyboard.press('Enter');
+      await expect(page.getByRole('main')).toBeFocused();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+  }
+}
