@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Badge,
   Drawer,
@@ -39,6 +39,7 @@ function actionColor(action: string): string {
 }
 
 export function AuditPage() {
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const [page, setPage] = useState(1);
   const [action, setAction] = useState('');
   const [actorId, setActorId] = useState('');
@@ -84,7 +85,7 @@ export function AuditPage() {
 
   return (
     <>
-      <PageHeader title="Nhật ký hệ thống" description="Lịch sử thao tác quản trị (append-only)" />
+      <PageHeader titleRef={titleRef} title="Nhật ký hệ thống" description="Lịch sử thao tác quản trị (append-only)" />
 
       <Group mb="md" align="flex-end" wrap="wrap">
         <TextInput
@@ -145,6 +146,9 @@ export function AuditPage() {
       />
 
       <Drawer
+        onExitTransitionEnd={() => {
+          titleRef.current?.focus();
+        }}
         opened={!!detail}
         onClose={() => setDetail(null)}
         position="right"
