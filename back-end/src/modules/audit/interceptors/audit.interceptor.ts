@@ -54,8 +54,20 @@ export class AuditInterceptor implements NestInterceptor {
     );
   }
 
+  /**
+   * APP_INTERCEPTOR nằm ngoài ResponseInterceptor (đăng ký ở main.ts), nên kết quả nhận được
+   * có thể đã được bọc thành ApiResponse `{ success, data, message }` — lấy phần `data`.
+   */
+  private unwrapEnvelope(data: unknown): unknown {
+    if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
+      return (data as { data: unknown }).data;
+    }
+    return data;
+  }
+
   /** Ưu tiên danh sách id, rồi id trả về (tạo mới), sau đó tới param :id. */
-  private resolveResourceIds(request: AuditRequest, data: unknown): string[] {
+  private resolveResourceIds(request: AuditRequest, result: unknown): string[] {
+    const data = this.unwrapEnvelope(result);
     if (data && typeof data === 'object' && 'roleIds' in data) {
       const roleIds = (data as { roleIds?: unknown }).roleIds;
       if (Array.isArray(roleIds)) {
