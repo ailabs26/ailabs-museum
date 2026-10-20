@@ -162,6 +162,20 @@ export function ModerationPage() {
       ),
     },
     { key: 'createdAt', header: 'Gửi lúc', render: (r) => formatTime(r.createdAt) },
+    {
+      key: 'actions',
+      header: 'Thao tác',
+      render: (revision) => (
+        <Button
+          variant="light"
+          size="xs"
+          aria-label={`Xem chi tiết ${revision.content.name}, bản #${revision.revisionNo}, ${revision.id}`}
+          onClick={(event) => { event.stopPropagation(); setDetailId(revision.id); }}
+        >
+          Xem chi tiết
+        </Button>
+      ),
+    },
   ];
 
   const data = queueQuery.data;

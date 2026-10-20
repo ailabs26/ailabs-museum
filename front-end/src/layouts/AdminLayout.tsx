@@ -103,12 +103,14 @@ export function AdminLayout() {
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Group>
-            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm"
+              aria-label={opened ? 'Đóng điều hướng quản trị' : 'Mở điều hướng quản trị'}
+              aria-expanded={opened} aria-controls="admin-navigation" />
             <Text fw={700}>Aura Museum · CMS</Text>
           </Group>
           <Menu position="bottom-end" withArrow>
             <Menu.Target>
-              <UnstyledButton>
+              <UnstyledButton aria-label={`Tài khoản ${user?.displayName ?? 'Admin'}`}>
                 <Group gap="xs">
                   <Avatar color="aura" radius="xl" size={32}>
                     {user?.displayName?.charAt(0)?.toUpperCase() ?? 'A'}
@@ -136,7 +138,7 @@ export function AdminLayout() {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="xs">
+      <AppShell.Navbar id="admin-navigation" p="xs" aria-label="Điều hướng quản trị">
         <ScrollArea>
           {NAV.map((group) => {
             const visible = group.items.filter(canSee);
