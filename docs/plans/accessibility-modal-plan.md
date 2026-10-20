@@ -10,7 +10,7 @@
 
 ## 1. Trạng thái và căn cứ source
 
-- **Trạng thái:** Planned — chỉ viết PLAN/TASK; **chưa code, chưa test A11Y-02, chưa commit/push/PR**.
+- **Trạng thái:** Đã triển khai trên `feat/a11y-modal-focus`; chờ review, chưa push/PR/merge. Giới hạn kiểm chứng được ghi bên dưới.
 - **Source baseline đã kiểm tra:** `dev` tại `56060dff10a550a766d79dbda9846a9ad1949c3b` (20/10/2026), sau khi A11Y-01 merge qua PR [#61](https://github.com/ailabs26/ailabs-museum/pull/61). Khi thực hiện phải fetch lại `origin/dev` và kiểm tra xung đột trước khi tạo nhánh.
 - Đã đối chiếu `AGENTS.md`, `front-end/docs/coding-conventions.md`, mẫu [`audio-player-01-plan.md`](audio-player-01-plan.md)/[`audio-player-01.md`](../tasks/audio-player-01.md), và tài liệu A11Y-01.
 - `front-end/src/AppProviders.tsx` có `ModalsProvider`; `front-end/src/shared/components/feedback/confirm.ts` mở xác nhận qua `modals.openConfirmModal`.
@@ -142,6 +142,12 @@ Không tạo commit rỗng khi behavior đã đúng; test-only commit vẫn hợ
 
 ### Verification evidence
 
-- **PLAN ONLY:** source `dev` `56060df` đã đọc; tài liệu Mantine v7/W3C APG đã đối chiếu.
-- Chưa chạy A11Y-02 Playwright, unit, lint, typecheck hoặc build; không có test PASS mới để báo.
-- Chưa tạo branch/commit/PR. Các kết quả test A11Y-01 trong PR #61 không thay thế verification cho A11Y-02.
+- Baseline `origin/dev` đã fetch và đồng bộ tại `56060df`; nhánh `feat/a11y-modal-focus`.
+- Browser baseline: 8/8 ca đầu thất bại ở initial focus/detached target; các test tiếp theo chứng minh Escape đóng Drawer cha khi Modal con còn mở, pending fieldset khiến Tab thoát, conflict để lại orphan Modal và mất focus sau refetch.
+- A11Y-02: **31/31 PASS** trong regression batch (confirm 3, CRUD 8, nested 8, read-only/detached 6, responsive 6).
+- Regression tổng: **66/67 PASS**; ca `museum-interaction` real scene picking timeout ở bước chờ Canvas 5 giây, chạy riêng **1/1 PASS** (8.7s). Không báo toàn batch xanh hoặc thay đổi renderer để xử lý timeout này.
+- Typecheck/lint/build: **PASS**; Vitest **69/69 PASS**. Build có cảnh báo chunk >500 kB hiện hữu.
+- Browser: Playwright Chromium qua Edge trên Windows, software WebGL. Responsive overlay: 320/768/1440px, light/dark.
+- **NOT TESTED:** screen reader và thiết bị thật; save/error mọi biến thể của Roles/Rooms/Exhibits, permission change khi overlay mở, route/pagination invalidation mọi overlay. Không coi tập test này là chứng nhận WCAG AA.
+- **Giới hạn trigger:** Audit/Reports vẫn row-click-only; test dùng click để mở rồi kiểm tra keyboard lifecycle. Icon detail Exhibits chưa có accessible name, test định vị theo hàng/index. Các hạn chế này không được báo keyboard end-to-end PASS và không mở rộng sửa navigation ngoài scope đã duyệt.
+- Commit theo nhóm task; ledger và baseline matrix tại [task evidence](../tasks/accessibility-modal.md#evidence-sau-triển-khai). Chưa push/PR/merge.
