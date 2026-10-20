@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Badge,
   Button,
@@ -49,6 +49,9 @@ function formatTime(iso: string): string {
 export function ModerationPage() {
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const rejectReasonRef = useRef<HTMLTextAreaElement>(null);
+  const didCompleteRef = useRef(false);
   const [page, setPage] = useState(1);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [rejectOpened, rejectModal] = useDisclosure(false);
@@ -95,6 +98,8 @@ export function ModerationPage() {
     handleCmsError(err, {
       onConflict: () => {
         refreshAll();
+        didCompleteRef.current = true;
+        rejectModal.close();
         setDetailId(null);
       },
     });
@@ -114,12 +119,13 @@ export function ModerationPage() {
       moderationService.reject(detail!.id, detail!.exhibit!.version, rejectReason.trim()),
     onSuccess: () => {
       notify.success('Đã từ chối phiên bản nội dung');
+      didCompleteRef.current = true;
       rejectModal.close();
       setRejectReason('');
       refreshAll();
       setDetailId(null);
     },
-    onError: handleError,
+    onError: (error) => { handleError(error); rejectReasonRef.current?.focus(); },
   });
 
   const hideMutation = useMutation({
@@ -183,6 +189,7 @@ export function ModerationPage() {
   return (
     <>
       <PageHeader
+        titleRef={titleRef}
         title="Kiểm duyệt nội dung"
         description="Duyệt, từ chối hoặc tạm ẩn các phiên bản nội dung đang chờ"
       />
@@ -203,6 +210,11 @@ export function ModerationPage() {
 
       <Drawer
         opened={!!detailId}
+        closeOnEscape={!rejectOpened}
+        onExitTransitionEnd={() => {
+          if (didCompleteRef.current || document.activeElement === document.body) titleRef.current?.focus();
+          didCompleteRef.current = false;
+        }}
         onClose={() => setDetailId(null)}
         position="right"
         size="lg"
@@ -310,10 +322,15 @@ export function ModerationPage() {
         )}
       </Drawer>
 
-      <Modal opened={rejectOpened} onClose={rejectModal.close} title="Từ chối phiên bản">
+      <Modal opened={rejectOpened} onClose={rejectModal.close} title="Từ chối phiên bản" zIndex={201}
+        onExitTransitionEnd={() => {
+          if (!detailId && document.activeElement === document.body) titleRef.current?.focus();
+        }}>
         <Stack>
           <Textarea
+            ref={rejectReasonRef}
             label="Lý do từ chối"
+            data-autofocus
             placeholder="Nêu rõ lý do để người gửi chỉnh sửa..."
             rows={4}
             value={rejectReason}
