@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActionIcon, Alert, Badge, Button, Drawer, Group, MultiSelect,
   Select, Stack, Text, TextInput,
@@ -48,6 +48,9 @@ function errorMessage(error: unknown, fallback: string): string {
 export function UsersPage() {
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const formTriggerRef = useRef<HTMLElement | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebouncedValue(search, 300);
@@ -120,10 +123,11 @@ export function UsersPage() {
   });
   const removeMutation = useMutation({
     mutationFn: (id: string) => usersService.remove(id),
-    onSuccess: () => {
+    onSuccess: async () => {
       notify.success('Đã xóa mềm tài khoản');
       if (page > 1 && usersQuery.data?.items.length === 1) setPage(page - 1);
-      void invalidate();
+      await invalidate();
+      titleRef.current?.focus();
     },
     onError: (error) => notify.error(errorMessage(error, 'Xóa tài khoản thất bại')),
   });
@@ -133,7 +137,12 @@ export function UsersPage() {
     && rolesQuery.isSuccess && rolesInitialized;
   const canSave = !editing || canUpdate || canSelectRoles;
 
+  useEffect(() => {
+    if (saveMutation.isPending) drawerRef.current?.querySelector<HTMLElement>('[role="dialog"]')?.focus();
+  }, [saveMutation.isPending]);
+
   const openForm = (user: UserRow | null) => {
+    formTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setEditing(user);
     setSaveError(null);
     form.clearErrors();
@@ -207,7 +216,7 @@ export function UsersPage() {
 
   return (
     <>
-      <PageHeader title="Tài khoản" description="Quản lý tài khoản Admin và vai trò"
+      <PageHeader titleRef={titleRef} title="Tài khoản" description="Quản lý tài khoản Admin và vai trò"
         actions={canCreate ? (
           <Button leftSection={<IconPlus size={16} />} disabled={isBusy} onClick={() => openForm(null)}>
             Tạo tài khoản
@@ -234,7 +243,10 @@ export function UsersPage() {
           total={data?.total} onPageChange={setPage}
           emptyText={debouncedSearch || status ? 'Không có tài khoản phù hợp' : 'Chưa có tài khoản'} />
       )}
-      <Drawer opened={opened} onClose={closeForm} position="right"
+      <Drawer ref={drawerRef} opened={opened} onClose={closeForm} position="right"
+        onExitTransitionEnd={() => {
+          if (!formTriggerRef.current?.isConnected) titleRef.current?.focus();
+        }}
         closeOnClickOutside={!saveMutation.isPending} closeOnEscape={!saveMutation.isPending}
         title={editing ? canUpdate ? 'Sửa tài khoản' : 'Gán vai trò' : 'Tạo tài khoản'}>
         <form onSubmit={form.onSubmit(handleSave)}>
@@ -242,16 +254,17 @@ export function UsersPage() {
             style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
             <Stack>
               {saveError && <Alert color="red" title="Không lưu được tài khoản" role="alert">{saveError}</Alert>}
-              <FormTextField label="Email" withAsterisk disabled={!!editing} {...form.getInputProps('email')} />
-              <FormTextField label="Tên hiển thị" withAsterisk disabled={!!editing && !canUpdate}
+              <FormTextField label="Email" data-autofocus={!editing || undefined} withAsterisk disabled={!!editing || saveMutation.isPending} {...form.getInputProps('email')} />
+              <FormTextField label="Tên hiển thị" data-autofocus={!!editing && canUpdate || undefined} withAsterisk disabled={(!!editing && !canUpdate) || saveMutation.isPending}
                 {...form.getInputProps('displayName')} />
               {(!editing || canUpdate) && (
                 <FormPassword label={editing ? 'Mật khẩu mới (để trống nếu giữ nguyên)' : 'Mật khẩu'}
+                  disabled={saveMutation.isPending}
                   withAsterisk={!editing} {...form.getInputProps('password')} />
               )}
               {editing && (
                 <Select label="Trạng thái" data={STATUS_OPTIONS} allowDeselect={false}
-                  disabled={!canUpdate} {...form.getInputProps('status')} />
+                  disabled={!canUpdate || saveMutation.isPending} {...form.getInputProps('status')} />
               )}
               {canAssignRoles && canReadRoles ? (
                 <>
@@ -266,8 +279,8 @@ export function UsersPage() {
                         loading={rolesQuery.isFetching}>Thử lại</Button>
                     </Alert>
                   )}
-                  <MultiSelect label="Vai trò" placeholder={rolesQuery.isPending ? 'Đang tải...' : 'Chọn vai trò'}
-                    data={roleOptions} searchable disabled={!canSelectRoles} {...form.getInputProps('roleIds')} />
+                  <MultiSelect label="Vai trò" data-autofocus={!!editing && !canUpdate || undefined} placeholder={rolesQuery.isPending ? 'Đang tải...' : 'Chọn vai trò'}
+                    data={roleOptions} searchable disabled={!canSelectRoles || saveMutation.isPending} {...form.getInputProps('roleIds')} />
                   <Text size="xs" c="dimmed">Bỏ hết lựa chọn để gỡ mọi vai trò. Admin hoạt động cuối cùng được bảo vệ.</Text>
                 </>
               ) : (
@@ -278,8 +291,8 @@ export function UsersPage() {
               )}
               <Text size="xs" c="dimmed">Thay đổi quyền áp dụng khi cấp access token mới; phiên đang mở có thể giữ quyền cũ đến khi token hết hạn.</Text>
               <Group justify="flex-end" mt="sm">
-                <Button variant="default" onClick={closeForm} type="button">Hủy</Button>
-                <Button type="submit" loading={saveMutation.isPending} disabled={!canSave}>Lưu</Button>
+                <Button variant="default" disabled={saveMutation.isPending} onClick={closeForm} type="button">Hủy</Button>
+                <Button type="submit" loading={saveMutation.isPending} disabled={!canSave || saveMutation.isPending}>Lưu</Button>
               </Group>
             </Stack>
           </fieldset>

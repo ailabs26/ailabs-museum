@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ActionIcon, Badge, Button, Drawer, Group, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
@@ -23,6 +23,7 @@ interface RoleFormValues {
 export function RolesPage() {
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const [editing, setEditing] = useState<RoleRow | null>(null);
   const [opened, drawer] = useDisclosure(false);
 
@@ -54,9 +55,10 @@ export function RolesPage() {
 
   const removeMutation = useMutation({
     mutationFn: (id: string) => rolesService.remove(id),
-    onSuccess: () => {
+    onSuccess: async () => {
       notify.success('Đã xóa vai trò');
-      invalidate();
+      await invalidate();
+      titleRef.current?.focus();
     },
     onError: (error) => notify.error(error instanceof ApiException ? error.message : 'Xóa thất bại'),
   });
@@ -134,6 +136,7 @@ export function RolesPage() {
   return (
     <>
       <PageHeader
+        titleRef={titleRef}
         title="Vai trò"
         description="Quản lý vai trò; cấu hình ma trận quyền ở tab Phân quyền"
         actions={
@@ -163,12 +166,13 @@ export function RolesPage() {
           <Stack>
             <FormTextField
               label="Mã vai trò"
+              data-autofocus={!editing || undefined}
               withAsterisk
               disabled={!!editing}
               description="Định danh ổn định, không đổi sau khi tạo"
               {...form.getInputProps('code')}
             />
-            <FormTextField label="Tên hiển thị" withAsterisk {...form.getInputProps('name')} />
+            <FormTextField label="Tên hiển thị" data-autofocus={!!editing || undefined} withAsterisk {...form.getInputProps('name')} />
             <Group justify="flex-end" mt="sm">
               <Button variant="default" type="button" onClick={drawer.close}>
                 Hủy
