@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -69,6 +69,7 @@ function toKebabCase(str: string): string {
 export function RoomsPage() {
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -160,9 +161,10 @@ export function RoomsPage() {
 
   const removeMutation = useMutation({
     mutationFn: (id: string) => roomsService.remove(id),
-    onSuccess: () => {
+    onSuccess: async () => {
       notify.success('Đã xóa mềm phòng trưng bày thành công');
-      invalidate();
+      await invalidate();
+      titleRef.current?.focus();
     },
     onError: (err) => {
       if (err instanceof ApiException) {
@@ -328,6 +330,7 @@ export function RoomsPage() {
   return (
     <>
       <PageHeader
+        titleRef={titleRef}
         title="Quản lý Phòng trưng bày"
         description="Quản lý thông tin các phòng, kiểm soát trạng thái hiển thị 3D và hiện vật liên kết"
         actions={
@@ -502,6 +505,7 @@ export function RoomsPage() {
           <Stack gap="md">
             <TextInput
               label="Tên phòng"
+              data-autofocus
               placeholder="Ví dụ: Phòng Khám Phá Văn Hóa Đông Sơn"
               required
               value={form.values.name}

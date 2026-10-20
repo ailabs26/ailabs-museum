@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActionIcon,
   Alert,
@@ -114,6 +114,7 @@ function getDisplayText(val: unknown, lang: 'vi' | 'en' = 'vi'): string {
 export function ExhibitsPage() {
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -294,9 +295,11 @@ export function ExhibitsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => exhibitsService.delete(id),
-    onSuccess: () => {
+    onSuccess: async () => {
       notify.success('Đã xóa bản nháp hiện vật');
-      invalidate();
+      await queryClient.invalidateQueries({ queryKey: ['admin-exhibits'] });
+      if (detailId) void queryClient.invalidateQueries({ queryKey: ['admin-exhibit-detail', detailId] });
+      titleRef.current?.focus();
     },
     onError: (err) => {
       notify.error(err instanceof Error ? err.message : 'Xóa hiện vật thất bại');
@@ -543,6 +546,7 @@ export function ExhibitsPage() {
   return (
     <>
       <PageHeader
+        titleRef={titleRef}
         title="Hiện vật"
         description="Quản lý hiện vật 3D, tọa độ không gian, phiên bản nội dung song ngữ và điểm tương tác"
         actions={
@@ -652,6 +656,7 @@ export function ExhibitsPage() {
                     <Grid.Col span={6}>
                       <TextInput
                         label="Tên hiện vật (Tiếng Việt)"
+                        data-autofocus
                         placeholder="Ví dụ: Trống đồng Đông Sơn"
                         required
                         {...form.getInputProps('nameVi')}

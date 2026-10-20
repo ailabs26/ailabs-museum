@@ -11,10 +11,10 @@ export const revisions = [1, 2].map(index => ({
   createdAt: '2026-10-19T00:00:00Z',
 }));
 
-export async function installModerationApi(page: Page, { authenticated = true } = {}) {
+export async function installModerationApi(page: Page, { authenticated = true, permissions = ['revision:publish'] } = {}) {
   const detailRequests: string[] = [];
   const writes: string[] = [];
-  const user = { id: '00000000-0000-4000-8000-000000000001', email: 'reviewer@example.test', displayName: 'Reviewer', roles: ['reviewer'], permissions: ['revision:publish'] };
+  const user = { id: '00000000-0000-4000-8000-000000000001', email: 'reviewer@example.test', displayName: 'Reviewer', roles: ['reviewer'], permissions };
   await page.route('**/api/**', async route => {
     const request = route.request();
     if (!new URL(request.url()).pathname.startsWith('/api/')) { await route.continue(); return; }

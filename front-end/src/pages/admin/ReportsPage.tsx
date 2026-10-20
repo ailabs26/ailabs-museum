@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Badge,
   Button,
@@ -58,6 +58,8 @@ type CloseKind = 'resolve' | 'dismiss';
 export function ReportsPage() {
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const resolutionRef = useRef<HTMLTextAreaElement>(null);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('all');
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -91,6 +93,7 @@ export function ReportsPage() {
     handleCmsError(err, {
       onConflict: () => {
         refreshAll();
+        closeModal.close();
         setDetailId(null);
       },
     });
@@ -116,7 +119,7 @@ export function ReportsPage() {
       refreshAll();
       setDetailId(null);
     },
-    onError: handleError,
+    onError: (error) => { handleError(error); resolutionRef.current?.focus(); },
   });
 
   const openClose = (kind: CloseKind) => {
@@ -164,6 +167,7 @@ export function ReportsPage() {
   return (
     <>
       <PageHeader
+        titleRef={titleRef}
         title="Báo cáo vi phạm"
         description="Tiếp nhận và xử lý báo cáo nội dung sai từ người dùng"
       />
@@ -198,6 +202,10 @@ export function ReportsPage() {
 
       <Drawer
         opened={!!detailId}
+        closeOnEscape={!closeOpened}
+        onExitTransitionEnd={() => {
+          if (document.activeElement === document.body) titleRef.current?.focus();
+        }}
         onClose={() => setDetailId(null)}
         position="right"
         size="lg"
@@ -273,12 +281,18 @@ export function ReportsPage() {
 
       <Modal
         opened={closeOpened}
+        zIndex={201}
+        onExitTransitionEnd={() => {
+          if (!detailId && document.activeElement === document.body) titleRef.current?.focus();
+        }}
         onClose={closeModal.close}
         title={closeKind === 'resolve' ? 'Xử lý xong báo cáo' : 'Đóng/bác báo cáo'}
       >
         <Stack>
           <Textarea
+            ref={resolutionRef}
             label="Kết luận xử lý"
+            data-autofocus
             placeholder="Mô tả cách xử lý hoặc lý do đóng báo cáo..."
             rows={4}
             value={resolution}
