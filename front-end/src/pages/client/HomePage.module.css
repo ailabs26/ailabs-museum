@@ -1,0 +1,39 @@
+.hero { display: grid; grid-template-columns: 1.15fr 1fr; gap: 48px; align-items: center; padding-block: 64px; }
+.heroContent { padding-block: 24px; }
+.eyebrow { color: var(--public-accent); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; margin: 0 0 24px; }
+.title { font-family: 'Times New Roman', serif; font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 400; line-height: 1.12; letter-spacing: -0.04em; }
+.introduction { max-width: 440px; color: var(--public-muted); font-size: 17px; line-height: 1.8; margin-block: 24px 32px; }
+.heroNote { color: var(--public-ink); font-size: 13px; margin-top: 24px; }
+.heroVisual { position: relative; min-height: 440px; background: var(--public-surface); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.arch { width: 60%; height: 320px; border-radius: 160px 160px 0 0; background: #d5c6aa; padding: 32px 28px 0; border: 1px solid #c7b898; box-shadow: 16px 12px 0 #c5b899; }
+.innerArch { height: 100%; border-radius: 140px 140px 0 0; background: #24534d; border: 16px solid #b7a484; border-bottom: 0; }
+.plinth { position: absolute; bottom: 48px; width: 72%; height: 28px; background: #e4d9c2; border-bottom: 10px solid #c6b797; }
+.visualCaption { position: absolute; bottom: 20px; color: var(--public-muted); font-size: 9px; letter-spacing: 0.15em; }
+.about { display: grid; grid-template-columns: 1fr 1.3fr; gap: 64px; padding-block: 56px; border-top: 1px solid var(--public-border); }
+.sectionTitle { font-family: 'Times New Roman', serif; font-size: clamp(2rem, 3vw, 2.75rem); font-weight: 400; line-height: 1.2; letter-spacing: -0.02em; }
+.aboutContent p { color: var(--public-muted); font-size: 16px; line-height: 1.8; margin: 0 0 20px; }
+.textLink { display: inline-flex; align-items: center; gap: 12px; padding-block: 12px; font-weight: 600; font-size: 14px; }
+.featured { padding-block: 48px 32px; border-top: 1px solid var(--public-border); }
+.featuredContent { margin-top: 24px; }
+.featuredRoom { color: var(--public-ink); font-weight: 600; margin: 0 0 8px; overflow-wrap: anywhere; }
+.featuredDescription { color: var(--public-muted); font-size: 14px; margin: 0 0 24px; }
+.featuredContent > a { margin-top: 16px; }
+
+@media (max-width: 62em) {
+  .hero { gap: 32px; }
+  .heroVisual { min-height: 360px; }
+  .arch { height: 264px; padding: 24px 20px 0; }
+  .about { gap: 32px; }
+}
+
+@media (max-width: 48em) {
+  .hero { grid-template-columns: 1fr; gap: 24px; padding-block: 32px; }
+  .heroContent { padding-block: 12px; }
+  .heroVisual { min-height: 320px; }
+  .arch { width: 55%; height: 240px; }
+  .plinth { bottom: 36px; }
+  .visualCaption { bottom: 12px; }
+  .about { grid-template-columns: 1fr; gap: 24px; padding-block: 40px; }
+  .introduction { font-size: 16px; }
+  .featured { padding-block: 40px 24px; }
+}

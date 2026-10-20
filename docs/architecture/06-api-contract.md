@@ -45,7 +45,33 @@ GET    /roles                 POST /roles           PATCH /roles/:id     DELETE 
 GET    /roles/:id/permissions PUT  /roles/:id/permissions        # set ma trận quyền
 GET    /permissions                                              # danh mục permission
 GET    /audit                 GET  /audit/:id                    # nhật ký (lọc theo actor/action/thời gian)
+GET    /admin/stats/overview                                     # số liệu tổng quan Dashboard
+GET    /admin/stats/charts                                       # dữ liệu biểu đồ Dashboard
 ```
+
+#### Stats (Dashboard Admin) — Task 21
+
+`GET /admin/stats/overview` → `OverviewStatsDto`:
+```json
+{
+  "rooms":     { "total": 12, "active": 9, "archived": 3 },
+  "exhibits":  { "total": 48, "visible": 40, "hidden": 8 },
+  "revisions": { "inReview": 5, "draft": 11 },
+  "reports":   { "open": 4, "inProgress": 2 },
+  "system":    { "api": "up", "db": "up", "uptimeSec": 38124, "serverTime": "2026-10-12T08:30:00.000Z" }
+}
+```
+
+`GET /admin/stats/charts` → `StatsChartsDto` (dữ liệu đã GROUP BY để FE vẽ ApexCharts):
+```json
+{
+  "reportsByStatus":    [ { "label": "open", "count": 4 } ],
+  "exhibitsByRoom":     [ { "label": "Phòng A", "count": 12 } ],
+  "revisionsByState":   [ { "label": "in_review", "count": 5 } ],
+  "activityLast14Days": [ { "date": "2026-10-12", "revisions": 3, "reports": 1 } ]
+}
+```
+> Chỉ đọc (count/GROUP BY), không đổi schema. Yêu cầu đăng nhập; mọi role quản trị xem được.
 
 ### CMS nội dung
 ```
@@ -63,10 +89,48 @@ POST   /exhibits/:id/attach-media         # gắn model/image/audio
 ### Kiểm duyệt & báo cáo
 ```
 GET    /moderation/queue                  # revision chờ duyệt
+GET    /moderation/revisions/:id          # chi tiết 1 revision
 GET    /moderation/revisions/:id/diff     # so sánh phiên bản cũ/mới
+GET    /exhibits/:id/revisions            # lịch sử revision của hiện vật
+POST   /revisions/:id/publish             # in_review -> approved (moderator)
+POST   /revisions/:id/reject              # kèm lý do (bắt buộc)
+POST   /exhibits/:id/hide  |  /unhide     # tạm ẩn/hiện hiện vật
 GET/POST /reports                         # Admin xem; Client gửi (public, rate-limited)
 POST   /reports/:id/resolve  | /dismiss
 ```
+
+#### Moderation (Task 22) — optimistic concurrency
+
+- `POST /revisions/:id/publish` body `{ version }`, `/reject` body `{ version, reason }`,
+  `/exhibits/:id/hide|unhide` body `{ version }`. `version` là phiên bản hiện vật phía client đang xem.
+- Cập nhật nguyên tử `UPDATE ... WHERE id=? AND version=?`; lệch version → **409 Conflict**
+  (message "Nội dung đã bị thay đổi... tải lại"). Publish tăng `version`, đặt `publishedRevisionId`, `visibility=visible`.
+- Quyền: queue `revision:publish`; đọc chi tiết/diff/lịch sử `exhibit:read`; publish/reject/hide theo `revision:publish|reject|hide`.
+- Mọi hành động ghi vết qua `@Audit` (revision.publish/reject, exhibit.hide/unhide).
+
+#### Reports (Task 23)
+
+- `GET /reports?page&pageSize&status` (`report:read`) → danh sách; `GET /reports/:id` (`report:read`) → chi tiết kèm phiên bản bị báo cáo.
+- `POST /reports/:id/assign` (`report:resolve`): open → in_progress, gán người tiếp nhận.
+- `POST /reports/:id/resolve` body `{ resolution }` (`report:resolve`): → resolved.
+- `POST /reports/:id/dismiss` body `{ resolution }` (`report:resolve`): → dismissed.
+- `POST /public/reports` **@Public** body `{ exhibitId, reportedRevisionId?, category, message }`, rate-limit 5 lần/phút.
+- Chuyển trạng thái chỉ hợp lệ khi báo cáo còn mở (open/in_progress) → sai → **409**. Ghi vết `@Audit` report.assign/resolve/dismiss.
+
+#### Audit (Task 24)
+
+`GET /audit?page&pageSize&actorId&action&resourceType&from&to` + `GET /audit/:id` (`audit:read`). Append-only, không có endpoint sửa/xóa.
+Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. Ánh xạ hành động CMS:
+
+| action | resourceType | revisionId | Nguồn |
+|---|---|---|---|
+| room.create/update/delete | room | — | AdminRoomsController |
+| revision.publish | revision | = resourceId | RevisionsController |
+| revision.reject | revision | = resourceId | RevisionsController |
+| exhibit.hide / exhibit.unhide | exhibit | — | ExhibitRevisionsController |
+| report.assign/resolve/dismiss | report | — | ReportsController |
+
+> Với `resourceType='revision'`, interceptor lưu thêm FK `revisionId` để join `audit_logs → exhibit_revisions`.
 
 ### Public (client — chỉ đọc nội dung published)
 ```

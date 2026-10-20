@@ -34,13 +34,15 @@ export class AuditInterceptor implements NestInterceptor {
     return next.handle().pipe(
       mergeMap(async (data) => {
         try {
-          const resourceId = this.resolveResourceId(request, data);
-          if (resourceId) {
+          const resourceIds = this.resolveResourceIds(request, data);
+          for (const resourceId of resourceIds) {
             await this.audit.record({
               actorId: request.user?.id ?? null,
               action: meta.action,
               resourceType: meta.resourceType,
               resourceId,
+              // Với hành động trên revision, lưu thêm FK revisionId để truy vết chéo.
+              revisionId: meta.resourceType === 'revision' ? resourceId : null,
               requestId: this.resolveRequestId(request),
             });
           }
@@ -52,14 +54,32 @@ export class AuditInterceptor implements NestInterceptor {
     );
   }
 
-  /** Ưu tiên id của tài nguyên trả về (tạo mới), sau đó tới param :id. */
-  private resolveResourceId(request: AuditRequest, data: unknown): string | null {
+  /**
+   * APP_INTERCEPTOR nằm ngoài ResponseInterceptor (đăng ký ở main.ts), nên kết quả nhận được
+   * có thể đã được bọc thành ApiResponse `{ success, data, message }` — lấy phần `data`.
+   */
+  private unwrapEnvelope(data: unknown): unknown {
+    if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
+      return (data as { data: unknown }).data;
+    }
+    return data;
+  }
+
+  /** Ưu tiên danh sách id, rồi id trả về (tạo mới), sau đó tới param :id. */
+  private resolveResourceIds(request: AuditRequest, result: unknown): string[] {
+    const data = this.unwrapEnvelope(result);
+    if (data && typeof data === 'object' && 'roleIds' in data) {
+      const roleIds = (data as { roleIds?: unknown }).roleIds;
+      if (Array.isArray(roleIds)) {
+        return roleIds.filter((id): id is string => typeof id === 'string');
+      }
+    }
     if (data && typeof data === 'object' && 'id' in data) {
       const id = (data as { id?: unknown }).id;
-      if (typeof id === 'string') return id;
+      if (typeof id === 'string') return [id];
     }
     const paramId = (request.params as Record<string, string> | undefined)?.id;
-    return paramId ?? null;
+    return paramId ? [paramId] : [];
   }
 
   private resolveRequestId(request: AuditRequest): string {

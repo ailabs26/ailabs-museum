@@ -1,0 +1,25 @@
+.page { padding-block: 48px 64px; }
+.intro { max-width: 640px; margin-bottom: 40px; }
+.eyebrow { color: var(--public-accent); font-size: 12px; letter-spacing: 0.14em; font-weight: 600; text-transform: uppercase; margin: 0 0 16px; }
+.title { font-family: 'Times New Roman', serif; font-weight: 400; font-size: clamp(2.5rem, 5vw, 3.75rem); line-height: 1.15; }
+.title:focus-visible { outline: 3px solid var(--public-accent); outline-offset: 4px; }
+.description, .roomDescription { color: var(--public-muted); line-height: 1.8; }
+.description { margin: 20px 0 0; }
+.toolbar { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; padding-bottom: 32px; margin-bottom: 32px; border-bottom: 1px solid var(--public-border); }
+.select { flex: 1; min-width: 0; max-width: 440px; }
+.select label { color: var(--public-ink); }
+.roomHeader { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; }
+.roomHeader > div { flex: 1; min-width: min(100%, 280px); }
+.roomTitle { font-family: 'Times New Roman', serif; font-weight: 400; font-size: 30px; line-height: 1.25; overflow-wrap: anywhere; }
+.roomDescription { margin: 12px 0; }
+.count { color: var(--public-muted); font-size: 14px; margin: 12px 0 0; }
+.tourLink { display: inline-flex; align-items: center; gap: 8px; padding-block: 12px; font-size: 14px; font-weight: 600; }
+.empty { color: var(--public-muted); border: 1px solid var(--public-border); padding: 32px; line-height: 1.8; }
+
+@media (max-width: 48em) {
+  .page { padding-block: 32px 48px; }
+  .intro { margin-bottom: 28px; }
+  .toolbar { align-items: stretch; }
+  .select { flex-basis: 100%; max-width: none; }
+  .roomTitle { font-size: 26px; }
+}

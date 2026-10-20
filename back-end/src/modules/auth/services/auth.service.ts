@@ -30,15 +30,13 @@ export class AuthService {
   async login(dto: LoginDto): Promise<LoginResult> {
     const user = await this.users.findByEmailWithAccess(dto.email);
     // So khớp mật khẩu kể cả khi không tìm thấy user để tránh lộ user tồn tại qua thời gian phản hồi.
-    const passwordOk = user
-      ? await this.passwords.compare(dto.password, user.passwordHash)
-      : false;
+    const passwordOk = await this.passwords.compare(dto.password, user?.passwordHash);
 
     if (!user || !passwordOk) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
-    if (user.status === UserStatus.DISABLED) {
+    if (user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException('Tài khoản đã bị khóa');
     }
 
@@ -54,26 +52,22 @@ export class AuthService {
     }
 
     const rotated = await this.tokens.rotate(rawToken);
-    const user = await this.users.findByIdWithAccess(rotated.userId);
-    if (!user || user.status === UserStatus.DISABLED) {
-      await this.tokens.revokeSession(rotated.session.id);
-      throw new UnauthorizedException('Tài khoản không khả dụng');
-    }
-
-    const accessToken = await this.tokens.signAccess(toAuthUser(user));
-    return { accessToken, refreshToken: rotated.raw };
+    return { accessToken: rotated.accessToken, refreshToken: rotated.raw };
   }
 
   async me(userId: string): Promise<AuthUser> {
     const user = await this.users.findByIdWithAccess(userId);
-    if (!user) {
+    if (!user || user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException('Phiên đăng nhập không hợp lệ');
     }
     return toAuthUser(user);
   }
 
   logout(rawToken: string | undefined): Promise<void> {
-    if (!rawToken) return Promise.resolve();
+    if (!rawToken) {
+      return Promise.resolve();
+    }
+
     return this.tokens.revokeByRaw(rawToken);
   }
 }

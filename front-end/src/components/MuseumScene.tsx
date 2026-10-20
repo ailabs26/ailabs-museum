@@ -1,43 +1,106 @@
-import { Canvas } from '@react-three/fiber';
-import { useCallback, useState } from 'react';
+import { Canvas, events } from '@react-three/fiber';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Button, Group } from '@mantine/core';
 import { ACESFilmicToneMapping } from 'three';
-import { SceneFallback } from '@/components/museum/SceneFallback';
 import { MuseumRoom } from '@/components/museum/MuseumRoom';
 import { ExhibitionDisplay } from '@/components/museum/ExhibitionDisplay';
 import { MuseumLighting } from '@/components/museum/MuseumLighting';
 import { MuseumControls, type CameraAction, type CameraCommand } from '@/components/museum/MuseumControls';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { SceneLifecycle } from '@/components/museum/SceneLifecycle';
+import { INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET } from '@/helpers/museumCamera';
+import classes from './MuseumScene.module.css';
+import { useRoomModels } from '@/hooks/useRoomModels';
+import { ModelLoadingStatus } from '@/components/museum/ModelLoadingStatus';
+import { ArtifactHotspotControls } from '@/components/museum/ArtifactHotspotControls';
+import { getArtifactFocusBounds } from '@/helpers/artifactHotspots';
+import type { ArtifactRenderState } from '@/components/museum/ArtifactModelBoundary';
+import { reportModelFailure } from '@/helpers/modelDiagnostics';
+import { createNavigationInput } from '@/helpers/museumNavigation';
+import { NavigationGestures } from '@/helpers/navigationGestures';
+import { NavigationHud, type NavigationMode } from '@/components/museum/NavigationHud';
 
-export function MuseumScene({ displays }: { displays: readonly MuseumDisplay[] }) {
+// Labels render over solid geometry. Picking follows that same visual order;
+// intersecting labels still use nearest-first ordering within their layer.
+const createMuseumEvents: typeof events = (store) => ({
+  ...events(store),
+  filter: (hits) => [...hits].sort((left, right) =>
+    Number(right.object.userData.museumLabel === true) - Number(left.object.userData.museumLabel === true) || left.distance - right.distance),
+});
+
+export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback }: {
+  displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void; onClear: () => void;
+  fallback: ReactNode;
+}) {
   const [command, setCommand] = useState<CameraCommand | null>(null);
   const [isContextLost, setIsContextLost] = useState(false);
+  const [renderStates, setRenderStates] = useState<Record<string, ArtifactRenderState>>({});
+  const input = useMemo(createNavigationInput, []);
+  const gestures = useMemo(() => new NavigationGestures(), []);
+  const [mode, setMode] = useState<NavigationMode>('explore');
+  const [isActive, setIsActive] = useState(false);
+  const [hasTouch, setHasTouch] = useState(false);
+  useEffect(() => { setHasTouch(navigator.maxTouchPoints > 0 || matchMedia('(any-pointer: coarse)').matches); }, []);
+  const handleSceneSelect = (id: string) => { if (gestures.canSelect) onSelect(id); };
+  const { models, retry } = useRoomModels(isContextLost ? [] : displays);
+  const selectedDisplay = displays.find((display) => display.id === selectedId);
+  const selectedModel = selectedDisplay?.model ? models[selectedDisplay.model.checksumSha256] : undefined;
+  const selectedRenderState = renderStates[selectedDisplay?.id ?? ''];
+  const selectedAsset = selectedModel?.status === 'ready' && !(selectedRenderState?.checksum === selectedDisplay?.model?.checksumSha256 && selectedRenderState?.failed) ? selectedModel.asset : undefined;
+  const focusBounds = useMemo(() => selectedDisplay?.model ? getArtifactFocusBounds(selectedDisplay, selectedAsset?.normalization)
+    : undefined, [selectedDisplay, selectedAsset]);
   const handleContextLost = useCallback(() => setIsContextLost(true), []);
+  const handleRenderError = (display: MuseumDisplay) => {
+    const previous = renderStates[display.id];
+    const attempts = previous?.checksum === display.model?.checksumSha256 ? previous.attempts : 0;
+    setRenderStates(states => ({ ...states, [display.id]: { checksum: display.model!.checksumSha256, attempts, failed: true } }));
+    reportModelFailure({ artifactId: display.id, roomId: display.roomId, attempt: attempts + 1, stage: 'render', category: 'render' });
+  };
+  const handleRetryRender = (id: string) => setRenderStates(states => {
+    const state = states[id];
+    return !state || !state.failed || state.attempts >= 3 ? states : { ...states, [id]: { ...state, failed: false, attempts: state.attempts + 1 } };
+  });
   const handleCommand = (action: CameraAction) => setCommand((previous) => ({ action, sequence: (previous?.sequence ?? 0) + 1 }));
-  if (isContextLost) return <SceneFallback />;
+  if (isContextLost) return fallback;
   return (
-    <>
+    <div className={classes.scene}>
+    <div className={classes.canvasFrame}
+      onPointerDownCapture={event => { gestures.start(event.pointerId, event.clientX, event.clientY); if (event.pointerType === 'touch') setHasTouch(true); }}
+      onPointerMoveCapture={event => gestures.move(event.pointerId, event.clientX, event.clientY)}
+      onPointerUpCapture={event => gestures.end(event.pointerId)}
+      onPointerCancelCapture={() => gestures.cancel()}>
     <Canvas
+      events={createMuseumEvents}
       frameloop="demand"
       dpr={[1, 1.5]}
-      camera={{ position: [0, 2.6, 5.8], fov: 60, near: 0.1, far: 40 }}
-      gl={{ antialias: true, alpha: false, powerPreference: 'low-power', toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
-      fallback={<SceneFallback />}
-      onCreated={({ camera }) => camera.lookAt(0, 1.35, 0)}
+      camera={{ position: INITIAL_CAMERA_POSITION, fov: 60, near: 0.1, far: 40 }}
+      gl={{ antialias: true, alpha: false, powerPreference: 'low-power', toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1 }}
+      // R3F mounts this inside <canvas> even when WebGL works; no failure callbacks here.
+      fallback="Trình duyệt không hiển thị được canvas. Nội dung hiện vật vẫn có trong danh mục bên dưới."
+      onPointerMissed={(event) => { if (event.type === 'click' && gestures.canSelect) onClear(); }}
+      onCreated={({ camera }) => camera.lookAt(...INITIAL_CAMERA_TARGET)}
     >
       <color attach="background" args={['#eee9df']} />
       <MuseumLighting />
       <SceneLifecycle onContextLost={handleContextLost} />
-      <MuseumControls command={command} />
+      <MuseumControls command={command} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
+        displays={displays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} />
       <MuseumRoom />
-      {displays.map((display) => <ExhibitionDisplay key={display.id} display={display} />)}
+      {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={handleSceneSelect}
+        modelState={display.model ? models[display.model.checksumSha256] : undefined} renderAttempt={renderStates[display.id]?.attempts}
+        hasRenderError={renderStates[display.id]?.checksum === display.model?.checksumSha256 && renderStates[display.id]?.failed}
+        onRenderError={() => handleRenderError(display)} />)}
     </Canvas>
-    <Group pos="absolute" bottom={16} left={16} right={16} gap="xs" aria-label="Điều khiển góc nhìn">
+    <NavigationHud input={input} mode={mode} isActive={isActive} hasTouch={hasTouch} />
+    </div>
+    <Group className={classes.toolbar} gap="xs" aria-label="Điều khiển góc nhìn">
       <Button variant="default" onClick={() => handleCommand('reset')}>Góc nhìn ban đầu</Button>
       <Button variant="default" onClick={() => handleCommand('in')}>Đến gần</Button>
       <Button variant="default" onClick={() => handleCommand('out')}>Lùi xa</Button>
+      <Button color="teal.9" disabled={!selectedDisplay || selectedDisplay.isOutsideRoom} onClick={() => handleCommand('focus')}>Tập trung hiện vật</Button>
     </Group>
-    </>
+    <ArtifactHotspotControls displays={displays} selectedId={selectedId} onSelect={onSelect} />
+    <ModelLoadingStatus displays={displays} models={models} onRetry={retry} renderStates={renderStates} onRetryRender={handleRetryRender} />
+    </div>
   );
 }

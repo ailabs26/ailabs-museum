@@ -27,12 +27,15 @@ import { useDisclosure } from '@mantine/hooks';
 import { NavLink as RouterNavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/auth/use-auth';
 import { PERMISSIONS } from '@/core/auth/permissions';
+import { ApiException } from '@/core/api/api-error';
+import { notify } from '@/shared/components/feedback';
 
 interface NavItem {
   label: string;
   to: string;
   icon: typeof IconLayoutDashboard;
   anyOf?: string[];
+  allOf?: string[];
 }
 
 const NAV: { section: string; items: NavItem[] }[] = [
@@ -55,7 +58,13 @@ const NAV: { section: string; items: NavItem[] }[] = [
     items: [
       { label: 'Tài khoản', to: '/admin/users', icon: IconUsers, anyOf: [PERMISSIONS.USER_READ] },
       { label: 'Vai trò', to: '/admin/roles', icon: IconShieldLock, anyOf: [PERMISSIONS.ROLE_READ] },
-      { label: 'Phân quyền', to: '/admin/permissions', icon: IconKey, anyOf: [PERMISSIONS.PERMISSION_READ] },
+      { label: 'Danh sách quyền', to: '/admin/permissions', icon: IconKey, anyOf: [PERMISSIONS.PERMISSION_READ] },
+      {
+        label: 'Ma trận phân quyền',
+        to: '/admin/permission-matrix',
+        icon: IconShieldLock,
+        allOf: [PERMISSIONS.PERMISSION_READ, PERMISSIONS.ROLE_READ],
+      },
       { label: 'Nhật ký hệ thống', to: '/admin/audit', icon: IconHistory, anyOf: [PERMISSIONS.AUDIT_READ] },
     ],
   },
@@ -63,11 +72,27 @@ const NAV: { section: string; items: NavItem[] }[] = [
 
 export function AdminLayout() {
   const [opened, { toggle }] = useDisclosure();
-  const { user, logout, hasAnyPermission } = useAuth();
+  const { user, logout, hasAnyPermission, hasPermission } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const canSee = (item: NavItem) => !item.anyOf || hasAnyPermission(item.anyOf);
+  const canSee = (item: NavItem) => {
+    const matchesAny = !item.anyOf?.length || hasAnyPermission(item.anyOf);
+    const matchesAll = !item.allOf?.length || item.allOf.every(hasPermission);
+    return matchesAny && matchesAll;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      notify.success('Đã đăng xuất khỏi CMS');
+    } catch (error) {
+      const message = error instanceof ApiException ? error.message : 'Không hoàn tất được đăng xuất trên máy chủ';
+      notify.error(message);
+    } finally {
+      navigate('/admin/login', { replace: true });
+    }
+  };
 
   return (
     <AppShell
@@ -78,12 +103,14 @@ export function AdminLayout() {
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Group>
-            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm"
+              aria-label={opened ? 'Đóng điều hướng quản trị' : 'Mở điều hướng quản trị'}
+              aria-expanded={opened} aria-controls="admin-navigation" />
             <Text fw={700}>Aura Museum · CMS</Text>
           </Group>
           <Menu position="bottom-end" withArrow>
             <Menu.Target>
-              <UnstyledButton>
+              <UnstyledButton aria-label={`Tài khoản ${user?.displayName ?? 'Admin'}`}>
                 <Group gap="xs">
                   <Avatar color="aura" radius="xl" size={32}>
                     {user?.displayName?.charAt(0)?.toUpperCase() ?? 'A'}
@@ -102,7 +129,7 @@ export function AdminLayout() {
             <Menu.Dropdown>
               <Menu.Item
                 leftSection={<IconLogout size={16} />}
-                onClick={() => logout().then(() => navigate('/admin/login'))}
+                onClick={handleLogout}
               >
                 Đăng xuất
               </Menu.Item>
@@ -111,7 +138,7 @@ export function AdminLayout() {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="xs">
+      <AppShell.Navbar id="admin-navigation" p="xs" aria-label="Điều hướng quản trị">
         <ScrollArea>
           {NAV.map((group) => {
             const visible = group.items.filter(canSee);

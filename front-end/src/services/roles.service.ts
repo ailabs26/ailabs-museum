@@ -1,4 +1,10 @@
 import { http } from '@/core/api/http-client';
+import { ApiException } from '@/core/api/api-error';
+import {
+  permissionListResponseSchema,
+  permissionMatrixResponseSchema,
+  roleListResponseSchema,
+} from '@/validations/rolePermissionSchema';
 
 export interface RoleRow {
   id: string;
@@ -18,9 +24,17 @@ export interface CreateRoleInput {
   name: string;
 }
 
+export interface PermissionMatrixUpdate {
+  roleId: string;
+  permissions: string[];
+}
+
 export const rolesService = {
-  list(): Promise<RoleRow[]> {
-    return http.get<RoleRow[]>('/roles');
+  async list(): Promise<RoleRow[]> {
+    const response = await http.raw.get<unknown>('/roles');
+    const result = roleListResponseSchema.safeParse(response.data);
+    if (!result.success) throw new ApiException('Danh sách vai trò từ máy chủ không hợp lệ', 502);
+    return result.data.data;
   },
   create(input: CreateRoleInput): Promise<RoleRow> {
     return http.post<RoleRow>('/roles', input);
@@ -38,6 +52,19 @@ export const rolesService = {
     return http.put<RoleRow>(`/roles/${id}/permissions`, { permissions });
   },
   listAllPermissions(): Promise<PermissionRow[]> {
-    return http.get<PermissionRow[]>('/permissions');
+    return getValidatedPermissions();
+  },
+  async setPermissionMatrix(updates: PermissionMatrixUpdate[]): Promise<RoleRow[]> {
+    const response = await http.raw.put<unknown>('/roles/permission-matrix', { updates });
+    const result = permissionMatrixResponseSchema.safeParse(response.data);
+    if (!result.success) throw new ApiException('Ma trận quyền từ máy chủ không hợp lệ', 502);
+    return result.data.data.roles;
   },
 };
+
+async function getValidatedPermissions(): Promise<PermissionRow[]> {
+  const response = await http.raw.get<unknown>('/permissions');
+  const result = permissionListResponseSchema.safeParse(response.data);
+  if (!result.success) throw new ApiException('Danh sách quyền từ máy chủ không hợp lệ', 502);
+  return result.data.data;
+}

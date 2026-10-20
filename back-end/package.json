@@ -13,7 +13,20 @@
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/config/data-source.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/config/data-source.ts",
     "seed": "ts-node src/database/seeds/seed.ts",
-    "test": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/*.spec.ts"
+    "seed:demo": "ts-node src/database/seeds/seed-demo-content.ts",
+    "seed:models": "ts-node src/database/seeds/seed-storage-models.ts",
+    "test:models": "node -r reflect-metadata -r ts-node/register --test src/modules/exhibits/tests/public-models.spec.ts src/database/seeds/seed-storage-models.spec.ts",
+    "test:seed": "node -r reflect-metadata -r ts-node/register --test src/database/seeds/seed-demo-content.spec.ts",
+    "test": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/*.spec.ts src/modules/stats/tests/*.spec.ts src/modules/moderation/tests/*.spec.ts src/modules/content-reports/tests/*.spec.ts src/modules/audit/tests/*.spec.ts src/modules/media/tests/*.spec.ts",
+    "test:rooms": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/*.spec.ts",
+    "test:stats": "node -r reflect-metadata -r ts-node/register --test src/modules/stats/tests/*.spec.ts",
+    "test:moderation": "node -r reflect-metadata -r ts-node/register --test src/modules/moderation/tests/*.spec.ts",
+    "test:reports": "node -r reflect-metadata -r ts-node/register --test src/modules/content-reports/tests/*.spec.ts",
+    "test:audit": "node -r reflect-metadata -r ts-node/register --test src/modules/audit/tests/*.spec.ts",
+    "test:exhibits": "node -r reflect-metadata -r ts-node/register --test src/modules/exhibits/tests/*.spec.ts",
+    "test:media": "node -r reflect-metadata -r ts-node/register --test src/modules/media/tests/*.spec.ts",
+    "test:service": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/rooms-service*.spec.ts",
+    "test:extended": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/rooms-service-extended.spec.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",
@@ -22,6 +35,7 @@
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/platform-express": "^10.4.15",
     "@nestjs/swagger": "^7.4.2",
+    "@nestjs/throttler": "^5.2.0",
     "@nestjs/typeorm": "^10.0.2",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
@@ -35,13 +49,16 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.9",
+    "@nestjs/testing": "^10.4.15",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.8",
     "@types/express": "^4.17.21",
     "@types/node": "^22.10.5",
+    "@types/supertest": "^6.0.2",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.1",
+    "supertest": "^7.0.0",
     "ts-node": "^10.9.2",
     "typescript": "~5.7.3"
   }

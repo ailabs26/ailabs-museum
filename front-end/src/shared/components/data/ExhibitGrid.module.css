@@ -1,0 +1,11 @@
+.grid { display: grid; grid-template-columns: 1fr; gap: 24px; list-style: none; padding: 0; margin: 0; }
+.card { border: 1px solid var(--public-border); min-width: 0; }
+.preview { min-height: 160px; }
+.cardBody { padding: 24px; }
+.number { color: var(--public-accent); text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; margin: 0 0 12px; }
+.exhibitTitle { color: var(--public-ink); font-size: 20px; line-height: 1.4; overflow-wrap: anywhere; }
+.exhibitDescription { color: var(--public-muted); font-size: 14px; line-height: 1.8; white-space: pre-line; overflow-wrap: anywhere; margin: 16px 0 0; }
+.detailLink { display: inline-block; padding-block: 12px; margin-top: 12px; font-size: 14px; font-weight: 600; }
+
+@media (min-width: 48em) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 62em) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

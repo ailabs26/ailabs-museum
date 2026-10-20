@@ -1,17 +1,12 @@
 import { http } from '@/core/api/http-client';
 import type { Page } from '@/core/api/api-response';
+import { ApiException } from '@/core/api/api-error';
+import { userListResponseSchema, userResponseSchema } from '@/validations/userSchema';
+import type { UserRow } from '@/validations/userSchema';
+
+export type { UserRow } from '@/validations/userSchema';
 
 export type UserStatus = 'active' | 'disabled';
-
-export interface UserRow {
-  id: string;
-  email: string;
-  displayName: string;
-  status: UserStatus;
-  roles: string[];
-  createdAt: string;
-  updatedAt: string;
-}
 
 export interface ListUsersParams {
   page?: number;
@@ -31,28 +26,41 @@ export interface UpdateUserInput {
   displayName?: string;
   status?: UserStatus;
   password?: string;
+  roleIds?: string[];
+}
+
+function parseUser(value: unknown): UserRow {
+  const result = userResponseSchema.safeParse(value);
+  if (!result.success) throw new ApiException('Dữ liệu tài khoản từ máy chủ không hợp lệ', 502);
+  return result.data.data;
 }
 
 export const usersService = {
-  list(params: ListUsersParams): Promise<Page<UserRow>> {
-    return http.getPage<UserRow>('/users', { params });
+  async list(params: ListUsersParams): Promise<Page<UserRow>> {
+    const response = await http.raw.get<unknown>('/users', { params });
+    const result = userListResponseSchema.safeParse(response.data);
+    if (!result.success) throw new ApiException('Danh sách tài khoản từ máy chủ không hợp lệ', 502);
+    return { items: result.data.data, ...result.data.meta };
   },
-  get(id: string): Promise<UserRow> {
-    return http.get<UserRow>(`/users/${id}`);
+  async get(id: string): Promise<UserRow> {
+    return parseUser((await http.raw.get<unknown>(`/users/${id}`)).data);
   },
-  create(input: CreateUserInput): Promise<UserRow> {
-    return http.post<UserRow>('/users', input);
+  async create(input: CreateUserInput): Promise<UserRow> {
+    return parseUser((await http.raw.post<unknown>('/users', input)).data);
   },
-  update(id: string, input: UpdateUserInput): Promise<UserRow> {
-    return http.patch<UserRow>(`/users/${id}`, input);
+  async update(id: string, input: UpdateUserInput): Promise<UserRow> {
+    return parseUser((await http.raw.patch<unknown>(`/users/${id}`, input)).data);
   },
   remove(id: string): Promise<void> {
     return http.delete<void>(`/users/${id}`);
   },
-  assignRoles(id: string, roleIds: string[]): Promise<UserRow> {
-    return http.post<UserRow>(`/users/${id}/roles`, { roleIds });
+  async assignRoles(id: string, roleIds: string[]): Promise<UserRow> {
+    return parseUser((await http.raw.post<unknown>(`/users/${id}/roles`, { roleIds })).data);
   },
-  removeRole(id: string, roleId: string): Promise<UserRow> {
-    return http.delete<UserRow>(`/users/${id}/roles/${roleId}`);
+  async setRoles(id: string, roleIds: string[]): Promise<UserRow> {
+    return parseUser((await http.raw.put<unknown>(`/users/${id}/roles`, { roleIds })).data);
+  },
+  async removeRole(id: string, roleId: string): Promise<UserRow> {
+    return parseUser((await http.raw.delete<unknown>(`/users/${id}/roles/${roleId}`)).data);
   },
 };

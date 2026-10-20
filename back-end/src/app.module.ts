@@ -6,9 +6,14 @@ import { appConfig, databaseConfig, jwtConfig, validateEnvironment } from './con
 import { DatabaseModule } from './database/database.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ContentReportsModule } from './modules/content-reports/content-reports.module';
 import { ExhibitsModule } from './modules/exhibits/exhibits.module';
 import { HealthController } from './modules/health/health.controller';
+import { MediaModule } from './modules/media/media.module';
+import { ModerationModule } from './modules/moderation/moderation.module';
 import { RolesModule } from './modules/roles/roles.module';
+import { RoomsModule } from './modules/rooms/rooms.module';
+import { StatsModule } from './modules/stats/stats.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -25,8 +30,16 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
     RolesModule,
     AuditModule,
-    // Nội dung công khai.
+    // Phân hệ nội dung (rooms, exhibits, media).
+    RoomsModule,
     ExhibitsModule,
+    MediaModule,
+    // Kiểm duyệt nội dung (duyệt/từ chối/ẩn revision + diff).
+    ModerationModule,
+    // Báo cáo vi phạm (Client gửi + Admin xử lý).
+    ContentReportsModule,
+    // Số liệu tổng quan cho Dashboard Admin.
+    StatsModule,
   ],
   controllers: [HealthController],
 })

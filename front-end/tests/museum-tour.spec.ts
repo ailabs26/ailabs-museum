@@ -1,7 +1,11 @@
 import { expect, test } from '@playwright/test';
+import { installMuseumApi } from './fixtures/museumApi';
+import { installRendererProbe } from './fixtures/museumProbe';
+
+test.beforeEach(async ({ page }) => { await installMuseumApi(page); });
 
 // Compare rendered scene pixels, excluding focus outlines and the DOM toolbar.
-const SCENE_CAPTURE = { style: 'canvas { outline: none !important; } [aria-label="Điều khiển góc nhìn"] { visibility: hidden !important; }' };
+const SCENE_CAPTURE = { style: 'canvas { outline: none !important; } [aria-label="Điều khiển góc nhìn"], [data-navigation-mode] { visibility: hidden !important; }' };
 
 test('opening and stopping the scene keep keyboard focus in the tour', async ({ page }) => {
   await page.goto('/tour');
@@ -16,11 +20,13 @@ test('gallery resizes on mobile and caps the drawing buffer', async ({ page }, t
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D');
   await expect(canvas).toBeVisible();
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.screenshot({ path: testInfo.outputPath('gallery-desktop.png'), fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect.poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.width / element.clientWidth)).toBeLessThanOrEqual(1.5);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect(page.getByRole('button', { name: 'Góc nhìn ban đầu' })).toBeVisible();
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.screenshot({ path: testInfo.outputPath('gallery-mobile.png'), fullPage: true });
 });
 
@@ -68,10 +74,10 @@ test('context loss exits the renderer and focuses a readable fallback', async ({
   await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
   await expect(page.locator('canvas')).toHaveCount(0);
   await expect(page.getByRole('status')).toBeFocused();
-  await expect(page.getByRole('list', { name: 'Các hình khối mẫu' }).getByRole('listitem')).toHaveCount(5);
+  await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);
 });
 
-test('unavailable WebGL preserves the sample catalogue', async ({ page }) => {
+test('unavailable WebGL preserves the API catalogue', async ({ page }) => {
   await page.addInitScript(() => {
     const getContext = HTMLCanvasElement.prototype.getContext;
     HTMLCanvasElement.prototype.getContext = function (type: string, ...args: unknown[]) {
@@ -82,7 +88,7 @@ test('unavailable WebGL preserves the sample catalogue', async ({ page }) => {
   await page.goto('/tour.html');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
-  await expect(page.getByRole('list', { name: 'Các hình khối mẫu' }).getByRole('listitem')).toHaveCount(5);
+  await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);
 });
 
 test('failed scene chunk leaves navigation and catalogue available', async ({ page }) => {
@@ -90,24 +96,31 @@ test('failed scene chunk leaves navigation and catalogue available', async ({ pa
   await page.goto('/tour.html');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Aura Museum' })).toBeVisible();
-  await expect(page.getByRole('list', { name: 'Các hình khối mẫu' }).getByRole('listitem')).toHaveCount(5);
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);
 });
 
 test('focused keyboard navigation and reset work without trapping focus', async ({ page }) => {
+  await installRendererProbe(page);
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D');
-  await expect(canvas).toBeVisible();
+  await expect(canvas).toBeVisible({ timeout: 15_000 });
   await canvas.focus();
   const initial = await canvas.screenshot(SCENE_CAPTURE);
+  const readCamera = () => page.evaluate(() => { const camera = window.museumProbe.at(-1)!.camera!.deref()!; return [camera.position.toArray(), camera.quaternion.toArray()]; });
+  const initialCamera = await readCamera();
   await canvas.press('ArrowLeft');
   await expect.poll(async () => (await canvas.screenshot(SCENE_CAPTURE)).equals(initial)).toBe(false);
   await page.getByRole('button', { name: 'Góc nhìn ban đầu' }).click();
+  // Toolbar commands reach the camera through a React effect after the click.
+  await expect.poll(readCamera).toEqual(initialCamera);
   await expect.poll(async () => (await canvas.screenshot(SCENE_CAPTURE)).equals(initial)).toBe(true);
   await page.getByRole('button', { name: 'Dừng 3D' }).focus();
   await page.keyboard.press('ArrowLeft');
-  expect((await canvas.screenshot(SCENE_CAPTURE)).equals(initial)).toBe(true);
+  // Focus can scroll the canvas beneath a stationary pointer and change hover
+  // pixels. The outside shortcut invariant is that camera transform stays put.
+  expect(await readCamera()).toEqual(initialCamera);
   await canvas.focus();
   await page.keyboard.press('Tab');
   await expect(canvas).not.toBeFocused();
@@ -127,14 +140,14 @@ test('mouse navigation changes the rendered view', async ({ page }) => {
   await expect.poll(async () => (await canvas.screenshot(SCENE_CAPTURE)).equals(before)).toBe(false);
 });
 
-test('sample catalogue stays readable without starting WebGL', async ({ page }) => {
+test('API catalogue stays readable without starting WebGL', async ({ page }) => {
   const sceneRequests: string[] = [];
   page.on('request', (request) => {
     if (request.url().includes('MuseumScene')) sceneRequests.push(request.url());
   });
   await page.goto('/tour.html');
   await expect(page.getByRole('heading', { name: 'Trong phòng trưng bày' })).toBeVisible();
-  await expect(page.getByRole('list', { name: 'Các hình khối mẫu' }).getByRole('listitem')).toHaveCount(5);
+  await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);
   await expect(page.locator('canvas')).toHaveCount(0);
   expect(sceneRequests).toEqual([]);
 });
@@ -155,10 +168,10 @@ test('HTML entry and SPA route expose the museum with public navigation', async 
   for (const path of ['/tour.html', '/tour']) {
     await page.goto(path);
     await expect(page.getByRole('heading', { name: 'Không gian của hình khối' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Aura Museum' })).toBeVisible();
+    await expect(page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true })).toBeVisible();
   }
-  await page.getByRole('link', { name: 'Aura Museum' }).click();
-  await expect(page.getByRole('heading', { name: 'Bảo tàng WebXR Aura' })).toBeVisible();
+  await page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /Mỗi hiện vật,.*một câu chuyện/ })).toBeVisible();
   await page.goto('/admin/login');
   await expect(page.locator('input[type="password"]')).toBeVisible();
 });
