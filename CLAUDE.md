@@ -35,7 +35,7 @@ rõ ràng (ví dụ: "xem thử .agents/rules/code-rules.md đang nói gì").
   - `database/` — `migrations/ seeds/ database.module.ts`.
   - `modules/<domain>/` — `controllers/ services/ repositories/ entities/ dto/` (auth, users, roles, audit, exhibits, rooms, media, content-reports, health). Entity đặt theo DDD trong từng module.
 - **`front-end/src/`**: `core/` (api, auth, config), `shared/components/` (data, form, feedback, layout), `services/` (gọi API theo domain), `app/` (router, theme), `pages/` (admin, client), `layouts/`.
-- **`docs/`**: `architecture/`, `plans/`, `tasks/`, `Diagrams/` (ERD/RBAC/auth-flow + bản vẽ gốc).
+- **`docs/`** (tài liệu tập trung, nguồn duy nhất): `architecture/`, `plans/` (gồm các plan theo ngày + `reports/`), `tasks/`, `Diagrams/` (ERD/RBAC/auth-flow + bản vẽ gốc), `supabase/`, và `back-end/`, `front-end/` (docs riêng từng app: `architecture/`, `tasks/`, `coding-conventions.md`).
 
 ## Lệnh
 
@@ -49,7 +49,7 @@ rõ ràng (ví dụ: "xem thử .agents/rules/code-rules.md đang nói gì").
 - **RBAC:** guard toàn cục; `@Public()` cho route công khai, `@Permissions('resource:action')` cho route quản trị, `@Audit('resource.action','resource')` để ghi vết. Không trả `passwordHash`/token.
 - **Config:** truy cập key namespaced (`config.getOrThrow('jwt.accessSecret')`, `'app.port'`...).
 - **FE:** mọi API qua `core/api/http-client` + service layer + react-query; RBAC bằng `RequireAuth`/`RequirePermission` (chốt chặn thật ở BE); dùng `shared/components`.
-- Chi tiết: `back-end/docs/coding-conventions.md`, `front-end/docs/coding-conventions.md`.
+- Chi tiết: `docs/back-end/coding-conventions.md`, `docs/front-end/coding-conventions.md`.
 - **Git:** nhánh từ `dev`, commit nhỏ & chi tiết, luôn PR vào `dev` rồi merge; không merge thẳng `main`.
 
 <!-- CODEGRAPH_START -->

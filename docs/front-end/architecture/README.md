@@ -19,7 +19,7 @@ Nguồn đã đọc:
 - [Bảng 45 task](https://docs.google.com/spreadsheets/d/1xmQzsXLrDOCqoDdtb4oRs7Pqmvie8yAShbVhiFLjUHU/edit?gid=0#gid=0), tab `gid=0`, đọc ngày 08/10/2026: snapshot phân công, không phải bằng chứng hoàn thành.
 - [Demo giao diện](https://github.com/nguyenthangdev/demo-3d-museum/tree/d2e42091e1bfb4e79508bfd55a3b8832a3cb1888), commit `d2e42091e1bfb4e79508bfd55a3b8832a3cb1888`: đã đối chiếu HTML/CSS/JavaScript và README, chưa audit trực quan trên browser/thiết bị thật.
 - Source dự án tại base `b2a2141`: [FE entry](../../src/main.tsx), [App](../../src/App.tsx), [BE controller](../../../back-end/src/exhibits/exhibits.controller.ts), [BE repository](../../../back-end/src/exhibits/repositories/exhibits.repository.ts).
-- [Content schema](../../../plans/content-schema.md), [device matrix](../../../plans/device-matrix.md), [fallback tests](../../../plans/fallback-tests.md), [performance audit](../../../plans/performance-audit.md): tài liệu tham khảo cũ; số đo trong đó không chứng minh scaffold hiện tại đạt nghiệm thu.
+- [Content schema](../../plans/content-schema.md), [device matrix](../../plans/device-matrix.md), [fallback tests](../../plans/fallback-tests.md), [performance audit](../../plans/performance-audit.md): tài liệu tham khảo cũ; số đo trong đó không chứng minh scaffold hiện tại đạt nghiệm thu.
 
 Tên module/route chưa tồn tại là **đề xuất triển khai**. Không tạo file rỗng, thêm dependency hay đổi API chỉ vì tên có trong tài liệu. `test.md` cũ trong thư mục này là placeholder, không phải tài liệu kiến trúc hoặc bằng chứng test.
 
