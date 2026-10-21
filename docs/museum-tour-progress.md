@@ -9,6 +9,7 @@
 - Catalogue/detail use published images with safe placeholders and preserve shared room/artifact metadata outside WebGL. Existing private-asset service, per-artifact isolation and signed-URL resolution remain unchanged. No backend/database/migration/env/Storage/dependency edits.
 - Final gates: 93/93 unit tests, 98/98 affected production-browser tests and typecheck/lint/build passed. Browser proof includes real software-WebGL loss/restore during web 3D and XR, same-Canvas recovery, cached five-GLB counts, stereo API simulation, native select, teleport, snap turn, gaze Exit, initialization interruption and stable 2D. Headset hardware, comfort and sustained device frame rate remain unverified.
 - Independent review found panel local/world-coordinate and Three r170 partial-initialization issues; both received regression fixes. Follow-up review reported no remaining important finding. One `feat/tour-webxr` branch from fetched `origin/dev` (`663081d`), PR into `dev`, no automatic merge.
+- Published [PR #64](https://github.com/ailabs26/ailabs-museum/pull/64), confirmed OPEN / mergeable with base `dev`, head `feat/tour-webxr`, not merged. Evidence commit `7cd6bcd`; full SHA/message ledger in the delivery report. Thirteen meaningful task commits including the publication record; no artificial splitting, force push or direct push to dev/main. Newer dev CMS/admin-media work does not overlap the task's files.
 
 ## Follow-up review and merge request (2026-10-17)
 

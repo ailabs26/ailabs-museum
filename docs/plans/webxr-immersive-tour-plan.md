@@ -30,7 +30,7 @@
 5. [x] Functional 2D/retry: extend existing display mapping/catalogue/details with API images and safe image fallback; bounded user-driven retry in `MuseumPage`/`SceneFallback`; keep selection and queries outside scene. Browser proof for missing WebGL, selection, rooms and retries; commit.
 6. [x] Browser recovery: use real `WEBGL_lose_context` on the existing Canvas; prove Canvas identity, rendered pixels, selection, cached model request counts and web navigation after restoration; timeout/repeated loss to stable 2D. Update old immediate-context-failure expectations to the new recovery contract without weakening assertions.
 7. [x] Final review/verification/docs: frontend typecheck/lint/build/unit and affected production-browser suites; inspect screenshots. Review whole diff, fix actual regressions with RED/GREEN, update progress/README and SHA ledger. Publication is tracked separately below.
-8. [ ] Publish one PR into `dev`; do not merge.
+8. [x] Publish one PR into `dev`; do not merge.
 
 ## Review focus
 
@@ -47,3 +47,4 @@
 - Independent review's two findings reproduced before fixes: translated-origin panel direction and Three r170 runtime end during partial native binding. Added local panel math and an end-deferral/Canvas-retirement adapter, with focused helper and native-browser regression proof. Follow-up review: no remaining important finding.
 - Real context loss/restore tested in normal3D and active simulated XR, plus timeout, repeated loss, two manual retries, gaze Exit and controller disconnect. Inspected the restored screenshot. API simulation is not headset validation; real optics/comfort/guardian/frame rate remain device QA.
 - Full architecture, limits, SHA ledger and confirmed publication: [delivery report](../tasks/tour-webxr.md).
+- Published [PR #64](https://github.com/ailabs26/ailabs-museum/pull/64): OPEN, base `dev`, head `feat/tour-webxr`, mergeable, not merged. `dev` advanced during execution to `7ec2946` with separate CMS/admin-media work; GitHub confirmed clean integration. No merge/rebase or force push was needed. Local test results describe this task branch, not the newer dev's unrelated CMS functionality.

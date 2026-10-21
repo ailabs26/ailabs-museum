@@ -74,6 +74,9 @@ c05a874 feat(tour): complete image catalogue and bounded 3D retry
 72267dd feat(tour): suspend web camera ownership during XR and recovery
 fa725fe feat(tour): integrate immersive controls and recoverable museum Canvas
 9235c58 test(tour): verify bounded recovery before readable 2D fallback
+7cd6bcd docs(tour): record WebXR architecture verification and device limits
 ```
 
-The evidence/documentation commit follows this ledger. The confirmed PR URL and its documentation SHA are added after publication; no merge is authorized by this task.
+Published [PR #64 — immersive WebXR, controller navigation and resilient fallback](https://github.com/ailabs26/ailabs-museum/pull/64). GitHub confirmed OPEN, base `dev`, head `feat/tour-webxr`, mergeable and **not merged**. `dev` advanced during implementation to `7ec2946` with separate CMS/admin-media work; no overlapping files or conflicts required a merge/rebase. Local gates describe the task branch, not the newer dev's unrelated CMS functionality. No direct push to dev/main, force push or automatic merge.
+
+The publication-record commit follows these twelve commits, for thirteen meaningful task commits. Its SHA is the branch HEAD in git log and the final handoff. Hardware QA remains explicitly outstanding before claiming device certification.
