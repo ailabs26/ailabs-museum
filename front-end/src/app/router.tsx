@@ -10,6 +10,7 @@ import { LoginPage } from '@/pages/admin/LoginPage';
 import { DashboardPage } from '@/pages/admin/DashboardPage';
 import { RoomsPage } from '@/pages/admin/RoomsPage';
 import { ExhibitsPage } from '@/pages/admin/ExhibitsPage';
+import { ExhibitPreviewPage } from '@/pages/admin/ExhibitPreviewPage';
 import { MediaPage } from '@/pages/admin/MediaPage';
 import { UsersPage } from '@/pages/admin/UsersPage';
 import { RolesPage } from '@/pages/admin/RolesPage';
@@ -68,6 +69,14 @@ export function AppRouter() {
             element={
               <RequirePermission anyOf={[PERMISSIONS.EXHIBIT_READ]} fallback={<NoAccess />}>
                 <ExhibitsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="exhibits/:id/preview"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.EXHIBIT_READ]} fallback={<NoAccess />}>
+                <ExhibitPreviewPage />
               </RequirePermission>
             }
           />

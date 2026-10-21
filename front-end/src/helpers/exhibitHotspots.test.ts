@@ -1,22 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import {
   emptyHotspot,
-  resolveHotspotText,
+  resolveBilingualText,
   toHotspotFormValues,
   toHotspotPayload,
   validateHotspots,
 } from './exhibitHotspots';
 
-describe('resolveHotspotText', () => {
+describe('resolveBilingualText', () => {
   it('reads the bilingual JSON string stored in the hotspot column', () => {
-    expect(resolveHotspotText('{"vi":"Mặt trống","en":"Drum face"}')).toEqual({ vi: 'Mặt trống', en: 'Drum face' });
+    expect(resolveBilingualText('{"vi":"Mặt trống","en":"Drum face"}')).toEqual({ vi: 'Mặt trống', en: 'Drum face' });
   });
 
   it('accepts objects, legacy plain strings and invalid JSON-looking text', () => {
-    expect(resolveHotspotText({ vi: 'A', en: 'B' })).toEqual({ vi: 'A', en: 'B' });
-    expect(resolveHotspotText('Nhãn cũ')).toEqual({ vi: 'Nhãn cũ', en: '' });
-    expect(resolveHotspotText('{không phải json}')).toEqual({ vi: '{không phải json}', en: '' });
-    expect(resolveHotspotText(null)).toEqual({ vi: '', en: '' });
+    expect(resolveBilingualText({ vi: 'A', en: 'B' })).toEqual({ vi: 'A', en: 'B' });
+    expect(resolveBilingualText('Nhãn cũ')).toEqual({ vi: 'Nhãn cũ', en: '' });
+    expect(resolveBilingualText('{không phải json}')).toEqual({ vi: '{không phải json}', en: '' });
+    expect(resolveBilingualText(null)).toEqual({ vi: '', en: '' });
   });
 });
 
