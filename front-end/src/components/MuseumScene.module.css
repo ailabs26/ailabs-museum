@@ -1,5 +1,6 @@
 .scene { display: flex; flex-direction: column; }
 .canvasFrame { position: relative; height: clamp(300px, 52svh, 620px); flex-shrink: 0; }
+.recovering { position: absolute; inset: 0; display: grid; place-items: center; padding: 2rem; text-align: center; background: #f7f3eaf2; color: #253a36; }
 .toolbar { flex-shrink: 0; padding: 12px; border-top: 1px solid #d3c7b1; background: #f7f3ea; }
 .toolbar button { min-height: 44px; height: auto; padding-block: 10px; max-width: 100%; }
 .toolbar :global(.mantine-Button-label) { white-space: normal; }

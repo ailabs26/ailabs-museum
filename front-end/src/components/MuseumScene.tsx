@@ -1,6 +1,6 @@
 import { Canvas, events } from '@react-three/fiber';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Button, Group } from '@mantine/core';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Button, Group, Text } from '@mantine/core';
 import { ACESFilmicToneMapping } from 'three';
 import { MuseumRoom } from '@/components/museum/MuseumRoom';
 import { ExhibitionDisplay } from '@/components/museum/ExhibitionDisplay';
@@ -19,6 +19,9 @@ import { reportModelFailure } from '@/helpers/modelDiagnostics';
 import { createNavigationInput } from '@/helpers/museumNavigation';
 import { NavigationGestures } from '@/helpers/navigationGestures';
 import { NavigationHud, type NavigationMode } from '@/components/museum/NavigationHud';
+import { MuseumXr } from '@/components/museum/MuseumXr';
+import type { XrSessionController, XrSnapshot } from '@/helpers/xrSession';
+import type { WebglStatus } from '@/helpers/webglRecovery';
 
 // Labels render over solid geometry. Picking follows that same visual order;
 // intersecting labels still use nearest-first ordering within their layer.
@@ -33,7 +36,28 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
   fallback: ReactNode;
 }) {
   const [command, setCommand] = useState<CameraCommand | null>(null);
-  const [isContextLost, setIsContextLost] = useState(false);
+  const [webglStatus, setWebglStatus] = useState<WebglStatus>('ready');
+  const [xrOwner, setXrOwner] = useState<XrSessionController | null>(null);
+  const [xrStatus, setXrStatus] = useState<XrSnapshot>({ capability: 'checking', phase: 'idle', message: '' });
+  const [xrHoveredId, setXrHoveredId] = useState<string | null>(null);
+  const [isRendererRestarting, setIsRendererRestarting] = useState(false);
+  const [canvasEpoch, setCanvasEpoch] = useState(0);
+  const rendererResets = useRef(0);
+  const isWebInputEnabled = !isRendererRestarting && webglStatus === 'ready' && xrStatus.phase === 'idle';
+  const handleRendererReset = useCallback(() => {
+    if (++rendererResets.current > 2) { setWebglStatus('failed'); return; }
+    setIsRendererRestarting(true); setXrOwner(null);
+    setXrStatus({ capability: 'checking', phase: 'idle', message: 'Đang khởi tạo lại phần hiển thị sau lỗi VR.' });
+  }, []);
+  useEffect(() => {
+    if (!isRendererRestarting) return;
+    // R3F 8 disposes an unmounted root after 500 ms. Retire that renderer before
+    // creating another; the room model owner above Canvas remains mounted.
+    const timer = window.setTimeout(() => {
+      setCanvasEpoch(epoch => epoch + 1); setWebglStatus('ready'); setIsRendererRestarting(false);
+    }, 650);
+    return () => window.clearTimeout(timer);
+  }, [isRendererRestarting]);
   const [renderStates, setRenderStates] = useState<Record<string, ArtifactRenderState>>({});
   const input = useMemo(createNavigationInput, []);
   const gestures = useMemo(() => new NavigationGestures(), []);
@@ -42,14 +66,14 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
   const [hasTouch, setHasTouch] = useState(false);
   useEffect(() => { setHasTouch(navigator.maxTouchPoints > 0 || matchMedia('(any-pointer: coarse)').matches); }, []);
   const handleSceneSelect = (id: string) => { if (gestures.canSelect) onSelect(id); };
-  const { models, retry } = useRoomModels(isContextLost ? [] : displays);
+  const { models, retry } = useRoomModels(displays);
   const selectedDisplay = displays.find((display) => display.id === selectedId);
   const selectedModel = selectedDisplay?.model ? models[selectedDisplay.model.checksumSha256] : undefined;
   const selectedRenderState = renderStates[selectedDisplay?.id ?? ''];
   const selectedAsset = selectedModel?.status === 'ready' && !(selectedRenderState?.checksum === selectedDisplay?.model?.checksumSha256 && selectedRenderState?.failed) ? selectedModel.asset : undefined;
   const focusBounds = useMemo(() => selectedDisplay?.model ? getArtifactFocusBounds(selectedDisplay, selectedAsset?.normalization)
     : undefined, [selectedDisplay, selectedAsset]);
-  const handleContextLost = useCallback(() => setIsContextLost(true), []);
+  const handleWebglStatus = useCallback((status: WebglStatus) => setWebglStatus(status), []);
   const handleRenderError = (display: MuseumDisplay) => {
     const previous = renderStates[display.id];
     const attempts = previous?.checksum === display.model?.checksumSha256 ? previous.attempts : 0;
@@ -61,15 +85,15 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
     return !state || !state.failed || state.attempts >= 3 ? states : { ...states, [id]: { ...state, failed: false, attempts: state.attempts + 1 } };
   });
   const handleCommand = (action: CameraAction) => setCommand((previous) => ({ action, sequence: (previous?.sequence ?? 0) + 1 }));
-  if (isContextLost) return fallback;
+  if (webglStatus === 'failed') return fallback;
   return (
-    <div className={classes.scene}>
+    <div className={classes.scene} data-webgl-status={webglStatus} data-xr-phase={xrStatus.phase}>
     <div className={classes.canvasFrame}
       onPointerDownCapture={event => { gestures.start(event.pointerId, event.clientX, event.clientY); if (event.pointerType === 'touch') setHasTouch(true); }}
       onPointerMoveCapture={event => gestures.move(event.pointerId, event.clientX, event.clientY)}
       onPointerUpCapture={event => gestures.end(event.pointerId)}
       onPointerCancelCapture={() => gestures.cancel()}>
-    <Canvas
+    {!isRendererRestarting && <Canvas key={canvasEpoch}
       events={createMuseumEvents}
       frameloop="demand"
       dpr={[1, 1.5]}
@@ -77,27 +101,36 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
       gl={{ antialias: true, alpha: false, powerPreference: 'low-power', toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1 }}
       // R3F mounts this inside <canvas> even when WebGL works; no failure callbacks here.
       fallback="Trình duyệt không hiển thị được canvas. Nội dung hiện vật vẫn có trong danh mục bên dưới."
-      onPointerMissed={(event) => { if (event.type === 'click' && gestures.canSelect) onClear(); }}
+      onPointerMissed={(event) => { if (isWebInputEnabled && event.type === 'click' && gestures.canSelect) onClear(); }}
       onCreated={({ camera }) => camera.lookAt(...INITIAL_CAMERA_TARGET)}
     >
       <color attach="background" args={['#eee9df']} />
       <MuseumLighting />
-      <SceneLifecycle onContextLost={handleContextLost} />
-      <MuseumControls command={command} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
+      <SceneLifecycle onStatus={handleWebglStatus} />
+      <MuseumXr available={webglStatus === 'ready'} displays={displays} selectedId={selectedId} onSelect={onSelect}
+        onController={setXrOwner} onStatus={setXrStatus} onHover={setXrHoveredId} onRendererReset={handleRendererReset} />
+      <MuseumControls enabled={isWebInputEnabled} command={command} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
         displays={displays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} />
       <MuseumRoom />
       {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={handleSceneSelect}
         modelState={display.model ? models[display.model.checksumSha256] : undefined} renderAttempt={renderStates[display.id]?.attempts}
         hasRenderError={renderStates[display.id]?.checksum === display.model?.checksumSha256 && renderStates[display.id]?.failed}
-        onRenderError={() => handleRenderError(display)} />)}
-    </Canvas>
-    <NavigationHud input={input} mode={mode} isActive={isActive} hasTouch={hasTouch} />
+        isXrHovered={xrHoveredId === display.id} onRenderError={() => handleRenderError(display)} />)}
+    </Canvas>}
+    {isRendererRestarting && <div className={classes.recovering} role="status">Đang khởi tạo lại phần hiển thị sau lỗi VR.</div>}
+    {webglStatus !== 'ready' && <div className={classes.recovering} role="status">Đang khôi phục không gian 3D. Bạn có thể tiếp tục đọc danh mục.</div>}
+    {isWebInputEnabled && <NavigationHud input={input} mode={mode} isActive={isActive} hasTouch={hasTouch} />}
     </div>
     <Group className={classes.toolbar} gap="xs" aria-label="Điều khiển góc nhìn">
-      <Button variant="default" onClick={() => handleCommand('reset')}>Góc nhìn ban đầu</Button>
-      <Button variant="default" onClick={() => handleCommand('in')}>Đến gần</Button>
-      <Button variant="default" onClick={() => handleCommand('out')}>Lùi xa</Button>
-      <Button color="teal.9" disabled={!selectedDisplay || selectedDisplay.isOutsideRoom} onClick={() => handleCommand('focus')}>Tập trung hiện vật</Button>
+      <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('reset')}>Góc nhìn ban đầu</Button>
+      <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('in')}>Đến gần</Button>
+      <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('out')}>Lùi xa</Button>
+      <Button color="teal.9" disabled={!isWebInputEnabled || !selectedDisplay || selectedDisplay.isOutsideRoom} onClick={() => handleCommand('focus')}>Tập trung hiện vật</Button>
+      {xrStatus.capability === 'ready' && xrStatus.phase === 'idle' && <Button disabled={webglStatus !== 'ready' || !xrOwner} onClick={() => { void xrOwner?.enter(); }}>Enter VR</Button>}
+      {xrStatus.phase === 'requesting' && <Button disabled>Đang vào VR…</Button>}
+      {(xrStatus.phase === 'active' || xrStatus.phase === 'ending') && <Button disabled={xrStatus.phase === 'ending'} onClick={() => { void xrOwner?.exit(); }}>Exit VR</Button>}
+      <Text size="sm" role="status">{xrStatus.message || (xrStatus.capability === 'checking' ? 'Đang kiểm tra VR…'
+        : xrStatus.capability === 'unavailable' ? 'VR không khả dụng trong trình duyệt hoặc thiết bị này. Bạn vẫn có thể tham quan 3D.' : '')}</Text>
     </Group>
     <ArtifactHotspotControls displays={displays} selectedId={selectedId} onSelect={onSelect} />
     <ModelLoadingStatus displays={displays} models={models} onRetry={retry} renderStates={renderStates} onRetryRender={handleRetryRender} />

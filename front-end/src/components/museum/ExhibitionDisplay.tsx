@@ -10,11 +10,13 @@ import { ArtifactHotspot } from './ArtifactHotspot';
 import { ArtifactFallback3D } from './ArtifactFallback3D';
 import { ArtifactModelBoundary } from './ArtifactModelBoundary';
 
-export function ExhibitionDisplay({ display, isSelected, onSelect, modelState, renderAttempt = 0, hasRenderError = false, onRenderError }: {
+export function ExhibitionDisplay({ display, isSelected, isXrHovered = false, onSelect, modelState, renderAttempt = 0, hasRenderError = false, onRenderError }: {
+  isXrHovered?: boolean;
   display: MuseumDisplay; isSelected: boolean; onSelect: (id: string) => void; modelState?: ModelLoadState;
   renderAttempt?: number; hasRenderError?: boolean; onRenderError: () => void;
 }) {
-  const [isHovered, setIsHovered] = useState(false);
+  const [isPointerHovered, setIsHovered] = useState(false);
+  const isHovered = isPointerHovered || isXrHovered;
   const canvas = useThree((state) => state.gl.domElement);
   useEffect(() => {
     if (!isHovered) return;
@@ -65,7 +67,7 @@ export function ExhibitionDisplay({ display, isSelected, onSelect, modelState, r
       </mesh>}
       <ExhibitLabel title={display.title} isSelected={isSelected} isCenterpiece={isCenterpiece} />
       {getArtifactHotspots(display, !hasRenderError && modelState?.status === 'ready' ? modelState.asset.normalization : undefined).map(hotspot =>
-        <ArtifactHotspot key={hotspot.id} hotspot={hotspot} artifactTitle={display.title} isSelected={isSelected} onSelect={onSelect} />)}
+        <ArtifactHotspot key={hotspot.id} hotspot={hotspot} artifactTitle={display.title} isSelected={isSelected} isXrHovered={isXrHovered} onSelect={onSelect} />)}
     </group>
   );
 }
