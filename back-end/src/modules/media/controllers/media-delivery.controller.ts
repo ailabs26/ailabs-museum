@@ -79,6 +79,14 @@ export class MediaDeliveryController {
       throw new NotFoundException(NOT_FOUND_MESSAGE);
     }
 
+    // Client đã ngắt trong lúc chờ kho lưu trữ (đóng modal, hủy fetch): pipeline vào response đã
+    // đóng sẽ ném lỗi TRƯỚC khi gắn listener cho stream nguồn, rồi lỗi muộn của upstream (vd HTTP/2
+    // reset từ Supabase) không ai bắt và làm sập process. Hủy stream nguồn và dừng ở đây.
+    if (res.destroyed || res.writableEnded) {
+      stream.destroy();
+      return;
+    }
+
     res.set(headers);
     if (range) {
       res.status(HttpStatus.PARTIAL_CONTENT).set('Content-Range', `bytes ${range.start}-${range.end}/${size}`);
