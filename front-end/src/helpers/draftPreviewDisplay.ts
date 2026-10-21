@@ -1,11 +1,32 @@
 import type { MuseumDisplay } from '@/interfaces/museumScene';
-import type { ExhibitDetail } from '@/services/exhibits.service';
+import type { ExhibitDetail, RevisionMediaSlot } from '@/services/exhibits.service';
 import type { MediaItem } from '@/services/media.service';
 import type { PublicModel } from '@/validations/roomSchema';
 import { resolveBilingualText } from './exhibitHotspots';
 import { isDisplayOutsideRoom } from './isDisplayOutsideRoom';
+import { toMediaCredits } from './mediaCredits';
 
 export type PreviewLocale = 'vi' | 'en';
+
+/** Slot media của revision theo thứ tự ghi công của tour (`collectMediaCredits`). */
+const CREDIT_SLOTS: { slot: RevisionMediaSlot; label: string }[] = [
+  { slot: 'model', label: 'Mô hình 3D' },
+  { slot: 'image', label: 'Hình ảnh' },
+  { slot: 'audioVi', label: 'Thuyết minh tiếng Việt' },
+  { slot: 'subtitleVi', label: 'Phụ đề tiếng Việt' },
+  { slot: 'audioEn', label: 'Thuyết minh tiếng Anh' },
+  { slot: 'subtitleEn', label: 'Phụ đề tiếng Anh' },
+];
+
+/** Ghi công từ quyền sử dụng của media đang gắn vào bản nháp — để preview hiện như tour công khai. */
+function draftCredits(detail: ExhibitDetail) {
+  return toMediaCredits(
+    CREDIT_SLOTS.flatMap(({ slot, label }) => {
+      const media = detail.media?.[slot];
+      return media ? [{ id: media.id, label, rights: { source: media.source, author: media.author, license: media.license } }] : [];
+    }),
+  );
+}
 
 const SHAPES: Record<string, MuseumDisplay['shape']> = {
   box: 'cube',
@@ -62,6 +83,7 @@ export function toDraftDisplay(detail: ExhibitDetail, model: MediaItem | null, l
     shape: SHAPES[content.placeholderShape ?? 'box'] ?? 'cube',
     color: content.placeholderColor ?? '#8b7355',
     ...(model ? { model: toPreviewModel(model) } : {}),
+    credits: draftCredits(detail),
   };
   return { ...display, isOutsideRoom: isDisplayOutsideRoom(display) };
 }

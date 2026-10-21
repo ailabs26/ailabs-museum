@@ -19,5 +19,7 @@ export interface MuseumDisplay {
   shape: 'sphere' | 'torus' | 'cone' | 'cube' | 'icosahedron' | 'cylinder';
   color: string;
   model?: import('@/validations/roomSchema').PublicModel | null;
+  /** Nguồn / tác giả / giấy phép của media công khai (FR-97). */
+  credits?: readonly import('@/helpers/mediaCredits').MediaCredit[];
   isOutsideRoom?: boolean;
 }

@@ -81,6 +81,19 @@ describe('toDraftDisplay', () => {
     expect(display.model?.checksumSha256).toBe('a'.repeat(64));
   });
 
+  it('credits the media attached to the draft from their rights metadata', () => {
+    const withMedia = detail({}, {
+      media: {
+        model: { id: 'm-1', source: 'Bảo tàng', author: 'Xưởng 3D', license: 'CC BY 4.0' },
+        image: { id: 'i-1', source: null, author: null, license: null },
+        audioVi: null, audioEn: null, subtitleVi: null, subtitleEn: null,
+      } as unknown as ExhibitDetail['media'],
+    });
+    expect(toDraftDisplay(withMedia, null, 'vi').credits).toEqual([
+      { label: 'Mô hình 3D', source: 'Bảo tàng', author: 'Xưởng 3D', license: 'CC BY 4.0' },
+    ]);
+  });
+
   it('flags drafts placed outside the room like the tour does', () => {
     expect(toDraftDisplay(detail({ position: { x: 50, y: 0, z: 0 } }), null, 'vi').isOutsideRoom).toBe(true);
     expect(toDraftDisplay(detail(), null, 'vi').isOutsideRoom).toBe(false);
