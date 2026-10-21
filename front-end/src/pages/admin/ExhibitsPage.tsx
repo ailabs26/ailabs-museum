@@ -32,6 +32,7 @@ import {
   IconEdit,
   IconEye,
   IconInfoCircle,
+  IconListNumbers,
   IconMapPin,
   IconPhoto,
   IconPlus,
@@ -61,6 +62,7 @@ import type {
 } from '@/services/exhibits.service';
 import { exhibitsService } from '@/services/exhibits.service';
 import { HotspotEditor } from '@/components/cms/HotspotEditor';
+import { TourOrderModal } from '@/components/cms/TourOrderModal';
 import { roomsService } from '@/services/rooms.service';
 import { Column, DataTable } from '@/shared/components/data';
 import { confirmAction, notify } from '@/shared/components/feedback';
@@ -220,6 +222,7 @@ export function ExhibitsPage() {
   /** Hiện vật đang mở trong form — bỏ kết quả tải hotspot muộn của lần mở trước. */
   const editingIdRef = useRef<string | null>(null);
 
+  const [tourOrderOpened, tourOrder] = useDisclosure(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [detailOpened, detailDrawer] = useDisclosure(false);
 
@@ -731,12 +734,26 @@ export function ExhibitsPage() {
         title="Hiện vật"
         description="Quản lý hiện vật 3D, tọa độ không gian, phiên bản nội dung song ngữ và điểm tương tác"
         actions={
-          canCreate ? (
-            <Button leftSection={<IconPlus size={16} />} onClick={openCreate}>
-              Thêm hiện vật
-            </Button>
-          ) : undefined
+          <Group gap="xs">
+            {canUpdate && (
+              <Button variant="default" leftSection={<IconListNumbers size={16} />} onClick={tourOrder.open}>
+                Thứ tự tour
+              </Button>
+            )}
+            {canCreate && (
+              <Button leftSection={<IconPlus size={16} />} onClick={openCreate}>
+                Thêm hiện vật
+              </Button>
+            )}
+          </Group>
         }
+      />
+
+      <TourOrderModal
+        opened={tourOrderOpened}
+        onClose={tourOrder.close}
+        rooms={formRoomOptions}
+        initialRoomId={queryRoomId}
       />
 
       <Card withBorder p="md" mb="md" radius="sm">
