@@ -10,12 +10,16 @@ const roomSummarySchema = z.object({
 /** Absolute http(s) URL issued by the API's managed media route; never a relative or script URL. */
 const mediaUrlSchema = z.string().url().refine((value) => /^https?:\/\//i.test(value), 'Media URL must be absolute http(s)');
 
+/** Nguồn / tác giả / giấy phép của media (FR-97) — công khai ở trang 2D và tour 3D. */
+const mediaRightsSchema = z.object({ source: z.string().nullable(), author: z.string().nullable(), license: z.string().nullable() });
+export type MediaRights = z.infer<typeof mediaRightsSchema>;
+
 const mediaSchema = z.object({
   id: z.string().uuid(),
   url: mediaUrlSchema,
   mimeType: z.string().min(1),
   sizeBytes: z.number().int().positive(),
-  rights: z.object({ source: z.string().nullable(), author: z.string().nullable(), license: z.string().nullable() }),
+  rights: mediaRightsSchema,
 });
 
 const bilingualSchema = z.object({ vi: z.string().nullable(), en: z.string().nullable() });
@@ -41,6 +45,8 @@ export const publicModelSchema = z.object({
   sizeBytes: z.number().int().positive().max(128 * 1024 * 1024),
   checksumSha256: z.string().regex(/^[a-f0-9]{64}$/),
   url: z.string().regex(/^\/rooms\/[a-zA-Z0-9_-]+\/exhibits\/[a-f0-9-]+\/model\?version=[a-f0-9]{64}$/),
+  // Tùy chọn để payload cũ (trước khi model mang rights) vẫn hợp lệ.
+  rights: mediaRightsSchema.optional(),
 });
 export type PublicModel = z.infer<typeof publicModelSchema>;
 
