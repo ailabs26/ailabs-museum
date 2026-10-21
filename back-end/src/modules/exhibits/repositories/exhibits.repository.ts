@@ -263,14 +263,28 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
   }
 
   /**
-   * Cập nhật thứ tự hiển thị display_order của hiện vật.
+   * ID các hiện vật chưa xóa của phòng, khóa dòng (FOR UPDATE) để hai lần sắp xếp
+   * đồng thời hoặc thêm/xóa hiện vật không chen vào giữa lúc kiểm tra và ghi.
+   */
+  async findIdsByRoomForUpdate(roomId: string, manager?: EntityManager): Promise<string[]> {
+    const rows = await this.scoped(manager).find({
+      select: { id: true },
+      where: { roomId, isDeleted: false },
+      lock: { mode: 'pessimistic_write' },
+    });
+    return rows.map((row) => row.id);
+  }
+
+  /**
+   * Cập nhật thứ tự hiển thị display_order của hiện vật — chỉ khi hiện vật thuộc đúng phòng.
    */
   async updateDisplayOrder(
     id: string,
+    roomId: string,
     displayOrder: number,
     manager?: EntityManager,
   ): Promise<void> {
-    await this.scoped(manager).update(id, { displayOrder });
+    await this.scoped(manager).update({ id, roomId }, { displayOrder });
   }
 
   /**

@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { DomainValidationException } from '../../../common/exceptions/validation.exception';
 import { DeepPartial, EntityManager } from 'typeorm';
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { Paginated } from '../../../common/types/paginated.type';
@@ -194,7 +195,10 @@ class MockExhibitsRepository {
   deletedRevisionExhibitIds: string[] = [];
   deletedRevisionIds: string[] = [];
   deletedCascadeExhibitIds: string[] = [];
-  updatedDisplayOrders: { id: string; displayOrder: number }[] = [];
+  updatedDisplayOrders: { id: string; roomId: string; displayOrder: number }[] = [];
+  /** ID hiện vật chưa xóa của phòng mà `findIdsByRoomForUpdate` trả về. */
+  roomExhibitIds: string[] = [];
+  lockedRoomIds: string[] = [];
 
   create(data: DeepPartial<Exhibit>): Exhibit {
     const ex = new Exhibit();
@@ -274,8 +278,13 @@ class MockExhibitsRepository {
     return this.countByRoomResult;
   }
 
-  async updateDisplayOrder(id: string, displayOrder: number): Promise<void> {
-    this.updatedDisplayOrders.push({ id, displayOrder });
+  async findIdsByRoomForUpdate(roomId: string): Promise<string[]> {
+    this.lockedRoomIds.push(roomId);
+    return [...this.roomExhibitIds];
+  }
+
+  async updateDisplayOrder(id: string, roomId: string, displayOrder: number): Promise<void> {
+    this.updatedDisplayOrders.push({ id, roomId, displayOrder });
   }
 }
 
@@ -1530,9 +1539,9 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
   });
 
   // --------------------------------------------------------------------------
-  // SUITE 10: ADMIN CMS — reorderExhibits, History & Detail (10 Tests)
+  // SUITE 10: ADMIN CMS — reorderExhibits, History & Detail (15 Tests)
   // --------------------------------------------------------------------------
-  describe('Suite 10: Admin CMS — reorderExhibits, History & Detail (10 Test Cases)', () => {
+  describe('Suite 10: Admin CMS — reorderExhibits, History & Detail (15 Test Cases)', () => {
     it('TC-S111: reorderExhibits throws NotFoundException when target room does not exist', async () => {
       setup();
       mockRooms.roomById = null;
@@ -1554,17 +1563,20 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
     it('TC-S113: reorderExhibits updates displayOrder (1-indexed) for each exhibit ID in transaction', async () => {
       setup();
       mockRooms.roomById = createSampleRoom();
+      mockExhibits.roomExhibitIds = ['ex-C', 'ex-A', 'ex-B'];
       await service.reorderExhibits(ROOM_ID_1, ['ex-A', 'ex-B', 'ex-C']);
       assert.equal(mockExhibits.updatedDisplayOrders.length, 3);
-      assert.deepEqual(mockExhibits.updatedDisplayOrders[0], { id: 'ex-A', displayOrder: 1 });
-      assert.deepEqual(mockExhibits.updatedDisplayOrders[1], { id: 'ex-B', displayOrder: 2 });
-      assert.deepEqual(mockExhibits.updatedDisplayOrders[2], { id: 'ex-C', displayOrder: 3 });
+      assert.deepEqual(mockExhibits.updatedDisplayOrders[0], { id: 'ex-A', roomId: ROOM_ID_1, displayOrder: 1 });
+      assert.deepEqual(mockExhibits.updatedDisplayOrders[1], { id: 'ex-B', roomId: ROOM_ID_1, displayOrder: 2 });
+      assert.deepEqual(mockExhibits.updatedDisplayOrders[2], { id: 'ex-C', roomId: ROOM_ID_1, displayOrder: 3 });
+      assert.deepEqual(mockExhibits.lockedRoomIds, [ROOM_ID_1]);
       assert.equal(mockTx.calls, 1);
     });
 
     it('TC-S114: reorderExhibits returns success response message', async () => {
       setup();
       mockRooms.roomById = createSampleRoom();
+      mockExhibits.roomExhibitIds = ['ex-1'];
       const res = await service.reorderExhibits(ROOM_ID_1, ['ex-1']);
       assert.equal(res.success, true);
       assert.ok(res.message.includes('thành công'));
@@ -1617,12 +1629,49 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       assert.equal(res.exhibitId, EXHIBIT_ID_1);
     });
 
-    it('TC-S120: reorderExhibits handles empty exhibitIds list without errors', async () => {
+    it('TC-S120: reorderExhibits accepts an empty list only for a room without exhibits', async () => {
       setup();
       mockRooms.roomById = createSampleRoom();
       const res = await service.reorderExhibits(ROOM_ID_1, []);
       assert.equal(res.success, true);
       assert.equal(mockExhibits.updatedDisplayOrders.length, 0);
+    });
+
+    /** Gọi reorder với danh sách sai, kỳ vọng 422 `reorder_ids_mismatch` và không ghi gì. */
+    async function assertReorderRejected(roomExhibitIds: string[], exhibitIds: string[]) {
+      setup();
+      mockRooms.roomById = createSampleRoom();
+      mockExhibits.roomExhibitIds = roomExhibitIds;
+      await assert.rejects(
+        () => service.reorderExhibits(ROOM_ID_1, exhibitIds),
+        (error: unknown) => {
+          assert.ok(error instanceof DomainValidationException);
+          const body = error.getResponse() as { errors: { field: string; code: string }[] };
+          assert.deepEqual(body.errors.map((e) => [e.field, e.code]), [['exhibitIds', 'reorder_ids_mismatch']]);
+          return true;
+        },
+      );
+      assert.equal(mockExhibits.updatedDisplayOrders.length, 0);
+    }
+
+    it('TC-S121: reorderExhibits rejects an exhibit that belongs to another room', async () => {
+      await assertReorderRejected(['ex-A', 'ex-B'], ['ex-A', 'ex-other-room']);
+    });
+
+    it('TC-S122: reorderExhibits rejects a list that also contains another room exhibit', async () => {
+      await assertReorderRejected(['ex-A', 'ex-B'], ['ex-A', 'ex-B', 'ex-other-room']);
+    });
+
+    it('TC-S123: reorderExhibits rejects a list missing an exhibit of the room', async () => {
+      await assertReorderRejected(['ex-A', 'ex-B', 'ex-C'], ['ex-A', 'ex-B']);
+    });
+
+    it('TC-S124: reorderExhibits rejects duplicate exhibit IDs', async () => {
+      await assertReorderRejected(['ex-A', 'ex-B'], ['ex-A', 'ex-A']);
+    });
+
+    it('TC-S125: reorderExhibits rejects unknown IDs instead of silently ignoring them', async () => {
+      await assertReorderRejected([], ['ex-ghost']);
     });
   });
 });
