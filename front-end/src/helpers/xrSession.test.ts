@@ -70,7 +70,7 @@ describe('XR session ownership', () => {
     const { owner, session, attach, detach } = setup(); await owner.check();
     let finish!: () => void; attach.mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve; }));
     const entry = owner.enter(); await vi.waitFor(() => expect(attach).toHaveBeenCalled());
-    await owner.exit(); finish(); await entry;
+    const exit = owner.exit(); finish(); await entry; await exit;
     expect(owner.getSnapshot().phase).toBe('idle'); expect(detach).toHaveBeenCalledTimes(1);
     session.dispatchEvent(new Event('select')); expect(owner.getSnapshot().phase).toBe('idle'); owner.dispose();
   });

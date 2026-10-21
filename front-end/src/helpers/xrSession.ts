@@ -20,6 +20,8 @@ export class XrSessionController {
   private generation = 0;
   private checkGeneration = 0;
   private attached = false;
+  private pending = false;
+  private binding: Promise<void> | null = null;
   constructor(private readonly options: XrSessionOptions) {
     options.xr?.addEventListener('devicechange', this.handleDeviceChange);
   }
@@ -41,7 +43,8 @@ export class XrSessionController {
   }
   // Keep requestSession in this synchronous call stack: it requires user activation.
   enter = async () => {
-    if (this.disposed || this.snapshot.capability !== 'ready' || this.snapshot.phase !== 'idle') return;
+    if (this.disposed || this.pending || this.snapshot.capability !== 'ready' || this.snapshot.phase !== 'idle') return;
+    this.pending = true;
     const generation = ++this.generation;
     this.update({ phase: 'requesting', message: '' });
     let session: XRSession | undefined;
@@ -58,7 +61,8 @@ export class XrSessionController {
       catch { type = 'local'; space = await session.requestReferenceSpace(type); }
       if (!this.isCurrent(session, generation)) return;
       this.attached = true; // detach also owns partially initialized renderers.
-      await this.options.attach(session, type, space);
+      this.binding = this.options.attach(session, type, space);
+      await this.binding;
       if (!this.isCurrent(session, generation)) return;
       this.update({ phase: 'active' });
     } catch {
@@ -67,7 +71,7 @@ export class XrSessionController {
         if (this.session === session) this.release();
       }
       if (generation === this.generation) this.update({ phase: 'idle', message: 'Không thể vào VR. Bạn vẫn có thể tham quan 3D và thử lại.' });
-    }
+    } finally { this.pending = false; this.binding = null; }
   };
   private isCurrent(session: XRSession, generation: number) {
     return !this.disposed && generation === this.generation && this.session === session;
@@ -90,6 +94,10 @@ export class XrSessionController {
     const session = this.session;
     if (!session) { this.update({ phase: 'idle' }); return; }
     this.update({ phase: 'ending' });
+    // WebXRManager.setSession is asynchronous and cannot be cancelled. End
+    // after it settles, otherwise it can resurrect presentation after `end`.
+    if (this.binding) { try { await this.binding; } catch { /* Entry failure cleans up below. */ } }
+    if (this.session !== session) return;
     try { await session.end(); if (this.session === session) this.release(); }
     catch {
       if (this.session === session) this.update({ phase: 'active', message: 'Hãy dùng nút thoát VR của thiết bị hoặc thử thoát lại.' });
@@ -100,7 +108,12 @@ export class XrSessionController {
     this.disposed = true; ++this.generation; ++this.checkGeneration;
     this.options.xr?.removeEventListener('devicechange', this.handleDeviceChange);
     const session = this.session;
-    this.release(); this.listeners.clear();
-    if (session) void this.endQuietly(session);
+    this.listeners.clear();
+    const cleanup = async () => {
+      if (this.binding) { try { await this.binding; } catch { /* Partial binding still needs teardown. */ } }
+      if (session) await this.endQuietly(session);
+      this.release();
+    };
+    void cleanup();
   }
 }
