@@ -196,6 +196,32 @@ describe('Admin Media HTTP (multipart thật → pipeline thật)', () => {
     });
   });
 
+  // --------------------------------------------------------------- nội dung file cho công cụ CMS
+  describe('GET /admin/media/:id/content', () => {
+    it('trả nguyên file với header an toàn, không cache', async () => {
+      const png = buildPng();
+      const id = await seed(png);
+      const res = await http().get(`/admin/media/${id}/content`).buffer(true).parse((r, done) => {
+        const chunks: Buffer[] = [];
+        r.on('data', (c: Buffer) => chunks.push(c));
+        r.on('end', () => done(null, Buffer.concat(chunks)));
+      }).expect(200);
+      assert.deepEqual(res.body, png);
+      assert.equal(res.headers['content-type'], 'image/png');
+      assert.equal(res.headers['cache-control'], 'private, no-store');
+      assert.equal(res.headers['x-content-type-options'], 'nosniff');
+    });
+
+    it('thiếu quyền media:upload → 403', async () => {
+      const id = await seed();
+      await http().get(`/admin/media/${id}/content`).set('x-test-user', 'no-permission').expect(403);
+    });
+
+    it('media không tồn tại → 404', async () => {
+      await http().get(`/admin/media/${randomUUID()}/content`).expect(404);
+    });
+  });
+
   // --------------------------------------------------------------- upload chi tiết
   describe('POST /admin/media/upload', () => {
     const formats: Array<[string, () => Buffer, string]> = [

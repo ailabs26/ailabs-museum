@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { Readable } from 'node:stream';
 import {
   BadRequestException,
   ConflictException,
@@ -75,6 +76,18 @@ export class MediaService {
 
   async getById(id: string): Promise<MediaResponse> {
     return this.toResponse(await this.findOrFail(id));
+  }
+
+  /**
+   * Mở nội dung media `ready` cho công cụ CMS cần đọc file (vd chọn tọa độ hotspot trên GLB) —
+   * dùng được cả với file seed nằm ngoài `uploads/` (không có URL ký). File cách ly/lỗi: 404.
+   */
+  async openContent(id: string): Promise<{ media: Media; stream: Readable }> {
+    const media = await this.findOrFail(id);
+    const stream =
+      media.processingState === MediaProcessingState.READY ? await this.storage.openPublic(media.storageKey) : null;
+    if (!stream) throw new NotFoundException('Không tìm thấy nội dung media');
+    return { media, stream };
   }
 
   /**
