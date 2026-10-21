@@ -18,7 +18,8 @@ interface FocusTransition {
 }
 
 /** Sole transform owner: exploration and focus share one demand-frame pipeline. */
-export function MuseumControls({ command, selectedDisplay, focusBounds, displays, input, gestures, onModeChange, onActiveChange }: {
+export function MuseumControls({ enabled = true, command, selectedDisplay, focusBounds, displays, input, gestures, onModeChange, onActiveChange }: {
+  enabled?: boolean;
   command: CameraCommand | null; selectedDisplay?: MuseumDisplay; focusBounds?: ModelFocusBounds;
   displays: readonly MuseumDisplay[]; input: NavigationInput; gestures: NavigationGestures;
   onModeChange: (mode: NavigationMode) => void; onActiveChange: (isActive: boolean) => void;
@@ -43,6 +44,10 @@ export function MuseumControls({ command, selectedDisplay, focusBounds, displays
   const callbacks = useRef({ onModeChange, onActiveChange }); callbacks.current = { onModeChange, onActiveChange };
 
   useEffect(() => {
+    if (!enabled) {
+      input.stop(); transitionRef.current = null; autoFocusRef.current = { id: selectedRef.current?.id, allowed: false };
+      runtime.velocity.set(0, 0, 0); return;
+    }
     const setMode = (mode: NavigationMode) => { modeRef.current = mode; callbacks.current.onModeChange(mode); };
     const syncLook = () => {
       runtime.euler.setFromQuaternion(camera.quaternion, 'YXZ');
@@ -121,18 +126,20 @@ export function MuseumControls({ command, selectedDisplay, focusBounds, displays
       detach(); transitionRef.current = null; actionRef.current = null;
       input.wake = input.invalidate = input.stop = () => {};
     };
-  }, [camera, gl, invalidate, input, gestures, runtime]);
+  }, [enabled, camera, gl, invalidate, input, gestures, runtime]);
 
   useEffect(() => {
+    if (!enabled) return;
     // New published placement can occupy a previous camera position. Recover to
     // the nearest free proxy boundary, never remain trapped inside new geometry.
     const safe = findSafeNavigationPoint({ x: camera.position.x, y: camera.position.z }, MUSEUM_ROOM_SIZE, colliders);
     if (safe && (safe.x !== camera.position.x || safe.y !== camera.position.z)) {
       transitionRef.current = null; camera.position.x = safe.x; camera.position.z = safe.y; invalidate();
     }
-  }, [camera, colliders, invalidate]);
+  }, [enabled, camera, colliders, invalidate]);
 
   useEffect(() => {
+    if (!enabled) { autoFocusRef.current = { id: selectedDisplay?.id, allowed: false }; return; }
     if (autoFocusRef.current.id !== selectedDisplay?.id) autoFocusRef.current = { id: selectedDisplay?.id, allowed: true };
     if (selectedDisplay && autoFocusRef.current.allowed) actionRef.current?.('focus');
     else if (!selectedDisplay) {
@@ -141,10 +148,11 @@ export function MuseumControls({ command, selectedDisplay, focusBounds, displays
       runtime.look.yaw = runtime.goal.yaw = runtime.euler.y; runtime.look.pitch = runtime.goal.pitch = runtime.euler.x;
       modeRef.current = 'explore'; callbacks.current.onModeChange('explore');
     }
-  }, [selectedDisplay, focusBounds, size.width, size.height, camera, runtime]);
+  }, [enabled, selectedDisplay, focusBounds, size.width, size.height, camera, runtime]);
   useEffect(() => { if (command) actionRef.current?.(command.action); }, [command]);
 
   useFrame((_, rawDelta) => {
+    if (!enabled) return;
     const transition = transitionRef.current;
     if (transition) {
       const progress = reducedRef.current ? 1 : Math.min(1, (performance.now() - transition.startedAt) / 550);
