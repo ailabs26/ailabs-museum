@@ -87,6 +87,9 @@ Migration không cần sửa: `uuid-ossp` đã có sẵn trên Supabase, `citext
 - Dùng chung biến `SUPABASE_*` và bucket `museum-assets`.
 - Kiểm chứng sau merge: BE typecheck/lint, `npm test` **1559/1559**, `test:models` 10/10, `test:seed` 6/6; FE typecheck/lint/build, `test:unit` 69/69, `room-contract.spec.ts` 8/8.
 
+> Tài liệu hướng dẫn đầy đủ (thiết lập, kiến trúc, phân phối, script, kiểm thử, vận hành):
+> [`docs/supabase/`](../../../docs/supabase/README.md).
+
 ## Kiểm chứng trên Supabase thật (21/10/2026)
 
 Project dùng chung `ailabs-museum` (session pooler `aws-0-ap-southeast-1`, TLS qua `sslmode=require` trong URL), `MEDIA_STORAGE_DRIVER=supabase`, bản build chạy cổng riêng.
