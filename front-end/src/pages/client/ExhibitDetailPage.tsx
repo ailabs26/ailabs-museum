@@ -2,6 +2,8 @@ import { Button, Container, Title } from '@mantine/core';
 import { useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { z } from 'zod';
+import { MediaCreditList } from '@/components/museum/MediaCreditList';
+import { collectMediaCredits } from '@/helpers/mediaCredits';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitPreview } from '@/shared/components/data/ExhibitPreview';
 import classes from './ExhibitDetailPage.module.css';
@@ -12,6 +14,7 @@ export function ExhibitDetailPage() {
   const isValidId = z.string().uuid().safeParse(exhibitId).success;
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const exhibit = detail && isValidId ? detail.exhibits.find((item) => item.id === exhibitId) : undefined;
+  const credits = exhibit ? collectMediaCredits(exhibit) : [];
 
   let statusTitle: string | undefined;
   let statusMessage: string | undefined;
@@ -82,6 +85,10 @@ export function ExhibitDetailPage() {
                     <p className={classes.body}>{hotspot.body}</p>
                   </li>)}
               </ul>
+            </section>}
+            {credits.length > 0 && <section aria-labelledby="exhibit-credits-title">
+              <Title order={2} id="exhibit-credits-title" className={classes.sectionTitle}>Nguồn & bản quyền</Title>
+              <MediaCreditList credits={credits} className={classes.body} />
             </section>}
           </div>
         </div>

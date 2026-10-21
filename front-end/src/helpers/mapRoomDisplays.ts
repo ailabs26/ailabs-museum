@@ -1,6 +1,7 @@
 import type { RoomDetail } from '@/validations/roomSchema';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { isDisplayOutsideRoom } from './isDisplayOutsideRoom';
+import { collectMediaCredits } from './mediaCredits';
 
 /** Backend coordinates anchor the existing display group, in metres / Y up. */
 export function mapRoomDisplays(room: RoomDetail): MuseumDisplay[] {
@@ -27,6 +28,7 @@ export function mapRoomDisplays(room: RoomDetail): MuseumDisplay[] {
       shape: exhibit.placeholderShape === 'box' ? 'cube' : exhibit.placeholderShape,
       color: exhibit.placeholderColor,
       ...(exhibit.model ? { model: exhibit.model } : {}),
+      credits: collectMediaCredits(exhibit),
     };
     return { ...display, isOutsideRoom: isDisplayOutsideRoom(display) };
   });

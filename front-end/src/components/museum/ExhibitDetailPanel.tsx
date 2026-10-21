@@ -3,6 +3,7 @@ import { Badge, Button, Stack, Text, Title } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { ExhibitImage } from './ExhibitImage';
+import { MediaCreditList } from './MediaCreditList';
 import classes from './ExhibitDetailPanel.module.css';
 
 /** Nonmodal so the scene and room selector stay usable. CMS preview omits the 2D link (drafts have no public page). */
@@ -34,6 +35,10 @@ export function ExhibitDetailPanel({ display, onClose, detail2dHref }: { display
             <Text fw={600} size="sm" className={classes.body}>{hotspot.label}</Text>
             <Text size="sm" className={classes.body}>{hotspot.body}</Text>
           </div>)}</Stack>
+        </section>}
+        {!!display.credits?.length && <section aria-label="Nguồn và bản quyền">
+          <Title order={3} size="h5" mb="xs">Nguồn & bản quyền</Title>
+          <Text size="sm" component="div" className={classes.body}><MediaCreditList credits={display.credits} /></Text>
         </section>}
         {display.isOutsideRoom && <Text size="sm">Hiện vật nằm ngoài phạm vi phòng 3D. Thông tin vẫn có thể đọc tại đây.</Text>}
         <Text size="xs" c="dimmed">Escape để đóng · Chọn hiện vật khác để tiếp tục khám phá</Text>
