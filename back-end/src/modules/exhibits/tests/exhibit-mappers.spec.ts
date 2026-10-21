@@ -146,6 +146,7 @@ describe('toPublicExhibit', () => {
     assert.deepEqual(dto.model, {
       id: 'm', storageKey: 'uploads/model/m.glb', sizeBytes: 1234, checksumSha256: 'f'.repeat(64),
       url: `/rooms/room/exhibits/${EXHIBIT_ID}/model?version=${'f'.repeat(64)}`,
+      rights: { source: 'Nguồn', author: 'Tác giả', license: 'CC BY 4.0' },
     });
     assert.equal(dto.image?.url, 'http://api.test/media/uploads/image/i.png');
     assert.deepEqual(dto.image?.altText, { vi: 'Ảnh', en: 'Photo' });
