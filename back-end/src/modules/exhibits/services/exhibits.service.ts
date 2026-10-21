@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { TransactionManager } from '../../../common/database/transaction.manager';
+import { DomainValidationException } from '../../../common/exceptions/validation.exception';
 import { Paginated } from '../../../common/types/paginated.type';
 import { RoomStatus } from '../../rooms/entities/room.entity';
 import { RoomsRepository } from '../../rooms/repositories/rooms.repository';
@@ -527,6 +528,8 @@ export class ExhibitsService {
 
   /**
    * Sắp xếp lại thứ tự hiện vật trong một phòng trưng bày.
+   * `exhibitIds` phải là đúng toàn bộ hiện vật chưa xóa của phòng (chỉ khác thứ tự): thiếu,
+   * thừa, trùng hoặc id của phòng khác → 422 và không ghi gì.
    */
   async reorderExhibits(
     roomId: string,
@@ -538,9 +541,22 @@ export class ExhibitsService {
     }
 
     await this.tx.run(async (manager) => {
+      const roomExhibitIds = new Set(await this.exhibits.findIdsByRoomForUpdate(roomId, manager));
+      const requested = new Set(exhibitIds);
+      const isSamePermutation =
+        requested.size === exhibitIds.length &&
+        requested.size === roomExhibitIds.size &&
+        exhibitIds.every((id) => roomExhibitIds.has(id));
+      if (!isSamePermutation) {
+        const message = `exhibitIds phải gồm đúng ${roomExhibitIds.size} hiện vật của phòng, mỗi hiện vật một lần`;
+        throw new DomainValidationException(
+          [{ field: 'exhibitIds', code: 'reorder_ids_mismatch', message }],
+          message,
+        );
+      }
+
       for (let i = 0; i < exhibitIds.length; i++) {
-        const id = exhibitIds[i];
-        await this.exhibits.updateDisplayOrder(id, i + 1, manager);
+        await this.exhibits.updateDisplayOrder(exhibitIds[i], roomId, i + 1, manager);
       }
     });
 
