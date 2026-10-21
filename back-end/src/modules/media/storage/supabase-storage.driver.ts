@@ -9,8 +9,13 @@ export interface SupabaseStorageOptions {
   serviceKey: string;
   /** Bucket PRIVATE chứa media. */
   bucket: string;
-  /** Thời gian chờ tối đa tới khi nhận header phản hồi (ms). */
+  /** Thời gian chờ tối đa tới khi nhận header phản hồi khi đọc/xóa (ms). */
   timeoutMs?: number;
+  /**
+   * Như `timeoutMs` nhưng cho upload: tính cả thời gian gửi thân request, nên phải đủ cho file
+   * tối đa 10 MB trên mạng upload chậm (mặc định 120 s).
+   */
+  uploadTimeoutMs?: number;
   /** Cho phép test thay `fetch`. */
   fetchFn?: typeof fetch;
 }
@@ -30,17 +35,19 @@ interface StorageErrorBody {
 export class SupabaseStorageDriver implements MediaStorageDriver {
   private readonly fetchFn: typeof fetch;
   private readonly timeoutMs: number;
+  private readonly uploadTimeoutMs: number;
 
   constructor(private readonly options: SupabaseStorageOptions) {
     this.fetchFn = options.fetchFn ?? fetch;
     this.timeoutMs = options.timeoutMs ?? 15_000;
+    this.uploadTimeoutMs = options.uploadTimeoutMs ?? 120_000;
   }
 
   async put(key: string, data: Buffer): Promise<void> {
     const res = await this.request('POST', this.objectUrl(key), {
       'content-type': 'application/octet-stream',
       'x-upsert': 'false',
-    }, data);
+    }, data, this.uploadTimeoutMs);
     if (res.ok) return;
     const body = await readError(res);
     const error = new Error(`Supabase Storage từ chối ghi ${key}: ${res.status} ${body.message ?? ''}`.trim());
@@ -82,15 +89,16 @@ export class SupabaseStorageDriver implements MediaStorageDriver {
     return `${this.options.url}/${segments.join('/')}`;
   }
 
-  /** Gọi API với khóa server; hết thời gian chờ header thì hủy (không giới hạn thời gian stream body). */
+  /** Gọi API với khóa server; hết thời gian chờ header thì hủy (không giới hạn thời gian stream body trả về). */
   private async request(
     method: string,
     url: string,
     headers: Record<string, string> = {},
     body?: Buffer,
+    timeoutMs: number = this.timeoutMs,
   ): Promise<Response> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       return await this.fetchFn(url, {
         method,
