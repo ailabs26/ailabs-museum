@@ -4,9 +4,9 @@
 > (Task 9 + nhánh `feat/supabase-storage`). Viết cho thành viên nhóm cần chạy, sửa hoặc
 > vận hành phần này.
 >
-> Plan gốc: [`plans/261019-2333-supabase-db-storage/plan.md`](../../plans/261019-2333-supabase-db-storage/plan.md) ·
-> Nhật ký task: [`back-end/docs/tasks/supabase-db-storage.md`](../../back-end/docs/tasks/supabase-db-storage.md),
-> [`cms-media-attach.md`](../../back-end/docs/tasks/cms-media-attach.md).
+> Plan gốc: [`plans/261019-2333-supabase-db-storage/plan.md`](../plans/261019-2333-supabase-db-storage/plan.md) ·
+> Nhật ký task: [`tasks/be/supabase-db-storage.md`](../tasks/be/supabase-db-storage.md),
+> [`cms-media-attach.md`](../tasks/be/cms-media-attach.md).
 
 ## Tóm tắt 30 giây
 

@@ -11,7 +11,7 @@
 ## 1. Trạng thái và căn cứ source
 
 - Trạng thái tài liệu: **Implemented trên `feat/audio-player-01`; chưa push/PR**.
-- Đã đọc `AGENTS.md`, `front-end/docs/coding-conventions.md`, `front-end/README.md`, `package.json`, theme/provider, shared components và cấu hình test/build.
+- Đã đọc `AGENTS.md`, `docs/architecture/fe/coding-conventions.md`, `front-end/README.md`, `package.json`, theme/provider, shared components và cấu hình test/build.
 - Đã fetch `origin/dev`; `dev` đồng bộ tại `8ffd808`. Nhánh chung cho tài liệu và code AUDIO-01: `feat/audio-player-01`.
 - `src/shared/components/` đang nhóm theo loại; AUDIO-01 bổ sung nhóm `media/` với `AudioPlayer`, còn trước triển khai chưa có `<audio>` hoặc `HTMLAudioElement` trong source.
 - `src/validations/roomSchema.ts` vẫn yêu cầu `audio: null`; không đổi contract trong AUDIO-01.
@@ -92,7 +92,7 @@ export interface AudioPlayerProps {
 |---|---|
 | `front-end/src/shared/components/media/AudioPlayer.tsx` | Component, props, media ref/events và cleanup. |
 | `front-end/src/shared/components/media/AudioPlayer.module.css` | Chỉ tạo nếu Mantine props không đủ cho reflow/target size. |
-| `front-end/docs/coding-conventions.md` | Ghi nhận nhóm shared `media/` trước khi sử dụng; không thêm layer cấp src mới. |
+| `docs/architecture/fe/coding-conventions.md` | Ghi nhận nhóm shared `media/` trước khi sử dụng; không thêm layer cấp src mới. |
 | `front-end/tests/fixtures/audio-player.html` | HTML mount fixture riêng, không route sản phẩm. |
 | `front-end/tests/fixtures/audio-player.tsx` | Mount bằng React + MantineProvider/theme thực tế; controls đổi/xóa nguồn và mount/unmount chỉ dành cho test. |
 | `front-end/tests/fixtures/audioFixture.ts` | Tạo Buffer WAV PCM nhỏ, xác định và có thời lượng đủ quan sát pause/resume; không tải mạng hoặc lưu binary mới. |

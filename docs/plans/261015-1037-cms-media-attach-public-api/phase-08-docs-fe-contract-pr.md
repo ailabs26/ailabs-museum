@@ -19,10 +19,10 @@ Cập nhật contract FE tối thiểu để public site không vỡ khi BE tr�
    - Không đổi component render (Task 16–18 của Tiến/Thi tiêu thụ sau). Chạy `npm run typecheck && npm run lint && npm run build` + vitest.
    - `services/exhibits.service.ts` (admin): thêm field `audioViId/audioEnId/subtitleViId/subtitleEnId` vào type (không đổi UI).
 2. **Docs**
-   - `back-end/docs/tasks/cms-media-attach.md` (cùng format `cms-media-upload.md`): API, mã lỗi, luật publish, quy tắc truy cập file, cấu hình env.
+   - `docs/tasks/be/cms-media-attach.md` (cùng format `cms-media-upload.md`): API, mã lỗi, luật publish, quy tắc truy cập file, cấu hình env.
    - `docs/architecture/06-api-contract.md`: DTO public mới + ví dụ JSON thật.
    - `docs/architecture/04-data-model-erd.md`, `docs/Diagrams/01-erd.md`: 3 cột mới.
-   - `front-end/docs/architecture/data-api-and-cms.md`: luồng Preview dùng URL ký.
+   - `docs/architecture/fe/data-api-and-cms.md`: luồng Preview dùng URL ký.
    - `.env.example`: `MEDIA_PUBLIC_BASE_URL`, `MEDIA_URL_SIGNING_SECRET`, `MEDIA_SIGNED_URL_TTL_SECONDS`.
 3. **Commit nhỏ** (gợi ý thứ tự):
    1. `feat(db): add localized audio and subtitle slots to revisions`

@@ -14,12 +14,12 @@ Ngày đối chiếu: **08/10/2026**. Trạng thái: **thiết kế để review
 
 Nguồn đã đọc:
 
-- [AGENTS.md](../../../AGENTS.md), [README dự án](../../../README.md), [README FE](../../README.md), [coding conventions FE](../coding-conventions.md).
+- [AGENTS.md](../../../AGENTS.md), [README dự án](../../../README.md), [README FE](../../../front-end/README.md), [coding conventions FE](coding-conventions.md).
 - [SRS v0.1](../../../docs/requirements.md): baseline MVP theo mục 1.7 của chính SRS. Các mã FR/NFR/BR/AC bên dưới tham chiếu SRS này.
 - [Bảng 45 task](https://docs.google.com/spreadsheets/d/1xmQzsXLrDOCqoDdtb4oRs7Pqmvie8yAShbVhiFLjUHU/edit?gid=0#gid=0), tab `gid=0`, đọc ngày 08/10/2026: snapshot phân công, không phải bằng chứng hoàn thành.
 - [Demo giao diện](https://github.com/nguyenthangdev/demo-3d-museum/tree/d2e42091e1bfb4e79508bfd55a3b8832a3cb1888), commit `d2e42091e1bfb4e79508bfd55a3b8832a3cb1888`: đã đối chiếu HTML/CSS/JavaScript và README, chưa audit trực quan trên browser/thiết bị thật.
-- Source dự án tại base `b2a2141`: [FE entry](../../src/main.tsx), [App](../../src/App.tsx), [BE controller](../../../back-end/src/exhibits/exhibits.controller.ts), [BE repository](../../../back-end/src/exhibits/repositories/exhibits.repository.ts).
-- [Content schema](../../../plans/content-schema.md), [device matrix](../../../plans/device-matrix.md), [fallback tests](../../../plans/fallback-tests.md), [performance audit](../../../plans/performance-audit.md): tài liệu tham khảo cũ; số đo trong đó không chứng minh scaffold hiện tại đạt nghiệm thu.
+- Source dự án tại base `b2a2141`: [FE entry](../../../front-end/src/main.tsx), [App](../../../front-end/src/App.tsx), [BE controller](../../../back-end/src/exhibits/exhibits.controller.ts), [BE repository](../../../back-end/src/exhibits/repositories/exhibits.repository.ts).
+- [Content schema](../../plans/content-schema.md), [device matrix](../../plans/device-matrix.md), [fallback tests](../../plans/fallback-tests.md), [performance audit](../../plans/performance-audit.md): tài liệu tham khảo cũ; số đo trong đó không chứng minh scaffold hiện tại đạt nghiệm thu.
 
 Tên module/route chưa tồn tại là **đề xuất triển khai**. Không tạo file rỗng, thêm dependency hay đổi API chỉ vì tên có trong tài liệu. `test.md` cũ trong thư mục này là placeholder, không phải tài liệu kiến trúc hoặc bằng chứng test.
 
@@ -79,7 +79,7 @@ flowchart LR
 
 ## Layer và quyền sở hữu
 
-Giữ layered hybrid architecture và [coding conventions](../coding-conventions.md). Feature nằm dưới layer hiện có bằng tên kebab-case; không thêm root layer `services/`, `store/`, `features/` trong kế hoạch này.
+Giữ layered hybrid architecture và [coding conventions](coding-conventions.md). Feature nằm dưới layer hiện có bằng tên kebab-case; không thêm root layer `services/`, `store/`, `features/` trong kế hoạch này.
 
 | Vị trí | Sở hữu | Không sở hữu |
 | --- | --- | --- |

@@ -13,7 +13,7 @@ Task nguồn: [client-homepage.md](../tasks/client-homepage.md).
 ## Global Constraints
 
 - Base: `origin/dev` tại `1ee2f41`; nhánh duy nhất `feat/client-homepage`.
-- Theo `front-end/docs/coding-conventions.md`: named export, alias `@/`, CSS Module cùng tên component.
+- Theo `docs/architecture/fe/coding-conventions.md`: named export, alias `@/`, CSS Module cùng tên component.
 - Nền kem, điểm nhấn teal; responsive và light/dark.
 - Hiện vật nổi bật để trống, không dữ liệu hardcode, skeleton tải giả hoặc API nội dung.
 - Tham quan 3D ghi rõ `Sắp ra mắt`; danh mục `/collection` vẫn thuộc lượt phát triển tiếp theo.
