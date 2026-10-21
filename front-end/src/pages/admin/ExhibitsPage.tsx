@@ -101,8 +101,7 @@ interface ExhibitFormValues {
   hotspots: HotspotFormValue[];
 }
 
-/** Trạng thái danh sách hotspot trong form sửa: phải tải từ chi tiết hiện vật (danh sách không có). */
-type HotspotLoadState = 'ready' | 'loading' | 'error';
+type EditLoadState = 'ready' | 'loading' | 'error';
 
 type MediaSlotField = 'modelId' | 'imageId' | 'audioViId' | 'audioEnId' | 'subtitleViId' | 'subtitleEnId';
 
@@ -218,9 +217,10 @@ export function ExhibitsPage() {
   const [editing, setEditing] = useState<ExhibitRow | null>(null);
   const [opened, drawer] = useDisclosure(false);
   const [formTab, setFormTab] = useState<ExhibitFormTab>('basic');
-  const [hotspotState, setHotspotState] = useState<HotspotLoadState>('ready');
-  /** Hiện vật đang mở trong form — bỏ kết quả tải hotspot muộn của lần mở trước. */
-  const editingIdRef = useRef<string | null>(null);
+  const [editLoadState, setEditLoadState] = useState<EditLoadState>('ready');
+  const editSessionRef = useRef(0);
+
+  useEffect(() => () => { editSessionRef.current++; }, []);
 
   const [tourOrderOpened, tourOrder] = useDisclosure(false);
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -339,6 +339,9 @@ export function ExhibitsPage() {
 
   const saveMutation = useMutation({
     mutationFn: (values: ExhibitFormValues) => {
+      if (editLoadState !== 'ready' || (editing ? !canUpdate || editing.revisionState === 'in_review' : !canCreate)) {
+        throw new Error('Hiện vật chưa sẵn sàng để lưu.');
+      }
       const payload: CreateExhibitInput = {
         roomId: values.roomId,
         name: {
@@ -376,8 +379,7 @@ export function ExhibitsPage() {
         subtitleEnId: values.subtitleEnId,
         altText: toBilingual(values.altTextVi, values.altTextEn),
         transcript: toBilingual(values.transcriptVi, values.transcriptEn),
-        // Chỉ gửi khi đã tải đủ hotspot của bản đã lưu — bỏ trường thì back-end giữ nguyên.
-        ...(hotspotState === 'ready' ? { hotspots: toHotspotPayload(values.hotspots) } : {}),
+        hotspots: toHotspotPayload(values.hotspots),
       };
 
       if (editing) {
@@ -391,6 +393,7 @@ export function ExhibitsPage() {
           ? `Đã cập nhật hiện vật "${getDisplayText(saved.content.name, 'vi')}"`
           : `Đã tạo bản nháp hiện vật mới "${getDisplayText(saved.content.name, 'vi')}"`,
       );
+      editSessionRef.current++;
       drawer.close();
       invalidate();
     },
@@ -430,8 +433,11 @@ export function ExhibitsPage() {
     onError: (err, exhibit) => {
       // 422 từ cổng Submit Review (§5.2, FR-97): mở form và chỉ ra đúng ô cần sửa.
       if (err instanceof ApiException && err.status === 422 && err.errors.length > 0 && canUpdate) {
-        // Đợi hotspot tải xong rồi mới đánh dấu lỗi — đổ hotspot vào form sẽ xóa lỗi của các ô đó.
-        void openEdit(exhibit).then(() => showFieldErrors(err));
+        const loading = openEdit(exhibit);
+        const session = editSessionRef.current;
+        void loading.then((loaded) => {
+          if (loaded && editSessionRef.current === session) showFieldErrors(err);
+        });
         notify.error(
           `Chưa đủ điều kiện gửi duyệt (${err.errors.length} lỗi). Các ô cần sửa đã được đánh dấu.`,
           'Không gửi được',
@@ -458,9 +464,10 @@ export function ExhibitsPage() {
   });
 
   const openCreate = () => {
+    if (saveMutation.isPending) return;
+    editSessionRef.current++;
     setEditing(null);
-    editingIdRef.current = null;
-    setHotspotState('ready');
+    setEditLoadState('ready');
     setFormTab('basic');
     form.reset();
     if (formRoomOptions.length > 0) {
@@ -469,20 +476,55 @@ export function ExhibitsPage() {
     drawer.open();
   };
 
-  const openEdit = (exhibit: ExhibitRow) => {
+  const closeForm = () => {
+    if (saveMutation.isPending) return;
+    editSessionRef.current++;
+    drawer.close();
+  };
+
+  const openEdit = (exhibit: ExhibitRow): Promise<boolean> => {
+    if (saveMutation.isPending) return Promise.resolve(false);
+    const session = ++editSessionRef.current;
     setEditing(exhibit);
-    const content = exhibit.content;
+    setEditLoadState('loading');
+    form.clearErrors();
+    setFormTab('basic');
+    drawer.open();
+    return loadEditDetail(exhibit.id, session);
+  };
+
+  const loadEditDetail = async (id: string, session: number): Promise<boolean> => {
+    const queryKey = ['admin-exhibit-detail', id];
+    try {
+      await queryClient.cancelQueries({ queryKey, exact: true });
+      if (editSessionRef.current !== session) return false;
+      const detail = await queryClient.fetchQuery({
+        queryKey, queryFn: () => exhibitsService.get(id), staleTime: 0, retry: false,
+      });
+      if (editSessionRef.current !== session) return false;
+      hydrateEditForm(detail);
+      setEditing(detail);
+      setEditLoadState('ready');
+      return true;
+    } catch {
+      if (editSessionRef.current === session) setEditLoadState('error');
+      return false;
+    }
+  };
+
+  function hydrateEditForm(detail: ExhibitDetail) {
+    const content = detail.content;
     const pos = content.position || { x: 0, y: 0, z: 0 };
     const rot = content.rotation || { x: 0, y: 0, z: 0 };
     const scale = content.scale || { x: 1, y: 1, z: 1 };
 
     form.setValues({
-      roomId: exhibit.roomId,
-      nameVi: getDisplayText(content.name, 'vi'),
-      nameEn: getDisplayText(content.name, 'en'),
-      descriptionVi: getDisplayText(content.description, 'vi'),
-      descriptionEn: getDisplayText(content.description, 'en'),
-      displayOrder: exhibit.displayOrder ?? 1,
+      roomId: detail.roomId,
+      nameVi: getLocalizedText(content.name, 'vi'),
+      nameEn: getLocalizedText(content.name, 'en'),
+      descriptionVi: getLocalizedText(content.description, 'vi'),
+      descriptionEn: getLocalizedText(content.description, 'en'),
+      displayOrder: detail.displayOrder ?? 1,
       positionX: pos.x,
       positionY: pos.y,
       positionZ: pos.z,
@@ -504,29 +546,10 @@ export function ExhibitsPage() {
       altTextEn: getLocalizedText(content.altText, 'en'),
       transcriptVi: getLocalizedText(content.transcript, 'vi'),
       transcriptEn: getLocalizedText(content.transcript, 'en'),
-      hotspots: [],
+      hotspots: toHotspotFormValues(detail.hotspots),
     });
     form.clearErrors();
-    setFormTab('basic');
-    drawer.open();
-    return loadHotspots(exhibit.id);
-  };
-
-  /** Danh sách hiện vật không kèm hotspot: lấy từ chi tiết (revision mới nhất) rồi đổ vào form. */
-  const loadHotspots = (id: string): Promise<void> => {
-    editingIdRef.current = id;
-    setHotspotState('loading');
-    return queryClient
-      .fetchQuery({ queryKey: ['admin-exhibit-detail', id], queryFn: () => exhibitsService.get(id) })
-      .then((detail) => {
-        if (editingIdRef.current !== id) return;
-        form.setFieldValue('hotspots', toHotspotFormValues(detail.hotspots));
-        setHotspotState('ready');
-      })
-      .catch(() => {
-        if (editingIdRef.current === id) setHotspotState('error');
-      });
-  };
+  }
 
   const openDetail = (exhibit: ExhibitRow) => {
     setDetailId(exhibit.id);
@@ -809,7 +832,9 @@ export function ExhibitsPage() {
       {/* Drawer Thêm / Chỉnh sửa hiện vật */}
       <Drawer
         opened={opened}
-        onClose={drawer.close}
+        onClose={closeForm}
+        closeOnEscape={!saveMutation.isPending}
+        closeOnClickOutside={!saveMutation.isPending}
         title={
           <Group gap="xs">
             <IconBox size={20} />
@@ -821,6 +846,14 @@ export function ExhibitsPage() {
         position="right"
         size="xl"
       >
+        {editLoadState === 'loading' ? <Text role="status">Đang tải hiện vật…</Text>
+          : editLoadState === 'error' ? <Alert color="red" role="alert" title="Không tải được hiện vật">
+            <Text>Không thể tải bản nháp mới nhất. Vui lòng thử lại trước khi chỉnh sửa.</Text>
+            <Button mt="sm" onClick={() => editing && void openEdit(editing)}>Thử lại</Button>
+          </Alert>
+          : editing?.revisionState === 'in_review' || (editing ? !canUpdate : !canCreate)
+            ? <Alert role="alert">{editing?.revisionState === 'in_review' ? 'Hiện vật đang chờ duyệt, không thể chỉnh sửa.' : 'Bạn không có quyền chỉnh sửa hiện vật này.'}</Alert>
+            : <>
         {/* noValidate: `required` gốc của trình duyệt chặn submit âm thầm khi ô lỗi nằm ở tab đang ẩn. */}
         <form
           noValidate
@@ -852,7 +885,7 @@ export function ExhibitsPage() {
                   Media & thuyết minh
                 </Tabs.Tab>
                 <Tabs.Tab value="hotspots" leftSection={<IconMapPin size={14} />}>
-                  Hotspots{hotspotState === 'ready' ? ` (${form.values.hotspots.length})` : ''}
+                   Hotspots ({form.values.hotspots.length})
                 </Tabs.Tab>
               </Tabs.List>
 
@@ -1111,8 +1144,7 @@ export function ExhibitsPage() {
                 <HotspotEditor
                   form={form}
                   modelId={form.values.modelId}
-                  ready={hotspotState === 'ready'}
-                  loadError={hotspotState === 'error'}
+                  ready
                 />
               </Tabs.Panel>
             </Tabs>
@@ -1120,7 +1152,7 @@ export function ExhibitsPage() {
             <Divider my="sm" />
 
             <Flex justify="flex-end" gap="sm">
-              <Button variant="default" onClick={drawer.close}>
+              <Button variant="default" disabled={saveMutation.isPending} onClick={closeForm}>
                 Hủy bỏ
               </Button>
               <Button type="submit" loading={saveMutation.isPending}>
@@ -1129,6 +1161,7 @@ export function ExhibitsPage() {
             </Flex>
           </Stack>
         </form>
+        </>}
       </Drawer>
 
       {/* Drawer Xem Chi Tiết Hiện Vật & Lịch Sử Revisions */}
