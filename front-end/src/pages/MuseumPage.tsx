@@ -20,6 +20,11 @@ export function MuseumPage() {
   const displays = useMemo(() => detail ? mapRoomDisplays(detail) : [], [detail]);
   const [isSceneOpen, setIsSceneOpen] = useState(false);
   const [failedRoomId, setFailedRoomId] = useState<string | null>(null);
+  const [sceneAttempt, setSceneAttempt] = useState(0);
+  const handleRetry3d = () => {
+    if (sceneAttempt >= 2) return;
+    setSceneAttempt(attempt => attempt + 1); setFailedRoomId(null); setIsSceneOpen(true);
+  };
   const currentRoomId = detail?.id;
   const handleUnavailable = useCallback(() => {
     if (currentRoomId) setFailedRoomId(currentRoomId);
@@ -52,7 +57,7 @@ export function MuseumPage() {
   const read2dHref = detail ? selectedDisplay
     ? `/collection/${encodeURIComponent(detail.slug)}/exhibits/${encodeURIComponent(selectedDisplay.id)}`
     : `/collection?${new URLSearchParams({ room: detail.slug })}` : '/collection';
-  const sceneFallback = <SceneFallback read2dHref={read2dHref} onUnavailable={handleUnavailable} />;
+  const sceneFallback = <SceneFallback read2dHref={read2dHref} onUnavailable={handleUnavailable} onRetry={handleRetry3d} retriesRemaining={2 - sceneAttempt} />;
   return (
     <Container size="xl" py="xl" className={classes.page} onKeyDown={(event) => {
       if (event.key === 'Escape' && selectedDisplay) { event.preventDefault(); handleCloseDetail(); }
@@ -91,7 +96,7 @@ export function MuseumPage() {
         <div className={`${classes.stage} ${selectedDisplay ? classes.stageDetails : ''}`}>
         <div className={classes.viewport}>
           {failedRoomId === detail.id ? sceneFallback : isSceneOpen ? (
-            <ErrorBoundary key={detail.id} fallback={sceneFallback}>
+            <ErrorBoundary key={`${detail.id}:${sceneAttempt}`} fallback={sceneFallback}>
               <Suspense fallback={<MuseumLoading text="Đang mở phòng 3D…" />}>
                 <LazyMuseumScene displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay} onClear={handleCloseDetail} fallback={sceneFallback} />
               </Suspense>
