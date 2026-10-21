@@ -8,9 +8,9 @@ import { CollectionPage } from '@/pages/client/CollectionPage';
 import { ExhibitDetailPage } from '@/pages/client/ExhibitDetailPage';
 import { LoginPage } from '@/pages/admin/LoginPage';
 import { DashboardPage } from '@/pages/admin/DashboardPage';
-import { PlaceholderPage } from '@/pages/admin/PlaceholderPage';
 import { RoomsPage } from '@/pages/admin/RoomsPage';
 import { ExhibitsPage } from '@/pages/admin/ExhibitsPage';
+import { MediaPage } from '@/pages/admin/MediaPage';
 import { UsersPage } from '@/pages/admin/UsersPage';
 import { RolesPage } from '@/pages/admin/RolesPage';
 import { PermissionMatrixPage } from '@/pages/admin/PermissionMatrixPage';
@@ -71,7 +71,14 @@ export function AppRouter() {
               </RequirePermission>
             }
           />
-          <Route path="media" element={<PlaceholderPage title="Media" pr="PR CMS (task 8)" />} />
+          <Route
+            path="media"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.MEDIA_UPLOAD]} fallback={<NoAccess />}>
+                <MediaPage />
+              </RequirePermission>
+            }
+          />
           <Route
             path="moderation"
             element={
