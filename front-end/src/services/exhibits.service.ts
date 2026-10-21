@@ -131,6 +131,18 @@ export interface CreateExhibitInput {
   altText?: BilingualText | null;
   /** Lời thuyết minh vi/en (bắt buộc cho audio cùng ngôn ngữ); `null` = xóa. */
   transcript?: BilingualText | null;
+  /** Danh sách hotspot thay thế toàn bộ hotspot của bản nháp; bỏ trường = giữ nguyên. */
+  hotspots?: HotspotInput[];
+}
+
+/** Hotspot gửi lên API (tọa độ local của GLB gốc; không có model thì là mét quanh bệ trưng bày). */
+export interface HotspotInput {
+  label: BilingualText;
+  body: BilingualText;
+  positionX: number;
+  positionY: number;
+  positionZ: number;
+  displayOrder: number;
 }
 
 export interface UpdateExhibitInput {
@@ -155,6 +167,8 @@ export interface UpdateExhibitInput {
   altText?: BilingualText | null;
   /** Lời thuyết minh vi/en (bắt buộc cho audio cùng ngôn ngữ); `null` = xóa. */
   transcript?: BilingualText | null;
+  /** Danh sách hotspot thay thế toàn bộ hotspot của bản nháp; bỏ trường = giữ nguyên. */
+  hotspots?: HotspotInput[];
 }
 
 export const exhibitsService = {

@@ -40,6 +40,21 @@ describe('mapExhibitErrors', () => {
     expect(result.general).toEqual(['hotspots.0.label: Thiếu nhãn', 'Lỗi chung']);
   });
 
+  it('maps publish-gate hotspot errors onto the hotspot fields of the right row', () => {
+    const result = mapExhibitErrors([
+      { field: 'hotspots[1].label.en', code: 'publish_content_invalid', message: 'Thiếu tiêu đề tiếng Anh' },
+      { field: 'hotspots[0].body.vi', code: 'publish_content_invalid', message: 'Thiếu nội dung' },
+      { field: 'hotspots[2].position', code: 'publish_content_invalid', message: 'Tọa độ không hợp lệ' },
+    ]);
+    expect(result.fieldErrors).toEqual({
+      'hotspots.1.labelEn': 'Thiếu tiêu đề tiếng Anh',
+      'hotspots.0.bodyVi': 'Thiếu nội dung',
+      'hotspots.2.positionX': 'Tọa độ không hợp lệ',
+    });
+    expect(result.general).toEqual([]);
+    expect(result.firstTab).toBe('hotspots');
+  });
+
   it('returns no tab when nothing maps to a field', () => {
     expect(mapExhibitErrors([{ code: 'x', message: 'y' }]).firstTab).toBeNull();
   });
@@ -48,6 +63,8 @@ describe('mapExhibitErrors', () => {
     expect(firstTabWithError(['transcriptVi', 'roomId'])).toBe('basic');
     expect(firstTabWithError(['scaleY'])).toBe('transform');
     expect(firstTabWithError(['altTextEn'])).toBe('media');
+    expect(firstTabWithError(['hotspots.0.labelVi'])).toBe('hotspots');
+    expect(firstTabWithError(['hotspots.0.labelVi', 'altTextEn'])).toBe('media');
     expect(firstTabWithError([])).toBeNull();
   });
 });
