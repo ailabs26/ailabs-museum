@@ -15,6 +15,9 @@ interface LoadedPreview {
   normalization: ModelNormalization;
 }
 
+const INVALID_MODEL_MESSAGE =
+  'Không dựng được mô hình 3D: tệp không có hình khối hiển thị được hoặc dùng tính năng glTF chưa hỗ trợ.';
+
 type PreviewState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
@@ -29,22 +32,24 @@ async function loadPreviewModel(url: string, signal: AbortSignal): Promise<Loade
   if (!response.ok) throw new Error(`Không tải được mô hình (HTTP ${response.status}).`);
   const buffer = await response.arrayBuffer();
   signal.throwIfAborted();
-  validateGlb(buffer);
 
-  const manager = new LoadingManager();
-  manager.setURLModifier((resource) => {
-    if (!resource.startsWith('blob:')) throw new Error('Mô hình chứa tài nguyên ngoài tệp.');
-    return resource;
-  });
-  const gltf = await new GLTFLoader(manager).parseAsync(buffer, '');
-  const scenes: Object3D[] = [...gltf.scenes];
+  let scenes: Object3D[] = [];
   try {
+    validateGlb(buffer);
+    const manager = new LoadingManager();
+    manager.setURLModifier((resource) => {
+      if (!resource.startsWith('blob:')) throw new Error('external resource');
+      return resource;
+    });
+    const gltf = await new GLTFLoader(manager).parseAsync(buffer, '');
+    scenes = [...gltf.scenes];
     const { quarantined } = sanitizeModel(gltf.scene);
     scenes.push(...quarantined);
     return { scene: gltf.scene, scenes, normalization: normalizeModel(gltf.scene) };
-  } catch (error) {
+  } catch {
     disposeModel(scenes);
-    throw error;
+    // Lỗi của loader/three là thông điệp kỹ thuật — báo người dùng điều họ hiểu được.
+    throw new Error(INVALID_MODEL_MESSAGE);
   }
 }
 

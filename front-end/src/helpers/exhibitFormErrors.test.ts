@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapExhibitErrors } from './exhibitFormErrors';
+import { firstTabWithError, mapExhibitErrors } from './exhibitFormErrors';
 
 describe('mapExhibitErrors', () => {
   it('maps Submit Review gate errors onto the media tab fields', () => {
@@ -42,5 +42,12 @@ describe('mapExhibitErrors', () => {
 
   it('returns no tab when nothing maps to a field', () => {
     expect(mapExhibitErrors([{ code: 'x', message: 'y' }]).firstTab).toBeNull();
+  });
+
+  it('finds the tab of client-side validation errors', () => {
+    expect(firstTabWithError(['transcriptVi', 'roomId'])).toBe('basic');
+    expect(firstTabWithError(['scaleY'])).toBe('transform');
+    expect(firstTabWithError(['altTextEn'])).toBe('media');
+    expect(firstTabWithError([])).toBeNull();
   });
 });

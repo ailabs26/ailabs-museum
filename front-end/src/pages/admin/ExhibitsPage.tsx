@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActionIcon,
   Alert,
@@ -39,7 +39,7 @@ import {
 } from '@tabler/icons-react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiException } from '@/core/api/api-error';
-import { mapExhibitErrors } from '@/helpers/exhibitFormErrors';
+import { firstTabWithError, mapExhibitErrors } from '@/helpers/exhibitFormErrors';
 import type { ExhibitFormTab } from '@/helpers/exhibitFormErrors';
 import { hasMediaRights } from '@/helpers/mediaLibrary';
 import { PERMISSIONS } from '@/core/auth/permissions';
@@ -303,6 +303,14 @@ export function ExhibitsPage() {
       scaleZ: (v) => (v <= 0 ? 'Scale Z phải lớn hơn 0' : null),
     },
   });
+
+  // Mở "Thêm hiện vật" trước khi danh sách phòng tải xong: chọn phòng đầu tiên khi có dữ liệu.
+  const firstRoomId = roomsQuery.data?.items[0]?.id;
+  useEffect(() => {
+    if (opened && !editing && !form.values.roomId && firstRoomId) form.setFieldValue('roomId', firstRoomId);
+    // form object ổn định; chỉ chạy lại khi drawer/phòng thay đổi.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened, editing, firstRoomId]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['admin-exhibits'] });
@@ -759,7 +767,16 @@ export function ExhibitsPage() {
         position="right"
         size="xl"
       >
-        <form onSubmit={form.onSubmit((vals) => saveMutation.mutate(vals))}>
+        <form
+          onSubmit={form.onSubmit(
+            (vals) => saveMutation.mutate(vals),
+            // Lỗi validate nằm ở tab khác thì chuyển tới đó — không để nút "Lưu" im lặng.
+            (errors) => {
+              const tab = firstTabWithError(Object.keys(errors));
+              if (tab) setFormTab(tab);
+            },
+          )}
+        >
           <Stack gap="md">
             {editing && editing.status === 'published' && (
               <Alert icon={<IconInfoCircle size={18} />} color="blue" variant="light">

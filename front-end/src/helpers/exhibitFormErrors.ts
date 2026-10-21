@@ -42,6 +42,8 @@ const TAB_OF_FIELD: Record<string, ExhibitFormTab> = {
   positionX: 'transform',
   rotationX: 'transform',
   scaleX: 'transform',
+  scaleY: 'transform',
+  scaleZ: 'transform',
 };
 
 export interface MappedExhibitErrors {
@@ -64,7 +66,21 @@ export function mapExhibitErrors(errors: readonly FieldApiError[]): MappedExhibi
     }
     fieldErrors[formField] = fieldErrors[formField] ? `${fieldErrors[formField]}; ${error.message}` : error.message;
   }
-  const tabs = new Set(Object.keys(fieldErrors).map((field) => TAB_OF_FIELD[field] ?? 'media'));
-  const firstTab = (['basic', 'transform', 'media'] as const).find((tab) => tabs.has(tab)) ?? null;
-  return { fieldErrors, general, firstTab };
+  return { fieldErrors, general, firstTab: firstTabWithError(Object.keys(fieldErrors)) };
+}
+
+const BASIC_FIELDS = new Set(['roomId', 'displayOrder']);
+const MEDIA_FIELDS = new Set(Object.values(FIELD_MAP).filter((field) => !(field in TAB_OF_FIELD)));
+
+/**
+ * Tab đầu tiên (theo thứ tự hiển thị) chứa một trong các field form có lỗi — dùng cho cả lỗi
+ * của API lẫn lỗi validate phía client (vd chưa chọn phòng khi đang đứng ở tab Media).
+ */
+export function firstTabWithError(formFields: readonly string[]): ExhibitFormTab | null {
+  const tabs = new Set(
+    formFields.map((field) =>
+      TAB_OF_FIELD[field] ?? (BASIC_FIELDS.has(field) ? 'basic' : MEDIA_FIELDS.has(field) ? 'media' : 'transform'),
+    ),
+  );
+  return (['basic', 'transform', 'media'] as const).find((tab) => tabs.has(tab)) ?? null;
 }
