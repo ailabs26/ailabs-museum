@@ -35,7 +35,7 @@ Các checkbox trong từng task bên dưới là checklist thực thi được g
 
 - Tạo `front-end/src/shared/components/media/AudioPlayer.tsx`.
 - Tạo CSS Module cùng tên chỉ nếu cần reflow/target size ngoài Mantine props.
-- Sửa `front-end/docs/coding-conventions.md`: bổ sung nhóm shared `media/`.
+- Sửa `docs/architecture/fe/coding-conventions.md`: bổ sung nhóm shared `media/`.
 - Tạo `front-end/tests/fixtures/audio-player.html`, `audio-player.tsx`, `audioFixture.ts`.
 - Tạo `front-end/tests/audio-player.spec.ts`.
 

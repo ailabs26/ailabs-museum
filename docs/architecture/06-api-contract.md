@@ -142,7 +142,7 @@ POST   /public/reports                    # gửi báo cáo nội dung sai (rate
 
 > Public cache TTL ≤ 60s; không bao giờ trả revision `draft/pending`.
 
-**Đã triển khai (Task 9):** `GET /api/rooms` và `GET /api/rooms/:slug` (`ExhibitsController`) là nguồn public chuẩn cho hiện vật; `Cache-Control: no-cache` (BR-22, AC-51) thay cho TTL. File media: `GET /media/uploads/<dir>/<uuid>.<ext>` (ngoài prefix `/api`) — chỉ phục vụ file được revision public hiện hành tham chiếu hoặc URL ký (Preview CMS); còn lại 404. Chi tiết: `back-end/docs/tasks/cms-media-attach.md`.
+**Đã triển khai (Task 9):** `GET /api/rooms` và `GET /api/rooms/:slug` (`ExhibitsController`) là nguồn public chuẩn cho hiện vật; `Cache-Control: no-cache` (BR-22, AC-51) thay cho TTL. File media: `GET /media/uploads/<dir>/<uuid>.<ext>` (ngoài prefix `/api`) — chỉ phục vụ file được revision public hiện hành tham chiếu hoặc URL ký (Preview CMS); còn lại 404. Chi tiết: `docs/tasks/be/cms-media-attach.md`.
 
 ```jsonc
 // GET /api/rooms/:slug → data.exhibits[i] (rút gọn)

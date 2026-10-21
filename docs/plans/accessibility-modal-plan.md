@@ -12,7 +12,7 @@
 
 - **Trạng thái:** Đã triển khai trên `feat/a11y-modal-focus`; chờ review, chưa push/PR/merge. Giới hạn kiểm chứng được ghi bên dưới.
 - **Source baseline đã kiểm tra:** `dev` tại `56060dff10a550a766d79dbda9846a9ad1949c3b` (20/10/2026), sau khi A11Y-01 merge qua PR [#61](https://github.com/ailabs26/ailabs-museum/pull/61). Khi thực hiện phải fetch lại `origin/dev` và kiểm tra xung đột trước khi tạo nhánh.
-- Đã đối chiếu `AGENTS.md`, `front-end/docs/coding-conventions.md`, mẫu [`audio-player-01-plan.md`](audio-player-01-plan.md)/[`audio-player-01.md`](../tasks/audio-player-01.md), và tài liệu A11Y-01.
+- Đã đối chiếu `AGENTS.md`, `docs/architecture/fe/coding-conventions.md`, mẫu [`audio-player-01-plan.md`](audio-player-01-plan.md)/[`audio-player-01.md`](../tasks/audio-player-01.md), và tài liệu A11Y-01.
 - `front-end/src/AppProviders.tsx` có `ModalsProvider`; `front-end/src/shared/components/feedback/confirm.ts` mở xác nhận qua `modals.openConfirmModal`.
 - Các Drawer trong CMS: `UsersPage`, `RolesPage`, `RoomsPage`, `ExhibitsPage` (form và detail), `ModerationPage`, `ReportsPage`, `AuditPage`.
 - Modal con trong Drawer: `ModerationPage` (từ chối phiên bản) và `ReportsPage` (xử lý/đóng báo cáo). Cần test **chỉ overlay trên cùng** nhận focus và Escape, sau đó focus quay lại Drawer cha.
