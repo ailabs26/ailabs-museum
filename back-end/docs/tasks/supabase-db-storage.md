@@ -87,11 +87,23 @@ Migration không cần sửa: `uuid-ossp` đã có sẵn trên Supabase, `citext
 - Dùng chung biến `SUPABASE_*` và bucket `museum-assets`.
 - Kiểm chứng sau merge: BE typecheck/lint, `npm test` **1559/1559**, `test:models` 10/10, `test:seed` 6/6; FE typecheck/lint/build, `test:unit` 69/69, `room-contract.spec.ts` 8/8.
 
-## Chưa kiểm chứng / việc sau
+## Kiểm chứng trên Supabase thật (21/10/2026)
 
-- [ ] Chạy với project Supabase thật: migration + seed qua session pooler có TLS; upload → preview URL ký → xem public → seek audio/GLB (Range) → unpublish → 404 ngay.
-- [ ] Xác nhận 2 hành vi Supabase viết theo tài liệu: mã lỗi khi trùng key / không có object, và hỗ trợ Range trên endpoint `authenticated` (code đã phòng cả hai trường hợp).
-- [ ] Merge Task 9 vào `dev`, push nhánh, mở PR vào `dev`.
+Project dùng chung `ailabs-museum` (session pooler `aws-0-ap-southeast-1`, TLS qua `sslmode=require` trong URL), `MEDIA_STORAGE_DRIVER=supabase`, bản build chạy cổng riêng.
+
+- **Migration:** `AddRevisionLocalizedMedia1792073130413` đã chạy (chỉ ADD COLUMN nullable + index). **Không chạy `seed`**: nhánh không đổi bộ quyền so với `dev`, còn seed đặt lại toàn bộ `role_permissions` về mặc định.
+- **Không chạy `media:upload-supabase`**: 16 file trong `public/media/uploads` thuộc DB local cũ, bảng `media` trên Supabase không tham chiếu file nào → chỉ tạo file mồ côi.
+- **E2E 28/29 + 1 kiểm lại bằng curl:** đăng nhập → upload GLB/PNG/MP3/VTT (file nằm ở `uploads/<kind>/` trong bucket) → gắn vào draft → preview URL ký 200 (`private, no-store`), cùng file không ký → 404 → submit thiếu rights/alt text → 422 (`media_rights_missing`, `image_alt_text_missing`) → sửa → submit → publish → public API có model/image/audio.vi → ảnh 200 (`nosniff`, `no-cache`, ETag) → HEAD → audio Range 206, ngoài file 416 → WebVTT `text/vtt` → GLB qua route tour 200 → ẩn → ảnh/audio 404 ngay. `If-None-Match` → 304 kiểm bằng curl (fetch của Node tự thêm `Cache-Control: no-cache` nên server bỏ qua 304 đúng thiết kế).
+- **Hành vi Supabase (trước đây chỉ theo tài liệu):** ghi trùng key với `x-upsert: false` → HTTP 400, body `statusCode "409"`, `code "KeyAlreadyExists"`; object không có → HTTP 400, body `statusCode "404"`, `code "NoSuchKey"`; Range trên `/object/authenticated/` → 206 + `Content-Range`. Xóa media qua API dọn file trên bucket.
+- **Dọn dữ liệu test:** hiện vật đã publish không xóa được qua API (đúng luật), nên xóa mềm hiện vật/room/media bằng SQL (giữ `audit_logs`), xóa file test khỏi bucket. Bucket trở về 5 GLB ở `models/`.
+
+## Việc sau
+
+- [x] Chạy với project Supabase thật (migration, upload → preview → public → Range → ẩn → 404).
+- [x] Xác nhận hành vi Supabase: mã lỗi trùng key / không có object, Range trên endpoint `authenticated`.
+- [ ] PR `feat/cms-media-attach` → `dev` (Task 9), review & merge; sau đó PR `feat/supabase-storage` → `dev`.
+- DB dùng chung đã có migration của Task 9 trước khi code lên `dev`: ai chạy `migration:generate` từ `dev` trên DB này sẽ thấy drift ngược (3 cột + index) — merge Task 9 sớm.
+- TLS DB đang mã hóa nhưng không xác thực chứng chỉ (`sslmode=require`); muốn xác thực thì bỏ tham số URL, dùng `DATABASE_SSL=true` + `DATABASE_SSL_CA`.
 - Stream qua API tốn băng thông 2 lần (Supabase → API → client); GLB ≤ 20 MB + `ETag`/304 giảm tải. Nếu nghẽn mới cân nhắc signed URL của Supabase (phải tính lại AC-51).
 - **Hai đường đọc Supabase song song:** GLB đi qua `ModelStorageService` (signed URL, chỉ chạy khi có Supabase — driver `local` sẽ trả 503 cho model), ảnh/audio/phụ đề đi qua `MediaStorageService`. Nên gộp `ModelStorageService` về `MediaStorageService` (cần SPCCPS review).
 - Gói free Supabase tạm dừng project sau 7 ngày không hoạt động.

@@ -28,8 +28,9 @@ container/Nginx vẫn giữ nhưng bỏ service `minio` và `postgres` khỏi co
 - [x] Env mới + validate (`MEDIA_STORAGE_DRIVER`, `SUPABASE_*`, `DATABASE_SSL*`)
 - [x] Script đẩy file local lên Supabase
 - [x] Test: hồi quy delivery/storage với driver local + unit test Supabase driver (fetch giả)
-- [ ] Người dùng tạo project Supabase, bucket, điền `.env` → chạy `migration:run`, `seed`, `media:upload-supabase`
-- [ ] Kiểm thử thật: upload, preview signed URL, public view, unpublish → 404 ngay
+- [x] Người dùng tạo project Supabase, bucket, điền `.env` → chạy `migration:run` (21/10; bỏ `seed` và `media:upload-supabase` — lý do ở task doc)
+- [x] Kiểm thử thật: upload, preview signed URL, public view, unpublish → 404 ngay (21/10, xem `back-end/docs/tasks/supabase-db-storage.md`)
+- [ ] PR Task 9 rồi nhánh này vào `dev`
 
 ## Hướng dẫn thiết lập (người dùng làm trên dashboard)
 1. Tạo project → **Project Settings → Database → Connection string → Session pooler** → dán vào `DATABASE_URL`
