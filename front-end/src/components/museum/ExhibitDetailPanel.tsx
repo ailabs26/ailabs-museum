@@ -5,8 +5,8 @@ import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { ExhibitImage } from './ExhibitImage';
 import classes from './ExhibitDetailPanel.module.css';
 
-/** Published text only; nonmodal so the scene and room selector stay usable. */
-export function ExhibitDetailPanel({ display, onClose, detail2dHref }: { display: MuseumDisplay; onClose: () => void; detail2dHref: string }) {
+/** Nonmodal so the scene and room selector stay usable. CMS preview omits the 2D link (drafts have no public page). */
+export function ExhibitDetailPanel({ display, onClose, detail2dHref }: { display: MuseumDisplay; onClose: () => void; detail2dHref?: string }) {
   const titleRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => titleRef.current?.focus(), [display.id]);
   return (
@@ -17,7 +17,7 @@ export function ExhibitDetailPanel({ display, onClose, detail2dHref }: { display
           <Button variant="subtle" color="dark" onClick={onClose} aria-label="Đóng chi tiết hiện vật">Đóng ×</Button>
         </div>
         <Title ref={titleRef} tabIndex={-1} order={2} size="h3" className={classes.title}>{display.title}</Title>
-        <Link to={detail2dHref}>Đọc chi tiết 2D</Link>
+        {detail2dHref && <Link to={detail2dHref}>Đọc chi tiết 2D</Link>}
         <ExhibitImage display={display} className={classes.preview} />
         {display.model && <Text size="sm" c="teal.9">Khám phá mô hình hiện vật trong phòng 3D.</Text>}
         <section aria-label="Mô tả hiện vật">

@@ -28,6 +28,7 @@ import {
   IconAlertCircle,
   IconBox,
   IconClock,
+  IconCube,
   IconEdit,
   IconEye,
   IconInfoCircle,
@@ -39,6 +40,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { ApiException } from '@/core/api/api-error';
 import { firstTabWithError, mapExhibitErrors } from '@/helpers/exhibitFormErrors';
 import { resolveBilingualText, toHotspotFormValues, toHotspotPayload, validateHotspots } from '@/helpers/exhibitHotspots';
@@ -1149,6 +1151,17 @@ export function ExhibitsPage() {
               <Text size="sm" c="dimmed" mb="xs">
                 {getDisplayText(detailQuery.data.content.description, 'vi') || 'Chưa có mô tả'}
               </Text>
+
+              <Button
+                component={Link}
+                to={`/admin/exhibits/${detailQuery.data.id}/preview`}
+                size="xs"
+                variant="light"
+                leftSection={<IconCube size={14} />}
+                mb="xs"
+              >
+                Xem trước 3D trong phòng trưng bày
+              </Button>
 
               <Divider my="xs" />
 

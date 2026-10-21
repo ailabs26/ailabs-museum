@@ -90,12 +90,12 @@ describe('toDraftDisplay', () => {
 describe('mergeDraftIntoRoom', () => {
   const published = (id: string) => ({ id, title: id, description: '', position: [0, 0, 0], shape: 'cube', color: '#000' }) as MuseumDisplay;
 
-  it('replaces the published version of the same exhibit in place', () => {
+  it('replaces the published version of the same exhibit and puts the draft first so its model loads first', () => {
     const draft = { ...published('b'), title: 'draft' };
-    expect(mergeDraftIntoRoom([published('a'), published('b')], draft).map((d) => d.title)).toEqual(['a', 'draft']);
+    expect(mergeDraftIntoRoom([published('a'), published('b'), published('c')], draft).map((d) => d.title)).toEqual(['draft', 'a', 'c']);
   });
 
   it('adds a never-published draft to the room', () => {
-    expect(mergeDraftIntoRoom([published('a')], published('new')).map((d) => d.id)).toEqual(['a', 'new']);
+    expect(mergeDraftIntoRoom([published('a')], published('new')).map((d) => d.id)).toEqual(['new', 'a']);
   });
 });

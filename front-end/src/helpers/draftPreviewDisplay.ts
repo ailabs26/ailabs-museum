@@ -66,9 +66,10 @@ export function toDraftDisplay(detail: ExhibitDetail, model: MediaItem | null, l
   return { ...display, isOutsideRoom: isDisplayOutsideRoom(display) };
 }
 
-/** Đặt bản nháp vào phòng như khách sẽ thấy: thay bản đã xuất bản cùng id, hoặc thêm mới. */
+/**
+ * Đặt bản nháp vào phòng như khách sẽ thấy: thay bản đã xuất bản cùng id (hoặc thêm mới). Bản nháp đứng
+ * đầu danh sách để bộ tải model của phòng (2 luồng, theo thứ tự) tải model của nó trước các model khác.
+ */
 export function mergeDraftIntoRoom(roomDisplays: readonly MuseumDisplay[], draft: MuseumDisplay): MuseumDisplay[] {
-  const index = roomDisplays.findIndex((display) => display.id === draft.id);
-  if (index === -1) return [...roomDisplays, draft];
-  return roomDisplays.map((display, i) => (i === index ? draft : display));
+  return [draft, ...roomDisplays.filter((display) => display.id !== draft.id)];
 }
