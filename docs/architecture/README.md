@@ -22,6 +22,7 @@ quy ước và ranh giới module. Mỗi người code theo đúng khung ở đ�
 | 07 | [07-admin-subsystem.md](07-admin-subsystem.md) | **Phân hệ quản trị hệ thống** (dựng trước): auth, users, roles, permissions, audit — màn hình, use-case, sequence |
 | 08 | [08-usecase-and-diagrams.md](08-usecase-and-diagrams.md) | Sơ đồ use-case tổng thể + các sequence diagram chính (login, publish CMS, client đọc nội dung, fallback) |
 | 09 | [09-roadmap-and-branching.md](09-roadmap-and-branching.md) | Ánh xạ 45 task/3 phase của nhóm vào component kiến trúc + chiến lược nhánh/PR |
+| — | [../supabase/README.md](../supabase/README.md) | **Supabase**: kết nối DB (pooler, TLS, migration DB dùng chung), lưu & phân phối media (driver, URL ký, Range/304), script, kiểm thử E2E, vận hành |
 
 ## Nguyên tắc thiết kế (tóm tắt)
 

@@ -83,7 +83,7 @@ POST   /revisions/:id/publish             # pending -> published (moderator)
 POST   /revisions/:id/reject              # kèm lý do
 POST   /exhibits/:id/hide  |  /unhide
 POST   /media   (multipart)               GET /media/:id       DELETE /media/:id
-POST   /exhibits/:id/attach-media         # gắn model/image/audio
+POST   /exhibits/:id/attach-media         # (thực tế Task 9: gắn qua PATCH /admin/exhibits/:id — modelId, imageId, audioViId, audioEnId, subtitleViId, subtitleEnId)
 ```
 
 ### Kiểm duyệt & báo cáo
@@ -141,6 +141,24 @@ POST   /public/reports                    # gửi báo cáo nội dung sai (rate
 ```
 
 > Public cache TTL ≤ 60s; không bao giờ trả revision `draft/pending`.
+
+**Đã triển khai (Task 9):** `GET /api/rooms` và `GET /api/rooms/:slug` (`ExhibitsController`) là nguồn public chuẩn cho hiện vật; `Cache-Control: no-cache` (BR-22, AC-51) thay cho TTL. File media: `GET /media/uploads/<dir>/<uuid>.<ext>` (ngoài prefix `/api`) — chỉ phục vụ file được revision public hiện hành tham chiếu hoặc URL ký (Preview CMS); còn lại 404. Chi tiết: `back-end/docs/tasks/cms-media-attach.md`.
+
+```jsonc
+// GET /api/rooms/:slug → data.exhibits[i] (rút gọn)
+{
+  "id": "uuid", "roomId": "uuid", "displayOrder": 1,
+  "name": "Bình gốm", "description": "…", "transcript": "…",          // bản vi (tương thích cũ)
+  "i18n": { "vi": { "name": "…", "description": "…", "transcript": "…" }, "en": { … } },
+  "positionX": 0, "positionY": 0, "positionZ": 0,
+  "rotation": { "x": 0, "y": 0, "z": 0 }, "scale": { "x": 1, "y": 1, "z": 1 },
+  "placeholderShape": "box", "placeholderColor": "#8b7355",
+  "hotspots": [{ "id": "uuid", "label": "…", "body": "…", "i18n": { "vi": { … }, "en": { … } }, "positionX": 0, "positionY": 0, "positionZ": 0, "displayOrder": 1 }],
+  "model": { "id": "uuid", "url": "https://api…/media/uploads/models/<uuid>.glb", "mimeType": "model/gltf-binary", "sizeBytes": 123, "rights": { "source": "…", "author": "…", "license": "…" } },
+  "image": { …MediaDto, "altText": { "vi": "…", "en": "…" } },
+  "audio": { "vi": { "audio": MediaDto, "subtitle": MediaDto | null, "transcript": "…" } | null, "en": … | null } // null khi không có audio
+}
+```
 
 ## 6.4 DTO ví dụ (exhibit)
 

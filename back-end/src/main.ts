@@ -1,25 +1,24 @@
 import 'reflect-metadata';
-import { ValidationPipe } from '@nestjs/common';
+import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
-import { static as expressStatic } from 'express';
 import { AppModule } from './app.module';
 import { PermissionDeniedFilter } from './modules/audit/filters/permission-denied.filter';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import {
-  DEFAULT_MEDIA_STORAGE_ROOTS,
-  PUBLIC_MEDIA_URL_PREFIX,
-} from './modules/media/services/media-storage.service';
+import { MEDIA_DELIVERY_ROUTE } from './modules/media/controllers/media-delivery.controller';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
 
-  // Mọi API dưới /api (xem 06-api-contract.md)
-  app.setGlobalPrefix(config.getOrThrow<string>('app.apiPrefix'));
+  // Mọi API dưới /api (xem 06-api-contract.md). Riêng file media giữ URL /media/... (ngoài
+  // prefix) — được phân phối có kiểm soát bởi MediaDeliveryController.
+  app.setGlobalPrefix(config.getOrThrow<string>('app.apiPrefix'), {
+    exclude: [{ path: MEDIA_DELIVERY_ROUTE, method: RequestMethod.GET }],
+  });
 
   // Đọc refresh token từ httpOnly cookie (AuthController).
   app.use(cookieParser());
@@ -36,17 +35,6 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ResponseInterceptor());
   // Nest xét filter từ cuối: lỗi RBAC phải được audit trước filter lỗi tổng quát.
   app.useGlobalFilters(new AllExceptionsFilter(), app.get(PermissionDeniedFilter));
-
-  // Media tĩnh (không chịu prefix /api). nosniff: trình duyệt không được "đoán" lại
-  // Content-Type — file upload luôn được phục vụ đúng kiểu đã kiểm tra.
-  app.use(
-    PUBLIC_MEDIA_URL_PREFIX,
-    expressStatic(DEFAULT_MEDIA_STORAGE_ROOTS.publicRoot, {
-      index: false,
-      dotfiles: 'deny',
-      setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
-    }),
-  );
 
   // Swagger tại /api/docs, có ô nhập Bearer token (dùng từ PR #D)
   const swagger = new DocumentBuilder()

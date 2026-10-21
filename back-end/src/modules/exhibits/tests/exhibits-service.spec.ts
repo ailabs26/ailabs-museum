@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { DomainValidationException } from '../../../common/exceptions/validation.exception';
 import { DeepPartial, EntityManager } from 'typeorm';
 import { TransactionManager } from '../../../common/database/transaction.manager';
@@ -23,6 +23,10 @@ import {
 import { Hotspot } from '../entities/hotspot.entity';
 import { ExhibitsRepository } from '../repositories/exhibits.repository';
 import { ExhibitsService } from '../services/exhibits.service';
+import { RevisionPublishGate } from '../services/revision-publish.gate';
+import { MediaReference, MediaReferenceValidator } from '../../media/services/media-reference.validator';
+import { testMediaUrlService } from '../../media/tests/media-test-doubles';
+import { Media, MediaKind, MediaProcessingState } from '../../media/entities/media.entity';
 
 // ============================================================================
 // TEST FIXTURES & SAMPLE HELPERS
@@ -121,7 +125,11 @@ function createSampleExhibit(
     overrides && 'room' in overrides
       ? (overrides.room as Room)
       : createSampleRoom({ id: exhibit.roomId });
-  exhibit.publishedRevisionId = overrides?.publishedRevisionId ?? null;
+  // Trong DB, publishedRevision luôn đi kèm publishedRevisionId cùng giá trị.
+  exhibit.publishedRevisionId =
+    overrides && 'publishedRevisionId' in overrides
+      ? (overrides.publishedRevisionId ?? null)
+      : (overrides?.publishedRevision?.id ?? null);
   exhibit.publishedRevision = overrides?.publishedRevision ?? null;
   exhibit.visibility = overrides?.visibility ?? ExhibitVisibility.HIDDEN;
   exhibit.version = overrides?.version ?? 1;
@@ -138,6 +146,26 @@ function createSampleExhibit(
 // ============================================================================
 // MOCKS
 // ============================================================================
+
+/** Ghi lại tham chiếu media được kiểm tra; có thể "cài" lỗi để giả lập 422. */
+class FakeMediaReferenceValidator {
+  calls: MediaReference[][] = [];
+  error?: Error;
+  async assertAttachable(references: MediaReference[]): Promise<void> {
+    this.calls.push(references);
+    if (this.error) throw this.error;
+  }
+}
+
+/** Cổng Submit/Publish giả: mặc định cho qua, có thể cài lỗi. */
+class FakePublishGate {
+  calls: ExhibitRevision[] = [];
+  error?: Error;
+  async assertPublishable(revision: ExhibitRevision): Promise<void> {
+    this.calls.push(revision);
+    if (this.error) throw this.error;
+  }
+}
 
 class MockTransactionManager {
   calls = 0;
@@ -297,15 +325,22 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
   let mockExhibits: MockExhibitsRepository;
   let mockRooms: MockRoomsRepository;
   let mockTx: MockTransactionManager;
+  let mediaRefs: FakeMediaReferenceValidator;
+  let gate: FakePublishGate;
 
   function setup() {
     mockExhibits = new MockExhibitsRepository();
     mockRooms = new MockRoomsRepository();
     mockTx = new MockTransactionManager();
+    mediaRefs = new FakeMediaReferenceValidator();
+    gate = new FakePublishGate();
     service = new ExhibitsService(
       mockExhibits as unknown as ExhibitsRepository,
       mockRooms as unknown as RoomsRepository,
       mockTx as unknown as TransactionManager,
+      mediaRefs as unknown as MediaReferenceValidator,
+      gate as unknown as RevisionPublishGate,
+      testMediaUrlService(),
     );
   }
 
@@ -1672,6 +1707,171 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
 
     it('TC-S125: reorderExhibits rejects unknown IDs instead of silently ignoring them', async () => {
       await assertReorderRejected([], ['ex-ghost']);
+    });
+  });
+  // --------------------------------------------------------------------------
+  // SUITE 11: TASK 9 — Gắn media, cổng Submit Review, media trong admin
+  // --------------------------------------------------------------------------
+  describe('Suite 11: Task 9 — media attach, publish gate, admin media', () => {
+    const MEDIA_A = 'a0000000-0000-4000-8000-00000000000a';
+    const MEDIA_B = 'a0000000-0000-4000-8000-00000000000b';
+    const MEDIA_C = 'a0000000-0000-4000-8000-00000000000c';
+    const unprocessable = () =>
+      new UnprocessableEntityException({ message: 'x', errors: [{ field: 'modelId', code: 'media_not_ready', message: 'x' }] });
+
+    function dto<T extends object>(Type: new () => T, value: object): T {
+      return Object.assign(new Type(), value);
+    }
+
+    it('TC-M01: create kiểm tra đúng các tham chiếu media được gửi (field + kind) trong transaction', async () => {
+      setup();
+      mockRooms.roomById = createSampleRoom();
+      await service.createExhibitDraft(
+        dto(CreateExhibitDto, { roomId: ROOM_ID_1, modelId: MEDIA_A, audioViId: MEDIA_B, subtitleEnId: MEDIA_C, imageId: null }),
+        { id: USER_ID_1 },
+      );
+      assert.deepEqual(mediaRefs.calls, [[
+        { field: 'modelId', kind: 'model', mediaId: MEDIA_A },
+        { field: 'audioViId', kind: 'audio', mediaId: MEDIA_B },
+        { field: 'subtitleEnId', kind: 'subtitle', mediaId: MEDIA_C },
+      ]]);
+      const rev = mockExhibits.savedRevisions[0];
+      assert.equal(rev.modelMediaId, MEDIA_A);
+      assert.equal(rev.audioMediaId, MEDIA_B);
+      assert.equal(rev.subtitleEnMediaId, MEDIA_C);
+      assert.equal(rev.imageMediaId, null);
+      assert.equal(rev.audioEnMediaId, null);
+    });
+
+    it('TC-M02: create với media không hợp lệ → 422, không lưu exhibit/revision', async () => {
+      setup();
+      mockRooms.roomById = createSampleRoom();
+      mediaRefs.error = unprocessable();
+      await assert.rejects(
+        service.createExhibitDraft(dto(CreateExhibitDto, { roomId: ROOM_ID_1, modelId: MEDIA_A }), { id: USER_ID_1 }),
+        UnprocessableEntityException,
+      );
+      assert.equal(mockExhibits.savedExhibits.length, 0);
+      assert.equal(mockExhibits.savedRevisions.length, 0);
+    });
+
+    it('TC-M03: alias audioId mâu thuẫn audioViId → 400 trước khi mở transaction', async () => {
+      setup();
+      mockRooms.roomById = createSampleRoom();
+      await assert.rejects(
+        service.createExhibitDraft(dto(CreateExhibitDto, { roomId: ROOM_ID_1, audioId: MEDIA_A, audioViId: MEDIA_B }), { id: USER_ID_1 }),
+        BadRequestException,
+      );
+      assert.equal(mockTx.calls, 0);
+    });
+
+    it('TC-M04: update Draft chỉ kiểm tra media trong request; field vắng mặt giữ nguyên, null tháo', async () => {
+      setup();
+      mockExhibits.findAdminDetailResult = createSampleExhibit();
+      mockExhibits.activeRevisionResult = createSampleRevision({ modelMediaId: MEDIA_A, imageMediaId: MEDIA_B, audioMediaId: MEDIA_C });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, dto(UpdateExhibitDto, { imageId: null, audioEnId: MEDIA_A }), { id: USER_ID_1 });
+      assert.deepEqual(mediaRefs.calls, [[{ field: 'audioEnId', kind: 'audio', mediaId: MEDIA_A }]]);
+      const rev = mockExhibits.savedRevisions.at(-1)!;
+      assert.equal(rev.modelMediaId, MEDIA_A);
+      assert.equal(rev.imageMediaId, null);
+      assert.equal(rev.audioMediaId, MEDIA_C);
+      assert.equal(rev.audioEnMediaId, MEDIA_A);
+    });
+
+    it('TC-M05: update thay media → bỏ relation cũ đã nạp để TypeORM ghi theo id mới', async () => {
+      setup();
+      mockExhibits.findAdminDetailResult = createSampleExhibit();
+      const active = createSampleRevision({ modelMediaId: MEDIA_A });
+      active.modelMedia = Object.assign(new Media(), { id: MEDIA_A });
+      mockExhibits.activeRevisionResult = active;
+      await service.updateExhibitDraft(EXHIBIT_ID_1, dto(UpdateExhibitDto, { modelId: MEDIA_B }), { id: USER_ID_1 });
+      const rev = mockExhibits.savedRevisions.at(-1)!;
+      assert.equal(rev.modelMediaId, MEDIA_B);
+      assert.equal('modelMedia' in rev, false);
+    });
+
+    it('TC-M06: update khi đang APPROVED → fork copy đủ 6 slot rồi áp thay đổi; revision cũ không đổi', async () => {
+      setup();
+      const published = createSampleRevision({ state: RevisionState.APPROVED, modelMediaId: MEDIA_A, audioMediaId: MEDIA_B });
+      Object.assign(published, { audioEnMediaId: MEDIA_C, subtitleViMediaId: MEDIA_A, subtitleEnMediaId: MEDIA_B });
+      mockExhibits.findAdminDetailResult = createSampleExhibit({ publishedRevision: published, visibility: ExhibitVisibility.VISIBLE });
+      mockExhibits.activeRevisionResult = published;
+      await service.updateExhibitDraft(EXHIBIT_ID_1, dto(UpdateExhibitDto, { modelId: MEDIA_C }), { id: USER_ID_1 });
+      const fork = mockExhibits.savedRevisions.at(-1)!;
+      assert.notEqual(fork, published);
+      assert.equal(fork.state, RevisionState.DRAFT);
+      assert.equal(fork.modelMediaId, MEDIA_C);
+      assert.equal(fork.audioMediaId, MEDIA_B);
+      assert.equal(fork.audioEnMediaId, MEDIA_C);
+      assert.equal(fork.subtitleViMediaId, MEDIA_A);
+      assert.equal(fork.subtitleEnMediaId, MEDIA_B);
+      assert.equal(published.modelMediaId, MEDIA_A, 'revision published không bị sửa tại chỗ');
+    });
+
+    it('TC-M07: update IN_REVIEW → 409 trước khi kiểm tra media', async () => {
+      setup();
+      mockExhibits.findAdminDetailResult = createSampleExhibit();
+      mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.IN_REVIEW });
+      await assert.rejects(
+        service.updateExhibitDraft(EXHIBIT_ID_1, dto(UpdateExhibitDto, { modelId: MEDIA_A }), { id: USER_ID_1 }),
+        ConflictException,
+      );
+      assert.equal(mediaRefs.calls.length, 0);
+    });
+
+    it('TC-M08: submit gọi cổng với revision đang xét trong transaction', async () => {
+      setup();
+      mockExhibits.findAdminDetailResult = createSampleExhibit();
+      const draft = createSampleRevision({ state: RevisionState.DRAFT });
+      mockExhibits.activeRevisionResult = draft;
+      await service.submitDraftForReview(EXHIBIT_ID_1);
+      assert.deepEqual(gate.calls, [draft]);
+      assert.equal(draft.state, RevisionState.IN_REVIEW);
+    });
+
+    it('TC-M09: cổng từ chối → 422, revision giữ DRAFT, không lưu, version không tăng', async () => {
+      setup();
+      const exhibit = createSampleExhibit({ version: 5 });
+      mockExhibits.findAdminDetailResult = exhibit;
+      const draft = createSampleRevision({ state: RevisionState.DRAFT });
+      mockExhibits.activeRevisionResult = draft;
+      gate.error = unprocessable();
+      await assert.rejects(service.submitDraftForReview(EXHIBIT_ID_1), UnprocessableEntityException);
+      assert.equal(draft.state, RevisionState.DRAFT);
+      assert.equal(mockExhibits.savedRevisions.length, 0);
+      assert.equal(mockExhibits.savedExhibits.length, 0);
+      assert.equal(exhibit.version, 5);
+    });
+
+    it('TC-M10: admin detail trả media của revision đang xem với URL ký', async () => {
+      setup();
+      const draft = createSampleRevision({ revisionNo: 2 });
+      draft.imageMedia = Object.assign(new Media(), {
+        id: MEDIA_B, kind: MediaKind.IMAGE, storageKey: `uploads/images/${MEDIA_B}.png`, mimeType: 'image/png',
+        sizeBytes: '10', processingState: MediaProcessingState.READY, isDeleted: false,
+      });
+      mockExhibits.findAdminDetailResult = createSampleExhibit({ revisions: [draft] });
+      const res = await service.getAdminDetail(EXHIBIT_ID_1);
+      assert.match(String(res.media?.image?.url), new RegExp(`^http://api\\.test/media/uploads/images/${MEDIA_B}\\.png\\?exp=\\d+&sig=[0-9a-f]{64}$`));
+      assert.equal(res.media?.model, null);
+      assert.equal(JSON.stringify(res).includes('storageKey'), false);
+    });
+
+    it('TC-M11: lịch sử & chi tiết revision là DTO — không lộ passwordHash', async () => {
+      setup();
+      const creator = createSampleUser();
+      (creator as User & { passwordHash: string }).passwordHash = '$2a$12$secret';
+      const rev = createSampleRevision({ createdBy: creator });
+      mockExhibits.findAdminDetailResult = createSampleExhibit();
+      mockExhibits.findRevisionsResult = [rev];
+      mockExhibits.findRevisionByIdResult = rev;
+      const history = await service.getRevisionsHistory(EXHIBIT_ID_1);
+      const detail = await service.getRevisionDetail(EXHIBIT_ID_1, REV_ID_1);
+      for (const value of [history, detail]) {
+        assert.equal(JSON.stringify(value).includes('$2a$12$secret'), false);
+        assert.equal(JSON.stringify(value).includes('passwordHash'), false);
+      }
+      assert.deepEqual(detail.createdBy, { id: USER_ID_1, name: creator.displayName, email: creator.email });
     });
   });
 });

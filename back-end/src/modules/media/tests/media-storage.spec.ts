@@ -4,13 +4,11 @@ import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { Readable } from 'node:stream';
 import { after, before, describe, it } from 'node:test';
 import { MEDIA_FORMAT_SPECS, MediaFormat } from '../inspection/media-formats';
-import {
-  DEFAULT_MEDIA_STORAGE_ROOTS,
-  MediaStorageService,
-  PUBLIC_MEDIA_URL_PREFIX,
-} from '../services/media-storage.service';
+import { MediaStorageService } from '../services/media-storage.service';
+import { DEFAULT_MEDIA_STORAGE_ROOTS, LocalStorageDriver } from '../storage/local-storage.driver';
 
 const UUID_PATTERN = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 
@@ -24,7 +22,7 @@ describe('MediaStorageService', () => {
     workDir = await mkdtemp(join(tmpdir(), 'media-storage-'));
     publicRoot = join(workDir, 'public', 'media');
     quarantineRoot = join(workDir, 'storage', 'quarantine');
-    storage = new MediaStorageService({ publicRoot, quarantineRoot });
+    storage = new MediaStorageService(new LocalStorageDriver({ publicRoot, quarantineRoot }));
   });
 
   after(async () => {
@@ -121,14 +119,44 @@ describe('MediaStorageService', () => {
     });
   });
 
-  describe('toPublicUrl', () => {
-    it('file public → /media/<key>', () => {
-      assert.equal(storage.toPublicUrl('uploads/images/a.png'), `${PUBLIC_MEDIA_URL_PREFIX}/uploads/images/a.png`);
+  describe('openPublic', () => {
+    const readAll = async (stream: Readable): Promise<string> => {
+      const chunks: Buffer[] = [];
+      for await (const chunk of stream) chunks.push(chunk as Buffer);
+      return Buffer.concat(chunks).toString();
+    };
+
+    it('file public → đọc đúng nội dung', async () => {
+      const key = storage.createKey(MEDIA_FORMAT_SPECS[MediaFormat.PNG]);
+      await storage.save(key, Buffer.from('0123456789'));
+      const stream = await storage.openPublic(key);
+      assert.ok(stream);
+      assert.equal(await readAll(stream), '0123456789');
     });
 
-    it('file quarantine → null (không lộ ra ngoài)', () => {
-      assert.equal(storage.toPublicUrl('quarantine/a.bin'), null);
+    it('có Range → chỉ đọc đoạn byte (end tính cả byte cuối)', async () => {
+      const key = storage.createKey(MEDIA_FORMAT_SPECS[MediaFormat.PNG]);
+      await storage.save(key, Buffer.from('0123456789'));
+      const stream = await storage.openPublic(key, { start: 2, end: 5 });
+      assert.ok(stream);
+      assert.equal(await readAll(stream), '2345');
     });
+
+    it('file không tồn tại → null', async () => {
+      assert.equal(await storage.openPublic('uploads/images/khong-ton-tai.png'), null);
+    });
+
+    it('file quarantine → null (không bao giờ phân phối) kể cả khi file có thật', async () => {
+      const key = storage.createKey(MEDIA_FORMAT_SPECS[MediaFormat.PNG], true);
+      await storage.save(key, Buffer.from('x'));
+      assert.equal(await storage.openPublic(key), null);
+    });
+
+    for (const key of ['../secret.png', 'uploads/../../etc/passwd', '/etc/passwd', 'uploads\\a.png', 'UPLOADS/A.PNG', '']) {
+      it(`key không an toàn ${JSON.stringify(key)} → null, không ném lỗi`, async () => {
+        assert.equal(await storage.openPublic(key), null);
+      });
+    }
 
     it('isQuarantineKey phân biệt đúng', () => {
       assert.equal(storage.isQuarantineKey('quarantine/a.bin'), true);
@@ -142,7 +170,7 @@ describe('MediaStorageService', () => {
       assert.ok(!resolve(DEFAULT_MEDIA_STORAGE_ROOTS.quarantineRoot).startsWith(publicDir));
     });
 
-    it('vùng public mặc định là public/media (thư mục main.ts phục vụ tĩnh)', () => {
+    it('vùng public mặc định là public/media (driver local)', () => {
       assert.ok(DEFAULT_MEDIA_STORAGE_ROOTS.publicRoot.endsWith(join('public', 'media')));
     });
   });

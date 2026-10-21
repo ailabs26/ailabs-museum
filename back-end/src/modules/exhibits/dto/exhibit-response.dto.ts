@@ -1,5 +1,6 @@
 import { Exhibit, ExhibitVisibility } from '../entities/exhibit.entity';
 import { ExhibitRevision, RevisionState } from '../entities/exhibit-revision.entity';
+import type { AdminRevisionMedia } from '../mappers/admin-revision.mapper';
 
 export interface ExhibitAdminResponse {
   id: string;
@@ -22,7 +23,12 @@ export interface ExhibitAdminResponse {
     transcript?: unknown;
     modelId?: string | null;
     imageId?: string | null;
+    /** @deprecated Trùng `audioViId` — giữ cho client cũ. */
     audioId?: string | null;
+    audioViId?: string | null;
+    audioEnId?: string | null;
+    subtitleViId?: string | null;
+    subtitleEnId?: string | null;
   };
   hotspotsCount: number;
   createdAt: Date;
@@ -30,6 +36,8 @@ export interface ExhibitAdminResponse {
 }
 
 export interface ExhibitAdminDetailResponse extends ExhibitAdminResponse {
+  /** Media của revision đang xem (URL đã ký cho Preview). */
+  media: AdminRevisionMedia | null;
   room: {
     id: string;
     name: string;
@@ -77,7 +85,12 @@ export class ExhibitResponseDto implements ExhibitAdminResponse {
     transcript?: unknown;
     modelId?: string | null;
     imageId?: string | null;
+    /** @deprecated Trùng `audioViId` — giữ cho client cũ. */
     audioId?: string | null;
+    audioViId?: string | null;
+    audioEnId?: string | null;
+    subtitleViId?: string | null;
+    subtitleEnId?: string | null;
   };
   hotspotsCount!: number;
   createdAt!: Date;
@@ -128,6 +141,10 @@ export class ExhibitResponseDto implements ExhibitAdminResponse {
       modelId: activeRevision?.modelMediaId ?? null,
       imageId: activeRevision?.imageMediaId ?? null,
       audioId: activeRevision?.audioMediaId ?? null,
+      audioViId: activeRevision?.audioMediaId ?? null,
+      audioEnId: activeRevision?.audioEnMediaId ?? null,
+      subtitleViId: activeRevision?.subtitleViMediaId ?? null,
+      subtitleEnId: activeRevision?.subtitleEnMediaId ?? null,
     };
 
     dto.hotspotsCount = activeRevision?.hotspots ? activeRevision.hotspots.length : 0;

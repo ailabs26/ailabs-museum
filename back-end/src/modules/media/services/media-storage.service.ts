@@ -1,23 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, unlink, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve, sep } from 'node:path';
+import { Readable } from 'node:stream';
 import { Inject, Injectable } from '@nestjs/common';
 import { MediaFormatSpec } from '../inspection/media-formats';
+import { ByteRange, MEDIA_STORAGE_DRIVER, MediaStorageDriver } from '../storage/media-storage-driver';
 
-export const MEDIA_STORAGE_ROOTS = Symbol('MEDIA_STORAGE_ROOTS');
-
-export interface MediaStorageRoots {
-  /** Thư mục được phục vụ tĩnh tại `PUBLIC_MEDIA_URL_PREFIX`. */
-  publicRoot: string;
-  /** Thư mục cách ly — KHÔNG được phục vụ ra ngoài. */
-  quarantineRoot: string;
-}
-
-export const DEFAULT_MEDIA_STORAGE_ROOTS: MediaStorageRoots = {
-  publicRoot: join(process.cwd(), 'public', 'media'),
-  quarantineRoot: join(process.cwd(), 'storage', 'quarantine'),
-};
-
+/** Tiền tố URL phân phối file media (ngoài prefix /api). */
 export const PUBLIC_MEDIA_URL_PREFIX = '/media';
 
 const QUARANTINE_PREFIX = 'quarantine/';
@@ -33,12 +20,13 @@ const KIND_DIRECTORIES: Record<string, string> = {
 };
 
 /**
- * Lưu file media trên đĩa cục bộ. Storage key do server sinh (UUID), mỗi file một key
- * duy nhất và không bao giờ bị ghi đè — media đang dùng không thể bị thay thế (BR-21).
+ * Lưu file media qua driver (đĩa cục bộ hoặc Supabase Storage). Storage key do server sinh
+ * (UUID), mỗi file một key duy nhất và không bao giờ bị ghi đè — media đang dùng không thể
+ * bị thay thế (BR-21).
  */
 @Injectable()
 export class MediaStorageService {
-  constructor(@Inject(MEDIA_STORAGE_ROOTS) private readonly roots: MediaStorageRoots) {}
+  constructor(@Inject(MEDIA_STORAGE_DRIVER) private readonly driver: MediaStorageDriver) {}
 
   /** Sinh storage key mới: `uploads/<kind>/<uuid>.<ext>` hoặc `quarantine/<uuid>.bin`. */
   createKey(spec: MediaFormatSpec, isQuarantined = false): string {
@@ -53,33 +41,26 @@ export class MediaStorageService {
 
   /** Ghi file; báo lỗi nếu key đã tồn tại thay vì ghi đè. */
   async save(key: string, data: Buffer): Promise<void> {
-    const path = this.resolvePath(key);
-    await mkdir(dirname(path), { recursive: true });
-    await writeFile(path, data, { flag: 'wx' });
+    assertSafeKey(key);
+    await this.driver.put(key, data);
   }
 
   /** Xóa file; bỏ qua nếu file không còn tồn tại. */
   async remove(key: string): Promise<void> {
-    try {
-      await unlink(this.resolvePath(key));
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-    }
+    assertSafeKey(key);
+    await this.driver.delete(key);
   }
 
-  /** URL công khai của file; `null` với file trong vùng cách ly. */
-  toPublicUrl(key: string): string | null {
-    return this.isQuarantineKey(key) ? null : `${PUBLIC_MEDIA_URL_PREFIX}/${key}`;
+  /**
+   * Mở luồng đọc file trong vùng public để phân phối; `null` nếu key thuộc vùng cách ly,
+   * không hợp lệ hoặc file không còn (không bao giờ đọc file quarantine ra ngoài).
+   */
+  async openPublic(key: string, range?: ByteRange): Promise<Readable | null> {
+    if (this.isQuarantineKey(key) || !SAFE_KEY.test(key)) return null;
+    return this.driver.read(key, range);
   }
+}
 
-  private resolvePath(key: string): string {
-    if (!SAFE_KEY.test(key)) throw new Error(`Storage key không hợp lệ: ${key}`);
-    const [root, relativeKey] = this.isQuarantineKey(key)
-      ? [this.roots.quarantineRoot, key.slice(QUARANTINE_PREFIX.length)]
-      : [this.roots.publicRoot, key];
-    const base = resolve(root);
-    const path = resolve(base, relativeKey);
-    if (!path.startsWith(base + sep)) throw new Error(`Storage key không hợp lệ: ${key}`);
-    return path;
-  }
+function assertSafeKey(key: string): void {
+  if (!SAFE_KEY.test(key)) throw new Error(`Storage key không hợp lệ: ${key}`);
 }

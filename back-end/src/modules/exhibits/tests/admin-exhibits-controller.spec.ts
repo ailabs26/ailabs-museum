@@ -81,6 +81,7 @@ function createMockExhibitAdminDetailResponse(
   const base = createMockExhibitAdminResponse(overrides);
   return {
     ...base,
+    media: overrides?.media ?? null,
     room: overrides && 'room' in overrides ? (overrides.room ?? null) : {
       id: 'r1b50c18-971c-4b68-b39f-f5cf171a8123',
       name: 'Gian phòng Khảo cổ',

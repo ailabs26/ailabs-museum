@@ -21,7 +21,8 @@ erDiagram
     EXHIBIT_REVISION }o--|| EXHIBIT : "current (published)"
     EXHIBIT_REVISION }o--o| MEDIA : "model (GLB)"
     EXHIBIT_REVISION }o--o| MEDIA : "image"
-    EXHIBIT_REVISION }o--o| MEDIA : "audio"
+    EXHIBIT_REVISION }o--o| MEDIA : "audio vi / audio en"
+    EXHIBIT_REVISION }o--o| MEDIA : "subtitle vi / subtitle en (WebVTT)"
     EXHIBIT_REVISION ||--o{ REPORT : "bị báo cáo"
     USER ||--o{ USER_ROLE : ""
     ROLE ||--o{ USER_ROLE : ""
@@ -62,7 +63,10 @@ erDiagram
       text transcript
       uuid modelId FK "Media, nullable"
       uuid imageId FK "Media, nullable"
-      uuid audioId FK "Media, nullable"
+      uuid audioId FK "Media, nullable — audio tiếng Việt"
+      uuid audioEnId FK "Media, nullable (Task 9)"
+      uuid subtitleViId FK "Media, nullable (Task 9)"
+      uuid subtitleEnId FK "Media, nullable (Task 9)"
       jsonb translations "i18n phase 3"
       uuid createdBy FK
       uuid reviewedBy FK "nullable"
@@ -72,7 +76,7 @@ erDiagram
     }
     MEDIA {
       uuid id PK
-      string kind "model|image|audio"
+      string kind "model|image|audio|subtitle"
       text url
       string mimeType
       bigint sizeBytes
