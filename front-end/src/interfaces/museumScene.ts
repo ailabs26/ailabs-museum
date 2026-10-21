@@ -12,11 +12,14 @@ export interface MuseumDisplay {
   title: string;
   description: string;
   transcript?: string | null;
+  image?: { url: string; alt: string };
   /** GLB source-local coordinates; non-GLB annotations use display-local metres, Y up. */
   hotspots?: readonly { id: string; label: string; body: string; position?: [number, number, number] }[];
   position: [number, number, number];
   shape: 'sphere' | 'torus' | 'cone' | 'cube' | 'icosahedron' | 'cylinder';
   color: string;
   model?: import('@/validations/roomSchema').PublicModel | null;
+  /** Nguồn / tác giả / giấy phép của media công khai (FR-97). */
+  credits?: readonly import('@/helpers/mediaCredits').MediaCredit[];
   isOutsideRoom?: boolean;
 }

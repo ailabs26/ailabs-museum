@@ -17,6 +17,9 @@ import { toPublicModel } from '../../media/dto/public-model.dto';
 import { Media, MediaKind, MediaProcessingState } from '../../media/entities/media.entity';
 import { PublicModelsService } from '../services/public-models.service';
 import { ExhibitsService } from '../services/exhibits.service';
+import { RevisionPublishGate } from '../services/revision-publish.gate';
+import { MediaReferenceValidator } from '../../media/services/media-reference.validator';
+import { MediaUrlService } from '../../media/services/media-url.service';
 
 const media = Object.assign(new Media(), {
   id: 'a1111111-1111-4111-8111-111111111111', kind: MediaKind.MODEL,
@@ -118,9 +121,11 @@ it('passes binary models through the response interceptor while preserving JSON 
 
 it('rejects archived rooms and unapproved revisions using the actual publication service', async () => {
   const room = { id: 'room', slug: 'room', name: 'Room', description: '', status: RoomStatus.ACTIVE, isDeleted: false };
-  const revision = { state: RevisionState.APPROVED, content: { name: 'Artifact', description: '' }, modelMedia: media, hotspots: [] };
-  const publication = new ExhibitsService({ findByRoom: async () => [{ id: 'exhibit', roomId: 'room', displayOrder: 0, publishedRevision: revision }] } as unknown as ExhibitsRepository,
-    { findBySlug: async () => room } as unknown as RoomsRepository, {} as TransactionManager);
+  const revision = { id: 'revision', state: RevisionState.APPROVED, content: { name: 'Artifact', description: '' }, modelMedia: media, hotspots: [] };
+  const publication = new ExhibitsService(
+    { findByRoom: async () => [{ id: 'exhibit', roomId: 'room', displayOrder: 0, publishedRevisionId: 'revision', publishedRevision: revision }] } as unknown as ExhibitsRepository,
+    { findBySlug: async () => room } as unknown as RoomsRepository, {} as TransactionManager,
+    {} as MediaReferenceValidator, {} as RevisionPublishGate, { publicUrl: () => null } as unknown as MediaUrlService);
   const content = await publication.roomWithExhibits('room');
   assert.ok(content.exhibits[0].model);
   assert.equal(content.exhibits[0].positionX, undefined, 'absent placement must reach the room layout fallback');

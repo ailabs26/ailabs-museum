@@ -1076,5 +1076,20 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
       assert.equal(res['isDeleted'], undefined);
       assert.equal(res['deletedAt'], undefined);
     });
+
+    it('TC-131: Trả altText song ngữ của revision để CMS điền lại form; thiếu thì null', () => {
+      const entity = createMockExhibit();
+      const rev = createMockRevision();
+      // Service lưu altText trong content JSON (ngoài kiểu ExhibitRevisionContent).
+      rev.content = {
+        ...rev.content,
+        altText: { vi: 'Ảnh trống đồng', en: 'Bronze drum photo' },
+      } as unknown as ExhibitRevision['content'];
+      assert.deepEqual(ExhibitResponseDto.fromEntity(entity, rev).content.altText, {
+        vi: 'Ảnh trống đồng',
+        en: 'Bronze drum photo',
+      });
+      assert.equal(ExhibitResponseDto.fromEntity(entity, createMockRevision()).content.altText, null);
+    });
   });
 });

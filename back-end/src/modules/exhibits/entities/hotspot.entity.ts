@@ -23,7 +23,8 @@ export class Hotspot {
   @JoinColumn({ name: 'revision_id' })
   revision!: ExhibitRevision;
 
-  @Column({ type: 'varchar', length: 200 })
+  // Lưu chuỗi JSON song ngữ `{"vi":…,"en":…}` (mỗi ngôn ngữ ≤ 200 ký tự) — varchar(200) không đủ chỗ.
+  @Column({ type: 'text' })
   label!: string;
 
   @Column({ type: 'text' })

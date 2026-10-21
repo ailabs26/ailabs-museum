@@ -12,7 +12,7 @@
 
 - **Trạng thái:** **Implemented trên `feat/a11y-keyboard`; chưa push/PR.**
 - **Baseline đã đọc:** `dev` tại `3f34a6bd9f6510316c99957ce2eddcb584989344` (19/10/2026). Agent phải fetch lại `origin/dev` trước khi triển khai và cập nhật SHA nếu đã đổi.
-- Đã tham chiếu `AGENTS.md`, `front-end/docs/coding-conventions.md`, `docs/plans/audio-player-01-plan.md`, `docs/tasks/audio-player-01.md`, các luồng UI và browser tests hiện có.
+- Đã tham chiếu `AGENTS.md`, `docs/architecture/fe/coding-conventions.md`, `docs/plans/audio-player-01-plan.md`, `docs/tasks/audio-player-01.md`, các luồng UI và browser tests hiện có.
 - `front-end/src/layouts/PublicLayout.tsx` có skip link `#public-content`, `main` focusable bằng `tabIndex={-1}` và liên kết điều hướng.
 - `front-end/src/helpers/attachNavigationInput.ts` đặt `canvas.tabIndex = 0`, `aria-label`, `aria-describedby`; chỉ nhận shortcut khi `document.activeElement === canvas`. **Hiện có `canvas.focus({ preventScroll: true })` khi attach**: nguy cơ focus chuyển ngoài dự kiến cần kiểm chứng runtime, chưa mặc định là lỗi.
 - `front-end/src/pages/MuseumPage.tsx` ghi `selectionTriggerRef`, xử lý Escape và restore focus khi trigger còn trong DOM. `ExhibitDetailPanel.tsx` hiển thị `<aside>` **non-modal**, focus vào heading khi hiện vật đổi.

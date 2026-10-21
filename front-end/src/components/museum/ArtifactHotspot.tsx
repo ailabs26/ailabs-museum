@@ -3,10 +3,12 @@ import { useThree } from '@react-three/fiber';
 import type { ArtifactHotspot as Hotspot } from '@/helpers/artifactHotspots';
 import { ArtifactCaption } from './ArtifactCaption';
 
-export function ArtifactHotspot({ hotspot, artifactTitle, isSelected, onSelect }: {
+export function ArtifactHotspot({ hotspot, artifactTitle, isSelected, isXrHovered = false, onSelect }: {
+  isXrHovered?: boolean;
   hotspot: Hotspot; artifactTitle: string; isSelected: boolean; onSelect: (id: string) => void;
 }) {
-  const [isHovered, setIsHovered] = useState(false);
+  const [isPointerHovered, setIsHovered] = useState(false);
+  const isHovered = isPointerHovered || isXrHovered;
   const canvas = useThree(state => state.gl.domElement);
   useEffect(() => {
     if (!isHovered) return;

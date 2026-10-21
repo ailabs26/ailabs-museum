@@ -3,7 +3,7 @@
 Nhánh: `feat/client-homepage`.
 Base khi bắt đầu: `origin/dev` tại `1ee2f41`.
 Plan: [client-homepage-plan.md](../plans/client-homepage-plan.md).
-Convention: [frontend coding conventions](../../front-end/docs/coding-conventions.md).
+Convention: [frontend coding conventions](../architecture/fe/coding-conventions.md).
 Trạng thái: đã triển khai, kiểm tra kỹ thuật và được người dùng xác nhận giao diện OK sau sửa font.
 
 ## Mục tiêu

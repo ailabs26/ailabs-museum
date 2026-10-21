@@ -1,18 +1,22 @@
+import { pipeline } from 'node:stream';
 import {
   Body,
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
   Query,
+  Res,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 import { Audit } from '../../audit/decorators/audit.decorator';
 import { PERMISSIONS } from '../../../common/constants/permissions.constant';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
@@ -58,6 +62,8 @@ const UPLOAD_BODY_SCHEMA = {
 @ApiBearerAuth()
 @Controller('admin/media')
 export class AdminMediaController {
+  private readonly logger = new Logger(AdminMediaController.name);
+
   constructor(private readonly mediaService: MediaService) {}
 
   @Get()
@@ -72,6 +78,30 @@ export class AdminMediaController {
   @ApiOperation({ summary: 'Chi tiết media theo UUID' })
   getById(@Param('id', ParseUUIDPipe) id: string) {
     return this.mediaService.getById(id);
+  }
+
+  @Get(':id/content')
+  @Permissions(PERMISSIONS.MEDIA_UPLOAD)
+  @ApiOperation({ summary: 'Nội dung file media (cần đăng nhập) — cho công cụ CMS đọc file, kể cả file seed' })
+  async content(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response): Promise<void> {
+    const { media, stream } = await this.mediaService.openContent(id);
+    // Client đã ngắt trong lúc chờ kho lưu trữ: không pipe vào response đã đóng (xem MediaDeliveryController).
+    if (res.destroyed || res.writableEnded) {
+      stream.destroy();
+      return;
+    }
+    res.set({
+      'Content-Type': media.mimeType,
+      'Content-Length': String(media.sizeBytes),
+      'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "default-src 'none'; sandbox",
+    });
+    pipeline(stream, res, (error?: NodeJS.ErrnoException | null) => {
+      if (error && error.code !== 'ERR_STREAM_PREMATURE_CLOSE' && error.code !== 'ECONNRESET') {
+        this.logger.warn(`Gửi nội dung media ${media.id} bị gián đoạn: ${error.message}`);
+      }
+    });
   }
 
   @Post('upload')

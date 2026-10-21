@@ -15,7 +15,7 @@ Task nguồn: [shared-exhibit-preview.md](../tasks/shared-exhibit-preview.md).
 - Base `c814655`, nhánh đã tạo trước tài liệu; người dùng cần duyệt tài liệu cụ thể trước commit/code.
 - Không thêm dependency, seed, asset file, ảnh giả, WebGL renderer hoặc URL storage.
 - Media schema/API vẫn null; ảnh thật và lỗi tải ảnh là lượt sau khi có contract.
-- Named export/alias/CSS Module theo `front-end/docs/coding-conventions.md`.
+- Named export/alias/CSS Module theo `docs/architecture/fe/coding-conventions.md`.
 - Caption “Hình minh họa thay thế” + “Chưa có ảnh”; shape trang trí aria-hidden, caption không aria-hidden.
 - Giữ nội dung và selection/focus; không đổi size/geometry 3D hoặc dùng screenshot Canvas làm thumbnail.
 - Không viết interface/config/variant cho các nhu cầu media chưa tồn tại.

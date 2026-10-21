@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ExhibitRevision } from '../exhibits/entities/exhibit-revision.entity';
 import { Exhibit } from '../exhibits/entities/exhibit.entity';
+import { ExhibitsModule } from '../exhibits/exhibits.module';
 import { ExhibitRevisionsController } from './controllers/exhibit-revisions.controller';
 import { ModerationController } from './controllers/moderation.controller';
 import { RevisionsController } from './controllers/revisions.controller';
@@ -10,7 +11,7 @@ import { ModerationService } from './services/moderation.service';
 
 /** Phân hệ kiểm duyệt nội dung: duyệt/từ chối/ẩn revision + diff cũ/mới. */
 @Module({
-  imports: [TypeOrmModule.forFeature([Exhibit, ExhibitRevision])],
+  imports: [TypeOrmModule.forFeature([Exhibit, ExhibitRevision]), ExhibitsModule],
   controllers: [ModerationController, ExhibitRevisionsController, RevisionsController],
   providers: [ModerationService, ModerationRepository],
 })

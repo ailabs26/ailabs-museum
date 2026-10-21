@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActionIcon,
   Alert,
@@ -28,30 +28,47 @@ import {
   IconAlertCircle,
   IconBox,
   IconClock,
+  IconCube,
   IconEdit,
   IconEye,
   IconInfoCircle,
+  IconListNumbers,
+  IconMapPin,
+  IconPhoto,
   IconPlus,
   IconSearch,
   IconSend,
   IconTrash,
 } from '@tabler/icons-react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { ApiException } from '@/core/api/api-error';
+import { firstTabWithError, mapExhibitErrors } from '@/helpers/exhibitFormErrors';
+import { resolveBilingualText, toHotspotFormValues, toHotspotPayload, validateHotspots } from '@/helpers/exhibitHotspots';
+import type { HotspotFormValue } from '@/helpers/exhibitHotspots';
+import type { ExhibitFormTab } from '@/helpers/exhibitFormErrors';
+import { hasMediaRights } from '@/helpers/mediaLibrary';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { useAuth } from '@/core/auth/use-auth';
 import type {
+  BilingualText,
   CreateExhibitInput,
+  ExhibitDetail,
   ExhibitRow,
   ExhibitStatus,
+  RevisionMediaSlot,
   RevisionState,
   UpdateExhibitInput,
 } from '@/services/exhibits.service';
 import { exhibitsService } from '@/services/exhibits.service';
+import { HotspotEditor } from '@/components/cms/HotspotEditor';
+import { TourOrderModal } from '@/components/cms/TourOrderModal';
 import { roomsService } from '@/services/rooms.service';
 import { Column, DataTable } from '@/shared/components/data';
 import { confirmAction, notify } from '@/shared/components/feedback';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
+import { MediaPreview } from '@/shared/components/media/MediaPreview';
+import { MediaSlotSelect } from '@/shared/components/media/MediaSlotSelect';
 
 interface ExhibitFormValues {
   roomId: string;
@@ -71,6 +88,38 @@ interface ExhibitFormValues {
   scaleZ: number;
   placeholderShape: string;
   placeholderColor: string;
+  modelId: string | null;
+  imageId: string | null;
+  audioViId: string | null;
+  audioEnId: string | null;
+  subtitleViId: string | null;
+  subtitleEnId: string | null;
+  altTextVi: string;
+  altTextEn: string;
+  transcriptVi: string;
+  transcriptEn: string;
+  hotspots: HotspotFormValue[];
+}
+
+/** Trạng thái danh sách hotspot trong form sửa: phải tải từ chi tiết hiện vật (danh sách không có). */
+type HotspotLoadState = 'ready' | 'loading' | 'error';
+
+type MediaSlotField = 'modelId' | 'imageId' | 'audioViId' | 'audioEnId' | 'subtitleViId' | 'subtitleEnId';
+
+/** Thứ tự & nhãn slot trong panel xem trước (khớp 6 slot của revision). */
+const PREVIEW_SLOTS: { slot: RevisionMediaSlot; label: string }[] = [
+  { slot: 'model', label: 'Model 3D' },
+  { slot: 'image', label: 'Hình ảnh' },
+  { slot: 'audioVi', label: 'Audio thuyết minh (Tiếng Việt)' },
+  { slot: 'audioEn', label: 'Audio thuyết minh (English)' },
+  { slot: 'subtitleVi', label: 'Phụ đề (Tiếng Việt)' },
+  { slot: 'subtitleEn', label: 'Phụ đề (English)' },
+];
+
+/** Hai ô trống → `null` (xóa trên server); ngược lại gửi bản đã trim, bỏ ngôn ngữ rỗng. */
+function toBilingual(vi: string, en: string): BilingualText | null {
+  const value = { vi: vi.trim() || undefined, en: en.trim() || undefined };
+  return value.vi || value.en ? value : null;
 }
 
 const STATUS_FILTER_OPTIONS = [
@@ -111,6 +160,51 @@ function getDisplayText(val: unknown, lang: 'vi' | 'en' = 'vi'): string {
   return String(val);
 }
 
+/** Lấy đúng một ngôn ngữ (không lấy ngôn ngữ kia thay thế) — chuỗi thuần coi là tiếng Việt. */
+function getLocalizedText(val: unknown, lang: 'vi' | 'en'): string {
+  if (typeof val === 'string') return lang === 'vi' ? val : '';
+  if (val && typeof val === 'object') {
+    const text = (val as Record<string, unknown>)[lang];
+    return typeof text === 'string' ? text : '';
+  }
+  return '';
+}
+
+/** Một slot media trong panel xem trước của drawer chi tiết. */
+function PreviewSlot({ detail, slot, label }: { detail: ExhibitDetail; slot: RevisionMediaSlot; label: string }) {
+  const media = detail.media?.[slot] ?? null;
+  if (!media) return null;
+  const subtitle =
+    slot === 'audioVi' ? detail.media?.subtitleVi : slot === 'audioEn' ? detail.media?.subtitleEn : null;
+  const altText = slot === 'image' ? getLocalizedText(detail.content.altText, 'vi') || media.altText : null;
+  return (
+    <Card withBorder p="xs" radius="xs">
+      <Group justify="space-between" mb={6} wrap="nowrap">
+        <Stack gap={0}>
+          <Text size="sm" fw={600}>{label}</Text>
+          <Text size="xs" c="dimmed" lineClamp={1}>{media.originalName ?? media.id}</Text>
+        </Stack>
+        <Group gap={4} wrap="nowrap">
+          {(media.isDeleted || media.processingState !== 'ready') && (
+            <Badge size="xs" color="red" variant="light">Không khả dụng</Badge>
+          )}
+          <Badge size="xs" variant="dot" color={hasMediaRights(media) ? 'teal' : 'orange'}>
+            {hasMediaRights(media) ? 'Đủ quyền sử dụng' : 'Thiếu quyền sử dụng'}
+          </Badge>
+        </Group>
+      </Group>
+      <MediaPreview
+        kind={media.kind}
+        url={media.url}
+        altText={altText}
+        subtitleUrl={subtitle?.url ?? null}
+        subtitleLang={slot === 'audioEn' ? 'en' : 'vi'}
+        height={slot === 'model' ? 260 : 200}
+      />
+    </Card>
+  );
+}
+
 export function ExhibitsPage() {
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
@@ -123,7 +217,12 @@ export function ExhibitsPage() {
 
   const [editing, setEditing] = useState<ExhibitRow | null>(null);
   const [opened, drawer] = useDisclosure(false);
+  const [formTab, setFormTab] = useState<ExhibitFormTab>('basic');
+  const [hotspotState, setHotspotState] = useState<HotspotLoadState>('ready');
+  /** Hiện vật đang mở trong form — bỏ kết quả tải hotspot muộn của lần mở trước. */
+  const editingIdRef = useRef<string | null>(null);
 
+  const [tourOrderOpened, tourOrder] = useDisclosure(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [detailOpened, detailDrawer] = useDisclosure(false);
 
@@ -201,21 +300,41 @@ export function ExhibitsPage() {
       scaleZ: 1,
       placeholderShape: 'box',
       placeholderColor: '#8b7355',
+      modelId: null,
+      imageId: null,
+      audioViId: null,
+      audioEnId: null,
+      subtitleViId: null,
+      subtitleEnId: null,
+      altTextVi: '',
+      altTextEn: '',
+      transcriptVi: '',
+      transcriptEn: '',
+      hotspots: [],
     },
-    validate: {
-      roomId: (v) => (v.trim().length === 0 ? 'Vui lòng chọn phòng trưng bày' : null),
-      nameVi: (v) => (v.trim().length === 0 ? 'Tên tiếng Việt không được để trống' : null),
-      scaleX: (v) => (v <= 0 ? 'Scale X phải lớn hơn 0' : null),
-      scaleY: (v) => (v <= 0 ? 'Scale Y phải lớn hơn 0' : null),
-      scaleZ: (v) => (v <= 0 ? 'Scale Z phải lớn hơn 0' : null),
+    validate: (values) => {
+      const errors: Record<string, string> = validateHotspots(values.hotspots);
+      if (values.roomId.trim().length === 0) errors.roomId = 'Vui lòng chọn phòng trưng bày';
+      if (values.nameVi.trim().length === 0) errors.nameVi = 'Tên tiếng Việt không được để trống';
+      if (values.scaleX <= 0) errors.scaleX = 'Scale X phải lớn hơn 0';
+      if (values.scaleY <= 0) errors.scaleY = 'Scale Y phải lớn hơn 0';
+      if (values.scaleZ <= 0) errors.scaleZ = 'Scale Z phải lớn hơn 0';
+      return errors;
     },
   });
 
+  // Mở "Thêm hiện vật" trước khi danh sách phòng tải xong: chọn phòng đầu tiên khi có dữ liệu.
+  const firstRoomId = roomsQuery.data?.items[0]?.id;
+  useEffect(() => {
+    if (opened && !editing && !form.values.roomId && firstRoomId) form.setFieldValue('roomId', firstRoomId);
+    // form object ổn định; chỉ chạy lại khi drawer/phòng thay đổi.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened, editing, firstRoomId]);
+
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['admin-exhibits'] });
-    if (detailId) {
-      queryClient.invalidateQueries({ queryKey: ['admin-exhibit-detail', detailId] });
-    }
+    // Mọi chi tiết đã cache (drawer chi tiết, hotspot nạp cho form sửa) đều có thể đã cũ.
+    queryClient.invalidateQueries({ queryKey: ['admin-exhibit-detail'] });
   };
 
   const saveMutation = useMutation({
@@ -248,6 +367,17 @@ export function ExhibitsPage() {
         },
         placeholderShape: values.placeholderShape,
         placeholderColor: values.placeholderColor,
+        // Slot: id = gắn/thay, null = tháo (file không bị xóa).
+        modelId: values.modelId,
+        imageId: values.imageId,
+        audioViId: values.audioViId,
+        audioEnId: values.audioEnId,
+        subtitleViId: values.subtitleViId,
+        subtitleEnId: values.subtitleEnId,
+        altText: toBilingual(values.altTextVi, values.altTextEn),
+        transcript: toBilingual(values.transcriptVi, values.transcriptEn),
+        // Chỉ gửi khi đã tải đủ hotspot của bản đã lưu — bỏ trường thì back-end giữ nguyên.
+        ...(hotspotState === 'ready' ? { hotspots: toHotspotPayload(values.hotspots) } : {}),
       };
 
       if (editing) {
@@ -270,23 +400,44 @@ export function ExhibitsPage() {
           notify.error(err.message);
           return;
         }
-        if (err.fieldErrors) {
-          for (const [field, msg] of Object.entries(err.fieldErrors)) {
-            form.setFieldError(field, msg);
-          }
-        }
+        showFieldErrors(err);
       }
       notify.error(err instanceof Error ? err.message : 'Lưu hiện vật thất bại');
     },
   });
 
+  /** Gắn lỗi theo field của API vào form, chuyển tới tab có lỗi; lỗi không gắn được thì báo chung. */
+  function showFieldErrors(err: ApiException) {
+    const { fieldErrors, general, firstTab } = mapExhibitErrors(err.errors);
+    form.setErrors(fieldErrors);
+    if (firstTab) setFormTab(firstTab);
+    for (const message of general) notify.error(message, 'Cần sửa');
+  }
+
+  /** Props cho ô chọn media của một slot (Select của Mantine không dùng getInputProps cho null). */
+  const slotProps = (field: MediaSlotField) => ({
+    value: form.values[field],
+    onChange: (value: string | null) => form.setFieldValue(field, value),
+    error: form.errors[field] as string | undefined,
+  });
+
   const submitReviewMutation = useMutation({
-    mutationFn: (id: string) => exhibitsService.submitReview(id),
+    mutationFn: (exhibit: ExhibitRow) => exhibitsService.submitReview(exhibit.id),
     onSuccess: () => {
       notify.success('Đã gửi hiện vật vào hàng chờ kiểm duyệt (IN_REVIEW)');
       invalidate();
     },
-    onError: (err) => {
+    onError: (err, exhibit) => {
+      // 422 từ cổng Submit Review (§5.2, FR-97): mở form và chỉ ra đúng ô cần sửa.
+      if (err instanceof ApiException && err.status === 422 && err.errors.length > 0 && canUpdate) {
+        // Đợi hotspot tải xong rồi mới đánh dấu lỗi — đổ hotspot vào form sẽ xóa lỗi của các ô đó.
+        void openEdit(exhibit).then(() => showFieldErrors(err));
+        notify.error(
+          `Chưa đủ điều kiện gửi duyệt (${err.errors.length} lỗi). Các ô cần sửa đã được đánh dấu.`,
+          'Không gửi được',
+        );
+        return;
+      }
       notify.error(
         err instanceof Error ? err.message : 'Gửi kiểm duyệt hiện vật thất bại',
       );
@@ -308,6 +459,9 @@ export function ExhibitsPage() {
 
   const openCreate = () => {
     setEditing(null);
+    editingIdRef.current = null;
+    setHotspotState('ready');
+    setFormTab('basic');
     form.reset();
     if (formRoomOptions.length > 0) {
       form.setFieldValue('roomId', formRoomOptions[0].value);
@@ -340,8 +494,38 @@ export function ExhibitsPage() {
       scaleZ: scale.z,
       placeholderShape: content.placeholderShape || 'box',
       placeholderColor: content.placeholderColor || '#8b7355',
+      modelId: content.modelId ?? null,
+      imageId: content.imageId ?? null,
+      audioViId: content.audioViId ?? content.audioId ?? null,
+      audioEnId: content.audioEnId ?? null,
+      subtitleViId: content.subtitleViId ?? null,
+      subtitleEnId: content.subtitleEnId ?? null,
+      altTextVi: getLocalizedText(content.altText, 'vi'),
+      altTextEn: getLocalizedText(content.altText, 'en'),
+      transcriptVi: getLocalizedText(content.transcript, 'vi'),
+      transcriptEn: getLocalizedText(content.transcript, 'en'),
+      hotspots: [],
     });
+    form.clearErrors();
+    setFormTab('basic');
     drawer.open();
+    return loadHotspots(exhibit.id);
+  };
+
+  /** Danh sách hiện vật không kèm hotspot: lấy từ chi tiết (revision mới nhất) rồi đổ vào form. */
+  const loadHotspots = (id: string): Promise<void> => {
+    editingIdRef.current = id;
+    setHotspotState('loading');
+    return queryClient
+      .fetchQuery({ queryKey: ['admin-exhibit-detail', id], queryFn: () => exhibitsService.get(id) })
+      .then((detail) => {
+        if (editingIdRef.current !== id) return;
+        form.setFieldValue('hotspots', toHotspotFormValues(detail.hotspots));
+        setHotspotState('ready');
+      })
+      .catch(() => {
+        if (editingIdRef.current === id) setHotspotState('error');
+      });
   };
 
   const openDetail = (exhibit: ExhibitRow) => {
@@ -353,7 +537,7 @@ export function ExhibitsPage() {
     confirmAction({
       message: `Bạn có chắc chắn muốn gửi hiện vật "${getDisplayText(exhibit.content.name, 'vi')}" đi kiểm duyệt?`,
       confirmLabel: 'Gửi kiểm duyệt',
-      onConfirm: () => submitReviewMutation.mutate(exhibit.id),
+      onConfirm: () => submitReviewMutation.mutate(exhibit),
     });
   };
 
@@ -550,12 +734,26 @@ export function ExhibitsPage() {
         title="Hiện vật"
         description="Quản lý hiện vật 3D, tọa độ không gian, phiên bản nội dung song ngữ và điểm tương tác"
         actions={
-          canCreate ? (
-            <Button leftSection={<IconPlus size={16} />} onClick={openCreate}>
-              Thêm hiện vật
-            </Button>
-          ) : undefined
+          <Group gap="xs">
+            {canUpdate && (
+              <Button variant="default" leftSection={<IconListNumbers size={16} />} onClick={tourOrder.open}>
+                Thứ tự tour
+              </Button>
+            )}
+            {canCreate && (
+              <Button leftSection={<IconPlus size={16} />} onClick={openCreate}>
+                Thêm hiện vật
+              </Button>
+            )}
+          </Group>
         }
+      />
+
+      <TourOrderModal
+        opened={tourOrderOpened}
+        onClose={tourOrder.close}
+        rooms={formRoomOptions}
+        initialRoomId={queryRoomId}
       />
 
       <Card withBorder p="md" mb="md" radius="sm">
@@ -623,7 +821,18 @@ export function ExhibitsPage() {
         position="right"
         size="xl"
       >
-        <form onSubmit={form.onSubmit((vals) => saveMutation.mutate(vals))}>
+        {/* noValidate: `required` gốc của trình duyệt chặn submit âm thầm khi ô lỗi nằm ở tab đang ẩn. */}
+        <form
+          noValidate
+          onSubmit={form.onSubmit(
+            (vals) => saveMutation.mutate(vals),
+            // Lỗi validate nằm ở tab khác thì chuyển tới đó — không để nút "Lưu" im lặng.
+            (errors) => {
+              const tab = firstTabWithError(Object.keys(errors));
+              if (tab) setFormTab(tab);
+            },
+          )}
+        >
           <Stack gap="md">
             {editing && editing.status === 'published' && (
               <Alert icon={<IconInfoCircle size={18} />} color="blue" variant="light">
@@ -635,10 +844,16 @@ export function ExhibitsPage() {
               </Alert>
             )}
 
-            <Tabs defaultValue="basic">
+            <Tabs value={formTab} onChange={(value) => value && setFormTab(value as ExhibitFormTab)}>
               <Tabs.List mb="md">
                 <Tabs.Tab value="basic">Thông tin cơ bản</Tabs.Tab>
                 <Tabs.Tab value="transform">Tọa độ 3D & Khối tạm</Tabs.Tab>
+                <Tabs.Tab value="media" leftSection={<IconPhoto size={14} />}>
+                  Media & thuyết minh
+                </Tabs.Tab>
+                <Tabs.Tab value="hotspots" leftSection={<IconMapPin size={14} />}>
+                  Hotspots{hotspotState === 'ready' ? ` (${form.values.hotspots.length})` : ''}
+                </Tabs.Tab>
               </Tabs.List>
 
               {/* Tab 1: Thông tin cơ bản */}
@@ -813,6 +1028,93 @@ export function ExhibitsPage() {
                   </Grid>
                 </Stack>
               </Tabs.Panel>
+
+              {/* Tab 3: Media & thuyết minh */}
+              <Tabs.Panel value="media">
+                <Stack gap="md">
+                  <Alert icon={<IconInfoCircle size={18} />} color="blue" variant="light">
+                    <Text size="sm">
+                      Chọn media đã tải lên ở trang <strong>Media</strong>. Khi gửi duyệt: media phải đủ nguồn, tác
+                      giả, giấy phép; có ảnh thì cần alt text cả hai ngôn ngữ; mỗi audio cần lời thuyết minh và phụ đề
+                      cùng ngôn ngữ. Bỏ chọn một slot chỉ tháo media khỏi hiện vật, không xóa tệp.
+                    </Text>
+                  </Alert>
+
+                  <Card withBorder p="sm" radius="xs" bg="gray.0">
+                    <Text fw={600} size="sm" mb="xs">
+                      1. Model 3D & hình ảnh
+                    </Text>
+                    <Stack gap="xs">
+                      <MediaSlotSelect kind="model" label="Model 3D (GLB)" {...slotProps('modelId')} />
+                      <MediaSlotSelect kind="image" label="Hình ảnh hiện vật" {...slotProps('imageId')} />
+                      <Grid gutter="xs">
+                        <Grid.Col span={6}>
+                          <TextInput
+                            label="Alt text ảnh (Tiếng Việt)"
+                            description="Bắt buộc khi có ảnh"
+                            maxLength={240}
+                            {...form.getInputProps('altTextVi')}
+                          />
+                        </Grid.Col>
+                        <Grid.Col span={6}>
+                          <TextInput
+                            label="Alt text ảnh (Tiếng Anh)"
+                            description="Required when an image is attached"
+                            maxLength={240}
+                            {...form.getInputProps('altTextEn')}
+                          />
+                        </Grid.Col>
+                      </Grid>
+                    </Stack>
+                  </Card>
+
+                  <Card withBorder p="sm" radius="xs" bg="gray.0">
+                    <Text fw={600} size="sm" mb="xs">
+                      2. Thuyết minh tiếng Việt
+                    </Text>
+                    <Stack gap="xs">
+                      <MediaSlotSelect kind="audio" label="Audio thuyết minh (MP3)" {...slotProps('audioViId')} />
+                      <MediaSlotSelect kind="subtitle" label="Phụ đề (WebVTT)" {...slotProps('subtitleViId')} />
+                      <Textarea
+                        label="Lời thuyết minh (transcript)"
+                        autosize
+                        minRows={3}
+                        maxRows={10}
+                        maxLength={10000}
+                        {...form.getInputProps('transcriptVi')}
+                      />
+                    </Stack>
+                  </Card>
+
+                  <Card withBorder p="sm" radius="xs" bg="gray.0">
+                    <Text fw={600} size="sm" mb="xs">
+                      3. English narration
+                    </Text>
+                    <Stack gap="xs">
+                      <MediaSlotSelect kind="audio" label="Audio guide (MP3)" {...slotProps('audioEnId')} />
+                      <MediaSlotSelect kind="subtitle" label="Subtitles (WebVTT)" {...slotProps('subtitleEnId')} />
+                      <Textarea
+                        label="Transcript"
+                        autosize
+                        minRows={3}
+                        maxRows={10}
+                        maxLength={10000}
+                        {...form.getInputProps('transcriptEn')}
+                      />
+                    </Stack>
+                  </Card>
+                </Stack>
+              </Tabs.Panel>
+
+              {/* Tab 4: Hotspots */}
+              <Tabs.Panel value="hotspots">
+                <HotspotEditor
+                  form={form}
+                  modelId={form.values.modelId}
+                  ready={hotspotState === 'ready'}
+                  loadError={hotspotState === 'error'}
+                />
+              </Tabs.Panel>
             </Tabs>
 
             <Divider my="sm" />
@@ -867,6 +1169,17 @@ export function ExhibitsPage() {
                 {getDisplayText(detailQuery.data.content.description, 'vi') || 'Chưa có mô tả'}
               </Text>
 
+              <Button
+                component={Link}
+                to={`/admin/exhibits/${detailQuery.data.id}/preview`}
+                size="xs"
+                variant="light"
+                leftSection={<IconCube size={14} />}
+                mb="xs"
+              >
+                Xem trước 3D trong phòng trưng bày
+              </Button>
+
               <Divider my="xs" />
 
               <Grid gutter="xs">
@@ -908,8 +1221,11 @@ export function ExhibitsPage() {
               </Grid>
             </Card>
 
-            <Tabs defaultValue="revisions">
+            <Tabs defaultValue="media">
               <Tabs.List mb="xs">
+                <Tabs.Tab value="media" leftSection={<IconPhoto size={14} />}>
+                  Media & xem trước
+                </Tabs.Tab>
                 <Tabs.Tab value="revisions" leftSection={<IconClock size={14} />}>
                   Lịch sử Revisions ({detailQuery.data.revisions.length})
                 </Tabs.Tab>
@@ -917,6 +1233,24 @@ export function ExhibitsPage() {
                   Hotspots ({detailQuery.data.hotspots.length})
                 </Tabs.Tab>
               </Tabs.List>
+
+              <Tabs.Panel value="media">
+                {PREVIEW_SLOTS.some(({ slot }) => detailQuery.data?.media?.[slot]) ? (
+                  <Stack gap="xs">
+                    <Text size="xs" c="dimmed">
+                      Xem trước theo bản nội dung đang hiển thị (cả bản nháp). Liên kết đã ký, hết hạn sau ít phút —
+                      mở lại chi tiết để làm mới.
+                    </Text>
+                    {PREVIEW_SLOTS.map(({ slot, label }) => (
+                      <PreviewSlot key={slot} detail={detailQuery.data!} slot={slot} label={label} />
+                    ))}
+                  </Stack>
+                ) : (
+                  <Text size="sm" c="dimmed" p="md" ta="center">
+                    Hiện vật chưa gắn media nào. Sửa hiện vật → tab “Media & thuyết minh” để gắn.
+                  </Text>
+                )}
+              </Tabs.Panel>
 
               <Tabs.Panel value="revisions">
                 <Stack gap="xs">
@@ -977,18 +1311,18 @@ export function ExhibitsPage() {
                   </Text>
                 ) : (
                   <Stack gap="xs">
-                    {detailQuery.data.hotspots.map((hs, index) => (
+                    {[...detailQuery.data.hotspots].sort((a, b) => a.displayOrder - b.displayOrder).map((hs, index) => (
                       <Card key={hs.id} withBorder p="xs" radius="xs">
                         <Group justify="space-between" mb={2}>
                           <Text size="xs" fw={600}>
-                            #{index + 1}: {getDisplayText(hs.label, 'vi')}
+                            #{index + 1}: {resolveBilingualText(hs.label).vi || resolveBilingualText(hs.label).en}
                           </Text>
                           <Code fz="xs">
                             x:{hs.position.x}, y:{hs.position.y}, z:{hs.position.z}
                           </Code>
                         </Group>
                         <Text size="xs" c="dimmed">
-                          {getDisplayText(hs.body, 'vi')}
+                          {resolveBilingualText(hs.body).vi || resolveBilingualText(hs.body).en}
                         </Text>
                       </Card>
                     ))}

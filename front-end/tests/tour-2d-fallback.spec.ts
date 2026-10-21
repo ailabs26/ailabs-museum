@@ -45,7 +45,8 @@ for (const failure of ['webgl', 'context', 'chunk']) {
           extension.loseContext();
         });
       }
-      await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
+      if (failure === 'context') await expect(page.getByText('Đang khôi phục không gian 3D. Bạn có thể tiếp tục đọc danh mục.')).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible({ timeout: failure === 'context' ? 12_000 : 5000 });
       await expect(page).toHaveURL(/\/tour\?room=sculpture$/);
       const link = page.getByRole('link', { name: 'Tiếp tục đọc trong giao diện 2D', exact: true });
       await expect(link).toHaveAttribute('href', selected
@@ -97,7 +98,7 @@ test('[F04] missing WebGL cancels pending models and focuses collection after de
   await expect(page.locator('canvas')).toHaveCount(0);
 });
 
-test('[F04] context loss retains selected exhibit and releases in-flight GLBs before the 2D transition', async ({ page }) => {
+test('[F04] unrecovered context retains selection and releases in-flight GLBs after the bounded recovery deadline', async ({ page }) => {
   const item = roomA.exhibits[0];
   const checksum = 'b'.repeat(64);
   await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: [{
@@ -119,7 +120,9 @@ test('[F04] context loss retains selected exhibit and releases in-flight GLBs be
     if (!extension) throw new Error('Context-loss extension required');
     extension.loseContext();
   });
-  await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
+  await expect(page.getByText('Đang khôi phục không gian 3D. Bạn có thể tiếp tục đọc danh mục.')).toBeVisible();
+  expect(aborted).toHaveLength(0);
+  await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible({ timeout: 12_000 });
   await expect(page.locator('canvas')).toHaveCount(0);
   await expect.poll(() => aborted.length).toBe(1);
   const link = page.getByRole('link', { name: 'Tiếp tục đọc trong giao diện 2D', exact: true });

@@ -17,6 +17,8 @@ export function toPublicModel(media: Media | null | undefined, slug: string, exh
     id: media.id, storageKey: media.storageKey, sizeBytes: Number(media.sizeBytes),
     checksumSha256: media.checksumSha256,
     url: `/rooms/${encodeURIComponent(slug)}/exhibits/${encodeURIComponent(exhibitId)}/model?version=${media.checksumSha256}`,
+    // FR-97: nguồn/tác giả/giấy phép của model cũng phải xem được ở tour 3D và trang 2D.
+    rights: { source: media.source ?? null, author: media.author ?? null, license: media.license ?? null },
   };
 }
 export type PublicModel = NonNullable<ReturnType<typeof toPublicModel>>;

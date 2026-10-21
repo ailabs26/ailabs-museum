@@ -1,9 +1,11 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { TransactionManager } from '../../../common/database/transaction.manager';
+import { DomainValidationException } from '../../../common/exceptions/validation.exception';
 import { Paginated } from '../../../common/types/paginated.type';
 import { RoomStatus } from '../../rooms/entities/room.entity';
 import { RoomsRepository } from '../../rooms/repositories/rooms.repository';
@@ -22,15 +24,44 @@ import {
   RevisionState,
 } from '../entities/exhibit-revision.entity';
 import { Hotspot } from '../entities/hotspot.entity';
-import { toPublicModel } from '../../media/dto/public-model.dto';
+import { MediaReferenceValidator } from '../../media/services/media-reference.validator';
+import { MediaUrlService } from '../../media/services/media-url.service';
+import {
+  AdminRevisionMedia,
+  AdminRevisionResponse,
+  toAdminRevision,
+  toAdminRevisionMedia,
+} from '../mappers/admin-revision.mapper';
+import { PublicExhibitDto, toPublicExhibit } from '../mappers/public-exhibit.mapper';
+import { REVISION_MEDIA_SLOTS } from '../constants/revision-media-slots';
 import { ExhibitsRepository } from '../repositories/exhibits.repository';
+import {
+  mediaReferencesOf,
+  pickRevisionMedia,
+  resolveRevisionMediaPatch,
+} from '../utils/revision-media-patch';
+import { RevisionPublishGate } from './revision-publish.gate';
+
+/** Phòng công khai kèm hiện vật đã xuất bản (FR-68). */
+export interface PublicRoomResponse {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  exhibits: PublicExhibitDto[];
+}
 
 @Injectable()
 export class ExhibitsService {
+  private readonly logger = new Logger(ExhibitsService.name);
+
   constructor(
     private readonly exhibits: ExhibitsRepository,
     private readonly roomsRepo: RoomsRepository,
     private readonly tx: TransactionManager,
+    private readonly mediaReferences: MediaReferenceValidator,
+    private readonly publishGate: RevisionPublishGate,
+    private readonly mediaUrls: MediaUrlService,
   ) {}
 
   // =========================================================================
@@ -47,8 +78,9 @@ export class ExhibitsService {
 
   /**
    * Chi tiết phòng kèm danh sách hiện vật đã xuất bản (cho khách tham quan).
+   * Chỉ revision Published hiện hành và media của chính revision đó (FR-68, AC-36).
    */
-  async roomWithExhibits(slug: string) {
+  async roomWithExhibits(slug: string): Promise<PublicRoomResponse> {
     const room = await this.roomsRepo.findBySlug(slug);
 
     if (!room || room.status !== RoomStatus.ACTIVE || room.isDeleted) {
@@ -56,48 +88,14 @@ export class ExhibitsService {
     }
 
     const exhibits = (await this.exhibits.findByRoom(room.id)).flatMap(
-      (exhibit) => {
-        const revision = exhibit.publishedRevision;
-
-        if (!revision || revision.state !== RevisionState.APPROVED) {
-          return [];
-        }
-
-        const content = revision.content as unknown as Record<string, unknown> | undefined;
-        const candidate = content?.position as { x?: unknown; y?: unknown; z?: unknown } | undefined;
-        const position = candidate && [candidate.x, candidate.y, candidate.z].every(value => typeof value === 'number' && Number.isFinite(value))
-          ? candidate as { x: number; y: number; z: number } : undefined;
-
-        return [
-          {
-            id: exhibit.id,
-            roomId: exhibit.roomId,
-            displayOrder: exhibit.displayOrder,
-            name: content?.name,
-            description: content?.description,
-            positionX: position?.x,
-            positionY: position?.y,
-            positionZ: position?.z,
-            transcript: content?.transcript ?? null,
-            placeholderShape: content?.placeholderShape ?? 'box',
-            placeholderColor: content?.placeholderColor ?? '#8b7355',
-            hotspots: (revision.hotspots || [])
-              .map((hotspot) => ({
-                id: hotspot.id,
-                label: hotspot.label,
-                body: hotspot.body,
-                positionX: Number(hotspot.positionX),
-                positionY: Number(hotspot.positionY),
-                positionZ: Number(hotspot.positionZ),
-                displayOrder: hotspot.displayOrder,
-              }))
-              .sort((left, right) => left.displayOrder - right.displayOrder),
-            model: toPublicModel(revision.modelMedia, room.slug, exhibit.id),
-            image: null,
-            audio: null,
-          },
-        ];
-      },
+      (exhibit) =>
+        toPublicExhibit(
+          exhibit,
+          (storageKey) => this.mediaUrls.publicUrl(storageKey),
+          (exhibitId, mediaId, reason) =>
+            this.logger.warn(`Bỏ qua media ${mediaId} của hiện vật ${exhibitId}: ${reason}`),
+          room.slug,
+        ) ?? [],
     );
 
     return {
@@ -120,9 +118,13 @@ export class ExhibitsService {
     query: ListExhibitsQueryDto,
   ): Promise<Paginated<ExhibitAdminResponse>> {
     const result = await this.exhibits.searchAdminExhibits(query);
+    // Hiển thị theo revision mới nhất (giống getAdminDetail) để hiện vật nháp không mất tên.
+    const latest = await this.exhibits.findLatestRevisionsByExhibitIds(
+      result.items.map((item) => item.id),
+    );
     return {
       ...result,
-      items: result.items.map((item) => toExhibitResponse(item)),
+      items: result.items.map((item) => toExhibitResponse(item, latest.get(item.id))),
     };
   }
 
@@ -144,6 +146,7 @@ export class ExhibitsService {
 
     return {
       ...baseResponse,
+      media: this.revisionMedia(activeRevision),
       room: exhibit.room
         ? {
             id: exhibit.room.id,
@@ -211,7 +214,12 @@ export class ExhibitsService {
       displayOrder = count + 1;
     }
 
+    const mediaPatch = resolveRevisionMediaPatch(dto);
+
     return this.tx.run(async (manager) => {
+      // 0. Media gắn vào Draft phải tồn tại, ready, đúng loại (khóa FOR SHARE tới hết tx).
+      await this.mediaReferences.assertAttachable(mediaReferencesOf(mediaPatch), manager);
+
       // 1. Tạo bản ghi Exhibit
       const exhibitEntity = this.exhibits.create({
         roomId: dto.roomId,
@@ -233,9 +241,7 @@ export class ExhibitsService {
           revisionNo: 1,
           state: RevisionState.DRAFT,
           content,
-          modelMediaId: dto.modelId ?? null,
-          imageMediaId: dto.imageId ?? null,
-          audioMediaId: dto.audioId ?? null,
+          ...pickRevisionMedia(mediaPatch),
           createdById: user.id,
           reviewedById: null,
           reason: null,
@@ -301,7 +307,13 @@ export class ExhibitsService {
       );
     }
 
+    const mediaPatch = resolveRevisionMediaPatch(dto);
+
     return this.tx.run(async (manager) => {
+      // 0. Chỉ kiểm tra media được gắn/thay trong request này (khóa FOR SHARE tới hết tx);
+      //    media giữ nguyên sẽ được kiểm lại ở cổng Submit Review/Publish.
+      await this.mediaReferences.assertAttachable(mediaReferencesOf(mediaPatch), manager);
+
       // 1. Cập nhật thông tin Exhibit nếu có thay đổi
       exhibit.version = (exhibit.version ?? 0) + 1;
       if (dto.roomId) exhibit.roomId = dto.roomId;
@@ -326,12 +338,8 @@ export class ExhibitsService {
             revisionNo: nextRevisionNo,
             state: RevisionState.DRAFT,
             content: mergedContent,
-            modelMediaId:
-              dto.modelId !== undefined ? dto.modelId : activeRev.modelMediaId,
-            imageMediaId:
-              dto.imageId !== undefined ? dto.imageId : activeRev.imageMediaId,
-            audioMediaId:
-              dto.audioId !== undefined ? dto.audioId : activeRev.audioMediaId,
+            // Fork giữ đủ các slot media của bản published, rồi áp thay đổi của request.
+            ...pickRevisionMedia({ ...pickRevisionMedia(activeRev), ...mediaPatch }),
             createdById: user.id,
             reviewedById: null,
             reason: null,
@@ -375,9 +383,11 @@ export class ExhibitsService {
       // Ngược lại (DRAFT hoặc REJECTED): Chỉnh sửa bản nháp hiện tại
       activeRev.state = RevisionState.DRAFT;
       activeRev.content = mergedContent;
-      if (dto.modelId !== undefined) activeRev.modelMediaId = dto.modelId;
-      if (dto.imageId !== undefined) activeRev.imageMediaId = dto.imageId;
-      if (dto.audioId !== undefined) activeRev.audioMediaId = dto.audioId;
+      Object.assign(activeRev, mediaPatch);
+      // Relation đã nạp có thể là media cũ: bỏ để TypeORM ghi theo cột id vừa đổi.
+      for (const slot of REVISION_MEDIA_SLOTS) {
+        if (mediaPatch[slot.column] !== undefined) delete (activeRev as Partial<ExhibitRevision>)[slot.relation];
+      }
 
       if (dto.hotspots !== undefined) {
         await this.exhibits.deleteHotspotsByRevisionIds([activeRev.id], manager);
@@ -433,6 +443,9 @@ export class ExhibitsService {
     }
 
     return this.tx.run(async (manager) => {
+      // §5.2: Submit Review phải đủ nội dung bắt buộc + media hợp lệ, trước khi đổi trạng thái.
+      await this.publishGate.assertPublishable(activeRev, manager);
+
       activeRev.state = RevisionState.IN_REVIEW;
       await this.exhibits.saveRevision(activeRev, manager);
 
@@ -527,6 +540,8 @@ export class ExhibitsService {
 
   /**
    * Sắp xếp lại thứ tự hiện vật trong một phòng trưng bày.
+   * `exhibitIds` phải là đúng toàn bộ hiện vật chưa xóa của phòng (chỉ khác thứ tự): thiếu,
+   * thừa, trùng hoặc id của phòng khác → 422 và không ghi gì.
    */
   async reorderExhibits(
     roomId: string,
@@ -538,9 +553,22 @@ export class ExhibitsService {
     }
 
     await this.tx.run(async (manager) => {
+      const roomExhibitIds = new Set(await this.exhibits.findIdsByRoomForUpdate(roomId, manager));
+      const requested = new Set(exhibitIds);
+      const isSamePermutation =
+        requested.size === exhibitIds.length &&
+        requested.size === roomExhibitIds.size &&
+        exhibitIds.every((id) => roomExhibitIds.has(id));
+      if (!isSamePermutation) {
+        const message = `exhibitIds phải gồm đúng ${roomExhibitIds.size} hiện vật của phòng, mỗi hiện vật một lần`;
+        throw new DomainValidationException(
+          [{ field: 'exhibitIds', code: 'reorder_ids_mismatch', message }],
+          message,
+        );
+      }
+
       for (let i = 0; i < exhibitIds.length; i++) {
-        const id = exhibitIds[i];
-        await this.exhibits.updateDisplayOrder(id, i + 1, manager);
+        await this.exhibits.updateDisplayOrder(exhibitIds[i], roomId, i + 1, manager);
       }
     });
 
@@ -553,12 +581,13 @@ export class ExhibitsService {
   /**
    * Lấy lịch sử các phiên bản của một hiện vật.
    */
-  async getRevisionsHistory(exhibitId: string): Promise<ExhibitRevision[]> {
+  async getRevisionsHistory(exhibitId: string): Promise<AdminRevisionResponse[]> {
     const exhibit = await this.exhibits.findAdminDetailById(exhibitId);
     if (!exhibit || exhibit.isDeleted) {
       throw new NotFoundException('Không tìm thấy hiện vật');
     }
-    return this.exhibits.findRevisionsByExhibitId(exhibitId);
+    const revisions = await this.exhibits.findRevisionsByExhibitId(exhibitId);
+    return revisions.map((revision) => this.toAdminRevision(revision));
   }
 
   /**
@@ -567,17 +596,27 @@ export class ExhibitsService {
   async getRevisionDetail(
     exhibitId: string,
     revisionId: string,
-  ): Promise<ExhibitRevision> {
+  ): Promise<AdminRevisionResponse> {
     const revision = await this.exhibits.findRevisionById(revisionId);
     if (!revision || revision.exhibitId !== exhibitId) {
       throw new NotFoundException('Không tìm thấy phiên bản hiện vật');
     }
-    return revision;
+    return this.toAdminRevision(revision);
   }
 
   // =========================================================================
   // 7. PRIVATE HELPER METHODS
   // =========================================================================
+
+  /** Media của revision đang xem, URL đã ký để Preview xem được media của Draft. */
+  private revisionMedia(revision: ExhibitRevision | null | undefined): AdminRevisionMedia | null {
+    return revision ? toAdminRevisionMedia(revision, (key) => this.mediaUrls.signedUrl(key)) : null;
+  }
+
+  /** Revision dạng DTO: không trả entity thô (User kèm passwordHash, media kèm storageKey). */
+  private toAdminRevision(revision: ExhibitRevision): AdminRevisionResponse {
+    return toAdminRevision(revision, (key) => this.mediaUrls.signedUrl(key));
+  }
 
   private buildContentFromCreateDto(
     dto: CreateExhibitDto,

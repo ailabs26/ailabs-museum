@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
+import { Brackets, EntityManager, In, IsNull, Not, Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseRepository } from '../../../common/repository/base.repository';
 import { Paginated } from '../../../common/types/paginated.type';
 import { ListExhibitsQueryDto } from '../dto/list-exhibits-query.dto';
 import { Exhibit, ExhibitVisibility } from '../entities/exhibit.entity';
-import { ExhibitRevision } from '../entities/exhibit-revision.entity';
+import { REVISION_MEDIA_RELATIONS } from '../constants/revision-media-slots';
+import { ExhibitRevision, RevisionState } from '../entities/exhibit-revision.entity';
 import { Hotspot } from '../entities/hotspot.entity';
 
 @Injectable()
@@ -32,8 +33,10 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
   }
 
   /**
-   * Truy vấn danh sách hiện vật công khai theo phòng trưng bày.
-   * Chỉ lấy hiện vật có visibility = 'visible', chưa bị xóa mềm và nạp bản published.
+   * Truy vấn danh sách hiện vật công khai theo phòng trưng bày (FR-68).
+   * Chỉ lấy hiện vật visible, chưa xóa mềm, chưa lưu trữ, có revision published đã APPROVED;
+   * nạp đủ các slot media của revision đó. Điều kiện phải khớp với
+   * `MediaRepository.isPubliclyReferenced` (phân phối file media).
    */
   async findByRoom(roomId: string): Promise<Exhibit[]> {
     return this.repo.find({
@@ -41,12 +44,13 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
         roomId,
         visibility: ExhibitVisibility.VISIBLE,
         isDeleted: false,
+        archivedAt: IsNull(),
+        publishedRevisionId: Not(IsNull()),
+        publishedRevision: { state: RevisionState.APPROVED },
       },
       relations: {
         publishedRevision: {
-          modelMedia: true,
-          imageMedia: true,
-          audioMedia: true,
+          ...REVISION_MEDIA_RELATIONS,
           hotspots: true,
         },
       },
@@ -64,15 +68,11 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
       relations: {
         room: true,
         publishedRevision: {
-          modelMedia: true,
-          imageMedia: true,
-          audioMedia: true,
+          ...REVISION_MEDIA_RELATIONS,
           hotspots: true,
         },
         revisions: {
-          modelMedia: true,
-          imageMedia: true,
-          audioMedia: true,
+          ...REVISION_MEDIA_RELATIONS,
           hotspots: true,
           createdBy: true,
           reviewedBy: true,
@@ -89,9 +89,7 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
     return this.revisionRepo.find({
       where: { exhibitId },
       relations: {
-        modelMedia: true,
-        imageMedia: true,
-        audioMedia: true,
+        ...REVISION_MEDIA_RELATIONS,
         hotspots: true,
         createdBy: true,
         reviewedBy: true,
@@ -111,9 +109,7 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
       where: { id: revisionId },
       relations: {
         exhibit: true,
-        modelMedia: true,
-        imageMedia: true,
-        audioMedia: true,
+        ...REVISION_MEDIA_RELATIONS,
         hotspots: true,
         createdBy: true,
         reviewedBy: true,
@@ -147,13 +143,30 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
     return this.scopedRevision(manager).findOne({
       where: { exhibitId },
       relations: {
-        modelMedia: true,
-        imageMedia: true,
-        audioMedia: true,
+        ...REVISION_MEDIA_RELATIONS,
         hotspots: true,
       },
       order: { revisionNo: 'DESC' },
     });
+  }
+
+  /**
+   * Lấy revision mới nhất của nhiều hiện vật trong một truy vấn (DISTINCT ON), trả về Map theo exhibitId.
+   */
+  async findLatestRevisionsByExhibitIds(
+    exhibitIds: string[],
+  ): Promise<Map<string, ExhibitRevision>> {
+    if (exhibitIds.length === 0) {
+      return new Map();
+    }
+    const revisions = await this.revisionRepo
+      .createQueryBuilder('rev')
+      .distinctOn(['rev.exhibitId'])
+      .where('rev.exhibitId IN (:...exhibitIds)', { exhibitIds })
+      .orderBy('rev.exhibitId')
+      .addOrderBy('rev.revisionNo', 'DESC')
+      .getMany();
+    return new Map(revisions.map((rev) => [rev.exhibitId, rev]));
   }
 
   /**
@@ -198,7 +211,13 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
         new Brackets((sub) => {
           sub
             .where('room.name ILIKE :search')
-            .orWhere('CAST(publishedRevision.content AS text) ILIKE :search');
+            .orWhere('CAST(publishedRevision.content AS text) ILIKE :search')
+            // Revision mới nhất (bản CMS đang hiển thị) — để tìm được cả hiện vật nháp chưa publish.
+            .orWhere(
+              `(SELECT CAST(latest.content AS text) FROM exhibit_revisions latest
+                WHERE latest.exhibit_id = exhibit.id
+                ORDER BY latest.revision_no DESC LIMIT 1) ILIKE :search`,
+            );
         }),
         { search },
       );
@@ -263,14 +282,28 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
   }
 
   /**
-   * Cập nhật thứ tự hiển thị display_order của hiện vật.
+   * ID các hiện vật chưa xóa của phòng, khóa dòng (FOR UPDATE) để hai lần sắp xếp
+   * đồng thời hoặc thêm/xóa hiện vật không chen vào giữa lúc kiểm tra và ghi.
+   */
+  async findIdsByRoomForUpdate(roomId: string, manager?: EntityManager): Promise<string[]> {
+    const rows = await this.scoped(manager).find({
+      select: { id: true },
+      where: { roomId, isDeleted: false },
+      lock: { mode: 'pessimistic_write' },
+    });
+    return rows.map((row) => row.id);
+  }
+
+  /**
+   * Cập nhật thứ tự hiển thị display_order của hiện vật — chỉ khi hiện vật thuộc đúng phòng.
    */
   async updateDisplayOrder(
     id: string,
+    roomId: string,
     displayOrder: number,
     manager?: EntityManager,
   ): Promise<void> {
-    await this.scoped(manager).update(id, { displayOrder });
+    await this.scoped(manager).update({ id, roomId }, { displayOrder });
   }
 
   /**

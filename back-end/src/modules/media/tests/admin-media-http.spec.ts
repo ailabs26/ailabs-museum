@@ -28,7 +28,9 @@ import { AuditService } from '../../audit/services/audit.service';
 import { AdminMediaController, MEDIA_UPLOAD_LIMITS } from '../controllers/admin-media.controller';
 import { MediaRepository } from '../repositories/media.repository';
 import { MediaInspectionService } from '../services/media-inspection.service';
-import { MEDIA_STORAGE_ROOTS, MediaStorageService } from '../services/media-storage.service';
+import { MediaStorageService } from '../services/media-storage.service';
+import { LocalStorageDriver } from '../storage/local-storage.driver';
+import { MEDIA_STORAGE_DRIVER } from '../storage/media-storage-driver';
 import { MediaService } from '../services/media.service';
 import {
   EXE_FILE,
@@ -42,7 +44,8 @@ import {
   buildVtt,
   buildWebp,
 } from './media-test-files';
-import { FakeMediaRepository, FakeTransactionManager } from './media-test-doubles';
+import { FakeMediaRepository, FakeTransactionManager, TEST_MEDIA_URL_OPTIONS } from './media-test-doubles';
+import { MEDIA_URL_OPTIONS, MediaUrlService } from '../services/media-url.service';
 
 const USER: AuthUser = {
   id: 'b0000000-0000-4000-8000-000000000002',
@@ -87,7 +90,12 @@ describe('Admin Media HTTP (multipart thật → pipeline thật)', () => {
         MediaService,
         MediaInspectionService,
         MediaStorageService,
-        { provide: MEDIA_STORAGE_ROOTS, useValue: { publicRoot: join(workDir, 'public'), quarantineRoot: join(workDir, 'quarantine') } },
+        MediaUrlService,
+        { provide: MEDIA_URL_OPTIONS, useValue: TEST_MEDIA_URL_OPTIONS },
+        {
+          provide: MEDIA_STORAGE_DRIVER,
+          useValue: new LocalStorageDriver({ publicRoot: join(workDir, 'public'), quarantineRoot: join(workDir, 'quarantine') }),
+        },
         { provide: MediaRepository, useValue: repo },
         { provide: TransactionManager, useValue: new FakeTransactionManager() },
         { provide: AuditService, useValue: audit },
@@ -185,6 +193,32 @@ describe('Admin Media HTTP (multipart thật → pipeline thật)', () => {
       const res = await http().delete(`/admin/media/${id}`).expect(200);
       assert.equal(res.body.success, true);
       assert.equal(res.body.data, null);
+    });
+  });
+
+  // --------------------------------------------------------------- nội dung file cho công cụ CMS
+  describe('GET /admin/media/:id/content', () => {
+    it('trả nguyên file với header an toàn, không cache', async () => {
+      const png = buildPng();
+      const id = await seed(png);
+      const res = await http().get(`/admin/media/${id}/content`).buffer(true).parse((r, done) => {
+        const chunks: Buffer[] = [];
+        r.on('data', (c: Buffer) => chunks.push(c));
+        r.on('end', () => done(null, Buffer.concat(chunks)));
+      }).expect(200);
+      assert.deepEqual(res.body, png);
+      assert.equal(res.headers['content-type'], 'image/png');
+      assert.equal(res.headers['cache-control'], 'private, no-store');
+      assert.equal(res.headers['x-content-type-options'], 'nosniff');
+    });
+
+    it('thiếu quyền media:upload → 403', async () => {
+      const id = await seed();
+      await http().get(`/admin/media/${id}/content`).set('x-test-user', 'no-permission').expect(403);
+    });
+
+    it('media không tồn tại → 404', async () => {
+      await http().get(`/admin/media/${randomUUID()}/content`).expect(404);
     });
   });
 

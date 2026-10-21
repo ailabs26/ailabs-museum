@@ -1,5 +1,6 @@
 import { http } from '@/core/api/http-client';
 import type { Page } from '@/core/api/api-response';
+import type { MediaKind, MediaProcessingState } from '@/services/media.service';
 
 export type ExhibitStatus = 'draft' | 'published';
 export type RevisionState = 'draft' | 'in_review' | 'approved' | 'rejected';
@@ -35,16 +36,43 @@ export interface ExhibitRow {
     placeholderShape?: string;
     placeholderColor?: string;
     transcript?: unknown;
+    /** Alt text song ngữ của ảnh (`{ vi, en }`). */
+    altText?: unknown;
     modelId?: string | null;
     imageId?: string | null;
+    /** @deprecated Trùng `audioViId`. */
     audioId?: string | null;
+    audioViId?: string | null;
+    audioEnId?: string | null;
+    subtitleViId?: string | null;
+    subtitleEnId?: string | null;
   };
   hotspotsCount: number;
   createdAt: string;
   updatedAt: string;
 }
 
+/** 6 slot media của revision (khóa trùng `revision-media-slots.ts` của back-end). */
+export type RevisionMediaSlot = 'model' | 'image' | 'audioVi' | 'audioEn' | 'subtitleVi' | 'subtitleEn';
+
+/** Media của revision đang xem — `url` đã ký để Preview xem được cả media của Draft. */
+export interface RevisionMediaItem {
+  id: string;
+  kind: MediaKind;
+  mimeType: string;
+  sizeBytes: number;
+  processingState: MediaProcessingState;
+  isDeleted: boolean;
+  url: string | null;
+  originalName: string | null;
+  altText: string | null;
+  source: string | null;
+  author: string | null;
+  license: string | null;
+}
+
 export interface ExhibitDetail extends ExhibitRow {
+  media: Record<RevisionMediaSlot, RevisionMediaItem | null> | null;
   room: {
     id: string;
     name: string;
@@ -93,7 +121,28 @@ export interface CreateExhibitInput {
   placeholderColor?: string;
   modelId?: string | null;
   imageId?: string | null;
+  /** @deprecated Dùng `audioViId`. */
   audioId?: string | null;
+  audioViId?: string | null;
+  audioEnId?: string | null;
+  subtitleViId?: string | null;
+  subtitleEnId?: string | null;
+  /** Alt text ảnh vi/en (bắt buộc khi có ảnh lúc Submit Review); `null` = xóa. */
+  altText?: BilingualText | null;
+  /** Lời thuyết minh vi/en (bắt buộc cho audio cùng ngôn ngữ); `null` = xóa. */
+  transcript?: BilingualText | null;
+  /** Danh sách hotspot thay thế toàn bộ hotspot của bản nháp; bỏ trường = giữ nguyên. */
+  hotspots?: HotspotInput[];
+}
+
+/** Hotspot gửi lên API (tọa độ local của GLB gốc; không có model thì là mét quanh bệ trưng bày). */
+export interface HotspotInput {
+  label: BilingualText;
+  body: BilingualText;
+  positionX: number;
+  positionY: number;
+  positionZ: number;
+  displayOrder: number;
 }
 
 export interface UpdateExhibitInput {
@@ -108,7 +157,18 @@ export interface UpdateExhibitInput {
   placeholderColor?: string;
   modelId?: string | null;
   imageId?: string | null;
+  /** @deprecated Dùng `audioViId`. */
   audioId?: string | null;
+  audioViId?: string | null;
+  audioEnId?: string | null;
+  subtitleViId?: string | null;
+  subtitleEnId?: string | null;
+  /** Alt text ảnh vi/en (bắt buộc khi có ảnh lúc Submit Review); `null` = xóa. */
+  altText?: BilingualText | null;
+  /** Lời thuyết minh vi/en (bắt buộc cho audio cùng ngôn ngữ); `null` = xóa. */
+  transcript?: BilingualText | null;
+  /** Danh sách hotspot thay thế toàn bộ hotspot của bản nháp; bỏ trường = giữ nguyên. */
+  hotspots?: HotspotInput[];
 }
 
 export const exhibitsService = {

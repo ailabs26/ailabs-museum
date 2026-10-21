@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { Readable } from 'node:stream';
 import {
   BadRequestException,
   ConflictException,
@@ -20,6 +21,7 @@ import { MEGABYTE, MediaFormatSpec } from '../inspection/media-formats';
 import { MediaRepository } from '../repositories/media.repository';
 import { MediaInspectionService } from './media-inspection.service';
 import { MediaStorageService } from './media-storage.service';
+import { MediaUrlService } from './media-url.service';
 
 /** Phần file multer cung cấp mà service cần (memory storage). */
 export interface UploadedMediaFile {
@@ -63,6 +65,7 @@ export class MediaService {
     private readonly storage: MediaStorageService,
     private readonly inspection: MediaInspectionService,
     private readonly tx: TransactionManager,
+    private readonly urls: MediaUrlService,
   ) {}
 
   /** Thư viện media cho Admin CMS (phân trang, lọc kind/trạng thái). */
@@ -73,6 +76,18 @@ export class MediaService {
 
   async getById(id: string): Promise<MediaResponse> {
     return this.toResponse(await this.findOrFail(id));
+  }
+
+  /**
+   * Mở nội dung media `ready` cho công cụ CMS cần đọc file (vd chọn tọa độ hotspot trên GLB) —
+   * dùng được cả với file seed nằm ngoài `uploads/` (không có URL ký). File cách ly/lỗi: 404.
+   */
+  async openContent(id: string): Promise<{ media: Media; stream: Readable }> {
+    const media = await this.findOrFail(id);
+    const stream =
+      media.processingState === MediaProcessingState.READY ? await this.storage.openPublic(media.storageKey) : null;
+    if (!stream) throw new NotFoundException('Không tìm thấy nội dung media');
+    return { media, stream };
   }
 
   /**
@@ -214,6 +229,7 @@ export class MediaService {
   }
 
   private toResponse(media: Media): MediaResponse {
-    return toMediaResponse(media, this.storage.toPublicUrl(media.storageKey));
+    // Thư viện CMS dùng URL đã ký: xem được cả media chưa gắn vào revision public.
+    return toMediaResponse(media, this.urls.signedUrl(media.storageKey));
   }
 }

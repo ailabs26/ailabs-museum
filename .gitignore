@@ -8,3 +8,7 @@
 .claude/.freeze-state
 .agent-kit/
 .codegraph/
+
+# Ảnh chụp và tệp thử của các script nghiệm thu UI
+plans/**/scripts/shots/
+plans/**/scripts/t10files/
