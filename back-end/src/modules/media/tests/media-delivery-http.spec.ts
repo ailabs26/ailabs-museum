@@ -4,9 +4,11 @@ import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, mkdtemp, rm, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { Readable } from 'node:stream';
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { INestApplication, RequestMethod } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import type { Request, Response } from 'express';
 import request from 'supertest';
 import { AllExceptionsFilter } from '../../../common/filters/all-exceptions.filter';
 import { ResponseInterceptor } from '../../../common/interceptors/response.interceptor';
@@ -252,5 +254,28 @@ describe('MediaDeliveryController (HTTP thật, file thật)', () => {
       const media = await addFile(MediaKind.MODEL, glb);
       await http().get(`${path(media)}?exp=1&exp=2&sig=${'a'.repeat(64)}`).expect(404);
     });
+  });
+});
+
+describe('MediaDeliveryController — client ngắt kết nối khi đang chờ kho lưu trữ', () => {
+  it('không pipe vào response đã đóng; hủy stream nguồn để lỗi muộn không làm sập process', async () => {
+    const source = new Readable({ read() {} });
+    const delivery = {
+      resolve: async () => ({
+        media: { id: 'm1', kind: MediaKind.IMAGE, mimeType: 'image/png', sizeBytes: '10', checksumSha256: 'a'.repeat(64) },
+        viaSignature: false,
+      }),
+      open: async () => source,
+    } as unknown as MediaDeliveryService;
+    const controller = new MediaDeliveryController(delivery);
+    const req = { headers: {}, method: 'GET' } as unknown as Request;
+    // Trình duyệt đã hủy request (đóng modal / StrictMode) trong lúc API chờ Supabase.
+    const res = { destroyed: true, writableEnded: false } as unknown as Response;
+
+    await controller.serve('images', `${randomUUID()}.png`, undefined, undefined, req, res);
+
+    assert.equal(source.destroyed, true);
+    // Lỗi đến muộn từ upstream (HTTP/2 reset) bị bỏ qua vì stream đã hủy, không ném ra ngoài.
+    assert.doesNotThrow(() => source.destroy(new Error('NGHTTP2_PROTOCOL_ERROR')));
   });
 });

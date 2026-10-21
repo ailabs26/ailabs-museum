@@ -21,6 +21,8 @@ export interface ExhibitAdminResponse {
     placeholderShape?: string;
     placeholderColor?: string;
     transcript?: unknown;
+    /** Alt text song ngữ của ảnh (`{ vi, en }`) — CMS điền lại form khi sửa. */
+    altText?: unknown;
     modelId?: string | null;
     imageId?: string | null;
     /** @deprecated Trùng `audioViId` — giữ cho client cũ. */
@@ -83,6 +85,8 @@ export class ExhibitResponseDto implements ExhibitAdminResponse {
     placeholderShape?: string;
     placeholderColor?: string;
     transcript?: unknown;
+    /** Alt text song ngữ của ảnh (`{ vi, en }`) — CMS điền lại form khi sửa. */
+    altText?: unknown;
     modelId?: string | null;
     imageId?: string | null;
     /** @deprecated Trùng `audioViId` — giữ cho client cũ. */
@@ -138,6 +142,7 @@ export class ExhibitResponseDto implements ExhibitAdminResponse {
       placeholderShape: (rawContent?.placeholderShape as string) ?? 'box',
       placeholderColor: (rawContent?.placeholderColor as string) ?? '#8b7355',
       transcript: rawContent?.transcript ?? null,
+      altText: rawContent?.altText ?? null,
       modelId: activeRevision?.modelMediaId ?? null,
       imageId: activeRevision?.imageMediaId ?? null,
       audioId: activeRevision?.audioMediaId ?? null,

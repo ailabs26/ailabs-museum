@@ -82,6 +82,40 @@ describe('SupabaseStorageDriver', () => {
     });
   });
 
+  describe('timeout', () => {
+    /** fetch chậm `delayMs` rồi trả `response`, trừ khi bị hủy trước (giống mạng upload chậm). */
+    const slowFetch = (delayMs: number, response: () => Response) =>
+      ((_url: string, init: RequestInit) =>
+        new Promise<Response>((resolve, reject) => {
+          const timer = setTimeout(() => resolve(response()), delayMs);
+          init.signal?.addEventListener('abort', () => {
+            clearTimeout(timer);
+            reject(new DOMException('This operation was aborted', 'AbortError'));
+          });
+        })) as unknown as typeof fetch;
+
+    const slowDriver = (delayMs: number, response: () => Response) =>
+      new SupabaseStorageDriver({
+        url: 'https://ref.supabase.co',
+        serviceKey: 'service-role-key-for-test',
+        bucket: 'aura-media',
+        timeoutMs: 20,
+        uploadTimeoutMs: 1_000,
+        fetchFn: slowFetch(delayMs, response),
+      });
+
+    it('upload dùng timeout riêng dài hơn — gửi file lớn trên mạng chậm không bị hủy', async () => {
+      await slowDriver(80, () => json(200, { Key: 'k' })).put(key, Buffer.from('glb'));
+    });
+
+    it('đọc vẫn giữ timeout ngắn chờ header', async () => {
+      await assert.rejects(
+        slowDriver(80, () => new Response('x', { status: 200 })).read(key),
+        /aborted/,
+      );
+    });
+  });
+
   describe('delete', () => {
     it('DELETE đúng object', async () => {
       fake.responses.push(json(200, { message: 'Successfully deleted' }));

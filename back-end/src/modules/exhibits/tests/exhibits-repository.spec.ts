@@ -1147,6 +1147,29 @@ describe('Task 7.2 — ExhibitsRepository Comprehensive Test Suite (105 Test Cas
       assert.ok(mockExhibitRepo.mockQb.andWhereList.some((w) => w.condition instanceof Brackets));
     });
 
+    it('TC-E068b: Tìm kiếm q: tìm cả trong revision mới nhất (hiện vật nháp chưa publish)', async () => {
+      const mockExhibitRepo = new MockRepository<Exhibit>(Exhibit);
+      const repo = new ExhibitsRepository(
+        mockExhibitRepo as unknown as Repository<Exhibit>,
+        new MockRepository(ExhibitRevision) as unknown as Repository<ExhibitRevision>,
+        new MockRepository(Hotspot) as unknown as Repository<Hotspot>,
+      );
+
+      await repo.searchAdminExhibits({ q: 'nháp' });
+      const bracket = mockExhibitRepo.mockQb.andWhereList.find((w) => w.condition instanceof Brackets);
+      const conditions: string[] = [];
+      const capture = {
+        where: (c: string) => (conditions.push(c), capture),
+        orWhere: (c: string) => (conditions.push(c), capture),
+      };
+      (bracket?.condition as Brackets).whereFactory(capture as never);
+      assert.ok(
+        conditions.some(
+          (c) => c.includes('exhibit_revisions latest') && c.includes('ORDER BY latest.revision_no DESC LIMIT 1'),
+        ),
+      );
+    });
+
     it('TC-E069: Trim khoảng trắng trong từ khóa tìm kiếm q', async () => {
       const mockExhibitRepo = new MockRepository<Exhibit>(Exhibit);
       const repo = new ExhibitsRepository(
