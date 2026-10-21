@@ -1,5 +1,15 @@
 # Museum tour — interactive hotspots and dynamic GLB delivery
 
+## Immersive WebXR, controller interaction and context recovery — 21 October 2026
+
+- Architecture, changed modules, controller mappings, session/recovery behavior, evidence and SHA ledger: [WebXR delivery report](tasks/tour-webxr.md). Implementation plan: [webxr-immersive-tour-plan.md](plans/webxr-immersive-tour-plan.md).
+- Installed Three.js 0.170 WebXRManager and R3F 8 reuse one Canvas/scene and existing model ownership. Secure capability checks and user-clicked entry; local-floor/local fallback; serialized entry/exit, system end, interrupted initialization and cleanup. Web controls suspend while XR owns the camera and resume with the saved camera, room and selection.
+- Native ray/hotspot selection, two controller pointers, profile-checked 30° snap turn, collision-safe floor teleport within 8 m and a paginated in-world detail/Exit panel. Controller-free gaze dwell can select/read/exit without automatic teleport.
+- Unsupported/refused XR keeps normal web 3D. Actual WebGL loss keeps the existing Canvas for up to 8 seconds and verifies a submitted frame after restoration; two recoveries, then stable functional 2D. Native partial binding failures retire only Canvas after R3F disposal while preserving the decoded GLB owner. Two deliberate page-level retries; no automatic VR re-entry.
+- Catalogue/detail use published images with safe placeholders and preserve shared room/artifact metadata outside WebGL. Existing private-asset service, per-artifact isolation and signed-URL resolution remain unchanged. No backend/database/migration/env/Storage/dependency edits.
+- Final gates: 93/93 unit tests, 98/98 affected production-browser tests and typecheck/lint/build passed. Browser proof includes real software-WebGL loss/restore during web 3D and XR, same-Canvas recovery, cached five-GLB counts, stereo API simulation, native select, teleport, snap turn, gaze Exit, initialization interruption and stable 2D. Headset hardware, comfort and sustained device frame rate remain unverified.
+- Independent review found panel local/world-coordinate and Three r170 partial-initialization issues; both received regression fixes. Follow-up review reported no remaining important finding. One `feat/tour-webxr` branch from fetched `origin/dev` (`663081d`), PR into `dev`, no automatic merge.
+
 ## Follow-up review and merge request (2026-10-17)
 
 After initial publication, the user explicitly requested review and merge of PR #57 into `dev`. A fresh independent read-only review found one P2 defect: a parsed skinned mesh could reference a nonexistent joint, pass sanitization, then break normalization for its otherwise healthy sibling meshes. Genuine GLB regressions reproduced the failure before the fix.

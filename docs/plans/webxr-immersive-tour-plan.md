@@ -23,13 +23,14 @@
 
 ## Tasks and proof
 
-1. [ ] Capability/lifecycle: add `helpers/xrSession.ts` and unit tests for secure/unavailable/unsupported/rejected/ready checks; synchronous request, duplicate suppression, rejection, partial bind failure, end/re-entry, dispose during pending request, listener cleanup. Verify RED then GREEN; commit.
-2. [ ] Renderer recovery: add `helpers/webglRecovery.ts` and unit tests for loss prevention, restore deadline, loss budget, duplicate signals and teardown; extend `SceneLifecycle` with rendered-frame verification. Keep models mounted. Verify RED/GREEN; commit.
-3. [ ] XR interaction math: add `helpers/xrInteraction.ts` and tests using real Three objects for ancestor IDs, occlusion, floor targets, collision bounds, rig teleport and head-centred snap turn/profile mapping. Verify RED/GREEN; commit.
-4. [ ] XR scene integration: add `MuseumXr`, `XrDetailsPanel` and UI controls; connect one lifecycle controller to the existing renderer, suspend web camera/input, native select only once, connect/disconnect and session cleanup, one-controller and gaze fallback. Add production-browser tests for capability, refusal and end lifecycle when simulation permits. Verify meaningful boundaries and commit completed pieces.
-5. [ ] Functional 2D/retry: extend existing display mapping/catalogue/details with API images and safe image fallback; bounded user-driven retry in `MuseumPage`/`SceneFallback`; keep selection and queries outside scene. Browser proof for missing WebGL, selection, rooms and retries; commit.
-6. [ ] Browser recovery: use real `WEBGL_lose_context` on the existing Canvas; prove Canvas identity, rendered pixels, selection, cached model request counts and web navigation after restoration; timeout/repeated loss to stable 2D. Update old immediate-context-failure expectations to the new recovery contract without weakening assertions.
-7. [ ] Final review/verification/docs: frontend typecheck/lint/build/unit and affected production-browser suites; inspect screenshots. Review whole diff, fix actual regressions with RED/GREEN, update progress/README and SHA ledger. Publish one PR into dev; do not merge.
+1. [x] Capability/lifecycle: add `helpers/xrSession.ts` and unit tests for secure/unavailable/unsupported/rejected/ready checks; synchronous request, duplicate suppression, rejection, partial bind failure, end/re-entry, dispose during pending request, listener cleanup. Verify RED then GREEN; commit.
+2. [x] Renderer recovery: add `helpers/webglRecovery.ts` and unit tests for loss prevention, restore deadline, loss budget, duplicate signals and teardown; extend `SceneLifecycle` with rendered-frame verification. Keep models mounted. Verify RED/GREEN; commit.
+3. [x] XR interaction math: add `helpers/xrInteraction.ts` and tests using real Three objects for ancestor IDs, occlusion, floor targets, collision bounds, rig teleport and head-centred snap turn/profile mapping. Verify RED/GREEN; commit.
+4. [x] XR scene integration: add `MuseumXr`, `XrDetailsPanel` and UI controls; connect one lifecycle controller to the existing renderer, suspend web camera/input, native select only once, connect/disconnect and session cleanup, one-controller and gaze fallback. Add production-browser tests for capability, refusal and end lifecycle when simulation permits. Verify meaningful boundaries and commit completed pieces.
+5. [x] Functional 2D/retry: extend existing display mapping/catalogue/details with API images and safe image fallback; bounded user-driven retry in `MuseumPage`/`SceneFallback`; keep selection and queries outside scene. Browser proof for missing WebGL, selection, rooms and retries; commit.
+6. [x] Browser recovery: use real `WEBGL_lose_context` on the existing Canvas; prove Canvas identity, rendered pixels, selection, cached model request counts and web navigation after restoration; timeout/repeated loss to stable 2D. Update old immediate-context-failure expectations to the new recovery contract without weakening assertions.
+7. [x] Final review/verification/docs: frontend typecheck/lint/build/unit and affected production-browser suites; inspect screenshots. Review whole diff, fix actual regressions with RED/GREEN, update progress/README and SHA ledger. Publication is tracked separately below.
+8. [ ] Publish one PR into `dev`; do not merge.
 
 ## Review focus
 
@@ -42,3 +43,7 @@
 ## Execution ledger
 
 - Baseline: freshly fetched dev; 69/69 frontend unit tests passed. Read tour entry, MuseumPage/Scene/Controls/Room, GLB owner/loader, hotspots, navigation collision helpers, public schema/service and fallback regression tests. Backend media changes on latest dev remain untouched.
+- Final gates: 93/93 unit tests; 98/98 affected production-browser tests; typecheck/lint/build pass. Evidence logs: `front-end/tmp/xr-unit-final.log`, `xr-typecheck-final.log`, `xr-lint-final.log`, `xr-build-final.log`, `webxr-final.log`. No backend check was needed because all implementation changes are frontend-only.
+- Independent review's two findings reproduced before fixes: translated-origin panel direction and Three r170 runtime end during partial native binding. Added local panel math and an end-deferral/Canvas-retirement adapter, with focused helper and native-browser regression proof. Follow-up review: no remaining important finding.
+- Real context loss/restore tested in normal3D and active simulated XR, plus timeout, repeated loss, two manual retries, gaze Exit and controller disconnect. Inspected the restored screenshot. API simulation is not headset validation; real optics/comfort/guardian/frame rate remain device QA.
+- Full architecture, limits, SHA ledger and confirmed publication: [delivery report](../tasks/tour-webxr.md).
