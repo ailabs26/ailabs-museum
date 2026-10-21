@@ -41,7 +41,7 @@ import {
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiException } from '@/core/api/api-error';
 import { firstTabWithError, mapExhibitErrors } from '@/helpers/exhibitFormErrors';
-import { resolveHotspotText, toHotspotFormValues, toHotspotPayload, validateHotspots } from '@/helpers/exhibitHotspots';
+import { resolveBilingualText, toHotspotFormValues, toHotspotPayload, validateHotspots } from '@/helpers/exhibitHotspots';
 import type { HotspotFormValue } from '@/helpers/exhibitHotspots';
 import type { ExhibitFormTab } from '@/helpers/exhibitFormErrors';
 import { hasMediaRights } from '@/helpers/mediaLibrary';
@@ -1285,14 +1285,14 @@ export function ExhibitsPage() {
                       <Card key={hs.id} withBorder p="xs" radius="xs">
                         <Group justify="space-between" mb={2}>
                           <Text size="xs" fw={600}>
-                            #{index + 1}: {resolveHotspotText(hs.label).vi || resolveHotspotText(hs.label).en}
+                            #{index + 1}: {resolveBilingualText(hs.label).vi || resolveBilingualText(hs.label).en}
                           </Text>
                           <Code fz="xs">
                             x:{hs.position.x}, y:{hs.position.y}, z:{hs.position.z}
                           </Code>
                         </Group>
                         <Text size="xs" c="dimmed">
-                          {resolveHotspotText(hs.body).vi || resolveHotspotText(hs.body).en}
+                          {resolveBilingualText(hs.body).vi || resolveBilingualText(hs.body).en}
                         </Text>
                       </Card>
                     ))}

@@ -25,10 +25,10 @@ function text(value: unknown): string {
 }
 
 /**
- * Văn bản song ngữ của hotspot từ API: object `{ vi, en }`, chuỗi JSON `'{"vi":…}'` (cột varchar/text
+ * Văn bản song ngữ từ API (hotspot, nội dung revision): object `{ vi, en }`, chuỗi JSON `'{"vi":…}'` (cột varchar/text
  * lưu object đã JSON.stringify) hoặc chuỗi thường (dữ liệu cũ — coi là tiếng Việt).
  */
-export function resolveHotspotText(value: unknown): BilingualPair {
+export function resolveBilingualText(value: unknown): BilingualPair {
   if (typeof value === 'string') {
     const trimmed = value.trim();
     if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
@@ -60,8 +60,8 @@ export function toHotspotFormValues(hotspots: ExhibitDetail['hotspots']): Hotspo
   return [...hotspots]
     .sort((a, b) => a.displayOrder - b.displayOrder)
     .map((hotspot) => {
-      const label = resolveHotspotText(hotspot.label);
-      const body = resolveHotspotText(hotspot.body);
+      const label = resolveBilingualText(hotspot.label);
+      const body = resolveBilingualText(hotspot.body);
       return {
         labelVi: label.vi,
         labelEn: label.en,
