@@ -45,14 +45,15 @@ test('closing details after stopping 3D falls back to the start control', async 
   await expect(page.getByRole('button', { name: 'Mở phòng 3D', exact: true })).toBeFocused();
 });
 
-test('closing details after renderer failure keeps focus in readable tour content', async ({ page }) => {
+test('closing details after the recovery deadline keeps focus in readable tour content', async ({ page }) => {
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).press('Enter');
   await page.getByRole('button', { name: 'Điểm tương tác Hiện vật 1', exact: true }).press('Enter');
   await page.getByLabel('Phòng trưng bày 3D', { exact: true }).evaluate(canvas => {
     canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
   });
-  await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
+  await expect(page.locator('[data-webgl-status="recovering"]')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible({ timeout: 12_000 });
   await page.getByRole('button', { name: 'Đóng chi tiết hiện vật' }).press('Enter');
   await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
 });
