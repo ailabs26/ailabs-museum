@@ -31,6 +31,7 @@ import {
   IconEdit,
   IconEye,
   IconInfoCircle,
+  IconMapPin,
   IconPhoto,
   IconPlus,
   IconSearch,
@@ -40,6 +41,8 @@ import {
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiException } from '@/core/api/api-error';
 import { firstTabWithError, mapExhibitErrors } from '@/helpers/exhibitFormErrors';
+import { resolveHotspotText, toHotspotFormValues, toHotspotPayload, validateHotspots } from '@/helpers/exhibitHotspots';
+import type { HotspotFormValue } from '@/helpers/exhibitHotspots';
 import type { ExhibitFormTab } from '@/helpers/exhibitFormErrors';
 import { hasMediaRights } from '@/helpers/mediaLibrary';
 import { PERMISSIONS } from '@/core/auth/permissions';
@@ -55,6 +58,7 @@ import type {
   UpdateExhibitInput,
 } from '@/services/exhibits.service';
 import { exhibitsService } from '@/services/exhibits.service';
+import { HotspotEditor } from '@/components/cms/HotspotEditor';
 import { roomsService } from '@/services/rooms.service';
 import { Column, DataTable } from '@/shared/components/data';
 import { confirmAction, notify } from '@/shared/components/feedback';
@@ -90,7 +94,11 @@ interface ExhibitFormValues {
   altTextEn: string;
   transcriptVi: string;
   transcriptEn: string;
+  hotspots: HotspotFormValue[];
 }
+
+/** Trạng thái danh sách hotspot trong form sửa: phải tải từ chi tiết hiện vật (danh sách không có). */
+type HotspotLoadState = 'ready' | 'loading' | 'error';
 
 type MediaSlotField = 'modelId' | 'imageId' | 'audioViId' | 'audioEnId' | 'subtitleViId' | 'subtitleEnId';
 
@@ -206,6 +214,9 @@ export function ExhibitsPage() {
   const [editing, setEditing] = useState<ExhibitRow | null>(null);
   const [opened, drawer] = useDisclosure(false);
   const [formTab, setFormTab] = useState<ExhibitFormTab>('basic');
+  const [hotspotState, setHotspotState] = useState<HotspotLoadState>('ready');
+  /** Hiện vật đang mở trong form — bỏ kết quả tải hotspot muộn của lần mở trước. */
+  const editingIdRef = useRef<string | null>(null);
 
   const [detailId, setDetailId] = useState<string | null>(null);
   const [detailOpened, detailDrawer] = useDisclosure(false);
@@ -294,13 +305,16 @@ export function ExhibitsPage() {
       altTextEn: '',
       transcriptVi: '',
       transcriptEn: '',
+      hotspots: [],
     },
-    validate: {
-      roomId: (v) => (v.trim().length === 0 ? 'Vui lòng chọn phòng trưng bày' : null),
-      nameVi: (v) => (v.trim().length === 0 ? 'Tên tiếng Việt không được để trống' : null),
-      scaleX: (v) => (v <= 0 ? 'Scale X phải lớn hơn 0' : null),
-      scaleY: (v) => (v <= 0 ? 'Scale Y phải lớn hơn 0' : null),
-      scaleZ: (v) => (v <= 0 ? 'Scale Z phải lớn hơn 0' : null),
+    validate: (values) => {
+      const errors: Record<string, string> = validateHotspots(values.hotspots);
+      if (values.roomId.trim().length === 0) errors.roomId = 'Vui lòng chọn phòng trưng bày';
+      if (values.nameVi.trim().length === 0) errors.nameVi = 'Tên tiếng Việt không được để trống';
+      if (values.scaleX <= 0) errors.scaleX = 'Scale X phải lớn hơn 0';
+      if (values.scaleY <= 0) errors.scaleY = 'Scale Y phải lớn hơn 0';
+      if (values.scaleZ <= 0) errors.scaleZ = 'Scale Z phải lớn hơn 0';
+      return errors;
     },
   });
 
@@ -314,9 +328,8 @@ export function ExhibitsPage() {
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['admin-exhibits'] });
-    if (detailId) {
-      queryClient.invalidateQueries({ queryKey: ['admin-exhibit-detail', detailId] });
-    }
+    // Mọi chi tiết đã cache (drawer chi tiết, hotspot nạp cho form sửa) đều có thể đã cũ.
+    queryClient.invalidateQueries({ queryKey: ['admin-exhibit-detail'] });
   };
 
   const saveMutation = useMutation({
@@ -358,6 +371,8 @@ export function ExhibitsPage() {
         subtitleEnId: values.subtitleEnId,
         altText: toBilingual(values.altTextVi, values.altTextEn),
         transcript: toBilingual(values.transcriptVi, values.transcriptEn),
+        // Chỉ gửi khi đã tải đủ hotspot của bản đã lưu — bỏ trường thì back-end giữ nguyên.
+        ...(hotspotState === 'ready' ? { hotspots: toHotspotPayload(values.hotspots) } : {}),
       };
 
       if (editing) {
@@ -410,8 +425,8 @@ export function ExhibitsPage() {
     onError: (err, exhibit) => {
       // 422 từ cổng Submit Review (§5.2, FR-97): mở form và chỉ ra đúng ô cần sửa.
       if (err instanceof ApiException && err.status === 422 && err.errors.length > 0 && canUpdate) {
-        openEdit(exhibit);
-        showFieldErrors(err);
+        // Đợi hotspot tải xong rồi mới đánh dấu lỗi — đổ hotspot vào form sẽ xóa lỗi của các ô đó.
+        void openEdit(exhibit).then(() => showFieldErrors(err));
         notify.error(
           `Chưa đủ điều kiện gửi duyệt (${err.errors.length} lỗi). Các ô cần sửa đã được đánh dấu.`,
           'Không gửi được',
@@ -439,6 +454,8 @@ export function ExhibitsPage() {
 
   const openCreate = () => {
     setEditing(null);
+    editingIdRef.current = null;
+    setHotspotState('ready');
     setFormTab('basic');
     form.reset();
     if (formRoomOptions.length > 0) {
@@ -482,10 +499,28 @@ export function ExhibitsPage() {
       altTextEn: getLocalizedText(content.altText, 'en'),
       transcriptVi: getLocalizedText(content.transcript, 'vi'),
       transcriptEn: getLocalizedText(content.transcript, 'en'),
+      hotspots: [],
     });
     form.clearErrors();
     setFormTab('basic');
     drawer.open();
+    return loadHotspots(exhibit.id);
+  };
+
+  /** Danh sách hiện vật không kèm hotspot: lấy từ chi tiết (revision mới nhất) rồi đổ vào form. */
+  const loadHotspots = (id: string): Promise<void> => {
+    editingIdRef.current = id;
+    setHotspotState('loading');
+    return queryClient
+      .fetchQuery({ queryKey: ['admin-exhibit-detail', id], queryFn: () => exhibitsService.get(id) })
+      .then((detail) => {
+        if (editingIdRef.current !== id) return;
+        form.setFieldValue('hotspots', toHotspotFormValues(detail.hotspots));
+        setHotspotState('ready');
+      })
+      .catch(() => {
+        if (editingIdRef.current === id) setHotspotState('error');
+      });
   };
 
   const openDetail = (exhibit: ExhibitRow) => {
@@ -767,7 +802,9 @@ export function ExhibitsPage() {
         position="right"
         size="xl"
       >
+        {/* noValidate: `required` gốc của trình duyệt chặn submit âm thầm khi ô lỗi nằm ở tab đang ẩn. */}
         <form
+          noValidate
           onSubmit={form.onSubmit(
             (vals) => saveMutation.mutate(vals),
             // Lỗi validate nằm ở tab khác thì chuyển tới đó — không để nút "Lưu" im lặng.
@@ -794,6 +831,9 @@ export function ExhibitsPage() {
                 <Tabs.Tab value="transform">Tọa độ 3D & Khối tạm</Tabs.Tab>
                 <Tabs.Tab value="media" leftSection={<IconPhoto size={14} />}>
                   Media & thuyết minh
+                </Tabs.Tab>
+                <Tabs.Tab value="hotspots" leftSection={<IconMapPin size={14} />}>
+                  Hotspots{hotspotState === 'ready' ? ` (${form.values.hotspots.length})` : ''}
                 </Tabs.Tab>
               </Tabs.List>
 
@@ -1046,6 +1086,16 @@ export function ExhibitsPage() {
                   </Card>
                 </Stack>
               </Tabs.Panel>
+
+              {/* Tab 4: Hotspots */}
+              <Tabs.Panel value="hotspots">
+                <HotspotEditor
+                  form={form}
+                  modelId={form.values.modelId}
+                  ready={hotspotState === 'ready'}
+                  loadError={hotspotState === 'error'}
+                />
+              </Tabs.Panel>
             </Tabs>
 
             <Divider my="sm" />
@@ -1231,18 +1281,18 @@ export function ExhibitsPage() {
                   </Text>
                 ) : (
                   <Stack gap="xs">
-                    {detailQuery.data.hotspots.map((hs, index) => (
+                    {[...detailQuery.data.hotspots].sort((a, b) => a.displayOrder - b.displayOrder).map((hs, index) => (
                       <Card key={hs.id} withBorder p="xs" radius="xs">
                         <Group justify="space-between" mb={2}>
                           <Text size="xs" fw={600}>
-                            #{index + 1}: {getDisplayText(hs.label, 'vi')}
+                            #{index + 1}: {resolveHotspotText(hs.label).vi || resolveHotspotText(hs.label).en}
                           </Text>
                           <Code fz="xs">
                             x:{hs.position.x}, y:{hs.position.y}, z:{hs.position.z}
                           </Code>
                         </Group>
                         <Text size="xs" c="dimmed">
-                          {getDisplayText(hs.body, 'vi')}
+                          {resolveHotspotText(hs.body).vi || resolveHotspotText(hs.body).en}
                         </Text>
                       </Card>
                     ))}

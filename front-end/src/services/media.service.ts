@@ -68,6 +68,12 @@ export const mediaService = {
     return http.get<MediaItem>(`/admin/media/${id}`);
   },
 
+  /** Nội dung file (cần đăng nhập) — dùng cả cho file seed không có URL ký. */
+  async content(id: string, signal?: AbortSignal): Promise<Blob> {
+    const res = await http.raw.get<Blob>(`/admin/media/${id}/content`, { responseType: 'blob', signal });
+    return res.data;
+  },
+
   /** Upload multipart (field `file`); `kind` giúp back-end báo lỗi khi nội dung không khớp loại đã chọn. */
   upload(file: File, { kind, onProgress }: UploadMediaOptions = {}): Promise<MediaItem> {
     const form = new FormData();
