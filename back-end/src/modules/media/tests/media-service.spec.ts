@@ -373,6 +373,22 @@ describe('MediaService', () => {
       await assert.rejects(service.getById(randomUUID()), NotFoundException);
     });
 
+    it('openContent trả đúng nội dung file của media ready', async () => {
+      const png = buildPng();
+      const uploaded = await service.upload(file(png), dto(), ACTOR_ID);
+      const { media, stream } = await service.openContent(uploaded.id);
+      const chunks: Buffer[] = [];
+      for await (const chunk of stream) chunks.push(Buffer.from(chunk as Buffer));
+      assert.equal(media.id, uploaded.id);
+      assert.deepEqual(Buffer.concat(chunks), png);
+    });
+
+    it('openContent media bị cách ly → 404, không đọc file ra ngoài', async () => {
+      inspection.structureError = new Error('x');
+      await assert.rejects(service.upload(file(buildPng()), dto(), ACTOR_ID));
+      await assert.rejects(service.openContent(repo.only().id), NotFoundException);
+    });
+
     it('getById media đã xóa → 404', async () => {
       const uploaded = await service.upload(file(buildPng()), dto(), ACTOR_ID);
       await service.remove(uploaded.id);

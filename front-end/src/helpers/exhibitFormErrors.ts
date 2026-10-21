@@ -5,11 +5,11 @@ export interface FieldApiError {
   message: string;
 }
 
-export type ExhibitFormTab = 'basic' | 'transform' | 'media';
+export type ExhibitFormTab = 'basic' | 'transform' | 'media' | 'hotspots';
 
 /**
  * Field của API (DTO / cổng Submit Review §5.2) → field của form hiện vật trong CMS.
- * Field không có trong bảng (vd hotspot) được gom vào `general` để vẫn hiện cho người dùng.
+ * Field không có trong bảng và không phải hotspot được gom vào `general` để vẫn hiện cho người dùng.
  */
 const FIELD_MAP: Record<string, string> = {
   'name.vi': 'nameVi',
@@ -33,6 +33,18 @@ const FIELD_MAP: Record<string, string> = {
   // validateForPublish: "audio: cần transcript" (luật cũ, áp cho audio tiếng Việt).
   audio: 'transcriptVi',
 };
+
+/** Cổng gửi duyệt báo `hotspots[<i>].label.vi` / `.body.en` / `.position`. */
+const HOTSPOT_FIELD = /^hotspots\[(\d+)\]\.(?:(label|body)\.(vi|en)|(position))$/;
+
+/** Field hotspot của API → `hotspots.<i>.<field>` (đường dẫn lồng nhau của Mantine form). */
+function hotspotFormField(apiField: string): string | undefined {
+  const match = HOTSPOT_FIELD.exec(apiField);
+  if (!match) return undefined;
+  const [, index, part, locale, position] = match;
+  if (position) return `hotspots.${index}.positionX`;
+  return `hotspots.${index}.${part}${locale === 'vi' ? 'Vi' : 'En'}`;
+}
 
 const TAB_OF_FIELD: Record<string, ExhibitFormTab> = {
   nameVi: 'basic',
@@ -59,7 +71,7 @@ export function mapExhibitErrors(errors: readonly FieldApiError[]): MappedExhibi
   const fieldErrors: Record<string, string> = {};
   const general: string[] = [];
   for (const error of errors) {
-    const formField = error.field ? FIELD_MAP[error.field] : undefined;
+    const formField = error.field ? (FIELD_MAP[error.field] ?? hotspotFormField(error.field)) : undefined;
     if (!formField) {
       general.push(error.field ? `${error.field}: ${error.message}` : error.message);
       continue;
@@ -72,15 +84,16 @@ export function mapExhibitErrors(errors: readonly FieldApiError[]): MappedExhibi
 const BASIC_FIELDS = new Set(['roomId', 'displayOrder']);
 const MEDIA_FIELDS = new Set(Object.values(FIELD_MAP).filter((field) => !(field in TAB_OF_FIELD)));
 
+function tabOf(field: string): ExhibitFormTab {
+  if (field.startsWith('hotspots.')) return 'hotspots';
+  return TAB_OF_FIELD[field] ?? (BASIC_FIELDS.has(field) ? 'basic' : MEDIA_FIELDS.has(field) ? 'media' : 'transform');
+}
+
 /**
  * Tab đầu tiên (theo thứ tự hiển thị) chứa một trong các field form có lỗi — dùng cho cả lỗi
  * của API lẫn lỗi validate phía client (vd chưa chọn phòng khi đang đứng ở tab Media).
  */
 export function firstTabWithError(formFields: readonly string[]): ExhibitFormTab | null {
-  const tabs = new Set(
-    formFields.map((field) =>
-      TAB_OF_FIELD[field] ?? (BASIC_FIELDS.has(field) ? 'basic' : MEDIA_FIELDS.has(field) ? 'media' : 'transform'),
-    ),
-  );
-  return (['basic', 'transform', 'media'] as const).find((tab) => tabs.has(tab)) ?? null;
+  const tabs = new Set(formFields.map(tabOf));
+  return (['basic', 'transform', 'media', 'hotspots'] as const).find((tab) => tabs.has(tab)) ?? null;
 }
