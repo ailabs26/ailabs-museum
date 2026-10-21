@@ -122,3 +122,140 @@ test('submit-review 422 hydrates fresh detail before marking the media tab', asy
   await page.getByRole('tab', { name: 'Thông tin cơ bản', exact: true }).click();
   await expect(nameField(page)).toHaveValue('Bản nháp cần sửa');
 });
+
+test('seeds the saved row while list refetch waits and a second save preserves the new values', async ({ page }) => {
+  const state = await installExhibitEditApi(page);
+  const gate = deferred();
+  await page.goto('/admin/exhibits'); await edit(page);
+  await expect(nameField(page)).toHaveValue('Hiện vật 1');
+  await nameField(page).fill('Tên đã lưu');
+  await page.getByRole('textbox', { name: 'Mô tả hiện vật (Tiếng Việt)', exact: true }).fill('Mô tả đã lưu');
+  await page.getByRole('tab', { name: 'Media & thuyết minh' }).click();
+  await page.getByRole('textbox', { name: 'Hình ảnh hiện vật', exact: true }).click();
+  await page.getByRole('option', { name: /image-2/ }).click();
+  await page.getByRole('textbox', { name: 'Audio thuyết minh (MP3)', exact: true }).click();
+  await page.getByRole('option', { name: /audio-2/ }).click();
+  state.listHook = async (route, rows) => {
+    await gate.promise;
+    await fulfillMuseum(route, { ...envelope(rows), meta: { page: 1, pageSize: 15, total: 2 } });
+  };
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByText('Đã lưu bản nháp hiện vật "Tên đã lưu"', { exact: true })).toBeVisible();
+  await expect(page.getByRole('row').filter({ hasText: 'Tên đã lưu' })).toBeVisible();
+  await edit(page, 'Tên đã lưu');
+  await expect(nameField(page)).toHaveValue('Tên đã lưu');
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect.poll(() => state.patches.length).toBe(2);
+  expect(state.patches[1].body.name).toEqual({ vi: 'Tên đã lưu' });
+  expect(state.patches[1].body.description).toEqual({ vi: 'Mô tả đã lưu' });
+  expect(state.patches[1].body.imageId).toBe('90000000-0000-4000-8000-000000000002');
+  expect(state.patches[1].body.audioViId).toBe('90000000-0000-4000-8000-000000000012');
+  expect(state.requests.some(path => /submit-review|publish/.test(path))).toBe(false);
+  gate.release();
+});
+
+test('saving empty slots retains null semantics when reopening after a failed list refresh', async ({ page }) => {
+  const state = await installExhibitEditApi(page);
+  state.records[0].content.imageId = '90000000-0000-4000-8000-000000000001';
+  state.records[0].content.audioViId = '90000000-0000-4000-8000-000000000011';
+  await page.goto('/admin/exhibits'); await edit(page);
+  await expect(nameField(page)).toHaveValue('Hiện vật 1');
+  await page.getByRole('tab', { name: 'Media & thuyết minh' }).click();
+  for (const label of ['Hình ảnh hiện vật', 'Audio thuyết minh (MP3)']) {
+    const input = page.getByRole('textbox', { name: label, exact: true });
+    await input.click();
+    const option = label === 'Hình ảnh hiện vật' ? /image-1/ : /audio-1/;
+    await page.getByRole('option', { name: option }).click();
+  }
+  state.listHook = async route => { await fulfillMuseum(route, { success: false, data: null, message: 'List unavailable' }, 503); };
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await edit(page);
+  await expect(nameField(page)).toHaveValue('Hiện vật 1');
+  await page.getByRole('tab', { name: 'Media & thuyết minh' }).click();
+  await expect(page.getByRole('textbox', { name: 'Hình ảnh hiện vật', exact: true })).toHaveValue('');
+  await expect(page.getByRole('textbox', { name: 'Audio thuyết minh (MP3)', exact: true })).toHaveValue('');
+  expect(state.patches[0].body.imageId).toBeNull();
+  expect(state.patches[0].body.audioViId).toBeNull();
+});
+
+test('an obsolete submit-review error cannot reopen a different edit session', async ({ page }) => {
+  const state = await installExhibitEditApi(page);
+  const gate = deferred();
+  await page.route('**/api/admin/exhibits/*/submit-review', async route => {
+    await gate.promise;
+    await fulfillMuseum(route, { success: false, data: null, message: 'Thiếu alt text', errors: [{ field: 'altText.vi', code: 'required', message: 'Cần alt text' }] }, 422);
+  });
+  await page.goto('/admin/exhibits');
+  await page.getByRole('row').filter({ hasText: 'Hiện vật 1' }).getByRole('button').nth(2).click();
+  const submitted = page.waitForRequest(request => request.url().endsWith('/submit-review') && request.method() === 'POST');
+  await page.getByRole('dialog', { name: 'Xác nhận', exact: true }).getByRole('button', { name: 'Gửi kiểm duyệt', exact: true }).click();
+  await submitted;
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await edit(page, 'Hiện vật 2');
+  await expect(nameField(page)).toHaveValue('Hiện vật 2');
+  await nameField(page).fill('Chưa lưu ở B');
+  const response = page.waitForResponse(res => res.url().endsWith('/submit-review'));
+  gate.release(); await response;
+  // Wait for the query/mutation callbacks as well as the network response.
+  await expect.poll(() => state.detailCount).toBe(1);
+  await expect(nameField(page)).toHaveValue('Chưa lưu ở B');
+  await expect(page.getByRole('tab', { name: 'Thông tin cơ bản', exact: true })).toHaveAttribute('aria-selected', 'true');
+});
+
+test('background detail refresh does not replace unsaved form input', async ({ page }) => {
+  const state = await installExhibitEditApi(page);
+  await page.goto('/admin/exhibits'); await edit(page);
+  await expect(nameField(page)).toHaveValue('Hiện vật 1');
+  await nameField(page).fill('Nội dung chưa lưu');
+  state.records[0].content.name = { vi: 'Nội dung server mới hơn' };
+  await page.evaluate(async ({ modulePath, id }) => {
+    const { queryClient } = await import(modulePath);
+    await queryClient.fetchQuery({ queryKey: ['admin-exhibit-detail', id], staleTime: 0,
+      queryFn: async () => {
+        const old = queryClient.getQueryData(['admin-exhibit-detail', id]);
+        return { ...old, content: { ...old.content, name: { vi: 'Refetch nền' } } };
+      } });
+  }, { modulePath: '/src/core/api/query-client.ts', id: state.records[0].id });
+  await expect(nameField(page)).toHaveValue('Nội dung chưa lưu');
+});
+
+test('saving updates only existing list entries and cancels a pre-save stale request', async ({ page }) => {
+  const state = await installExhibitEditApi(page);
+  await page.goto('/admin/exhibits'); await edit(page);
+  await expect(nameField(page)).toHaveValue('Hiện vật 1');
+  const original = structuredClone(state.records);
+  await page.evaluate(async ({ modulePath, records }) => {
+    const { queryClient } = await import(modulePath);
+    queryClient.setQueryData(['admin-exhibits', 'cached-filter'], { items: records, page: 2, pageSize: 15, total: 30 });
+    queryClient.setQueryData(['admin-exhibits', 'unrelated-filter'], { items: [records[1]], page: 1, pageSize: 15, total: 1 });
+  }, { modulePath: '/src/core/api/query-client.ts', records: original });
+  const gate = deferred();
+  let oldRequestStarted = false;
+  state.listHook = async (route, rows) => {
+    oldRequestStarted = true;
+    await gate.promise;
+    await fulfillMuseum(route, { ...envelope(rows), meta: { page: 1, pageSize: 15, total: 2 } });
+  };
+  await page.evaluate(async modulePath => {
+    const { queryClient } = await import(modulePath);
+    void queryClient.invalidateQueries({ queryKey: ['admin-exhibits'] });
+  }, '/src/core/api/query-client.ts');
+  await expect.poll(() => oldRequestStarted).toBe(true);
+  await nameField(page).fill('Tên được giữ sau lưu');
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('row').filter({ hasText: 'Tên được giữ sau lưu' })).toBeVisible();
+  const caches = await page.evaluate(async modulePath => {
+    const { queryClient } = await import(modulePath);
+    return { filtered: queryClient.getQueryData(['admin-exhibits', 'cached-filter']), unrelated: queryClient.getQueryData(['admin-exhibits', 'unrelated-filter']) };
+  }, '/src/core/api/query-client.ts');
+  expect(caches.filtered.items.map((item: { id: string }) => item.id)).toEqual(original.map(item => item.id));
+  expect(caches.filtered.items[0].content.name).toEqual({ vi: 'Tên được giữ sau lưu' });
+  expect(caches.filtered.items[1]).toEqual(original[1]);
+  expect({ page: caches.filtered.page, total: caches.filtered.total, pageSize: caches.filtered.pageSize }).toEqual({ page: 2, total: 30, pageSize: 15 });
+  expect(caches.unrelated.items).toEqual([original[1]]);
+  gate.release();
+  await expect(page.getByRole('row').filter({ hasText: 'Tên được giữ sau lưu' })).toBeVisible();
+});

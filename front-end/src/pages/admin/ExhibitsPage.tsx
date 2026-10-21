@@ -43,6 +43,7 @@ import {
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ApiException } from '@/core/api/api-error';
+import type { Page } from '@/core/api/api-response';
 import { firstTabWithError, mapExhibitErrors } from '@/helpers/exhibitFormErrors';
 import { resolveBilingualText, toHotspotFormValues, toHotspotPayload, validateHotspots } from '@/helpers/exhibitHotspots';
 import type { HotspotFormValue } from '@/helpers/exhibitHotspots';
@@ -338,7 +339,7 @@ export function ExhibitsPage() {
   };
 
   const saveMutation = useMutation({
-    mutationFn: (values: ExhibitFormValues) => {
+    mutationFn: ({ values, id }: { values: ExhibitFormValues; id: string | null; session: number }) => {
       if (editLoadState !== 'ready' || (editing ? !canUpdate || editing.revisionState === 'in_review' : !canCreate)) {
         throw new Error('Hiện vật chưa sẵn sàng để lưu.');
       }
@@ -382,28 +383,39 @@ export function ExhibitsPage() {
         hotspots: toHotspotPayload(values.hotspots),
       };
 
-      if (editing) {
-        return exhibitsService.update(editing.id, payload as UpdateExhibitInput);
+      if (id) {
+        return exhibitsService.update(id, payload as UpdateExhibitInput);
       }
       return exhibitsService.create(payload);
     },
-    onSuccess: (saved) => {
+    onSuccess: async (saved, { id, session }) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ['admin-exhibits'] }),
+        queryClient.cancelQueries({ queryKey: ['admin-exhibit-detail', saved.id], exact: true }),
+      ]);
+      queryClient.setQueriesData<Page<ExhibitRow>>({ queryKey: ['admin-exhibits'] }, (cached) => {
+        if (!cached || !cached.items.some(item => item.id === saved.id)) return cached;
+        return { ...cached, items: cached.items.map(item => item.id === saved.id ? saved : item) };
+      });
+      await queryClient.invalidateQueries({ queryKey: ['admin-exhibit-detail', saved.id], exact: true, refetchType: 'none' });
+      void queryClient.invalidateQueries({ queryKey: ['admin-exhibits'] });
       notify.success(
-        editing
-          ? `Đã cập nhật hiện vật "${getDisplayText(saved.content.name, 'vi')}"`
+        id
+          ? `Đã lưu bản nháp hiện vật "${getDisplayText(saved.content.name, 'vi')}"`
           : `Đã tạo bản nháp hiện vật mới "${getDisplayText(saved.content.name, 'vi')}"`,
       );
-      editSessionRef.current++;
-      drawer.close();
-      invalidate();
+      if (editSessionRef.current === session) {
+        editSessionRef.current++;
+        drawer.close();
+      }
     },
-    onError: (err) => {
+    onError: (err, { session }) => {
       if (err instanceof ApiException) {
         if (err.status === 409) {
           notify.error(err.message);
           return;
         }
-        showFieldErrors(err);
+        if (editSessionRef.current === session) showFieldErrors(err);
       }
       notify.error(err instanceof Error ? err.message : 'Lưu hiện vật thất bại');
     },
@@ -425,14 +437,14 @@ export function ExhibitsPage() {
   });
 
   const submitReviewMutation = useMutation({
-    mutationFn: (exhibit: ExhibitRow) => exhibitsService.submitReview(exhibit.id),
+    mutationFn: ({ exhibit }: { exhibit: ExhibitRow; session: number }) => exhibitsService.submitReview(exhibit.id),
     onSuccess: () => {
       notify.success('Đã gửi hiện vật vào hàng chờ kiểm duyệt (IN_REVIEW)');
       invalidate();
     },
-    onError: (err, exhibit) => {
+    onError: (err, { exhibit, session: submittedSession }) => {
       // 422 từ cổng Submit Review (§5.2, FR-97): mở form và chỉ ra đúng ô cần sửa.
-      if (err instanceof ApiException && err.status === 422 && err.errors.length > 0 && canUpdate) {
+      if (err instanceof ApiException && err.status === 422 && err.errors.length > 0 && canUpdate && editSessionRef.current === submittedSession) {
         const loading = openEdit(exhibit);
         const session = editSessionRef.current;
         void loading.then((loaded) => {
@@ -560,7 +572,7 @@ export function ExhibitsPage() {
     confirmAction({
       message: `Bạn có chắc chắn muốn gửi hiện vật "${getDisplayText(exhibit.content.name, 'vi')}" đi kiểm duyệt?`,
       confirmLabel: 'Gửi kiểm duyệt',
-      onConfirm: () => submitReviewMutation.mutate(exhibit),
+      onConfirm: () => submitReviewMutation.mutate({ exhibit, session: editSessionRef.current }),
     });
   };
 
@@ -858,7 +870,9 @@ export function ExhibitsPage() {
         <form
           noValidate
           onSubmit={form.onSubmit(
-            (vals) => saveMutation.mutate(vals),
+            (values) => {
+              if (!saveMutation.isPending) saveMutation.mutate({ values, id: editing?.id ?? null, session: editSessionRef.current });
+            },
             // Lỗi validate nằm ở tab khác thì chuyển tới đó — không để nút "Lưu" im lặng.
             (errors) => {
               const tab = firstTabWithError(Object.keys(errors));

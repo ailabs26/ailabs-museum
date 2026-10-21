@@ -123,4 +123,5 @@ npm.cmd run build
 - EDIT-00: `4bc772f` — docs đã duyệt, fetch origin/dev không đổi baseline.
 - EDIT-01: RED 4/5 fail đúng symptom (loading/error/stale detail/in-review), 1 ca create đã đúng; sau fix **7/7 PASS**, gồm 422 và A→B. Typecheck/lint/build PASS; build còn cảnh báo chunk >500 kB hiện hữu.
 - Form nạp detail mới với staleTime 0, cancel promise query cũ và token phiên; chỉ hydrate một lần toàn bộ fields. API/schema/backend không đổi.
+- EDIT-02: RED ở toast/cache list; bổ sung race 422 cũ mở đè form B đã fail rồi sửa guard phiên. Sau sửa **12/12 PASS**, typecheck/lint/build PASS. Test kiểm tra cache nhiều filter/meta, pending list cũ, dirty form, null media và payload lần save kế tiếp.
 - Chưa push/PR; test browser dùng stateful API mocks, không xác nhận DB production persistence.
