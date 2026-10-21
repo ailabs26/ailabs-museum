@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
-import { Group, Mesh, BoxGeometry, MeshBasicMaterial, Raycaster, Vector3 } from 'three';
-import { resolveXrIntersection, canTeleport, teleportOrigin, snapTurnOrigin, getSnapAxis } from './xrInteraction';
+import { Group, Mesh, BoxGeometry, Matrix4, MeshBasicMaterial, Raycaster, Vector3 } from 'three';
+import { resolveXrIntersection, canTeleport, teleportOrigin, snapTurnOrigin, getSnapAxis, placeXrPanel } from './xrInteraction';
 import { MUSEUM_ROOM_SIZE } from '@/interfaces/museumScene';
 it('resolves nested artifact/hotspot identity and respects solid occluders', () => {
   const scene = new Group(), exhibit = new Group(); exhibit.userData.artifactId = 'artifact-7';
@@ -32,4 +32,15 @@ it('uses only verified xr-standard thumbsticks and ignores absent/unknown axes',
   expect(getSnapAxis(source(['oculus-touch-v3'], [0, 0, 0.12, 0]))).toBe(0);
   expect(getSnapAxis(source(['unknown'], [0, 0, 1, 0]))).toBe(0);
   expect(getSnapAxis(source(['oculus-touch-v3']))).toBe(0);
+});
+it('faces the in-world panel toward the headset under a translated and rotated origin', () => {
+  for (const yaw of [0, Math.PI / 2, -Math.PI / 3]) {
+    const origin = new Group(); origin.position.set(3, 0, 5.8); origin.rotation.y = yaw;
+    const panel = new Group(); origin.add(panel);
+    const pose = new Matrix4().makeTranslation(0.2, 1.7, -0.3);
+    placeXrPanel(panel, pose); origin.updateMatrixWorld(true);
+    const head = origin.localToWorld(new Vector3(0.2, 1.7, -0.3));
+    const direction = head.sub(panel.getWorldPosition(new Vector3())).normalize();
+    expect(panel.getWorldDirection(new Vector3()).dot(direction)).toBeGreaterThan(0.99);
+  }
 });

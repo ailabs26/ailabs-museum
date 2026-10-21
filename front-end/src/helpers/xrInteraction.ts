@@ -1,4 +1,4 @@
-import { Vector3, type Group, type Object3D, type Raycaster, type Intersection } from 'three';
+import { Vector3, type Group, type Object3D, type Raycaster, type Intersection, type Matrix4 } from 'three';
 import { findNavigationPath, type NavigationCollider, type NavigationRoom } from './museumNavigation';
 
 export interface XrTarget {
@@ -43,6 +43,14 @@ export function snapTurnOrigin(origin: Group, head: Vector3, radians: number) {
   const offset = head.clone().sub(origin.position).applyAxisAngle(new Vector3(0, 1, 0), radians);
   origin.rotation.y += radians;
   origin.position.x = head.x - offset.x; origin.position.z = head.z - offset.z; origin.updateMatrixWorld(true);
+}
+export function placeXrPanel(panel: Group, referencePose: Matrix4) {
+  const head = new Vector3().setFromMatrixPosition(referencePose);
+  const forward = new Vector3(0, 0, -1).transformDirection(referencePose); forward.y = 0;
+  if (forward.lengthSq() < 0.01) forward.set(0, 0, -1); forward.normalize();
+  panel.position.copy(head).addScaledVector(forward, 1.6); panel.position.y = head.y - 0.05;
+  // Both pose and panel are origin-local; Object3D.lookAt takes world space.
+  panel.rotation.set(0, Math.atan2(-forward.x, -forward.z), 0);
 }
 
 // WebXR Input Profiles registry: these layouts expose thumbstick x at axis 2.
