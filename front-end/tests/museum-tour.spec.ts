@@ -60,7 +60,7 @@ test('reduced motion stops camera inertia when the drag ends', async ({ page }) 
   expect((await canvas.screenshot(SCENE_CAPTURE)).equals(first)).toBe(true);
 });
 
-test('context loss exits the renderer and focuses a readable fallback', async ({ page }) => {
+test('unrecovered context exits the renderer after its deadline and focuses a readable fallback', async ({ page }) => {
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D');
@@ -71,7 +71,8 @@ test('context loss exits the renderer and focuses a readable fallback', async ({
     if (!extension) throw new Error('Context loss extension unavailable in test browser');
     extension.loseContext();
   });
-  await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
+  await expect(page.locator('[data-webgl-status="recovering"]')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible({ timeout: 12_000 });
   await expect(page.locator('canvas')).toHaveCount(0);
   await expect(page.getByRole('status')).toBeFocused();
   await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);

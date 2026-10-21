@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Badge, Button, Stack, Text, Title } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
-import { ExhibitPreview } from '@/shared/components/data/ExhibitPreview';
+import { ExhibitImage } from './ExhibitImage';
 import classes from './ExhibitDetailPanel.module.css';
 
 /** Published text only; nonmodal so the scene and room selector stay usable. */
@@ -18,7 +18,7 @@ export function ExhibitDetailPanel({ display, onClose, detail2dHref }: { display
         </div>
         <Title ref={titleRef} tabIndex={-1} order={2} size="h3" className={classes.title}>{display.title}</Title>
         <Link to={detail2dHref}>Đọc chi tiết 2D</Link>
-        <ExhibitPreview shape={display.shape} color={display.color} className={classes.preview} />
+        <ExhibitImage display={display} className={classes.preview} />
         {display.model && <Text size="sm" c="teal.9">Khám phá mô hình hiện vật trong phòng 3D.</Text>}
         <section aria-label="Mô tả hiện vật">
           <Title order={3} size="h5" mb="xs">Câu chuyện hiện vật</Title>

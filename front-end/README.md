@@ -151,7 +151,7 @@ Hotspot 3D dùng cùng ID/selection với mesh, danh mục và panel. Chạm/cli
 
 Tọa độ hotspot GLB được hiểu là **source-model local**, trước scale/pivot normalization; áp dụng offset → uniform scale → đỉnh bệ Y=1.14 → placement hiện vật. Hotspot của hình khối không có GLB dùng display-local mét/Y up. API hiện chưa có trường coordinate-space; đây là quy ước frontend cần dùng khi tác giả bổ sung tọa độ. Chưa có cấu hình thì dùng marker trên normalized bounds. Khi không có bounds hoặc tọa độ ngoài phòng, dùng vị trí an toàn; không suy đoán transform từ GLB hỏng. Metadata đổi qua **Làm mới** cập nhật marker/panel mà không tải lại GLB nếu descriptor không đổi.
 
-Lỗi tải/parse/normalize chỉ thay model đó bằng biểu tượng 3D có nhãn **Mô hình 3D không khả dụng**. Pedestal, hotspot, chi tiết và camera focus vẫn hoạt động. Mesh lỗi sau parse được cách ly trước khi tính bounds; nếu không còn mesh hợp lệ thì fallback cả artifact. Không thể phục hồi mesh từ GLB mà parser không đọc được, và React boundary không bắt mọi lỗi driver/WebGL. Context loss vẫn dùng giao diện 2D hiện có.
+Lỗi tải/parse/normalize chỉ thay model đó bằng biểu tượng 3D có nhãn **Mô hình 3D không khả dụng**. Pedestal, hotspot, chi tiết và camera focus vẫn hoạt động. Mesh lỗi sau parse được cách ly trước khi tính bounds; nếu không còn mesh hợp lệ thì fallback cả artifact. Không thể phục hồi mesh từ GLB mà parser không đọc được, và React boundary không bắt mọi lỗi driver/WebGL. Context loss dùng quy trình phục hồi có giới hạn ở phần WebXR bên dưới.
 
 **Thử lại** chỉ tải asset lỗi; backend tạo signed URL private mới cho mỗi request, frontend không giữ signed URL hoặc gọi Storage trực tiếp. Mỗi lần mở 3D cho phép ba lần retry thủ công: lần đầu ngay, hai lần sau chờ 1/2 giây nếu lỗi tiếp diễn; không tự lặp request. Lỗi render/clone dùng boundary riêng và retry dựng lại instance từ asset đã tải, không tải lại các model khỏe. Chia sẻ asset checksum vẫn giữ instance/selection riêng; owner của phòng dispose tài nguyên dùng chung sau teardown.
 
@@ -170,6 +170,16 @@ Kiểm chứng: `npm.cmd run test:unit`, `npm.cmd test -- museum-hotspots.spec.t
 - Media public hiện luôn `model/image/audio: null`. Không tự dựng URL từ storageKey hoặc coi hình khối thay thế là model thật. Phòng/danh sách rỗng, lỗi, phòng không hợp lệ và chuyển phòng đều có trạng thái riêng; nội dung phòng cũ không xuất hiện sau lỗi/chuyển chọn.
 
 Tiến độ, lịch sử commit và giới hạn: [museum-tour-progress.md](../docs/museum-tour-progress.md).
+
+## WebXR immersive VR và phục hồi 3D
+
+Trên HTTPS hoặc localhost tin cậy, **Enter VR** xuất hiện khi API thực tế xác nhận hỗ trợ `immersive-vr`. Chỉ thao tác bấm nút mới yêu cầu phiên. Three.js 0.170 WebXRManager cùng cầu nối XR sẵn có của R3F 8 dùng lại Canvas/scene/GLB; không thêm dependency hay render loop. Thiết bị không hỗ trợ hoặc từ chối VR vẫn dùng 3D web. Thoát VR qua hệ thống, nút DOM hoặc nút **Exit VR** trong headset sẽ khôi phục điều khiển web và giữ lựa chọn.
+
+Controller dùng ray/reticle để chọn hotspot và đọc panel trong không gian VR. Ngắm sàn trống rồi chọn để teleport tối đa 8 m trên đoạn đường an toàn; cần điều khiển bên phải xoay từng bước 30° với các profile đã xác minh. Thiếu gamepad/profile vẫn chọn và teleport bằng native select. Không có controller thì nhìn giữ 1,5 giây để chọn/thoát, không tự teleport. Desktop WASD/chuột và mobile joystick/vuốt tạm dừng trong phiên XR.
+
+Mất WebGL context giữ Canvas, dừng tương tác và chờ tối đa 8 giây; chỉ trở về 3D sau khi đã render frame mới. Cho phép hai lần phục hồi, sau đó dùng catalogue/chi tiết 2D; hai lượt **Thử lại 3D** thủ công trong mỗi lần tham quan tránh vòng lặp. Phòng, hiện vật đang chọn và cache API được giữ. Ảnh đã xuất bản hiển thị trong catalogue/panel, ảnh lỗi có hình thay thế. Không tự vào lại VR sau phục hồi.
+
+Kiến trúc, controller mapping, workaround khởi tạo Three r170, lệnh kiểm thử, commit và giới hạn: [tour-webxr.md](../docs/tasks/tour-webxr.md). Kiểm thử browser dùng Edge/SwiftShader và API XR mô phỏng với native Three/R3F; chưa kiểm chứng headset thật, comfort hoặc frame rate VR trên thiết bị.
 
 ## Cấu trúc
 

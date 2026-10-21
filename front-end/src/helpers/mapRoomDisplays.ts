@@ -16,6 +16,7 @@ export function mapRoomDisplays(room: RoomDetail): MuseumDisplay[] {
       title: exhibit.name,
       description: exhibit.description,
       transcript: exhibit.transcript,
+      ...(exhibit.image ? { image: { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } } : {}),
       hotspots: [...exhibit.hotspots].sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
         .map(({ id, label, body, positionX, positionY, positionZ }) => ({ id, label, body, position: [positionX, positionY, positionZ] })),
       position: exhibit.positionX !== undefined && exhibit.positionY !== undefined && exhibit.positionZ !== undefined

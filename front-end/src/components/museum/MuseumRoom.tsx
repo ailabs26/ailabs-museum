@@ -6,7 +6,7 @@ export function MuseumRoom() {
   return (
     <group>
       <GalleryArchitecture />
-      <mesh position={[0, -0.12, 0]}>
+      <mesh position={[0, -0.12, 0]} userData={{ museumFloor: true }}>
         <boxGeometry args={[MUSEUM_ROOM_SIZE.width + 0.4, 0.24, MUSEUM_ROOM_SIZE.depth + 0.4]} />
         <meshStandardMaterial color="#d9d0bf" roughness={0.86} metalness={0.02} />
       </mesh>
