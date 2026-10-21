@@ -118,9 +118,13 @@ export class ExhibitsService {
     query: ListExhibitsQueryDto,
   ): Promise<Paginated<ExhibitAdminResponse>> {
     const result = await this.exhibits.searchAdminExhibits(query);
+    // Hiển thị theo revision mới nhất (giống getAdminDetail) để hiện vật nháp không mất tên.
+    const latest = await this.exhibits.findLatestRevisionsByExhibitIds(
+      result.items.map((item) => item.id),
+    );
     return {
       ...result,
-      items: result.items.map((item) => toExhibitResponse(item)),
+      items: result.items.map((item) => toExhibitResponse(item, latest.get(item.id))),
     };
   }
 

@@ -151,6 +151,25 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
   }
 
   /**
+   * Lấy revision mới nhất của nhiều hiện vật trong một truy vấn (DISTINCT ON), trả về Map theo exhibitId.
+   */
+  async findLatestRevisionsByExhibitIds(
+    exhibitIds: string[],
+  ): Promise<Map<string, ExhibitRevision>> {
+    if (exhibitIds.length === 0) {
+      return new Map();
+    }
+    const revisions = await this.revisionRepo
+      .createQueryBuilder('rev')
+      .distinctOn(['rev.exhibitId'])
+      .where('rev.exhibitId IN (:...exhibitIds)', { exhibitIds })
+      .orderBy('rev.exhibitId')
+      .addOrderBy('rev.revisionNo', 'DESC')
+      .getMany();
+    return new Map(revisions.map((rev) => [rev.exhibitId, rev]));
+  }
+
+  /**
    * Tìm kiếm, lọc và phân trang hiện vật cho phân hệ Admin CMS.
    */
   async searchAdminExhibits(
@@ -192,7 +211,13 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
         new Brackets((sub) => {
           sub
             .where('room.name ILIKE :search')
-            .orWhere('CAST(publishedRevision.content AS text) ILIKE :search');
+            .orWhere('CAST(publishedRevision.content AS text) ILIKE :search')
+            // Revision mới nhất (bản CMS đang hiển thị) — để tìm được cả hiện vật nháp chưa publish.
+            .orWhere(
+              `(SELECT CAST(latest.content AS text) FROM exhibit_revisions latest
+                WHERE latest.exhibit_id = exhibit.id
+                ORDER BY latest.revision_no DESC LIMIT 1) ILIKE :search`,
+            );
         }),
         { search },
       );

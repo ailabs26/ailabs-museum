@@ -214,6 +214,7 @@ class MockExhibitsRepository {
   latestRevisionNoResult = 1;
   activeRevisionResult: ExhibitRevision | null = null;
   searchAdminResult: Paginated<Exhibit> = { items: [], total: 0, page: 1, pageSize: 20 };
+  latestRevisionsResult = new Map<string, ExhibitRevision>();
   countByRoomResult = 0;
 
   savedExhibits: Exhibit[] = [];
@@ -261,6 +262,10 @@ class MockExhibitsRepository {
 
   async searchAdminExhibits(): Promise<Paginated<Exhibit>> {
     return this.searchAdminResult;
+  }
+
+  async findLatestRevisionsByExhibitIds(): Promise<Map<string, ExhibitRevision>> {
+    return this.latestRevisionsResult;
   }
 
   async save(entity: Exhibit): Promise<Exhibit> {
@@ -537,6 +542,18 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       const res = await service.searchAdminExhibits(new ListExhibitsQueryDto());
       assert.equal(res.items[0].status, 'published');
       assert.equal(res.items[0].id, EXHIBIT_ID_1);
+    });
+
+    it('TC-S017b: searchAdminExhibits hiển thị nội dung revision mới nhất cho hiện vật nháp', async () => {
+      setup();
+      const exhibit = createSampleExhibit({ publishedRevisionId: null, publishedRevision: null });
+      const draft = createSampleRevision({ revisionNo: 2 });
+      draft.content = { ...draft.content, name: 'Bản nháp mới' };
+      mockExhibits.searchAdminResult = { items: [exhibit], total: 1, page: 1, pageSize: 20 };
+      mockExhibits.latestRevisionsResult = new Map([[EXHIBIT_ID_1, draft]]);
+      const res = await service.searchAdminExhibits(new ListExhibitsQueryDto());
+      assert.equal(res.items[0].content.name, 'Bản nháp mới');
+      assert.equal(res.items[0].currentRevisionNo, 2);
     });
 
     it('TC-S018: searchAdminExhibits handles empty search results cleanly', async () => {
