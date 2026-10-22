@@ -8,6 +8,7 @@ import { Exhibit, ExhibitVisibility } from '../entities/exhibit.entity';
 import { REVISION_MEDIA_RELATIONS } from '../constants/revision-media-slots';
 import { ExhibitRevision, RevisionState } from '../entities/exhibit-revision.entity';
 import { Hotspot } from '../entities/hotspot.entity';
+import { ContentReport } from '../../content-reports/entities/content-report.entity';
 
 @Injectable()
 export class ExhibitsRepository extends BaseRepository<Exhibit> {
@@ -30,6 +31,33 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
   /** Lấy Repository của Hotspot gắn với EntityManager (nếu đang trong transaction). */
   protected scopedHotspot(manager?: EntityManager): Repository<Hotspot> {
     return manager ? manager.getRepository(this.hotspotRepo.target) : this.hotspotRepo;
+  }
+
+  /** Lock the scalar exhibit row, without nullable joins, before lifecycle mutations. */
+  findForUpdate(id: string, manager: EntityManager): Promise<Exhibit | null> {
+    return this.scoped(manager).findOne({ where: { id, isDeleted: false }, lock: { mode: 'pessimistic_write' } });
+  }
+
+  findRevisionsForDeletion(exhibitId: string, manager: EntityManager): Promise<ExhibitRevision[]> {
+    return this.scopedRevision(manager).find({
+      where: { exhibitId }, order: { id: 'ASC' }, lock: { mode: 'pessimistic_write' },
+    });
+  }
+
+  async hasReportReferences(exhibitId: string, revisionIds: string[], manager: EntityManager): Promise<boolean> {
+    return manager.getRepository(ContentReport).exists({ where: [
+      { exhibitId }, ...(revisionIds.length ? [{ reportedRevisionId: In(revisionIds) }] : []),
+    ] });
+  }
+
+  /** Only report FKs blocking this deletion are translated; other DB failures propagate. */
+  isReportReferenceConflict(error: unknown): boolean {
+    if (!error || typeof error !== 'object' || !('driverError' in error)) return false;
+    const driver = error.driverError as { code?: string; constraint?: string } | undefined;
+    if (driver?.code !== '23503') return false;
+    const metadata = this.repo.manager.connection.getMetadata(ContentReport);
+    return metadata.foreignKeys.some(fk => fk.name === driver.constraint &&
+      (fk.referencedEntityMetadata.target === Exhibit || fk.referencedEntityMetadata.target === ExhibitRevision));
   }
 
   /**

@@ -134,4 +134,11 @@ npm.cmd run build
 - [x] PLAN/TASK có file, bước, test, acceptance, commit và giới hạn race.
 - [x] Người dùng duyệt trước triển khai/commit.
 
-**Evidence hiện tại:** Chỉ tạo nhánh và hai docs; chưa code/test implementation, chưa commit/push/PR.
+## Evidence triển khai
+
+- DELETE-00: `caee7c3` — docs duyệt/commit trước source, origin/dev không đổi baseline.
+- DELETE-01: RED 13/14 cases (sau sửa một lỗi type fixture); policy + repository tests sau fix **18/18 PASS**, backend typecheck/lint/build PASS. Suites service/repository/controller/moderation hiện có đã chạy PASS trước mở rộng hai repository tests.
+- DELETE decision nằm trong tx, khóa exhibit → revisions, check reports exhibit hoặc revision rồi cascade; nhận diện FK report qua metadata + PostgreSQL 23503, rollback trước map 409.
+- Update/submit sau media checks phải lấy lại exhibit dưới FOR UPDATE và re-read active revision, so version/ID/state; nếu bị xóa thì 404, state thay đổi thì 409 trước mọi save. Publish/hide hiện dùng UPDATE affected/version, không save snapshot có thể insert lại; không thay writer đó khi chưa có failure.
+- **NOT TESTED:** row-lock/concurrency/FK thực trên PostgreSQL; mocks mô phỏng lịch biểu và metadata không thay DB proof. Cần reviewer đánh giá blocker trước merge; không chạy migrations hoặc dữ liệu thật.
+- Chưa push/PR/merge.
