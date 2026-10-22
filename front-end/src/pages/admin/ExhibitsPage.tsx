@@ -31,6 +31,7 @@ import {
   IconCube,
   IconEdit,
   IconEye,
+  IconEyeOff,
   IconInfoCircle,
   IconListNumbers,
   IconMapPin,
@@ -65,6 +66,7 @@ import { exhibitsService } from '@/services/exhibits.service';
 import { HotspotEditor } from '@/components/cms/HotspotEditor';
 import { TourOrderModal } from '@/components/cms/TourOrderModal';
 import { roomsService } from '@/services/rooms.service';
+import { moderationService } from '@/services/moderation.service';
 import { Column, DataTable } from '@/shared/components/data';
 import { confirmAction, notify } from '@/shared/components/feedback';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
@@ -242,6 +244,7 @@ export function ExhibitsPage() {
   const canUpdate = hasPermission(PERMISSIONS.EXHIBIT_UPDATE);
   const canDelete = hasPermission(PERMISSIONS.EXHIBIT_UPDATE);
   const canSubmit = hasPermission(PERMISSIONS.REVISION_SUBMIT);
+  const canHide = hasPermission(PERMISSIONS.REVISION_HIDE);
 
   // Danh sách phòng cho bộ lọc và form
   const roomsQuery = useQuery({
@@ -493,6 +496,40 @@ export function ExhibitsPage() {
     ['admin-exhibits'], ['admin-exhibit-detail'], ['rooms'], ['rooms-all-select'],
     ['moderation'], ['museum-tour'], ['public-room'],
   ].map(queryKey => queryClient.invalidateQueries({ queryKey })));
+
+  const hideMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const detail = await exhibitsService.get(id);
+      if (!canHide || detail.visibility !== 'visible' || !detail.publishedRevisionId) {
+        throw new Error('Hiện vật không còn công khai hoặc bạn không có quyền ẩn. Vui lòng tải lại.');
+      }
+      return moderationService.hide(id, detail.version);
+    },
+    onSuccess: async () => {
+      notify.success('Đã ẩn hiện vật khỏi bảo tàng. Lịch sử và media vẫn được giữ.');
+      await refreshLifecycleQueries();
+      titleRef.current?.focus();
+    },
+    onError: (error) => {
+      notify.error(error instanceof Error ? error.message : 'Không ẩn được hiện vật');
+      void refreshLifecycleQueries();
+    },
+    onSettled: () => { actionBusyRef.current = false; setIsActionBusy(false); },
+  });
+
+  const handleHide = (exhibit: ExhibitRow) => {
+    if (!canHide || actionBusyRef.current) return;
+    const request = ++actionRequestRef.current;
+    confirmAction({
+      message: 'Ẩn hiện vật khỏi trang công khai? Lịch sử, bản nháp và media vẫn được giữ.',
+      confirmLabel: 'Ẩn khỏi bảo tàng',
+      onConfirm: () => {
+        if (request !== actionRequestRef.current || actionBusyRef.current) return;
+        actionBusyRef.current = true; setIsActionBusy(true);
+        hideMutation.mutate(exhibit.id);
+      },
+    });
+  };
 
   const openCreate = () => {
     if (saveMutation.isPending) return;
@@ -780,6 +817,14 @@ export function ExhibitsPage() {
                   onClick={() => handleDelete(r)}
                 >
                   <IconTrash size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {canHide && r.visibility === 'visible' && r.publishedRevisionId && (
+              <Tooltip label="Ẩn khỏi bảo tàng, giữ lịch sử và media">
+                <ActionIcon variant="subtle" color="gray" disabled={isActionBusy}
+                  aria-label={`Ẩn hiện vật ${getDisplayText(r.content.name)}`} onClick={() => handleHide(r)}>
+                  <IconEyeOff size={18} />
                 </ActionIcon>
               </Tooltip>
             )}

@@ -143,3 +143,4 @@ npm.cmd run build
 - **NOT TESTED:** row-lock/concurrency/FK thực trên PostgreSQL; mocks mô phỏng lịch biểu và metadata không thay DB proof. Cần reviewer đánh giá blocker trước merge; không chạy migrations hoặc dữ liệu thật.
 - Chưa push/PR/merge.
 - DELETE-02: browser Xóa **5/5 PASS**, frontend typecheck/lint/build PASS (cảnh báo chunk hiện hữu). Fixture auth ban đầu che route rooms do đăng ký hai lần đã sửa bằng optional permissions của overlay fixture. Fresh detail kiểm toàn revisions; pending guards, report conflict, confirm media text, pagination và focus đã kiểm chứng bằng mocked API.
+- DELETE-03: hide RED 3/4 trước implementation; sau fix Xóa/Ẩn **9/9 PASS**, frontend typecheck/lint/build PASS. Version GET mới tại confirm, permission hide/update tách riêng, 409 không tự retry; hidden row giữ published pointer nên không mở khóa xóa. Test hide tách `exhibit-hide-policy.spec.ts` để review riêng.
