@@ -24,7 +24,7 @@
 
 ## 2. Global constraints
 
-- Giai đoạn hiện tại chỉ tạo nhánh/PLAN/TASK rồi **DỪNG để người dùng duyệt**.
+- PLAN/TASK đã duyệt; triển khai trên cùng nhánh và dừng trước push/PR/merge.
 - Một nhánh chung docs + backend + frontend; sau duyệt mỗi task kiểm chứng xong có commit riêng.
 - Không migration, schema/database changes, seed, đổi quyền/RBAC, API route/envelope hoặc submit/publish/reject business flow.
 - Không chạy mutation thật hoặc test tự chạy migrations. Tests dùng metadata/query runner giả lập và API mocks; nếu cần đọc API thật, chỉ GET bằng môi trường người dùng cho phép, không lấy/in token.
@@ -101,4 +101,14 @@ qb.orderBy('rev.createdAt', 'ASC')
 - [x] Phân biệt test mocks/metadata với persistence/SQL thật, giữ FIFO hiện tại.
 - [x] Người dùng duyệt trước commit/implementation.
 
-**Trạng thái:** Plan only. Chưa sửa source/test hoặc chạy verification cho bản fix, chưa commit/push/PR.
+## 7. Verification sau triển khai
+
+- Đã sửa order `rev.createdAt` và tie-breaker `rev.id`; test repository đi qua metadata/order resolution TypeORM thật, không initialize DB hoặc chạy migration. RED trước fix đúng exception `databaseName` cả trang 1/2.
+- Backend focused moderation + exhibit-service: **162/162 PASS**, 0 fail/skip. Typecheck, lint và build backend PASS.
+- Frontend affected regression: **43/43 PASS**, 0 fail/skip, gồm 11 queue tests, 13 exhibit-edit, 8 nested-modal, 3 moderation-keyboard, 8 admin-navigation. Typecheck, lint và build frontend PASS; build còn cảnh báo chunk >500 kB hiện hữu.
+- Fixture queue stateful: submit thành công mới thêm revision; test quay lại queue dưới 30 giây, invalidation cả trang 1/2, FIFO, 422/403/409 không báo success/tạo record giả.
+- Shared frontend RevisionContent type song ngữ ảnh hưởng Reports: cập nhật đúng hai field reported name/description và thêm browser regression; không đổi report mutation/behavior.
+- Browser Edge/Chromium trên Windows; mocked APIs chặn mutation thật. Output ignored tại `front-end/tmp/queue-final-regression/`.
+- **NOT TESTED:** GET queue có xác thực trên database/session thật của người dùng; tests metadata/HTTP mock không chứng minh SQL live, không có migration hoặc ghi dữ liệu CMS thật.
+- Giới hạn đã duyệt còn giữ: service diff dùng `String(value)` với text object có thể hiện `[object Object]`; không sửa diff/contract trong task này. Không kiểm thử screen reader/thiết bị thật.
+- Đã review diff/phạm vi, không schema/RBAC/dependency changes; commit ledger ở task document. Chưa push/PR/merge.
