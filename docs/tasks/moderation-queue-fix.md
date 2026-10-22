@@ -127,4 +127,8 @@ npm.cmd run build
 - [x] Người dùng duyệt PLAN/TASK.
 - [ ] Commit docs rồi triển khai sau duyệt.
 
-**Evidence hiện tại:** chỉ tạo hai file Markdown; chưa sửa source/test, chưa commit/push/PR và chưa chạy verification bản fix.
+## Evidence triển khai
+
+- QUEUE-00: `bb0e992`, docs commit trước source; baseline không thay đổi sau fetch.
+- QUEUE-01: test TypeORM metadata thật RED đúng `databaseName` cả page 1/2; sau đổi createdAt + tie-breaker **25/25 focused backend tests PASS**, typecheck/lint/build PASS. Không initialize DB/run migrations; HTTP tests dùng service giả, không chứng minh SQL live.
+- Chưa push/PR/merge.

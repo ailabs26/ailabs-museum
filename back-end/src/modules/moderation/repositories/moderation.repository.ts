@@ -38,7 +38,8 @@ export class ModerationRepository {
       qb.andWhere('exhibit.room_id = :roomId', { roomId: query.roomId });
     }
 
-    qb.orderBy('rev.created_at', 'ASC')
+    qb.orderBy('rev.createdAt', 'ASC')
+      .addOrderBy('rev.id', 'ASC')
       .skip((page - 1) * pageSize)
       .take(pageSize);
 
