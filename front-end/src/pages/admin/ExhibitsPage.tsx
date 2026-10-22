@@ -533,6 +533,8 @@ export function ExhibitsPage() {
 
   const openCreate = () => {
     if (saveMutation.isPending) return;
+    actionRequestRef.current++;
+    if (!deleteMutation.isPending && !hideMutation.isPending) { actionBusyRef.current = false; setIsActionBusy(false); }
     editSessionRef.current++;
     setEditing(null);
     setEditLoadState('ready');
@@ -552,6 +554,8 @@ export function ExhibitsPage() {
 
   const openEdit = (exhibit: ExhibitRow): Promise<boolean> => {
     if (saveMutation.isPending) return Promise.resolve(false);
+    actionRequestRef.current++;
+    if (!deleteMutation.isPending && !hideMutation.isPending) { actionBusyRef.current = false; setIsActionBusy(false); }
     const session = ++editSessionRef.current;
     setEditing(exhibit);
     setEditLoadState('loading');
@@ -620,6 +624,8 @@ export function ExhibitsPage() {
   }
 
   const openDetail = (exhibit: ExhibitRow) => {
+    actionRequestRef.current++;
+    if (!deleteMutation.isPending && !hideMutation.isPending) { actionBusyRef.current = false; setIsActionBusy(false); }
     setDetailId(exhibit.id);
     detailDrawer.open();
   };

@@ -1,12 +1,12 @@
 # Exhibit Deletion Policy — Task breakdown
 
-**Trạng thái:** Đã duyệt, bắt đầu triển khai; chưa push/PR.
+**Trạng thái:** Đã triển khai và kiểm chứng local; dừng chờ review PostgreSQL concurrency trước tích hợp. Chưa push/PR/merge.
 **Plan:** [exhibit-deletion-policy-plan.md](../plans/exhibit-deletion-policy-plan.md).
 **Branch/base:** `fix/exhibit-deletion-policy` từ `origin/dev` `f4ab406`, đã fetch và đồng bộ.
 
 ## Quy tắc
 
-- Chỉ viết docs trong phiên này, dừng chờ duyệt. Sau duyệt commit docs trước source, mỗi task có commit riêng trên cùng branch; không push/PR/merge khi chưa được yêu cầu.
+- Gate docs đã được duyệt và commit trước source; mỗi task có commit riêng trên cùng branch. Không push/PR/merge khi chưa được yêu cầu.
 - Không thêm xóa revision; giữ endpoint xóa riêng revision hiện có. Không migration/schema/RBAC/dependency mới hoặc mutation dữ liệu thật.
 - Trước commit kiểm status/diff/log/secrets/whitespace, stage đúng task; source commit chỉ sau focused tests và gates đạt, không squash/amend/commit rỗng.
 - Chỉ test mocks/metadata/isolated runner mặc định; không tự chạy suites PostgreSQL có migration/seed. DB concurrency chưa kiểm chứng phải ghi blocker/NOT TESTED để reviewer quyết định.
@@ -18,7 +18,7 @@
 **Bước**
 - [x] Người dùng duyệt policy/report protection, đường Hide và phạm vi phối hợp writer locks.
 - [x] Fetch lại origin/dev, đối chiếu thay đổi liên quan từ baseline, bảo toàn user work.
-- [ ] Đánh dấu đã duyệt, review file/task/tests và commit `docs(exhibits): plan deletion policy fixes` sau whitespace check.
+- [x] Đánh dấu đã duyệt, review file/task/tests và commit `docs(exhibits): plan deletion policy fixes` sau whitespace check.
 
 **Test:** docs review + `git diff --cached --check`.
 **Acceptance:** Docs duyệt/commit trước implementation, đúng một branch cho feature.
@@ -38,15 +38,15 @@
 - Chỉ dùng native PostgreSQL row locks trong repository, không service truy cập TypeORM/global mutex.
 
 **Bước**
-- [ ] Test trước policy matrix: chưa published Draft/Rejected/no revision cho xóa; pointer/visible/Approved bất kỳ/In Review bất kỳ/reports open/resolved/dismissed chặn.
-- [ ] Test guard/reports từ snapshot **trong tx**, truyền cùng manager, check report exhibitId hoặc reportedRevisionId, không gọi media/storage delete.
-- [ ] Chạy RED để chứng minh In Review/hidden published UI/backend gaps; test message không còn “ẩn trước rồi xóa”.
-- [ ] Implement khóa exhibit riêng dòng, đọc/khóa revision, xét policy/report rồi cascade trong cùng transaction; report check qua repository.
-- [ ] Test FK 23503 report phát sinh sau precheck → rollback và 409; constraint khác/exception khác không bị nuốt. Xác định tên constraint từ entity metadata thay vì hardcode đoán.
-- [ ] Test lịch biểu DELETE↔submit/update/publish. Đọc và kiểm tra lại record/state sau lock trước ghi, không save stale entity để resurrect record. Tôn trọng media→exhibit→revision cho writer có gate; DELETE exhibit→revision và không khóa media.
-- [ ] Chỉ bổ sung writer revalidation/lock cần thiết với failing test. Nếu không thể giải quyết race gọn trong phạm vi hoặc có deadlock, dừng xin review trước tiếp tục; không tuyên bố atomic chỉ vì mock tx callback PASS.
-- [ ] Test DELETE báo 404/409 chuẩn envelope và quyền `exhibit:update`/audit không đổi; xóa riêng revision vẫn giữ behavior cũ.
-- [ ] Chạy focused tests + typecheck/lint/build backend, review diff và commit `fix(exhibits): enforce safe whole-exhibit deletion`.
+- [x] Test trước policy matrix: chưa published Draft/Rejected/no revision cho xóa; pointer/visible/Approved bất kỳ/In Review bất kỳ/reports chặn; query report không lọc status.
+- [x] Test guard/reports từ snapshot **trong tx**, truyền cùng manager, check report exhibitId hoặc reportedRevisionId, không gọi media/storage delete.
+- [x] Chạy RED để chứng minh In Review/hidden published UI/backend gaps; test message không còn “ẩn trước rồi xóa”.
+- [x] Implement khóa exhibit riêng dòng, đọc/khóa revision, xét policy/report rồi cascade trong cùng transaction; report check qua repository.
+- [x] Mock lỗi report FK sau precheck → rollback và 409; constraint khác/exception khác không bị nuốt. Identity từ metadata TypeORM. FK thực tế vẫn NOT TESTED.
+- [x] Fake schedules DELETE↔submit/update/publish kiểm chứng revalidation/conditional update không resurrect snapshot. Review lock order media→exhibit→revision; chưa có DB deadlock proof.
+- [x] Chỉ bổ sung writer revalidation/lock cần thiết với failing test; giữ PostgreSQL concurrency là review blocker, không nhận atomic từ mock tx callback.
+- [x] Test DELETE báo 404/409 chuẩn envelope và metadata quyền `exhibit:update`/audit không đổi; xóa riêng revision giữ behavior cũ.
+- [x] Chạy focused tests + typecheck/lint/build backend, review diff và commit `fix(exhibits): enforce safe whole-exhibit deletion`.
 
 **Test commands — `back-end/`**
 ```powershell
@@ -57,10 +57,10 @@ npm.cmd run build
 ```
 
 **Acceptance**
-- [ ] Không hard-delete hiện vật có Published/Approved/In Review hoặc report refs; media không bị xóa theo.
-- [ ] Guard và cascade chung transaction, rollback không mất hotspots/revisions khi delete thất bại; không resurrect từ writer stale.
-- [ ] FK report chuyển đúng 409, DB errors khác không bị che; không schema/migration/RBAC changes.
-- [ ] Test/lock evidence và giới hạn DB concurrency thật được ghi rõ trước nghiệm thu.
+- [x] Policy tests chặn Published/Approved/In Review/report refs; cascade không xóa media.
+- [x] Guard/cascade chung manager; fake transaction runner rollback hotspots/revisions khi lỗi; writer revalidation tests không save stale snapshot. DB rollback/concurrency chưa kiểm chứng.
+- [x] Mock FK report đúng identity chuyển 409, lỗi khác không bị che; không schema/migration/RBAC changes.
+- [x] Test/lock evidence và giới hạn DB concurrency thật được ghi rõ; cần reviewer quyết định gate DB trước merge.
 
 ## DELETE-02 — CMS guard và xác nhận xóa đúng nghĩa
 
@@ -70,19 +70,19 @@ npm.cmd run build
 **Interface:** dùng `ExhibitRow.publishedRevisionId/visibility/revisionState`, detail revisions và `exhibitsService.delete(id)` hiện có; không đổi DTO status để chữa UI.
 
 **Bước**
-- [ ] Stateful fixture có never-published Draft/Rejected, hidden published, visible published, Approved history/In Review, mock report 409 và deferred DELETE/GET; auth permissions rõ, không gửi mutation thật.
-- [ ] Test RED: hidden published và In Review không được mở confirm xóa; nút không phụ thuộc riêng status=draft.
-- [ ] Disable/giải thích các trạng thái đã biết; native icon/button có aria-label, keyboard usable. Không dùng disabled tooltip làm cách duy nhất thông báo 409.
-- [ ] Fetch detail mới trước confirm; nếu state chuyển Approved/In Review/pointer có từ lần render cũ thì dừng action và refetch. Guard response muộn không mở nhầm confirm cho record khác.
-- [ ] Confirm nói xóa vĩnh viễn toàn hiện vật/revisions/hotspots, media vẫn trong thư viện; Hủy/Escape không DELETE, xác nhận một lần, pending không double invoke.
-- [ ] Xử lý report/version/state 409 từ server bằng toast/inline rõ nghĩa và refetch; không báo thành công. Không bắt người dùng có report:read để precheck reports.
-- [ ] Success invalidate đúng keys thực tế exhibit list/detail, room counts/select/tour-order, moderation; xử lý trang cuối bị rỗng và focus đích còn tồn tại.
-- [ ] Chạy tests + frontend gates, review và commit `fix(exhibits): align delete controls with protected states`.
+- [x] Stateful fixture có Draft, hidden/visible published, Approved history/In Review, report 409, deferred DELETE/GET và auth permissions; Rejected được kiểm backend matrix. Không mutation thật.
+- [x] Test RED: hidden published và In Review không được mở confirm xóa; nút không phụ thuộc riêng status=draft.
+- [x] Disable/giải thích các trạng thái đã biết; native icon/button có aria-label, keyboard usable. 409 được toast riêng.
+- [x] Fetch detail mới trước confirm, chặn Approved/In Review/pointer; guard response muộn khi mở form/detail/create.
+- [x] Confirm nêu toàn hiện vật/revisions/hotspots/media; Escape không DELETE, keyboard confirm và pending một request.
+- [x] Report/state 409 hiện nguyên nhân và refetch; không yêu cầu report:read, không báo thành công.
+- [x] Invalidate lifecycle keys, trang cuối về trang trước, focus heading còn tồn tại.
+- [x] Tests + frontend gates và commit `fix(exhibits): align delete controls with protected states`.
 
 **Acceptance**
-- [ ] Có quyền update mới thấy Xóa; không hard-delete hidden published/In Review qua UI, backend vẫn bảo vệ direct API.
-- [ ] Stale detail/409 giữ record và message đúng; cancel/confirm không double requests; media giữ nguyên.
-- [ ] Refetch/paging/focus hợp lệ sau success; không thêm nút xóa revision.
+- [x] Có quyền update mới thấy Xóa; UI chặn hidden published/In Review, backend có policy guards.
+- [x] Stale detail/409 giữ record/message; cancel/pending một request; media fixture giữ nguyên.
+- [x] Refetch/paging/focus hợp lệ; không thêm nút xóa revision.
 
 ## DELETE-03 — Đường Ẩn cho hiện vật đang public
 
@@ -92,40 +92,40 @@ npm.cmd run build
 **Interface:** `moderationService.hide(id, version)`, permission `revision:hide`, response `ExhibitBrief`, không đổi endpoint hoặc gỡ publishedRevisionId.
 
 **Bước**
-- [ ] Test action Ẩn chỉ khi visible + published pointer + đúng hide permission; user chỉ update không được gọi hide, user chỉ hide vẫn thao tác Ẩn được.
-- [ ] Test confirm nội dung bảo toàn history/media, Cancel không request, confirm fetch version mới và POST hide đúng payload; không tự unhide/delete/publish.
-- [ ] Implement nút Ẩn khỏi bảo tàng trong danh sách và loading/error/409 guards; gọi API hiện có, không yêu cầu record còn trong moderation queue.
-- [ ] Test 409 do version stale không tự retry để vượt lock; refetch hiển thị state mới. Test success row chuyển hidden, giữ pointer và Xóa vẫn bị chặn.
-- [ ] Invalidate admin exhibit/detail/moderation/public-room queries liên quan, không clear toàn query client. Test public GET fixture sau ẩn không còn item; history/media mock vẫn giữ.
-- [ ] Chạy tests + frontend gates, review và commit `fix(exhibits): expose hide action for published items`.
+- [x] Action Ẩn đúng visible/pointer/permission; user chỉ update không thấy Ẩn, user chỉ hide thực hiện thành công.
+- [x] Confirm bảo toàn history/media, Escape không request, confirm lấy version mới và POST đúng payload.
+- [x] Nút Ẩn độc lập queue, có pending/error/409 guards và dùng API hiện có.
+- [x] 409 không retry; success row hidden, giữ pointer và Xóa vẫn bị chặn.
+- [x] Invalidate admin/moderation/public keys, không clear dữ liệu khác; public GET fixture sau ẩn bỏ item, history/media giữ nguyên.
+- [x] Tests + frontend gates, commit `fix(exhibits): expose hide action for published items`.
 
 **Acceptance**
-- [ ] Có đường Ẩn độc lập queue cho đúng quyền, version lấy mới và xử lý conflict rõ ràng.
-- [ ] Ẩn không làm mất history/media hoặc mở khóa hard-delete; public refresh phản ánh trạng thái ẩn.
+- [x] Ẩn độc lập queue, đúng quyền/version mới và conflict rõ ràng.
+- [x] Fixture kiểm history/media/pointer giữ nguyên, Xóa vẫn khóa và public GET bỏ item.
 
 ## DELETE-04 — Regression/evidence và dừng review
 
 **Files:** hai docs nhiệm vụ, tests thực sự liên quan; README chỉ nếu cần hướng dẫn Xóa/Ẩn mới.
 
 **Bước**
-- [ ] Chạy focused backend DELETE-01, moderation hide/publish và frontend deletion-policy, edit-persistence, readonly-drawer, moderation keyboard/nested queue regression bị ảnh hưởng.
-- [ ] Typecheck/lint/build cả hai app; không tự chạy integration DB/migration/seed. Nếu cần DB lock proof thật, xin phê duyệt riêng và không báo PASS khi chưa có.
-- [ ] Review full diff chống scope creep; không revision-delete feature, schema/RBAC/storage/file changes hoặc secrets/artifacts.
-- [ ] Ghi matrix PASS/FAIL/NOT TESTED theo từng policy, concurrent schedules, cache/focus/version; báo lock concurrency thật NOT TESTED nếu chỉ mock, không che blocker dữ liệu phá hủy.
-- [ ] Ghi commit ledger và còn thiếu; commit `test(exhibits): verify deletion and hiding policy`, báo cáo rồi DỪNG trước push/PR/merge để con người review.
+- [x] Focused backend 409/409, moderation HTTP 8/8 và browser regression 56/56 PASS.
+- [x] Typecheck/lint/build cả hai app PASS; không chạy integration DB/migration/seed; DB proof cần phê duyệt riêng.
+- [x] Full diff review: phạm vi policy/UI/tests/docs; không revision-delete feature, schema/RBAC/storage/dependency changes hoặc secrets/artifacts.
+- [x] Matrix PASS/NOT TESTED ở dưới; PostgreSQL concurrency/rollback/FK thực tế là review blocker.
+- [x] Ghi commit ledger và còn thiếu trong commit `test(exhibits): verify deletion and hiding policy`; dừng ở nhánh local trước push/PR/merge để con người review.
 
 **Frontend commands dự kiến — `front-end/`**
 ```powershell
-npm.cmd test -- exhibit-deletion-policy.spec.ts exhibit-edit-persistence.spec.ts readonly-drawer-focus.spec.ts moderation-keyboard.spec.ts accessibility-modal.spec.ts moderation-queue.spec.ts --reporter=line
+npm.cmd test -- exhibit-deletion-policy.spec.ts exhibit-hide-policy.spec.ts exhibit-edit-persistence.spec.ts readonly-drawer-focus.spec.ts moderation-keyboard.spec.ts accessibility-modal.spec.ts moderation-queue.spec.ts --reporter=line
 npm.cmd run typecheck
 npm.cmd run lint
 npm.cmd run build
 ```
 
 **Acceptance**
-- [ ] Đủ policy + UI Xóa/Ẩn có test, guards/focus/media không regress; counts/log thật.
-- [ ] Lỗi data-loss/race chưa giải quyết không được nhận hoàn thành; mọi thiếu DB live proof ghi review blocker rõ ràng.
-- [ ] Một nhánh/những commit nhỏ, không push/PR/merge trước yêu cầu.
+- [x] Policy/UI/guards/focus/media có mocked tests và counts thật (matrix bên dưới).
+- [x] Không nhận hoàn thành DB safety từ mocks; live proof là review blocker trước merge.
+- [x] Một nhánh, commit theo task; dừng trước push/PR/merge.
 
 ## Gate hiện tại
 
@@ -144,3 +144,41 @@ npm.cmd run build
 - Chưa push/PR/merge.
 - DELETE-02: browser Xóa **5/5 PASS**, frontend typecheck/lint/build PASS (cảnh báo chunk hiện hữu). Fixture auth ban đầu che route rooms do đăng ký hai lần đã sửa bằng optional permissions của overlay fixture. Fresh detail kiểm toàn revisions; pending guards, report conflict, confirm media text, pagination và focus đã kiểm chứng bằng mocked API.
 - DELETE-03: hide RED 3/4 trước implementation; sau fix Xóa/Ẩn **9/9 PASS**, frontend typecheck/lint/build PASS. Version GET mới tại confirm, permission hide/update tách riêng, 409 không tự retry; hidden row giữ published pointer nên không mở khóa xóa. Test hide tách `exhibit-hide-policy.spec.ts` để review riêng.
+
+### DELETE-04 — Verification ngày 2026-10-22
+
+- Fetch lại `origin/dev`: vẫn `f4ab406`; nhánh hiện có hơn baseline 4 commit trước commit regression cuối. Giữ workspace/branch đang triển khai.
+- Lệnh focused backend ở DELETE-01: **409 tests / 42 suites PASS**, 0 fail/skip; trong đó policy repository/HTTP mới **22 tests PASS**. Chạy thêm `node -r reflect-metadata -r ts-node/register --test --test-reporter=spec src/modules/moderation/tests/moderation-http.spec.ts`: **8/8 PASS**.
+- Browser command ở trên: **56/56 PASS**, Chromium qua Edge, API mocks; riêng Xóa/Ẩn **15/15 PASS**. Fixture history Approved không rỗng và media được so sánh trước/sau Hide; public GET trước có item, sau Hide không còn.
+- Sau khi bổ sung history Approved không rỗng vào fixture, chạy lại riêng Xóa/Ẩn: **15/15 PASS**; các regression khác không đổi.
+- Regression late DELETE preflight: tạm bỏ 6 dòng guard đang dở → test FAIL (confirm vẫn xuất hiện trên form sửa), khôi phục guard → **1/1 PASS**. Không ghi nhận chạy RED mới cho các bổ sung test chỉ kiểm hành vi đã có.
+- `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build`: **PASS cho cả hai app**. Frontend build có cảnh báo chunk >500 kB; không làm build thất bại.
+- Một lượt chạy song song ban đầu bị lỗi tool `ChildProcess.kill`, không tính là PASS. Đã chạy lại từng gate và các suite, lấy counts ở trên.
+
+| Acceptance / scenario | Evidence local | Kết quả |
+|---|---|---|
+| Draft / Rejected / không revision được xóa; pointer/visible/Approved history/In Review bị chặn | Policy matrix + service suite | PASS (mocks) |
+| Reports mọi status, exhibitId OR revisionId thực tế kể cả cross-reference | Repository assertion OR query, không có filter status; service chặn trước cascade | PASS (query contract/mocks) |
+| Transaction manager xuyên suốt, exhibit→revisions→report→cascade, không xóa media | Policy log + repo suite; cascade fake runner kiểm thứ tự/khôi phục và media giữ nguyên | PASS (fake manager/runner) |
+| Report FK `23503` đúng identity → 409; lỗi khác propagate | TypeORM entity metadata + injected error + HTTP error envelope | PASS (metadata/mocks) |
+| DELETE trước submit/update/publish không resurrect snapshot | Revalidation sau media gate + conditional publish UPDATE affected=0 | PASS (fake schedules) |
+| Endpoint/permission/audit và xóa riêng revision | Controller metadata/execution suite; service regression | PASS |
+| Stale detail/review conflict/report 409, preflight error và response về muộn | Browser Xóa; RED→GREEN late-preflight | PASS |
+| Keyboard cancel/confirm, pending một request, paging/focus | Browser Xóa/Ẩn và readonly/nested overlay suites | PASS |
+| Hide đúng quyền/version, không retry conflict, giữ published pointer/history/media | Browser Hide (user chỉ hide thực hiện thật trong mock) | PASS |
+| Public refresh và cache keys liên quan, cache khác giữ nguyên | Public GET fixture + query invalidation assertions | PASS (fixture/cache contract) |
+| PostgreSQL row locks/deadlock/report insert↔DELETE/FK/rollback với giao dịch thật | Không có isolated DB được cho phép; không chạy migration/schema/seed | **NOT TESTED — REVIEW BLOCKER** |
+
+**Giới hạn nghiệm thu:** Fake rollback chủ động khôi phục state chỉ kiểm Repository/TransactionManager truyền lỗi đúng đường; không chứng minh PostgreSQL rollback. Report insert commit trước/sau DELETE và hai chiều lock contention chưa chạy trên DB. Người phụ trách database/reviewer cần quyết định kiểm chứng bổ sung trước merge; chưa nhận nghiệm thu concurrency thực tế.
+
+### Commit ledger
+
+| Task | Commit | Nội dung |
+|---|---|---|
+| DELETE-00 | `caee7c3` | Docs đã duyệt trước source |
+| DELETE-01 | `dc13c1d` | Backend policy và writer revalidation |
+| DELETE-02 | `90825da` | CMS guard/xác nhận Xóa |
+| DELETE-03 | `3abfec2` | CMS action Ẩn |
+| DELETE-04 | Commit mang message `test(exhibits): verify deletion and hiding policy` | Regression/evidence cuối; hash báo trong báo cáo hoàn thành để tránh tự tham chiếu hash trong chính commit |
+
+**Integration:** Giữ nhánh local `fix/exhibit-deletion-policy`. Chưa push, chưa có URL PR, chưa merge. Dừng để con người review, đặc biệt gate PostgreSQL ở trên.

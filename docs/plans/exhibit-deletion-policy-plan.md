@@ -22,7 +22,7 @@
 
 ## 2. Global constraints
 
-- Chỉ tạo nhánh và hai docs rồi dừng chờ duyệt; chưa commit ở phiên lập kế hoạch.
+- Gate lập kế hoạch đã hoàn tất: người dùng duyệt, docs được commit trước source; tiếp tục trên cùng nhánh và dừng trước push/PR/merge.
 - **Không thêm UI xóa revision; không thay endpoint/hành vi xóa riêng revision.**
 - Không migration/schema, seed, database writes thật, dependency mới, đổi permission hoặc ép gỡ ràng buộc FK.
 - Không soft-delete mới, purge/history cleanup hay xóa file media theo exhibit. Không tự gỡ publishedRevisionId để cho xóa.
@@ -126,4 +126,10 @@ Không bắt buộc sửa mọi candidate. Không sửa UI/backend endpoint xóa
 - [x] Có task/file/test/acceptance/commit boundaries và giới hạn rõ.
 - [x] Người dùng duyệt trước implementation/commit.
 
-**Trạng thái:** Chỉ PLAN/TASK; chưa source/test/commit/push/PR.
+**Trạng thái (2026-10-22):** Đã triển khai DELETE-00–03 và hoàn tất regression/evidence local của DELETE-04; chờ review trước tích hợp. Ledger và matrix chi tiết ở [task breakdown](../tasks/exhibit-deletion-policy.md).
+
+- Backend focused: **409/409 PASS**; moderation HTTP: **8/8 PASS**.
+- Browser mocked API: **56/56 PASS** (bao gồm 15 test Xóa/Ẩn); typecheck/lint/build cả hai app PASS. Vite còn cảnh báo chunk >500 kB.
+- Regression response DELETE preflight về muộn: bỏ guard → FAIL, khôi phục → PASS; response không mở confirm chồng lên form mới.
+- **Review blocker / NOT TESTED:** row-lock, deadlock, FK/report insert đồng thời và rollback thực tế trên PostgreSQL. Fake manager/metadata/transaction runner chỉ chứng minh control flow và hợp đồng query; không thay thế DB proof. Chưa được phép chạy DB integration/migration/seed.
+- Giữ nhánh `fix/exhibit-deletion-policy`; chưa push, chưa tạo PR, chưa merge.

@@ -11,6 +11,14 @@ import { Exhibit, ExhibitVisibility } from '../entities/exhibit.entity';
 import { ExhibitRevision, RevisionState } from '../entities/exhibit-revision.entity';
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { UpdateExhibitDto } from '../dto/update-exhibit.dto';
+import { ModerationService } from '../../moderation/services/moderation.service';
+import { ModerationRepository } from '../../moderation/repositories/moderation.repository';
+import { Hotspot } from '../entities/hotspot.entity';
+import { Test } from '@nestjs/testing';
+import request from 'supertest';
+import { AdminExhibitsController } from '../controllers/admin-exhibits.controller';
+import { AllExceptionsFilter } from '../../../common/filters/all-exceptions.filter';
+import { ResponseInterceptor } from '../../../common/interceptors/response.interceptor';
 
 function setup(states: RevisionState[] = []) {
   const exhibit: Exhibit = Object.assign(new Exhibit(), { id: 'fixture', publishedRevisionId: null, visibility: ExhibitVisibility.HIDDEN, version: 1, isDeleted: false });
@@ -24,7 +32,7 @@ function setup(states: RevisionState[] = []) {
     findRevisionsForDeletion: async (_id: string, m: EntityManager) => { assert.equal(m, manager); log.push('lock-revisions'); return revisions; },
     hasReportReferences: async (_id: string, ids: string[], m: EntityManager) => { assert.equal(m, manager); assert.deepEqual(ids, revisions.map(r => r.id)); log.push('reports'); return reports; },
     isReportReferenceConflict: (error: unknown) => error === 'report-fk',
-    deleteCascadeDraft: async (_id: string, m: EntityManager) => { assert.equal(m, manager); log.push('delete'); if (failDelete) throw failDelete; },
+    deleteCascadeDraft: async (_id: string, m: EntityManager) => { assert.equal(m, manager); log.push('delete'); if (failDelete) throw failDelete; present = false; },
     findActiveRevision: async () => revisions.at(-1) ?? null,
     save: async () => { log.push('save-exhibit'); return exhibit; },
     saveRevision: async (r: ExhibitRevision) => { log.push('save-revision'); return r; },
@@ -101,6 +109,43 @@ describe('Whole exhibit deletion policy', () => {
       assert.equal(state.log.includes('save-exhibit'), false);
     });
   }
+
+  it('a stale publish snapshot cannot recreate an exhibit deleted before its conditional update', async () => {
+    const state = setup([RevisionState.DRAFT]);
+    const snapshot = Object.assign(new ExhibitRevision(), state.revisions[0], { state: RevisionState.IN_REVIEW });
+    const updates: unknown[] = [];
+    const manager = { update: async (target: unknown) => { updates.push(target); return { affected: 0 }; } } as unknown as EntityManager;
+    const moderation = new ModerationService(
+      { findDetail: async () => snapshot } as unknown as ModerationRepository,
+      { run: async (work: (m: EntityManager) => unknown) => work(manager) } as TransactionManager,
+      { assertPublishable: async () => { await state.service.deleteExhibitDraft('fixture'); } } as never,
+    );
+    await assert.rejects(() => moderation.publish(snapshot.id, { version: 1 }, { id: 'actor' } as never), ConflictException);
+    assert.deepEqual(updates, [Exhibit]);
+    await assert.rejects(() => state.service.deleteExhibitDraft('fixture'), NotFoundException);
+  });
+
+  it('cascade failure restores hotspots, revisions and exhibit through the transaction runner', async () => {
+    const state = { exhibit: true, revisions: ['revision'], hotspots: ['hotspot'], media: ['shared-media'] };
+    const original = structuredClone(state);
+    const log: string[] = [];
+    const manager = { getRepository: (target: unknown) => ({
+      find: async () => state.revisions.map(id => ({ id })),
+      delete: async () => {
+        if (target === Hotspot) { log.push('hotspots'); state.hotspots = []; }
+        else if (target === ExhibitRevision) { log.push('revisions'); state.revisions = []; }
+        else { log.push('exhibit'); throw new Error('simulated exhibit delete failure'); }
+      },
+    }) } as unknown as EntityManager;
+    const dataSource = { transaction: async (work: (m: EntityManager) => unknown) => {
+      try { return await work(manager); }
+      catch (error) { Object.assign(state, structuredClone(original)); log.push('rollback'); throw error; }
+    } } as unknown as DataSource;
+    const repo = new ExhibitsRepository({ target: Exhibit } as never, { target: ExhibitRevision } as never, { target: Hotspot } as never);
+    await assert.rejects(() => new TransactionManager(dataSource).run(m => repo.deleteCascadeDraft('fixture', m)), /simulated exhibit delete failure/);
+    assert.deepEqual(log, ['hotspots', 'revisions', 'exhibit', 'rollback']);
+    assert.deepEqual(state, original);
+  });
 });
 
 describe('Deletion repository guards and report constraint identities', () => {
@@ -136,4 +181,28 @@ describe('Deletion repository guards and report constraint identities', () => {
     assert.equal(repo.isReportReferenceConflict({ driverError: { code: '23505', constraint: 'other' } }), false);
     assert.equal(repo.isReportReferenceConflict({ driverError: { code: '23503', constraint: 'unknown_fk' } }), false);
   });
+});
+
+describe('Whole exhibit deletion HTTP errors', () => {
+  for (const status of [404, 409]) {
+    it(`returns the standard ${status} envelope with the policy reason`, async () => {
+      const reason = status === 404 ? 'Không tìm thấy hiện vật' : 'Hiện vật có báo cáo liên quan nên không thể xóa vĩnh viễn.';
+      const module = await Test.createTestingModule({
+        controllers: [AdminExhibitsController],
+        providers: [{ provide: ExhibitsService, useValue: { deleteExhibitDraft: async () => {
+          throw status === 404 ? new NotFoundException(reason) : new ConflictException(reason);
+        } } }],
+      }).compile();
+      const app = module.createNestApplication();
+      app.useGlobalInterceptors(new ResponseInterceptor());
+      app.useGlobalFilters(new AllExceptionsFilter());
+      try {
+        await app.init();
+        const response = await request(app.getHttpServer()).delete('/admin/exhibits/10000000-0000-4000-8000-000000000001').expect(status);
+        assert.equal(response.body.success, false);
+        assert.equal(response.body.message, reason);
+        assert.equal(response.body.data, null);
+      } finally { await app.close(); }
+    });
+  }
 });
