@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import {
   Badge,
+  Alert,
   Button,
   Divider,
   Drawer,
@@ -27,6 +28,12 @@ import { notify } from '@/shared/components/feedback';
 import { Column, DataTable } from '@/shared/components/data';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { moderationService, Revision } from '@/services/moderation.service';
+import { resolveBilingualText } from '@/helpers/exhibitHotspots';
+
+function revisionName(value: Revision['content']['name']): string {
+  const { vi, en } = resolveBilingualText(value);
+  return vi.trim() || en.trim() || 'Chưa đặt tên';
+}
 
 const STATE_COLOR: Record<string, string> = {
   draft: 'gray',
@@ -145,7 +152,7 @@ export function ModerationPage() {
       render: (r) => (
         <Stack gap={2}>
           <Text fw={600} size="sm">
-            {r.content.name}
+            {revisionName(r.content.name)}
           </Text>
           <Text size="xs" c="dimmed">
             Bản #{r.revisionNo}
@@ -175,7 +182,7 @@ export function ModerationPage() {
         <Button
           variant="light"
           size="xs"
-          aria-label={`Xem chi tiết ${revision.content.name}, bản #${revision.revisionNo}, ${revision.id}`}
+          aria-label={`Xem chi tiết ${revisionName(revision.content.name)}, bản #${revision.revisionNo}, ${revision.id}`}
           onClick={(event) => { event.stopPropagation(); setDetailId(revision.id); }}
         >
           Xem chi tiết
@@ -192,9 +199,15 @@ export function ModerationPage() {
         titleRef={titleRef}
         title="Kiểm duyệt nội dung"
         description="Duyệt, từ chối hoặc tạm ẩn các phiên bản nội dung đang chờ"
+        actions={<Button variant="default" loading={queueQuery.isFetching} disabled={queueQuery.isFetching}
+          onClick={() => void queueQuery.refetch()}>Làm mới</Button>}
       />
 
-      <DataTable
+      {queueQuery.isPending ? <Text role="status">Đang tải hàng chờ…</Text>
+        : queueQuery.isError ? <Alert color="red" role="alert" title="Không tải được hàng chờ kiểm duyệt">
+          <Text>{queueQuery.error.message}</Text>
+          <Button mt="sm" onClick={() => void queueQuery.refetch()}>Thử lại</Button>
+        </Alert> : <DataTable
         columns={columns}
         data={data?.items ?? []}
         rowKey={(r) => r.id}
@@ -206,7 +219,7 @@ export function ModerationPage() {
         onPageChange={setPage}
         emptyText="Không có phiên bản nào chờ duyệt"
         minWidth={680}
-      />
+      />}
 
       <Drawer
         opened={!!detailId}
@@ -220,7 +233,7 @@ export function ModerationPage() {
         size="lg"
         title={
           <Text fw={700} size="lg">
-            {detail ? detail.content.name : 'Chi tiết phiên bản'}
+            {detail ? revisionName(detail.content.name) : 'Chi tiết phiên bản'}
           </Text>
         }
       >
