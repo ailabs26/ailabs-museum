@@ -155,3 +155,9 @@ npm.cmd run build
 - Commit evidence cuối: `test(moderation): verify submit to queue workflow`.
 
 Chưa push/PR/merge; dừng để người dùng review. Các checkbox live/tiêu chí không chứng minh đầy đủ vẫn để trống, không nhận SQL live PASS từ mock.
+
+### Kiểm tra sau phản hồi vẫn lỗi 500
+
+- Mở rộng repository regression qua `getManyAndCount()` thật: SQL runner giả lập trả dữ liệu tại ranh giới I/O, không thay method pagination/execution của builder. Bao phủ queue rỗng và có revision, DISTINCT pagination, hydration. Repository tests **5/5 PASS**; backend typecheck/lint/build PASS.
+- Source và dist đều dùng `rev.createdAt` + `rev.id`. `netstat` xác nhận port 3001 do PID 16788 giữ; `Get-Process` cho thấy process bắt đầu 22/10/2026 09:34:27, trước các build sửa lỗi. Chưa chứng minh process đã reload module mới; cần restart backend và đối chiếu response/log thật, không mặc định đã hết lỗi live.
+- Không kill/restart tiến trình của người dùng, không đọc credentials hoặc gọi mutation/DB thật. Runtime verification vẫn pending sau restart.

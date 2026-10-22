@@ -15,6 +15,36 @@ describe('ModerationRepository joined queue pagination', () => {
     await (db as unknown as { buildMetadatas(): Promise<void> }).buildMetadatas();
   });
 
+  for (const populated of [false, true]) {
+    it(`executes the full joined pagination path with an isolated SQL runner (populated=${populated})`, async () => {
+      const runner = db.createQueryRunner();
+      const sql: string[] = [];
+      const id = '30000000-0000-4000-8000-000000000001';
+      runner.query = async (query: string) => {
+        sql.push(query);
+        const records = query.includes('COUNT(') ? [{ cnt: '1' }]
+          : !populated ? [] : query.includes('SELECT DISTINCT') ? [{ ids_rev_id: id, rev_created_at: new Date(), rev_id: id }]
+          : [{ rev_id: id, rev_exhibit_id: '10000000-0000-4000-8000-000000000001', rev_revision_no: 1,
+            rev_state: 'in_review', rev_content: { name: { vi: 'Bình gốm', en: 'Vase' } }, rev_created_at: new Date() }];
+        return { records, raw: records, affected: records.length };
+      };
+      runner.release = async () => undefined;
+      const revisions = db.getRepository(ExhibitRevision);
+      const create = revisions.createQueryBuilder.bind(revisions);
+      revisions.createQueryBuilder = () => create('rev', runner);
+      try {
+        const result = await new ModerationRepository(revisions, db.getRepository(Exhibit)).queue(new ListQueueQueryDto());
+        assert.equal(result.items.length, populated ? 1 : 0);
+        if (populated) assert.equal(result.items[0].id, id);
+        assert.match(sql[0], /SELECT DISTINCT/);
+        assert.match(sql[0], /rev_created_at/);
+        assert.match(sql[0], /LIMIT 20/);
+      } finally {
+        delete (revisions as Partial<typeof revisions>).createQueryBuilder;
+      }
+    });
+  }
+
   for (const page of [1, 2]) {
     it(`resolves actual TypeORM pagination order metadata on page ${page}`, async () => {
       const revisions = db.getRepository(ExhibitRevision);
