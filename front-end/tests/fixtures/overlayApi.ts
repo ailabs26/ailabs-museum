@@ -18,7 +18,7 @@ export async function installOverlayApi(page: Page) {
     'revision:publish', 'revision:reject', 'revision:submit', 'report:read', 'report:resolve', 'audit:read',
   ] });
   const writes: { method: string; path: string; body: unknown }[] = [];
-  const lists: Record<string, unknown[]> = { '/users': [overlayUser], '/roles': [overlayRole], '/admin/rooms': [overlayRoom], '/admin/exhibits': [overlayExhibit], '/reports': [overlayReport], '/audit': [overlayAudit] };
+  const lists: Record<string, unknown[]> = { '/users': [overlayUser], '/roles': [overlayRole], '/admin/rooms': [overlayRoom], '/admin/exhibits': [overlayExhibit], '/admin/media': [], '/reports': [overlayReport], '/audit': [overlayAudit] };
   await page.route('**/api/**', async route => {
     const request = route.request();
     const path = new URL(request.url()).pathname.slice('/api'.length);
