@@ -133,3 +133,4 @@ npm.cmd run build
 - QUEUE-01: test TypeORM metadata thật RED đúng `databaseName` cả page 1/2; sau đổi createdAt + tie-breaker **25/25 focused backend tests PASS**, typecheck/lint/build PASS. Không initialize DB/run migrations; HTTP tests dùng service giả, không chứng minh SQL live.
 - Chưa push/PR/merge.
 - QUEUE-02: UI RED 5/5, sau fix queue states/name **6/6 PASS**, moderation keyboard+nested **11/11 PASS**; frontend typecheck/lint/build PASS. Shared RevisionContent type ảnh hưởng Reports nên sửa hiển thị đúng hai trường reported name/description và thêm regression riêng, không đổi report mutations.
+- QUEUE-03: RED 2/2 đúng cache queue fresh không fetch; thêm prefix invalidation sau submit success → queue + exhibit edit **24/24 PASS**, frontend typecheck/lint/build PASS. FIFO/paging và submit failure 422/403/409 có coverage.

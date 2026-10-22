@@ -69,3 +69,54 @@ test('reported revision using the shared bilingual type remains readable', async
   await expect(page.getByRole('dialog').getByText('Tên trong báo cáo', { exact: true })).toBeVisible();
   await expect(page.getByRole('dialog').getByText('Reported description', { exact: true })).toBeVisible();
 });
+
+test('successful submission refreshes a recently cached empty queue', async ({ page }) => {
+  const state = await installModerationQueueApi(page);
+  await page.goto('/admin/moderation');
+  await expect(page.getByText('Không có phiên bản nào chờ duyệt', { exact: true })).toBeVisible();
+  expect(state.queueGets).toEqual([1]);
+  await page.getByRole('link', { name: 'Hiện vật', exact: true }).click();
+  await page.getByRole('row').filter({ hasText: 'Hiện vật 1' }).getByRole('button').nth(2).click();
+  await page.getByRole('dialog', { name: 'Xác nhận', exact: true }).getByRole('button', { name: 'Gửi kiểm duyệt', exact: true }).click();
+  await expect(page.getByText('Đã gửi hiện vật vào hàng chờ kiểm duyệt (IN_REVIEW)', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Kiểm duyệt', exact: true }).click();
+  await expect(page.getByRole('cell', { name: /Hiện vật 1/ }).first()).toBeVisible();
+  expect(state.queueGets).toEqual([1, 1]);
+  expect(state.writes).toEqual([`/admin/exhibits/${state.exhibits.records[0].id}/submit-review`]);
+});
+
+test('submission invalidates every cached queue page and preserves FIFO pagination', async ({ page }) => {
+  const state = await installModerationQueueApi(page);
+  state.revisions = Array.from({ length: 21 }, (_, index) => queueRevision(index + 1));
+  await page.goto('/admin/moderation');
+  await expect(page.getByRole('row')).toHaveCount(21);
+  await page.getByRole('button', { name: '2', exact: true }).click();
+  await expect(page.getByRole('button', { name: /Xem chi tiết Bình gốm, bản #21,/ })).toBeVisible();
+  await page.getByRole('link', { name: 'Hiện vật', exact: true }).click();
+  await page.getByRole('row').filter({ hasText: 'Hiện vật 1' }).getByRole('button').nth(2).click();
+  await page.getByRole('dialog', { name: 'Xác nhận', exact: true }).getByRole('button', { name: 'Gửi kiểm duyệt', exact: true }).click();
+  await expect(page.getByText('Đã gửi hiện vật vào hàng chờ kiểm duyệt (IN_REVIEW)', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Kiểm duyệt', exact: true }).click();
+  await expect.poll(() => state.queueGets.filter(number => number === 1).length).toBe(2);
+  await expect(page.getByRole('cell', { name: /Hiện vật 1/ })).toHaveCount(0);
+  await page.getByRole('button', { name: '2', exact: true }).click();
+  await expect(page.getByRole('cell', { name: /Hiện vật 1/ }).first()).toBeVisible();
+  expect(state.queueGets.filter(number => number === 2)).toHaveLength(2);
+});
+
+for (const status of [422, 403, 409]) {
+  test(`failed submit ${status} does not add a revision or report success`, async ({ page }) => {
+    const state = await installModerationQueueApi(page); state.submitStatus = status;
+    await page.goto('/admin/exhibits');
+    await page.getByRole('row').filter({ hasText: 'Hiện vật 1' }).getByRole('button').nth(2).click();
+    await page.getByRole('dialog', { name: 'Xác nhận', exact: true }).getByRole('button', { name: 'Gửi kiểm duyệt', exact: true }).click();
+    if (status === 422) {
+      await expect(page.getByRole('tab', { name: 'Media & thuyết minh' })).toHaveAttribute('aria-selected', 'true');
+      await page.keyboard.press('Escape');
+    } else await expect(page.getByText('Không gửi được bản nháp', { exact: true })).toBeVisible();
+    await page.getByRole('link', { name: 'Kiểm duyệt', exact: true }).click();
+    await expect(page.getByText('Không có phiên bản nào chờ duyệt', { exact: true })).toBeVisible();
+    await expect(page.getByText('Đã gửi hiện vật vào hàng chờ kiểm duyệt (IN_REVIEW)', { exact: true })).toHaveCount(0);
+    expect(state.revisions).toEqual([]);
+  });
+}
