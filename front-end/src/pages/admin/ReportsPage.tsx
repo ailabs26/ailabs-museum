@@ -26,6 +26,7 @@ import { notify } from '@/shared/components/feedback';
 import { Column, DataTable } from '@/shared/components/data';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { ContentReport, reportsService, ReportStatus } from '@/services/reports.service';
+import { resolveBilingualText } from '@/helpers/exhibitHotspots';
 
 const STATUS_COLOR: Record<string, string> = {
   open: 'red',
@@ -235,8 +236,8 @@ export function ReportsPage() {
                   label="Phiên bản"
                   value={`#${detail.reportedRevision.revisionNo} (${detail.reportedRevision.state})`}
                 />
-                <Field label="Tên hiện vật" value={detail.reportedRevision.content.name} />
-                <Field label="Mô tả" value={detail.reportedRevision.content.description} />
+                <Field label="Tên hiện vật" value={resolveBilingualText(detail.reportedRevision.content.name)} />
+                <Field label="Mô tả" value={resolveBilingualText(detail.reportedRevision.content.description)} />
               </Stack>
             ) : (
               <Text size="sm" c="dimmed">
@@ -318,14 +319,14 @@ export function ReportsPage() {
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({ label, value }: { label: string; value: string | { vi: string; en: string } }) {
   return (
     <div>
       <Text size="xs" c="dimmed">
         {label}
       </Text>
       <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
-        {value}
+        {typeof value === 'string' ? value : value.vi || value.en}
       </Text>
     </div>
   );

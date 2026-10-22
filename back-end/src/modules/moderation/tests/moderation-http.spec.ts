@@ -18,6 +18,29 @@ import { ModerationService } from '../services/moderation.service';
 
 const UUID = 'd1111111-1111-4111-1111-111111111111';
 
+describe('Moderation HTTP · queue', () => {
+  const apps: INestApplication[] = [];
+  after(async () => { await Promise.all(apps.map(app => app.close())); });
+
+  it('returns queue items and pagination meta without changing bilingual content', async () => {
+    const app = await makeApp({ queue: async query => ({
+      items: [{ id: UUID, content: { name: { vi: 'Bình gốm', en: 'Vase' } } }] as never,
+      page: query.page, pageSize: query.pageSize, total: 21,
+    }) });
+    apps.push(app);
+    const res = await request(app.getHttpServer()).get('/moderation/queue?page=2&pageSize=20').expect(200);
+    assert.equal(res.body.success, true);
+    assert.deepEqual(res.body.meta, { page: 2, pageSize: 20, total: 21 });
+    assert.deepEqual(res.body.data[0].content.name, { vi: 'Bình gốm', en: 'Vase' });
+  });
+
+  it('rejects invalid page/pageSize before querying the queue', async () => {
+    const app = await makeApp({ queue: async () => { throw new Error('must not be called'); } });
+    apps.push(app);
+    await request(app.getHttpServer()).get('/moderation/queue?page=0&pageSize=101').expect(400);
+  });
+});
+
 /** Dựng app test với ResponseInterceptor + AllExceptionsFilter + ValidationPipe như main.ts. */
 async function makeApp(mock: Partial<ModerationService>): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({

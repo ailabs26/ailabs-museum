@@ -441,6 +441,7 @@ export function ExhibitsPage() {
     onSuccess: () => {
       notify.success('Đã gửi hiện vật vào hàng chờ kiểm duyệt (IN_REVIEW)');
       invalidate();
+      void queryClient.invalidateQueries({ queryKey: ['moderation', 'queue'] });
     },
     onError: (err, { exhibit, session: submittedSession }) => {
       // 422 từ cổng Submit Review (§5.2, FR-97): mở form và chỉ ra đúng ô cần sửa.

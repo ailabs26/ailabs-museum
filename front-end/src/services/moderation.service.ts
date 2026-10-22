@@ -1,11 +1,12 @@
 import { http } from '@/core/api/http-client';
 import type { Page } from '@/core/api/api-response';
+import type { BilingualText } from './exhibits.service';
 
 export interface RevisionContent {
-  name: string;
-  description: string;
+  name: string | BilingualText | null;
+  description: string | BilingualText | null;
   position: { x: number; y: number; z: number };
-  transcript?: string | null;
+  transcript?: string | BilingualText | null;
   placeholderShape?: string;
   placeholderColor?: string;
 }
