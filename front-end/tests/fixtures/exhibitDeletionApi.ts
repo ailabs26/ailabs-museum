@@ -7,7 +7,7 @@ import { envelope, exhibit } from './museumContent';
 export async function installExhibitDeletionApi(page: Page, permissions = ['exhibit:read', 'exhibit:update', 'revision:hide']) {
   await installOverlayApi(page, permissions);
   const state = { records: [editDetail(1)], writes: [] as { method: string; path: string; body: unknown }[],
-    deleteStatus: 200, hideStatus: 200, detailGate: undefined as Promise<void> | undefined,
+    deleteStatus: 200, hideStatus: 200, unhideStatus: 200, detailGate: undefined as Promise<void> | undefined,
     mutationGate: undefined as Promise<void> | undefined, pageGets: [] as number[],
     media: [{ id: 'preserved-media', originalName: 'shared-image.fixture' }] };
   await page.route('**/api/**', async route => {
@@ -29,7 +29,7 @@ export async function installExhibitDeletionApi(page: Page, permissions = ['exhi
       await fulfillMuseum(route, { ...envelope(state.records.slice((currentPage - 1) * size, currentPage * size)), meta: { page: currentPage, pageSize: size, total: state.records.length } }); return;
     }
     const record = state.records.find(item => path.includes(item.id));
-    if (record && (path.startsWith('/admin/exhibits/') || path.endsWith('/hide'))) {
+    if (record && (path.startsWith('/admin/exhibits/') || path.endsWith('/hide') || path.endsWith('/unhide'))) {
       if (req.method() === 'GET') {
         const snapshot = structuredClone(record);
         if (state.detailGate) await state.detailGate;
@@ -45,6 +45,11 @@ export async function installExhibitDeletionApi(page: Page, permissions = ['exhi
       if (path.endsWith('/hide')) {
         if (state.hideStatus !== 200) { await fulfillMuseum(route, { success: false, data: null, message: 'Trạng thái hiện vật vừa thay đổi. Vui lòng tải lại.' }, state.hideStatus); return; }
         record.visibility = 'hidden'; record.status = 'draft'; record.version++;
+        await fulfillMuseum(route, envelope({ id: record.id, version: record.version, visibility: record.visibility, publishedRevisionId: record.publishedRevisionId, roomId: record.roomId })); return;
+      }
+      if (path.endsWith('/unhide')) {
+        if (state.unhideStatus !== 200) { await fulfillMuseum(route, { success: false, data: null, message: 'Trạng thái hiện vật vừa thay đổi. Vui lòng tải lại.' }, state.unhideStatus); return; }
+        record.visibility = 'visible'; record.status = 'published'; record.version++;
         await fulfillMuseum(route, envelope({ id: record.id, version: record.version, visibility: record.visibility, publishedRevisionId: record.publishedRevisionId, roomId: record.roomId })); return;
       }
     }

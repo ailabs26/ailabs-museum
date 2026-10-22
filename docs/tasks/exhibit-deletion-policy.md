@@ -182,3 +182,12 @@ npm.cmd run build
 | DELETE-04 | Commit mang message `test(exhibits): verify deletion and hiding policy` | Regression/evidence cuối; hash báo trong báo cáo hoàn thành để tránh tự tham chiếu hash trong chính commit |
 
 **Integration:** Giữ nhánh local `fix/exhibit-deletion-policy`. Chưa push, chưa có URL PR, chưa merge. Dừng để con người review, đặc biệt gate PostgreSQL ở trên.
+
+### Follow-up — Xuất bản lại sau khi Ẩn
+
+- Người dùng tái hiện: Ẩn → sửa/gửi duyệt → Publish báo đã xuất bản trong CMS nhưng public không có hiện vật.
+- Nguyên nhân: Hide ghi `archivedAt`; Publish đổi `visibility=visible` nhưng không xóa marker này. Public exhibit query và media delivery đều yêu cầu `archivedAt IS NULL`; admin status chỉ xét visibility/published pointer.
+- Sửa Publish đặt `archivedAt: null` trong cùng conditional update đang có. Regression stateful chạy service thật: Hide→Unhide PASS trước fix, Hide→Publish FAIL vì còn timestamp; sau fix kiểm cả hai đường phục hồi.
+- API bỏ ẩn hiện có: `POST /exhibits/:id/unhide`, body `{ version }`, quyền `revision:hide`; giữ published pointer và xóa `archivedAt`. CMS nay có nút Bỏ ẩn cho hidden published, lấy version mới, confirm, xử lý conflict và invalidate các cache liên quan.
+- Sửa code không tự cập nhật các record đã Publish lỗi trước đó. Các record đó cần Unhide qua API hiện có hoặc Publish một revision mới sau khi backend nạp bản sửa; không sửa DB/migration trực tiếp.
+- Verification trước commit: focused backend **419/419 PASS**; browser deletion/hiding/edit/moderation/accessibility regression **59/59 PASS**; frontend/backend typecheck, lint, build PASS. Frontend build chỉ còn cảnh báo chunk >500 kB hiện hữu. Chưa xác thực trên DB/live record của người dùng.

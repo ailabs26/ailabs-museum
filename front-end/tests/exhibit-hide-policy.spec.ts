@@ -97,3 +97,43 @@ test('hide stays locked while its fresh-detail request is pending', async ({ pag
   await expect(hide).toHaveCount(0);
   expect(state.writes).toHaveLength(1);
 });
+
+test('unhide uses the fresh version, restores public visibility and keeps draft history', async ({ page }) => {
+  const state = await installExhibitDeletionApi(page);
+  const record = state.records[0];
+  record.publishedRevisionId = 'published'; record.visibility = 'hidden'; record.status = 'draft'; record.version = 8;
+  record.revisions = [{ id: 'published', revisionNo: 1, state: 'approved', createdById: 'actor', createdBy: null, reviewedById: null, reviewedBy: null, reason: null, createdAt: '2026-10-22T00:00:00Z', reviewedAt: null }];
+  await page.goto('/admin/exhibits');
+  await expect(page.getByText('Đã xuất bản · Đang ẩn', { exact: true })).toBeVisible();
+  const unhide = page.getByRole('button', { name: 'Bỏ ẩn hiện vật Hiện vật 1', exact: true });
+  await expect(unhide).toBeVisible();
+  await unhide.press('Enter');
+  await expect(page.getByRole('dialog')).toContainText('bản đã xuất bản');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0); expect(state.writes).toEqual([]);
+  await unhide.press('Enter');
+  record.version = 12;
+  await page.getByRole('button', { name: 'Bỏ ẩn hiện vật', exact: true }).press('Space');
+  await expect(unhide).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Ẩn hiện vật Hiện vật 1', exact: true })).toBeVisible();
+  expect(state.writes).toEqual([{ method: 'POST', path: `/exhibits/${record.id}/unhide`, body: { version: 12 } }]);
+  expect(record.publishedRevisionId).toBe('published'); expect(record.revisions[0].state).toBe('approved');
+});
+
+test('unhide conflict does not retry or change the hidden record', async ({ page }) => {
+  const state = await installExhibitDeletionApi(page); state.unhideStatus = 409;
+  const record = state.records[0]; record.publishedRevisionId = 'published'; record.visibility = 'hidden'; record.status = 'draft';
+  await page.goto('/admin/exhibits');
+  await page.getByRole('button', { name: 'Bỏ ẩn hiện vật Hiện vật 1', exact: true }).click();
+  await page.getByRole('button', { name: 'Bỏ ẩn hiện vật', exact: true }).click();
+  await expect(page.getByText('Trạng thái hiện vật vừa thay đổi. Vui lòng tải lại.', { exact: true })).toBeVisible();
+  expect(state.writes).toHaveLength(1); expect(record.visibility).toBe('hidden');
+});
+
+test('unhide is independent from delete permission', async ({ page }) => {
+  const state = await installExhibitDeletionApi(page, ['exhibit:read', 'revision:hide']);
+  const record = state.records[0]; record.publishedRevisionId = 'published'; record.visibility = 'hidden'; record.status = 'draft';
+  await page.goto('/admin/exhibits');
+  await expect(page.getByRole('button', { name: 'Xóa hiện vật Hiện vật 1', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Bỏ ẩn hiện vật Hiện vật 1', exact: true })).toBeVisible();
+});

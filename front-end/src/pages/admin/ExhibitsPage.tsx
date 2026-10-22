@@ -517,6 +517,26 @@ export function ExhibitsPage() {
     onSettled: () => { actionBusyRef.current = false; setIsActionBusy(false); },
   });
 
+  const unhideMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const detail = await exhibitsService.get(id);
+      if (!canHide || detail.visibility !== 'hidden' || !detail.publishedRevisionId) {
+        throw new Error('Hiện vật không còn ở trạng thái ẩn hoặc bạn không có quyền. Vui lòng tải lại.');
+      }
+      return moderationService.unhide(id, detail.version);
+    },
+    onSuccess: async () => {
+      notify.success('Đã bỏ ẩn hiện vật. Bản đã xuất bản hiện đang hiển thị trong bảo tàng.');
+      await refreshLifecycleQueries();
+      titleRef.current?.focus();
+    },
+    onError: (error) => {
+      notify.error(error instanceof Error ? error.message : 'Không bỏ ẩn được hiện vật');
+      void refreshLifecycleQueries();
+    },
+    onSettled: () => { actionBusyRef.current = false; setIsActionBusy(false); },
+  });
+
   const handleHide = (exhibit: ExhibitRow) => {
     if (!canHide || actionBusyRef.current) return;
     const request = ++actionRequestRef.current;
@@ -531,10 +551,24 @@ export function ExhibitsPage() {
     });
   };
 
+  const handleUnhide = (exhibit: ExhibitRow) => {
+    if (!canHide || actionBusyRef.current) return;
+    const request = ++actionRequestRef.current;
+    confirmAction({
+      message: 'Hiện lại bản đã xuất bản của hiện vật trên bảo tàng? Bản nháp và phiên bản đang chờ duyệt không bị thay đổi.',
+      confirmLabel: 'Bỏ ẩn hiện vật',
+      onConfirm: () => {
+        if (request !== actionRequestRef.current || actionBusyRef.current) return;
+        actionBusyRef.current = true; setIsActionBusy(true);
+        unhideMutation.mutate(exhibit.id);
+      },
+    });
+  };
+
   const openCreate = () => {
     if (saveMutation.isPending) return;
     actionRequestRef.current++;
-    if (!deleteMutation.isPending && !hideMutation.isPending) { actionBusyRef.current = false; setIsActionBusy(false); }
+    if (!deleteMutation.isPending && !hideMutation.isPending && !unhideMutation.isPending) { actionBusyRef.current = false; setIsActionBusy(false); }
     editSessionRef.current++;
     setEditing(null);
     setEditLoadState('ready');
@@ -555,7 +589,7 @@ export function ExhibitsPage() {
   const openEdit = (exhibit: ExhibitRow): Promise<boolean> => {
     if (saveMutation.isPending) return Promise.resolve(false);
     actionRequestRef.current++;
-    if (!deleteMutation.isPending && !hideMutation.isPending) { actionBusyRef.current = false; setIsActionBusy(false); }
+    if (!deleteMutation.isPending && !hideMutation.isPending && !unhideMutation.isPending) { actionBusyRef.current = false; setIsActionBusy(false); }
     const session = ++editSessionRef.current;
     setEditing(exhibit);
     setEditLoadState('loading');
@@ -625,7 +659,7 @@ export function ExhibitsPage() {
 
   const openDetail = (exhibit: ExhibitRow) => {
     actionRequestRef.current++;
-    if (!deleteMutation.isPending && !hideMutation.isPending) { actionBusyRef.current = false; setIsActionBusy(false); }
+    if (!deleteMutation.isPending && !hideMutation.isPending && !unhideMutation.isPending) { actionBusyRef.current = false; setIsActionBusy(false); }
     setDetailId(exhibit.id);
     detailDrawer.open();
   };
@@ -714,7 +748,11 @@ export function ExhibitsPage() {
           variant={r.status === 'published' ? 'filled' : 'light'}
           size="sm"
         >
-          {r.status === 'published' ? 'Đã xuất bản' : 'Bản nháp'}
+          {r.status === 'published'
+            ? 'Đã xuất bản'
+            : r.visibility === 'hidden' && r.publishedRevisionId
+              ? 'Đã xuất bản · Đang ẩn'
+              : 'Bản nháp'}
         </Badge>
       ),
     },
@@ -831,6 +869,14 @@ export function ExhibitsPage() {
                 <ActionIcon variant="subtle" color="gray" disabled={isActionBusy}
                   aria-label={`Ẩn hiện vật ${getDisplayText(r.content.name)}`} onClick={() => handleHide(r)}>
                   <IconEyeOff size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {canHide && r.visibility === 'hidden' && r.publishedRevisionId && (
+              <Tooltip label="Bỏ ẩn bản đã xuất bản, giữ bản nháp và lịch sử">
+                <ActionIcon variant="subtle" color="teal" disabled={isActionBusy}
+                  aria-label={`Bỏ ẩn hiện vật ${getDisplayText(r.content.name)}`} onClick={() => handleUnhide(r)}>
+                  <IconEye size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
