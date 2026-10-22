@@ -11,12 +11,12 @@ export const overlayExhibit = { id: revisions[0].exhibitId, roomId: overlayRoom.
 export const overlayReport = { id: '70000000-0000-4000-8000-000000000001', exhibitId: overlayExhibit.id, category: 'Nội dung sai', message: 'Báo cáo mẫu', status: 'open', assignedTo: null, resolution: null, reportedRevision: null, createdAt: timestamp, resolvedAt: null };
 export const overlayAudit = { id: '80000000-0000-4000-8000-000000000001', actorId: null, actor: null, action: 'room.update', resourceType: 'room', resourceId: overlayRoom.id, revisionId: null, reason: null, requestId: 'fixture-request', occurredAt: timestamp };
 
-export async function installOverlayApi(page: Page) {
-  await installModerationApi(page, { permissions: [
+export async function installOverlayApi(page: Page, permissions = [
     'user:read', 'user:create', 'user:update', 'user:delete', 'role:read', 'role:update', 'role:delete', 'role:assign',
     'room:read', 'room:create', 'room:update', 'room:delete', 'exhibit:read', 'exhibit:create', 'exhibit:update',
     'revision:publish', 'revision:reject', 'revision:submit', 'report:read', 'report:resolve', 'audit:read',
-  ] });
+  ]) {
+  await installModerationApi(page, { permissions });
   const writes: { method: string; path: string; body: unknown }[] = [];
   const lists: Record<string, unknown[]> = { '/users': [overlayUser], '/roles': [overlayRole], '/admin/rooms': [overlayRoom], '/admin/exhibits': [overlayExhibit], '/admin/media': [], '/reports': [overlayReport], '/audit': [overlayAudit] };
   await page.route('**/api/**', async route => {
