@@ -1,6 +1,6 @@
 # CMS Exhibit Edit — Task breakdown: Fix dữ liệu cũ khi mở lại form
 
-**Trạng thái:** Đã duyệt, bắt đầu triển khai.
+**Trạng thái:** Đã triển khai và kiểm chứng, chờ review; chưa push/PR/merge.
 **Plan:** [exhibit-edit-stale-data-plan.md](../plans/exhibit-edit-stale-data-plan.md).
 **Branch/base:** `fix/exhibit-edit-stale-data` từ `origin/dev` `37f5de7`.
 
@@ -20,7 +20,7 @@
 - [x] Người dùng duyệt luồng GET detail mới, session guard và cache sau save.
 - [x] Fetch lại dev, so sánh thay đổi liên quan với baseline; bảo toàn worktree người dùng.
 - [x] Cập nhật trạng thái đã duyệt và review đủ file/test/acceptance trong tài liệu.
-- [ ] Chạy whitespace check cho hai docs; stage đúng hai file và commit `docs(exhibits): plan fresh edit form loading`.
+- [x] Chạy whitespace check cho hai docs; stage đúng hai file và commit `docs(exhibits): plan fresh edit form loading`.
 
 **Test:** review nội dung + `git diff --cached --check`; không chạy frontend chỉ vì Markdown.
 **Acceptance:** Docs được duyệt trước source; cùng một nhánh fix cho toàn nhiệm vụ.
@@ -116,7 +116,7 @@ npm.cmd run build
 - [x] `origin/dev` đã fetch, baseline `37f5de7`; nhánh fix đã tạo.
 - [x] Đã viết PLAN/TASK có bước/file/test/acceptance và mốc commit.
 - [x] Người dùng duyệt hai tài liệu.
-- [ ] Commit docs và bắt đầu implementation sau duyệt.
+- [x] Commit docs và bắt đầu implementation sau duyệt.
 
 ## Evidence triển khai
 
@@ -125,3 +125,24 @@ npm.cmd run build
 - Form nạp detail mới với staleTime 0, cancel promise query cũ và token phiên; chỉ hydrate một lần toàn bộ fields. API/schema/backend không đổi.
 - EDIT-02: RED ở toast/cache list; bổ sung race 422 cũ mở đè form B đã fail rồi sửa guard phiên. Sau sửa **12/12 PASS**, typecheck/lint/build PASS. Test kiểm tra cache nhiều filter/meta, pending list cũ, dirty form, null media và payload lần save kế tiếp.
 - Chưa push/PR; test browser dùng stateful API mocks, không xác nhận DB production persistence.
+
+### EDIT-03 — Kết quả cuối
+
+- Feature suite: **13/13 PASS** (59.8s), output `front-end/tmp/edit-final-feature-2/`.
+- Regression: **31/31 PASS** (3.4m), output `front-end/tmp/edit-final-regression/`; tổng hai nhóm **44 PASS, 0 FAIL**.
+- Lệnh regression giữ nguyên suites đã duyệt, thêm `--timeout=60000` cho thời gian tổng mỗi test. Assertion timeout không thay đổi. Lượt trước có một ca responsive nhiều bước Tab vượt 30s; ca chạy riêng PASS. Một lượt 43 tests in PASS nhưng harness chạm 10 phút không dùng làm bằng chứng exit sạch; hai lượt cuối có output hoàn chỉnh.
+- Typecheck/lint/build cuối PASS. Không thêm helper production nên không yêu cầu chạy lại toàn unit suite. Build có cảnh báo chunk >500 kB hiện hữu.
+- Test bổ sung kiểm tra đủ 6 slot, localized text, altText/transcript, transforms, displayOrder và hotspots qua hai payload save.
+- Fixture `overlayApi.ts` bổ sung `/admin/media: []` để regression cũ khớp API hiện tại; không sửa MediaSlotSelect ngoài phạm vi.
+- Chỉ một production file đổi: `ExhibitsPage.tsx`; tests/fixtures/docs là các file còn lại. Query keys/service/API và workflow publish giữ nguyên.
+- **NOT TESTED:** API/DB production persistence, đổi permission runtime khi Drawer đang mở, screen reader/thiết bị thật. Dùng Edge/Chromium headless với mocked API, không ghi dữ liệu CMS thật.
+- `cancelQueries` vô hiệu kết quả query cũ, không abort transport Axios khi service không nhận signal. Token bảo vệ từng phiên hydrate; request cũ còn chạy cũng không được điền form mới.
+
+### Commit ledger
+
+- `4bc772f` — `docs(exhibits): plan fresh edit form loading`.
+- `486b31d` — `fix(exhibits): load edit forms from fresh detail`.
+- `9e22466` — `fix(exhibits): synchronize saved drafts with list cache`.
+- Commit evidence cuối: `test(exhibits): verify edit save and reopen lifecycle`.
+
+Các checkbox chi tiết chưa tick không thay thế bảng evidence trên; không tuyên bố live/DB validation từ test mock. Chờ người dùng review trước push/PR.

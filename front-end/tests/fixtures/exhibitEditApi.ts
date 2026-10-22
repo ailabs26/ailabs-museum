@@ -42,11 +42,13 @@ export async function installExhibitEditApi(page: Page) {
     state.requests.push(`${request.method()} ${path}`);
     if (path === '/admin/media') {
       const kind = url.searchParams.get('kind');
-      const items = [1, 2].map(index => ({ id: `90000000-0000-4000-8000-${kind === 'image' ? '00000000000' : '00000000001'}${index}`,
+      const slot = { image: 0, audio: 1, model: 2, subtitle: 3 }[kind ?? 'image'] ?? 0;
+      const items = [1, 2].map(index => ({ id: `90000000-0000-4000-8000-0000000000${slot}${index}`,
         kind, originalName: `${kind}-${index}.fixture`, processingState: 'ready', sizeBytes: 100,
         source: 'Fixture', author: 'Fixture', license: 'CC0', url: null }));
       await fulfillMuseum(route, { ...envelope(items), meta: { page: 1, pageSize: 100, total: 2 } }); return;
     }
+    if (path.startsWith('/admin/media/')) { await route.fallback(); return; }
     if (path === '/admin/exhibits' && request.method() === 'GET') {
       state.listCount++;
       const q = url.searchParams.get('q') ?? '';

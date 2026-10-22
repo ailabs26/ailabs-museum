@@ -259,3 +259,36 @@ test('saving updates only existing list entries and cancels a pre-save stale req
   gate.release();
   await expect(page.getByRole('row').filter({ hasText: 'Tên được giữ sau lưu' })).toBeVisible();
 });
+
+test('saves every field from one detail revision and preserves hotspots on a second save', async ({ page }) => {
+  const state = await installExhibitEditApi(page);
+  state.listRows = structuredClone(state.records);
+  const record = state.records[0];
+  Object.assign(record.content, {
+    name: { vi: 'Tên detail', en: 'Detail name' }, description: { vi: 'Mô tả detail', en: 'Detail description' },
+    position: { x: 2, y: 3, z: 4 }, rotation: { x: 0.1, y: 0.2, z: 0.3 }, scale: { x: 2, y: 2, z: 2 },
+    placeholderShape: 'sphere', placeholderColor: '#123456',
+    modelId: '90000000-0000-4000-8000-000000000021', imageId: '90000000-0000-4000-8000-000000000001',
+    audioViId: '90000000-0000-4000-8000-000000000011', audioEnId: '90000000-0000-4000-8000-000000000012',
+    subtitleViId: '90000000-0000-4000-8000-000000000031', subtitleEnId: '90000000-0000-4000-8000-000000000032',
+    altText: { vi: 'Ảnh detail', en: 'Detail image' }, transcript: { vi: 'Thuyết minh', en: 'Narration' },
+  });
+  record.displayOrder = 7;
+  record.hotspots = [{ id: '80000000-0000-4000-8000-000000000001', label: JSON.stringify({ vi: 'Điểm A', en: 'Point A' }),
+    body: JSON.stringify({ vi: 'Nội dung A', en: 'Body A' }), position: { x: 1, y: 2, z: 3 }, displayOrder: 1 }];
+  const expectedContent = structuredClone(record.content);
+  await page.goto('/admin/exhibits'); await edit(page);
+  await expect(nameField(page)).toHaveValue('Tên detail');
+  state.listRows = null;
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await edit(page, 'Tên detail');
+  await expect(nameField(page)).toHaveValue('Tên detail');
+  await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect.poll(() => state.patches.length).toBe(2);
+  for (const patch of state.patches) {
+    expect(patch.body).toMatchObject(expectedContent);
+    expect(patch.body.displayOrder).toBe(7);
+    expect(patch.body.hotspots).toEqual([{ label: { vi: 'Điểm A', en: 'Point A' }, body: { vi: 'Nội dung A', en: 'Body A' }, positionX: 1, positionY: 2, positionZ: 3, displayOrder: 1 }]);
+  }
+});

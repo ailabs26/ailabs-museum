@@ -23,7 +23,7 @@
 
 ## 2. Global constraints
 
-- Chỉ viết PLAN/TASK ở giai đoạn hiện tại và dừng để duyệt.
+- PLAN/TASK đã được duyệt; triển khai trên nhánh fix, dừng trước push/PR để review.
 - Khi triển khai: chỉ frontend, không sửa backend, API contract, database, migration, RBAC hoặc quy trình xuất bản.
 - Không tích hợp ảnh/audio vào trang khách trong nhiệm vụ này; lưu nháp không tự public.
 - Không thêm dependency, global form/focus manager, refactor diện rộng hoặc cache abstraction.
@@ -33,7 +33,7 @@
 - Test bằng mocked API/browser, không tạo/sửa/xóa nội dung CMS thật. Không sử dụng hoặc in credentials thật.
 - Sau mỗi task sửa source: focused browser tests + `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build`; helpers thay đổi thì chạy unit liên quan.
 
-## 3. Thiết kế được đề xuất để duyệt
+## 3. Thiết kế đã triển khai
 
 ### 3.1 Một nguồn dữ liệu cho toàn form
 
@@ -119,4 +119,14 @@ Regression trước merge còn kiểm tra `modal-responsive-focus.spec.ts` và `
 - [x] Giới hạn frontend, không thêm API/database/migration/dependency hoặc tích hợp player.
 - [x] Người dùng duyệt trước triển khai/commit.
 
-**Verification hiện tại:** chỉ PLAN/TASK được viết; chưa chạy verification cho bản sửa vì chưa triển khai.
+## 7. Verification sau triển khai
+
+- Baseline `37f5de7`, branch `fix/exhibit-edit-stale-data`; không thay backend/API/schema/migration/dependency.
+- `exhibit-edit-persistence.spec.ts`: **13/13 PASS**, stateful mocked API và browser Edge/Chromium trên Windows. Bao phủ detail mới toàn form, retry/error, cache fresh, cùng ID mở lại, A→B/create, IN_REVIEW, 422, slow list, null slots, dirty form, cache filters và payload hai lần lưu.
+- Regression Drawer/keyboard: **31/31 PASS** với `--timeout=60000`; không nới từng assertion focus. Một lượt trước timeout tổng 30s ở ca nhiều bước Tab; chạy riêng và lượt cuối đều PASS.
+- Typecheck/lint/build cuối: **PASS**. Build vẫn có cảnh báo chunk >500 kB hiện hữu.
+- Fixture overlay cũ thiếu response list `/admin/media`, khiến MediaSlotSelect lỗi `items.find`; chỉ sửa fixture trả array rỗng đúng contract.
+- Không chạy backend/live CMS/database mutation; tests mock không chứng minh persistence production. Không có QA screen reader/thiết bị thật hoặc browser khác Edge.
+- Không thêm AbortSignal vào service: query cancellation chặn kết quả promise cũ và token phiên chặn hydrate; không tuyên bố request HTTP cũ được abort ở transport.
+- Chưa có test thay đổi permission runtime trong lúc Drawer đang mở; UI dùng quyền hiện tại và backend vẫn là chốt kiểm tra quyền.
+- Dừng trước push/PR/merge; ledger tại task document.
