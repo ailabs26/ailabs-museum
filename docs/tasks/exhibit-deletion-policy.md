@@ -142,3 +142,4 @@ npm.cmd run build
 - Update/submit sau media checks phải lấy lại exhibit dưới FOR UPDATE và re-read active revision, so version/ID/state; nếu bị xóa thì 404, state thay đổi thì 409 trước mọi save. Publish/hide hiện dùng UPDATE affected/version, không save snapshot có thể insert lại; không thay writer đó khi chưa có failure.
 - **NOT TESTED:** row-lock/concurrency/FK thực trên PostgreSQL; mocks mô phỏng lịch biểu và metadata không thay DB proof. Cần reviewer đánh giá blocker trước merge; không chạy migrations hoặc dữ liệu thật.
 - Chưa push/PR/merge.
+- DELETE-02: browser Xóa **5/5 PASS**, frontend typecheck/lint/build PASS (cảnh báo chunk hiện hữu). Fixture auth ban đầu che route rooms do đăng ký hai lần đã sửa bằng optional permissions của overlay fixture. Fresh detail kiểm toàn revisions; pending guards, report conflict, confirm media text, pagination và focus đã kiểm chứng bằng mocked API.

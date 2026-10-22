@@ -104,6 +104,14 @@ interface ExhibitFormValues {
 
 type EditLoadState = 'ready' | 'loading' | 'error';
 
+function deletionBlock(exhibit: ExhibitRow, revisions: ExhibitDetail['revisions'] = []): string | null {
+  if (exhibit.publishedRevisionId || exhibit.visibility === 'visible' || exhibit.revisionState === 'approved' || revisions.some(r => r.state === 'approved')) {
+    return 'Hiện vật có lịch sử xuất bản hoặc phê duyệt nên không thể xóa vĩnh viễn. Có thể ẩn hiện vật đang công khai khỏi bảo tàng.';
+  }
+  return exhibit.revisionState === 'in_review' || revisions.some(r => r.state === 'in_review')
+    ? 'Hiện vật có phiên bản đang chờ kiểm duyệt, không thể xóa.' : null;
+}
+
 type MediaSlotField = 'modelId' | 'imageId' | 'audioViId' | 'audioEnId' | 'subtitleViId' | 'subtitleEnId';
 
 /** Thứ tự & nhãn slot trong panel xem trước (khớp 6 slot của revision). */
@@ -220,8 +228,11 @@ export function ExhibitsPage() {
   const [formTab, setFormTab] = useState<ExhibitFormTab>('basic');
   const [editLoadState, setEditLoadState] = useState<EditLoadState>('ready');
   const editSessionRef = useRef(0);
+  const actionRequestRef = useRef(0);
+  const actionBusyRef = useRef(false);
+  const [isActionBusy, setIsActionBusy] = useState(false);
 
-  useEffect(() => () => { editSessionRef.current++; }, []);
+  useEffect(() => () => { editSessionRef.current++; actionRequestRef.current++; }, []);
 
   const [tourOrderOpened, tourOrder] = useDisclosure(false);
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -467,14 +478,21 @@ export function ExhibitsPage() {
     mutationFn: (id: string) => exhibitsService.delete(id),
     onSuccess: async () => {
       notify.success('Đã xóa bản nháp hiện vật');
-      await queryClient.invalidateQueries({ queryKey: ['admin-exhibits'] });
-      if (detailId) void queryClient.invalidateQueries({ queryKey: ['admin-exhibit-detail', detailId] });
+      if (page > 1 && exhibitsQuery.data?.items.length === 1) setPage(page - 1);
+      await refreshLifecycleQueries();
       titleRef.current?.focus();
     },
     onError: (err) => {
       notify.error(err instanceof Error ? err.message : 'Xóa hiện vật thất bại');
+      void refreshLifecycleQueries();
     },
+    onSettled: () => { actionBusyRef.current = false; setIsActionBusy(false); },
   });
+
+  const refreshLifecycleQueries = () => Promise.all([
+    ['admin-exhibits'], ['admin-exhibit-detail'], ['rooms'], ['rooms-all-select'],
+    ['moderation'], ['museum-tour'], ['public-room'],
+  ].map(queryKey => queryClient.invalidateQueries({ queryKey })));
 
   const openCreate = () => {
     if (saveMutation.isPending) return;
@@ -577,20 +595,30 @@ export function ExhibitsPage() {
     });
   };
 
-  const handleDelete = (exhibit: ExhibitRow) => {
-    if (exhibit.status === 'published' || exhibit.visibility === 'visible') {
-      notify.error(
-        'Không thể xóa hiện vật đã từng xuất bản (Quy tắc nghiệp vụ BR-20). Vui lòng chuyển trạng thái ẩn thay vì xóa.',
-      );
-      return;
+  const handleDelete = async (exhibit: ExhibitRow) => {
+    if (!canDelete || actionBusyRef.current) return;
+    const request = ++actionRequestRef.current;
+    actionBusyRef.current = true; setIsActionBusy(true);
+    try {
+      const detail = await exhibitsService.get(exhibit.id);
+      if (request !== actionRequestRef.current) return;
+      const reason = deletionBlock(detail, detail.revisions);
+      if (reason) { notify.error(reason); void refreshLifecycleQueries(); return; }
+      confirmAction({
+        message: `Xóa vĩnh viễn hiện vật "${getDisplayText(detail.content.name, 'vi')}" và toàn bộ revisions/hotspots? Media vẫn được giữ trong thư viện.`,
+        danger: true,
+        confirmLabel: 'Xóa vĩnh viễn bản nháp',
+        onConfirm: () => {
+          if (request !== actionRequestRef.current || actionBusyRef.current) return;
+          actionBusyRef.current = true; setIsActionBusy(true);
+          deleteMutation.mutate(detail.id);
+        },
+      });
+    } catch (error) {
+      if (request === actionRequestRef.current) notify.error(error instanceof Error ? error.message : 'Không tải được hiện vật');
+    } finally {
+      if (request === actionRequestRef.current) { actionBusyRef.current = false; setIsActionBusy(false); }
     }
-
-    confirmAction({
-      message: `Bạn có chắc chắn muốn xóa bản nháp hiện vật "${getDisplayText(exhibit.content.name, 'vi')}"? Hành động này sẽ cascade xóa toàn bộ hotspots và revisions liên quan.`,
-      danger: true,
-      confirmLabel: 'Xóa vĩnh viễn bản nháp',
-      onConfirm: () => deleteMutation.mutate(exhibit.id),
-    });
   };
 
   const columns: Column<ExhibitRow>[] = [
@@ -697,6 +725,7 @@ export function ExhibitsPage() {
       render: (r) => {
         const isPublished = r.status === 'published';
         const isInReview = r.revisionState === 'in_review';
+        const deleteReason = deletionBlock(r);
 
         return (
           <Group gap={6} justify="flex-end" wrap="nowrap">
@@ -741,16 +770,13 @@ export function ExhibitsPage() {
 
             {canDelete && (
               <Tooltip
-                label={
-                  isPublished
-                    ? 'Chặn xóa: Hiện vật đã từng xuất bản (SRS BR-20)'
-                    : 'Xóa bản nháp hiện vật'
-                }
+                label={deleteReason ?? 'Xóa vĩnh viễn bản nháp hiện vật'}
               >
                 <ActionIcon
                   variant="subtle"
-                  color={isPublished ? 'gray' : 'red'}
-                  disabled={isPublished}
+                  aria-label={`Xóa hiện vật ${getDisplayText(r.content.name)}`}
+                  color={deleteReason ? 'gray' : 'red'}
+                  disabled={!!deleteReason || isActionBusy}
                   onClick={() => handleDelete(r)}
                 >
                   <IconTrash size={18} />
