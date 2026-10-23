@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Button, MantineProvider, Stack } from '@mantine/core';
 import { theme } from '@/app/theme';
@@ -35,4 +35,4 @@ function AudioPlayerFixture() {
   );
 }
 
-createRoot(document.getElementById('root')!).render(<AudioPlayerFixture />);
+createRoot(document.getElementById('root')!).render(<StrictMode><AudioPlayerFixture /></StrictMode>);

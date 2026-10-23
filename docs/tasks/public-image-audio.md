@@ -1,6 +1,6 @@
 # MEDIA-01 — Tích hợp ảnh và audio thật qua API
 
-**Trạng thái:** Đã được người dùng duyệt; đang triển khai.
+**Trạng thái:** Frontend đã triển khai và kiểm chứng; nghiệm thu file media live bị chặn bởi HTTP 404 từ backend.
 **Ngày:** 23/10/2026 (Asia/Bangkok).
 **Nhánh:** `fix/public-image-audio`, từ `origin/dev` tại `bb0127c321e38c855bb210f4a865e5d79f3b473e`.
 **Plan:** [public-image-audio-plan.md](../plans/public-image-audio-plan.md).
@@ -32,7 +32,7 @@ README có đoạn cũ nói mọi media luôn null; source mới đã có contra
 - Audio ở chi tiết 2D và panel tour DOM, kể cả khi chưa mở WebGL hoặc renderer lỗi. Không đặt player trên từng card.
 - Tái sử dụng `AudioPlayer`: Phát/Tạm dừng/Tiếp tục/Phát lại, thêm Dừng về đầu và âm lượng theo FR-19. Không autoplay; tải audio theo thao tác người dùng.
 - Khi có WebVTT, có nút bật/tắt phụ đề và vùng chữ đồng bộ với cue hiện hành trong DOM (FR-94). Transcript đầy đủ luôn đọc được; không dựa vào trình duyệt tự vẽ subtitle của thẻ audio.
-- Public hiện chưa có bộ chọn ngôn ngữ: dùng `vi`; chỉ lấy `audio.vi`, không tự lấy `audio.en` khi thiếu vi. Preview CMS dùng locale đang chọn, đổi locale dừng nguồn cũ. Đây là đề xuất phạm vi, chưa phải quyết định người dùng đã duyệt.
+- Public hiện chưa có bộ chọn ngôn ngữ: dùng `vi`; chỉ lấy `audio.vi`, không tự lấy `audio.en` khi thiếu vi. Preview CMS dùng locale đang chọn, đổi locale dừng nguồn cũ. Phạm vi đã được người dùng duyệt cùng plan.
 - Chuyển hiện vật/phòng/route, đóng panel, thay nguồn hoặc mất dữ liệu sau refresh phải dừng và giải phóng audio cũ. Dừng 3D chỉ tháo Canvas: nếu panel DOM vẫn mở thì audio tiếp tục, vì không thuộc vòng đời renderer.
 - Tối đa một player guide phát trong cùng document; khi player khác bắt đầu, pause player cũ bằng native media event/listener có cleanup. Không đồng bộ nhiều tab hoặc dựng global store/playlist.
 - Preview CMS dùng signed URL đã có cho audio/subtitle đúng slot; lỗi/hết hạn báo lỗi, giữ transcript; người dùng tải lại preview để nhận URL mới. Không chuyển sang public URL của revision khác.
@@ -73,35 +73,35 @@ Mỗi task runtime gồm code, tests và evidence trong cùng commit sau kiểm 
 - [x] Đọc source, SRS và mẫu plan/task AUDIO-01, chi tiết 2D, CMS preview, public rights.
 - [x] Viết thiết kế, plan và task; tự rà coverage, consumer chung và failure paths.
 - [x] Người dùng duyệt phạm vi, nhất là Stop/âm lượng/captions, locale vi và preview CMS.
-- [ ] Review diff và commit đúng hai tài liệu; chưa push/PR.
+- [x] Review diff và commit đúng hai tài liệu (`b75309f`); chưa push/PR.
 
 ### MEDIA-01.1 — Ảnh thật và fallback
 
-- [ ] Home/collection/detail/tour render đúng URL image từ API, ảnh decode thật trong browser, alt đúng; không tải scene trên trang 2D.
-- [ ] Media null, 404/byte hỏng và URL ảnh đổi sau lỗi giữ fallback/khôi phục đúng; không lặp tải vô hạn, không còn ảnh hiện vật cũ sau chuyển trang.
-- [ ] Layout desktop/mobile, light/dark, nguồn/bản quyền và links giữ nguyên hành vi.
-- [ ] Focused browser tests + typecheck/lint/build đạt, review diff và commit.
+- [x] Home/collection/detail/tour render đúng URL image từ API, ảnh decode thật trong browser, alt đúng; không tải scene trên trang 2D.
+- [x] Media null, 404/byte hỏng và URL ảnh đổi sau lỗi giữ fallback/khôi phục đúng; không lặp tải vô hạn, không còn ảnh hiện vật cũ sau chuyển trang.
+- [x] Layout desktop/mobile, light/dark, nguồn/bản quyền và links giữ nguyên hành vi qua các regression liên quan.
+- [x] Focused browser tests + typecheck/lint/build đạt, review diff và commit (`e7f76e5`).
 
 ### MEDIA-01.2 — Player guide
 
-- [ ] Native playback thật tăng `currentTime`; pause/resume giữ mốc, Stop về 0, volume đổi native value, ended cho phát lại.
+- [x] Native playback thật tăng `currentTime`; pause/resume giữ mốc, Stop về 0, volume đổi native value, ended cho phát lại.
 - [ ] Không autoplay; play reject, byte hỏng, 404, click lặp khi pending và retry có trạng thái đúng, không unhandled rejection.
-- [ ] WebVTT cue đổi đúng thời gian, bật/tắt được; thiếu/lỗi subtitle không chặn audio/transcript. Cleanup source/track/listener và promise muộn an toàn trong StrictMode.
-- [ ] Player thứ hai bắt đầu thì player cũ pause; keyboard và trạng thái accessible; focused tests + gates đạt trước commit.
+- [x] WebVTT cue đổi đúng thời gian, bật/tắt được; thiếu/lỗi subtitle không chặn audio/transcript. Cleanup source/track/listener và promise muộn được kiểm trong StrictMode.
+- [x] Player thứ hai bắt đầu thì player cũ pause; keyboard và trạng thái accessible; focused tests + gates đạt trước commit.
 
 ### MEDIA-01.3 — Tích hợp API vào consumer
 
-- [ ] Public vi và preview CMS vi/en lấy đúng track/transcript/subtitle; thiếu locale không phát ngôn ngữ còn lại.
-- [ ] Chi tiết 2D/panel tour có player dùng URL API; null/thiếu audio báo rõ, transcript vẫn đọc được. Không tải tất cả audio trong catalogue.
-- [ ] Đổi item/phòng/route, đóng panel, đổi locale/nguồn hoặc refresh loại item dừng audio cũ; promise/cue cũ không cập nhật item mới kể cả cùng URL audio.
-- [ ] DOM fallback không WebGL dùng được; preview CMS giữ signed URL và nguồn/bản quyền. Regression GLB, focus, loading/error/refresh giữ nguyên.
-- [ ] Unit/focused browser tests + gates đạt, review diff và commit.
+- [x] Public vi và mapper preview CMS vi/en lấy đúng track/transcript/subtitle; thiếu locale không phát ngôn ngữ còn lại. CMS locale được kiểm ở mức unit mapper, chưa browser admin end-to-end.
+- [x] Chi tiết 2D/panel tour có player dùng URL API; null/thiếu audio báo rõ, transcript vẫn đọc được. Không tải tất cả audio trong catalogue.
+- [x] Đổi item/route, đóng panel, thay nguồn hoặc refresh lỗi dừng audio cũ; test promise muộn với hai item cùng URL đạt. Đổi locale CMS được bảo vệ bằng key theo locale; kiểm ở mức mapper/code review.
+- [x] DOM khi chưa mở Canvas dùng được; preview CMS mapper giữ signed URL và nguồn/bản quyền. Regression GLB, focus, loading/error/refresh đạt; không chứng nhận headset hoặc CMS browser end-to-end.
+- [x] Unit/focused browser tests + gates đạt, review diff để commit integration.
 
 ### MEDIA-01.4 — Chứng minh tích hợp và bàn giao
 
-- [ ] Regression production liên quan chạy đạt; phân biệt fixture intercept với live không intercept.
+- [x] Regression production liên quan chạy đạt; phân biệt fixture intercept với live không intercept.
 - [ ] API thật read-only: tìm nội dung public có ảnh/audio, chứng minh ảnh decode và audio play/pause/resume bằng request + native element, transcript và captions nếu có.
-- [ ] Nếu API offline hoặc không có media đã publish: ghi rõ blocker, không đánh dấu nghiệm thu live đầy đủ và không tự tạo nội dung.
+- [x] Ghi rõ blocker thực tế: API metadata tồn tại nhưng URL file trả 404; không đánh dấu nghiệm thu live đầy đủ và không tự tạo nội dung.
 - [ ] README bỏ các mô tả cũ về media-null/audio standalone đã được task này thay đổi; cập nhật evidence/giới hạn trong hai tài liệu.
 - [ ] Review toàn diff, báo branch/commits/checks/live limitation. PR sau khi có chỉ dẫn tiếp theo, base `dev`, không tự merge.
 
@@ -121,3 +121,12 @@ Mỗi task runtime gồm code, tests và evidence trong cùng commit sau kiểm 
 - 01.3 mapper RED: 2 test thiếu audio trước sửa; GREEN 10/10 mapper, toàn unit suite 126/126 đạt.
 - 01.1: renderer ảnh dùng chung, home/collection/detail/catalogue/panel decode ảnh; 404 fallback và đổi URL sau lỗi được kiểm bằng browser. Typecheck/lint/build đạt; consumer audio được tách vào commit 01.3.
 - Ruling: tách integration audio thành `tests/public-audio.spec.ts` và shared fixture `tests/fixtures/publicMediaApi.ts` để ảnh/audio không lặp setup; giữ `public-image-audio.spec.ts` cho ảnh và live spec cho full luồng.
+- Production regression lần đầu: 84 pass/1 fail trong 85 ca; assertion exact của room-mapping thiếu roomId/credits từ trước và audio/audioLocale mới. Cập nhật đủ expected fields, không đổi sang assertion yếu hơn.
+- Captions replay: thêm test Stop→Phát trong cùng cue, RED thật vì caption trống; sửa đồng bộ activeCues khi `playing`, chờ GREEN bản build mới.
+- API live: có một hiện vật public gắn ảnh JPEG/MP3/VTT, nhưng HEAD cả ba URL và GET ảnh/audio đều HTTP 404; browser live positive fail ở image decode. Giữ nguyên backend/storage và dữ liệu, chưa nghiệm thu media live thành công.
+- Final review độc lập (Gibbs): không Critical; phát hiện React 18 không nhận native track error qua JSX. Xếp thành Important để đạt acceptance lỗi VTT đã duyệt: test native VTT404 RED (audio phát nhưng thiếu warning), sửa listener trực tiếp có cleanup, chờ GREEN.
+- Reviewer declined: không xác nhận live delivery (404), kết quả suite đang chạy hoặc thiết bị/CMS browser chưa test. Ruling: giữ live acceptance pending; chỉ báo browser/locale ở mức fixture/unit đã có, không tuyên bố thiết bị/headset/CMS end-to-end đã được kiểm.
+- Final production: **89/89 passed (3.9 phút)** qua 10 spec liên quan trên build mới; thêm **2/2** test corrupt bytes đạt. Output: `front-end/tmp/media-production-final`, `tmp/media-corrupt` (ignored, chỉ local).
+- Captions Stop/replay và VTT404 đều RED→GREEN trong suite final. Final unit **127/127**, typecheck/lint/build và fixture typecheck exit 0; cảnh báo bundle >500 kB vẫn còn.
+- Standalone player trên Vite dev, React StrictMode: **12/12 passed (36 giây)** ở `tmp/audio-strict-final`; pause/resume/replay, error/retry, source/unmount/promise cũ, keyboard, reflow, nhiều player, Stop/volume và captions đều đạt.
+- Không có deferred minor runtime sau fix track error. Chưa kiểm điện thoại/headset/GPU thật hoặc browser CMS locale switching; toàn bộ test sản phẩm liên quan chạy Edge/SwiftShader và fixture.

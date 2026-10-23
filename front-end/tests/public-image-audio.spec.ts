@@ -31,3 +31,9 @@ test('a new image URL recovers after the previous image failed', async ({ page }
   await page.getByRole('button', { name: 'Làm mới', exact: true }).click();
   await expect.poll(() => page.getByRole('img', { name: 'Ảnh bình', exact: true }).evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
 });
+
+test('corrupt image bytes use the labelled fallback', async ({ page }) => {
+  const room = await installMedia(page, 'corrupt');
+  await page.goto(`/collection/${room.slug}/exhibits/${room.exhibits[0].id}`);
+  await expect(page.getByText('Chưa có ảnh', { exact: true })).toBeVisible();
+});

@@ -18,6 +18,6 @@ export async function installMedia(page: Page, imageMode = 'ok') {
   }));
   await page.route('**/media/uploads/images/**', route => imageMode === 'ok' || route.request().url().endsWith('/new.png')
     ? route.fulfill({ contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aKn8AAAAASUVORK5CYII=', 'base64') })
-    : route.fulfill({ status: 404 }));
+    : route.fulfill(imageMode === 'corrupt' ? { contentType: 'image/png', body: 'not a PNG' } : { status: 404 }));
   return room;
 }

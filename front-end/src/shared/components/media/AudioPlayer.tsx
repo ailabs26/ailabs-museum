@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useId, useLayoutEffect, useRef, useState } from 'react';
 import { Button, Group, Paper, Stack, Text } from '@mantine/core';
 import { IconPlayerPause, IconPlayerPlay } from '@tabler/icons-react';
 
@@ -36,6 +36,8 @@ function AudioPlayerInstance({ source, label, subtitleUrl, locale }: { source: s
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
   const [caption, setCaption] = useState('');
   const [subtitleFailed, setSubtitleFailed] = useState(false);
+  const updateCaption = useCallback(() => setCaption(Array.from(trackRef.current?.track.activeCues ?? [])
+    .map(cue => (cue as VTTCue).getCueAsHTML().textContent ?? '').join('\n')), []);
 
   useLayoutEffect(() => {
     const audio = audioRef.current;
@@ -63,12 +65,16 @@ function AudioPlayerInstance({ source, label, subtitleUrl, locale }: { source: s
     const element = trackRef.current;
     if (!element) return;
     const track = element.track;
-    const updateCaption = () => setCaption(Array.from(track.activeCues ?? [])
-      .map(cue => (cue as VTTCue).getCueAsHTML().textContent ?? '').join('\n'));
+    const handleSubtitleError = () => { setSubtitleFailed(true); setCaption(''); };
     track.mode = 'hidden';
     track.addEventListener('cuechange', updateCaption);
-    return () => { track.removeEventListener('cuechange', updateCaption); track.mode = 'disabled'; };
-  }, [subtitleUrl]);
+    element.addEventListener('error', handleSubtitleError);
+    return () => {
+      track.removeEventListener('cuechange', updateCaption);
+      element.removeEventListener('error', handleSubtitleError);
+      track.mode = 'disabled';
+    };
+  }, [subtitleUrl, updateCaption]);
 
   const handlePlay = async () => {
     const audio = audioRef.current;
@@ -111,13 +117,12 @@ function AudioPlayerInstance({ source, label, subtitleUrl, locale }: { source: s
           crossOrigin="anonymous"
           preload="none"
           aria-hidden="true"
-          onPlaying={() => { if (!hasMediaErrorRef.current) { setIsPending(false); setStatus('playing'); } }}
+          onPlaying={() => { if (!hasMediaErrorRef.current) { setIsPending(false); setStatus('playing'); updateCaption(); } }}
           onPause={() => setStatus(current => current === 'playing' || current === 'loading' ? 'paused' : current)}
           onEnded={() => { setIsPending(false); setStatus('ended'); }}
           onError={() => { hasMediaErrorRef.current = true; requestRef.current += 1; setIsPending(false); setStatus('error'); }}
         >
-          {source && subtitleUrl && <track ref={trackRef} kind="subtitles" src={subtitleUrl} srcLang={locale}
-            onError={() => { setSubtitleFailed(true); setCaption(''); }} />}
+          {source && subtitleUrl && <track ref={trackRef} kind="subtitles" src={subtitleUrl} srcLang={locale} />}
         </audio>
         <Group justify="space-between" align="center" wrap="wrap">
           <Text fw={600}>{label}</Text>

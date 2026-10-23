@@ -6,7 +6,7 @@ import { exhibit, roomA } from './fixtures/museumContent';
 test('display mapping preserves backend identity, coordinates, colors and every supported shape', () => {
   const displays = mapRoomDisplays(roomDetailSchema.parse(roomA));
   expect(displays.map((item) => item.shape)).toEqual(['torus', 'sphere', 'cube', 'cone', 'cylinder']);
-  expect(displays[0]).toEqual({ id: '10000000-0000-4000-8000-000000000001', title: 'Hiện vật 1', description: 'Mô tả hiện vật 1', transcript: null, hotspots: [], position: [0, 0, 0], shape: 'torus', color: '#8b7355', isOutsideRoom: false });
+  expect(displays[0]).toEqual({ id: '10000000-0000-4000-8000-000000000001', roomId: '00000000-0000-4000-8000-000000000001', title: 'Hiện vật 1', description: 'Mô tả hiện vật 1', transcript: null, audio: null, audioLocale: 'vi', credits: [], hotspots: [], position: [0, 0, 0], shape: 'torus', color: '#8b7355', isOutsideRoom: false });
   expect(displays[1].position).toEqual([-5.3, 0, -5.1]);
   const offset = mapRoomDisplays(roomDetailSchema.parse({ ...roomA, exhibits: [{ ...exhibit(), positionX: 2, positionY: 3, positionZ: -4 }] }));
   expect(offset[0].position).toEqual([2, 3, -4]);

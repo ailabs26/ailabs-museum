@@ -6,6 +6,7 @@ import { MediaCreditList } from '@/components/museum/MediaCreditList';
 import { collectMediaCredits } from '@/helpers/mediaCredits';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
+import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
 import classes from './ExhibitDetailPage.module.css';
 
 export function ExhibitDetailPage() {
@@ -15,6 +16,8 @@ export function ExhibitDetailPage() {
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const exhibit = detail && isValidId ? detail.exhibits.find((item) => item.id === exhibitId) : undefined;
   const credits = exhibit ? collectMediaCredits(exhibit) : [];
+  const audio = exhibit?.audio?.vi;
+  const transcript = audio?.transcript ?? (exhibit?.i18n ? exhibit.i18n.vi.transcript : exhibit?.transcript);
 
   let statusTitle: string | undefined;
   let statusMessage: string | undefined;
@@ -69,13 +72,14 @@ export function ExhibitDetailPage() {
           <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } : null}
             shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
           <div className={classes.sections}>
+            <AudioPlayer key={`${detail.id}:${exhibit.id}:vi`} src={audio?.audio.url} subtitleUrl={audio?.subtitle?.url} locale="vi" />
             <section aria-labelledby="exhibit-description-title">
               <Title order={2} id="exhibit-description-title" className={classes.sectionTitle}>Câu chuyện hiện vật</Title>
               <p className={classes.body}>{exhibit.description || 'Chưa có mô tả.'}</p>
             </section>
-            {exhibit.transcript && <section aria-labelledby="exhibit-transcript-title">
+            {transcript && <section aria-labelledby="exhibit-transcript-title">
               <Title order={2} id="exhibit-transcript-title" className={classes.sectionTitle}>Bản thuyết minh</Title>
-              <p className={classes.body}>{exhibit.transcript}</p>
+              <p className={classes.body}>{transcript}</p>
             </section>}
             {exhibit.hotspots.length > 0 && <section aria-labelledby="exhibit-hotspots-title">
               <Title order={2} id="exhibit-hotspots-title" className={classes.sectionTitle}>Điểm chú ý</Title>
