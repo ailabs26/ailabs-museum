@@ -43,6 +43,7 @@ export class AuditInterceptor implements NestInterceptor {
               resourceId,
               // Với hành động trên revision, lưu thêm FK revisionId để truy vết chéo.
               revisionId: meta.resourceType === 'revision' ? resourceId : null,
+              reason: this.resolveReason(request),
               requestId: this.resolveRequestId(request),
             });
           }
@@ -80,6 +81,18 @@ export class AuditInterceptor implements NestInterceptor {
     }
     const paramId = (request.params as Record<string, string> | undefined)?.id;
     return paramId ? [paramId] : [];
+  }
+
+  private resolveReason(request: AuditRequest): string | null {
+    const body = request.body as Record<string, unknown> | undefined;
+    if (!body || typeof body !== 'object') return null;
+    if (typeof body.reason === 'string' && body.reason.trim().length > 0) {
+      return body.reason.trim();
+    }
+    if (typeof body.resolution === 'string' && body.resolution.trim().length > 0) {
+      return body.resolution.trim();
+    }
+    return null;
   }
 
   private resolveRequestId(request: AuditRequest): string {
