@@ -33,3 +33,4 @@ Hệ thống kiểm thử kết hợp 2 tầng:
 | **TC-13** | Nhật ký hệ thống (Audit Trail) | Kiểm tra toàn bộ chuỗi hành động trên được ghi vết đầy đủ | `200 OK` |
 | **TC-14** | Thống kê Dashboard | Kiểm tra số liệu tổng quan và biểu đồ cập nhật chính xác | `200 OK` |
 | **TC-15** | Dọn dẹp an toàn | Xóa hiện vật nháp, dọn dẹp phòng thử nghiệm | `200 OK` |
+

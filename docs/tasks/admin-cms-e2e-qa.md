@@ -26,3 +26,4 @@ Xây dựng bộ kịch bản kiểm thử End-to-End (E2E) tự động hóa, b
    - **Minor/Trivial:** Lỗi hiển thị giao diện nhỏ, thông báo chưa tối ưu hoặc xử lý ngoại lệ biên.
 2. Thực hiện sửa lỗi (Bug Fixing) trực tiếp trong sprint kiểm thử để gia cố mã nguồn, đảm bảo hệ thống đạt độ tin cậy cao nhất cho Production v1.
 3. Bàn giao báo cáo nghiệm thu kiểm thử E2E (`E2E Test CMS Report`) với đầy đủ số liệu kiểm chứng.
+
