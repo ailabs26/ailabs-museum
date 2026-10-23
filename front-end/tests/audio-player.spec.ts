@@ -254,6 +254,16 @@ test('native timeline seeks while playing and paused with keyboard support and S
   await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeCloseTo(8, 1);
   await seek.press('Home');
   await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBe(0);
+  const box = (await seek.boundingBox())!;
+  const middle = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  await page.mouse.click(middle.x, middle.y);
+  await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeCloseTo(4, 1);
+  await page.mouse.move(middle.x, middle.y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.75, middle.y, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeCloseTo(6, 1);
+  await expect(audio).toHaveJSProperty('paused', true);
   await page.getByRole('button', { name: 'Dừng', exact: true }).click();
   await expect(seek).toHaveValue('0');
   await expect(page.getByLabel('Tổng thời lượng')).toHaveText('00:08');

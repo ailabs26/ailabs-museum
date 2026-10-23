@@ -1,13 +1,13 @@
 # Nâng cấp AudioPlayer — Tua âm thanh và bố cục
 
-**Trạng thái:** Người dùng đã duyệt; đang triển khai, chưa push/PR/merge.
+**Trạng thái:** Đã triển khai và kiểm chứng; giữ nhánh local để người dùng review, chưa push/PR/merge.
 **Ngày:** 23/10/2026 (Asia/Bangkok).
 **Plan:** [audio-player-seek-ui-plan.md](../plans/audio-player-seek-ui-plan.md).
 **Base khảo sát:** `dev` tại `75df3ea6728d5d44bdc3891723fdaccdc0a14557` (đã merge PR #70).
 **Nhánh:** `fix/audio-player-seek-ui` từ latest `origin/dev` tại `75df3ea`; PR tương lai vào `dev`.
 **Execution gate:** Người dùng đã duyệt hai tài liệu và yêu cầu tạo nhánh, triển khai. Thực thi inline trên nhánh nhiệm vụ; chưa push/PR/merge theo phạm vi task mới.
 
-## 1. Mục tiêu và hiện trạng
+## 1. Mục tiêu và hiện trạng trước triển khai (`75df3ea`)
 
 `AudioPlayer` đang phát audio từ API trong trang chi tiết hiện vật 2D và panel tour 3D; CMS Draft Preview cũng dùng panel chung. Component hiện có Phát/Tạm dừng/Tiếp tục/Phát lại/Dừng, âm lượng, WebVTT, trạng thái lỗi/Thử lại, cleanup và quy tắc chỉ một guide phát trong cùng document. Tuy nhiên:
 
@@ -101,10 +101,10 @@
 
 **File:** `docs/plans/audio-player-seek-ui-plan.md`, `docs/tasks/audio-player-seek-ui.md`.
 
-- [ ] Người dùng duyệt cả PLAN/TASK, gồm chính sách `preload="none"` và seek khi paused/ended.
-- [ ] Refresh `origin/dev` và xác minh đã có PR #70; tạo `fix/audio-player-seek-ui` từ HEAD mới nhất; working tree không có thay đổi ngoài nhiệm vụ.
-- [ ] Đặt đúng hai file dưới `docs/plans/` và `docs/tasks/`; rà links chéo, path code/test, `git diff --check`.
-- [ ] Commit tài liệu, không triển khai code trước khi duyệt.
+- [x] Người dùng duyệt cả PLAN/TASK, gồm chính sách `preload="none"` và seek khi paused/ended.
+- [x] Refresh `origin/dev` và xác minh đã có PR #70; tạo `fix/audio-player-seek-ui` từ HEAD mới nhất; working tree không có thay đổi ngoài nhiệm vụ.
+- [x] Đặt đúng hai file dưới `docs/plans/` và `docs/tasks/`; rà links chéo, path code/test, `git diff --check`.
+- [x] Commit tài liệu, không triển khai code trước khi duyệt.
 
 **Acceptance:** Không có file runtime nào bị sửa; plan/task nhất quán, chưa push/PR/merge.
 
@@ -120,11 +120,11 @@ export function getSeekDuration(duration: number): number | null;
 export function clampAudioTime(seconds: number, duration: number): number;
 ```
 
-- [ ] Viết test RED: `0 → 00:00`, `74.9 → 01:14`, `3601 → 01:00:01`; `NaN/Infinity` không tạo chữ số lỗi.
-- [ ] Viết test duration: `NaN`, `Infinity`, `0`, số âm → `null`; `180` → `180`.
-- [ ] Viết test clamp: dưới 0 → 0, vượt duration → duration, số không hợp lệ → 0; không cho ra `NaN`.
-- [ ] Chạy `npm run test:unit -- src/helpers/audioTime.test.ts`; xác nhận RED có nguyên nhân hợp lệ, sau đó implement tối thiểu.
-- [ ] Chạy lại unit/typecheck đạt, review diff và commit đúng files.
+- [x] Viết test RED: `0 → 00:00`, `74.9 → 01:14`, `3601 → 01:00:01`; `NaN/Infinity` không tạo chữ số lỗi.
+- [x] Viết test duration: `NaN`, `Infinity`, `0`, số âm → `null`; `180` → `180`.
+- [x] Viết test clamp: dưới 0 → 0, vượt duration → duration, số không hợp lệ → 0; không cho ra `NaN`.
+- [x] Chạy `npm run test:unit -- src/helpers/audioTime.test.ts`; xác nhận RED có nguyên nhân hợp lệ, sau đó implement tối thiểu.
+- [x] Chạy lại unit/typecheck đạt, review diff và commit đúng files.
 
 **Acceptance:** Helper thuần, không phụ thuộc React/DOM; output ổn định và xử lý số không hữu hạn an toàn.
 
@@ -132,13 +132,13 @@ export function clampAudioTime(seconds: number, duration: number): number;
 
 **Files:** `front-end/src/shared/components/media/AudioPlayer.tsx`, `front-end/tests/audio-player.spec.ts`, `front-end/tests/fixtures/audioFixture.ts` (Range/206), `front-end/tests/fixtures/audio-player.tsx` (theme auto).
 
-- [ ] RED browser test: source có `preload="none"`, trước metadata hiển thị `00:00 / --:--` và slider **Tua âm thanh** disabled; không request audio khi chỉ mount.
-- [ ] RED browser test: sau khi bấm Phát, duration từ WAV fixture xuất hiện, `currentTime` tăng, slider tiến theo native event.
-- [ ] RED browser test: tua khi playing vẫn phát; tua khi paused vẫn paused; thao tác bằng Arrow/Home/End; Stop về 0.
-- [ ] RED browser test: ended→tua về giữa không autoplay; source đổi/unmount reset timeline và không nhận sự kiện muộn của source cũ.
-- [ ] RED browser test: source thiếu, HTTP 404/bytes hỏng, duration không hữu hạn → seek disabled, UI không có NaN; Retry vẫn dùng được.
-- [ ] Implement state `currentTime`, `duration` theo native media events; `onChange` seek có guard/clamp, không gọi `play()`; `onSeeked` đồng bộ phụ đề kể cả khi paused.
-- [ ] Chạy lại focused Playwright, helper Vitest và typecheck; review diff, commit.
+- [x] RED browser test: source có `preload="none"`, trước metadata hiển thị `00:00 / --:--` và slider **Tua âm thanh** disabled; không request audio khi chỉ mount.
+- [x] RED browser test: sau khi bấm Phát, duration từ WAV fixture xuất hiện, `currentTime` tăng, slider tiến theo native event.
+- [x] RED browser test: tua khi playing vẫn phát; tua khi paused vẫn paused; thao tác bằng Arrow/Home/End; Stop về 0.
+- [x] RED browser test: ended→tua về giữa không autoplay; source đổi/unmount reset timeline và không nhận sự kiện muộn của source cũ.
+- [x] RED browser test: source thiếu, HTTP 404/bytes hỏng, duration không hữu hạn → seek disabled, UI không có NaN; Retry vẫn dùng được.
+- [x] Implement state `currentTime`, `duration` theo native media events; `onChange` seek có guard/clamp, không gọi `play()`; `onSeeked` đồng bộ phụ đề kể cả khi paused.
+- [x] Chạy lại focused Playwright, helper Vitest và typecheck; review diff, commit.
 
 **Acceptance:** Native `audio.currentTime` phản ánh thời điểm đã tua (không chỉ đổi slider); không phá Play/Pause/Resume/Stop/Retry/ended, pending promises và caption.
 
@@ -146,12 +146,12 @@ export function clampAudioTime(seconds: number, duration: number): number;
 
 **Files:** `front-end/src/shared/components/media/AudioPlayer.tsx`, `front-end/src/shared/components/media/AudioPlayer.module.css` (new), `front-end/tests/audio-player-layout.spec.ts` (new), fixture CSS và `front-end/tests/public-audio.spec.ts` (Stop/contrast regression).
 
-- [ ] RED browser test: kiểm thứ tự hiển thị title/status → timeline/time → controls/volume → captions; nút Phát và Dừng nằm cùng nhóm.
-- [ ] RED browser test: volume chỉ chiếm vùng gọn 100–140 px khi đủ rộng; seek full width không bị nhầm với volume.
-- [ ] RED browser test: 320/375/768/1440 px ở light/dark không overflow; controls/slider keyboard, focus ring và hit area tối thiểu 44 px.
-- [ ] RED browser test: tua qua cue VTT khi đang paused cập nhật phụ đề đúng; cue rỗng không chiếm hộp lớn; VTT 404 vẫn phát audio và hiện warning.
-- [ ] Thực hiện layout bằng Mantine + CSS Module, spacing gọn và theme-aware; chỉ một vùng status live, error là alert.
-- [ ] Chạy lại focused tests, fixture typecheck, lint, build; review diff và commit.
+- [x] RED browser test: kiểm thứ tự hiển thị title/status → timeline/time → controls/volume → captions; nút Phát và Dừng nằm cùng nhóm.
+- [x] RED browser test: volume chỉ chiếm vùng gọn 100–140 px khi đủ rộng; seek full width không bị nhầm với volume.
+- [x] RED browser test: 320/375/768/1440 px ở light/dark không overflow; controls/slider keyboard, focus ring và hit area tối thiểu 44 px.
+- [x] RED browser test: tua qua cue VTT khi đang paused cập nhật phụ đề đúng; cue rỗng không chiếm hộp lớn; VTT 404 vẫn phát audio và hiện warning.
+- [x] Thực hiện layout bằng Mantine + CSS Module, spacing gọn và theme-aware; chỉ một vùng status live, error là alert.
+- [x] Chạy lại focused tests, fixture typecheck, lint, build; review diff và commit.
 
 **Acceptance:** UI thống nhất ở 2D/panel tour/CMS preview do dùng cùng component; visual responsive, không thay public props và playback behavior.
 
@@ -159,12 +159,12 @@ export function clampAudioTime(seconds: number, duration: number): number;
 
 **Files:** `front-end/tests/audio-player.spec.ts` (click/kéo native), `front-end/tests/public-image-audio-live.spec.ts` (seek native live), `front-end/README.md`, PLAN/TASK (ghi evidence thật).
 
-- [ ] Chạy focused regression AudioPlayer, public audio và public image/audio; kiểm playback, VTT, lỗi media, one-guide policy và cleanup khi chuyển hiện vật/phòng.
-- [ ] Chạy `npm run test:unit`, `npm run typecheck`, `npx tsc -p tsconfig.audio-fixture.json --pretty false`, `npm run lint`, `npm run build`; ghi đầy đủ passed/failed/skipped và warnings nếu có.
-- [ ] Nếu sẵn backend/media live, chạy **read-only** live test; test hiện tại không tự chứng minh seek live — chỉ ghi seek live đã kiểm khi thật sự có assertion/tương tác và kết quả.
-- [ ] Cập nhật README hướng dẫn seek, hiển thị duration khi `preload="none"`, keyboard, điều khiển âm lượng; không quảng cáo tính năng chưa làm.
-- [ ] Review diff so với `dev`, `git diff --check`, cập nhật task evidence và commit (chỉ commit files thay đổi; không commit rỗng).
-- [ ] Chuẩn bị mô tả PR vào `dev`; dừng trước push/PR/merge nếu chưa được yêu cầu.
+- [x] Chạy focused regression AudioPlayer, public audio và public image/audio; kiểm playback, VTT, lỗi media, one-guide policy và cleanup khi chuyển hiện vật/phòng.
+- [x] Chạy `npm run test:unit`, `npm run typecheck`, `npx tsc -p tsconfig.audio-fixture.json --pretty false`, `npm run lint`, `npm run build`; ghi đầy đủ passed/failed/skipped và warnings nếu có.
+- [x] Nếu sẵn backend/media live, chạy **read-only** live test; baseline chưa có assertion seek, đã bổ sung tua khi paused + Resume và đạt với media/API thật (evidence mục 6).
+- [x] Cập nhật README hướng dẫn seek, hiển thị duration khi `preload="none"`, keyboard, điều khiển âm lượng; không quảng cáo tính năng chưa làm.
+- [x] Review diff so với `dev`, `git diff --check`, cập nhật task evidence và commit (chỉ commit files thay đổi; không commit rỗng).
+- [x] Chuẩn bị mô tả PR vào `dev`; dừng trước push/PR/merge nếu chưa được yêu cầu.
 
 **Acceptance:** Hành vi đã triển khai khớp tất cả tiêu chí ở mục 2; không có regression đã biết hoặc test bắt buộc đang fail. Báo cáo rõ những phần chưa test (nếu có).
 
@@ -199,3 +199,15 @@ export function clampAudioTime(seconds: number, duration: number): number;
 - Live read-only: `MUSEUM_LIVE_TEST=1 PLAYWRIGHT_PREVIEW=1 npm.cmd test -- public-image-audio-live.spec.ts --reporter=list --output=tmp/seek-live-final` **1/1 passed (19 giây), không skip**. Dùng API và media thật, không interception/seed/upload/publish; duration hữu hạn, tua native tới mốc mới khi paused vẫn paused, Resume tăng từ mốc đó; ảnh decode và WebVTT hiển thị. Không có blocker HTTP 404 ở lần xác nhận này.
 - Full Vitest sau sửa: **146/146 passed**; app typecheck, fixture typecheck và lint exit 0. Final `npm.cmd run build` **passed (26,05 giây)**; cảnh báo chunk >500 kB vẫn có (main ~904,19 kB), không thêm dependency và không mở rộng nhiệm vụ sang tối ưu bundle.
 - Visual QA: đã xem screenshot desktop dark và mobile light từ browser run; UI có style Mantine, volume gọn, controls wrap và không tràn ngang. Chưa kiểm thiết bị cảm ứng/iOS/Safari thật hoặc screen reader thủ công; CMS Preview dùng component/panel chung nhưng không chạy luồng đăng nhập CMS riêng.
+- Task 3 commit `14c156c`; Task 4 hoàn tất README, assertion pointer/native seek live và tài liệu. Diff được review so với `75df3ea`; `git diff --check` đạt. Chỉ frontend/tests/docs, không backend/API/dependency/database changes. Không chạy backend gates vì backend không đổi.
+
+## 7. Mô tả PR chuẩn bị (chưa tạo)
+
+**Base:** `dev`. **Title:** `fix(audio): add native seeking and responsive player controls`.
+
+- Thêm timeline/time theo native metadata/events, guard duration và seek bằng chuột/bàn phím; giữ preload none, paused/ended không autoplay.
+- Gộp controls, volume gọn, caption section responsive; sửa stopped-caption race và contrast trong dark tour panel. Giữ nguyên props/callers, lifecycle ownership, transcript/retry và one-guide policy.
+- Kiểm chứng: unit 146/146; browser regression 37/37; pointer assertion riêng 1/1; API/media thật với paused seek + Resume 1/1 không skip; typecheck/fixture typecheck/lint/build đều đạt.
+- Giới hạn: chưa kiểm Safari/iOS/thiết bị thật/screen reader thủ công hoặc luồng CMS đăng nhập; bundle warning >500 kB hiện hữu. Không còn known failing acceptance sau sửa findings review.
+
+**Push / PR URL / merge:** Chưa thực hiện, chưa có URL PR; dừng tại nhánh local theo phạm vi nhiệm vụ. Commit bàn giao dùng `test(audio): verify seek UI integration` (xem `git log` để lấy SHA cuối).
