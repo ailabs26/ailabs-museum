@@ -157,4 +157,19 @@ describe('Moderation HTTP · hide', () => {
       .send({ version: 1 })
       .expect(409);
   });
+
+  it('201 khi tạm ẩn kèm lý do hợp lệ', async () => {
+    const app = await makeApp({
+      hide: () => Promise.resolve({ id: UUID, visibility: 'hidden', version: 2 } as never),
+    });
+    apps.push(app);
+
+    const res = await request(app.getHttpServer())
+      .post(`/exhibits/${UUID}/hide`)
+      .send({ version: 1, reason: 'Tạm ẩn để kiểm tra niên đại hiện vật' })
+      .expect(201);
+
+    assert.equal(res.body.success, true);
+    assert.equal(res.body.data.visibility, 'hidden');
+  });
 });
