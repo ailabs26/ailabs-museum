@@ -39,6 +39,13 @@ test('published image and audio load through the real API', async ({ page, reque
   await page.getByRole('button', { name: 'Phát', exact: true }).click();
   await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime), { timeout: 15000 }).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Tạm dừng', exact: true }).click();
+  const duration = await audio.evaluate((el: HTMLAudioElement) => el.duration);
+  expect(Number.isFinite(duration) && duration > 0).toBe(true);
+  const seekTime = Math.min(3, Math.floor(duration / 2));
+  expect(seekTime).toBeGreaterThan(0);
+  await page.getByRole('slider', { name: 'Tua âm thanh' }).fill(String(seekTime));
+  await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeCloseTo(seekTime, 1);
+  await expect(audio).toHaveJSProperty('paused', true);
   const pausedTime = await audio.evaluate((el: HTMLAudioElement) => el.currentTime);
   await page.getByRole('button', { name: 'Tiếp tục', exact: true }).click();
   await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeGreaterThan(pausedTime);
