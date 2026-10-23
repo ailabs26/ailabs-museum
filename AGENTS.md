@@ -28,7 +28,7 @@ Các hướng dẫn này áp dụng cho toàn bộ kho mã nguồn. Nếu một 
 
 ## Frontend
 
-- Tuân theo `front-end/docs/coding-conventions.md`.
+- Tuân theo `docs/architecture/fe/coding-conventions.md`.
 - Frontend giao tiếp với NestJS API, không kết nối trực tiếp tới PostgreSQL, Supabase hoặc dịch vụ lưu trữ.
 - Kiểm tra tính hợp lệ của phản hồi từ API bên ngoài trước khi code ứng dụng sử dụng.
 - Duy trì DOM có khả năng tiếp cận và hành vi dự phòng song song với trải nghiệm 3D và WebXR.
@@ -39,7 +39,7 @@ Các hướng dẫn này áp dụng cho toàn bộ kho mã nguồn. Nếu một 
 
 ## Backend
 
-- Tuân theo `back-end/docs/coding-conventions.md`. Giữ luồng Controller → Service → Repository; chỉ Repository chạm TypeORM.
+- Tuân theo `docs/architecture/be/coding-conventions.md`. Giữ luồng Controller → Service → Repository; chỉ Repository chạm TypeORM.
 - Giữ các endpoint nội dung công khai (`/rooms`, `/health`) ở chế độ chỉ đọc + `@Public()`. Route quản trị bảo vệ bằng guard toàn cục + `@Permissions('resource:action')`; thao tác ghi/sửa đánh `@Audit(...)`.
 - Endpoint trả `ApiResponse` (qua ResponseInterceptor); không trả Entity thô / `passwordHash`.
 - Luôn tắt TypeORM `synchronize`.
