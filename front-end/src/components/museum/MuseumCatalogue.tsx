@@ -1,7 +1,7 @@
 import { Badge, Button, Card, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { EmptyState } from '@/shared/components/data/EmptyState';
-import { ExhibitImage } from './ExhibitImage';
+import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import classes from './MuseumCatalogue.module.css';
 
 export function MuseumCatalogue({ displays, selectedId, onSelect }: {
@@ -19,7 +19,7 @@ export function MuseumCatalogue({ displays, selectedId, onSelect }: {
         <SimpleGrid component="ul" aria-label="Các hiện vật" cols={{ base: 1, sm: 2, lg: 3 }} p={0} m={0} style={{ listStyle: 'none' }}>
           {displays.map((display, index) => (
             <Card component="li" key={display.id} withBorder padding="lg" className={classes.card} data-selected={selectedId === display.id}>
-              <ExhibitImage display={display} className={classes.preview} />
+              <ExhibitImage image={display.image} shape={display.shape} color={display.color} className={classes.preview} />
               <Badge variant="light" color="gray" mb="md">Hiện vật {String(index + 1).padStart(2, '0')}</Badge>
               <Title order={3} size="h4" mb="xs">{display.title}</Title>
               <Text size="sm" c="dimmed" mb="md">{display.description}</Text>

@@ -12,6 +12,8 @@ export interface MuseumDisplay {
   title: string;
   description: string;
   transcript?: string | null;
+  audio?: NonNullable<import('@/validations/roomSchema').RoomDetail['exhibits'][number]['audio']>['vi'];
+  audioLocale?: 'vi' | 'en';
   image?: { url: string; alt: string };
   /** GLB source-local coordinates; non-GLB annotations use display-local metres, Y up. */
   hotspots?: readonly { id: string; label: string; body: string; position?: [number, number, number] }[];
