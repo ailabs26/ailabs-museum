@@ -1,4 +1,5 @@
-import { crc32, inflateSync } from 'node:zlib';
+import { inflateSync } from 'node:zlib';
+import { crc32 } from '../crc32';
 import { corrupted } from '../media-format.error';
 import { MAX_DECODED_IMAGE_BYTES, MAX_IMAGE_DIMENSION } from '../media-formats';
 
