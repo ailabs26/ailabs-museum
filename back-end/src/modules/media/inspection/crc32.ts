@@ -18,3 +18,4 @@ export function crc32(buffer: Uint8Array): number {
   }
   return (crc ^ 0xffffffff) >>> 0;
 }
+

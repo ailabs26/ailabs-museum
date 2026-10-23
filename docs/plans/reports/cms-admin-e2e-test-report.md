@@ -65,3 +65,4 @@
 1. Toàn bộ kịch bản kiểm thử E2E (15/15 ca) đã chạy thành công 100% trên môi trường thực tế tích hợp với backend NestJS và cơ sở dữ liệu Supabase.
 2. Bộ script kiểm thử tự động hóa (`front-end/scripts/e2e-cms-workflow.mjs`) được bàn giao đầy đủ, hỗ trợ chạy trực tiếp thông qua lệnh `npm run test:e2e:cms`.
 3. Hệ thống CMS Admin đạt đầy đủ các tiêu chuẩn kỹ thuật về tính sẵn sàng, độ tin cậy và an toàn nghiệp vụ để chuyển giao sang giai đoạn bàn giao nghiệm thu Production v1.
+
