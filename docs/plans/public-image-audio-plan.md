@@ -1,6 +1,6 @@
 # Public Image and Audio — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Đây là bản draft: dừng cho người dùng review trước commit/implementation; chưa chọn phương thức thực thi.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this approved plan task-by-task, inline; final review độc lập. Steps use checkbox (`- [ ]`) syntax for tracking. Evidence thực tế và các điều chỉnh ghi tại task ledger.
 
 **Goal:** Hiển thị ảnh và phát audio thật từ API trong public 2D/panel tour, giữ fallback, transcript và phụ đề đúng ngôn ngữ.
 
@@ -10,7 +10,7 @@
 
 **Spec:** [public-image-audio.md — Thiết kế đề xuất để review](../tasks/public-image-audio.md#thiết-kế-đề-xuất-để-review).
 **Base/branch:** `bb0127c` (`origin/dev`) → `fix/public-image-audio`.
-**Status:** Người dùng đã duyệt ngày 23/10/2026; thực thi inline, cập nhật evidence ở task.
+**Status:** Frontend đã thực thi inline và kiểm chứng ngày 23/10/2026; live acceptance pending do URL file HTTP 404. Evidence, commit và coverage thực tế ở task. Checklist bước dưới đây giữ nguyên để đối chiếu kế hoạch; không dùng checkbox kế hoạch làm bằng chứng test đã chạy.
 
 ## Global Constraints
 
@@ -21,7 +21,7 @@
 - Không autoplay. Phát/Tạm dừng/Tiếp tục/Phát lại, Dừng về đầu, âm lượng; captions DOM có bật/tắt, transcript vẫn đọc được khi lỗi.
 - Không thêm seek/playlist/auto tour/spatial audio/headset UI; không đổi GLB/camera/transform.
 - Mỗi task runtime hoàn thành và kiểm chứng có một commit gồm code/tests/evidence; không commit test fail hoặc commit rỗng.
-- Tài liệu draft chưa được duyệt: không bắt đầu task runtime, push/PR/merge trong lượt này.
+- Người dùng đã duyệt implementation; chưa push/PR/merge trong lượt này.
 
 ## Review Focus
 
@@ -60,7 +60,7 @@ CSS chỉ sửa file `.module.css` cùng consumer khi layout ảnh/controls cầ
 
 **Files:** task/plan này. **Consumes:** yêu cầu người dùng + source base. **Produces:** phạm vi được duyệt.
 
-- [ ] Người dùng review hai file và chốt đề xuất/ngưỡng nghiệm thu trước code.
+- [x] Người dùng review hai file và chốt đề xuất/ngưỡng nghiệm thu trước code.
 - [ ] Xác nhận origin/dev chưa thay đổi; nếu có upstream mới, đọc diff liên quan và cập nhật plan/base trên cùng nhánh trước runtime.
 - [ ] Review/stage đúng hai file, `git diff --cached --check`, commit `docs(media): plan public image and audio integration` sau duyệt.
 
@@ -149,4 +149,4 @@ Không cần full-repo/backend gates nếu chỉ frontend/docs như dự kiến.
 - [x] Props/type/locale thống nhất; không thêm parser/store/service suy đoán.
 - [x] Năm Review Focus đều có tests được giao cho task sở hữu.
 - [x] Không cấp quyền sửa dữ liệu/backend chỉ để có live evidence; test fixture không chứng minh media production tồn tại.
-- [ ] Người dùng review và phê duyệt trước triển khai.
+- [x] Người dùng review và phê duyệt trước triển khai.

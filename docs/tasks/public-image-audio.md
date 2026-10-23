@@ -102,8 +102,8 @@ Mỗi task runtime gồm code, tests và evidence trong cùng commit sau kiểm 
 - [x] Regression production liên quan chạy đạt; phân biệt fixture intercept với live không intercept.
 - [ ] API thật read-only: tìm nội dung public có ảnh/audio, chứng minh ảnh decode và audio play/pause/resume bằng request + native element, transcript và captions nếu có.
 - [x] Ghi rõ blocker thực tế: API metadata tồn tại nhưng URL file trả 404; không đánh dấu nghiệm thu live đầy đủ và không tự tạo nội dung.
-- [ ] README bỏ các mô tả cũ về media-null/audio standalone đã được task này thay đổi; cập nhật evidence/giới hạn trong hai tài liệu.
-- [ ] Review toàn diff, báo branch/commits/checks/live limitation. PR sau khi có chỉ dẫn tiếp theo, base `dev`, không tự merge.
+- [x] README bỏ các mô tả cũ về media-null/audio standalone đã được task này thay đổi; cập nhật evidence/giới hạn trong hai tài liệu.
+- [x] Review toàn diff và giữ nhánh local; chưa push/PR/merge. PR nếu có chỉ dẫn tiếp theo sẽ base `dev`; live acceptance vẫn chưa đạt.
 
 ## Evidence ở mốc lập kế hoạch
 
@@ -130,3 +130,6 @@ Mỗi task runtime gồm code, tests và evidence trong cùng commit sau kiểm 
 - Captions Stop/replay và VTT404 đều RED→GREEN trong suite final. Final unit **127/127**, typecheck/lint/build và fixture typecheck exit 0; cảnh báo bundle >500 kB vẫn còn.
 - Standalone player trên Vite dev, React StrictMode: **12/12 passed (36 giây)** ở `tmp/audio-strict-final`; pause/resume/replay, error/retry, source/unmount/promise cũ, keyboard, reflow, nhiều player, Stop/volume và captions đều đạt.
 - Không có deferred minor runtime sau fix track error. Chưa kiểm điện thoại/headset/GPU thật hoặc browser CMS locale switching; toàn bộ test sản phẩm liên quan chạy Edge/SwiftShader và fixture.
+- Commits: `b75309f` docs; `da3a87c` player; `e7f76e5` ảnh; `71a9a6b` nối audio và final fixes/tests. Commit bàn giao cuối chứa README, plan status, live opt-in test và evidence.
+- Live spec bổ sung readiness HEAD: URL file public 404 được annotate `blocker` rồi skip (không tính pass), để lần chạy sau không lẫn thiếu file môi trường với lỗi frontend. Lần chạy browser đầu tiên đã FAIL thật do ảnh không decode; không xóa evidence này hoặc tuyên bố live thành công.
+- Live final: **1 skipped** với blocker readiness HTTP404, output `front-end/tmp/media-live-final`. Final lint và whitespace check đạt. Working tree chỉ gồm task files; backend, dependencies và env không có diff. Chưa push, tạo PR hoặc merge.
