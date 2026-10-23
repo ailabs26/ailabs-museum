@@ -1,7 +1,8 @@
 import { useCallback, useId, useLayoutEffect, useRef, useState } from 'react';
 import { Button, Group, Paper, Stack, Text } from '@mantine/core';
-import { IconPlayerPause, IconPlayerPlay } from '@tabler/icons-react';
+import { IconHeadphones, IconPlayerPause, IconPlayerPlay, IconVolume } from '@tabler/icons-react';
 import { clampAudioTime, formatAudioTime, getSeekDuration } from '@/helpers/audioTime';
+import classes from './AudioPlayer.module.css';
 
 export interface AudioPlayerProps {
   src?: string | null;
@@ -32,6 +33,7 @@ function AudioPlayerInstance({ source, label, subtitleUrl, locale }: { source: s
   const volumeId = useId();
   const requestRef = useRef(0);
   const hasMediaErrorRef = useRef(false);
+  const captionsStoppedRef = useRef(true);
   const [status, setStatus] = useState<PlayerStatus>(source ? 'ready' : 'empty');
   const [isPending, setIsPending] = useState(false);
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
@@ -47,7 +49,7 @@ function AudioPlayerInstance({ source, label, subtitleUrl, locale }: { source: s
     setCurrentTime(nextDuration === null ? 0 : clampAudioTime(audio.currentTime, nextDuration));
   };
   const resetTimeline = () => { setCurrentTime(0); setDuration(null); };
-  const updateCaption = useCallback(() => setCaption(Array.from(trackRef.current?.track.activeCues ?? [])
+  const updateCaption = useCallback(() => setCaption(captionsStoppedRef.current ? '' : Array.from(trackRef.current?.track.activeCues ?? [])
     .map(cue => (cue as VTTCue).getCueAsHTML().textContent ?? '').join('\n')), []);
 
   useLayoutEffect(() => {
@@ -93,6 +95,7 @@ function AudioPlayerInstance({ source, label, subtitleUrl, locale }: { source: s
     const request = requestRef.current + 1;
     requestRef.current = request;
     hasMediaErrorRef.current = false;
+    captionsStoppedRef.current = false;
     setIsPending(true);
     setStatus('loading');
     try {
@@ -107,6 +110,7 @@ function AudioPlayerInstance({ source, label, subtitleUrl, locale }: { source: s
 
   const handlePause = () => audioRef.current?.pause();
   const handleStop = () => {
+    captionsStoppedRef.current = true;
     requestRef.current += 1;
     setIsPending(false);
     const audio = audioRef.current;
@@ -124,6 +128,7 @@ function AudioPlayerInstance({ source, label, subtitleUrl, locale }: { source: s
     if (nativeDuration === null) return;
     const wasEnded = audio.ended || status === 'ended';
     try {
+      captionsStoppedRef.current = false;
       audio.currentTime = clampAudioTime(value, nativeDuration);
       if (wasEnded) setStatus('paused');
     } catch {
@@ -134,7 +139,7 @@ function AudioPlayerInstance({ source, label, subtitleUrl, locale }: { source: s
   const buttonLabel = isError ? 'Thử lại' : isPlaying ? 'Tạm dừng' : status === 'paused' ? 'Tiếp tục' : 'Phát';
 
   return (
-    <Paper component="section" aria-label={label} withBorder p="md" radius="md">
+    <Paper component="section" aria-label={label} withBorder p="md" radius="md" className={classes.player}>
       <Stack gap="sm">
         <audio
           ref={audioRef}
@@ -156,40 +161,49 @@ function AudioPlayerInstance({ source, label, subtitleUrl, locale }: { source: s
         >
           {source && subtitleUrl && <track ref={trackRef} kind="subtitles" src={subtitleUrl} srcLang={locale} />}
         </audio>
+        <div className={classes.header}>
+          <div className={classes.title}><IconHeadphones size={20} aria-hidden="true" /><Text fw={600}>{label}</Text></div>
+          <Text role={status === 'error' ? 'alert' : 'status'} aria-live="polite" size="sm" c={status === 'error' ? 'red' : 'dimmed'}>
+            {statusText(status)}
+          </Text>
+        </div>
         <div>
           <input type="range" aria-label="Tua âm thanh" min="0" max={duration ?? 0} step="1" value={currentTime}
             aria-valuetext={`${formatAudioTime(currentTime)} / ${duration === null ? '--:--' : formatAudioTime(duration)}`}
-            disabled={!source || isError || duration === null} style={{ width: '100%', minHeight: 44 }}
+            disabled={!source || isError || duration === null} className={classes.seek}
             onChange={event => handleSeek(Number(event.currentTarget.value))} />
-          <Group justify="space-between">
+          <Group justify="space-between" className={classes.times}>
             <span aria-label="Thời gian hiện tại">{formatAudioTime(currentTime)}</span>
             <span aria-label="Tổng thời lượng">{duration === null ? '--:--' : formatAudioTime(duration)}</span>
           </Group>
         </div>
-        <Group justify="space-between" align="center" wrap="wrap">
-          <Text fw={600}>{label}</Text>
-          <Button
-            styles={{ root: { minHeight: 44 } }}
-            leftSection={isPlaying ? <IconPlayerPause size={18} aria-hidden="true" /> : <IconPlayerPlay size={18} aria-hidden="true" />}
-            onClick={isPlaying ? handlePause : () => void handlePlay()}
-            disabled={!source}
-          >
-            {buttonLabel}
-          </Button>
-          <Button variant="default" styles={{ root: { minHeight: 44 } }} onClick={handleStop} disabled={!source}>Dừng</Button>
-        </Group>
-        <label htmlFor={volumeId}>Âm lượng</label>
-        <input id={volumeId} type="range" min="0" max="1" step="0.1" defaultValue="1" disabled={!source}
-          style={{ width: '100%', minHeight: 44 }} onChange={event => { if (audioRef.current) audioRef.current.volume = Number(event.target.value); }} />
-        {source && subtitleUrl && <>
-          <Button variant="subtle" styles={{ root: { minHeight: 44 } }} aria-pressed={captionsEnabled}
-            onClick={() => setCaptionsEnabled(enabled => !enabled)}>{captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}</Button>
+        <div className={classes.controls}>
+          <Group gap="xs" className={classes.playback}>
+            <Button
+              styles={{ root: { minHeight: 44 } }}
+              leftSection={isPlaying ? <IconPlayerPause size={18} aria-hidden="true" /> : <IconPlayerPlay size={18} aria-hidden="true" />}
+              onClick={isPlaying ? handlePause : () => void handlePlay()}
+              disabled={!source}
+            >
+              {buttonLabel}
+            </Button>
+            <Button variant="default" styles={{ root: { minHeight: 44 } }} onClick={handleStop} disabled={!source}>Dừng</Button>
+          </Group>
+          <div className={classes.volume}>
+            <label htmlFor={volumeId} className={classes.volumeLabel}><IconVolume size={20} aria-hidden="true" /><span className={classes.srOnly}>Âm lượng</span></label>
+            <input id={volumeId} type="range" min="0" max="1" step="0.1" defaultValue="1" disabled={!source}
+              onChange={event => { if (audioRef.current) audioRef.current.volume = Number(event.target.value); }} />
+          </div>
+        </div>
+        {source && subtitleUrl && <div className={classes.captions}>
+          <div className={classes.captionHeader}>
+            <Text size="sm" fw={500}>Phụ đề WebVTT</Text>
+            <Button variant="subtle" size="compact-sm" styles={{ root: { minHeight: 44 } }} aria-pressed={captionsEnabled}
+              onClick={() => setCaptionsEnabled(enabled => !enabled)}>{captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}</Button>
+          </div>
           {subtitleFailed ? <Text role="alert" size="sm">Không tải được phụ đề. Bạn vẫn có thể đọc bản thuyết minh.</Text>
-            : captionsEnabled && <Text component="p" aria-label="Phụ đề hiện tại" style={{ whiteSpace: 'pre-line' }}>{caption}</Text>}
-        </>}
-        <Text role={status === 'error' ? 'alert' : 'status'} aria-live="polite" size="sm" c={status === 'error' ? 'red' : 'dimmed'}>
-          {statusText(status)}
-        </Text>
+            : captionsEnabled && caption.trim() && <Text component="p" aria-label="Phụ đề hiện tại" className={classes.cue}>{caption}</Text>}
+        </div>}
       </Stack>
     </Paper>
   );

@@ -4,7 +4,7 @@
 **Ngày:** 23/10/2026 (Asia/Bangkok).
 **Plan:** [audio-player-seek-ui-plan.md](../plans/audio-player-seek-ui-plan.md).
 **Base khảo sát:** `dev` tại `75df3ea6728d5d44bdc3891723fdaccdc0a14557` (đã merge PR #70).
-**Nhánh dự kiến:** `fix/audio-player-seek-ui` → PR vào `dev` (refresh `origin/dev` trước khi thực thi).
+**Nhánh:** `fix/audio-player-seek-ui` từ latest `origin/dev` tại `75df3ea`; PR tương lai vào `dev`.
 **Execution gate:** Người dùng đã duyệt hai tài liệu và yêu cầu tạo nhánh, triển khai. Thực thi inline trên nhánh nhiệm vụ; chưa push/PR/merge theo phạm vi task mới.
 
 ## 1. Mục tiêu và hiện trạng
@@ -130,7 +130,7 @@ export function clampAudioTime(seconds: number, duration: number): number;
 
 ### Task 2 — Seek timeline và đồng bộ trạng thái (TDD)
 
-**Files:** `front-end/src/shared/components/media/AudioPlayer.tsx`, `front-end/tests/audio-player.spec.ts`.
+**Files:** `front-end/src/shared/components/media/AudioPlayer.tsx`, `front-end/tests/audio-player.spec.ts`, `front-end/tests/fixtures/audioFixture.ts` (Range/206), `front-end/tests/fixtures/audio-player.tsx` (theme auto).
 
 - [ ] RED browser test: source có `preload="none"`, trước metadata hiển thị `00:00 / --:--` và slider **Tua âm thanh** disabled; không request audio khi chỉ mount.
 - [ ] RED browser test: sau khi bấm Phát, duration từ WAV fixture xuất hiện, `currentTime` tăng, slider tiến theo native event.
@@ -144,7 +144,7 @@ export function clampAudioTime(seconds: number, duration: number): number;
 
 ### Task 3 — Bố cục responsive và phụ đề (TDD)
 
-**Files:** `front-end/src/shared/components/media/AudioPlayer.tsx`, `front-end/src/shared/components/media/AudioPlayer.module.css` (new), `front-end/tests/audio-player.spec.ts`.
+**Files:** `front-end/src/shared/components/media/AudioPlayer.tsx`, `front-end/src/shared/components/media/AudioPlayer.module.css` (new), `front-end/tests/audio-player-layout.spec.ts` (new), fixture CSS và `front-end/tests/public-audio.spec.ts` (Stop/contrast regression).
 
 - [ ] RED browser test: kiểm thứ tự hiển thị title/status → timeline/time → controls/volume → captions; nút Phát và Dừng nằm cùng nhóm.
 - [ ] RED browser test: volume chỉ chiếm vùng gọn 100–140 px khi đủ rộng; seek full width không bị nhầm với volume.
@@ -157,7 +157,7 @@ export function clampAudioTime(seconds: number, duration: number): number;
 
 ### Task 4 — Regression, tài liệu và bàn giao
 
-**Files:** `front-end/tests/public-audio.spec.ts` (chỉ khi cần assertion bổ sung), `front-end/README.md`, PLAN/TASK (ghi evidence thật).
+**Files:** `front-end/tests/audio-player.spec.ts` (click/kéo native), `front-end/tests/public-image-audio-live.spec.ts` (seek native live), `front-end/README.md`, PLAN/TASK (ghi evidence thật).
 
 - [ ] Chạy focused regression AudioPlayer, public audio và public image/audio; kiểm playback, VTT, lỗi media, one-guide policy và cleanup khi chuyển hiện vật/phòng.
 - [ ] Chạy `npm run test:unit`, `npm run typecheck`, `npx tsc -p tsconfig.audio-fixture.json --pretty false`, `npm run lint`, `npm run build`; ghi đầy đủ passed/failed/skipped và warnings nếu có.
@@ -192,3 +192,10 @@ export function clampAudioTime(seconds: number, duration: number): number;
 - Ruling: tách test layout/captions paused vào `tests/audio-player-layout.spec.ts`, dùng chung WAV/Range helper trong fixture để từng task có test độc lập. Mọi command verification Task 3–4 phải chạy thêm file này; không đổi phạm vi sản phẩm.
 - Task 2 GREEN: toàn `audio-player.spec.ts` **16/16 passed (25.5 giây)**; helper **19/19**, typecheck exit 0. Seek đọc native currentTime, không gọi play; ended→seek về giữa giữ paused; đổi nguồn và event cũ không ghi timeline mới.
 - Task 3 RED đã xác nhận: hierarchy hiện title/status dưới timeline và cue rỗng vẫn tạo node; viết test trước bố cục mới. Fixture đổi `defaultColorScheme` sang auto để dark-mode test thật sự kiểm theme dark.
+- Visual QA phát hiện fixture standalone thiếu `@mantine/core/styles.css` (screenshot là native unstyled buttons, Times font); bổ sung CSS như app thật trước khi đo layout/theme. Không sửa theme hay caller sản phẩm để bù lỗi fixture.
+- Task 2 commit `1b672ff`; Task 3 layout/caption/theme tests đạt **3/3**, screenshot mobile light được kiểm tra trực quan.
+- Review độc lập source/diff: không có Critical; hai findings được tái hiện bằng test RED (contrast dark tour **2,72:1**, Stop bị cuechange/seeked khôi phục phụ đề). Sửa token dimmed cục bộ theo scheme và chặn cue updates khi stopped; play/seek mở lại cập nhật cue. GREEN **3/3** bao gồm paused seek sau Stop, Stop/replay và contrast tối thiểu 4,5:1 trong panel tour thật.
+- Regression sau sửa: `npm.cmd test -- audio-player.spec.ts audio-player-layout.spec.ts public-audio.spec.ts public-image-audio.spec.ts --reporter=list --output=tmp/seek-accepted-final` **37/37 passed (1,3 phút)**. Assertion click/kéo chuột native bổ sung chạy riêng **1/1 passed (5,3 giây)**, không đổi runtime sau regression.
+- Live read-only: `MUSEUM_LIVE_TEST=1 PLAYWRIGHT_PREVIEW=1 npm.cmd test -- public-image-audio-live.spec.ts --reporter=list --output=tmp/seek-live-final` **1/1 passed (19 giây), không skip**. Dùng API và media thật, không interception/seed/upload/publish; duration hữu hạn, tua native tới mốc mới khi paused vẫn paused, Resume tăng từ mốc đó; ảnh decode và WebVTT hiển thị. Không có blocker HTTP 404 ở lần xác nhận này.
+- Full Vitest sau sửa: **146/146 passed**; app typecheck, fixture typecheck và lint exit 0. Final `npm.cmd run build` **passed (26,05 giây)**; cảnh báo chunk >500 kB vẫn có (main ~904,19 kB), không thêm dependency và không mở rộng nhiệm vụ sang tối ưu bundle.
+- Visual QA: đã xem screenshot desktop dark và mobile light từ browser run; UI có style Mantine, volume gọn, controls wrap và không tràn ngang. Chưa kiểm thiết bị cảm ứng/iOS/Safari thật hoặc screen reader thủ công; CMS Preview dùng component/panel chung nhưng không chạy luồng đăng nhập CMS riêng.

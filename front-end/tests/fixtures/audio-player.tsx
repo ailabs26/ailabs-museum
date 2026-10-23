@@ -1,4 +1,5 @@
 import { StrictMode, useState } from 'react';
+import '@mantine/core/styles.css';
 import { createRoot } from 'react-dom/client';
 import { Button, MantineProvider, Stack } from '@mantine/core';
 import { theme } from '@/app/theme';
