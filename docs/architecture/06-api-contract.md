@@ -40,10 +40,13 @@ Lỗi:
 ```
 POST   /auth/login            POST /auth/refresh    POST /auth/logout    GET /auth/me
 GET    /users                 POST /users           GET /users/:id       PATCH /users/:id     DELETE /users/:id
-POST   /users/:id/roles       DELETE /users/:id/roles/:roleId
+POST   /users/:id/roles       PUT  /users/:id/roles              # thêm / thay toàn bộ ([] = bỏ hết, bảo vệ Admin cuối)
+DELETE /users/:id/roles/:roleId
 GET    /roles                 POST /roles           PATCH /roles/:id     DELETE /roles/:id
-GET    /roles/:id/permissions PUT  /roles/:id/permissions        # set ma trận quyền
+GET    /roles/:id/permissions PUT  /roles/:id/permissions        # set quyền của 1 vai trò
+PUT    /roles/permission-matrix                                  # cập nhật nhiều vai trò trong 1 transaction
 GET    /permissions                                              # danh mục permission
+GET    /health                                                   # @Public, trả { status: 'ok' }
 GET    /audit                 GET  /audit/:id                    # nhật ký (lọc theo actor/action/thời gian)
 GET    /admin/stats/overview                                     # số liệu tổng quan Dashboard
 GET    /admin/stats/charts                                       # dữ liệu biểu đồ Dashboard
@@ -72,19 +75,40 @@ GET    /admin/stats/charts                                       # dữ liệu b
 }
 ```
 > Chỉ đọc (count/GROUP BY), không đổi schema. Yêu cầu đăng nhập; mọi role quản trị xem được.
+> Chi tiết: [`docs/tasks/be/admin-dashboard-stats.md`](../tasks/be/admin-dashboard-stats.md).
 
 ### CMS nội dung
+
+Route CMS thực tế dùng prefix `/admin/*` (bản thiết kế ban đầu `/rooms`, `/exhibits`,
+`/media` không còn dùng cho thao tác ghi).
+
 ```
-GET/POST/PATCH/DELETE   /rooms
-GET/POST/PATCH/DELETE   /exhibits
-GET    /exhibits/:id/revisions            POST /exhibits/:id/revisions         # tạo draft
-POST   /revisions/:id/submit              # draft -> pending
-POST   /revisions/:id/publish             # pending -> published (moderator)
-POST   /revisions/:id/reject              # kèm lý do
-POST   /exhibits/:id/hide  |  /unhide
-POST   /media   (multipart)               GET /media/:id       DELETE /media/:id
-POST   /exhibits/:id/attach-media         # (thực tế Task 9: gắn qua PATCH /admin/exhibits/:id — modelId, imageId, audioViId, audioEnId, subtitleViId, subtitleEnId)
+# Phòng — room:read|create|update|delete, audit room.*
+GET    /admin/rooms               GET /admin/rooms/:id
+POST   /admin/rooms               PATCH /admin/rooms/:id (slug bất biến)    DELETE /admin/rooms/:id (xóa mềm, BR-20)
+
+# Hiện vật & revision — exhibit:read|create|update, revision:submit
+GET    /admin/exhibits            GET /admin/exhibits/:id                   # lọc phòng/trạng thái/tìm kiếm
+GET    /admin/exhibits/:id/preview                                          # preview bản nháp (3D transform + hotspot)
+GET    /admin/exhibits/:id/revisions             GET /admin/exhibits/:id/revisions/:revId
+POST   /admin/exhibits                           # tạo hiện vật + Revision #1 (draft)
+PATCH  /admin/exhibits/:id                       # sửa nháp; đã xuất bản → fork revision mới (BR-21); gắn media qua modelId, imageId, audioViId...
+POST   /admin/exhibits/:id/submit-review         # draft -> in_review
+DELETE /admin/exhibits/:id                       # xóa cả hiện vật — chặn nếu đã public/được bảo vệ (BR-20)
+DELETE /admin/exhibits/:id/revisions/:revId      # xóa 1 revision nháp
+PUT    /admin/exhibits/rooms/:roomId/reorder     # thứ tự guided tour (displayOrder)
+
+# Media — media:upload, audit media.*
+GET    /admin/media               GET /admin/media/:id     GET /admin/media/:id/content
+POST   /admin/media/upload  (multipart)          # kiểm định dạng thật, dung lượng, cấu trúc file
+PATCH  /admin/media/:id                          # metadata: nguồn, tác giả, giấy phép, alt text
+DELETE /admin/media/:id                          # xóa mềm; 409 nếu hiện vật đã xuất bản đang dùng (BR-21)
 ```
+
+Chi tiết: [`docs/tasks/be/rooms-crud.md`](../tasks/be/rooms-crud.md),
+[`cms-exhibits-management.md`](../tasks/be/cms-exhibits-management.md),
+[`cms-media-upload.md`](../tasks/be/cms-media-upload.md),
+[`../tasks/exhibit-deletion-policy.md`](../tasks/exhibit-deletion-policy.md).
 
 ### Kiểm duyệt & báo cáo
 ```
@@ -107,6 +131,7 @@ POST   /reports/:id/resolve  | /dismiss
   (message "Nội dung đã bị thay đổi... tải lại"). Publish tăng `version`, đặt `publishedRevisionId`, `visibility=visible`.
 - Quyền: queue `revision:publish`; đọc chi tiết/diff/lịch sử `exhibit:read`; publish/reject/hide theo `revision:publish|reject|hide`.
 - Mọi hành động ghi vết qua `@Audit` (revision.publish/reject, exhibit.hide/unhide).
+- Chi tiết module: [`docs/tasks/be/moderation.md`](../tasks/be/moderation.md).
 
 #### Reports (Task 23)
 
@@ -116,6 +141,7 @@ POST   /reports/:id/resolve  | /dismiss
 - `POST /reports/:id/dismiss` body `{ resolution }` (`report:resolve`): → dismissed.
 - `POST /public/reports` **@Public** body `{ exhibitId, reportedRevisionId?, category, message }`, rate-limit 5 lần/phút.
 - Chuyển trạng thái chỉ hợp lệ khi báo cáo còn mở (open/in_progress) → sai → **409**. Ghi vết `@Audit` report.assign/resolve/dismiss.
+- Chi tiết module: [`docs/tasks/be/content-reports.md`](../tasks/be/content-reports.md).
 
 #### Audit (Task 24)
 
@@ -142,7 +168,19 @@ POST   /public/reports                    # gửi báo cáo nội dung sai (rate
 
 > Public cache TTL ≤ 60s; không bao giờ trả revision `draft/pending`.
 
-**Đã triển khai (Task 9):** `GET /api/rooms` và `GET /api/rooms/:slug` (`ExhibitsController`) là nguồn public chuẩn cho hiện vật; `Cache-Control: no-cache` (BR-22, AC-51) thay cho TTL. File media: `GET /media/uploads/<dir>/<uuid>.<ext>` (ngoài prefix `/api`) — chỉ phục vụ file được revision public hiện hành tham chiếu hoặc URL ký (Preview CMS); còn lại 404. Chi tiết: `docs/tasks/be/cms-media-attach.md`.
+**Đã triển khai thực tế** (khác bản thiết kế ở khối trên):
+
+```
+GET    /public/rooms                      # danh sách phòng active (RoomsModule, Task 6)
+GET    /public/rooms/:slug                # chi tiết phòng cho tour 3D
+GET    /rooms                             # danh sách phòng công khai (ExhibitsController)
+GET    /rooms/:slug                       # phòng + hiện vật published + media
+GET    /rooms/:slug/exhibits/:exhibitId/model   # GLB qua máy chủ, Cache-Control: private, no-store
+POST   /public/reports                    # 5 lần/phút
+GET    /media/uploads/:directory/:fileName      # ngoài prefix /api
+```
+
+**Task 9:** `GET /api/rooms` và `GET /api/rooms/:slug` (`ExhibitsController`) là nguồn public chuẩn cho hiện vật; `Cache-Control: no-cache` (BR-22, AC-51) thay cho TTL. File media: `GET /media/uploads/<dir>/<uuid>.<ext>` (ngoài prefix `/api`) — chỉ phục vụ file được revision public hiện hành tham chiếu hoặc URL ký (Preview CMS); còn lại 404. Chi tiết: `docs/tasks/be/cms-media-attach.md`.
 
 ```jsonc
 // GET /api/rooms/:slug → data.exhibits[i] (rút gọn)
