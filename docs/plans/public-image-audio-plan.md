@@ -10,7 +10,7 @@
 
 **Spec:** [public-image-audio.md — Thiết kế đề xuất để review](../tasks/public-image-audio.md#thiết-kế-đề-xuất-để-review).
 **Base/branch:** `bb0127c` (`origin/dev`) → `fix/public-image-audio`.
-**Status:** Frontend đã thực thi inline và kiểm chứng ngày 23/10/2026; live acceptance pending do URL file HTTP 404. Evidence, commit và coverage thực tế ở task. Checklist bước dưới đây giữ nguyên để đối chiếu kế hoạch; không dùng checkbox kế hoạch làm bằng chứng test đã chạy.
+**Status:** Frontend đã thực thi inline và kiểm chứng ngày 23/10/2026; API ảnh/audio/VTT thật trả HTTP 200, live test **1/1 passed**, người dùng đã kiểm thử và xác nhận OK. Không còn blocker 404 ở lần xác nhận mới nhất. Code đã push trên `fix/public-image-audio`; chưa tạo PR/merge. Evidence, commit và coverage thực tế ở task. Checklist bước dưới đây giữ nguyên để đối chiếu kế hoạch; không dùng checkbox kế hoạch làm bằng chứng test đã chạy.
 
 ## Global Constraints
 
@@ -21,7 +21,7 @@
 - Không autoplay. Phát/Tạm dừng/Tiếp tục/Phát lại, Dừng về đầu, âm lượng; captions DOM có bật/tắt, transcript vẫn đọc được khi lỗi.
 - Không thêm seek/playlist/auto tour/spatial audio/headset UI; không đổi GLB/camera/transform.
 - Mỗi task runtime hoàn thành và kiểm chứng có một commit gồm code/tests/evidence; không commit test fail hoặc commit rỗng.
-- Người dùng đã duyệt implementation; chưa push/PR/merge trong lượt này.
+- Người dùng đã duyệt implementation và cho phép push cùng nhánh; chưa tạo PR/merge.
 
 ## Review Focus
 

@@ -143,7 +143,7 @@ import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
 
 Ví dụ trên minh họa component standalone. Luồng sản phẩm truyền `audio.vi.audio.url` và `audio.vi.subtitle.url` từ API public, không đặt asset thay thế trong `public/`. Fixture Playwright tạo WAV trong test và không phải asset sản phẩm.
 
-Kế hoạch/task tích hợp: [public-image-audio-plan.md](../docs/plans/public-image-audio-plan.md), [public-image-audio.md](../docs/tasks/public-image-audio.md). `public-image-audio.spec.ts` kiểm ảnh, `public-audio.spec.ts` kiểm API fixture + native playback/captions/lifecycle; live opt-in: `MUSEUM_LIVE_TEST=1 PLAYWRIGHT_PREVIEW=1 npm test -- public-image-audio-live.spec.ts` (PowerShell đặt env như hướng dẫn ở trên). Live chỉ đọc, không upload/seed/publish. Metadata có URL chưa chứng minh file tồn tại: lần kiểm 23/10/2026 ảnh/MP3/VTT public hiện có đều trả 404, nên nghiệm thu playback live còn bị chặn bởi phân phối file.
+Kế hoạch/task tích hợp: [public-image-audio-plan.md](../docs/plans/public-image-audio-plan.md), [public-image-audio.md](../docs/tasks/public-image-audio.md). `public-image-audio.spec.ts` kiểm ảnh, `public-audio.spec.ts` kiểm API fixture + native playback/captions/lifecycle; live opt-in: `MUSEUM_LIVE_TEST=1 PLAYWRIGHT_PREVIEW=1 npm test -- public-image-audio-live.spec.ts` (PowerShell đặt env như hướng dẫn ở trên). Live chỉ đọc, không upload/seed/publish. Xác nhận mới nhất ngày 23/10/2026: URL ảnh/MP3/VTT thật đều trả **HTTP 200**, live test **1/1 passed** (không skip), ảnh decode, playback và phụ đề hoạt động; người dùng đã kiểm thử và xác nhận OK. Chi tiết lịch sử kiểm chứng nằm ở task, không còn blocker media live ở lần xác nhận này.
 
 ## Tham quan Day 1–4
 

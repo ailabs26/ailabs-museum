@@ -1,12 +1,12 @@
 # MEDIA-01 — Tích hợp ảnh và audio thật qua API
 
-**Trạng thái:** Frontend đã triển khai và kiểm chứng; nghiệm thu file media live bị chặn bởi HTTP 404 từ backend.
+**Trạng thái:** Frontend đã triển khai và kiểm chứng; API ảnh/audio/VTT thật trả HTTP 200, live test 1/1 passed; người dùng đã kiểm thử và xác nhận OK. Không còn blocker 404 ở lần xác nhận mới nhất.
 **Ngày:** 23/10/2026 (Asia/Bangkok).
 **Nhánh:** `fix/public-image-audio`, từ `origin/dev` tại `bb0127c321e38c855bb210f4a865e5d79f3b473e`.
 **Plan:** [public-image-audio-plan.md](../plans/public-image-audio-plan.md).
-**Execution gate:** Người dùng đã duyệt và yêu cầu triển khai. Thực thi inline trên nhánh hiện có; commit theo task, chưa push/PR/merge.
+**Execution gate:** Người dùng đã duyệt và yêu cầu triển khai, sau đó cho phép push. Code đã push lên `origin/fix/public-image-audio`; chưa tạo PR hoặc merge.
 
-## Mục tiêu và hiện trạng
+## Mục tiêu và hiện trạng trước triển khai
 
 Khách xem ảnh và nghe thuyết minh của revision đã xuất bản qua URL do NestJS cung cấp, ở giao diện 2D và panel tour. Không dùng ảnh/audio demo làm nội dung thay thế cho dữ liệu API.
 
@@ -100,10 +100,21 @@ Mỗi task runtime gồm code, tests và evidence trong cùng commit sau kiểm 
 ### MEDIA-01.4 — Chứng minh tích hợp và bàn giao
 
 - [x] Regression production liên quan chạy đạt; phân biệt fixture intercept với live không intercept.
-- [ ] API thật read-only: tìm nội dung public có ảnh/audio, chứng minh ảnh decode và audio play/pause/resume bằng request + native element, transcript và captions nếu có.
-- [x] Ghi rõ blocker thực tế: API metadata tồn tại nhưng URL file trả 404; không đánh dấu nghiệm thu live đầy đủ và không tự tạo nội dung.
+- [x] API thật read-only: ảnh decode, audio play/pause/resume/Stop và captions đạt qua live browser test 1/1 passed; người dùng đã kiểm thử và xác nhận OK.
+- [x] Tái kiểm các URL ảnh/MP3/VTT hiện hành: đều HTTP 200; blocker 404 của lần kiểm ban đầu đã hết. Không tự tạo hoặc sửa dữ liệu để kiểm chứng.
 - [x] README bỏ các mô tả cũ về media-null/audio standalone đã được task này thay đổi; cập nhật evidence/giới hạn trong hai tài liệu.
-- [x] Review toàn diff và giữ nhánh local; chưa push/PR/merge. PR nếu có chỉ dẫn tiếp theo sẽ base `dev`; live acceptance vẫn chưa đạt.
+- [x] Review toàn diff và push nhánh theo yêu cầu người dùng; chưa tạo PR/merge. PR nếu có chỉ dẫn tiếp theo sẽ base `dev`; live acceptance hiện đã đạt.
+
+## Xác nhận mới nhất — 23/10/2026
+
+Phần này thay thế kết luận blocker/live pending trong các mốc lịch sử bên dưới.
+
+- Người dùng đã kiểm thử bản fix và xác nhận OK.
+- Tái chạy `MUSEUM_LIVE_TEST=1 PLAYWRIGHT_PREVIEW=1 npm.cmd test -- public-image-audio-live.spec.ts --reporter=list --output=tmp/media-live-confirmation`: **1 passed (16.3 giây), 0 failed, 0 skipped**, exit 0. Không intercept API/media hoặc mock playback.
+- HEAD ba URL media hiện hành: ảnh PNG **200**, MP3 **200**, WebVTT **200**. Test browser xác nhận ảnh decode, audio phát/tạm dừng/tiếp tục/Dừng và captions hiển thị.
+- URL media hiện hành khác các URL ở lần kiểm 404 ban đầu; không suy ra nguyên nhân thay đổi hoặc lỗi storage hiện tại từ kết quả cũ.
+- Giữ kết quả regression đã chạy: **127 unit**, **89 production + 2 corrupt-media**, **12 player StrictMode** đều pass; lần cập nhật này chỉ sửa tài liệu và chạy lại live test, không chạy lại toàn bộ suite.
+- Code đã push trên `fix/public-image-audio` (implementation tới `e9e67ad`); chưa tạo PR/merge. Giới hạn kiểm thử thiết bị/headset và CMS browser end-to-end vẫn giữ nguyên.
 
 ## Evidence ở mốc lập kế hoạch
 
@@ -111,7 +122,9 @@ Mỗi task runtime gồm code, tests và evidence trong cùng commit sau kiểm 
 - Chỉ thêm hai file Markdown. Chưa commit, push, PR hoặc merge.
 - Chưa chạy frontend gates hoặc kiểm thử live; chưa sửa runtime. Kiểm tra tài liệu/whitespace được báo trong handoff, không suy ra tính năng đã hoạt động.
 
-## Execution ledger
+## Execution ledger — lịch sử triển khai
+
+Các kết quả dưới đây được ghi tại từng thời điểm, không phải trạng thái hiện tại. Trạng thái live mới nhất là **1/1 passed, URL media 200** ở phần xác nhận bên trên.
 
 - Setup: fetch lại origin/dev vẫn tại bb0127c; chỉ hai tài liệu draft là thay đổi có sẵn.
 - Ruling: dùng checkout/nhánh nhiệm vụ đã được yêu cầu, không tạo worktree thứ hai; ledger đặt ngay trong task để theo mẫu repo. Script bookkeeping của skill dùng shell Unix, thay bằng checklist/evidence và git commands trong PowerShell.
@@ -123,13 +136,13 @@ Mỗi task runtime gồm code, tests và evidence trong cùng commit sau kiểm 
 - Ruling: tách integration audio thành `tests/public-audio.spec.ts` và shared fixture `tests/fixtures/publicMediaApi.ts` để ảnh/audio không lặp setup; giữ `public-image-audio.spec.ts` cho ảnh và live spec cho full luồng.
 - Production regression lần đầu: 84 pass/1 fail trong 85 ca; assertion exact của room-mapping thiếu roomId/credits từ trước và audio/audioLocale mới. Cập nhật đủ expected fields, không đổi sang assertion yếu hơn.
 - Captions replay: thêm test Stop→Phát trong cùng cue, RED thật vì caption trống; sửa đồng bộ activeCues khi `playing`, chờ GREEN bản build mới.
-- API live: có một hiện vật public gắn ảnh JPEG/MP3/VTT, nhưng HEAD cả ba URL và GET ảnh/audio đều HTTP 404; browser live positive fail ở image decode. Giữ nguyên backend/storage và dữ liệu, chưa nghiệm thu media live thành công.
+- API live lần đầu (đã được thay thế bởi tái kiểm thành công): các URL JPEG/MP3/VTT khi đó trả HTTP 404; browser live positive fail ở image decode. Giữ nguyên backend/storage và dữ liệu. Đây là evidence lịch sử, không còn là blocker hiện tại.
 - Final review độc lập (Gibbs): không Critical; phát hiện React 18 không nhận native track error qua JSX. Xếp thành Important để đạt acceptance lỗi VTT đã duyệt: test native VTT404 RED (audio phát nhưng thiếu warning), sửa listener trực tiếp có cleanup, chờ GREEN.
-- Reviewer declined: không xác nhận live delivery (404), kết quả suite đang chạy hoặc thiết bị/CMS browser chưa test. Ruling: giữ live acceptance pending; chỉ báo browser/locale ở mức fixture/unit đã có, không tuyên bố thiết bị/headset/CMS end-to-end đã được kiểm.
+- Reviewer declined tại thời điểm review: live delivery (404), kết quả suite đang chạy hoặc thiết bị/CMS browser chưa test. Ruling khi đó: giữ live acceptance pending tới khi có evidence mới; tái kiểm phía trên đã xác nhận live pass. Không tuyên bố thiết bị/headset/CMS end-to-end đã được kiểm.
 - Final production: **89/89 passed (3.9 phút)** qua 10 spec liên quan trên build mới; thêm **2/2** test corrupt bytes đạt. Output: `front-end/tmp/media-production-final`, `tmp/media-corrupt` (ignored, chỉ local).
 - Captions Stop/replay và VTT404 đều RED→GREEN trong suite final. Final unit **127/127**, typecheck/lint/build và fixture typecheck exit 0; cảnh báo bundle >500 kB vẫn còn.
 - Standalone player trên Vite dev, React StrictMode: **12/12 passed (36 giây)** ở `tmp/audio-strict-final`; pause/resume/replay, error/retry, source/unmount/promise cũ, keyboard, reflow, nhiều player, Stop/volume và captions đều đạt.
 - Không có deferred minor runtime sau fix track error. Chưa kiểm điện thoại/headset/GPU thật hoặc browser CMS locale switching; toàn bộ test sản phẩm liên quan chạy Edge/SwiftShader và fixture.
 - Commits: `b75309f` docs; `da3a87c` player; `e7f76e5` ảnh; `71a9a6b` nối audio và final fixes/tests. Commit bàn giao cuối chứa README, plan status, live opt-in test và evidence.
-- Live spec bổ sung readiness HEAD: URL file public 404 được annotate `blocker` rồi skip (không tính pass), để lần chạy sau không lẫn thiếu file môi trường với lỗi frontend. Lần chạy browser đầu tiên đã FAIL thật do ảnh không decode; không xóa evidence này hoặc tuyên bố live thành công.
-- Live final: **1 skipped** với blocker readiness HTTP404, output `front-end/tmp/media-live-final`. Final lint và whitespace check đạt. Working tree chỉ gồm task files; backend, dependencies và env không có diff. Chưa push, tạo PR hoặc merge.
+- Live spec có readiness HEAD: nếu URL file public trả 404 thì annotate `blocker` và skip (không tính pass). Đây là nhánh kiểm tra lỗi môi trường, không phải kết quả mới nhất. Lần browser đầu tiên đã FAIL do ảnh không decode; tái kiểm hiện tại đã pass đầy đủ.
+- Mốc live trước tái kiểm: **1 skipped** vì readiness HTTP404, output `front-end/tmp/media-live-final`; tại mốc này chưa push/PR/merge. Evidence đó đã được thay thế bởi **1 passed, 0 skipped** ở `tmp/media-live-confirmation`. Backend, dependencies và env không có diff trong nhiệm vụ.
