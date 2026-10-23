@@ -184,3 +184,11 @@ export function clampAudioTime(seconds: number, duration: number): number;
 - Pre-flight: Task 1 xuất ba helper thuần cùng chữ ký Task 2 cần; Task 3 chỉ đổi layout, props/caller không đổi. Task 4 regression chung xác nhận 2D/tour. Không có xung đột interface.
 - Ruling: dùng checkout và nhánh riêng người dùng đã yêu cầu; ledger nằm ngay trong task theo mẫu repo, không tạo worktree hoặc Unix bookkeeping scripts thứ hai.
 - CodeGraph transport đã đóng; đọc source trực tiếp khi công cụ không phản hồi. Không thay đổi/index lại graph.
+- Task 0: tài liệu đã duyệt, commit `40a8d09`; nhánh từ latest origin/dev, không đổi file ngoài nhiệm vụ.
+- Baseline: `npm.cmd run test:unit` **127/127 passed** trước thay đổi runtime.
+- Task 1: RED thiếu module audioTime; GREEN **19/19** helper cases, typecheck exit 0. Commit `bebaecf`.
+- Task 2 RED: browser không tìm thấy slider `Tua âm thanh` như dự kiến; không dùng lỗi môi trường làm bằng chứng.
+- Seek diagnosis: WAV cũ báo buffered [0,8] nhưng seekable [0,0] do fixture không mô phỏng Range; giữ readback native, thêm response 206/Content-Range vào fixture. Sau đó ca native seek playing/paused/keyboard/Stop đạt (4.8 giây).
+- Ruling: tách test layout/captions paused vào `tests/audio-player-layout.spec.ts`, dùng chung WAV/Range helper trong fixture để từng task có test độc lập. Mọi command verification Task 3–4 phải chạy thêm file này; không đổi phạm vi sản phẩm.
+- Task 2 GREEN: toàn `audio-player.spec.ts` **16/16 passed (25.5 giây)**; helper **19/19**, typecheck exit 0. Seek đọc native currentTime, không gọi play; ended→seek về giữa giữ paused; đổi nguồn và event cũ không ghi timeline mới.
+- Task 3 RED đã xác nhận: hierarchy hiện title/status dưới timeline và cue rỗng vẫn tạo node; viết test trước bố cục mới. Fixture đổi `defaultColorScheme` sang auto để dark-mode test thật sự kiểm theme dark.

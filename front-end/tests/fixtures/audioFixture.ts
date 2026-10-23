@@ -1,3 +1,16 @@
+import type { Route } from '@playwright/test';
+
+export async function fulfillSeekableAudio(route: Route, body: Buffer) {
+  const match = /^bytes=(\d+)-(\d*)$/.exec(route.request().headers().range ?? '');
+  const start = match ? Number(match[1]) : 0;
+  const end = match?.[2] ? Math.min(Number(match[2]), body.length - 1) : body.length - 1;
+  await route.fulfill({
+    status: match ? 206 : 200, contentType: 'audio/wav', body: body.subarray(start, end + 1),
+    headers: { 'Accept-Ranges': 'bytes', 'Content-Length': String(end - start + 1),
+      ...(match ? { 'Content-Range': `bytes ${start}-${end}/${body.length}` } : {}) },
+  });
+}
+
 function writeAscii(view: DataView, offset: number, value: string) {
   [...value].forEach((character, index) => view.setUint8(offset + index, character.charCodeAt(0)));
 }

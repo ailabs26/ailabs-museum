@@ -16,7 +16,7 @@ function AudioPlayerFixture() {
   const [subtitleUrl, setSubtitleUrl] = useState<string | null>(null);
 
   return (
-    <MantineProvider theme={theme} defaultColorScheme="light">
+    <MantineProvider theme={theme} defaultColorScheme="auto">
       <Stack p="md" maw={520}>
         <Stack gap="xs" aria-label="Fixture controls">
           <Button data-testid="load-source" onClick={() => setSrc(AUDIO_SRC)}>Nạp nguồn audio</Button>
