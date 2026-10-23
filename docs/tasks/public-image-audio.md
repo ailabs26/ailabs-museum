@@ -119,3 +119,5 @@ Mỗi task runtime gồm code, tests và evidence trong cùng commit sau kiểm 
 - 01.2 RED: Stop/volume test thiếu slider/control, captions test thiếu vùng cue; sau sửa 2/2 focused GREEN, toàn audio-player 12 ca đã in kết quả pass. Typecheck/lint/build/fixture typecheck đạt; build vẫn cảnh báo chunk >500 kB có sẵn.
 - Ruling: commit player độc lập trước commit consumer ảnh (01.2 không thực sự phụ thuộc 01.1); giữ tách biệt code player với mapping/consumer. 01.1/01.3 đang kiểm integration, chưa coi hoàn tất.
 - 01.3 mapper RED: 2 test thiếu audio trước sửa; GREEN 10/10 mapper, toàn unit suite 126/126 đạt.
+- 01.1: renderer ảnh dùng chung, home/collection/detail/catalogue/panel decode ảnh; 404 fallback và đổi URL sau lỗi được kiểm bằng browser. Typecheck/lint/build đạt; consumer audio được tách vào commit 01.3.
+- Ruling: tách integration audio thành `tests/public-audio.spec.ts` và shared fixture `tests/fixtures/publicMediaApi.ts` để ảnh/audio không lặp setup; giữ `public-image-audio.spec.ts` cho ảnh và live spec cho full luồng.

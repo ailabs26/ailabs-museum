@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { MediaCreditList } from '@/components/museum/MediaCreditList';
 import { collectMediaCredits } from '@/helpers/mediaCredits';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
-import { ExhibitPreview } from '@/shared/components/data/ExhibitPreview';
+import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import classes from './ExhibitDetailPage.module.css';
 
 export function ExhibitDetailPage() {
@@ -66,7 +66,8 @@ export function ExhibitDetailPage() {
           <Title ref={titleRef} tabIndex={-1} order={1} id="exhibit-title" className={classes.title}>{exhibit.name}</Title>
         </header>
         <div className={classes.content}>
-          <ExhibitPreview shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
+          <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } : null}
+            shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
           <div className={classes.sections}>
             <section aria-labelledby="exhibit-description-title">
               <Title order={2} id="exhibit-description-title" className={classes.sectionTitle}>Câu chuyện hiện vật</Title>
