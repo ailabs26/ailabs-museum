@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import {
+  Alert,
   Badge,
+  Button,
   Drawer,
   Group,
   Select,
@@ -21,7 +23,9 @@ const RESOURCE_OPTIONS = [
   { value: 'room', label: 'Phòng trưng bày' },
   { value: 'exhibit', label: 'Hiện vật' },
   { value: 'revision', label: 'Phiên bản nội dung' },
+  { value: 'media', label: 'Tư liệu Media' },
   { value: 'report', label: 'Báo cáo vi phạm' },
+  { value: 'access', label: 'Truy cập bảo mật' },
 ];
 
 function formatTime(iso: string): string {
@@ -79,13 +83,39 @@ export function AuditPage() {
       ),
     },
     { key: 'resourceType', header: 'Đối tượng', render: (r) => r.resourceType },
+    {
+      key: 'reason',
+      header: 'Lý do / Ghi chú',
+      render: (r) =>
+        r.reason ? (
+          <Text size="xs" lineClamp={1}>
+            {r.reason}
+          </Text>
+        ) : (
+          <Text c="dimmed">—</Text>
+        ),
+    },
   ];
 
   const data = query.data;
 
   return (
     <>
-      <PageHeader titleRef={titleRef} title="Nhật ký hệ thống" description="Lịch sử thao tác quản trị (append-only)" />
+      <PageHeader
+        titleRef={titleRef}
+        title="Nhật ký hệ thống"
+        description="Lịch sử thao tác quản trị (append-only)"
+        actions={
+          <Button
+            variant="default"
+            loading={query.isFetching}
+            disabled={query.isFetching}
+            onClick={() => void query.refetch()}
+          >
+            Làm mới
+          </Button>
+        }
+      />
 
       <Group mb="md" align="flex-end" wrap="wrap">
         <TextInput
@@ -132,18 +162,27 @@ export function AuditPage() {
         />
       </Group>
 
-      <DataTable
-        columns={columns}
-        data={data?.items ?? []}
-        rowKey={(r) => r.id}
-        loading={query.isLoading}
-        onRowClick={setDetail}
-        page={data?.page}
-        pageSize={data?.pageSize}
-        total={data?.total}
-        onPageChange={setPage}
-        emptyText="Chưa có nhật ký"
-      />
+      {query.isError ? (
+        <Alert color="red" role="alert" title="Không tải được nhật ký hệ thống">
+          <Text>{query.error.message}</Text>
+          <Button mt="sm" onClick={() => void query.refetch()}>
+            Thử lại
+          </Button>
+        </Alert>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={data?.items ?? []}
+          rowKey={(r) => r.id}
+          loading={query.isLoading}
+          onRowClick={setDetail}
+          page={data?.page}
+          pageSize={data?.pageSize}
+          total={data?.total}
+          onPageChange={setPage}
+          emptyText="Chưa có nhật ký"
+        />
+      )}
 
       <Drawer
         onExitTransitionEnd={() => {

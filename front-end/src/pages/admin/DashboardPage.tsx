@@ -1,5 +1,5 @@
 import { IconBuildingArch, IconArtboard, IconFlag, IconChecklist } from '@tabler/icons-react';
-import { Alert, Badge, Group, Paper, SimpleGrid, Skeleton, Text, useComputedColorScheme } from '@mantine/core';
+import { Alert, Badge, Button, Group, Paper, SimpleGrid, Skeleton, Text, useComputedColorScheme } from '@mantine/core';
 import { IconAlertTriangle, IconServer } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
@@ -55,9 +55,23 @@ export function DashboardPage() {
   const activity = c?.activityLast14Days ?? [];
   const ramp = categorical(scheme);
 
+  const refreshing = overview.isFetching || charts.isFetching;
+  const handleRefresh = () => {
+    void overview.refetch();
+    void charts.refetch();
+  };
+
   return (
     <>
-      <PageHeader title="Dashboard" description={`Xin chào, ${user?.displayName ?? 'Admin'}`} />
+      <PageHeader
+        title="Dashboard"
+        description={`Xin chào, ${user?.displayName ?? 'Admin'}`}
+        actions={
+          <Button variant="default" loading={refreshing} disabled={refreshing} onClick={handleRefresh}>
+            Làm mới
+          </Button>
+        }
+      />
 
       {(overview.isError || charts.isError) && (
         <Alert
@@ -79,24 +93,28 @@ export function DashboardPage() {
             <StatCard
               label="Phòng trưng bày"
               value={o?.rooms.total ?? 0}
+              subtitle={`${o?.rooms.active ?? 0} hoạt động · ${o?.rooms.archived ?? 0} lưu trữ`}
               icon={<IconBuildingArch size={24} />}
               color="aura"
             />
             <StatCard
               label="Hiện vật"
               value={o?.exhibits.total ?? 0}
+              subtitle={`${o?.exhibits.visible ?? 0} hiển thị · ${o?.exhibits.hidden ?? 0} đang ẩn`}
               icon={<IconArtboard size={24} />}
               color="teal"
             />
             <StatCard
               label="Chờ duyệt"
               value={o?.revisions.inReview ?? 0}
+              subtitle={`${o?.revisions.draft ?? 0} bản nháp đang biên tập`}
               icon={<IconChecklist size={24} />}
               color="yellow"
             />
             <StatCard
               label="Báo cáo mở"
               value={o?.reports.open ?? 0}
+              subtitle={`${o?.reports.inProgress ?? 0} đang xử lý`}
               icon={<IconFlag size={24} />}
               color="red"
             />

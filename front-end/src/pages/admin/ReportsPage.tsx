@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import {
+  Alert,
   Badge,
   Button,
   Divider,
@@ -171,6 +172,16 @@ export function ReportsPage() {
         titleRef={titleRef}
         title="Báo cáo vi phạm"
         description="Tiếp nhận và xử lý báo cáo nội dung sai từ người dùng"
+        actions={
+          <Button
+            variant="default"
+            loading={listQuery.isFetching}
+            disabled={listQuery.isFetching}
+            onClick={() => void listQuery.refetch()}
+          >
+            Làm mới
+          </Button>
+        }
       />
 
       <Group mb="md">
@@ -187,19 +198,28 @@ export function ReportsPage() {
         />
       </Group>
 
-      <DataTable
-        columns={columns}
-        data={data?.items ?? []}
-        rowKey={(r) => r.id}
-        loading={listQuery.isLoading}
-        onRowClick={(r) => setDetailId(r.id)}
-        page={data?.page}
-        pageSize={data?.pageSize}
-        total={data?.total}
-        onPageChange={setPage}
-        emptyText="Chưa có báo cáo nào"
-        minWidth={680}
-      />
+      {listQuery.isError ? (
+        <Alert color="red" role="alert" title="Không tải được danh sách báo cáo">
+          <Text>{listQuery.error.message}</Text>
+          <Button mt="sm" onClick={() => void listQuery.refetch()}>
+            Thử lại
+          </Button>
+        </Alert>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={data?.items ?? []}
+          rowKey={(r) => r.id}
+          loading={listQuery.isLoading}
+          onRowClick={(r) => setDetailId(r.id)}
+          page={data?.page}
+          pageSize={data?.pageSize}
+          total={data?.total}
+          onPageChange={setPage}
+          emptyText="Chưa có báo cáo nào"
+          minWidth={680}
+        />
+      )}
 
       <Drawer
         opened={!!detailId}
@@ -228,6 +248,7 @@ export function ReportsPage() {
               <Field label="Người tiếp nhận" value={detail.assignedTo.displayName} />
             )}
             {detail.resolution && <Field label="Kết luận" value={detail.resolution} />}
+            {detail.resolvedAt && <Field label="Xử lý lúc" value={formatTime(detail.resolvedAt)} />}
 
             <Divider label="Phiên bản bị báo cáo" labelPosition="left" my="xs" />
             {detail.reportedRevision ? (

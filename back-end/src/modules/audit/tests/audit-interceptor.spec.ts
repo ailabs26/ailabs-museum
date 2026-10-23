@@ -68,6 +68,17 @@ describe('AuditInterceptor', () => {
     await lastValueFrom(interceptor.intercept(context, next));
     assert.deepEqual(recorded.map((entry) => entry.resourceId), ['room-7']);
   });
+
+  it('ghi nhận reason hoặc resolution từ request.body vào bản ghi nhật ký', async () => {
+    const recorded: RecordAuditInput[] = [];
+    const audit = { record: async (input: RecordAuditInput) => void recorded.push(input) } as unknown as AuditService;
+    const interceptor = new AuditInterceptor(fakeReflector({ action: 'exhibit.hide', resourceType: 'exhibit' }), audit);
+    const context = buildContext('ex-10');
+    (context.switchToHttp().getRequest() as { body?: object }).body = { version: 2, reason: '  Bảo trì định kỳ  ' };
+    const next: CallHandler = { handle: () => of({ id: 'ex-10' }) };
+    await lastValueFrom(interceptor.intercept(context, next));
+    assert.equal(recorded[0].reason, 'Bảo trì định kỳ');
+  });
 });
 
 /**
