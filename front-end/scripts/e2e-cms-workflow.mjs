@@ -284,7 +284,10 @@ async function runAll() {
     const hideRes = await request(`/exhibits/${createdExhibitId}/hide`, {
       method: 'POST',
       token: adminToken,
-      body: JSON.stringify({ version: verBeforeHide }),
+      body: JSON.stringify({
+        version: verBeforeHide,
+        reason: 'Tạm ẩn để bảo dưỡng thông tin hiện vật trưng bày',
+      }),
     });
     assert(hideRes.status === 200 || hideRes.status === 201, `Expected 200/201 on hide, got ${hideRes.status}`);
 
@@ -294,7 +297,10 @@ async function runAll() {
     const unhideRes = await request(`/exhibits/${createdExhibitId}/unhide`, {
       method: 'POST',
       token: adminToken,
-      body: JSON.stringify({ version: verBeforeUnhide }),
+      body: JSON.stringify({
+        version: verBeforeUnhide,
+        reason: 'Mở lại hiện vật sau khi bảo dưỡng hoàn tất',
+      }),
     });
     assert(unhideRes.status === 200 || unhideRes.status === 201, `Expected 200/201 on unhide, got ${unhideRes.status}`);
   });
@@ -351,6 +357,12 @@ async function runAll() {
     const auditData = auditRes.data?.data;
     const items = Array.isArray(auditData) ? auditData : (auditData?.items || []);
     assert(items.length > 0, 'Audit items should not be empty');
+
+    const hideEntry = items.find((i) => i.action === 'exhibit.hide' && i.resourceId === createdExhibitId);
+    assert(hideEntry?.reason, 'Audit entry for exhibit.hide must record the management reason');
+
+    const resolveEntry = items.find((i) => i.action === 'report.resolve' && i.resourceId === createdReportId);
+    assert(resolveEntry?.reason, 'Audit entry for report.resolve must record the resolution note');
 
     const actions = items.map((i) => i.action);
     console.log(`    Các hành động mới nhất trong nhật ký: ${actions.slice(0, 5).join(', ')}`);
