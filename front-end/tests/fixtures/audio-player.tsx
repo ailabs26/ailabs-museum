@@ -13,6 +13,7 @@ function AudioPlayerFixture() {
   const [isMounted, setIsMounted] = useState(true);
   const [showSecond, setShowSecond] = useState(false);
   const [useLongLabel, setUseLongLabel] = useState(false);
+  const [subtitleUrl, setSubtitleUrl] = useState<string | null>(null);
 
   return (
     <MantineProvider theme={theme} defaultColorScheme="light">
@@ -25,8 +26,9 @@ function AudioPlayerFixture() {
           <Button data-testid="unmount-player" variant="default" onClick={() => setIsMounted(false)}>Tháo audio player</Button>
           <Button data-testid="show-second-player" variant="default" onClick={() => setShowSecond(true)}>Thêm player thứ hai</Button>
           <Button data-testid="long-label" variant="default" onClick={() => setUseLongLabel(true)}>Dùng nhãn dài</Button>
+          <Button data-testid="load-caption-source" onClick={() => { setSrc(AUDIO_SRC); setSubtitleUrl('/guide.vtt'); }}>Nạp phụ đề</Button>
         </Stack>
-        {isMounted && <AudioPlayer src={src} label={useLongLabel ? 'Bản thuyết minh audio của hiện vật trong phòng trưng bày Aura Museum' : 'Bản thuyết minh mẫu'} />}
+        {isMounted && <AudioPlayer src={src} subtitleUrl={subtitleUrl} label={useLongLabel ? 'Bản thuyết minh audio của hiện vật trong phòng trưng bày Aura Museum' : 'Bản thuyết minh mẫu'} />}
         {showSecond && <AudioPlayer src={src} label="Audio player thứ hai" />}
       </Stack>
     </MantineProvider>

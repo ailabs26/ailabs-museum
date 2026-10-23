@@ -184,5 +184,35 @@ test('reflows long labels and multiple independent players in light and dark the
   await expect(players.nth(1).getByRole('button', { name: 'Phát' })).toBeVisible();
   await players.nth(1).getByRole('button', { name: 'Phát' }).click();
   await expect(players.nth(1).getByRole('status')).toHaveText('Đang phát');
-  await expect(players.nth(0).getByRole('status')).toHaveText('Đang phát');
+  await expect(players.nth(0).getByRole('status')).toHaveText('Đã tạm dừng');
+});
+
+test('stop rewinds native playback and volume control changes native volume', async ({ page }) => {
+  await page.goto('/tests/fixtures/audio-player.html');
+  await page.getByTestId('load-source').click();
+  const audio = page.locator('audio');
+  await page.getByRole('button', { name: 'Phát', exact: true }).click();
+  await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeGreaterThan(0);
+  await page.getByRole('slider', { name: 'Âm lượng' }).fill('0.3');
+  await expect(audio).toHaveJSProperty('volume', 0.3);
+  await page.getByRole('button', { name: 'Dừng', exact: true }).click();
+  await expect(audio).toHaveJSProperty('paused', true);
+  await expect(audio).toHaveJSProperty('currentTime', 0);
+});
+
+test('captions follow native cues and can be toggled without stopping audio', async ({ page }) => {
+  await page.route('**/guide.vtt', route => route.fulfill({ contentType: 'text/vtt', body: 'WEBVTT\n\n00:00.000 --> 00:02.000\nCue một\n\n00:02.000 --> 00:04.000\n<b>Cue hai</b>\n' }));
+  await page.goto('/tests/fixtures/audio-player.html');
+  await page.getByTestId('load-caption-source').click();
+  await page.getByRole('button', { name: 'Phát', exact: true }).click();
+  const audio = page.locator('audio');
+  await expect(page.getByLabel('Phụ đề hiện tại')).toHaveText('Cue một');
+  await audio.evaluate((el: HTMLAudioElement) => { el.currentTime = 3; });
+  await expect(page.getByLabel('Phụ đề hiện tại')).toHaveText('Cue hai');
+  await expect(page.getByLabel('Phụ đề hiện tại').locator('b')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Tắt phụ đề' }).click();
+  await expect(page.getByLabel('Phụ đề hiện tại')).toHaveCount(0);
+  await expect(audio).toHaveJSProperty('paused', false);
+  await page.getByRole('button', { name: 'Bật phụ đề' }).click();
+  await expect(page.getByLabel('Phụ đề hiện tại')).toHaveText('Cue hai');
 });
