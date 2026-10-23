@@ -31,6 +31,7 @@ import {
   IconCube,
   IconEdit,
   IconEye,
+  IconEyeOff,
   IconInfoCircle,
   IconListNumbers,
   IconMapPin,
@@ -43,6 +44,7 @@ import {
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ApiException } from '@/core/api/api-error';
+import type { Page } from '@/core/api/api-response';
 import { firstTabWithError, mapExhibitErrors } from '@/helpers/exhibitFormErrors';
 import { resolveBilingualText, toHotspotFormValues, toHotspotPayload, validateHotspots } from '@/helpers/exhibitHotspots';
 import type { HotspotFormValue } from '@/helpers/exhibitHotspots';
@@ -64,6 +66,7 @@ import { exhibitsService } from '@/services/exhibits.service';
 import { HotspotEditor } from '@/components/cms/HotspotEditor';
 import { TourOrderModal } from '@/components/cms/TourOrderModal';
 import { roomsService } from '@/services/rooms.service';
+import { moderationService } from '@/services/moderation.service';
 import { Column, DataTable } from '@/shared/components/data';
 import { confirmAction, notify } from '@/shared/components/feedback';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
@@ -101,8 +104,15 @@ interface ExhibitFormValues {
   hotspots: HotspotFormValue[];
 }
 
-/** Trạng thái danh sách hotspot trong form sửa: phải tải từ chi tiết hiện vật (danh sách không có). */
-type HotspotLoadState = 'ready' | 'loading' | 'error';
+type EditLoadState = 'ready' | 'loading' | 'error';
+
+function deletionBlock(exhibit: ExhibitRow, revisions: ExhibitDetail['revisions'] = []): string | null {
+  if (exhibit.publishedRevisionId || exhibit.visibility === 'visible' || exhibit.revisionState === 'approved' || revisions.some(r => r.state === 'approved')) {
+    return 'Hiện vật có lịch sử xuất bản hoặc phê duyệt nên không thể xóa vĩnh viễn. Có thể ẩn hiện vật đang công khai khỏi bảo tàng.';
+  }
+  return exhibit.revisionState === 'in_review' || revisions.some(r => r.state === 'in_review')
+    ? 'Hiện vật có phiên bản đang chờ kiểm duyệt, không thể xóa.' : null;
+}
 
 type MediaSlotField = 'modelId' | 'imageId' | 'audioViId' | 'audioEnId' | 'subtitleViId' | 'subtitleEnId';
 
@@ -218,9 +228,13 @@ export function ExhibitsPage() {
   const [editing, setEditing] = useState<ExhibitRow | null>(null);
   const [opened, drawer] = useDisclosure(false);
   const [formTab, setFormTab] = useState<ExhibitFormTab>('basic');
-  const [hotspotState, setHotspotState] = useState<HotspotLoadState>('ready');
-  /** Hiện vật đang mở trong form — bỏ kết quả tải hotspot muộn của lần mở trước. */
-  const editingIdRef = useRef<string | null>(null);
+  const [editLoadState, setEditLoadState] = useState<EditLoadState>('ready');
+  const editSessionRef = useRef(0);
+  const actionRequestRef = useRef(0);
+  const actionBusyRef = useRef(false);
+  const [isActionBusy, setIsActionBusy] = useState(false);
+
+  useEffect(() => () => { editSessionRef.current++; actionRequestRef.current++; }, []);
 
   const [tourOrderOpened, tourOrder] = useDisclosure(false);
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -230,6 +244,7 @@ export function ExhibitsPage() {
   const canUpdate = hasPermission(PERMISSIONS.EXHIBIT_UPDATE);
   const canDelete = hasPermission(PERMISSIONS.EXHIBIT_UPDATE);
   const canSubmit = hasPermission(PERMISSIONS.REVISION_SUBMIT);
+  const canHide = hasPermission(PERMISSIONS.REVISION_HIDE);
 
   // Danh sách phòng cho bộ lọc và form
   const roomsQuery = useQuery({
@@ -338,7 +353,10 @@ export function ExhibitsPage() {
   };
 
   const saveMutation = useMutation({
-    mutationFn: (values: ExhibitFormValues) => {
+    mutationFn: ({ values, id }: { values: ExhibitFormValues; id: string | null; session: number }) => {
+      if (editLoadState !== 'ready' || (editing ? !canUpdate || editing.revisionState === 'in_review' : !canCreate)) {
+        throw new Error('Hiện vật chưa sẵn sàng để lưu.');
+      }
       const payload: CreateExhibitInput = {
         roomId: values.roomId,
         name: {
@@ -376,31 +394,42 @@ export function ExhibitsPage() {
         subtitleEnId: values.subtitleEnId,
         altText: toBilingual(values.altTextVi, values.altTextEn),
         transcript: toBilingual(values.transcriptVi, values.transcriptEn),
-        // Chỉ gửi khi đã tải đủ hotspot của bản đã lưu — bỏ trường thì back-end giữ nguyên.
-        ...(hotspotState === 'ready' ? { hotspots: toHotspotPayload(values.hotspots) } : {}),
+        hotspots: toHotspotPayload(values.hotspots),
       };
 
-      if (editing) {
-        return exhibitsService.update(editing.id, payload as UpdateExhibitInput);
+      if (id) {
+        return exhibitsService.update(id, payload as UpdateExhibitInput);
       }
       return exhibitsService.create(payload);
     },
-    onSuccess: (saved) => {
+    onSuccess: async (saved, { id, session }) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ['admin-exhibits'] }),
+        queryClient.cancelQueries({ queryKey: ['admin-exhibit-detail', saved.id], exact: true }),
+      ]);
+      queryClient.setQueriesData<Page<ExhibitRow>>({ queryKey: ['admin-exhibits'] }, (cached) => {
+        if (!cached || !cached.items.some(item => item.id === saved.id)) return cached;
+        return { ...cached, items: cached.items.map(item => item.id === saved.id ? saved : item) };
+      });
+      await queryClient.invalidateQueries({ queryKey: ['admin-exhibit-detail', saved.id], exact: true, refetchType: 'none' });
+      void queryClient.invalidateQueries({ queryKey: ['admin-exhibits'] });
       notify.success(
-        editing
-          ? `Đã cập nhật hiện vật "${getDisplayText(saved.content.name, 'vi')}"`
+        id
+          ? `Đã lưu bản nháp hiện vật "${getDisplayText(saved.content.name, 'vi')}"`
           : `Đã tạo bản nháp hiện vật mới "${getDisplayText(saved.content.name, 'vi')}"`,
       );
-      drawer.close();
-      invalidate();
+      if (editSessionRef.current === session) {
+        editSessionRef.current++;
+        drawer.close();
+      }
     },
-    onError: (err) => {
+    onError: (err, { session }) => {
       if (err instanceof ApiException) {
         if (err.status === 409) {
           notify.error(err.message);
           return;
         }
-        showFieldErrors(err);
+        if (editSessionRef.current === session) showFieldErrors(err);
       }
       notify.error(err instanceof Error ? err.message : 'Lưu hiện vật thất bại');
     },
@@ -422,16 +451,20 @@ export function ExhibitsPage() {
   });
 
   const submitReviewMutation = useMutation({
-    mutationFn: (exhibit: ExhibitRow) => exhibitsService.submitReview(exhibit.id),
+    mutationFn: ({ exhibit }: { exhibit: ExhibitRow; session: number }) => exhibitsService.submitReview(exhibit.id),
     onSuccess: () => {
       notify.success('Đã gửi hiện vật vào hàng chờ kiểm duyệt (IN_REVIEW)');
       invalidate();
+      void queryClient.invalidateQueries({ queryKey: ['moderation', 'queue'] });
     },
-    onError: (err, exhibit) => {
+    onError: (err, { exhibit, session: submittedSession }) => {
       // 422 từ cổng Submit Review (§5.2, FR-97): mở form và chỉ ra đúng ô cần sửa.
-      if (err instanceof ApiException && err.status === 422 && err.errors.length > 0 && canUpdate) {
-        // Đợi hotspot tải xong rồi mới đánh dấu lỗi — đổ hotspot vào form sẽ xóa lỗi của các ô đó.
-        void openEdit(exhibit).then(() => showFieldErrors(err));
+      if (err instanceof ApiException && err.status === 422 && err.errors.length > 0 && canUpdate && editSessionRef.current === submittedSession) {
+        const loading = openEdit(exhibit);
+        const session = editSessionRef.current;
+        void loading.then((loaded) => {
+          if (loaded && editSessionRef.current === session) showFieldErrors(err);
+        });
         notify.error(
           `Chưa đủ điều kiện gửi duyệt (${err.errors.length} lỗi). Các ô cần sửa đã được đánh dấu.`,
           'Không gửi được',
@@ -448,19 +481,97 @@ export function ExhibitsPage() {
     mutationFn: (id: string) => exhibitsService.delete(id),
     onSuccess: async () => {
       notify.success('Đã xóa bản nháp hiện vật');
-      await queryClient.invalidateQueries({ queryKey: ['admin-exhibits'] });
-      if (detailId) void queryClient.invalidateQueries({ queryKey: ['admin-exhibit-detail', detailId] });
+      if (page > 1 && exhibitsQuery.data?.items.length === 1) setPage(page - 1);
+      await refreshLifecycleQueries();
       titleRef.current?.focus();
     },
     onError: (err) => {
       notify.error(err instanceof Error ? err.message : 'Xóa hiện vật thất bại');
+      void refreshLifecycleQueries();
     },
+    onSettled: () => { actionBusyRef.current = false; setIsActionBusy(false); },
   });
 
+  const refreshLifecycleQueries = () => Promise.all([
+    ['admin-exhibits'], ['admin-exhibit-detail'], ['rooms'], ['rooms-all-select'],
+    ['moderation'], ['museum-tour'], ['public-room'],
+  ].map(queryKey => queryClient.invalidateQueries({ queryKey })));
+
+  const hideMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const detail = await exhibitsService.get(id);
+      if (!canHide || detail.visibility !== 'visible' || !detail.publishedRevisionId) {
+        throw new Error('Hiện vật không còn công khai hoặc bạn không có quyền ẩn. Vui lòng tải lại.');
+      }
+      return moderationService.hide(id, detail.version);
+    },
+    onSuccess: async () => {
+      notify.success('Đã ẩn hiện vật khỏi bảo tàng. Lịch sử và media vẫn được giữ.');
+      await refreshLifecycleQueries();
+      titleRef.current?.focus();
+    },
+    onError: (error) => {
+      notify.error(error instanceof Error ? error.message : 'Không ẩn được hiện vật');
+      void refreshLifecycleQueries();
+    },
+    onSettled: () => { actionBusyRef.current = false; setIsActionBusy(false); },
+  });
+
+  const unhideMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const detail = await exhibitsService.get(id);
+      if (!canHide || detail.visibility !== 'hidden' || !detail.publishedRevisionId) {
+        throw new Error('Hiện vật không còn ở trạng thái ẩn hoặc bạn không có quyền. Vui lòng tải lại.');
+      }
+      return moderationService.unhide(id, detail.version);
+    },
+    onSuccess: async () => {
+      notify.success('Đã bỏ ẩn hiện vật. Bản đã xuất bản hiện đang hiển thị trong bảo tàng.');
+      await refreshLifecycleQueries();
+      titleRef.current?.focus();
+    },
+    onError: (error) => {
+      notify.error(error instanceof Error ? error.message : 'Không bỏ ẩn được hiện vật');
+      void refreshLifecycleQueries();
+    },
+    onSettled: () => { actionBusyRef.current = false; setIsActionBusy(false); },
+  });
+
+  const handleHide = (exhibit: ExhibitRow) => {
+    if (!canHide || actionBusyRef.current) return;
+    const request = ++actionRequestRef.current;
+    confirmAction({
+      message: 'Ẩn hiện vật khỏi trang công khai? Lịch sử, bản nháp và media vẫn được giữ.',
+      confirmLabel: 'Ẩn khỏi bảo tàng',
+      onConfirm: () => {
+        if (request !== actionRequestRef.current || actionBusyRef.current) return;
+        actionBusyRef.current = true; setIsActionBusy(true);
+        hideMutation.mutate(exhibit.id);
+      },
+    });
+  };
+
+  const handleUnhide = (exhibit: ExhibitRow) => {
+    if (!canHide || actionBusyRef.current) return;
+    const request = ++actionRequestRef.current;
+    confirmAction({
+      message: 'Hiện lại bản đã xuất bản của hiện vật trên bảo tàng? Bản nháp và phiên bản đang chờ duyệt không bị thay đổi.',
+      confirmLabel: 'Bỏ ẩn hiện vật',
+      onConfirm: () => {
+        if (request !== actionRequestRef.current || actionBusyRef.current) return;
+        actionBusyRef.current = true; setIsActionBusy(true);
+        unhideMutation.mutate(exhibit.id);
+      },
+    });
+  };
+
   const openCreate = () => {
+    if (saveMutation.isPending) return;
+    actionRequestRef.current++;
+    if (!deleteMutation.isPending && !hideMutation.isPending && !unhideMutation.isPending) { actionBusyRef.current = false; setIsActionBusy(false); }
+    editSessionRef.current++;
     setEditing(null);
-    editingIdRef.current = null;
-    setHotspotState('ready');
+    setEditLoadState('ready');
     setFormTab('basic');
     form.reset();
     if (formRoomOptions.length > 0) {
@@ -469,20 +580,57 @@ export function ExhibitsPage() {
     drawer.open();
   };
 
-  const openEdit = (exhibit: ExhibitRow) => {
+  const closeForm = () => {
+    if (saveMutation.isPending) return;
+    editSessionRef.current++;
+    drawer.close();
+  };
+
+  const openEdit = (exhibit: ExhibitRow): Promise<boolean> => {
+    if (saveMutation.isPending) return Promise.resolve(false);
+    actionRequestRef.current++;
+    if (!deleteMutation.isPending && !hideMutation.isPending && !unhideMutation.isPending) { actionBusyRef.current = false; setIsActionBusy(false); }
+    const session = ++editSessionRef.current;
     setEditing(exhibit);
-    const content = exhibit.content;
+    setEditLoadState('loading');
+    form.clearErrors();
+    setFormTab('basic');
+    drawer.open();
+    return loadEditDetail(exhibit.id, session);
+  };
+
+  const loadEditDetail = async (id: string, session: number): Promise<boolean> => {
+    const queryKey = ['admin-exhibit-detail', id];
+    try {
+      await queryClient.cancelQueries({ queryKey, exact: true });
+      if (editSessionRef.current !== session) return false;
+      const detail = await queryClient.fetchQuery({
+        queryKey, queryFn: () => exhibitsService.get(id), staleTime: 0, retry: false,
+      });
+      if (editSessionRef.current !== session) return false;
+      hydrateEditForm(detail);
+      setEditing(detail);
+      setEditLoadState('ready');
+      return true;
+    } catch {
+      if (editSessionRef.current === session) setEditLoadState('error');
+      return false;
+    }
+  };
+
+  function hydrateEditForm(detail: ExhibitDetail) {
+    const content = detail.content;
     const pos = content.position || { x: 0, y: 0, z: 0 };
     const rot = content.rotation || { x: 0, y: 0, z: 0 };
     const scale = content.scale || { x: 1, y: 1, z: 1 };
 
     form.setValues({
-      roomId: exhibit.roomId,
-      nameVi: getDisplayText(content.name, 'vi'),
-      nameEn: getDisplayText(content.name, 'en'),
-      descriptionVi: getDisplayText(content.description, 'vi'),
-      descriptionEn: getDisplayText(content.description, 'en'),
-      displayOrder: exhibit.displayOrder ?? 1,
+      roomId: detail.roomId,
+      nameVi: getLocalizedText(content.name, 'vi'),
+      nameEn: getLocalizedText(content.name, 'en'),
+      descriptionVi: getLocalizedText(content.description, 'vi'),
+      descriptionEn: getLocalizedText(content.description, 'en'),
+      displayOrder: detail.displayOrder ?? 1,
       positionX: pos.x,
       positionY: pos.y,
       positionZ: pos.z,
@@ -504,31 +652,14 @@ export function ExhibitsPage() {
       altTextEn: getLocalizedText(content.altText, 'en'),
       transcriptVi: getLocalizedText(content.transcript, 'vi'),
       transcriptEn: getLocalizedText(content.transcript, 'en'),
-      hotspots: [],
+      hotspots: toHotspotFormValues(detail.hotspots),
     });
     form.clearErrors();
-    setFormTab('basic');
-    drawer.open();
-    return loadHotspots(exhibit.id);
-  };
-
-  /** Danh sách hiện vật không kèm hotspot: lấy từ chi tiết (revision mới nhất) rồi đổ vào form. */
-  const loadHotspots = (id: string): Promise<void> => {
-    editingIdRef.current = id;
-    setHotspotState('loading');
-    return queryClient
-      .fetchQuery({ queryKey: ['admin-exhibit-detail', id], queryFn: () => exhibitsService.get(id) })
-      .then((detail) => {
-        if (editingIdRef.current !== id) return;
-        form.setFieldValue('hotspots', toHotspotFormValues(detail.hotspots));
-        setHotspotState('ready');
-      })
-      .catch(() => {
-        if (editingIdRef.current === id) setHotspotState('error');
-      });
-  };
+  }
 
   const openDetail = (exhibit: ExhibitRow) => {
+    actionRequestRef.current++;
+    if (!deleteMutation.isPending && !hideMutation.isPending && !unhideMutation.isPending) { actionBusyRef.current = false; setIsActionBusy(false); }
     setDetailId(exhibit.id);
     detailDrawer.open();
   };
@@ -537,24 +668,34 @@ export function ExhibitsPage() {
     confirmAction({
       message: `Bạn có chắc chắn muốn gửi hiện vật "${getDisplayText(exhibit.content.name, 'vi')}" đi kiểm duyệt?`,
       confirmLabel: 'Gửi kiểm duyệt',
-      onConfirm: () => submitReviewMutation.mutate(exhibit),
+      onConfirm: () => submitReviewMutation.mutate({ exhibit, session: editSessionRef.current }),
     });
   };
 
-  const handleDelete = (exhibit: ExhibitRow) => {
-    if (exhibit.status === 'published' || exhibit.visibility === 'visible') {
-      notify.error(
-        'Không thể xóa hiện vật đã từng xuất bản (Quy tắc nghiệp vụ BR-20). Vui lòng chuyển trạng thái ẩn thay vì xóa.',
-      );
-      return;
+  const handleDelete = async (exhibit: ExhibitRow) => {
+    if (!canDelete || actionBusyRef.current) return;
+    const request = ++actionRequestRef.current;
+    actionBusyRef.current = true; setIsActionBusy(true);
+    try {
+      const detail = await exhibitsService.get(exhibit.id);
+      if (request !== actionRequestRef.current) return;
+      const reason = deletionBlock(detail, detail.revisions);
+      if (reason) { notify.error(reason); void refreshLifecycleQueries(); return; }
+      confirmAction({
+        message: `Xóa vĩnh viễn hiện vật "${getDisplayText(detail.content.name, 'vi')}" và toàn bộ revisions/hotspots? Media vẫn được giữ trong thư viện.`,
+        danger: true,
+        confirmLabel: 'Xóa vĩnh viễn bản nháp',
+        onConfirm: () => {
+          if (request !== actionRequestRef.current || actionBusyRef.current) return;
+          actionBusyRef.current = true; setIsActionBusy(true);
+          deleteMutation.mutate(detail.id);
+        },
+      });
+    } catch (error) {
+      if (request === actionRequestRef.current) notify.error(error instanceof Error ? error.message : 'Không tải được hiện vật');
+    } finally {
+      if (request === actionRequestRef.current) { actionBusyRef.current = false; setIsActionBusy(false); }
     }
-
-    confirmAction({
-      message: `Bạn có chắc chắn muốn xóa bản nháp hiện vật "${getDisplayText(exhibit.content.name, 'vi')}"? Hành động này sẽ cascade xóa toàn bộ hotspots và revisions liên quan.`,
-      danger: true,
-      confirmLabel: 'Xóa vĩnh viễn bản nháp',
-      onConfirm: () => deleteMutation.mutate(exhibit.id),
-    });
   };
 
   const columns: Column<ExhibitRow>[] = [
@@ -607,7 +748,11 @@ export function ExhibitsPage() {
           variant={r.status === 'published' ? 'filled' : 'light'}
           size="sm"
         >
-          {r.status === 'published' ? 'Đã xuất bản' : 'Bản nháp'}
+          {r.status === 'published'
+            ? 'Đã xuất bản'
+            : r.visibility === 'hidden' && r.publishedRevisionId
+              ? 'Đã xuất bản · Đang ẩn'
+              : 'Bản nháp'}
         </Badge>
       ),
     },
@@ -661,6 +806,7 @@ export function ExhibitsPage() {
       render: (r) => {
         const isPublished = r.status === 'published';
         const isInReview = r.revisionState === 'in_review';
+        const deleteReason = deletionBlock(r);
 
         return (
           <Group gap={6} justify="flex-end" wrap="nowrap">
@@ -705,19 +851,32 @@ export function ExhibitsPage() {
 
             {canDelete && (
               <Tooltip
-                label={
-                  isPublished
-                    ? 'Chặn xóa: Hiện vật đã từng xuất bản (SRS BR-20)'
-                    : 'Xóa bản nháp hiện vật'
-                }
+                label={deleteReason ?? 'Xóa vĩnh viễn bản nháp hiện vật'}
               >
                 <ActionIcon
                   variant="subtle"
-                  color={isPublished ? 'gray' : 'red'}
-                  disabled={isPublished}
+                  aria-label={`Xóa hiện vật ${getDisplayText(r.content.name)}`}
+                  color={deleteReason ? 'gray' : 'red'}
+                  disabled={!!deleteReason || isActionBusy}
                   onClick={() => handleDelete(r)}
                 >
                   <IconTrash size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {canHide && r.visibility === 'visible' && r.publishedRevisionId && (
+              <Tooltip label="Ẩn khỏi bảo tàng, giữ lịch sử và media">
+                <ActionIcon variant="subtle" color="gray" disabled={isActionBusy}
+                  aria-label={`Ẩn hiện vật ${getDisplayText(r.content.name)}`} onClick={() => handleHide(r)}>
+                  <IconEyeOff size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {canHide && r.visibility === 'hidden' && r.publishedRevisionId && (
+              <Tooltip label="Bỏ ẩn bản đã xuất bản, giữ bản nháp và lịch sử">
+                <ActionIcon variant="subtle" color="teal" disabled={isActionBusy}
+                  aria-label={`Bỏ ẩn hiện vật ${getDisplayText(r.content.name)}`} onClick={() => handleUnhide(r)}>
+                  <IconEye size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
@@ -809,7 +968,9 @@ export function ExhibitsPage() {
       {/* Drawer Thêm / Chỉnh sửa hiện vật */}
       <Drawer
         opened={opened}
-        onClose={drawer.close}
+        onClose={closeForm}
+        closeOnEscape={!saveMutation.isPending}
+        closeOnClickOutside={!saveMutation.isPending}
         title={
           <Group gap="xs">
             <IconBox size={20} />
@@ -821,11 +982,21 @@ export function ExhibitsPage() {
         position="right"
         size="xl"
       >
+        {editLoadState === 'loading' ? <Text role="status">Đang tải hiện vật…</Text>
+          : editLoadState === 'error' ? <Alert color="red" role="alert" title="Không tải được hiện vật">
+            <Text>Không thể tải bản nháp mới nhất. Vui lòng thử lại trước khi chỉnh sửa.</Text>
+            <Button mt="sm" onClick={() => editing && void openEdit(editing)}>Thử lại</Button>
+          </Alert>
+          : editing?.revisionState === 'in_review' || (editing ? !canUpdate : !canCreate)
+            ? <Alert role="alert">{editing?.revisionState === 'in_review' ? 'Hiện vật đang chờ duyệt, không thể chỉnh sửa.' : 'Bạn không có quyền chỉnh sửa hiện vật này.'}</Alert>
+            : <>
         {/* noValidate: `required` gốc của trình duyệt chặn submit âm thầm khi ô lỗi nằm ở tab đang ẩn. */}
         <form
           noValidate
           onSubmit={form.onSubmit(
-            (vals) => saveMutation.mutate(vals),
+            (values) => {
+              if (!saveMutation.isPending) saveMutation.mutate({ values, id: editing?.id ?? null, session: editSessionRef.current });
+            },
             // Lỗi validate nằm ở tab khác thì chuyển tới đó — không để nút "Lưu" im lặng.
             (errors) => {
               const tab = firstTabWithError(Object.keys(errors));
@@ -852,7 +1023,7 @@ export function ExhibitsPage() {
                   Media & thuyết minh
                 </Tabs.Tab>
                 <Tabs.Tab value="hotspots" leftSection={<IconMapPin size={14} />}>
-                  Hotspots{hotspotState === 'ready' ? ` (${form.values.hotspots.length})` : ''}
+                   Hotspots ({form.values.hotspots.length})
                 </Tabs.Tab>
               </Tabs.List>
 
@@ -1111,8 +1282,7 @@ export function ExhibitsPage() {
                 <HotspotEditor
                   form={form}
                   modelId={form.values.modelId}
-                  ready={hotspotState === 'ready'}
-                  loadError={hotspotState === 'error'}
+                  ready
                 />
               </Tabs.Panel>
             </Tabs>
@@ -1120,7 +1290,7 @@ export function ExhibitsPage() {
             <Divider my="sm" />
 
             <Flex justify="flex-end" gap="sm">
-              <Button variant="default" onClick={drawer.close}>
+              <Button variant="default" disabled={saveMutation.isPending} onClick={closeForm}>
                 Hủy bỏ
               </Button>
               <Button type="submit" loading={saveMutation.isPending}>
@@ -1129,6 +1299,7 @@ export function ExhibitsPage() {
             </Flex>
           </Stack>
         </form>
+        </>}
       </Drawer>
 
       {/* Drawer Xem Chi Tiết Hiện Vật & Lịch Sử Revisions */}

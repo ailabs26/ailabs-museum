@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { createWavFixture } from './fixtures/audioFixture';
+import { createWavFixture, fulfillSeekableAudio } from './fixtures/audioFixture';
 
 test.beforeEach(async ({ page }) => {
   await page.route('**/audio-fixture.wav', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'audio/wav', body: createWavFixture() });
+    await fulfillSeekableAudio(route, createWavFixture());
   });
   await page.route('**/audio-fixture-2.wav', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'audio/wav', body: createWavFixture(8, 11025) });
+    await fulfillSeekableAudio(route, createWavFixture(8, 11025));
   });
 });
 
@@ -184,5 +184,123 @@ test('reflows long labels and multiple independent players in light and dark the
   await expect(players.nth(1).getByRole('button', { name: 'Phát' })).toBeVisible();
   await players.nth(1).getByRole('button', { name: 'Phát' }).click();
   await expect(players.nth(1).getByRole('status')).toHaveText('Đang phát');
-  await expect(players.nth(0).getByRole('status')).toHaveText('Đang phát');
+  await expect(players.nth(0).getByRole('status')).toHaveText('Đã tạm dừng');
+});
+
+test('stop rewinds native playback and volume control changes native volume', async ({ page }) => {
+  await page.goto('/tests/fixtures/audio-player.html');
+  await page.getByTestId('load-source').click();
+  const audio = page.locator('audio');
+  await page.getByRole('button', { name: 'Phát', exact: true }).click();
+  await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeGreaterThan(0);
+  await page.getByRole('slider', { name: 'Âm lượng' }).fill('0.3');
+  await expect(audio).toHaveJSProperty('volume', 0.3);
+  await page.getByRole('button', { name: 'Dừng', exact: true }).click();
+  await expect(audio).toHaveJSProperty('paused', true);
+  await expect(audio).toHaveJSProperty('currentTime', 0);
+});
+
+test('captions follow native cues and can be toggled without stopping audio', async ({ page }) => {
+  await page.route('**/guide.vtt', route => route.fulfill({ contentType: 'text/vtt', body: 'WEBVTT\n\n00:00.000 --> 00:02.000\nCue một\n\n00:02.000 --> 00:04.000\n<b>Cue hai</b>\n' }));
+  await page.goto('/tests/fixtures/audio-player.html');
+  await page.getByTestId('load-caption-source').click();
+  await page.getByRole('button', { name: 'Phát', exact: true }).click();
+  const audio = page.locator('audio');
+  await expect(page.getByLabel('Phụ đề hiện tại')).toHaveText('Cue một');
+  await audio.evaluate((el: HTMLAudioElement) => { el.currentTime = 3; });
+  await expect(page.getByLabel('Phụ đề hiện tại')).toHaveText('Cue hai');
+  await expect(page.getByLabel('Phụ đề hiện tại').locator('b')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Tắt phụ đề' }).click();
+  await expect(page.getByLabel('Phụ đề hiện tại')).toHaveCount(0);
+  await expect(audio).toHaveJSProperty('paused', false);
+  await page.getByRole('button', { name: 'Bật phụ đề' }).click();
+  await expect(page.getByLabel('Phụ đề hiện tại')).toHaveText('Cue hai');
+});
+
+test('seek stays disabled and makes no media requests before metadata is loaded', async ({ page }) => {
+  const audioRequests: string[] = [];
+  page.on('request', request => { if (request.url().includes('audio-fixture.wav')) audioRequests.push(request.url()); });
+  await page.goto('/tests/fixtures/audio-player.html');
+  await page.getByTestId('load-source').click();
+  await expect(page.getByRole('slider', { name: 'Tua âm thanh' })).toBeDisabled();
+  await expect(page.getByLabel('Thời gian hiện tại')).toHaveText('00:00');
+  await expect(page.getByLabel('Tổng thời lượng')).toHaveText('--:--');
+  expect(audioRequests).toEqual([]);
+  await expect(page.locator('audio')).toHaveAttribute('preload', 'none');
+});
+
+test('native timeline seeks while playing and paused with keyboard support and Stop resets it', async ({ page }) => {
+  await page.goto('/tests/fixtures/audio-player.html');
+  await page.getByTestId('load-source').click();
+  const audio = page.locator('audio');
+  const seek = page.getByRole('slider', { name: 'Tua âm thanh' });
+  await page.getByRole('button', { name: 'Phát', exact: true }).click();
+  await expect(page.getByLabel('Tổng thời lượng')).toHaveText('00:08');
+  await expect(seek).toBeEnabled();
+  await expect(page.getByRole('status')).toHaveText('Đang phát');
+  await seek.fill('4');
+  await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeGreaterThanOrEqual(4);
+  await expect(audio).toHaveJSProperty('seeking', false);
+  await expect(audio).toHaveJSProperty('paused', false);
+  await page.getByRole('button', { name: 'Tạm dừng', exact: true }).click();
+  await expect(audio).toHaveJSProperty('paused', true);
+  await seek.fill('2');
+  await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeCloseTo(2, 1);
+  await expect(audio).toHaveJSProperty('paused', true);
+  await expect(page.getByLabel('Thời gian hiện tại')).toHaveText('00:02');
+  await seek.press('ArrowRight');
+  await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeCloseTo(3, 1);
+  await seek.press('End');
+  await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeCloseTo(8, 1);
+  await seek.press('Home');
+  await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBe(0);
+  const box = (await seek.boundingBox())!;
+  const middle = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  await page.mouse.click(middle.x, middle.y);
+  await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeCloseTo(4, 1);
+  await page.mouse.move(middle.x, middle.y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.75, middle.y, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeCloseTo(6, 1);
+  await expect(audio).toHaveJSProperty('paused', true);
+  await page.getByRole('button', { name: 'Dừng', exact: true }).click();
+  await expect(seek).toHaveValue('0');
+  await expect(page.getByLabel('Tổng thời lượng')).toHaveText('00:08');
+});
+
+test('seeking after ended never autoplays and changing sources resets duration and time', async ({ page }) => {
+  await page.goto('/tests/fixtures/audio-player.html');
+  await page.getByTestId('load-source').click();
+  await page.getByRole('button', { name: 'Phát', exact: true }).click();
+  const audio = page.locator('audio');
+  await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.duration)).toBe(8);
+  await audio.evaluate((el: HTMLAudioElement) => { el.currentTime = 7.95; });
+  await expect(page.getByRole('status')).toHaveText('Đã phát xong', { timeout: 10000 });
+  await page.getByRole('slider', { name: 'Tua âm thanh' }).fill('2');
+  await expect(page.getByRole('button', { name: 'Tiếp tục', exact: true })).toBeVisible();
+  await expect(audio).toHaveJSProperty('paused', true);
+  const oldAudio = await audio.elementHandle();
+  await page.getByTestId('load-second-source').click();
+  await oldAudio!.evaluate(el => { el.dispatchEvent(new Event('durationchange')); el.dispatchEvent(new Event('seeked')); });
+  await expect(page.getByLabel('Tổng thời lượng')).toHaveText('--:--');
+  await expect(page.getByLabel('Thời gian hiện tại')).toHaveText('00:00');
+  await expect(page.getByRole('slider', { name: 'Tua âm thanh' })).toBeDisabled();
+});
+test('invalid durations and playback errors disable seeking without showing invalid time', async ({ page }) => {
+  await page.route('**/audio-error.wav', route => route.fulfill({ status: 404 }));
+  await page.goto('/tests/fixtures/audio-player.html');
+  await page.getByTestId('load-source').click();
+  for (const duration of [NaN, Infinity, 0, -1]) {
+    await page.locator('audio').evaluate((el, value) => {
+      Object.defineProperty(el, 'duration', { configurable: true, value });
+      el.dispatchEvent(new Event('durationchange'));
+    }, duration);
+    await expect(page.getByLabel('Tổng thời lượng')).toHaveText('--:--');
+    await expect(page.getByRole('slider', { name: 'Tua âm thanh' })).toBeDisabled();
+  }
+  await page.getByTestId('load-error-source').click();
+  await page.getByRole('button', { name: 'Phát', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Thử lại', exact: true })).toBeVisible();
+  await expect(page.getByRole('slider', { name: 'Tua âm thanh' })).toBeDisabled();
 });

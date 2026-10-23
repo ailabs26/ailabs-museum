@@ -124,6 +124,7 @@ export class ModerationService {
         {
           publishedRevisionId: revision.id,
           visibility: ExhibitVisibility.VISIBLE,
+          archivedAt: null,
           version: () => '"version" + 1',
         },
       );

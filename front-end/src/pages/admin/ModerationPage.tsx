@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import {
   Badge,
+  Alert,
   Button,
   Divider,
   Drawer,
@@ -27,6 +28,12 @@ import { notify } from '@/shared/components/feedback';
 import { Column, DataTable } from '@/shared/components/data';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { moderationService, Revision } from '@/services/moderation.service';
+import { resolveBilingualText } from '@/helpers/exhibitHotspots';
+
+function revisionName(value: Revision['content']['name']): string {
+  const { vi, en } = resolveBilingualText(value);
+  return vi.trim() || en.trim() || 'Chưa đặt tên';
+}
 
 const STATE_COLOR: Record<string, string> = {
   draft: 'gray',
@@ -51,11 +58,14 @@ export function ModerationPage() {
   const queryClient = useQueryClient();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const rejectReasonRef = useRef<HTMLTextAreaElement>(null);
+  const hideReasonRef = useRef<HTMLTextAreaElement>(null);
   const didCompleteRef = useRef(false);
   const [page, setPage] = useState(1);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [rejectOpened, rejectModal] = useDisclosure(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [hideOpened, hideModal] = useDisclosure(false);
+  const [hideReason, setHideReason] = useState('');
 
   const canPublish = hasPermission(PERMISSIONS.REVISION_PUBLISH);
   const canReject = hasPermission(PERMISSIONS.REVISION_REJECT);
@@ -100,6 +110,7 @@ export function ModerationPage() {
         refreshAll();
         didCompleteRef.current = true;
         rejectModal.close();
+        hideModal.close();
         setDetailId(null);
       },
     });
@@ -129,13 +140,21 @@ export function ModerationPage() {
   });
 
   const hideMutation = useMutation({
-    mutationFn: () => moderationService.hide(detail!.exhibit!.id, detail!.exhibit!.version),
+    mutationFn: () =>
+      moderationService.hide(
+        detail!.exhibit!.id,
+        detail!.exhibit!.version,
+        hideReason.trim() || undefined,
+      ),
     onSuccess: () => {
       notify.success('Đã tạm ẩn hiện vật');
+      didCompleteRef.current = true;
+      hideModal.close();
+      setHideReason('');
       refreshAll();
       setDetailId(null);
     },
-    onError: handleError,
+    onError: (error) => { handleError(error); hideReasonRef.current?.focus(); },
   });
 
   const columns: Column<Revision>[] = [
@@ -145,7 +164,7 @@ export function ModerationPage() {
       render: (r) => (
         <Stack gap={2}>
           <Text fw={600} size="sm">
-            {r.content.name}
+            {revisionName(r.content.name)}
           </Text>
           <Text size="xs" c="dimmed">
             Bản #{r.revisionNo}
@@ -175,7 +194,7 @@ export function ModerationPage() {
         <Button
           variant="light"
           size="xs"
-          aria-label={`Xem chi tiết ${revision.content.name}, bản #${revision.revisionNo}, ${revision.id}`}
+          aria-label={`Xem chi tiết ${revisionName(revision.content.name)}, bản #${revision.revisionNo}, ${revision.id}`}
           onClick={(event) => { event.stopPropagation(); setDetailId(revision.id); }}
         >
           Xem chi tiết
@@ -192,9 +211,15 @@ export function ModerationPage() {
         titleRef={titleRef}
         title="Kiểm duyệt nội dung"
         description="Duyệt, từ chối hoặc tạm ẩn các phiên bản nội dung đang chờ"
+        actions={<Button variant="default" loading={queueQuery.isFetching} disabled={queueQuery.isFetching}
+          onClick={() => void queueQuery.refetch()}>Làm mới</Button>}
       />
 
-      <DataTable
+      {queueQuery.isPending ? <Text role="status">Đang tải hàng chờ…</Text>
+        : queueQuery.isError ? <Alert color="red" role="alert" title="Không tải được hàng chờ kiểm duyệt">
+          <Text>{queueQuery.error.message}</Text>
+          <Button mt="sm" onClick={() => void queueQuery.refetch()}>Thử lại</Button>
+        </Alert> : <DataTable
         columns={columns}
         data={data?.items ?? []}
         rowKey={(r) => r.id}
@@ -206,11 +231,11 @@ export function ModerationPage() {
         onPageChange={setPage}
         emptyText="Không có phiên bản nào chờ duyệt"
         minWidth={680}
-      />
+      />}
 
       <Drawer
         opened={!!detailId}
-        closeOnEscape={!rejectOpened}
+        closeOnEscape={!rejectOpened && !hideOpened}
         onExitTransitionEnd={() => {
           if (didCompleteRef.current || document.activeElement === document.body) titleRef.current?.focus();
           didCompleteRef.current = false;
@@ -220,7 +245,7 @@ export function ModerationPage() {
         size="lg"
         title={
           <Text fw={700} size="lg">
-            {detail ? detail.content.name : 'Chi tiết phiên bản'}
+            {detail ? revisionName(detail.content.name) : 'Chi tiết phiên bản'}
           </Text>
         }
       >
@@ -262,22 +287,29 @@ export function ModerationPage() {
             <Tabs.Panel value="history">
               <Stack gap="xs">
                 {(historyQuery.data ?? []).map((h) => (
-                  <Group key={h.id} justify="space-between" wrap="nowrap">
-                    <Group gap="sm">
-                      <Text fw={600} size="sm">
-                        #{h.revisionNo}
-                      </Text>
-                      <Badge color={STATE_COLOR[h.state] ?? 'gray'} variant="light" size="sm">
-                        {STATE_VI[h.state] ?? h.state}
-                      </Badge>
+                  <Stack key={h.id} gap={2}>
+                    <Group justify="space-between" wrap="nowrap">
+                      <Group gap="sm">
+                        <Text fw={600} size="sm">
+                          #{h.revisionNo}
+                        </Text>
+                        <Badge color={STATE_COLOR[h.state] ?? 'gray'} variant="light" size="sm">
+                          {STATE_VI[h.state] ?? h.state}
+                        </Badge>
+                        <Text size="xs" c="dimmed">
+                          {h.createdBy?.displayName ?? '—'}
+                        </Text>
+                      </Group>
                       <Text size="xs" c="dimmed">
-                        {h.createdBy?.displayName ?? '—'}
+                        {formatTime(h.createdAt)}
                       </Text>
                     </Group>
-                    <Text size="xs" c="dimmed">
-                      {formatTime(h.createdAt)}
-                    </Text>
-                  </Group>
+                    {h.reason && (
+                      <Text size="xs" c="red">
+                        Lý do từ chối: {h.reason}
+                      </Text>
+                    )}
+                  </Stack>
                 ))}
               </Stack>
             </Tabs.Panel>
@@ -293,7 +325,10 @@ export function ModerationPage() {
                   variant="default"
                   leftSection={<IconEyeOff size={16} />}
                   loading={hideMutation.isPending}
-                  onClick={() => hideMutation.mutate()}
+                  onClick={() => {
+                    setHideReason('');
+                    hideModal.open();
+                  }}
                 >
                   Tạm ẩn hiện vật
                 </Button>
@@ -348,6 +383,35 @@ export function ModerationPage() {
               onClick={() => rejectMutation.mutate()}
             >
               Xác nhận từ chối
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal opened={hideOpened} onClose={hideModal.close} title="Tạm ẩn hiện vật" zIndex={201}
+        onExitTransitionEnd={() => {
+          if (!detailId && document.activeElement === document.body) titleRef.current?.focus();
+        }}>
+        <Stack>
+          <Textarea
+            ref={hideReasonRef}
+            label="Lý do tạm ẩn"
+            data-autofocus
+            placeholder="Nhập lý do tạm ẩn hiện vật khỏi không gian công khai (tùy chọn)..."
+            rows={3}
+            value={hideReason}
+            onChange={(e) => setHideReason(e.currentTarget.value)}
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={hideModal.close}>
+              Hủy
+            </Button>
+            <Button
+              color="orange"
+              loading={hideMutation.isPending}
+              onClick={() => hideMutation.mutate()}
+            >
+              Xác nhận tạm ẩn
             </Button>
           </Group>
         </Stack>

@@ -10,7 +10,8 @@
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint .",
     "test": "playwright test",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "test:e2e:cms": "node scripts/e2e-cms-workflow.mjs"
   },
   "dependencies": {
     "@mantine/core": "^7.15.2",

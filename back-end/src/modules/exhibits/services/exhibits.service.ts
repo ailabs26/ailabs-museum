@@ -314,21 +314,28 @@ export class ExhibitsService {
       //    media giữ nguyên sẽ được kiểm lại ở cổng Submit Review/Publish.
       await this.mediaReferences.assertAttachable(mediaReferencesOf(mediaPatch), manager);
 
-      // 1. Cập nhật thông tin Exhibit nếu có thay đổi
-      exhibit.version = (exhibit.version ?? 0) + 1;
-      if (dto.roomId) exhibit.roomId = dto.roomId;
-      if (dto.displayOrder !== undefined && dto.displayOrder !== null) {
-        exhibit.displayOrder = dto.displayOrder;
+      const currentExhibit = await this.exhibits.findForUpdate(id, manager);
+      if (!currentExhibit) throw new NotFoundException('Không tìm thấy hiện vật');
+      const currentRevision = await this.exhibits.findActiveRevision(id, manager);
+      if (!currentRevision || currentExhibit.version !== exhibit.version || currentRevision.id !== activeRev.id || currentRevision.state !== activeRev.state) {
+        throw new ConflictException('Trạng thái hiện vật vừa thay đổi. Vui lòng tải lại và thử lại.');
       }
-      await this.exhibits.save(exhibit, manager);
+
+      // 1. Cập nhật thông tin Exhibit nếu có thay đổi
+      currentExhibit.version = (currentExhibit.version ?? 0) + 1;
+      if (dto.roomId) currentExhibit.roomId = dto.roomId;
+      if (dto.displayOrder !== undefined && dto.displayOrder !== null) {
+        currentExhibit.displayOrder = dto.displayOrder;
+      }
+      await this.exhibits.save(currentExhibit, manager);
 
       const mergedContent = this.mergeContentWithUpdateDto(
-        activeRev.content as unknown as Record<string, unknown>,
+        currentRevision.content as unknown as Record<string, unknown>,
         dto,
       );
 
       // BR-21: Nếu revision hiện tại đã APPROVED, fork ra bản revision mới
-      if (activeRev.state === RevisionState.APPROVED) {
+      if (currentRevision.state === RevisionState.APPROVED) {
         const nextRevisionNo =
           (await this.exhibits.findLatestRevisionNo(id, manager)) + 1;
 
@@ -339,7 +346,7 @@ export class ExhibitsService {
             state: RevisionState.DRAFT,
             content: mergedContent,
             // Fork giữ đủ các slot media của bản published, rồi áp thay đổi của request.
-            ...pickRevisionMedia({ ...pickRevisionMedia(activeRev), ...mediaPatch }),
+            ...pickRevisionMedia({ ...pickRevisionMedia(currentRevision), ...mediaPatch }),
             createdById: user.id,
             reviewedById: null,
             reason: null,
@@ -351,7 +358,7 @@ export class ExhibitsService {
         const hotspotsToUse =
           dto.hotspots !== undefined
             ? dto.hotspots
-            : (activeRev.hotspots ?? []).map((h) => ({
+            : (currentRevision.hotspots ?? []).map((h) => ({
                 label: h.label,
                 body: h.body,
                 positionX: Number(h.positionX),
@@ -377,24 +384,24 @@ export class ExhibitsService {
           newRevision.hotspots = [];
         }
 
-        return toExhibitResponse(exhibit, newRevision);
+        return toExhibitResponse(currentExhibit, newRevision);
       }
 
       // Ngược lại (DRAFT hoặc REJECTED): Chỉnh sửa bản nháp hiện tại
-      activeRev.state = RevisionState.DRAFT;
-      activeRev.content = mergedContent;
-      Object.assign(activeRev, mediaPatch);
+      currentRevision.state = RevisionState.DRAFT;
+      currentRevision.content = mergedContent;
+      Object.assign(currentRevision, mediaPatch);
       // Relation đã nạp có thể là media cũ: bỏ để TypeORM ghi theo cột id vừa đổi.
       for (const slot of REVISION_MEDIA_SLOTS) {
-        if (mediaPatch[slot.column] !== undefined) delete (activeRev as Partial<ExhibitRevision>)[slot.relation];
+        if (mediaPatch[slot.column] !== undefined) delete (currentRevision as Partial<ExhibitRevision>)[slot.relation];
       }
 
       if (dto.hotspots !== undefined) {
-        await this.exhibits.deleteHotspotsByRevisionIds([activeRev.id], manager);
+        await this.exhibits.deleteHotspotsByRevisionIds([currentRevision.id], manager);
         if (dto.hotspots.length > 0) {
-          activeRev.hotspots = await this.exhibits.saveHotspots(
+          currentRevision.hotspots = await this.exhibits.saveHotspots(
             dto.hotspots.map((h, i) => ({
-              revisionId: activeRev.id,
+              revisionId: currentRevision.id,
               label: h.label,
               body: h.body,
               positionX: String(h.positionX ?? 0),
@@ -405,12 +412,12 @@ export class ExhibitsService {
             manager,
           );
         } else {
-          activeRev.hotspots = [];
+          currentRevision.hotspots = [];
         }
       }
 
-      const savedRev = await this.exhibits.saveRevision(activeRev, manager);
-      return toExhibitResponse(exhibit, savedRev);
+      const savedRev = await this.exhibits.saveRevision(currentRevision, manager);
+      return toExhibitResponse(currentExhibit, savedRev);
     });
   }
 
@@ -446,13 +453,20 @@ export class ExhibitsService {
       // §5.2: Submit Review phải đủ nội dung bắt buộc + media hợp lệ, trước khi đổi trạng thái.
       await this.publishGate.assertPublishable(activeRev, manager);
 
-      activeRev.state = RevisionState.IN_REVIEW;
-      await this.exhibits.saveRevision(activeRev, manager);
+      const currentExhibit = await this.exhibits.findForUpdate(id, manager);
+      if (!currentExhibit) throw new NotFoundException('Không tìm thấy hiện vật');
+      const currentRevision = await this.exhibits.findActiveRevision(id, manager);
+      if (!currentRevision || currentExhibit.version !== exhibit.version || currentRevision.id !== activeRev.id || currentRevision.state !== activeRev.state) {
+        throw new ConflictException('Trạng thái hiện vật vừa thay đổi. Vui lòng tải lại và thử lại.');
+      }
 
-      exhibit.version = (exhibit.version ?? 0) + 1;
-      await this.exhibits.save(exhibit, manager);
+      currentRevision.state = RevisionState.IN_REVIEW;
+      await this.exhibits.saveRevision(currentRevision, manager);
 
-      return toExhibitResponse(exhibit, activeRev);
+      currentExhibit.version = (currentExhibit.version ?? 0) + 1;
+      await this.exhibits.save(currentExhibit, manager);
+
+      return toExhibitResponse(currentExhibit, currentRevision);
     });
   }
 
@@ -468,24 +482,28 @@ export class ExhibitsService {
   async deleteExhibitDraft(
     id: string,
   ): Promise<{ success: boolean; message: string }> {
-    const exhibit = await this.exhibits.findAdminDetailById(id);
-    if (!exhibit || exhibit.isDeleted) {
-      throw new NotFoundException('Không tìm thấy hiện vật');
+    try {
+      await this.tx.run(async (manager) => {
+        const exhibit = await this.exhibits.findForUpdate(id, manager);
+        if (!exhibit || exhibit.isDeleted) throw new NotFoundException('Không tìm thấy hiện vật');
+        const revisions = await this.exhibits.findRevisionsForDeletion(id, manager);
+        if (exhibit.publishedRevisionId !== null || exhibit.visibility === ExhibitVisibility.VISIBLE || revisions.some(r => r.state === RevisionState.APPROVED)) {
+          throw new ConflictException('Hiện vật có lịch sử xuất bản hoặc phê duyệt nên không thể xóa vĩnh viễn. Có thể ẩn hiện vật đang công khai khỏi bảo tàng.');
+        }
+        if (revisions.some(r => r.state === RevisionState.IN_REVIEW)) {
+          throw new ConflictException('Hiện vật có phiên bản đang chờ kiểm duyệt, không thể xóa.');
+        }
+        if (await this.exhibits.hasReportReferences(id, revisions.map(r => r.id), manager)) {
+          throw new ConflictException('Hiện vật hoặc phiên bản có báo cáo liên quan nên không thể xóa vĩnh viễn.');
+        }
+        await this.exhibits.deleteCascadeDraft(id, manager);
+      });
+    } catch (error) {
+      if (this.exhibits.isReportReferenceConflict(error)) {
+        throw new ConflictException('Hiện vật hoặc phiên bản có báo cáo liên quan nên không thể xóa vĩnh viễn.');
+      }
+      throw error;
     }
-
-    // BR-20: Bảo vệ hiện vật đã xuất bản
-    if (
-      exhibit.publishedRevisionId !== null ||
-      exhibit.visibility === ExhibitVisibility.VISIBLE
-    ) {
-      throw new ConflictException(
-        'Không thể xóa hiện vật đã xuất bản. Vui lòng ẩn (Hide/Unpublish) hiện vật trước',
-      );
-    }
-
-    await this.tx.run(async (manager) => {
-      await this.exhibits.deleteCascadeDraft(id, manager);
-    });
 
     return {
       success: true,

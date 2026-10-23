@@ -201,6 +201,38 @@ describe('ModerationService.reject', () => {
 });
 
 describe('ModerationService.hide/unhide', () => {
+  for (const restore of ['unhide', 'publish'] as const) {
+    it(`hide → ${restore} clears the archive marker required by public exhibit and media queries`, async () => {
+      const exhibit = sampleExhibit({ publishedRevisionId: 'previous-published' });
+      exhibit.archivedAt = null;
+      const revision = sampleRevision({ exhibit });
+      const manager = {
+        update: async (target: unknown, where: { version?: number }, patch: Record<string, unknown>) => {
+          if (target === Exhibit) {
+            if (where.version !== exhibit.version) return { affected: 0 };
+            Object.assign(exhibit, patch, { version: exhibit.version + 1 });
+          } else {
+            assert.equal(target, ExhibitRevision);
+            Object.assign(revision, patch);
+          }
+          return { affected: 1 };
+        },
+      } as unknown as EntityManager;
+      const tx = { run: async (work: (m: EntityManager) => unknown) => work(manager) } as TransactionManager;
+      const svc = new ModerationService(fakeRepo({ exhibit, revision }), tx, passGate);
+      await svc.hide(exhibit.id, { version: 3 });
+      assert.equal(exhibit.visibility, ExhibitVisibility.HIDDEN);
+      assert.notEqual(exhibit.archivedAt, null);
+      if (restore === 'publish') await svc.publish(revision.id, { version: 4 }, ACTOR);
+      else await svc.unhide(exhibit.id, { version: 4 });
+      assert.equal(exhibit.visibility, ExhibitVisibility.VISIBLE);
+      assert.equal(exhibit.archivedAt, null);
+      assert.equal(exhibit.version, 5);
+      assert.equal(exhibit.publishedRevisionId, restore === 'publish' ? revision.id : 'previous-published');
+      if (restore === 'publish') assert.equal(revision.state, RevisionState.APPROVED);
+    });
+  }
+
   it('ném 404 khi không có hiện vật', async () => {
     const svc = new ModerationService(fakeRepo({ exhibit: null }), fakeTx([]), passGate);
     await assert.rejects(() => svc.hide('e', { version: 3 }), NotFoundException);

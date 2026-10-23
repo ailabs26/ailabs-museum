@@ -21,7 +21,7 @@ Frontend của bảo tàng WebXR, dùng React, TypeScript và Vite. Three.js đ�
 
 ## Trạng thái hiện tại
 
-Ứng dụng đã có router public/admin và các màn hình quản trị. Tour chạy tại `/tour` hoặc `/tour.html`: tải phòng và hiện vật đã xuất bản từ NestJS API, catalogue DOM, GLB/placeholder, hotspots, chi tiết và scene R3F render theo nhu cầu. Một controller quản lý đi bộ desktop/touch và focus hiện vật; không có orbit controller chạy song song. Collision dùng shell phòng đang render và proxy bảo thủ của bệ/hiện vật; mọi phòng hiện dùng cùng shell 14 × 16 × 5 m vì API chưa có kích thước phòng. Audio/WebXR chưa được triển khai. Một số file museum khác vẫn là scaffold; không dùng file rỗng làm convention.
+Ứng dụng đã có router public/admin và các màn hình quản trị. Tour chạy tại `/tour` hoặc `/tour.html`: tải phòng và hiện vật đã xuất bản từ NestJS API, catalogue DOM, GLB/placeholder, hotspots, chi tiết và scene R3F render theo nhu cầu. Một controller quản lý đi bộ desktop/touch và focus hiện vật; không có orbit controller chạy song song. Collision dùng shell phòng đang render và proxy bảo thủ của bệ/hiện vật; mọi phòng hiện dùng cùng shell 14 × 16 × 5 m vì API chưa có kích thước phòng. Ảnh/audio đã nối vào các view public; WebXR và giới hạn thiết bị được mô tả ở cuối README. Một số file museum khác vẫn là scaffold; không dùng file rỗng làm convention.
 
 Quy tắc đặt tên nằm tại [docs/coding-conventions.md](docs/coding-conventions.md). Thành viên và AI agent phải đọc tài liệu đó trước khi thêm code mới.
 
@@ -84,7 +84,7 @@ Live test chạy frontend trên `http://localhost:5173` để khớp CORS local 
 
 - `ExhibitPreview` dựng hình bằng DOM/CSS từ shape/color API, dùng ở collection, featured, catalogue tour và panel. Caption **Hình minh họa thay thế** / **Chưa có ảnh** phân biệt rõ với ảnh hiện vật thật.
 - Hình không cần WebGL/Canvas hoặc file ảnh; không seed/upload thêm. Renderer Three.js vẫn dựng khối 3D riêng từ cùng dữ liệu. API box và mapper cube hiển thị cùng minh họa hộp.
-- API/schema hiện vẫn media null. Khi có ảnh thật cần media public contract, cập nhật schema/mapper và component preview để render ảnh/lỗi tải; lượt này chưa thêm image loader speculative.
+- `shared/components/media/ExhibitImage` hiển thị URL ảnh API ở home/collection/detail/catalogue/panel; thiếu ảnh hoặc tải lỗi dùng `ExhibitPreview`. URL mới sau lỗi được thử lại; không đoán URL Storage.
 - Focused tests: `npm.cmd test -- exhibit-preview.spec.ts collection.spec.ts home-featured.spec.ts museum-interaction.spec.ts museum-font.spec.ts`. API thật: bật `MUSEUM_LIVE_TEST=1`, chạy `npm.cmd test -- exhibit-preview-live.spec.ts`, rồi bỏ biến; không mock/DB writes.
 - Fixtures nội dung public dùng 401 cho `/auth/me` và `/auth/refresh`, theo bản sửa khôi phục phiên ẩn danh của Day 4. Regression kiểm tra query public không bị khởi động lại khi bootstrap ẩn danh thất bại; live test chạy luồng thực tế riêng.
 - Task/plan: [shared-exhibit-preview.md](../docs/tasks/shared-exhibit-preview.md), [shared-exhibit-preview-plan.md](../docs/plans/shared-exhibit-preview-plan.md).
@@ -101,7 +101,7 @@ Live test chạy frontend trên `http://localhost:5173` để khớp CORS local 
 
 - Mở `/collection` hoặc `/collection?room=<slug>`. Chọn phòng để đọc tên/mô tả hiện vật đã xuất bản qua cùng API public của tour.
 - Lựa chọn được giữ trong URL; liên kết **Tham quan phòng này trong 3D** mở tour đúng phòng. Trang collection không tải scene hoặc Canvas.
-- API chưa trả ảnh: thẻ hiển thị **Chưa có ảnh**, không đoán URL storage hoặc tạo ảnh giả. Danh sách, số lượng và thứ tự lấy từ API, không giới hạn cứng 5.
+- Thẻ hiển thị ảnh API và alt text tiếng Việt; thiếu/lỗi ảnh hiển thị **Chưa có ảnh**. Danh sách, số lượng và thứ tự lấy từ API, không giới hạn cứng 5.
 - Đang tải, không có phòng/hiện vật, lỗi/schema không hợp lệ và retry có trạng thái riêng; **Làm mới** cập nhật nội dung. API lỗi không được thay bằng mẫu.
 - Focused tests: `npm.cmd test -- collection.spec.ts public-tour-navigation.spec.ts`. API thật (cần backend đang chạy và dữ liệu seed): đặt `MUSEUM_LIVE_TEST=1`, chạy `npm.cmd test -- collection-live.spec.ts`, rồi bỏ biến môi trường. Live collection test không mock hoặc ghi database, yêu cầu phòng lịch sử quân sự và 5 hiện vật mẫu đã seed.
 - Task/plan: [client-collection.md](../docs/tasks/client-collection.md), [client-collection-plan.md](../docs/plans/client-collection-plan.md).
@@ -109,7 +109,7 @@ Live test chạy frontend trên `http://localhost:5173` để khớp CORS local 
 ## Chi tiết hiện vật 2D
 
 - Thẻ collection và hiện vật nổi bật có **Xem chi tiết**, mở `/collection/:roomSlug/exhibits/:exhibitId`. URL mở trực tiếp/reload được, đọc hiện vật public trong chi tiết phòng API hiện có, không gọi endpoint admin.
-- Trang DOM hiển thị tên/phòng, minh họa CSS, mô tả đầy đủ và transcript/điểm chú ý nếu có. Hotspots sắp xếp displayOrder/ID; nội dung render text, không chèn HTML. Không có ảnh/model/audio thật thì không dựng player hoặc đoán URL.
+- Trang DOM hiển thị tên/phòng, ảnh API hoặc minh họa CSS, mô tả và transcript/điểm chú ý nếu có. Hotspots sắp xếp displayOrder/ID; nội dung render text, không chèn HTML. Player dùng audio vi của API; thiếu nguồn hiện trạng thái không có audio và nút disabled, không đoán URL.
 - Link **Quay lại bộ sưu tập của phòng này** giữ slug; URL sai/phòng không công khai/ID không thuộc phòng có thông báo riêng. HTTP/schema lỗi có **Thử lại**, không dùng dữ liệu mẫu/cache lỗi thời thay lỗi.
 - Heading nhận focus khi chuyển route hoặc trạng thái lỗi/phục hồi; background refetch thành công không giành focus khỏi link người dùng. Không cần WebGL và không tải scene/Canvas.
 - Tests: `npm.cmd test -- exhibit-detail.spec.ts`. Live read-only: bật `MUSEUM_LIVE_TEST=1`, chạy `npm.cmd test -- exhibit-detail-live.spec.ts`, rồi bỏ biến. Live rỗng được annotate, không tự seed; rich transcript/hotspots được chứng minh bằng fixture nếu API thật chưa có nội dung đó.
@@ -124,14 +124,17 @@ Live test chạy frontend trên `http://localhost:5173` để khớp CORS local 
 - Tests fallback: `npm.cmd test -- tour-2d-fallback.spec.ts`. Live read-only khi backend đang chạy: bật `MUSEUM_LIVE_TEST=1`, chạy `npm.cmd test -- tour-2d-fallback-live.spec.ts`, rồi bỏ biến. Không seed hoặc ghi database.
 - Nếu fallback chuyển vào collection với state từ tour, trang collection chỉ đưa focus tới h1 khi navigation state báo từ fallback; refetch nền không giành focus.
 
-## Audio Player cơ bản
+## Audio guide qua API
 
-- `AudioPlayer` là reusable component tại `src/shared/components/media/AudioPlayer.tsx`, nhận `src?: string | null` và `label?: string`; component chỉ dùng `HTMLAudioElement`, không gọi API/backend và chưa tích hợp vào trang chi tiết hiện vật.
+- `AudioPlayer` tại `src/shared/components/media/AudioPlayer.tsx` nhận `src`, `label`, `subtitleUrl?`, `locale?: 'vi' | 'en'`. Trang chi tiết 2D/panel tour truyền URL audio/subtitle từ API đã validate. Public hiện chọn vi, thiếu vi không phát en; preview CMS theo locale đang chọn.
 - Component hỗ trợ Phát, Tạm dừng và Tiếp tục trên cùng native audio element; Resume giữ vị trí hiện tại. Nguồn rỗng/thiếu bị disabled, lỗi phát có thông báo và retry thủ công, kết thúc cho phép phát lại.
 - UI dùng Mantine/theme hiện có, có trạng thái live cho screen reader, keyboard focus và target điều khiển tối thiểu 44px. Đổi nguồn hoặc unmount sẽ pause, tháo source và dọn tải nguồn cũ.
-- Chưa có tua, thời lượng, âm lượng, playlist hoặc playback manager. Các tính năng này có thể bổ sung trên native element hiện tại mà không đổi cách consumer truyền `src`.
-- Browser fixture standalone tại `tests/fixtures/audio-player.html` tạo WAV trong test, không phải audio asset sản phẩm. Chạy focused test từ `front-end/` bằng `npm.cmd test -- audio-player.spec.ts`; không cần backend.
+- Có timeline **Tua âm thanh**, thời gian hiện tại/tổng thời lượng (`mm:ss`, từ một giờ dùng `hh:mm:ss`), **Dừng** về đầu, thanh **Âm lượng** gọn và bật/tắt WebVTT qua TextTrack. Giữ `preload="none"`: trước khi Phát hoặc chưa có metadata hợp lệ, hiện `00:00 / --:--` và khóa tua; không tải audio chỉ để lấy duration. Tua bằng click/kéo hoặc Arrow/Home/End, bước 1 giây; tua khi paused/đã kết thúc không tự phát, khi đang phát giữ playback. Server/browser phải hỗ trợ seek; UI đọc lại vị trí native, không giả lập tiến trình.
+- Dừng giữ duration đã tải và xóa cue; tua khi paused đồng bộ cue mới. Header/trạng thái → timeline → nhóm Phát/Dừng và âm lượng → phụ đề, tự wrap trong panel hẹp; cue trống không tạo hộp rỗng. Hai slider có tên riêng, thời gian không phải live region; theme sáng/tối giữ chữ thời gian/trạng thái đủ tương phản cả trong panel tour/CMS.
+- Transcript luôn đọc được khi playback/phụ đề lỗi. Không autoplay, không tải audio trên mỗi thẻ catalogue; chỉ một guide player phát trong cùng document. Đổi item/phòng/route/locale hoặc đóng panel dừng nguồn cũ; tháo riêng Canvas không cắt audio của panel còn mở. Chưa có playlist/spatial audio/headset captions.
+- Browser fixture standalone tại `tests/fixtures/audio-player.html` tạo WAV/Range response trong test, không phải audio asset sản phẩm. Focused tests từ `front-end/`: `npm.cmd test -- audio-player.spec.ts audio-player-layout.spec.ts public-audio.spec.ts public-image-audio.spec.ts`; không cần backend. Live opt-in phía dưới kiểm cả tua native khi paused rồi Resume với API thật, chỉ đọc.
 - Task/plan: [audio-player-01.md](../docs/tasks/audio-player-01.md), [audio-player-01-plan.md](../docs/plans/audio-player-01-plan.md).
+- Seek/layout và evidence mới: [audio-player-seek-ui.md](../docs/tasks/audio-player-seek-ui.md), [audio-player-seek-ui-plan.md](../docs/plans/audio-player-seek-ui-plan.md).
 
 Ví dụ dùng component trong một page đã có URL audio hợp lệ:
 
@@ -141,7 +144,9 @@ import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
 <AudioPlayer src="/audio/exhibit-01.mp3" label="Bản thuyết minh hiện vật" />
 ```
 
-Với file local có quyền sử dụng, đặt file trong `front-end/public/audio/` rồi truyền URL root-relative như `/audio/exhibit-01.mp3`. Fixture Playwright tạo WAV trong test và không phải asset sản phẩm.
+Ví dụ trên minh họa component standalone. Luồng sản phẩm truyền `audio.vi.audio.url` và `audio.vi.subtitle.url` từ API public, không đặt asset thay thế trong `public/`. Fixture Playwright tạo WAV trong test và không phải asset sản phẩm.
+
+Kế hoạch/task tích hợp: [public-image-audio-plan.md](../docs/plans/public-image-audio-plan.md), [public-image-audio.md](../docs/tasks/public-image-audio.md). `public-image-audio.spec.ts` kiểm ảnh, `public-audio.spec.ts` kiểm API fixture + native playback/captions/lifecycle; live opt-in: `MUSEUM_LIVE_TEST=1 PLAYWRIGHT_PREVIEW=1 npm test -- public-image-audio-live.spec.ts` (PowerShell đặt env như hướng dẫn ở trên). Live chỉ đọc, không upload/seed/publish. Xác nhận mới nhất ngày 23/10/2026: URL ảnh/MP3/VTT thật đều trả **HTTP 200**, live test **1/1 passed** (không skip), ảnh decode, playback và phụ đề hoạt động; người dùng đã kiểm thử và xác nhận OK. Chi tiết lịch sử kiểm chứng nằm ở task, không còn blocker media live ở lần xác nhận này.
 
 ## Tham quan Day 1–4
 
@@ -167,7 +172,7 @@ Kiểm chứng: `npm.cmd run test:unit`, `npm.cmd test -- museum-hotspots.spec.t
 - Scene lỗi hoặc mất context vẫn giữ catalogue DOM. Sau lỗi tải chunk, tải lại trang nếu muốn thử tải module lại.
 - `GET /api/rooms` là array không phân trang; `GET /api/rooms/:slug` trả chi tiết kèm `exhibits`. `museum.service.ts` dùng Axios client chung và Zod kiểm tra envelope/payload/identity; `useMuseumRooms` dùng React Query + AbortSignal. Chỉ tải phòng đang chọn, cache theo ID/slug; không preload phòng/asset khác hoặc thay lỗi API bằng mẫu.
 - Vị trí backend giữ nguyên; thiếu toàn bộ tọa độ dùng layout xác định theo displayOrder + ID. Hiện vật nằm ngoài shell giữ thông tin trong DOM, có thông báo riêng và không dựng geometry ngoài phòng. Tọa độ sai/thiếu một phần bị từ chối.
-- Media public hiện luôn `model/image/audio: null`. Không tự dựng URL từ storageKey hoặc coi hình khối thay thế là model thật. Phòng/danh sách rỗng, lỗi, phòng không hợp lệ và chuyển phòng đều có trạng thái riêng; nội dung phòng cũ không xuất hiện sau lỗi/chuyển chọn.
+- Media public có thể là descriptor hoặc null theo nội dung đã xuất bản. URL ảnh/audio/VTT do NestJS trả, model giữ tuyến API GLB hiện có. Phòng/danh sách rỗng, lỗi, phòng không hợp lệ và chuyển phòng đều có trạng thái riêng; nội dung phòng cũ không xuất hiện sau lỗi/chuyển chọn.
 
 Tiến độ, lịch sử commit và giới hạn: [museum-tour-progress.md](../docs/museum-tour-progress.md).
 

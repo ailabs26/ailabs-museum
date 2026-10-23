@@ -1,11 +1,12 @@
 import { http } from '@/core/api/http-client';
 import type { Page } from '@/core/api/api-response';
+import type { BilingualText } from './exhibits.service';
 
 export interface RevisionContent {
-  name: string;
-  description: string;
+  name: string | BilingualText | null;
+  description: string | BilingualText | null;
   position: { x: number; y: number; z: number };
-  transcript?: string | null;
+  transcript?: string | BilingualText | null;
   placeholderShape?: string;
   placeholderColor?: string;
 }
@@ -79,10 +80,18 @@ export const moderationService = {
   reject(id: string, version: number, reason: string): Promise<Revision> {
     return http.post<Revision>(`/revisions/${id}/reject`, { version, reason });
   },
-  hide(exhibitId: string, version: number): Promise<ExhibitBrief> {
-    return http.post<ExhibitBrief>(`/exhibits/${exhibitId}/hide`, { version });
+  hide(exhibitId: string, version: number, reason?: string): Promise<ExhibitBrief> {
+    const trimmed = reason?.trim();
+    return http.post<ExhibitBrief>(
+      `/exhibits/${exhibitId}/hide`,
+      trimmed ? { version, reason: trimmed } : { version },
+    );
   },
-  unhide(exhibitId: string, version: number): Promise<ExhibitBrief> {
-    return http.post<ExhibitBrief>(`/exhibits/${exhibitId}/unhide`, { version });
+  unhide(exhibitId: string, version: number, reason?: string): Promise<ExhibitBrief> {
+    const trimmed = reason?.trim();
+    return http.post<ExhibitBrief>(
+      `/exhibits/${exhibitId}/unhide`,
+      trimmed ? { version, reason: trimmed } : { version },
+    );
   },
 };

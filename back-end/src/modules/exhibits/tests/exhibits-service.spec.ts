@@ -244,6 +244,17 @@ class MockExhibitsRepository {
     return this.findAdminDetailResult;
   }
 
+  async findForUpdate(): Promise<Exhibit | null> {
+    return this.findAdminDetailResult;
+  }
+
+  async findRevisionsForDeletion(): Promise<ExhibitRevision[]> {
+    return this.findAdminDetailResult?.revisions ?? [];
+  }
+
+  async hasReportReferences(): Promise<boolean> { return false; }
+  isReportReferenceConflict(): boolean { return false; }
+
   async findRevisionsByExhibitId(): Promise<ExhibitRevision[]> {
     return this.findRevisionsResult;
   }
@@ -1408,12 +1419,12 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       );
     });
 
-    it('TC-S095: deleteExhibitDraft error message guides user to hide/unpublish first', async () => {
+    it('TC-S095: deleteExhibitDraft explains that hiding does not unlock permanent deletion', async () => {
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit({ publishedRevisionId: REV_ID_1 });
       await assert.rejects(
         () => service.deleteExhibitDraft(EXHIBIT_ID_1),
-        (err: Error) => err instanceof ConflictException && err.message.includes('ẩn (Hide/Unpublish)'),
+        (err: Error) => err instanceof ConflictException && err.message.includes('không thể xóa vĩnh viễn'),
       );
     });
 

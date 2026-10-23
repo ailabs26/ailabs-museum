@@ -42,6 +42,27 @@ function detail(overrides: Partial<ExhibitDetail['content']> = {}, extra: Partia
 const model = { id: 'm-1', sizeBytes: 3562172, checksumSha256: 'a'.repeat(64) } as MediaItem;
 
 describe('toDraftDisplay', () => {
+  it('maps signed audio and subtitle slots only for the chosen locale', () => {
+    const input = detail({}, { media: {
+      audioVi: { id: 'vi', url: 'https://api/media/vi.mp3?sig=1', mimeType: 'audio/mpeg', sizeBytes: 10 },
+      subtitleVi: { id: 'sub', url: 'https://api/media/vi.vtt?sig=2', mimeType: 'text/vtt', sizeBytes: 10 },
+    } as unknown as ExhibitDetail['media'] });
+    expect(toDraftDisplay(input, null, 'vi').audio?.audio.url).toBe('https://api/media/vi.mp3?sig=1');
+    expect(toDraftDisplay(input, null, 'vi').audio?.subtitle?.url).toBe('https://api/media/vi.vtt?sig=2');
+    expect(toDraftDisplay(input, null, 'en').audio).toBeNull();
+    expect(input.media?.audioVi?.url).toBe('https://api/media/vi.mp3?sig=1');
+  });
+  it('selects English audio and transcript without mutating Vietnamese media', () => {
+    const input = detail({ transcript: { vi: 'Lời Việt', en: 'English narration' } }, { media: {
+      audioVi: { id: 'vi', url: 'https://api/media/vi.mp3?sig=1', mimeType: 'audio/mpeg', sizeBytes: 10 },
+      audioEn: { id: 'en', url: 'https://api/media/en.mp3?sig=2', mimeType: 'audio/mpeg', sizeBytes: 10 },
+    } as unknown as ExhibitDetail['media'] });
+    expect(toDraftDisplay(input, null, 'en')).toMatchObject({
+      audioLocale: 'en', transcript: 'English narration',
+      audio: { audio: { url: 'https://api/media/en.mp3?sig=2' }, subtitle: null, transcript: 'English narration' },
+    });
+    expect(toDraftDisplay(input, null, 'vi').audio?.audio.url).toBe('https://api/media/vi.mp3?sig=1');
+  });
   it('maps the draft content in the chosen language with hotspots in display order', () => {
     const display = toDraftDisplay(detail(), null, 'vi');
     expect(display).toMatchObject({

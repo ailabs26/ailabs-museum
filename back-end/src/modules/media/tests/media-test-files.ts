@@ -1,4 +1,5 @@
-import { crc32, deflateSync } from 'node:zlib';
+import { deflateSync } from 'node:zlib';
+import { crc32 } from '../inspection/crc32';
 
 /**
  * Dựng file mẫu hợp lệ (và biến thể hỏng) bằng code cho test media — không commit file nhị phân.

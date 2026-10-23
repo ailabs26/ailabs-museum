@@ -63,6 +63,12 @@ export function toDraftDisplay(detail: ExhibitDetail, model: MediaItem | null, l
   const { content } = detail;
   const missing = locale === 'vi' ? '(Chưa có tiếng Việt)' : '(No English text yet)';
   const image = detail.media?.image;
+  const audio = detail.media?.[locale === 'vi' ? 'audioVi' : 'audioEn'];
+  const subtitle = detail.media?.[locale === 'vi' ? 'subtitleVi' : 'subtitleEn'];
+  const mediaDto = (media: NonNullable<typeof audio>) => ({
+    id: media.id, url: media.url!, mimeType: media.mimeType, sizeBytes: media.sizeBytes,
+    rights: { source: media.source, author: media.author, license: media.license },
+  });
   const position = content.position ?? { x: 0, y: 0, z: 0 };
   const display: MuseumDisplay = {
     id: detail.id,
@@ -70,6 +76,9 @@ export function toDraftDisplay(detail: ExhibitDetail, model: MediaItem | null, l
     title: pick(content.name, locale) || missing,
     description: pick(content.description, locale),
     transcript: pick(content.transcript, locale) || null,
+    audio: audio?.url ? { audio: mediaDto(audio), subtitle: subtitle?.url ? mediaDto(subtitle) : null,
+      transcript: pick(content.transcript, locale) || null } : null,
+    audioLocale: locale,
     ...(image?.url ? { image: { url: image.url, alt: pick(content.altText, locale) || missing } } : {}),
     hotspots: [...detail.hotspots]
       .sort((a, b) => a.displayOrder - b.displayOrder)

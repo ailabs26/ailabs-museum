@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { StrictMode, useState } from 'react';
+import '@mantine/core/styles.css';
 import { createRoot } from 'react-dom/client';
 import { Button, MantineProvider, Stack } from '@mantine/core';
 import { theme } from '@/app/theme';
@@ -13,9 +14,10 @@ function AudioPlayerFixture() {
   const [isMounted, setIsMounted] = useState(true);
   const [showSecond, setShowSecond] = useState(false);
   const [useLongLabel, setUseLongLabel] = useState(false);
+  const [subtitleUrl, setSubtitleUrl] = useState<string | null>(null);
 
   return (
-    <MantineProvider theme={theme} defaultColorScheme="light">
+    <MantineProvider theme={theme} defaultColorScheme="auto">
       <Stack p="md" maw={520}>
         <Stack gap="xs" aria-label="Fixture controls">
           <Button data-testid="load-source" onClick={() => setSrc(AUDIO_SRC)}>Nạp nguồn audio</Button>
@@ -25,12 +27,13 @@ function AudioPlayerFixture() {
           <Button data-testid="unmount-player" variant="default" onClick={() => setIsMounted(false)}>Tháo audio player</Button>
           <Button data-testid="show-second-player" variant="default" onClick={() => setShowSecond(true)}>Thêm player thứ hai</Button>
           <Button data-testid="long-label" variant="default" onClick={() => setUseLongLabel(true)}>Dùng nhãn dài</Button>
+          <Button data-testid="load-caption-source" onClick={() => { setSrc(AUDIO_SRC); setSubtitleUrl('/guide.vtt'); }}>Nạp phụ đề</Button>
         </Stack>
-        {isMounted && <AudioPlayer src={src} label={useLongLabel ? 'Bản thuyết minh audio của hiện vật trong phòng trưng bày Aura Museum' : 'Bản thuyết minh mẫu'} />}
+        {isMounted && <AudioPlayer src={src} subtitleUrl={subtitleUrl} label={useLongLabel ? 'Bản thuyết minh audio của hiện vật trong phòng trưng bày Aura Museum' : 'Bản thuyết minh mẫu'} />}
         {showSecond && <AudioPlayer src={src} label="Audio player thứ hai" />}
       </Stack>
     </MantineProvider>
   );
 }
 
-createRoot(document.getElementById('root')!).render(<AudioPlayerFixture />);
+createRoot(document.getElementById('root')!).render(<StrictMode><AudioPlayerFixture /></StrictMode>);
