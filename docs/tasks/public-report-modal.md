@@ -14,7 +14,7 @@ Khách có thể báo cáo nội dung chưa chính xác hoặc không phù hợp
 
 - `category`: select bắt buộc với bốn lựa chọn cố định; không cho nhập tự do.
 - `message`: textarea bắt buộc, nội dung tự do; trim hai đầu, giới hạn 2000 ký tự.
-- Bốn nhãn tạm đề xuất:
+- Bốn category cố định đã duyệt:
   1. **Sai thông tin** (`wrong_info`)
   2. **Lỗi chính tả** (`typo`)
   3. **Ảnh/nội dung không phù hợp** (`inappropriate_content`)
@@ -44,14 +44,14 @@ Khách có thể báo cáo nội dung chưa chính xác hoặc không phù hợp
 
 ## 4. Acceptance criteria
 
-- [ ] Modal được mở từ collection, chi tiết 2D và tour, luôn gắn đúng exhibit.
-- [ ] Chỉ gửi một trong bốn category cố định; request tự do từ client khác bị backend từ chối.
-- [ ] Message rỗng sau trim hoặc dài quá giới hạn không được gửi; message hợp lệ được giữ nguyên nội dung bên trong.
-- [ ] Payload chứa đúng published revision ID đang hiển thị; API từ chối revision thuộc exhibit khác.
-- [ ] Trạng thái pending ngăn gửi lặp và thể hiện rõ đang xử lý.
-- [ ] Thành công đóng/reset form; lỗi giữ dữ liệu và cho phép thử lại.
-- [ ] CMS draft preview không vô tình hiện nút báo cáo public.
-- [ ] Không thay đổi database schema; không thay đổi `@Public()`/rate limit ngoài yêu cầu.
+- [x] Modal được mở từ collection, chi tiết 2D và tour, luôn gắn đúng exhibit.
+- [x] Chỉ gửi một trong bốn category cố định; request tự do từ client khác bị backend từ chối.
+- [x] Message rỗng sau trim hoặc dài quá giới hạn không được gửi; message hợp lệ được giữ nguyên nội dung bên trong.
+- [x] Payload chứa đúng published revision ID đang hiển thị; API từ chối revision thuộc exhibit khác.
+- [x] Trạng thái pending ngăn gửi lặp và thể hiện rõ đang xử lý.
+- [x] Thành công đóng/reset form; lỗi giữ dữ liệu và cho phép thử lại.
+- [x] CMS draft preview không vô tình hiện nút báo cáo public.
+- [x] Không thay đổi database schema; không thay đổi `@Public()`/rate limit ngoài yêu cầu.
 
 ## 5. Task breakdown
 
@@ -69,5 +69,6 @@ Khách có thể báo cáo nội dung chưa chính xác hoặc không phù hợp
 - [x] Người dùng review/duyệt PLAN/TASK và bốn nhãn category.
 - [x] Task 1: API allowlist, revision ownership/approved-state check, public revision ID; backend reports 15/15, mapper 14/14, FE typecheck và room contract 8/8.
 - [x] Task 2: modal dùng chung và ba điểm vào; browser spec **3/3**, frontend unit **147/147**, typecheck/build và ESLint các file đổi đều pass.
-- [ ] Task 3: chạy backend full tests/lint/build, review toàn branch, cập nhật final evidence.
-- [ ] Ghi final evidence và phần còn thiếu sau khi hoàn tất Task 2.
+- [x] Task 3: backend full tests **1,612/1,612**, lint, typecheck, build đạt; frontend typecheck, unit **147/147**, room contract **8/8**, browser **3/3**, build và targeted lint đạt.
+- Frontend full lint còn **37 lỗi nền** tại `scripts/e2e-cms-workflow.mjs`, `tests/fixtures/cmsExhibitsApi.ts`, `tests/fixtures/cmsReportsWorkflowApi.ts`; các file này không thuộc diff. Backend integration test cần PostgreSQL thật bị skip do thiếu `MEDIA_TEST_DATABASE_URL`.
+- `git diff --check` sạch. Không tạo migration hoặc sửa schema. Chưa push/PR.

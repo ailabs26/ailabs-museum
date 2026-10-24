@@ -70,8 +70,8 @@ Các đường dẫn controller/DTO chính xác và mọi caller liên quan sẽ
 
 ### Task 3 — Hoàn tất và bàn giao
 
-- [ ] Kiểm chứng các acceptance criteria trong TASK và chạy gates của hai app bị ảnh hưởng theo AGENTS.md.
-- [ ] Review toàn diff, cập nhật ledger; chưa push/PR/merge nếu chưa có yêu cầu tiếp theo.
+- [x] Kiểm chứng acceptance criteria và chạy gates backend/frontend theo AGENTS.md.
+- [x] Review diff, cập nhật ledger; chưa push/PR/merge.
 
 ## Execution ledger
 
@@ -80,3 +80,4 @@ Các đường dẫn controller/DTO chính xác và mọi caller liên quan sẽ
 - Task 0: commit `3dbdd7a` — `docs(report): add public report plan`.
 - Task 1: backend typecheck đạt; content-reports tests **15/15**, public exhibit mapper **14/14**, frontend typecheck đạt, room contract **8/8**. Không migration/database changes.
 - Task 2: commit sau khi browser spec **3/3**, unit **147/147**, typecheck, build và ESLint trên mọi file frontend đã đổi đều đạt. Lint toàn app còn 37 lỗi ở ba file không thuộc diff; details ở task ledger.
+- Task 3: backend full tests **1,612/1,612**, lint, typecheck và build đạt; frontend typecheck, unit **147/147**, room contract **8/8**, browser **3/3**, build và lint trên file đổi đạt. Frontend lint toàn app vẫn báo 37 lỗi ở ba file không đổi. `git diff --check` sạch; không có thay đổi database. Chưa push/PR.
