@@ -5,7 +5,7 @@
 - **Ngày chạy:** 24/10/2026
 - **Nhánh:** `test/phase2-core-db-safety`
 - **Công cụ:** `back-end/tools/db/backup-restore-drill.sh`, `back-end/tools/db/check-db-config.sh`
-- **Kết luận:** quy trình backup logic → khôi phục **đạt** trên môi trường diễn tập (khôi phục đầy đủ, RTO đo được 10–14 giây). **Chưa đạt** ở môi trường thật vì chưa có backup định kỳ, nên RPO hiện chưa có giới hạn (xem §5). Kiểm cấu hình DB Supabase thấy quyền thừa của `anon`/`authenticated` và RLS tắt, nhưng **Data API đã tắt** nên hiện không khai thác được (§4.3).
+- **Kết luận:** quy trình backup logic → khôi phục **đạt** trên môi trường diễn tập (khôi phục đầy đủ, RTO đo được 10–14 giây). Ở môi trường thật, backup định kỳ hằng ngày đã được lập lịch từ 24/10/2026 (RPO ≤ 24 giờ khi máy chạy backup đang bật; xem §5 #1). Kiểm cấu hình DB Supabase thấy quyền thừa của `anon`/`authenticated` và RLS tắt, nhưng **Data API đã tắt** nên hiện không khai thác được (§4.3).
 
 ## 1. Mục tiêu RPO/RTO
 
@@ -66,7 +66,7 @@ RTO được tính từ lúc xảy ra sự cố tới lúc xác minh xong, khôn
 | DB-06 | Phát hiện dữ liệu khôi phục bị sai lệch (kiểm thử âm) | **ĐẠT** — sửa 1 dòng `exhibit_revisions` thì vân tay lệch đúng bảng đó |
 | DB-07 | File backup hỏng/bị cắt cụt không được khôi phục âm thầm | **ĐẠT** — sha256 khác bản gốc; `pg_restore` dừng với lỗi `could not read from input file` (exit 1) |
 | DB-08 | RTO ≤ 1 giờ | **ĐẠT** ở môi trường diễn tập (13,86 s với 150 MB). Ở môi trường thật cần cộng thời gian tải file và tạo project/đổi `DATABASE_URL` (§5) |
-| DB-09 | RPO ≤ 24 giờ | **CHƯA ĐẠT ở môi trường thật**: chưa có backup định kỳ (§5, phát hiện #1) |
+| DB-09 | RPO ≤ 24 giờ | **ĐẠT có điều kiện**: backup hằng ngày bằng `tools/db/backup.sh` (§5 #1); phụ thuộc máy chạy timer đang bật, và bản backup chưa được sao ra ngoài máy đó |
 
 Ghi chú: lần chạy đầu, vân tay ràng buộc bị báo lệch dù dữ liệu khớp. Nguyên nhân: PostgreSQL in lại CHECK dạng `x IN (...)` theo văn bản khác sau dump/restore, nhưng ngữ nghĩa không đổi. Script đã chuẩn hóa định nghĩa trước khi băm; đã đối chiếu từng ràng buộc để xác nhận đây không phải sai lệch thật.
 
@@ -126,9 +126,9 @@ Cách sửa an toàn cho back-end: role `postgres` của API là chủ của c�
 
 | # | Mức | Phát hiện | Đề xuất |
 |---|---|---|---|
-| 1 | **Cao** | Chưa có backup định kỳ. Gói Supabase đang dùng không có PITR (`docs/supabase/07` §3); hiện chỉ có `pg_dump` thủ công trước thao tác lớn → RPO thực tế = thời gian kể từ lần dump tay gần nhất, không có giới hạn. | Lập lịch `pg_dump -Fc` hằng ngày (cron trên VPS hoặc GitHub Actions có secret `DATABASE_URL`), lưu kèm sha256, giữ ≥ 7 bản, lưu ngoài Supabase và mã hóa (vd `age`/`gpg`). Mỗi tháng chạy `backup-restore-drill.sh`, hoặc restore bản mới nhất vào container tạm rồi chạy `check-db-config.sh` + integration test. |
+| 1 | Trung bình (đã xử lý một phần) | Trước 24/10/2026 chưa có backup định kỳ (gói Supabase không có PITR). **Đã làm:** `tools/db/backup.sh` (pg_dump -Fc, kiểm TOC, sha256, giữ 14 ngày, file 600) chạy hằng ngày 12:30 bằng systemd user timer `aura-db-backup.timer` (`Persistent=true`: máy tắt lúc đến giờ thì chạy bù khi đăng nhập). Bản đầu tiên đã kiểm khôi phục được (6 user, 816 session, 3 migration). | **Còn lại:** (a) timer chỉ chạy trên máy của Thắng và chỉ khi đã đăng nhập (Linger=no) → nên chuyển sang VPS/GitHub Actions khi có chỗ chạy; (b) sao bản backup ra ngoài máy (USB/cloud riêng), mã hóa (`age`/`gpg`) vì chứa hash mật khẩu; (c) mỗi tháng chạy `backup-restore-drill.sh` hoặc restore bản mới nhất vào container tạm. |
 | 2 | Thấp (đang được chặn) | 14 bảng `public` cấp SELECT/INSERT/DELETE cho `anon`/`authenticated`, RLS tắt hết, nhưng Data API đang tắt (§4.3). | Giữ Data API tắt. Nếu sau này cần bật: trước đó `ENABLE ROW LEVEL SECURITY` cho mọi bảng + `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated`. Chạy lại `check-db-config.sh` sau mọi thay đổi cấu hình Supabase. |
-| 2b | Trung bình | DB dùng chung thiếu migration `WidenHotspotLabel` (label > 200 ký tự sẽ lỗi khi lưu). | Backup rồi chạy `npm run migration:run` trên DB dùng chung (báo nhóm trước). |
+| 2b | Đã xử lý | DB dùng chung thiếu migration `WidenHotspotLabel`. | Đã backup (`aura-2026-10-24-2304-pre-WidenHotspotLabel.dump`) rồi chạy `migration:run` ngày 24/10/2026; `hotspots.label` giờ là `text`, DB đủ 4 migration. |
 | 3 | Trung bình | TLS tới Supabase không xác thực CA (`sslmode=require`). | Chuyển sang cách A trong `docs/supabase/02` (`DATABASE_SSL=true` + `DATABASE_SSL_CA`). |
 | 4 | Trung bình | `idle_in_transaction_session_timeout = 0` trên cả DB cục bộ và Supabase (Supabase đã có `statement_timeout = 2min`). | `ALTER ROLE <app_role> SET statement_timeout = '30s'; ALTER ROLE <app_role> SET idle_in_transaction_session_timeout = '60s';` Chạy sau khi xác nhận không ảnh hưởng tới migration dài (migration chạy bằng phiên riêng thì đặt lại giá trị cho phiên đó). |
 | 5 | Thấp | Ứng dụng dùng role `postgres` (quyền rộng). | Về lâu dài tạo role riêng chỉ có DML trên schema `public` cho API; migration dùng role khác. |
@@ -157,3 +157,14 @@ DATABASE_URL=postgres://...@localhost:.../db tools/db/check-db-config.sh
 ```
 
 Yêu cầu: Docker, `node_modules` của back-end đã cài. Script tự dọn container khi kết thúc (đặt `KEEP=1` để giữ lại container khôi phục).
+
+## 8. Backup định kỳ (vận hành)
+
+```sh
+tools/db/backup.sh                          # chạy tay; BACKUP_DIR (~/aura-backups), KEEP_DAYS (14)
+systemctl --user list-timers aura-db-backup.timer   # xem lần chạy kế tiếp
+systemctl --user start aura-db-backup.service       # chạy ngay
+journalctl --user -u aura-db-backup.service -n 20   # xem log
+```
+
+Unit nằm ở `~/.config/systemd/user/aura-db-backup.{service,timer}` (không nằm trong repo). Máy khác cài lại bằng cách tạo 2 file đó trỏ `ExecStart` tới `back-end/tools/db/backup.sh`, rồi `systemctl --user enable --now aura-db-backup.timer`.
