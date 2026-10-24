@@ -1,0 +1,146 @@
+/*
+ * Aura Design System 2.0 — Design Tokens & Motion
+ * "Contemporary Luxury Digital Heritage & Immersive Spatial Experience"
+ *
+ * Nguồn token duy nhất cho cổng thông tin public. Các biến --aura-* khai báo ở
+ * :root (ánh theo data-mantine-color-scheme) để mọi CSS Module tham chiếu chung.
+ * Keyframes đặt ở global scope (không bị CSS Modules đổi tên) để tái sử dụng.
+ */
+
+:root {
+  /* ----- Refined Studio Light Mode ----- */
+  --aura-bg: #f8fafc;
+  --aura-bg-alt: #f1f5f9;
+  --aura-surface: #ffffff;
+  --aura-surface-2: #f8fafc;
+  --aura-glass-bg: rgba(255, 255, 255, 0.72);
+  --aura-glass-strong: rgba(255, 255, 255, 0.86);
+  --aura-glass-border: rgba(15, 23, 42, 0.08);
+
+  --aura-ink: #0f172a;
+  --aura-ink-soft: #334155;
+  --aura-muted: #64748b;
+  --aura-border: #e2e8f0;
+
+  /* Aura accents */
+  --aura-emerald: #0d9488;
+  --aura-emerald-bright: #10b981;
+  --aura-teal: #14b8a6;
+  --aura-gold: #d97706;
+  --aura-gold-bright: #f59e0b;
+  --aura-cyan: #0891b2;
+  --aura-cyan-bright: #06b6d4;
+  --aura-accent: var(--aura-emerald);
+  --aura-on-accent: #ffffff;
+
+  /* Elevation & glow */
+  --aura-shadow-card: 0 10px 30px -14px rgba(2, 6, 23, 0.12);
+  --aura-shadow-float: 0 34px 64px -24px rgba(2, 6, 23, 0.28);
+  --aura-glow-emerald: 0 0 24px -2px rgba(16, 185, 129, 0.45);
+  --aura-glow-gold: 0 0 24px -2px rgba(245, 158, 11, 0.45);
+
+  /* Gradients */
+  --aura-gradient-title: linear-gradient(135deg, #0f172a 10%, #0d9488 115%);
+  --aura-gradient-accent: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  --aura-gradient-gold: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --aura-gradient-mesh:
+    radial-gradient(900px 500px at 85% -5%, rgba(13, 148, 136, 0.14), transparent 60%),
+    radial-gradient(700px 500px at 5% 15%, rgba(245, 158, 11, 0.10), transparent 55%);
+
+  /* Shape & motion */
+  --aura-radius-sm: 10px;
+  --aura-radius: 16px;
+  --aura-radius-lg: 24px;
+  --aura-ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --aura-dur: 0.45s;
+
+  /* Typography */
+  --aura-font-display: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --aura-font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ----- Deep Obsidian Dark Mode (museum spotlight) ----- */
+[data-mantine-color-scheme='dark'] {
+  --aura-bg: #0a0e17;
+  --aura-bg-alt: #0f172a;
+  --aura-surface: #1e293b;
+  --aura-surface-2: #172234;
+  --aura-glass-bg: rgba(30, 41, 59, 0.66);
+  --aura-glass-strong: rgba(15, 23, 42, 0.82);
+  --aura-glass-border: rgba(255, 255, 255, 0.08);
+
+  --aura-ink: #f1f5f9;
+  --aura-ink-soft: #cbd5e1;
+  --aura-muted: #94a3b8;
+  --aura-border: rgba(255, 255, 255, 0.10);
+
+  --aura-emerald: #2dd4bf;
+  --aura-emerald-bright: #10b981;
+  --aura-gold: #fbbf24;
+  --aura-gold-bright: #f59e0b;
+  --aura-accent: var(--aura-emerald-bright);
+
+  --aura-shadow-card: 0 14px 40px -18px rgba(0, 0, 0, 0.7);
+  --aura-shadow-float: 0 40px 80px -28px rgba(0, 0, 0, 0.8);
+  --aura-glow-emerald: 0 0 30px -2px rgba(16, 185, 129, 0.55);
+  --aura-glow-gold: 0 0 30px -2px rgba(245, 158, 11, 0.5);
+
+  --aura-gradient-title: linear-gradient(135deg, #ffffff 20%, #94a3b8 100%);
+  --aura-gradient-mesh:
+    radial-gradient(1000px 600px at 80% -10%, rgba(16, 185, 129, 0.16), transparent 60%),
+    radial-gradient(800px 600px at 0% 10%, rgba(245, 158, 11, 0.12), transparent 55%),
+    radial-gradient(600px 400px at 50% 110%, rgba(6, 182, 212, 0.10), transparent 60%);
+}
+
+/* ============================= Keyframes ============================= */
+@keyframes aura-fade-in-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes aura-float {
+  0%, 100% { transform: translateY(0) rotateX(0) rotateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes aura-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.0); }
+  50% { box-shadow: 0 0 28px 2px rgba(16, 185, 129, 0.35); }
+}
+
+@keyframes aura-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes aura-badge-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.82); }
+}
+
+@keyframes aura-sound-wave {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+
+@keyframes aura-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================= Utilities ============================= */
+/* Hiệu ứng xuất hiện tuần tự (staggered). Gắn class + style --aura-delay. */
+.aura-reveal {
+  opacity: 0;
+  animation: aura-fade-in-up var(--aura-dur) var(--aura-ease-spring) forwards;
+  animation-delay: var(--aura-delay, 0s);
+}
+
+/* Tôn trọng người dùng giảm chuyển động (WCAG 2.2). */
+@media (prefers-reduced-motion: reduce) {
+  .aura-reveal { opacity: 1; animation: none; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
