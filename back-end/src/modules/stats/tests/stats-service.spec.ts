@@ -5,6 +5,7 @@ import { DataSource, ObjectLiteral, Repository } from 'typeorm';
 import { ContentReport } from '../../content-reports/entities/content-report.entity';
 import { ExhibitRevision } from '../../exhibits/entities/exhibit-revision.entity';
 import { Exhibit } from '../../exhibits/entities/exhibit.entity';
+import { Media } from '../../media/entities/media.entity';
 import { Room } from '../../rooms/entities/room.entity';
 import { StatsService } from '../services/stats.service';
 
@@ -43,7 +44,8 @@ function buildService(dbUp = true): StatsService {
     [JSON.stringify({ status: 'open' })]: 4,
     [JSON.stringify({ status: 'in_progress' })]: 2,
   });
-  return new StatsService(rooms, exhibits, revisions, reports, fakeDataSource(dbUp));
+  const media = fakeRepo<Media>({});
+  return new StatsService(rooms, exhibits, revisions, reports, media, fakeDataSource(dbUp));
 }
 
 describe('StatsService.overview', () => {

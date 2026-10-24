@@ -31,11 +31,26 @@ export interface StatsCharts {
   activityLast14Days: ActivityPoint[];
 }
 
+export interface StorageKindUsage {
+  kind: string;
+  bytes: number;
+  count: number;
+}
+
+export interface StorageStats {
+  byKind: StorageKindUsage[];
+  totalBytes: number;
+  totalCount: number;
+}
+
 export const statsService = {
   overview(): Promise<OverviewStats> {
     return http.get<OverviewStats>('/admin/stats/overview');
   },
   charts(): Promise<StatsCharts> {
     return http.get<StatsCharts>('/admin/stats/charts');
+  },
+  storage(): Promise<StorageStats> {
+    return http.get<StorageStats>('/admin/stats/storage');
   },
 };
