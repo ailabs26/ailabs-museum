@@ -56,6 +56,7 @@ export interface PublicHotspotDto {
 
 export interface PublicExhibitDto {
   id: string;
+  revisionId: string;
   roomId: string;
   displayOrder: number;
   /** Bản tiếng Việt (thiếu thì tiếng Anh) — giữ contract cũ cho FE hiện tại. */
@@ -206,6 +207,7 @@ export function toPublicExhibit(
 
   return {
     id: exhibit.id,
+    revisionId: revision.id,
     roomId: exhibit.roomId,
     displayOrder: exhibit.displayOrder,
     name: primaryText(name) ?? '',

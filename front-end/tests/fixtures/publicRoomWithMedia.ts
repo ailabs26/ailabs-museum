@@ -11,6 +11,7 @@ export const publicRoomWithMediaResponse = {
     "exhibits": [
       {
         "id": "ddc811c8-4c00-48b4-915a-8cdcbb70f836",
+        "revisionId": "c0000000-0000-4000-8000-000000000001",
         "roomId": "a39b8304-8df3-426d-80bd-6f5c96a6875f",
         "displayOrder": 0,
         "name": "Bình gốm",

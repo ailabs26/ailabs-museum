@@ -10,6 +10,7 @@ export const roomSummaries = [
 export function exhibit(index = 1, roomId = ROOM_A_ID) {
   return {
     id: `10000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
+    revisionId: `20000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
     roomId, displayOrder: index, name: `Hiện vật ${index}`, description: `Mô tả hiện vật ${index}`,
     positionX: 0, positionY: 0, positionZ: 0, transcript: null,
     placeholderShape: 'box', placeholderColor: '#8b7355', hotspots: [],

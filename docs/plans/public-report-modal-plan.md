@@ -10,7 +10,7 @@
 
 **Spec:** [public-report-modal.md — Đề xuất để review](../tasks/public-report-modal.md#phạm-vi-và-hành-vi-đề-xuất).
 **Base/branch:** `origin/dev` tại `02dc42a` → `feat/public-report-modal`.
-**Status:** Chỉ tạo PLAN/TASK để người dùng review; chưa sửa runtime, chưa chạy kiểm thử, chưa commit/push/PR.
+**Status:** Đang triển khai trên `feat/public-report-modal`; Task 0 đã commit, Task 1 hoàn tất kiểm chứng, Task 2 đang thực hiện. Chưa push/PR.
 
 ## Phạm vi đã chốt
 
@@ -49,16 +49,16 @@ Các đường dẫn controller/DTO chính xác và mọi caller liên quan sẽ
 
 ### Task 0 — Review tài liệu
 
-- [ ] Người dùng duyệt PLAN/TASK, gồm bốn nhãn category đề xuất và cách xử lý revision cũ.
-- [ ] Chỉ sau khi duyệt mới tiếp tục thực thi trên `feat/public-report-modal`.
+- [x] Người dùng duyệt PLAN/TASK, gồm bốn nhãn category đề xuất và cách xử lý revision cũ.
+- [x] Thực thi trên `feat/public-report-modal`, bắt đầu từ `origin/dev` tại `02dc42a`.
 
 ### Task 1 — API contract và revision ID
 
-- [ ] Rà toàn bộ callers của DTO public exhibit và endpoint report.
-- [ ] Thêm bốn giá trị category cố định tại DTO boundary; backend từ chối category ngoài danh sách.
-- [ ] Bảo đảm revision thuộc exhibit; giữ rate limit và lỗi API theo chuẩn hiện tại.
-- [ ] Thêm `revisionId` vào public exhibit contract và Zod schema; không đổi dữ liệu CMS draft.
-- [ ] Kiểm chứng contract/service và các kiểm tra backend/frontend liên quan.
+- [x] Rà callers của DTO public exhibit và endpoint report.
+- [x] Thêm bốn giá trị category cố định tại DTO boundary; backend từ chối category ngoài danh sách.
+- [x] Bảo đảm revision đã duyệt thuộc exhibit; giữ rate limit và lỗi API theo chuẩn hiện tại.
+- [x] Thêm `revisionId` vào public exhibit contract, Zod schema và mapper tour; không đổi dữ liệu CMS draft.
+- [x] Backend typecheck, report tests 15/15, public mapper 14/14; frontend typecheck và room contract 8/8 đạt.
 
 ### Task 2 — Modal và ba điểm vào
 
@@ -72,3 +72,11 @@ Các đường dẫn controller/DTO chính xác và mọi caller liên quan sẽ
 
 - [ ] Kiểm chứng các acceptance criteria trong TASK và chạy gates của hai app bị ảnh hưởng theo AGENTS.md.
 - [ ] Review toàn diff, cập nhật ledger; chưa push/PR/merge nếu chưa có yêu cầu tiếp theo.
+
+## Execution ledger
+
+- Ruling: Dùng checkout hiện tại của nhánh `feat/public-report-modal`, không tạo worktree thứ hai — đây đã là nhánh cô lập từ `origin/dev`; giữ hai tài liệu chưa commit lúc bắt đầu và làm commit docs riêng trước runtime.
+- RED: category tự do ban đầu nhận 201; revision sai exhibit ban đầu không bị từ chối; public DTO/schema ban đầu thiếu revision ID. GREEN đã kiểm chứng trong test HTTP/service/repository, mapper và room contract.
+- Task 0: commit `3dbdd7a` — `docs(report): add public report plan`.
+- Task 1: backend typecheck đạt; content-reports tests **15/15**, public exhibit mapper **14/14**, frontend typecheck đạt, room contract **8/8**. Không migration/database changes.
+- Task 2: đang thực hiện; browser spec **3/3** pass trên Vite dev server reuse; kiểm tra gates cuối sẽ chạy sau khi hoàn tất toàn diff.

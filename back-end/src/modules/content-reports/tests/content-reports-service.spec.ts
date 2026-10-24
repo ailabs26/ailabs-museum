@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { AuthUser } from '../../../common/types/auth-user.type';
 import {
   ContentReport,
@@ -9,6 +9,7 @@ import {
 } from '../entities/content-report.entity';
 import { ContentReportsRepository } from '../repositories/content-reports.repository';
 import { ContentReportsService } from '../services/content-reports.service';
+import { PublicReportCategory } from '../dto/create-report.dto';
 
 const ACTOR: AuthUser = {
   id: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
@@ -36,11 +37,14 @@ function sampleReport(overrides?: Partial<ContentReport>): ContentReport {
 function fakeRepo(opts: {
   report?: ContentReport | null;
   exhibitExists?: boolean;
+  revisionBelongsToExhibit?: boolean;
+  onCreate?: (data: Partial<ContentReport>) => void;
 }): ContentReportsRepository {
   return {
     findDetail: () => Promise.resolve(opts.report ?? null),
     exhibitExists: () => Promise.resolve(opts.exhibitExists ?? true),
-    create: (data: Partial<ContentReport>) => sampleReport(data),
+    revisionBelongsToExhibit: () => Promise.resolve(opts.revisionBelongsToExhibit ?? true),
+    create: (data: Partial<ContentReport>) => { opts.onCreate?.(data); return sampleReport(data); },
     save: (report: ContentReport) => Promise.resolve(report),
   } as unknown as ContentReportsRepository;
 }
@@ -49,15 +53,25 @@ describe('ContentReportsService.create', () => {
   it('ném 404 khi hiện vật không tồn tại', async () => {
     const svc = new ContentReportsService(fakeRepo({ exhibitExists: false }));
     await assert.rejects(
-      () => svc.create({ exhibitId: 'x', category: 'c', message: 'm' }),
+      () => svc.create({ exhibitId: 'x', category: PublicReportCategory.OTHER, message: 'm' }),
       NotFoundException,
     );
   });
 
   it('tạo báo cáo trạng thái open', async () => {
-    const svc = new ContentReportsService(fakeRepo({ exhibitExists: true }));
-    const res = await svc.create({ exhibitId: 'e', category: 'wrong_info', message: 'm' });
+    let created: Partial<ContentReport> | undefined;
+    const svc = new ContentReportsService(fakeRepo({ exhibitExists: true, onCreate: (data) => { created = data; } }));
+    const res = await svc.create({ exhibitId: 'e', reportedRevisionId: 'r', category: PublicReportCategory.WRONG_INFO, message: 'm' });
     assert.equal(res.status, ContentReportStatus.OPEN);
+    assert.equal(created?.reportedRevisionId, 'r');
+  });
+
+  it('từ chối revision không thuộc hiện vật được báo cáo', async () => {
+    const svc = new ContentReportsService(fakeRepo({ revisionBelongsToExhibit: false }));
+    await assert.rejects(
+      () => svc.create({ exhibitId: 'e', reportedRevisionId: 'r', category: PublicReportCategory.WRONG_INFO, message: 'm' }),
+      BadRequestException,
+    );
   });
 });
 

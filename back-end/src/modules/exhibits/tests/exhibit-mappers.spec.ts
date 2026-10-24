@@ -82,6 +82,7 @@ describe('toPublicExhibit', () => {
 
   it('nội dung song ngữ: field cũ là bản vi + i18n đủ', () => {
     const dto = toPublicExhibit(exhibit(revision()), url, () => undefined, 'room')!;
+    assert.equal(dto.revisionId, REVISION_ID);
     assert.equal(dto.name, 'Bình');
     assert.equal(dto.description, 'Mô tả');
     assert.equal(dto.transcript, 'Thuyết minh');
@@ -158,9 +159,10 @@ describe('toPublicExhibit', () => {
     assert.equal(dto.audio?.en?.transcript, 'Narration');
     // Model cố ý mang storageKey/checksum (contract tour 3D); các phần còn lại không được lộ.
     const json = JSON.stringify({ ...dto, model: undefined });
-    for (const secret of ['storageKey', 'checksum', 'createdById', 'originalName', 'goc.png', REVISION_ID]) {
+    for (const secret of ['storageKey', 'checksum', 'createdById', 'originalName', 'goc.png']) {
       assert.equal(json.includes(secret), false, secret);
     }
+    assert.equal(dto.revisionId, REVISION_ID);
   });
 
   it('chỉ audio en → audio.vi = null (không tự thay ngôn ngữ — AC-08)', () => {

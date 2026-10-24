@@ -1,6 +1,6 @@
 # Public Report Modal
 
-**Trạng thái:** Đề xuất để review; chưa triển khai.
+**Trạng thái:** Đang triển khai; Task 0 và Task 1 hoàn tất, Task 2 đang thực hiện.
 **Plan:** [public-report-modal-plan.md](../plans/public-report-modal-plan.md).
 **Base/branch:** `origin/dev` tại `02dc42a` / `feat/public-report-modal`.
 
@@ -66,6 +66,7 @@ Khách có thể báo cáo nội dung chưa chính xác hoặc không phù hợp
 
 - [x] Đọc source hiện hữu qua CodeGraph: endpoint, DTO/service, public exhibit mapping/schema và ba consumer UI.
 - [x] Xác nhận workspace sạch và nhánh `feat/public-report-modal` bắt đầu từ `origin/dev` tại `02dc42a`.
-- [ ] Người dùng review PLAN/TASK và chốt bốn nhãn category.
-- [ ] Chưa sửa code hoặc chạy kiểm thử trong giai đoạn review tài liệu.
-- [ ] Ghi evidence thực tế, kết quả kiểm chứng và thay đổi phạm vi sau khi được duyệt.
+- [x] Người dùng review/duyệt PLAN/TASK và bốn nhãn category.
+- [x] Task 1: API allowlist, revision ownership/approved-state check, public revision ID; backend reports 15/15, mapper 14/14, FE typecheck và room contract 8/8.
+- [ ] Task 2: modal dùng chung và ba điểm vào; browser spec 3/3 pass, chạy lại cùng final gates sau review toàn diff.
+- [ ] Ghi final evidence và phần còn thiếu sau khi hoàn tất Task 2.
