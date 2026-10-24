@@ -5,7 +5,7 @@
 - **Ngày chạy:** 24/10/2026
 - **Nhánh:** `test/phase2-core-db-safety`
 - **Công cụ:** `back-end/tools/db/backup-restore-drill.sh`, `back-end/tools/db/check-db-config.sh`
-- **Kết luận:** quy trình backup logic → khôi phục **đạt** trên môi trường diễn tập (khôi phục đầy đủ, RTO đo được 10–14 giây). **Chưa đạt** ở môi trường thật vì chưa có backup định kỳ, nên RPO hiện chưa có giới hạn (xem §5). Phần kiểm cấu hình phía server của DB Supabase **chưa chạy** (xem §4.3).
+- **Kết luận:** quy trình backup logic → khôi phục **đạt** trên môi trường diễn tập (khôi phục đầy đủ, RTO đo được 10–14 giây). **Chưa đạt** ở môi trường thật vì chưa có backup định kỳ, nên RPO hiện chưa có giới hạn (xem §5). Kiểm cấu hình DB Supabase phát hiện **lỗ hổng nghiêm trọng**: toàn bộ bảng có thể bị đọc/ghi qua Data API (§4.3).
 
 ## 1. Mục tiêu RPO/RTO
 
@@ -94,24 +94,41 @@ Ghi chú: lần chạy đầu, vân tay ràng buộc bị báo lệch dù dữ l
 | `statement_timeout`, `idle_in_transaction_session_timeout` = 0 | WARN — truy vấn treo hoặc transaction bỏ dở có thể giữ khóa vô hạn |
 | `archive_mode=off` | INFO — không có PITR, chỉ dựa vào backup logic |
 
-### 4.3 Phía server — DB Supabase dùng chung: **CHƯA CHẠY**
+### 4.3 Phía server — DB Supabase dùng chung (PostgreSQL 17.11, chạy 24/10/2026)
 
-Phiên kiểm thử không được cấp quyền đọc DB production, nên phần này chưa có kết quả. Người có quyền chạy lệnh dưới đây (chỉ đọc catalog; phiên bị khóa READ ONLY ngay câu lệnh đầu; không in URL/mật khẩu) rồi dán bảng kết quả vào phụ lục biên bản:
+Chạy `tools/db/check-db-config.sh` với phiên bị khóa READ ONLY. Kết quả được kiểm chéo bằng truy vấn catalog chỉ đọc.
 
-```sh
-cd back-end && tools/db/check-db-config.sh
-```
+| Kiểm tra | Kết quả |
+|---|---|
+| TLS client → pooler | PASS — TLSv1.3 (`pg_stat_ssl` báo không mã hóa vì chỉ thấy chặng pooler → Postgres nội bộ; script đã sửa để đọc phía client) |
+| `password_encryption = scram-sha-256`, role `postgres` không phải superuser, PUBLIC không có CREATE trên `public` | PASS |
+| Extension, ràng buộc VALID (40), index hợp lệ (33), mọi bảng có khóa chính | PASS |
+| 6 tài khoản đều bcrypt; 814 refresh session đều SHA-256 | PASS |
+| `statement_timeout` | PASS — 2 phút |
+| `idle_in_transaction_session_timeout` | WARN — 0 |
+| Kết nối | PASS — 16/60 |
+| `wal_level=logical`, `archive_mode=on` | INFO — Supabase có lưu trữ WAL ở tầng nền tảng; gói hiện tại có cho tải/khôi phục backup hay không phải xem ở Dashboard → Database → Backups |
+| Migration | **WARN** — DB có 3/4 migration; thiếu `WidenHotspotLabel1792150000000` (`hotspots.label` vẫn là `varchar(200)` trong khi mã nguồn yêu cầu `text`) |
+| **Bảng lộ qua Data API (anon/authenticated)** | **FAIL — NGHIÊM TRỌNG**: cả 14 bảng trong `public` (kể cả `users`, `refresh_sessions`, `user_roles`, `migrations`) đều cấp SELECT/INSERT/DELETE cho `anon` và `authenticated`, `anon` có USAGE trên schema `public`, và 0/13 bảng bật RLS |
 
-Cần chú ý nhất kiểm tra số 6, *"Bảng có thể bị đọc qua Data API (anon/authenticated)"*. Supabase tự mở schema `public` qua REST API cho role `anon`, mà khóa publishable được phép công khai. Nếu bảng `users`/`refresh_sessions` vừa cấp quyền cho `anon` vừa tắt RLS, bất kỳ ai cũng đọc được hash mật khẩu qua REST. Khi kiểm tra này FAIL, phải bật RLS hoặc thu hồi quyền của `anon`/`authenticated` trên schema `public` ngay. Bật RLS mà không tạo policy vẫn an toàn cho back-end: API kết nối bằng `postgres` (chủ sở hữu bảng do migration tạo), và RLS không áp lên chủ bảng khi không dùng `FORCE ROW LEVEL SECURITY`.
+Ý nghĩa của FAIL Data API: nếu Data API (PostgREST) của project đang bật, bất kỳ ai có khóa publishable/anon (khóa được thiết kế để công khai) đều có thể:
+- đọc hash mật khẩu và refresh session;
+- tự chèn tài khoản + gán role `admin` (`users`, `user_roles`), tức chiếm quyền quản trị;
+- xóa dữ liệu.
+
+Mình không thử khai thác để xác nhận; kết luận chỉ dựa trên quyền trong catalog.
+
+Cách sửa an toàn cho back-end: role `postgres` của API là chủ của cả 14 bảng và có `BYPASSRLS = true`, nên bật RLS (không cần policy) **không ảnh hưởng** API, đồng thời chặn hết `anon`/`authenticated`. Nên làm thêm: thu hồi quyền của 2 role này trên schema `public`, và tắt Data API trong Dashboard nếu không dùng.
 
 ## 5. Phát hiện và đề xuất
 
 | # | Mức | Phát hiện | Đề xuất |
 |---|---|---|---|
 | 1 | **Cao** | Chưa có backup định kỳ. Gói Supabase đang dùng không có PITR (`docs/supabase/07` §3); hiện chỉ có `pg_dump` thủ công trước thao tác lớn → RPO thực tế = thời gian kể từ lần dump tay gần nhất, không có giới hạn. | Lập lịch `pg_dump -Fc` hằng ngày (cron trên VPS hoặc GitHub Actions có secret `DATABASE_URL`), lưu kèm sha256, giữ ≥ 7 bản, lưu ngoài Supabase và mã hóa (vd `age`/`gpg`). Mỗi tháng chạy `backup-restore-drill.sh`, hoặc restore bản mới nhất vào container tạm rồi chạy `check-db-config.sh` + integration test. |
-| 2 | **Cao** (chờ xác minh) | Chưa kiểm được việc lộ bảng qua Supabase Data API (§4.3). | Chạy `check-db-config.sh` trên DB thật trong tuần này. |
+| 2 | **Nghiêm trọng** | 14 bảng `public` cấp SELECT/INSERT/DELETE cho `anon`/`authenticated`, RLS tắt hết (§4.3). | Ngay: `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` cho mọi bảng (thêm thành migration để môi trường mới cũng có) + `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated`; tắt Data API nếu không dùng; xoay vòng khóa publishable/anon nếu từng bị phát tán. |
+| 2b | Trung bình | DB dùng chung thiếu migration `WidenHotspotLabel` (label > 200 ký tự sẽ lỗi khi lưu). | Backup rồi chạy `npm run migration:run` trên DB dùng chung (báo nhóm trước). |
 | 3 | Trung bình | TLS tới Supabase không xác thực CA (`sslmode=require`). | Chuyển sang cách A trong `docs/supabase/02` (`DATABASE_SSL=true` + `DATABASE_SSL_CA`). |
-| 4 | Trung bình | Không đặt `statement_timeout`/`idle_in_transaction_session_timeout` cho role ứng dụng (đã thấy trên DB cục bộ; DB thật cần kiểm qua #2). | `ALTER ROLE <app_role> SET statement_timeout = '30s'; ALTER ROLE <app_role> SET idle_in_transaction_session_timeout = '60s';` Chạy sau khi xác nhận không ảnh hưởng tới migration dài (migration chạy bằng phiên riêng thì đặt lại giá trị cho phiên đó). |
+| 4 | Trung bình | `idle_in_transaction_session_timeout = 0` trên cả DB cục bộ và Supabase (Supabase đã có `statement_timeout = 2min`). | `ALTER ROLE <app_role> SET statement_timeout = '30s'; ALTER ROLE <app_role> SET idle_in_transaction_session_timeout = '60s';` Chạy sau khi xác nhận không ảnh hưởng tới migration dài (migration chạy bằng phiên riêng thì đặt lại giá trị cho phiên đó). |
 | 5 | Thấp | Ứng dụng dùng role `postgres` (quyền rộng). | Về lâu dài tạo role riêng chỉ có DML trên schema `public` cho API; migration dùng role khác. |
 | 6 | Thấp | RTO đo được chưa tính phần đặc thù của môi trường thật: tải file backup về, tạo project Supabase mới hoặc khôi phục project bị pause, đổi `DATABASE_URL`. | Ghi lại thời gian thực tế ở lần diễn tập đầu tiên trên project Supabase thử nghiệm; mục tiêu ≤ 1 giờ vẫn còn dư nhiều. |
 
