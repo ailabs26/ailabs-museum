@@ -60,6 +60,26 @@ Không ship code chưa kiểm chứng để tránh hồi quy trên hệ thống 
 
 ---
 
-## 5. Kết luận
+## 5. Đợt 2 — Hoàn thiện nốt các hạng mục đã hoãn (PR #87, #88)
 
-Đợt nâng cấp UI/UX Aura DS 2.0 (Giai đoạn 1–3) **đạt nghiệm thu về mặt kỹ thuật tự động**: typecheck sạch, toàn bộ unit test PASS, build production thành công, không hồi quy chức năng. Các hạng mục 3D/CMS phức tạp được tách lộ trình để bảo đảm chất lượng.
+| PR | Nội dung | Trạng thái |
+|----|----------|------------|
+| #87 | Admin đợt 2: phím tắt duyệt A/R, diff xanh-đỏ, canned responses, Hiện vật xem Bảng↔Thẻ, **storage quota bar** (+ endpoint BE `GET /admin/stats/storage`) | ✅ Merged |
+| #88 | 3D: **Cinematic camera intro** (helper thuần + 11 test, luôn kết thúc đúng pose, hủy khi tương tác, bỏ qua reduced-motion) + **Photo Mode** (watermark PNG) | ✅ Merged |
+
+### Các mục tưởng thiếu nhưng ĐÃ có sẵn từ trước (không cần làm lại)
+- **Hotspot 3D click editor** → `ModelHotspotPicker` · **Drag-drop tour order** → `TourOrderModal`
+- **In-app 3D media inspector** → `MediaPreview` · **Revision diff side-by-side** → tab "So sánh cũ/mới" (ModerationPage)
+
+### Cố tình bỏ
+- **Pulsing hotspot 3D**: animation liên tục phá tối ưu `frameloop="demand"` (hao pin). Marker được chọn ở **mini-map & dock** đã có hào quang nhịp thở ở lớp HUD.
+
+### Kiểm thử đợt 2 (trên `dev` sau merge #87, #88)
+- FE: `typecheck` 0 lỗi · `test:unit` **27/27 suite · 152 test PASS** · `build` production OK · 0 lỗi lint trong `src/`.
+- BE: `typecheck` 0 lỗi · stats test **3/3 PASS**.
+
+## 6. Kết luận
+
+Đợt nâng cấp UI/UX Aura DS 2.0 đã **hoàn thiện toàn bộ hạng mục** của kế hoạch (8 PR #83–#88 đã merge vào `dev`), hoặc xác nhận đã có sẵn. Chỉ chủ động bỏ hiệu ứng pulsing hotspot 3D vì xung đột với kiến trúc render demand-frame. Đạt nghiệm thu kỹ thuật tự động: typecheck sạch (FE+BE), toàn bộ test PASS, build production thành công, không hồi quy chức năng.
+
+> Khuyến nghị cuối: chạy `npm run dev` + đo Lighthouse (≥ 90) và 60fps trên Chrome/Firefox/Edge để xác nhận trực quan hiệu năng & các hiệu ứng 3D (cinematic/photo) trên thiết bị thật.
