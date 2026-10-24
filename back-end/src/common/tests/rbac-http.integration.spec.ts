@@ -21,7 +21,7 @@ import { RolesController } from '../../modules/roles/controllers/roles.controlle
 import { RolesService } from '../../modules/roles/services/roles.service';
 import { UsersController } from '../../modules/users/controllers/users.controller';
 import { UsersService } from '../../modules/users/services/users.service';
-import { ALL_PERMISSIONS, DEFAULT_ROLE_PERMISSIONS, PERMISSIONS, PermissionKey } from '../constants/permissions.constant';
+import { ALL_PERMISSIONS, DEFAULT_ROLE_PERMISSIONS, PermissionKey } from '../constants/permissions.constant';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 import { RoleKey } from '../enums/role.enum';
 import { AllExceptionsFilter } from '../filters/all-exceptions.filter';
