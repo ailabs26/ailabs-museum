@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   Card,
+  Center,
   Code,
   Divider,
   Drawer,
@@ -14,7 +15,10 @@ import {
   Group,
   Loader,
   NumberInput,
+  Pagination,
+  SegmentedControl,
   Select,
+  SimpleGrid,
   Stack,
   Tabs,
   Text,
@@ -33,12 +37,14 @@ import {
   IconEye,
   IconEyeOff,
   IconInfoCircle,
+  IconLayoutGrid,
   IconListNumbers,
   IconMapPin,
   IconPhoto,
   IconPlus,
   IconSearch,
   IconSend,
+  IconTable,
   IconTrash,
 } from '@tabler/icons-react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -224,6 +230,7 @@ export function ExhibitsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roomFilter, setRoomFilter] = useState<string>('all');
+  const [view, setView] = useState<'table' | 'card'>('table');
 
   const [editing, setEditing] = useState<ExhibitRow | null>(null);
   const [opened, drawer] = useDisclosure(false);
@@ -951,19 +958,91 @@ export function ExhibitsPage() {
         </Grid>
       </Card>
 
-      <Card withBorder p={0} radius="sm">
-        <DataTable
-          columns={columns}
-          data={exhibitsQuery.data?.items ?? []}
-          rowKey={(r) => r.id}
-          total={exhibitsQuery.data?.total ?? 0}
-          page={page}
-          pageSize={15}
-          onPageChange={setPage}
-          loading={exhibitsQuery.isLoading}
-          emptyText="Không tìm thấy hiện vật nào phù hợp với bộ lọc."
-        />
-      </Card>
+      <Group justify="flex-end" mb="sm">
+        <SegmentedControl size="xs" value={view} onChange={(v) => setView(v as 'table' | 'card')}
+          data={[
+            { value: 'table', label: <Center style={{ gap: 6 }}><IconTable size={14} /> Bảng</Center> },
+            { value: 'card', label: <Center style={{ gap: 6 }}><IconLayoutGrid size={14} /> Thẻ</Center> },
+          ]} />
+      </Group>
+
+      {view === 'table' ? (
+        <Card withBorder p={0} radius="sm">
+          <DataTable
+            columns={columns}
+            data={exhibitsQuery.data?.items ?? []}
+            rowKey={(r) => r.id}
+            total={exhibitsQuery.data?.total ?? 0}
+            page={page}
+            pageSize={15}
+            onPageChange={setPage}
+            loading={exhibitsQuery.isLoading}
+            emptyText="Không tìm thấy hiện vật nào phù hợp với bộ lọc."
+          />
+        </Card>
+      ) : (
+        <>
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
+            {(exhibitsQuery.data?.items ?? []).map((r) => {
+              const deleteReason = deletionBlock(r);
+              const isInReview = r.revisionState === 'in_review';
+              return (
+                <Card key={r.id} withBorder radius="md" p="md">
+                  <Group justify="space-between" wrap="nowrap" mb={6}>
+                    <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+                      <Box style={{ width: 16, height: 16, flexShrink: 0,
+                        borderRadius: r.content.placeholderShape === 'sphere' ? '50%' : 3,
+                        backgroundColor: r.content.placeholderColor || '#8b7355' }} />
+                      <Text fw={700} size="sm" lineClamp={1}>{getDisplayText(r.content.name) || 'Chưa đặt tên'}</Text>
+                    </Group>
+                    <Badge color={REVISION_STATE_COLOR[r.revisionState] ?? 'gray'} variant="light" size="sm">
+                      {REVISION_STATE_LABEL[r.revisionState] ?? r.revisionState}
+                    </Badge>
+                  </Group>
+                  <Group gap={6} mb="xs">
+                    <Badge variant="light" color="blue" size="xs">{roomMap.get(r.roomId) ?? r.roomId.slice(0, 8)}</Badge>
+                    <Badge color={r.status === 'published' ? 'teal' : 'gray'} variant={r.status === 'published' ? 'filled' : 'light'} size="xs">
+                      {r.status === 'published' ? 'Đã xuất bản' : r.visibility === 'hidden' && r.publishedRevisionId ? 'Đã XB · Ẩn' : 'Bản nháp'}
+                    </Badge>
+                    <Badge variant="subtle" color="indigo" size="xs">{r.hotspotsCount} hotspot</Badge>
+                    <Badge size="xs" variant="outline" color="dark">#{r.displayOrder}</Badge>
+                  </Group>
+                  <Group gap={4} justify="flex-end">
+                    <Tooltip label="Xem chi tiết"><ActionIcon variant="subtle" color="blue" onClick={() => openDetail(r)}><IconEye size={18} /></ActionIcon></Tooltip>
+                    {canUpdate && (
+                      <Tooltip label={isInReview ? 'Đang chờ kiểm duyệt (BR-26)' : 'Chỉnh sửa'}>
+                        <ActionIcon variant="subtle" disabled={isInReview} color={isInReview ? 'gray' : 'aura'} onClick={() => openEdit(r)}><IconEdit size={18} /></ActionIcon>
+                      </Tooltip>
+                    )}
+                    {canSubmit && (r.revisionState === 'draft' || r.revisionState === 'rejected') && (
+                      <Tooltip label="Gửi kiểm duyệt"><ActionIcon variant="subtle" color="yellow" onClick={() => handleSubmitReview(r)}><IconSend size={18} /></ActionIcon></Tooltip>
+                    )}
+                    {canHide && r.visibility === 'visible' && r.publishedRevisionId && (
+                      <Tooltip label="Ẩn khỏi bảo tàng"><ActionIcon variant="subtle" color="gray" disabled={isActionBusy} onClick={() => handleHide(r)}><IconEyeOff size={18} /></ActionIcon></Tooltip>
+                    )}
+                    {canHide && r.visibility === 'hidden' && r.publishedRevisionId && (
+                      <Tooltip label="Bỏ ẩn"><ActionIcon variant="subtle" color="teal" disabled={isActionBusy} onClick={() => handleUnhide(r)}><IconEye size={18} /></ActionIcon></Tooltip>
+                    )}
+                    {canDelete && (
+                      <Tooltip label={deleteReason ?? 'Xóa bản nháp'}>
+                        <ActionIcon variant="subtle" color={deleteReason ? 'gray' : 'red'} disabled={!!deleteReason || isActionBusy} onClick={() => handleDelete(r)}><IconTrash size={18} /></ActionIcon>
+                      </Tooltip>
+                    )}
+                  </Group>
+                </Card>
+              );
+            })}
+          </SimpleGrid>
+          {!exhibitsQuery.isLoading && (exhibitsQuery.data?.items.length ?? 0) === 0 && (
+            <Text c="dimmed" ta="center" py="xl">Không tìm thấy hiện vật nào phù hợp với bộ lọc.</Text>
+          )}
+          {exhibitsQuery.data && exhibitsQuery.data.total > 15 && (
+            <Group justify="center" mt="md">
+              <Pagination value={page} total={Math.ceil(exhibitsQuery.data.total / 15)} onChange={setPage} />
+            </Group>
+          )}
+        </>
+      )}
 
       {/* Drawer Thêm / Chỉnh sửa hiện vật */}
       <Drawer
