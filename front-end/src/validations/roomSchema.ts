@@ -52,6 +52,7 @@ export type PublicModel = z.infer<typeof publicModelSchema>;
 
 const exhibitSchema = z.object({
   id: z.string().uuid(),
+  revisionId: z.string().uuid(),
   roomId: z.string().uuid(),
   displayOrder: z.number().int().nonnegative(),
   name: z.string().min(1).max(200),

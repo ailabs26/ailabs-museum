@@ -26,7 +26,7 @@ import { PERMISSIONS } from '@/core/auth/permissions';
 import { notify } from '@/shared/components/feedback';
 import { Column, DataTable } from '@/shared/components/data';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
-import { ContentReport, reportsService, ReportStatus } from '@/services/reports.service';
+import { ContentReport, reportCategoryLabel, reportsService, ReportStatus } from '@/services/reports.service';
 import { resolveBilingualText } from '@/helpers/exhibitHotspots';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -139,7 +139,7 @@ export function ReportsPage() {
       render: (r) => (
         <Stack gap={2}>
           <Badge variant="light" size="sm">
-            {r.category}
+            {reportCategoryLabel(r.category)}
           </Badge>
           <Text size="xs" c="dimmed" lineClamp={1}>
             {r.message}

@@ -4,6 +4,25 @@ import type { RevisionContent, UserBrief } from '@/services/moderation.service';
 
 export type ReportStatus = 'open' | 'in_progress' | 'resolved' | 'dismissed';
 
+export const PUBLIC_REPORT_CATEGORIES = [
+  { value: 'wrong_info', label: 'Sai thông tin' },
+  { value: 'typo', label: 'Lỗi chính tả' },
+  { value: 'inappropriate_content', label: 'Ảnh/nội dung không phù hợp' },
+  { value: 'other', label: 'Khác' },
+] as const;
+export type PublicReportCategory = (typeof PUBLIC_REPORT_CATEGORIES)[number]['value'];
+
+export function reportCategoryLabel(category: string): string {
+  return PUBLIC_REPORT_CATEGORIES.find((item) => item.value === category)?.label ?? category;
+}
+
+export interface CreatePublicReportInput {
+  exhibitId: string;
+  reportedRevisionId: string;
+  category: PublicReportCategory;
+  message: string;
+}
+
 export interface ReportedRevisionBrief {
   id: string;
   revisionNo: number;
@@ -31,6 +50,9 @@ export interface ListReportsParams {
 }
 
 export const reportsService = {
+  createPublic(input: CreatePublicReportInput): Promise<ContentReport> {
+    return http.post<ContentReport>('/public/reports', input);
+  },
   list(params: ListReportsParams): Promise<Page<ContentReport>> {
     return http.getPage<ContentReport>('/reports', { params });
   },

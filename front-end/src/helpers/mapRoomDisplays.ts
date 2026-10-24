@@ -13,6 +13,7 @@ export function mapRoomDisplays(room: RoomDetail): MuseumDisplay[] {
   return exhibits.map((exhibit, index) => {
     const display: MuseumDisplay = {
       id: exhibit.id,
+      revisionId: exhibit.revisionId,
       roomId: room.id,
       title: exhibit.name,
       description: exhibit.description,

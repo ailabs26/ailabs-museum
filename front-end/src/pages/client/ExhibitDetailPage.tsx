@@ -1,5 +1,5 @@
 import { Button, Container, Title } from '@mantine/core';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { z } from 'zod';
 import { MediaCreditList } from '@/components/museum/MediaCreditList';
@@ -7,9 +7,11 @@ import { collectMediaCredits } from '@/helpers/mediaCredits';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
+import { PublicReportModal } from '@/shared/components/feedback/PublicReportModal';
 import classes from './ExhibitDetailPage.module.css';
 
 export function ExhibitDetailPage() {
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const { roomSlug, exhibitId } = useParams<{ roomSlug: string; exhibitId: string }>();
   const { rooms, room, selectedRoom } = useMuseumRooms(roomSlug ?? '');
   const isValidId = z.string().uuid().safeParse(exhibitId).success;
@@ -67,6 +69,7 @@ export function ExhibitDetailPage() {
         <header className={classes.header}>
           <p className={classes.roomName}>{detail.name}</p>
           <Title ref={titleRef} tabIndex={-1} order={1} id="exhibit-title" className={classes.title}>{exhibit.name}</Title>
+          <Button variant="default" onClick={() => setIsReportOpen(true)}>Báo nội dung</Button>
         </header>
         <div className={classes.content}>
           <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } : null}
@@ -98,6 +101,8 @@ export function ExhibitDetailPage() {
           </div>
         </div>
       </article> : null}
+      {exhibit && isReportOpen && <PublicReportModal key={`${exhibit.id}:${exhibit.revisionId}`} exhibitId={exhibit.id}
+        reportedRevisionId={exhibit.revisionId} opened onClose={() => setIsReportOpen(false)} />}
     </Container>
   );
 }
