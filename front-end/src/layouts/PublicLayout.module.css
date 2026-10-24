@@ -1,53 +1,132 @@
 .layout {
-  --public-background: #f7f5ef;
-  --public-surface: #eeeae0;
-  --public-ink: #172d2e;
-  --public-muted: #586564;
-  --public-border: #d7d9cf;
-  --public-accent: #245d56;
+  /* Cầu nối token cũ (--public-*) sang Aura DS 2.0 để component hiện có tự đổi màu. */
+  --public-background: var(--aura-bg);
+  --public-surface: var(--aura-surface);
+  --public-ink: var(--aura-ink);
+  --public-muted: var(--aura-muted);
+  --public-border: var(--aura-border);
+  --public-accent: var(--aura-accent);
+
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--public-background);
-  color: var(--public-ink);
-}
-
-:global([data-mantine-color-scheme='dark']) .layout {
-  --public-background: #142324;
-  --public-surface: #203334;
-  --public-ink: #f3f0e7;
-  --public-muted: #bbc6c0;
-  --public-border: #435553;
-  --public-accent: #acd1bf;
+  background: var(--aura-bg);
+  background-image: var(--aura-gradient-mesh);
+  background-attachment: fixed;
+  color: var(--aura-ink);
+  font-family: var(--aura-font-body);
 }
 
 .layout a { color: inherit; text-decoration: none; }
-.layout a:focus-visible { outline: 3px solid var(--public-accent); outline-offset: 4px; }
-.layout a:hover { text-decoration: underline; text-underline-offset: 5px; }
-.header { border-bottom: 1px solid var(--public-border); }
-.headerInner { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 20px; }
-.brand { display: inline-flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: 0.12em; }
-.brandDetail { display: block; font-size: 10px; font-weight: 500; letter-spacing: 0.24em; }
-.navigation { display: flex; align-items: center; flex-wrap: wrap; gap: 24px; font-size: 14px; }
-.navLink { padding-block: 12px; }
-.navLink[aria-current='page'] { color: var(--public-accent); text-decoration: underline; text-underline-offset: 8px; }
+.layout a:focus-visible { outline: 2px solid var(--aura-accent); outline-offset: 3px; border-radius: 4px; }
+
+/* ============================ Sticky Glass Header ============================ */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: padding 0.3s var(--aura-ease-spring), background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  border-bottom: 1px solid transparent;
+  padding-block: 8px;
+}
+.headerScrolled {
+  background: var(--aura-glass-bg);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border-bottom-color: var(--aura-glass-border);
+  box-shadow: 0 8px 30px -16px rgba(2, 6, 23, 0.4);
+  padding-block: 2px;
+}
+.headerInner { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 14px; }
+
+/* Logo phát hào quang */
+.brand { display: inline-flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: 0.1em; font-family: var(--aura-font-display); }
+.brandMark {
+  display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px;
+  background: var(--aura-surface); border: 1px solid var(--aura-glass-border);
+  transition: box-shadow 0.3s var(--aura-ease-spring), transform 0.3s var(--aura-ease-spring);
+}
+.brand:hover .brandMark { box-shadow: var(--aura-glow-emerald); transform: translateY(-1px); }
+.brandDetail { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.26em; color: var(--aura-muted); }
+
+/* Navigation với active pill */
+.navigation { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 14px; }
+.navLink {
+  position: relative; padding: 9px 16px; border-radius: 999px; font-weight: 600; color: var(--aura-ink-soft);
+  transition: color 0.25s ease, background 0.25s ease;
+}
+.navLink:hover { color: var(--aura-ink); background: color-mix(in srgb, var(--aura-accent) 10%, transparent); }
+.navLink[aria-current='page'] {
+  color: var(--aura-on-accent);
+  background: var(--aura-gradient-accent);
+  box-shadow: var(--aura-glow-emerald);
+}
+
+.headerActions { display: flex; align-items: center; gap: 10px; }
+
+/* Nút CTA "Vào không gian 3D" */
+.vrButton {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: 999px;
+  font-weight: 700; font-size: 14px; color: var(--aura-on-accent);
+  background: var(--aura-gradient-accent); border: 1px solid transparent;
+  box-shadow: var(--aura-glow-emerald);
+  transition: transform 0.25s var(--aura-ease-spring), box-shadow 0.25s ease;
+}
+.vrButton:hover { transform: translateY(-2px); box-shadow: 0 0 34px -2px rgba(16, 185, 129, 0.6); }
+.vrButton:focus-visible { outline: 2px solid var(--aura-cyan-bright); outline-offset: 3px; }
+
 .main { flex: 1; }
-.skipLink { position: fixed; top: 8px; left: 8px; z-index: 1000; padding: 12px 20px; background: var(--public-background); transform: translateY(-150%); }
+.skipLink {
+  position: fixed; top: 8px; left: 8px; z-index: 1000; padding: 12px 20px; border-radius: 10px;
+  background: var(--aura-surface); color: var(--aura-ink); box-shadow: var(--aura-shadow-card);
+  transform: translateY(-160%); transition: transform 0.2s ease;
+}
 .skipLink:focus { transform: translateY(0); }
-.footer { border-top: 1px solid var(--public-border); padding-block: 32px; }
-.footerInner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; }
-.footerBrand { font-family: Georgia, 'Times New Roman', serif; font-size: 24px; }
-.footer p, .footer small { color: var(--public-muted); font-size: 13px; }
-.footer p { margin-bottom: 0; max-width: 320px; }
-.footerLinks { display: flex; gap: 24px; font-size: 14px; }
-.footerLinks a { padding-block: 12px; }
+
+/* ============================ Footer đa tầng ============================ */
+.footer {
+  margin-top: 64px;
+  border-top: 1px solid var(--aura-glass-border);
+  background: var(--aura-glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding-block: 56px 32px;
+}
+.footerGrid {
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 48px;
+  padding-bottom: 40px; border-bottom: 1px solid var(--aura-glass-border);
+}
+.footerBrand { display: inline-flex; align-items: center; gap: 12px; font-family: var(--aura-font-display); font-weight: 800; font-size: 22px; letter-spacing: 0.08em; }
+.footerManifesto { color: var(--aura-muted); font-size: 14px; line-height: 1.7; max-width: 340px; margin: 16px 0 0; }
+.footerBadge {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; padding: 7px 14px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; color: var(--aura-emerald);
+  background: color-mix(in srgb, var(--aura-accent) 12%, transparent);
+  border: 1px solid var(--aura-glass-border);
+}
+.footerColTitle { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--aura-muted); margin: 0 0 16px; }
+.footerLinks { display: flex; flex-direction: column; gap: 12px; font-size: 14px; }
+.footerLinks a { color: var(--aura-ink-soft); width: fit-content; transition: color 0.2s ease; }
+.footerLinks a:hover { color: var(--aura-accent); }
+.adminLink { display: inline-flex; align-items: center; gap: 6px; color: var(--aura-muted); font-weight: 600; }
+.footerBottom {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
+  padding-top: 28px; color: var(--aura-muted); font-size: 13px;
+}
+
+@media (max-width: 62em) {
+  .footerGrid { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .footerBrandCol { grid-column: 1 / -1; }
+}
 
 @media (max-width: 48em) {
-  .headerInner { align-items: flex-start; flex-direction: column; gap: 12px; }
-  .navigation { width: 100%; gap: 20px; justify-content: space-between; font-size: 13px; }
-  .footerInner { align-items: flex-start; flex-direction: column; }
+  .navigation { display: none; }
+  .vrButton span { display: none; }
+  .vrButton { padding: 9px 12px; }
+  .footerGrid { grid-template-columns: 1fr; gap: 28px; }
 }
 
 @media (forced-colors: active) {
   .navLink[aria-current='page'] { color: LinkText; }
+  .headerScrolled { border-bottom-color: CanvasText; }
 }

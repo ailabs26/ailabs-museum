@@ -1,4 +1,5 @@
 import { Button, Container, Title } from '@mantine/core';
+import { IconCube } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { z } from 'zod';
@@ -69,13 +70,21 @@ export function ExhibitDetailPage() {
         <header className={classes.header}>
           <p className={classes.roomName}>{detail.name}</p>
           <Title ref={titleRef} tabIndex={-1} order={1} id="exhibit-title" className={classes.title}>{exhibit.name}</Title>
-          <Button variant="default" onClick={() => setIsReportOpen(true)}>Báo nội dung</Button>
+          <div className={classes.headerActions}>
+            <Link className={classes.jump3d}
+              to={`/tour?${new URLSearchParams({ room: detail.slug, exhibit: exhibit.id })}`}>
+              <IconCube size={18} aria-hidden="true" /> Xem trong không gian 3D
+            </Link>
+            <Button variant="default" onClick={() => setIsReportOpen(true)}>Báo nội dung</Button>
+          </div>
         </header>
         <div className={classes.content}>
           <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } : null}
             shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
           <div className={classes.sections}>
-            <AudioPlayer key={`${detail.id}:${exhibit.id}:vi`} src={audio?.audio.url} subtitleUrl={audio?.subtitle?.url} locale="vi" />
+            <div className={classes.audioDock}>
+              <AudioPlayer key={`${detail.id}:${exhibit.id}:vi`} src={audio?.audio.url} subtitleUrl={audio?.subtitle?.url} locale="vi" />
+            </div>
             <section aria-labelledby="exhibit-description-title">
               <Title order={2} id="exhibit-description-title" className={classes.sectionTitle}>Câu chuyện hiện vật</Title>
               <p className={classes.body}>{exhibit.description || 'Chưa có mô tả.'}</p>

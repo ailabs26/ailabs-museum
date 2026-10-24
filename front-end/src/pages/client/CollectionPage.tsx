@@ -1,14 +1,16 @@
-import { Alert, Button, Container, NativeSelect, Text, Title } from '@mantine/core';
-import { IconArrowRight } from '@tabler/icons-react';
+import { Alert, Button, Container, Text, TextInput, Title } from '@mantine/core';
+import { IconArrowRight, IconSearch } from '@tabler/icons-react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitGrid } from '@/shared/components/data/ExhibitGrid';
+import { ExhibitSkeleton } from '@/shared/components/feedback/ExhibitSkeleton';
 import { PublicReportModal } from '@/shared/components/feedback/PublicReportModal';
 import classes from './CollectionPage.module.css';
 
 export function CollectionPage() {
   const [reportTarget, setReportTarget] = useState<{ exhibitId: string; reportedRevisionId: string } | null>(null);
+  const [query, setQuery] = useState('');
   const location = useLocation();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const focusedLocation = useRef<string | null>(null);
@@ -17,6 +19,11 @@ export function CollectionPage() {
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const exhibits = detail ? [...detail.exhibits].sort((left, right) =>
     left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)) : [];
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return exhibits;
+    return exhibits.filter((e) => `${e.name} ${e.description}`.toLowerCase().includes(q));
+  }, [exhibits, query]);
   const destinationReady = !rooms.isPending && (!selectedRoom || !room.isPending);
   const fromTourFallback = location.state?.fromTourFallback === true;
   useEffect(() => {
@@ -29,6 +36,7 @@ export function CollectionPage() {
     const next = new URLSearchParams(searchParams);
     next.set('room', slug);
     setSearchParams(next);
+    setQuery('');
   };
 
   return (
@@ -40,27 +48,38 @@ export function CollectionPage() {
           Khám phá nội dung hiện vật trong giao diện 2D, không cần mở không gian 3D.</p>
       </header>
 
-      <div className={classes.toolbar}>
-        {rooms.data && rooms.data.length > 0 && (
-          <NativeSelect label="Chọn phòng trưng bày" value={selectedSlug ?? ''}
-            className={classes.select} onChange={(event) => handleSelectRoom(event.currentTarget.value)}
-            data={[
-              ...(!selectedRoom ? [{ value: selectedSlug ?? '', label: 'Phòng không khả dụng', disabled: true }] : []),
-              ...rooms.data.map((item) => ({ value: item.slug, label: item.name })),
-            ]} />
-        )}
-        <Button variant="default" disabled={rooms.isFetching || room.isFetching}
-          onClick={() => void refresh()}>Làm mới</Button>
-      </div>
+      {/* Filter pills + live search */}
+      {rooms.data && rooms.data.length > 0 && (
+        <div className={classes.toolbar}>
+          <div className={classes.pills} role="group" aria-label="Chọn phòng trưng bày">
+            {!selectedRoom && selectedSlug && (
+              <span className={`${classes.pill} ${classes.pillActive}`}>Phòng không khả dụng</span>
+            )}
+            {rooms.data.map((item) => (
+              <button key={item.slug} type="button"
+                className={`${classes.pill} ${item.slug === selectedSlug ? classes.pillActive : ''}`}
+                aria-pressed={item.slug === selectedSlug}
+                onClick={() => handleSelectRoom(item.slug)}>{item.name}</button>
+            ))}
+          </div>
+          <div className={classes.toolbarRight}>
+            <TextInput className={classes.search} value={query} onChange={(e) => setQuery(e.currentTarget.value)}
+              placeholder="Tìm hiện vật theo tên hoặc từ khóa…" aria-label="Tìm kiếm hiện vật"
+              leftSection={<IconSearch size={16} aria-hidden="true" />} />
+            <Button variant="default" disabled={rooms.isFetching || room.isFetching}
+              onClick={() => void refresh()}>Làm mới</Button>
+          </div>
+        </div>
+      )}
 
-      {rooms.isPending ? <p role="status">Đang tải danh sách phòng…</p>
+      {rooms.isPending ? <ExhibitSkeleton />
         : rooms.isError ? <Alert color="red" role="alert" title="Không tải được danh sách phòng">
           <Text>{rooms.error.message}</Text>
           <Button mt="sm" onClick={() => void rooms.refetch()}>Thử lại</Button>
         </Alert>
         : rooms.data.length === 0 ? <p role="status" className={classes.empty}>Chưa có phòng trưng bày công khai.</p>
         : !selectedRoom ? <Alert color="red" role="alert">Phòng được chọn không có trong danh sách công khai. Hãy chọn phòng khác.</Alert>
-        : room.isPending ? <p role="status">Đang tải hiện vật…</p>
+        : room.isPending ? <ExhibitSkeleton />
         : room.isError ? <Alert color="red" role="alert" title="Không tải được hiện vật">
           <Text>{room.error.message}</Text>
           <Button mt="sm" onClick={() => void room.refetch()}>Thử lại</Button>
@@ -72,15 +91,19 @@ export function CollectionPage() {
             <div>
               <Title order={2} id="collection-room-title" className={classes.roomTitle}>{detail.name}</Title>
               {detail.description && <p className={classes.roomDescription}>{detail.description}</p>}
-              <p className={classes.count}>{exhibits.length} hiện vật đã xuất bản</p>
+              <p className={classes.count}>
+                {query.trim() ? `${filtered.length}/${exhibits.length}` : exhibits.length} hiện vật
+                {query.trim() ? ' khớp tìm kiếm' : ' đã xuất bản'}
+              </p>
             </div>
             <Link to={`/tour?${new URLSearchParams({ room: detail.slug })}`} className={classes.tourLink}>
               Tham quan phòng này trong 3D <IconArrowRight size={18} aria-hidden="true" />
             </Link>
           </div>
           {room.isFetching && <p role="status">Đang cập nhật hiện vật…</p>}
-          {exhibits.length === 0 ? <p role="status" className={classes.empty}>Phòng này chưa có hiện vật được xuất bản.</p> : (
-            <ExhibitGrid exhibits={exhibits} roomSlug={detail.slug} onReport={(exhibit) =>
+          {exhibits.length === 0 ? <p role="status" className={classes.empty}>Phòng này chưa có hiện vật được xuất bản.</p>
+            : filtered.length === 0 ? <p role="status" className={classes.empty}>Không có hiện vật nào khớp với “{query}”.</p> : (
+            <ExhibitGrid exhibits={filtered} roomSlug={detail.slug} onReport={(exhibit) =>
               setReportTarget({ exhibitId: exhibit.id, reportedRevisionId: exhibit.revisionId })} />
           )}
         </section>

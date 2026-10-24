@@ -1,20 +1,40 @@
 .page { padding-block: 48px 64px; }
 .header { margin-bottom: 32px; }
-.backLink { display: inline-block; padding-block: 12px; margin-bottom: 20px; font-size: 14px; font-weight: 600; }
-.roomName { color: var(--public-accent); font-size: 14px; font-weight: 600; margin: 0 0 16px; overflow-wrap: anywhere; }
-.title { font-family: 'Times New Roman', serif; font-weight: 400; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.2; overflow-wrap: anywhere; }
-.title:focus-visible { outline: 3px solid var(--public-accent); outline-offset: 4px; }
+.backLink { display: inline-flex; align-items: center; gap: 6px; padding-block: 10px; margin-bottom: 16px; font-size: 14px; font-weight: 600; color: var(--aura-emerald); }
+.roomName { color: var(--aura-emerald); font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 14px; overflow-wrap: anywhere; }
+.title { font-family: var(--aura-font-display); font-weight: 800; font-size: clamp(2rem, 4vw, 3.1rem); line-height: 1.15; letter-spacing: -0.02em; overflow-wrap: anywhere; color: var(--aura-ink); }
+.title:focus-visible { outline: 2px solid var(--aura-accent); outline-offset: 4px; }
+
+.headerActions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 20px; }
+.jump3d {
+  display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 12px;
+  font-weight: 700; font-size: 14px; color: var(--aura-on-accent);
+  background: var(--aura-gradient-accent); box-shadow: var(--aura-glow-emerald);
+  transition: transform 0.25s var(--aura-ease-spring), box-shadow 0.25s ease;
+}
+.jump3d:hover { transform: translateY(-2px); box-shadow: 0 0 34px -2px rgba(16, 185, 129, 0.6); }
+.jump3d:focus-visible { outline: 2px solid var(--aura-cyan-bright); outline-offset: 3px; }
+
 .content { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 40px; align-items: start; }
-.preview { min-height: 240px; border: 1px solid var(--public-border); }
-.sectionTitle { font-size: 22px; line-height: 1.4; overflow-wrap: anywhere; }
-.body { color: var(--public-muted); line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; margin-block: 16px 0; }
+.preview { min-height: 240px; border-radius: 16px; overflow: hidden; border: 1px solid var(--aura-glass-border); box-shadow: var(--aura-shadow-card); }
+.sectionTitle { font-family: var(--aura-font-display); font-weight: 700; font-size: 22px; line-height: 1.4; overflow-wrap: anywhere; color: var(--aura-ink); }
+.body { color: var(--aura-ink-soft); line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; margin-block: 16px 0; }
 .sections { display: grid; gap: 32px; min-width: 0; }
+
+/* Floating sticky audio bar — ghim khi cuộn đọc câu chuyện */
+.audioDock {
+  position: sticky; top: 76px; z-index: 20; border-radius: 16px; padding: 4px;
+  background: var(--aura-glass-strong); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--aura-glass-border); box-shadow: var(--aura-shadow-card);
+}
+
 .hotspots { padding-left: 24px; margin: 20px 0 0; }
 .hotspots li + li { margin-top: 24px; }
-.hotspotLabel { font-weight: 600; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.hotspotLabel { font-family: var(--aura-font-display); font-weight: 700; color: var(--aura-ink); margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 @media (max-width: 48em) {
   .page { padding-block: 32px 48px; }
   .content { grid-template-columns: minmax(0, 1fr); gap: 28px; }
   .preview { min-height: 192px; }
+  .audioDock { position: static; }
 }
