@@ -164,7 +164,16 @@ npm run migration:generate -- src/database/migrations/TenMigration
 npm run typecheck   # tsc --noEmit
 npm run lint        # eslint
 npm run build       # nest build
+npm test            # toàn bộ test back-end
+npm run test:core   # test lõi: common, config, auth, users, roles
+npm run test:coverage  # coverage phạm vi lõi, fail nếu < 80% (cần CORE_TEST_DATABASE_URL)
 ```
+
+Integration test trên PostgreSQL thật chỉ chạy khi `CORE_TEST_DATABASE_URL` trỏ tới DB **cục bộ**
+(vd container `postgres:16-alpine`). An toàn DB: `tools/db/check-db-config.sh` (kiểm cấu hình, chỉ đọc)
+và `tools/db/backup-restore-drill.sh` (diễn tập backup/restore, đo RPO/RTO trên container tạm).
+Kết quả: [báo cáo coverage](../docs/plans/reports/core-backend-test-coverage-report.md),
+[biên bản kiểm thử DB](../docs/plans/reports/db-backup-restore-safety-report.md).
 
 Phân hệ quản trị đã có đầy đủ xác thực, RBAC, CRUD người dùng/vai trò/quyền và nhật ký.
 Các module nội dung CMS (CRUD rooms/exhibits, upload media, kiểm duyệt/report) và bộ kiểm thử
