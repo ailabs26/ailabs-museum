@@ -3,18 +3,22 @@ import {
   Alert,
   Badge,
   Button,
+  Center,
   Drawer,
   Group,
+  Pagination,
+  SegmentedControl,
   Select,
   Stack,
   Text,
   TextInput,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconSearch } from '@tabler/icons-react';
+import { IconLayoutList, IconSearch, IconTable } from '@tabler/icons-react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Column, DataTable } from '@/shared/components/data';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
+import { AuditTimeline } from '@/components/cms/AuditTimeline';
 import { AuditRow, auditService } from '@/services/audit.service';
 
 const RESOURCE_OPTIONS = [
@@ -50,6 +54,7 @@ export function AuditPage() {
   const [resourceType, setResourceType] = useState<string | null>(null);
   const [range, setRange] = useState<[Date | null, Date | null]>([null, null]);
   const [detail, setDetail] = useState<AuditRow | null>(null);
+  const [view, setView] = useState<'table' | 'timeline'>('table');
 
   const query = useQuery({
     queryKey: ['audit', page, action, actorId, resourceType, range[0]?.toISOString(), range[1]?.toISOString()],
@@ -106,14 +111,15 @@ export function AuditPage() {
         title="Nhật ký hệ thống"
         description="Lịch sử thao tác quản trị (append-only)"
         actions={
-          <Button
-            variant="default"
-            loading={query.isFetching}
-            disabled={query.isFetching}
-            onClick={() => void query.refetch()}
-          >
-            Làm mới
-          </Button>
+          <Group gap="xs">
+            <SegmentedControl size="sm" value={view} onChange={(v) => setView(v as 'table' | 'timeline')}
+              data={[
+                { value: 'table', label: <Center style={{ gap: 6 }}><IconTable size={15} /> Bảng</Center> },
+                { value: 'timeline', label: <Center style={{ gap: 6 }}><IconLayoutList size={15} /> Dòng thời gian</Center> },
+              ]} />
+            <Button variant="default" loading={query.isFetching} disabled={query.isFetching}
+              onClick={() => void query.refetch()}>Làm mới</Button>
+          </Group>
         }
       />
 
@@ -169,6 +175,15 @@ export function AuditPage() {
             Thử lại
           </Button>
         </Alert>
+      ) : view === 'timeline' ? (
+        <Stack gap="md">
+          <AuditTimeline rows={data?.items ?? []} onSelect={setDetail} />
+          {data && data.total > data.pageSize && (
+            <Group justify="center">
+              <Pagination value={data.page} total={Math.ceil(data.total / data.pageSize)} onChange={setPage} />
+            </Group>
+          )}
+        </Stack>
       ) : (
         <DataTable
           columns={columns}

@@ -42,6 +42,7 @@ import { Column, DataTable } from '@/shared/components/data';
 import { confirmAction, notify } from '@/shared/components/feedback';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { MediaPreview } from '@/shared/components/media/MediaPreview';
+import { UploadDropzone } from '@/components/cms/UploadDropzone';
 
 const PAGE_SIZE = 15;
 
@@ -337,6 +338,10 @@ export function MediaPage() {
             GLB ≤ 10 MB (tài nguyên nhúng) · Ảnh JPEG/PNG/WebP ≤ 2 MB · MP3 ≤ 10 MB · WebVTT ≤ 1 MB
           </Text>
         </Group>
+        <div style={{ marginTop: 12 }}>
+          <UploadDropzone onFile={handleFile} disabled={uploadMutation.isPending}
+            hint={`Hoặc thả tệp ${MEDIA_KIND_LABEL[uploadKind]} (${MEDIA_ACCEPT[uploadKind]}) vào vùng này`} />
+        </div>
         {uploadProgress !== null && (
           <Progress value={uploadProgress * 100} mt="sm" size="sm" animated aria-label="Tiến độ tải lên" />
         )}
