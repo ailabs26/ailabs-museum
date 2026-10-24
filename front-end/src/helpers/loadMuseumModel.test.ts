@@ -1,9 +1,14 @@
 import { beforeEach, expect, it, vi } from 'vitest';
+import { webcrypto } from 'node:crypto';
 import { BoxGeometry, Group, Mesh, MeshStandardMaterial } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { museumService } from '@/services/museum.service';
 import { loadMuseumModel } from './loadMuseumModel';
 import { disposeModel } from './glbAsset';
+
+if (!globalThis.crypto) {
+  (globalThis as unknown as { crypto: Crypto }).crypto = webcrypto as unknown as Crypto;
+}
 
 vi.mock('@/services/museum.service', () => ({ museumService: { getModelBinary: vi.fn() } }));
 const buffer = new ArrayBuffer(52);
