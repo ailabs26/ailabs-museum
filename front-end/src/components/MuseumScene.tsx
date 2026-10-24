@@ -19,6 +19,13 @@ import { reportModelFailure } from '@/helpers/modelDiagnostics';
 import { createNavigationInput } from '@/helpers/museumNavigation';
 import { NavigationGestures } from '@/helpers/navigationGestures';
 import { NavigationHud, type NavigationMode } from '@/components/museum/NavigationHud';
+import { SpatialMinimap } from '@/components/museum/SpatialMinimap';
+import { ArtifactDock } from '@/components/museum/ArtifactDock';
+import { CinematicIntro } from '@/components/museum/CinematicIntro';
+import { PhotoCapture } from '@/components/museum/PhotoCapture';
+import { downloadScenePhoto } from '@/helpers/scenePhoto';
+import { notify } from '@/shared/components/feedback';
+import { IconCamera } from '@tabler/icons-react';
 import { MuseumXr } from '@/components/museum/MuseumXr';
 import type { XrSessionController, XrSnapshot } from '@/helpers/xrSession';
 import type { WebglStatus } from '@/helpers/webglRecovery';
@@ -85,6 +92,18 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
     return !state || !state.failed || state.attempts >= 3 ? states : { ...states, [id]: { ...state, failed: false, attempts: state.attempts + 1 } };
   });
   const handleCommand = (action: CameraAction) => setCommand((previous) => ({ action, sequence: (previous?.sequence ?? 0) + 1 }));
+  const captureRef = useRef<(() => string | null) | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const handlePhoto = async () => {
+    setIsCapturing(true);
+    try {
+      const ok = await downloadScenePhoto(captureRef.current?.() ?? null);
+      if (ok) notify.success('Đã lưu ảnh kỷ niệm không gian 3D');
+      else notify.error('Chưa chụp được ảnh. Hãy thử lại sau khi khung 3D hiển thị xong.');
+    } finally {
+      setIsCapturing(false);
+    }
+  };
   if (webglStatus === 'failed') return fallback;
   return (
     <div className={classes.scene} data-webgl-status={webglStatus} data-xr-phase={xrStatus.phase}>
@@ -98,7 +117,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
       frameloop="demand"
       dpr={[1, 1.5]}
       camera={{ position: INITIAL_CAMERA_POSITION, fov: 60, near: 0.1, far: 40 }}
-      gl={{ antialias: true, alpha: false, powerPreference: 'low-power', toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1 }}
+      gl={{ antialias: true, alpha: false, powerPreference: 'low-power', preserveDrawingBuffer: true, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1 }}
       // R3F mounts this inside <canvas> even when WebGL works; no failure callbacks here.
       fallback="Trình duyệt không hiển thị được canvas. Nội dung hiện vật vẫn có trong danh mục bên dưới."
       onPointerMissed={(event) => { if (isWebInputEnabled && event.type === 'click' && gestures.canSelect) onClear(); }}
@@ -109,6 +128,8 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
       <SceneLifecycle onStatus={handleWebglStatus} />
       <MuseumXr available={webglStatus === 'ready'} displays={displays} selectedId={selectedId} onSelect={onSelect}
         onController={setXrOwner} onStatus={setXrStatus} onHover={setXrHoveredId} onRendererReset={handleRendererReset} />
+      <PhotoCapture bind={(fn) => { captureRef.current = fn; }} />
+      <CinematicIntro input={input} enabled={isWebInputEnabled} />
       <MuseumControls enabled={isWebInputEnabled} command={command} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
         displays={displays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} />
       <MuseumRoom />
@@ -120,12 +141,16 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
     {isRendererRestarting && <div className={classes.recovering} role="status">Đang khởi tạo lại phần hiển thị sau lỗi VR.</div>}
     {webglStatus !== 'ready' && <div className={classes.recovering} role="status">Đang khôi phục không gian 3D. Bạn có thể tiếp tục đọc danh mục.</div>}
     {isWebInputEnabled && <NavigationHud input={input} mode={mode} isActive={isActive} hasTouch={hasTouch} />}
+    {isWebInputEnabled && <SpatialMinimap displays={displays} selectedId={selectedId} onSelect={onSelect} />}
+    {isWebInputEnabled && <ArtifactDock displays={displays} selectedId={selectedId} onSelect={onSelect} onFocus={() => handleCommand('focus')} />}
     </div>
     <Group className={classes.toolbar} gap="xs" aria-label="Điều khiển góc nhìn">
       <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('reset')}>Góc nhìn ban đầu</Button>
       <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('in')}>Đến gần</Button>
       <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('out')}>Lùi xa</Button>
       <Button color="teal.9" disabled={!isWebInputEnabled || !selectedDisplay || selectedDisplay.isOutsideRoom} onClick={() => handleCommand('focus')}>Tập trung hiện vật</Button>
+      <Button variant="default" leftSection={<IconCamera size={16} aria-hidden="true" />} disabled={!isWebInputEnabled || isCapturing}
+        loading={isCapturing} onClick={() => void handlePhoto()}>Chụp ảnh</Button>
       {xrStatus.capability === 'ready' && xrStatus.phase === 'idle' && <Button disabled={webglStatus !== 'ready' || !xrOwner} onClick={() => { void xrOwner?.enter(); }}>Enter VR</Button>}
       {xrStatus.phase === 'requesting' && <Button disabled>Đang vào VR…</Button>}
       {(xrStatus.phase === 'active' || xrStatus.phase === 'ending') && <Button disabled={xrStatus.phase === 'ending'} onClick={() => { void xrOwner?.exit(); }}>Exit VR</Button>}

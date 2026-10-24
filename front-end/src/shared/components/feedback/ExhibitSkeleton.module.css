@@ -1,0 +1,19 @@
+.grid { display: grid; grid-template-columns: 1fr; gap: 24px; list-style: none; padding: 0; margin: 0; }
+.card { overflow: hidden; border-radius: 16px; border: 1px solid var(--aura-glass-border); background: var(--aura-glass-bg); }
+.media { height: 190px; }
+.body { padding: 22px; }
+.line { height: 12px; border-radius: 6px; margin-bottom: 12px; }
+.lineTitle { height: 18px; width: 70%; }
+.lineShort { width: 45%; margin-bottom: 0; }
+
+.shimmer {
+  background: linear-gradient(90deg,
+    var(--aura-surface-2) 0%,
+    color-mix(in srgb, var(--aura-accent) 10%, var(--aura-surface-2)) 50%,
+    var(--aura-surface-2) 100%);
+  background-size: 800px 100%;
+  animation: aura-shimmer 1.4s linear infinite;
+}
+
+@media (min-width: 48em) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 62em) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

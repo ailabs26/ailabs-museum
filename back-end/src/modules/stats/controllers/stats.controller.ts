@@ -2,6 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { OverviewStatsDto } from '../dto/overview-stats.dto';
 import { StatsChartsDto } from '../dto/stats-charts.dto';
+import { StorageStatsDto } from '../dto/storage-stats.dto';
 import { StatsService } from '../services/stats.service';
 
 @ApiTags('Admin · Stats')
@@ -20,5 +21,11 @@ export class StatsController {
   @ApiOperation({ summary: 'Dữ liệu biểu đồ Dashboard (báo cáo/hiện vật/revision + hoạt động 14 ngày)' })
   charts(): Promise<StatsChartsDto> {
     return this.stats.charts();
+  }
+
+  @Get('storage')
+  @ApiOperation({ summary: 'Dung lượng lưu trữ media theo từng loại tệp' })
+  storage(): Promise<StorageStatsDto> {
+    return this.stats.storage();
   }
 }

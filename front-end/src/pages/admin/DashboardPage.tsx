@@ -55,6 +55,16 @@ export function DashboardPage() {
   const activity = c?.activityLast14Days ?? [];
   const ramp = categorical(scheme);
 
+  const revSpark = activity.map((a) => a.revisions);
+  const repSpark = activity.map((a) => a.reports);
+  const weekDelta = (series: number[]): number | undefined => {
+    if (series.length < 14) return undefined;
+    const last = series.slice(-7).reduce((s, v) => s + v, 0);
+    const prev = series.slice(-14, -7).reduce((s, v) => s + v, 0);
+    if (prev === 0) return last > 0 ? 100 : 0;
+    return Math.round(((last - prev) / prev) * 100);
+  };
+
   const refreshing = overview.isFetching || charts.isFetching;
   const handleRefresh = () => {
     void overview.refetch();
@@ -96,6 +106,7 @@ export function DashboardPage() {
               subtitle={`${o?.rooms.active ?? 0} hoạt động · ${o?.rooms.archived ?? 0} lưu trữ`}
               icon={<IconBuildingArch size={24} />}
               color="aura"
+              accent={ramp[0]}
             />
             <StatCard
               label="Hiện vật"
@@ -103,6 +114,7 @@ export function DashboardPage() {
               subtitle={`${o?.exhibits.visible ?? 0} hiển thị · ${o?.exhibits.hidden ?? 0} đang ẩn`}
               icon={<IconArtboard size={24} />}
               color="teal"
+              accent={ramp[2]}
             />
             <StatCard
               label="Chờ duyệt"
@@ -110,6 +122,9 @@ export function DashboardPage() {
               subtitle={`${o?.revisions.draft ?? 0} bản nháp đang biên tập`}
               icon={<IconChecklist size={24} />}
               color="yellow"
+              accent={ramp[3]}
+              delta={weekDelta(revSpark)}
+              spark={revSpark}
             />
             <StatCard
               label="Báo cáo mở"
@@ -117,6 +132,9 @@ export function DashboardPage() {
               subtitle={`${o?.reports.inProgress ?? 0} đang xử lý`}
               icon={<IconFlag size={24} />}
               color="red"
+              accent={reportStatusColor('open', scheme)}
+              delta={weekDelta(repSpark)}
+              spark={repSpark}
             />
           </>
         )}
