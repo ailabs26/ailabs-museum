@@ -5,7 +5,7 @@
 - **Ngày chạy:** 24/10/2026
 - **Nhánh:** `test/phase2-core-db-safety`
 - **Công cụ:** `back-end/tools/db/backup-restore-drill.sh`, `back-end/tools/db/check-db-config.sh`
-- **Kết luận:** quy trình backup logic → khôi phục **đạt** trên môi trường diễn tập (khôi phục đầy đủ, RTO đo được 10–14 giây). **Chưa đạt** ở môi trường thật vì chưa có backup định kỳ, nên RPO hiện chưa có giới hạn (xem §5). Kiểm cấu hình DB Supabase phát hiện **lỗ hổng nghiêm trọng**: toàn bộ bảng có thể bị đọc/ghi qua Data API (§4.3).
+- **Kết luận:** quy trình backup logic → khôi phục **đạt** trên môi trường diễn tập (khôi phục đầy đủ, RTO đo được 10–14 giây). **Chưa đạt** ở môi trường thật vì chưa có backup định kỳ, nên RPO hiện chưa có giới hạn (xem §5). Kiểm cấu hình DB Supabase thấy quyền thừa của `anon`/`authenticated` và RLS tắt, nhưng **Data API đã tắt** nên hiện không khai thác được (§4.3).
 
 ## 1. Mục tiêu RPO/RTO
 
@@ -109,23 +109,25 @@ Chạy `tools/db/check-db-config.sh` với phiên bị khóa READ ONLY. Kết qu
 | Kết nối | PASS — 16/60 |
 | `wal_level=logical`, `archive_mode=on` | INFO — Supabase có lưu trữ WAL ở tầng nền tảng; gói hiện tại có cho tải/khôi phục backup hay không phải xem ở Dashboard → Database → Backups |
 | Migration | **WARN** — DB có 3/4 migration; thiếu `WidenHotspotLabel1792150000000` (`hotspots.label` vẫn là `varchar(200)` trong khi mã nguồn yêu cầu `text`) |
-| **Bảng lộ qua Data API (anon/authenticated)** | **FAIL — NGHIÊM TRỌNG**: cả 14 bảng trong `public` (kể cả `users`, `refresh_sessions`, `user_roles`, `migrations`) đều cấp SELECT/INSERT/DELETE cho `anon` và `authenticated`, `anon` có USAGE trên schema `public`, và 0/13 bảng bật RLS |
+| Bảng lộ qua Data API (anon/authenticated) | **FAIL ở mức quyền, được chặn nhờ Data API tắt** (xác nhận trên Dashboard 24/10/2026): cả 14 bảng trong `public` (kể cả `users`, `refresh_sessions`, `user_roles`, `migrations`) đều cấp SELECT/INSERT/DELETE cho `anon` và `authenticated`, `anon` có USAGE trên schema `public`, và 0/13 bảng bật RLS |
 
-Ý nghĩa của FAIL Data API: nếu Data API (PostgREST) của project đang bật, bất kỳ ai có khóa publishable/anon (khóa được thiết kế để công khai) đều có thể:
+**Trạng thái thực tế:** Dashboard → Integrations → Data API cho thấy *Enable Data API* đang **tắt**; mọi gọi tới `/rest/v1/` đều lỗi nên rủi ro dưới đây hiện **không khai thác được**. Đây là nợ kỹ thuật, không phải sự cố đang mở.
+
+Ý nghĩa nếu sau này Data API (PostgREST) được bật lại, bất kỳ ai có khóa publishable/anon (khóa được thiết kế để công khai) đều có thể:
 - đọc hash mật khẩu và refresh session;
 - tự chèn tài khoản + gán role `admin` (`users`, `user_roles`), tức chiếm quyền quản trị;
 - xóa dữ liệu.
 
 Mình không thử khai thác để xác nhận; kết luận chỉ dựa trên quyền trong catalog.
 
-Cách sửa an toàn cho back-end: role `postgres` của API là chủ của cả 14 bảng và có `BYPASSRLS = true`, nên bật RLS (không cần policy) **không ảnh hưởng** API, đồng thời chặn hết `anon`/`authenticated`. Nên làm thêm: thu hồi quyền của 2 role này trên schema `public`, và tắt Data API trong Dashboard nếu không dùng.
+Cách sửa an toàn cho back-end: role `postgres` của API là chủ của cả 14 bảng và có `BYPASSRLS = true`, nên bật RLS (không cần policy) **không ảnh hưởng** API, đồng thời chặn hết `anon`/`authenticated`. Chỉ cần làm khi có kế hoạch bật Data API hoặc dùng Supabase client ở front-end; khi đó phải bật RLS và thu hồi quyền của 2 role này **trước** khi bật. Chưa cần migration vì dự án chỉ truy cập DB qua NestJS (YAGNI).
 
 ## 5. Phát hiện và đề xuất
 
 | # | Mức | Phát hiện | Đề xuất |
 |---|---|---|---|
 | 1 | **Cao** | Chưa có backup định kỳ. Gói Supabase đang dùng không có PITR (`docs/supabase/07` §3); hiện chỉ có `pg_dump` thủ công trước thao tác lớn → RPO thực tế = thời gian kể từ lần dump tay gần nhất, không có giới hạn. | Lập lịch `pg_dump -Fc` hằng ngày (cron trên VPS hoặc GitHub Actions có secret `DATABASE_URL`), lưu kèm sha256, giữ ≥ 7 bản, lưu ngoài Supabase và mã hóa (vd `age`/`gpg`). Mỗi tháng chạy `backup-restore-drill.sh`, hoặc restore bản mới nhất vào container tạm rồi chạy `check-db-config.sh` + integration test. |
-| 2 | **Nghiêm trọng** | 14 bảng `public` cấp SELECT/INSERT/DELETE cho `anon`/`authenticated`, RLS tắt hết (§4.3). | Ngay: `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` cho mọi bảng (thêm thành migration để môi trường mới cũng có) + `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated`; tắt Data API nếu không dùng; xoay vòng khóa publishable/anon nếu từng bị phát tán. |
+| 2 | Thấp (đang được chặn) | 14 bảng `public` cấp SELECT/INSERT/DELETE cho `anon`/`authenticated`, RLS tắt hết, nhưng Data API đang tắt (§4.3). | Giữ Data API tắt. Nếu sau này cần bật: trước đó `ENABLE ROW LEVEL SECURITY` cho mọi bảng + `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated`. Chạy lại `check-db-config.sh` sau mọi thay đổi cấu hình Supabase. |
 | 2b | Trung bình | DB dùng chung thiếu migration `WidenHotspotLabel` (label > 200 ký tự sẽ lỗi khi lưu). | Backup rồi chạy `npm run migration:run` trên DB dùng chung (báo nhóm trước). |
 | 3 | Trung bình | TLS tới Supabase không xác thực CA (`sslmode=require`). | Chuyển sang cách A trong `docs/supabase/02` (`DATABASE_SSL=true` + `DATABASE_SSL_CA`). |
 | 4 | Trung bình | `idle_in_transaction_session_timeout = 0` trên cả DB cục bộ và Supabase (Supabase đã có `statement_timeout = 2min`). | `ALTER ROLE <app_role> SET statement_timeout = '30s'; ALTER ROLE <app_role> SET idle_in_transaction_session_timeout = '60s';` Chạy sau khi xác nhận không ảnh hưởng tới migration dài (migration chạy bằng phiên riêng thì đặt lại giá trị cho phiên đó). |
