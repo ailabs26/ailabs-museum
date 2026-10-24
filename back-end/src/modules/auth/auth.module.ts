@@ -8,6 +8,7 @@ import { RefreshSession } from './entities/refresh-session.entity';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './controllers/auth.controller';
 import { RefreshCookieOriginGuard } from './guards/refresh-cookie-origin.guard';
+import { AuthRateLimiter } from './services/auth-rate-limiter.service';
 import { AuthService } from './services/auth.service';
 import { RefreshSessionsRepository } from './repositories/refresh-sessions.repository';
 import { TokenService } from './services/token.service';
@@ -22,6 +23,7 @@ import { TokenService } from './services/token.service';
   providers: [
     AuthService,
     TokenService,
+    AuthRateLimiter,
     RefreshSessionsRepository,
     RefreshCookieOriginGuard,
     // Guard toàn cục: JwtAuthGuard xác thực trước, PermissionsGuard kiểm quyền sau.

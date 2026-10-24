@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  HttpException,
   HttpStatus,
   Post,
   UnauthorizedException,
@@ -16,6 +17,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { CookieOptions, Request, Response } from 'express';
@@ -25,6 +27,7 @@ import { Public } from '../../../common/decorators/public.decorator';
 import { AuthService } from '../services/auth.service';
 import { LoginDto } from '../dto/login.dto';
 import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard';
+import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
 import { TokenService } from '../services/token.service';
 
 type RequestWithCookies = Request & { cookies?: Record<string, string> };
@@ -36,6 +39,7 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly tokens: TokenService,
     private readonly config: ConfigService,
+    private readonly limiter: AuthRateLimiter,
   ) {}
 
   @Public()
@@ -43,14 +47,30 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng nhập, trả access token + set cookie refresh' })
   @ApiUnauthorizedResponse({ description: 'Sai thông tin đăng nhập hoặc tài khoản bị khóa.' })
+  @ApiTooManyRequestsResponse({ description: 'Quá nhiều lần thử theo IP hoặc email; xem Retry-After.' })
   @ApiOkResponse({
     description: 'Access token và user trong ApiResponse; refresh token qua cookie HttpOnly.',
   })
   async login(
     @Body() dto: LoginDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ accessToken: string; user: AuthUser }> {
-    const result = await this.auth.login(dto);
+    this.limitOrRetryAfter(res, () => {
+      this.limiter.consumeIp(req.ip ?? 'unknown');
+      this.limiter.assertEmailAllowed(dto.email);
+    });
+
+    let result;
+    try {
+      result = await this.auth.login(dto);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        this.limiter.recordEmailFailure(dto.email);
+      }
+      throw error;
+    }
+    this.limiter.resetEmail(dto.email);
     this.setRefreshCookie(res, result.refreshToken);
     return { accessToken: result.accessToken, user: result.user };
   }
@@ -70,6 +90,7 @@ export class AuthController {
     @Req() req: RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ accessToken: string }> {
+    this.limitOrRetryAfter(res, () => this.limiter.consumeIp(req.ip ?? 'unknown'));
     try {
       const result = await this.auth.refresh(this.readRefreshCookie(req));
       this.setRefreshCookie(res, result.refreshToken);
@@ -113,6 +134,19 @@ export class AuthController {
   @ApiOkResponse({ description: 'User hiện tại trong ApiResponse.' })
   me(@CurrentUser() user: AuthUser): Promise<AuthUser> {
     return this.auth.me(user.id);
+  }
+
+  /** Chạy kiểm tra giới hạn; nếu 429 thì gắn header Retry-After rồi ném lại. */
+  private limitOrRetryAfter(res: Response, check: () => void): void {
+    try {
+      check();
+    } catch (error) {
+      if (error instanceof HttpException && error.getStatus() === HttpStatus.TOO_MANY_REQUESTS) {
+        const body = error.getResponse() as { retryAfter?: number };
+        if (body.retryAfter) res.setHeader('Retry-After', String(body.retryAfter));
+      }
+      throw error;
+    }
   }
 
   private cookieName(): string {

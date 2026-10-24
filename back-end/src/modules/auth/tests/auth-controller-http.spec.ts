@@ -11,6 +11,7 @@ import { ResponseInterceptor } from '../../../common/interceptors/response.inter
 import { appConfig, jwtConfig } from '../../../config';
 import { AuthController } from '../controllers/auth.controller';
 import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard';
+import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
 import { AuthService } from '../services/auth.service';
 import { TokenService } from '../services/token.service';
 
@@ -39,6 +40,7 @@ describe('AuthController HTTP — refresh cookie', () => {
       controllers: [AuthController],
       providers: [
         RefreshCookieOriginGuard,
+        AuthRateLimiter,
         { provide: AuthService, useValue: auth },
         { provide: TokenService, useValue: { refreshCookieMaxAgeMs: () => 7 * 24 * 3600 * 1000 } },
       ],
