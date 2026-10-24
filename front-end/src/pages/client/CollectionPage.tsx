@@ -1,12 +1,14 @@
 import { Alert, Button, Container, NativeSelect, Text, Title } from '@mantine/core';
 import { IconArrowRight } from '@tabler/icons-react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitGrid } from '@/shared/components/data/ExhibitGrid';
+import { PublicReportModal } from '@/shared/components/feedback/PublicReportModal';
 import classes from './CollectionPage.module.css';
 
 export function CollectionPage() {
+  const [reportTarget, setReportTarget] = useState<{ exhibitId: string; reportedRevisionId: string } | null>(null);
   const location = useLocation();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const focusedLocation = useRef<string | null>(null);
@@ -78,10 +80,13 @@ export function CollectionPage() {
           </div>
           {room.isFetching && <p role="status">Đang cập nhật hiện vật…</p>}
           {exhibits.length === 0 ? <p role="status" className={classes.empty}>Phòng này chưa có hiện vật được xuất bản.</p> : (
-            <ExhibitGrid exhibits={exhibits} roomSlug={detail.slug} />
+            <ExhibitGrid exhibits={exhibits} roomSlug={detail.slug} onReport={(exhibit) =>
+              setReportTarget({ exhibitId: exhibit.id, reportedRevisionId: exhibit.revisionId })} />
           )}
         </section>
       )}
+      {reportTarget && <PublicReportModal key={`${reportTarget.exhibitId}:${reportTarget.reportedRevisionId}`}
+        {...reportTarget} opened onClose={() => setReportTarget(null)} />}
     </Container>
   );
 }

@@ -1,6 +1,6 @@
 # Public Report Modal
 
-**Trạng thái:** Đang triển khai; Task 0 và Task 1 hoàn tất, Task 2 đang thực hiện.
+**Trạng thái:** Task 0, Task 1 và Task 2 đã hoàn tất, commit riêng; Task 3 đang chạy final checks.
 **Plan:** [public-report-modal-plan.md](../plans/public-report-modal-plan.md).
 **Base/branch:** `origin/dev` tại `02dc42a` / `feat/public-report-modal`.
 
@@ -68,5 +68,6 @@ Khách có thể báo cáo nội dung chưa chính xác hoặc không phù hợp
 - [x] Xác nhận workspace sạch và nhánh `feat/public-report-modal` bắt đầu từ `origin/dev` tại `02dc42a`.
 - [x] Người dùng review/duyệt PLAN/TASK và bốn nhãn category.
 - [x] Task 1: API allowlist, revision ownership/approved-state check, public revision ID; backend reports 15/15, mapper 14/14, FE typecheck và room contract 8/8.
-- [ ] Task 2: modal dùng chung và ba điểm vào; browser spec 3/3 pass, chạy lại cùng final gates sau review toàn diff.
+- [x] Task 2: modal dùng chung và ba điểm vào; browser spec **3/3**, frontend unit **147/147**, typecheck/build và ESLint các file đổi đều pass.
+- [ ] Task 3: chạy backend full tests/lint/build, review toàn branch, cập nhật final evidence.
 - [ ] Ghi final evidence và phần còn thiếu sau khi hoàn tất Task 2.

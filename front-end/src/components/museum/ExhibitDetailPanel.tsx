@@ -8,7 +8,12 @@ import { MediaCreditList } from './MediaCreditList';
 import classes from './ExhibitDetailPanel.module.css';
 
 /** Nonmodal so the scene and room selector stay usable. CMS preview omits the 2D link (drafts have no public page). */
-export function ExhibitDetailPanel({ display, onClose, detail2dHref }: { display: MuseumDisplay; onClose: () => void; detail2dHref?: string }) {
+export function ExhibitDetailPanel({ display, onClose, detail2dHref, onReport }: {
+  display: MuseumDisplay;
+  onClose: () => void;
+  detail2dHref?: string;
+  onReport?: () => void;
+}) {
   const titleRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => titleRef.current?.focus(), [display.id]);
   return (
@@ -20,6 +25,7 @@ export function ExhibitDetailPanel({ display, onClose, detail2dHref }: { display
         </div>
         <Title ref={titleRef} tabIndex={-1} order={2} size="h3" className={classes.title}>{display.title}</Title>
         {detail2dHref && <Link to={detail2dHref}>Đọc chi tiết 2D</Link>}
+        {onReport && <Button variant="default" onClick={onReport}>Báo nội dung</Button>}
         <ExhibitImage image={display.image} shape={display.shape} color={display.color} className={classes.preview} />
         {display.model && <Text size="sm" c="teal.9">Khám phá mô hình hiện vật trong phòng 3D.</Text>}
         <AudioPlayer key={`${display.roomId}:${display.id}:${display.audioLocale ?? 'vi'}`} src={display.audio?.audio.url}

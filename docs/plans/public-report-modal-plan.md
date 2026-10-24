@@ -10,7 +10,7 @@
 
 **Spec:** [public-report-modal.md — Đề xuất để review](../tasks/public-report-modal.md#phạm-vi-và-hành-vi-đề-xuất).
 **Base/branch:** `origin/dev` tại `02dc42a` → `feat/public-report-modal`.
-**Status:** Đang triển khai trên `feat/public-report-modal`; Task 0 đã commit, Task 1 hoàn tất kiểm chứng, Task 2 đang thực hiện. Chưa push/PR.
+**Status:** Task 0/1/2 đã commit riêng trên `feat/public-report-modal`; đang chạy kiểm chứng bàn giao Task 3. Chưa push/PR.
 
 ## Phạm vi đã chốt
 
@@ -62,11 +62,11 @@ Các đường dẫn controller/DTO chính xác và mọi caller liên quan sẽ
 
 ### Task 2 — Modal và ba điểm vào
 
-- [ ] Thêm API method cho `POST /public/reports`.
-- [ ] Tạo modal dùng chung với category select tĩnh và message tự do; validation client khớp giới hạn API.
-- [ ] Kết nối collection, chi tiết 2D và tour; gửi chính xác exhibit/revision đang hiển thị.
-- [ ] Chặn gửi trùng khi pending; success chỉ đóng/reset sau response thành công; lỗi giữ input và hiện thông báo.
-- [ ] Kiểm tra bàn phím/label cơ bản và layout modal theo UI pattern sẵn có.
+- [x] Thêm API method cho `POST /public/reports`.
+- [x] Tạo modal dùng chung với category select tĩnh và message tự do; validation client khớp giới hạn API.
+- [x] Kết nối collection, chi tiết 2D và tour; gửi chính xác exhibit/revision đang hiển thị.
+- [x] Chặn gửi trùng khi pending; success chỉ đóng/reset sau response thành công; lỗi giữ input và hiện thông báo.
+- [x] Dùng control và nhãn form có thể truy cập; kiểm tra luồng bằng browser test.
 
 ### Task 3 — Hoàn tất và bàn giao
 
@@ -79,4 +79,4 @@ Các đường dẫn controller/DTO chính xác và mọi caller liên quan sẽ
 - RED: category tự do ban đầu nhận 201; revision sai exhibit ban đầu không bị từ chối; public DTO/schema ban đầu thiếu revision ID. GREEN đã kiểm chứng trong test HTTP/service/repository, mapper và room contract.
 - Task 0: commit `3dbdd7a` — `docs(report): add public report plan`.
 - Task 1: backend typecheck đạt; content-reports tests **15/15**, public exhibit mapper **14/14**, frontend typecheck đạt, room contract **8/8**. Không migration/database changes.
-- Task 2: đang thực hiện; browser spec **3/3** pass trên Vite dev server reuse; kiểm tra gates cuối sẽ chạy sau khi hoàn tất toàn diff.
+- Task 2: commit sau khi browser spec **3/3**, unit **147/147**, typecheck, build và ESLint trên mọi file frontend đã đổi đều đạt. Lint toàn app còn 37 lỗi ở ba file không thuộc diff; details ở task ledger.
