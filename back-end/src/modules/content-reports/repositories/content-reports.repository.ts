@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Paginated } from '../../../common/types/paginated.type';
 import { Exhibit } from '../../exhibits/entities/exhibit.entity';
+import { ExhibitRevision, RevisionState } from '../../exhibits/entities/exhibit-revision.entity';
 import { ContentReport } from '../entities/content-report.entity';
 import { ListReportsQueryDto } from '../dto/list-reports-query.dto';
 
@@ -13,6 +14,8 @@ export class ContentReportsRepository {
     private readonly reports: Repository<ContentReport>,
     @InjectRepository(Exhibit)
     private readonly exhibits: Repository<Exhibit>,
+    @InjectRepository(ExhibitRevision)
+    private readonly revisions: Repository<ExhibitRevision>,
   ) {}
 
   /** Danh sách báo cáo, mới nhất lên trước, kèm phiên bản bị báo cáo + người tiếp nhận. */
@@ -41,6 +44,10 @@ export class ContentReportsRepository {
   /** Kiểm tra hiện vật tồn tại (cho báo cáo từ client). */
   async exhibitExists(id: string): Promise<boolean> {
     return (await this.exhibits.count({ where: { id, isDeleted: false } })) > 0;
+  }
+
+  async revisionBelongsToExhibit(revisionId: string, exhibitId: string): Promise<boolean> {
+    return (await this.revisions.count({ where: { id: revisionId, exhibitId, state: RevisionState.APPROVED } })) > 0;
   }
 
   create(data: Partial<ContentReport>): ContentReport {

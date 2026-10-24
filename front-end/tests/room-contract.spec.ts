@@ -19,7 +19,7 @@ test('public room contract rejects failed envelopes and malformed content', () =
   }
   for (const change of [
     { positionX: '1' }, { positionY: Infinity }, { positionZ: NaN },
-    { placeholderColor: 'url(javascript:bad)' }, { placeholderShape: 'unknown' },
+    { placeholderColor: 'url(javascript:bad)' }, { placeholderShape: 'unknown' }, { revisionId: 'bad-id' },
     { model: { url: 'https://example.org/model.glb' } }, { name: '' }, { id: 'bad-id' }, { displayOrder: -1 },
   ]) {
     expect(roomDetailSchema.safeParse({ ...roomA, exhibits: [{ ...exhibit(), ...change }] }).success).toBe(false);
@@ -37,6 +37,7 @@ test('public room contract permits absent coordinates but rejects a partial tran
   const withoutPosition = { ...exhibit(), positionX: undefined, positionY: undefined, positionZ: undefined };
   expect(roomDetailSchema.safeParse({ ...roomA, exhibits: [withoutPosition] }).success).toBe(true);
   expect(roomDetailSchema.safeParse({ ...roomA, exhibits: [{ ...withoutPosition, positionX: 0 }] }).success).toBe(false);
+  expect(roomDetailSchema.safeParse({ ...roomA, exhibits: [{ ...withoutPosition, revisionId: undefined }] }).success).toBe(false);
 });
 
 test('public room contract accepts the real Task 9 response with published media', () => {

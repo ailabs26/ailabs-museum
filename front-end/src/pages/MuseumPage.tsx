@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Container, Group, NativeSelect, Stack, Text, Title } from '@mantine/core';
 import { useSearchParams } from 'react-router-dom';
+import { PublicReportModal } from '@/shared/components/feedback/PublicReportModal';
 import { MuseumCatalogue } from '@/components/museum/MuseumCatalogue';
 import { ExhibitDetailPanel } from '@/components/museum/ExhibitDetailPanel';
 import { MuseumLoading } from '@/components/museum/MuseumLoading';
@@ -14,6 +15,7 @@ import classes from './MuseumPage.module.css';
 const LazyMuseumScene = lazy(() => import('@/components/MuseumScene').then((module) => ({ default: module.MuseumScene })));
 
 export function MuseumPage() {
+  const [reportTarget, setReportTarget] = useState<{ exhibitId: string; reportedRevisionId: string } | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { rooms, room, selectedRoom, selectedSlug, refresh } = useMuseumRooms(searchParams.get('room'));
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
@@ -31,6 +33,10 @@ export function MuseumPage() {
   }, [currentRoomId]);
   const [selection, setSelection] = useState<{ roomId: string; id: string } | null>(null);
   const selectedDisplay = detail && selection?.roomId === detail.id ? displays.find((display) => display.id === selection.id) : undefined;
+  const selectedReportTarget = selectedDisplay?.revisionId ? {
+    exhibitId: selectedDisplay.id,
+    reportedRevisionId: selectedDisplay.revisionId,
+  } : null;
   useEffect(() => setSelection(null), [selectedSlug]);
   const selectionTriggerRef = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -112,7 +118,8 @@ export function MuseumPage() {
           )}
         </div>
         {selectedDisplay && <ExhibitDetailPanel display={selectedDisplay} onClose={handleCloseDetail}
-          detail2dHref={`/collection/${encodeURIComponent(detail.slug)}/exhibits/${encodeURIComponent(selectedDisplay.id)}`} />}
+          detail2dHref={`/collection/${encodeURIComponent(detail.slug)}/exhibits/${encodeURIComponent(selectedDisplay.id)}`}
+          onReport={selectedReportTarget ? () => setReportTarget(selectedReportTarget) : undefined} />}
         </div>
         <Text id="museum-controls-help" size="sm" c="dimmed">
           Giữ và kéo chuột hoặc vuốt để nhìn · Joystick trái để đi trên thiết bị cảm ứng.
@@ -122,6 +129,8 @@ export function MuseumPage() {
         <MuseumCatalogue displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay} />
         </>}
       </Stack>
+      {reportTarget && <PublicReportModal key={`${reportTarget.exhibitId}:${reportTarget.reportedRevisionId}`}
+        {...reportTarget} opened onClose={() => setReportTarget(null)} />}
     </Container>
   );
 }

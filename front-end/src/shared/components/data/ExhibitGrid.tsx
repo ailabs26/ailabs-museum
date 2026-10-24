@@ -1,10 +1,14 @@
-import { Title } from '@mantine/core';
+import { Button, Title } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { RoomDetail } from '@/validations/roomSchema';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import classes from './ExhibitGrid.module.css';
 
-export function ExhibitGrid({ exhibits, roomSlug }: { exhibits: readonly RoomDetail['exhibits'][number][]; roomSlug: string }) {
+export function ExhibitGrid({ exhibits, roomSlug, onReport }: {
+  exhibits: readonly RoomDetail['exhibits'][number][];
+  roomSlug: string;
+  onReport?: (exhibit: RoomDetail['exhibits'][number]) => void;
+}) {
   return (
     <ul className={classes.grid} aria-label="Hiện vật trong bộ sưu tập">
       {exhibits.map((exhibit, index) => (
@@ -18,6 +22,7 @@ export function ExhibitGrid({ exhibits, roomSlug }: { exhibits: readonly RoomDet
             <Link className={classes.detailLink}
               to={`/collection/${encodeURIComponent(roomSlug)}/exhibits/${encodeURIComponent(exhibit.id)}`}
               aria-label={`Xem chi tiết ${exhibit.name}`}>Xem chi tiết</Link>
+            {onReport && <Button variant="subtle" onClick={() => onReport(exhibit)}>Báo nội dung</Button>}
           </div>
         </li>
       ))}
