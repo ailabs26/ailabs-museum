@@ -68,3 +68,4 @@ Bảo đảm mọi người dùng, kể cả người khuyết tật vận độ
 ## 4. Bàn giao và Duy trì
 
 Checklist này được tích hợp vào quy trình kiểm thử CI/E2E định kỳ của dự án Aura Museum. Bất kỳ thay đổi giao diện hoặc thêm mới component đều phải vượt qua checklist này trước khi phát hành phiên bản tiếp theo.
+

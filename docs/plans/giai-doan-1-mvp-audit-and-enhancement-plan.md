@@ -141,3 +141,4 @@ flowchart TD
    - Bản kế hoạch đánh giá tổng thể: `docs/plans/giai-doan-1-mvp-audit-and-enhancement-plan.md`.
 2. **Bước 2:** Đẩy nhánh `plan/giai-doan-1-mvp` lên GitHub và mở Pull Request hướng về `dev`.
 3. **Bước 3:** Bàn giao báo cáo tổng kết nghiệm thu Giai đoạn 1 (MVP) cho ban quản trị dự án.
+
