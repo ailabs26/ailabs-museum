@@ -1,0 +1,335 @@
+import 'reflect-metadata';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { after, before, describe, it } from 'node:test';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { DataSource } from 'typeorm';
+import { dataSource as appDataSource } from '../../config/data-source';
+import { RefreshSession } from '../../modules/auth/entities/refresh-session.entity';
+import { RefreshSessionsRepository } from '../../modules/auth/repositories/refresh-sessions.repository';
+import { TokenService } from '../../modules/auth/services/token.service';
+import { Permission } from '../../modules/roles/entities/permission.entity';
+import { RolePermission } from '../../modules/roles/entities/role-permission.entity';
+import { Role } from '../../modules/roles/entities/role.entity';
+import { PermissionsRepository } from '../../modules/roles/repositories/permissions.repository';
+import { RolesRepository } from '../../modules/roles/repositories/roles.repository';
+import { UserRole } from '../../modules/users/entities/user-role.entity';
+import { User, UserStatus } from '../../modules/users/entities/user.entity';
+import { UserRolesRepository } from '../../modules/users/repositories/user-roles.repository';
+import { UsersRepository } from '../../modules/users/repositories/users.repository';
+import { TransactionManager } from '../database/transaction.manager';
+
+/**
+ * Integration test lõi (Transaction + repository + khóa advisory) trên PostgreSQL THẬT.
+ * Chỉ chạy khi CORE_TEST_DATABASE_URL trỏ tới database cục bộ (localhost) — không bao giờ chạy
+ * trên database dùng chung/Supabase. Test chỉ thêm/xóa bản ghi có tiền tố `tag` do chính nó tạo.
+ *
+ *   docker run -d --rm --name aura-pg-test -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=aura_test \
+ *     -p 55432:5432 postgres:16-alpine
+ *   CORE_TEST_DATABASE_URL=postgres://postgres:postgres@localhost:55432/aura_test npm run test:core
+ */
+const TEST_DATABASE_URL = process.env.CORE_TEST_DATABASE_URL;
+const isLocalDatabase = !!TEST_DATABASE_URL && /@(localhost|127\.0\.0\.1)(:\d+)?\//.test(TEST_DATABASE_URL);
+const skip = isLocalDatabase ? false : 'Cần CORE_TEST_DATABASE_URL trỏ tới PostgreSQL cục bộ';
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+describe('Core DB (PostgreSQL thật)', { skip }, () => {
+  let db: DataSource;
+  let tx: TransactionManager;
+  let users: UsersRepository;
+  let userRoles: UserRolesRepository;
+  let roles: RolesRepository;
+  let permissions: PermissionsRepository;
+  const tag = `itest${randomUUID().slice(0, 8)}`;
+  const created = { users: [] as string[], roles: [] as string[], permissions: [] as string[] };
+
+  async function createUser(suffix: string, overrides: Partial<User> = {}): Promise<User> {
+    const user = await db.getRepository(User).save({
+      email: `${tag}-${suffix}@example.test`,
+      passwordHash: 'not-a-real-hash',
+      displayName: `${tag} ${suffix}`,
+      ...overrides,
+    });
+    created.users.push(user.id);
+    return user;
+  }
+
+  async function createRole(suffix: string): Promise<Role> {
+    const role = await db.getRepository(Role).save({ code: `${tag}-${suffix}`, name: `Role ${suffix}` });
+    created.roles.push(role.id);
+    return role;
+  }
+
+  before(async () => {
+    db = new DataSource({ ...appDataSource.options, url: TEST_DATABASE_URL, ssl: undefined } as typeof appDataSource.options);
+    await db.initialize();
+    await db.runMigrations();
+    tx = new TransactionManager(db);
+    users = new UsersRepository(db.getRepository(User));
+    userRoles = new UserRolesRepository(db.getRepository(UserRole), db.getRepository(Role));
+    roles = new RolesRepository(db.getRepository(Role));
+    permissions = new PermissionsRepository(db.getRepository(Permission), db.getRepository(RolePermission));
+    for (const action of ['read', 'write']) {
+      const permission = await db.getRepository(Permission).save({ code: `${tag}:${action}` });
+      created.permissions.push(permission.id);
+    }
+  });
+
+  after(async () => {
+    if (!db?.isInitialized) return;
+    if (created.users.length) {
+      await db.query('UPDATE refresh_sessions SET replaced_by_id = NULL WHERE user_id = ANY($1)', [created.users]);
+      await db.query('DELETE FROM refresh_sessions WHERE user_id = ANY($1)', [created.users]);
+      await db.query('DELETE FROM user_roles WHERE user_id = ANY($1)', [created.users]);
+      await db.query('DELETE FROM users WHERE id = ANY($1)', [created.users]);
+    }
+    if (created.roles.length) {
+      await db.query('DELETE FROM role_permissions WHERE role_id = ANY($1)', [created.roles]);
+      await db.query('DELETE FROM user_roles WHERE role_id = ANY($1)', [created.roles]);
+      await db.query('DELETE FROM roles WHERE id = ANY($1)', [created.roles]);
+    }
+    if (created.permissions.length) await db.query('DELETE FROM permissions WHERE id = ANY($1)', [created.permissions]);
+    await db.destroy();
+  });
+
+  describe('TransactionManager', () => {
+    it('commit: mọi thao tác trong work được lưu', async () => {
+      const code = `${tag}-commit`;
+      const role = await tx.run(async (manager) => {
+        const saved = await manager.getRepository(Role).save({ code, name: 'Commit' });
+        await manager.getRepository(RolePermission).save({ roleId: saved.id, permissionId: created.permissions[0] });
+        return saved;
+      });
+      created.roles.push(role.id);
+      assert.equal(await db.getRepository(RolePermission).count({ where: { roleId: role.id } }), 1);
+    });
+
+    it('rollback: lỗi giữa chừng hủy MỌI thao tác đã ghi trước đó', async () => {
+      const code = `${tag}-rollback`;
+      await assert.rejects(tx.run(async (manager) => {
+        const saved = await manager.getRepository(Role).save({ code, name: 'Rollback' });
+        await manager.getRepository(RolePermission).save({ roleId: saved.id, permissionId: created.permissions[0] });
+        throw new Error('fail after writes');
+      }), /fail after writes/);
+      assert.equal(await db.getRepository(Role).count({ where: { code } }), 0);
+    });
+
+    it('rollback khi vi phạm ràng buộc DB (unique) ở thao tác sau', async () => {
+      const existing = await createRole('unique');
+      const code = `${tag}-before-dup`;
+      await assert.rejects(tx.run(async (manager) => {
+        await manager.getRepository(Role).save({ code, name: 'Before' });
+        await manager.getRepository(Role).save({ code: existing.code, name: 'Dup' });
+      }));
+      assert.equal(await db.getRepository(Role).count({ where: { code } }), 0);
+    });
+
+    it('cô lập: dữ liệu chưa commit không nhìn thấy từ kết nối khác', async () => {
+      const code = `${tag}-isolation`;
+      let seenOutside = -1;
+      const role = await tx.run(async (manager) => {
+        const saved = await manager.getRepository(Role).save({ code, name: 'Isolation' });
+        seenOutside = await db.getRepository(Role).count({ where: { code } });
+        return saved;
+      });
+      created.roles.push(role.id);
+      assert.equal(seenOutside, 0);
+      assert.equal(await db.getRepository(Role).count({ where: { code } }), 1);
+    });
+
+    it('advisory lock quản trị user tuần tự hóa 2 transaction đồng thời', async () => {
+      const events: string[] = [];
+      const first = tx.run(async (manager) => {
+        await users.lockManagement(manager);
+        events.push('A:locked');
+        await sleep(300);
+        events.push('A:commit');
+      });
+      await sleep(50);
+      const second = tx.run(async (manager) => {
+        events.push('B:waiting');
+        await users.lockManagement(manager);
+        events.push('B:locked');
+      });
+      await Promise.all([first, second]);
+      assert.deepEqual(events, ['A:locked', 'B:waiting', 'A:commit', 'B:locked']);
+    });
+
+    it('advisory lock ma trận quyền tuần tự hóa 2 transaction đồng thời', async () => {
+      const events: string[] = [];
+      const first = tx.run(async (manager) => {
+        await permissions.lockMatrix(manager);
+        events.push('A:locked');
+        await sleep(200);
+        events.push('A:commit');
+      });
+      await sleep(50);
+      const second = tx.run(async (manager) => {
+        await permissions.lockMatrix(manager);
+        events.push('B:locked');
+      });
+      await Promise.all([first, second]);
+      assert.deepEqual(events, ['A:locked', 'A:commit', 'B:locked']);
+    });
+  });
+
+  describe('UsersRepository / UserRolesRepository', () => {
+    it('existsByEmail tính cả tài khoản đã xóa mềm; saveNew trùng email (không phân biệt hoa thường) → 409', async () => {
+      const deleted = await createUser('deleted', { isDeleted: true, deletedAt: new Date() });
+      assert.equal(await users.existsByEmail(deleted.email), true);
+      await assert.rejects(
+        tx.run((manager) => users.saveNew(users.create({
+          email: deleted.email.toUpperCase(),
+          passwordHash: 'x',
+          displayName: 'Dup',
+        }), manager)),
+        ConflictException,
+      );
+    });
+
+    it('findDetail/findByIdWithAccess bỏ qua user đã xóa mềm và nạp đủ quan hệ quyền', async () => {
+      const role = await createRole('access');
+      await db.getRepository(RolePermission).save({ roleId: role.id, permissionId: created.permissions[1] });
+      const user = await createUser('access');
+      await userRoles.assign(user.id, role.id);
+      const withAccess = await users.findByIdWithAccess(user.id);
+      assert.equal(withAccess?.userRoles[0].role.rolePermissions[0].permission.code, `${tag}:write`);
+      assert.equal((await users.findByEmailWithAccess(user.email))?.id, user.id);
+      assert.equal(await userRoles.has(user.id, role.id), true);
+
+      const gone = await createUser('gone', { isDeleted: true, deletedAt: new Date() });
+      assert.equal(await users.findDetail(gone.id), null);
+      assert.equal(await users.findActiveById(gone.id), null);
+      assert.equal(await users.findByEmailWithAccess(gone.email), null);
+    });
+
+    it('listPaginated lọc theo từ khóa + trạng thái, loại user đã xóa', async () => {
+      await createUser('list-active');
+      await createUser('list-disabled', { status: UserStatus.DISABLED });
+      await createUser('list-deleted', { isDeleted: true, deletedAt: new Date() });
+      const all = await users.listPaginated({ page: 1, pageSize: 100, q: `${tag}-list` });
+      assert.equal(all.total, 2);
+      const disabled = await users.listPaginated({ page: 1, pageSize: 100, q: `${tag}-list`, status: UserStatus.DISABLED });
+      assert.deepEqual(disabled.items.map((user) => user.status), [UserStatus.DISABLED]);
+      const paged = await users.listPaginated({ page: 2, pageSize: 1, q: `${tag}-list` });
+      assert.equal(paged.items.length, 1);
+      assert.equal(paged.total, 2);
+    });
+
+    it('assignMany idempotent, replace thay toàn bộ, findMissingRoleIds/findCodes', async () => {
+      const [a, b] = [await createRole('ra'), await createRole('rb')];
+      const user = await createUser('roles');
+      await tx.run(async (manager) => {
+        await userRoles.assignMany(user.id, [a.id, b.id], manager);
+        await userRoles.assignMany(user.id, [a.id], manager);
+      });
+      assert.equal(await db.getRepository(UserRole).count({ where: { userId: user.id } }), 2);
+      await tx.run((manager) => userRoles.replace(user.id, [b.id], manager));
+      assert.deepEqual((await db.getRepository(UserRole).find({ where: { userId: user.id } })).map((row) => row.roleId), [b.id]);
+      await tx.run((manager) => userRoles.remove(user.id, b.id, manager));
+      assert.equal(await userRoles.has(user.id, b.id), false);
+
+      const ghost = randomUUID();
+      assert.deepEqual(await userRoles.findMissingRoleIds([a.id, ghost]), [ghost]);
+      assert.deepEqual(await userRoles.findMissingRoleIds([]), []);
+      assert.deepEqual(await tx.run((manager) => userRoles.findCodes([a.id], manager)), [a.code]);
+      assert.deepEqual(await tx.run((manager) => userRoles.findCodes([], manager)), []);
+    });
+
+    it('countActiveAdmins chỉ đếm user active, chưa xóa, có role admin', async () => {
+      const admin = await db.getRepository(Role).findOneByOrFail({ code: 'admin' }).catch(() => null);
+      if (!admin) return; // DB chưa seed role admin — kiểm thử này không áp dụng.
+      const baseline = await tx.run((manager) => users.countActiveAdmins(manager));
+      const active = await createUser('admin-active');
+      const disabled = await createUser('admin-disabled', { status: UserStatus.DISABLED });
+      for (const user of [active, disabled]) await userRoles.assign(user.id, admin.id);
+      assert.equal(await tx.run((manager) => users.countActiveAdmins(manager)), baseline + 1);
+    });
+  });
+
+  describe('RolesRepository / PermissionsRepository', () => {
+    it('setForRole thay toàn bộ quyền; findMissingCodes; findManyByIds; listWithPermissions', async () => {
+      const role = await createRole('perm');
+      await tx.run((manager) => permissions.setForRole(role.id, [`${tag}:read`, `${tag}:write`], manager));
+      assert.deepEqual(
+        (await roles.findWithPermissions(role.id))!.rolePermissions.map((link) => link.permission.code).sort(),
+        [`${tag}:read`, `${tag}:write`],
+      );
+      await tx.run((manager) => permissions.setForRole(role.id, [], manager));
+      assert.equal(await db.getRepository(RolePermission).count({ where: { roleId: role.id } }), 0);
+
+      assert.deepEqual(await permissions.findMissingCodes([`${tag}:read`, `${tag}:nope`]), [`${tag}:nope`]);
+      assert.deepEqual(await permissions.findMissingCodes([]), []);
+      assert.ok((await permissions.listAll()).some((permission) => permission.code === `${tag}:read`));
+      assert.equal(await roles.existsByCode(role.code), true);
+      assert.equal((await roles.findByCode(role.code))?.id, role.id);
+      assert.deepEqual((await tx.run((manager) => roles.findManyByIds([role.id, randomUUID()], manager))).map((r) => r.id), [role.id]);
+      assert.deepEqual(await tx.run((manager) => roles.findManyByIds([], manager)), []);
+      assert.ok((await roles.listWithPermissions()).some((item) => item.id === role.id));
+    });
+  });
+
+  describe('TokenService + RefreshSessionsRepository', () => {
+    let service: TokenService;
+    let userId: string;
+
+    before(async () => {
+      const config = {
+        getOrThrow: (key: string) => ({
+          'jwt.accessSecret': 'core-db-integration-secret-012345',
+          'jwt.accessTtl': '5m',
+          'jwt.refreshTtlDays': 1,
+        })[key],
+      } as unknown as ConfigService;
+      service = new TokenService(
+        new JwtService(),
+        config,
+        new RefreshSessionsRepository(db.getRepository(RefreshSession)),
+        users,
+        tx,
+      );
+      userId = (await createUser('token')).id;
+    });
+
+    it('xoay vòng lưu chuỗi replaced_by_id và chỉ lưu hash', async () => {
+      const issued = await service.issueRefresh(userId);
+      const rotated = await service.rotate(issued.raw);
+      const old = await db.getRepository(RefreshSession).findOneByOrFail({ id: issued.session.id });
+      assert.equal(old.replacedById, rotated.session.id);
+      assert.ok(old.usedAt);
+      const raw = await db.query('SELECT count(*)::int AS n FROM refresh_sessions WHERE token_hash = $1', [issued.raw]);
+      assert.equal(raw[0].n, 0, 'raw token không được lưu trong DB');
+    });
+
+    it('2 request refresh đồng thời cùng 1 token: đúng 1 thành công, reuse → thu hồi cả family', async () => {
+      const issued = await service.issueRefresh(userId);
+      const results = await Promise.allSettled([service.rotate(issued.raw), service.rotate(issued.raw)]);
+      const fulfilled = results.filter((result) => result.status === 'fulfilled');
+      const rejected = results.filter((result) => result.status === 'rejected') as PromiseRejectedResult[];
+      assert.equal(fulfilled.length, 1);
+      assert.equal(rejected.length, 1);
+      assert.ok(rejected[0].reason instanceof UnauthorizedException);
+      const family = await db.getRepository(RefreshSession).find({ where: { familyId: issued.session.familyId } });
+      assert.equal(family.length, 2);
+      assert.ok(family.every((session) => session.revokedAt), 'mọi session trong family phải bị thu hồi');
+    });
+
+    it('revoke do hết hạn được commit dù request trả 401', async () => {
+      const issued = await service.issueRefresh(userId);
+      await db.getRepository(RefreshSession).update(issued.session.id, { expiresAt: new Date(Date.now() - 1000) });
+      await assert.rejects(service.rotate(issued.raw), UnauthorizedException);
+      const row = await db.getRepository(RefreshSession).findOneByOrFail({ id: issued.session.id });
+      assert.ok(row.revokedAt);
+    });
+
+    it('logout (revokeByRaw) thu hồi cả token kế tiếp trong family', async () => {
+      const issued = await service.issueRefresh(userId);
+      const rotated = await service.rotate(issued.raw);
+      await service.revokeByRaw(issued.raw);
+      await assert.rejects(service.rotate(rotated.raw), UnauthorizedException);
+    });
+  });
+});
