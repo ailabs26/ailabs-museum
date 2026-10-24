@@ -1,11 +1,11 @@
-.hud { position: absolute; inset: 0; pointer-events: none; color: #243e38; z-index: 1; }
-.help { position: absolute; top: 10px; left: 10px; right: 10px; width: fit-content; max-width: calc(100% - 20px); padding: 6px 10px; border: 1px solid #c2b59b; border-radius: 8px; background: rgb(247 243 234 / 90%); font-size: 12px; }
-.help button { pointer-events: auto; border: 0; border-radius: 4px; color: #243e38; background: transparent; font: inherit; font-weight: 700; cursor: pointer; min-height: 44px; padding: 4px; }
+.hud { position: absolute; inset: 0; pointer-events: none; color: var(--aura-ink, #243e38); z-index: 2; }
+.help { position: absolute; top: 10px; left: 10px; width: fit-content; max-width: min(calc(100% - 180px), 420px); padding: 8px 12px; border: 1px solid var(--aura-glass-border, #c2b59b); border-radius: 12px; background: var(--aura-glass-strong, rgb(247 243 234 / 90%)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); font-size: 12px; box-shadow: 0 10px 30px -16px rgba(0, 0, 0, 0.6); }
+.help button { pointer-events: auto; border: 0; border-radius: 6px; color: var(--aura-emerald, #243e38); background: transparent; font: inherit; font-weight: 700; cursor: pointer; min-height: 44px; padding: 4px; }
 .help p { margin: 0 0 6px; max-width: 430px; }
 .help span { display: block; }
 .joystick { pointer-events: auto; touch-action: none; position: absolute; bottom: max(16px, env(safe-area-inset-bottom)); left: max(16px, env(safe-area-inset-left)); width: 116px; height: 116px; padding: 0; border-radius: 50%; border: 2px solid rgb(66 91 77 / 65%); background: rgb(247 243 234 / 55%); color: #314f45; cursor: grab; user-select: none; }
 .joystick[aria-pressed='true'] { cursor: grabbing; background: rgb(247 243 234 / 75%); }
 .thumb { position: absolute; width: 44px; height: 44px; top: 34px; left: 34px; border-radius: 50%; border: 2px solid #aa9169; background: rgb(49 79 69 / 80%); pointer-events: none; }
 .cross { opacity: 0.6; font-size: 22px; line-height: 36px; pointer-events: none; }
-.joystick:focus-visible, .help button:focus-visible { outline: 3px solid #25645c; outline-offset: 3px; }
+.joystick:focus-visible, .help button:focus-visible { outline: 3px solid var(--aura-emerald-bright, #25645c); outline-offset: 3px; }
 @media (max-height: 500px) { .help p { max-width: 300px; } }

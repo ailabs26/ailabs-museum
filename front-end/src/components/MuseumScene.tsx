@@ -19,6 +19,8 @@ import { reportModelFailure } from '@/helpers/modelDiagnostics';
 import { createNavigationInput } from '@/helpers/museumNavigation';
 import { NavigationGestures } from '@/helpers/navigationGestures';
 import { NavigationHud, type NavigationMode } from '@/components/museum/NavigationHud';
+import { SpatialMinimap } from '@/components/museum/SpatialMinimap';
+import { ArtifactDock } from '@/components/museum/ArtifactDock';
 import { MuseumXr } from '@/components/museum/MuseumXr';
 import type { XrSessionController, XrSnapshot } from '@/helpers/xrSession';
 import type { WebglStatus } from '@/helpers/webglRecovery';
@@ -120,6 +122,8 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
     {isRendererRestarting && <div className={classes.recovering} role="status">Đang khởi tạo lại phần hiển thị sau lỗi VR.</div>}
     {webglStatus !== 'ready' && <div className={classes.recovering} role="status">Đang khôi phục không gian 3D. Bạn có thể tiếp tục đọc danh mục.</div>}
     {isWebInputEnabled && <NavigationHud input={input} mode={mode} isActive={isActive} hasTouch={hasTouch} />}
+    {isWebInputEnabled && <SpatialMinimap displays={displays} selectedId={selectedId} onSelect={onSelect} />}
+    {isWebInputEnabled && <ArtifactDock displays={displays} selectedId={selectedId} onSelect={onSelect} onFocus={() => handleCommand('focus')} />}
     </div>
     <Group className={classes.toolbar} gap="xs" aria-label="Điều khiển góc nhìn">
       <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('reset')}>Góc nhìn ban đầu</Button>
