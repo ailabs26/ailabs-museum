@@ -1,0 +1,30 @@
+.zone {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: 22px; border-radius: 12px; text-align: center;
+  color: var(--mantine-color-dimmed);
+  background:
+    linear-gradient(var(--mantine-color-body), var(--mantine-color-body)) padding-box,
+    repeating-linear-gradient(90deg, var(--mantine-color-default-border) 0 10px, transparent 10px 20px) border-box;
+  border: 2px dashed transparent;
+  background-size: 100% 100%, 200% 2px;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+.over {
+  color: var(--mantine-primary-color-filled);
+  background:
+    linear-gradient(var(--mantine-primary-color-light), var(--mantine-primary-color-light)) padding-box,
+    repeating-linear-gradient(90deg, var(--mantine-primary-color-filled) 0 10px, transparent 10px 20px) border-box;
+  background-size: 100% 100%, 200% 2px;
+  animation: dropzone-dash 0.6s linear infinite;
+  transform: translateY(-2px);
+}
+.icon { opacity: 0.8; }
+.disabled { opacity: 0.5; pointer-events: none; }
+
+@keyframes dropzone-dash {
+  to { background-position: 0 0, 40px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .over { animation: none; }
+}
