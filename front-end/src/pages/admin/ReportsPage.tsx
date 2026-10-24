@@ -13,7 +13,7 @@ import {
   Textarea,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconCheck, IconUserCheck, IconX } from '@tabler/icons-react';
+import { IconCheck, IconMessage2, IconUserCheck, IconX } from '@tabler/icons-react';
 import {
   keepPreviousData,
   useMutation,
@@ -56,6 +56,20 @@ function formatTime(iso: string): string {
 }
 
 type CloseKind = 'resolve' | 'dismiss';
+
+/** Mẫu phản hồi nhanh (canned responses) để điền kết luận chỉ với một cú nhấp. */
+const CANNED: Record<CloseKind, { label: string; text: string }[]> = {
+  resolve: [
+    { label: 'Đã gỡ/sửa nội dung', text: 'Nội dung vi phạm đã được gỡ bỏ hoặc chỉnh sửa. Cảm ơn bạn đã báo cáo.' },
+    { label: 'Đã tạm ẩn hiện vật', text: 'Hiện vật đã được tạm ẩn khỏi không gian công khai để rà soát và xử lý.' },
+    { label: 'Đã nhắc nhở biên tập', text: 'Chúng tôi đã yêu cầu biên tập viên điều chỉnh nội dung theo quy định.' },
+  ],
+  dismiss: [
+    { label: 'Không vi phạm', text: 'Sau khi rà soát, nội dung không vi phạm quy định hiện hành nên báo cáo được đóng.' },
+    { label: 'Trùng lặp', text: 'Báo cáo trùng với một báo cáo khác đang được xử lý nên được đóng lại.' },
+    { label: 'Thiếu thông tin', text: 'Báo cáo chưa đủ thông tin để xác minh vi phạm. Vui lòng gửi lại kèm mô tả chi tiết.' },
+  ],
+};
 
 export function ReportsPage() {
   const { hasPermission } = useAuth();
@@ -311,6 +325,18 @@ export function ReportsPage() {
         title={closeKind === 'resolve' ? 'Xử lý xong báo cáo' : 'Đóng/bác báo cáo'}
       >
         <Stack>
+          <div>
+            <Group gap={6} mb={6}>
+              <IconMessage2 size={14} aria-hidden />
+              <Text size="xs" c="dimmed" fw={600}>Mẫu phản hồi nhanh</Text>
+            </Group>
+            <Group gap={6}>
+              {CANNED[closeKind].map((tpl) => (
+                <Button key={tpl.label} size="compact-xs" variant="light"
+                  onClick={() => setResolution(tpl.text)}>{tpl.label}</Button>
+              ))}
+            </Group>
+          </div>
           <Textarea
             ref={resolutionRef}
             label="Kết luận xử lý"
