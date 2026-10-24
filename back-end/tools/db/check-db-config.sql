@@ -1,6 +1,8 @@
 -- Kiểm tra an toàn cấu hình PostgreSQL cho Aura Museum. CHỈ ĐỌC catalog/thiết lập,
 -- không đọc dữ liệu nghiệp vụ. Chạy qua tools/db/check-db-config.sh (phiên read-only).
--- Biến psql: is_local=true|false (DB cục bộ thì không bắt buộc TLS).
+-- Biến psql: is_local=true|false (DB cục bộ thì không bắt buộc TLS); client_ssl=true|false và
+-- client_ssl_protocol lấy từ \conninfo phía client — qua pooler (Supavisor), pg_stat_ssl chỉ thấy
+-- chặng pooler → Postgres nội bộ nên không phản ánh kết nối của ứng dụng.
 -- Mỗi dòng: check | status (PASS/WARN/FAIL/INFO) | detail.
 \set ON_ERROR_STOP on
 \pset footer off
@@ -15,8 +17,9 @@ WITH _app_tables AS (
   WHERE n.nspname = 'public' AND c.relkind = 'r' AND c.relname <> 'migrations'
 ), checks(ord, check_name, status, detail) AS (
   SELECT 1, 'TLS cho kết nối hiện tại',
-    CASE WHEN s.ssl THEN 'PASS' WHEN :'is_local' = 'true' THEN 'INFO' ELSE 'FAIL' END,
-    CASE WHEN s.ssl THEN s.version || ' / ' || s.cipher
+    CASE WHEN s.ssl OR :'client_ssl' = 'true' THEN 'PASS' WHEN :'is_local' = 'true' THEN 'INFO' ELSE 'FAIL' END,
+    CASE WHEN :'client_ssl' = 'true' THEN 'client → server/pooler: ' || :'client_ssl_protocol'
+      WHEN s.ssl THEN s.version || ' / ' || s.cipher
       WHEN :'is_local' = 'true' THEN 'DB cục bộ, không mã hóa' ELSE 'Kết nối không mã hóa' END
   FROM pg_stat_ssl s WHERE s.pid = pg_backend_pid()
 

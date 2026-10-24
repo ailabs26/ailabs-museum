@@ -62,7 +62,14 @@ echo
 echo "== Cấu hình server (phiên read-only)"
 is_local=false
 [[ "$PSQL_URL" =~ @(localhost|127\.0\.0\.1)[:/] ]] && is_local=true
-server_report="$(PGCONNECT_TIMEOUT=15 psql "$PSQL_URL" -X -q -v is_local="$is_local" -f "$(dirname "$0")/check-db-config.sql")"
+# TLS phía client (psql 16- in "SSL connection (protocol: ...)", psql 17+ in bảng có "SSL Protocol").
+conninfo="$(PGCONNECT_TIMEOUT=15 psql "$PSQL_URL" -X -q -c '\conninfo')"
+client_ssl_protocol="$(grep -oE 'TLSv[0-9.]+' <<<"$conninfo" | head -n1 || true)"
+client_ssl=false
+[[ -n "$client_ssl_protocol" ]] && client_ssl=true
+server_report="$(PGCONNECT_TIMEOUT=15 psql "$PSQL_URL" -X -q -v is_local="$is_local" \
+  -v client_ssl="$client_ssl" -v client_ssl_protocol="${client_ssl_protocol:-none}" \
+  -f "$(dirname "$0")/check-db-config.sql")"
 echo "$server_report"
 grep -qE '\| FAIL +\|' <<<"$server_report" && db_fail=1 || db_fail=0
 
