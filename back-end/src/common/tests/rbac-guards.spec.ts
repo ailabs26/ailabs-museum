@@ -210,3 +210,31 @@ describe('PermissionsGuard', () => {
     assert.throws(() => guard.canActivate(context('readUsers', { user })), PermissionDeniedException);
   });
 });
+
+describe('Đăng ký module', () => {
+  it('AuthModule đăng ký JwtAuthGuard TRƯỚC PermissionsGuard làm APP_GUARD', async () => {
+    const { APP_GUARD } = await import('@nestjs/core');
+    const { AuthModule } = await import('../../modules/auth/auth.module');
+    const providers = Reflect.getMetadata('providers', AuthModule) as Array<{ provide?: unknown; useClass?: unknown }>;
+    const guards = providers.filter((provider) => provider.provide === APP_GUARD).map((provider) => provider.useClass);
+    assert.deepEqual(guards, [JwtAuthGuard, PermissionsGuard]);
+  });
+
+  it('CommonModule là @Global và export TransactionManager + PasswordService', async () => {
+    const { CommonModule } = await import('../common.module');
+    const { TransactionManager } = await import('../database/transaction.manager');
+    const { PasswordService } = await import('../security/password.service');
+    assert.equal(Reflect.getMetadata('__module:global__', CommonModule), true);
+    assert.deepEqual(Reflect.getMetadata('exports', CommonModule), [TransactionManager, PasswordService]);
+  });
+
+  it('UsersModule export UsersRepository cho AuthModule; RolesModule khai báo controller quản trị', async () => {
+    const { UsersModule } = await import('../../modules/users/users.module');
+    const { UsersRepository } = await import('../../modules/users/repositories/users.repository');
+    const { RolesModule } = await import('../../modules/roles/roles.module');
+    const { RolesController } = await import('../../modules/roles/controllers/roles.controller');
+    const { PermissionsController } = await import('../../modules/roles/controllers/permissions.controller');
+    assert.ok((Reflect.getMetadata('exports', UsersModule) as unknown[]).includes(UsersRepository));
+    assert.deepEqual(Reflect.getMetadata('controllers', RolesModule), [RolesController, PermissionsController]);
+  });
+});
