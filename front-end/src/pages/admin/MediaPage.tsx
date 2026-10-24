@@ -43,6 +43,7 @@ import { confirmAction, notify } from '@/shared/components/feedback';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { MediaPreview } from '@/shared/components/media/MediaPreview';
 import { UploadDropzone } from '@/components/cms/UploadDropzone';
+import { StorageQuotaBar } from '@/components/cms/StorageQuotaBar';
 
 const PAGE_SIZE = 15;
 
@@ -313,6 +314,8 @@ export function MediaPage() {
         title="Media"
         description="Thư viện model 3D, ảnh, audio thuyết minh và phụ đề dùng cho hiện vật"
       />
+
+      <StorageQuotaBar />
 
       <Card withBorder p="md" mb="md" radius="sm">
         <Text fw={600} size="sm" mb="xs">

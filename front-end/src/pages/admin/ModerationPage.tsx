@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Badge,
   Alert,
@@ -6,6 +6,7 @@ import {
   Divider,
   Drawer,
   Group,
+  Kbd,
   Modal,
   Stack,
   Table,
@@ -157,6 +158,24 @@ export function ModerationPage() {
     onError: (error) => { handleError(error); hideReasonRef.current?.focus(); },
   });
 
+  // Phím tắt duyệt nhanh khi mở chi tiết (A = xuất bản, R = từ chối),
+  // bỏ qua khi đang gõ trong ô nhập hoặc có modal mở.
+  useEffect(() => {
+    if (!detail || detail.state !== 'in_review' || rejectOpened || hideOpened) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+      if (el?.isContentEditable || e.metaKey || e.ctrlKey || e.altKey) return;
+      if ((e.key === 'a' || e.key === 'A') && canPublish && !publishMutation.isPending) {
+        e.preventDefault(); publishMutation.mutate();
+      } else if ((e.key === 'r' || e.key === 'R') && canReject) {
+        e.preventDefault(); setRejectReason(''); rejectModal.open();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [detail, rejectOpened, hideOpened, canPublish, canReject, publishMutation, rejectModal]);
+
   const columns: Column<Revision>[] = [
     {
       key: 'name',
@@ -273,10 +292,17 @@ export function ModerationPage() {
                   </Table.Thead>
                   <Table.Tbody>
                     {diffQuery.data.fields.map((f) => (
-                      <Table.Tr key={f.field} bg={f.changed ? 'yellow.0' : undefined}>
+                      <Table.Tr key={f.field}>
                         <Table.Td fw={500}>{f.label}</Table.Td>
-                        <Table.Td c="dimmed">{f.oldValue ?? '—'}</Table.Td>
-                        <Table.Td fw={f.changed ? 600 : 400}>{f.newValue ?? '—'}</Table.Td>
+                        <Table.Td c={f.changed ? 'red.7' : 'dimmed'}
+                          bg={f.changed ? 'var(--mantine-color-red-light)' : undefined}
+                          style={f.changed && f.oldValue ? { textDecoration: 'line-through' } : undefined}>
+                          {f.oldValue ?? '—'}
+                        </Table.Td>
+                        <Table.Td fw={f.changed ? 600 : 400} c={f.changed ? 'teal.8' : undefined}
+                          bg={f.changed ? 'var(--mantine-color-teal-light)' : undefined}>
+                          {f.newValue ?? '—'}
+                        </Table.Td>
                       </Table.Tr>
                     ))}
                   </Table.Tbody>
@@ -319,6 +345,11 @@ export function ModerationPage() {
         {detail && (
           <>
             <Divider my="md" />
+            {detail.state === 'in_review' && (canPublish || canReject) && (
+              <Text size="xs" c="dimmed" ta="right" mb={6}>
+                Phím tắt: <Kbd>A</Kbd> xuất bản · <Kbd>R</Kbd> từ chối
+              </Text>
+            )}
             <Group justify="flex-end">
               {canHide && detail.exhibit && (
                 <Button

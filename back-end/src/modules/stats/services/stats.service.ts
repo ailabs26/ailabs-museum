@@ -10,8 +10,10 @@ import {
   RevisionState,
 } from '../../exhibits/entities/exhibit-revision.entity';
 import { Exhibit, ExhibitVisibility } from '../../exhibits/entities/exhibit.entity';
+import { Media } from '../../media/entities/media.entity';
 import { Room, RoomStatus } from '../../rooms/entities/room.entity';
 import { OverviewStatsDto } from '../dto/overview-stats.dto';
+import { StorageStatsDto } from '../dto/storage-stats.dto';
 import {
   ActivityPointDto,
   LabeledCountDto,
@@ -31,8 +33,32 @@ export class StatsService {
     private readonly revisions: Repository<ExhibitRevision>,
     @InjectRepository(ContentReport)
     private readonly reports: Repository<ContentReport>,
+    @InjectRepository(Media) private readonly media: Repository<Media>,
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
+
+  /** Dung lượng lưu trữ media theo từng phân loại tệp (bỏ bản đã xóa mềm). */
+  async storage(): Promise<StorageStatsDto> {
+    const rows = await this.media
+      .createQueryBuilder('m')
+      .select('m.kind', 'kind')
+      .addSelect('COALESCE(SUM(m.size_bytes), 0)', 'bytes')
+      .addSelect('COUNT(*)', 'count')
+      .where('m.isDeleted = :deleted', { deleted: false })
+      .groupBy('m.kind')
+      .getRawMany<{ kind: string; bytes: string; count: string }>();
+
+    const byKind = rows.map((r) => ({
+      kind: r.kind,
+      bytes: Number(r.bytes),
+      count: Number(r.count),
+    }));
+    return {
+      byKind,
+      totalBytes: byKind.reduce((sum, r) => sum + r.bytes, 0),
+      totalCount: byKind.reduce((sum, r) => sum + r.count, 0),
+    };
+  }
 
   /** Số liệu tổng quan cho các thẻ StatCard + trạng thái hệ thống. */
   async overview(): Promise<OverviewStatsDto> {
