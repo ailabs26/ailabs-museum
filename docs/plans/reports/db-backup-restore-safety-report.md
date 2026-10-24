@@ -5,7 +5,7 @@
 - **Ngày chạy:** 24/10/2026
 - **Nhánh:** `test/phase2-core-db-safety`
 - **Công cụ:** `back-end/tools/db/backup-restore-drill.sh`, `back-end/tools/db/check-db-config.sh`
-- **Kết luận:** quy trình backup logic → khôi phục **đạt** trên môi trường diễn tập (khôi phục đầy đủ, RTO đo được 9–13 giây). **Chưa đạt** ở môi trường thật vì chưa có backup định kỳ, nên RPO hiện chưa có giới hạn (xem §5). Phần kiểm cấu hình phía server của DB Supabase **chưa chạy** (xem §4.3).
+- **Kết luận:** quy trình backup logic → khôi phục **đạt** trên môi trường diễn tập (khôi phục đầy đủ, RTO đo được 10–14 giây). **Chưa đạt** ở môi trường thật vì chưa có backup định kỳ, nên RPO hiện chưa có giới hạn (xem §5). Phần kiểm cấu hình phía server của DB Supabase **chưa chạy** (xem §4.3).
 
 ## 1. Mục tiêu RPO/RTO
 
@@ -40,17 +40,17 @@ RTO được tính từ lúc xảy ra sự cố tới lúc xác minh xong, khôn
 
 | Hạng mục | Lần 1 (SCALE=20) | Lần 2 (SCALE=100) |
 |---|---|---|
-| Dữ liệu nguồn | 37 MB, 110.324 dòng | 152 MB, 551.204 dòng |
+| Dữ liệu nguồn | 37 MB, 110.324 dòng | 150 MB, 551.204 dòng |
 | File backup (`-Fc -Z 6`) | 6,0 MB, 94 mục TOC | 30 MB, 94 mục TOC |
-| Thời gian backup (đang có ghi đồng thời) | 0,56 s | 2,26 s |
-| Ghi đồng thời: nằm trong backup / tổng số đã ghi ở nguồn | 138 / 352, liên tục | 139 / 591, liên tục |
-| Cửa sổ mất dữ liệu đo được | 1,74 s | 3,49 s |
-| RTO — dựng server mới | 2,03 s | 2,05 s |
+| Thời gian backup (đang có ghi đồng thời) | 0,58 s | 2,31 s |
+| Ghi đồng thời: nằm trong backup / tổng số đã ghi ở nguồn | 109 / 283, liên tục | 137 / 557, liên tục |
+| Cửa sổ mất dữ liệu đo được | 1,79 s | 3,57 s |
+| RTO — dựng server mới | 2,20 s | 2,38 s |
 | RTO — chuyển file + kiểm checksum | 0,08 s | 0,19 s |
-| RTO — `pg_restore -j 4` | 0,49 s | 1,95 s |
-| RTO — `ANALYZE` | 0,27 s | 0,37 s |
-| RTO — xác minh | 6,25 s | 8,14 s |
-| **Tổng RTO** | **9,12 s** | **12,71 s** |
+| RTO — `pg_restore -j 4` | 0,63 s | 2,44 s |
+| RTO — `ANALYZE` | 0,37 s | 0,47 s |
+| RTO — xác minh | 6,35 s | 8,37 s |
+| **Tổng RTO** | **9,63 s** | **13,86 s** |
 | Vân tay 14 bảng + 4 nhóm schema | Khớp tuyệt đối | Khớp tuyệt đối |
 | Migration / integration test trên DB khôi phục | 4 [X] / 16 pass | 4 [X] / 16 pass |
 
@@ -65,7 +65,7 @@ RTO được tính từ lúc xảy ra sự cố tới lúc xác minh xong, khôn
 | DB-05 | Ứng dụng chạy đúng trên DB khôi phục | **ĐẠT** — `migration:show` đủ; 16 integration test lõi pass |
 | DB-06 | Phát hiện dữ liệu khôi phục bị sai lệch (kiểm thử âm) | **ĐẠT** — sửa 1 dòng `exhibit_revisions` thì vân tay lệch đúng bảng đó |
 | DB-07 | File backup hỏng/bị cắt cụt không được khôi phục âm thầm | **ĐẠT** — sha256 khác bản gốc; `pg_restore` dừng với lỗi `could not read from input file` (exit 1) |
-| DB-08 | RTO ≤ 1 giờ | **ĐẠT** ở môi trường diễn tập (12,71 s với 152 MB). Ở môi trường thật cần cộng thời gian tải file và tạo project/đổi `DATABASE_URL` (§5) |
+| DB-08 | RTO ≤ 1 giờ | **ĐẠT** ở môi trường diễn tập (13,86 s với 150 MB). Ở môi trường thật cần cộng thời gian tải file và tạo project/đổi `DATABASE_URL` (§5) |
 | DB-09 | RPO ≤ 24 giờ | **CHƯA ĐẠT ở môi trường thật**: chưa có backup định kỳ (§5, phát hiện #1) |
 
 Ghi chú: lần chạy đầu, vân tay ràng buộc bị báo lệch dù dữ liệu khớp. Nguyên nhân: PostgreSQL in lại CHECK dạng `x IN (...)` theo văn bản khác sau dump/restore, nhưng ngữ nghĩa không đổi. Script đã chuẩn hóa định nghĩa trước khi băm; đã đối chiếu từng ràng buộc để xác nhận đây không phải sai lệch thật.
