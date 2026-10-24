@@ -73,7 +73,9 @@ log "DB nguồn: $SRC_SIZE, $SRC_ROWS dòng"
 
 # ---------------------------------------------------------------- 2. Backup nóng
 log "Backup (pg_dump -Fc) trong khi có ghi đồng thời"
-docker exec "$SRC" sh -c 'i=0; while :; do i=$((i+1));
+# Vòng ghi chạy TRONG container; dừng bằng file cờ vì kill tiến trình `docker exec` phía host
+# không dừng được tiến trình bên trong.
+docker exec "$SRC" sh -c 'i=0; while [ ! -f /tmp/stop-writer ]; do i=$((i+1));
   psql -h 127.0.0.1 -U postgres -d aura -qAtc "INSERT INTO audit_logs (action, resource_type, resource_id, request_id)
     VALUES ('"'"'drill.concurrent'"'"', '"'"'drill'"'"', gen_random_uuid(), '"'"'conc-'"'"' || $i)" >/dev/null 2>&1 || exit 0;
   done' &
@@ -83,7 +85,7 @@ T_BACKUP_START="$(now)"
 docker exec "$SRC" pg_dump -h 127.0.0.1 -U postgres -d "$DB" -Fc -Z 6 -f /tmp/aura.dump
 T_BACKUP_END="$(now)"
 sleep 1
-kill "$WRITER_PID" 2>/dev/null || true
+docker exec "$SRC" touch /tmp/stop-writer
 wait "$WRITER_PID" 2>/dev/null || true
 WRITER_PID=
 CONC_SOURCE="$(psql_in "$SRC" -At -c "select count(*) from audit_logs where action = 'drill.concurrent'")"

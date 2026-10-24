@@ -126,6 +126,8 @@ describe('RBAC HTTP — guard toàn cục trên route quản trị', () => {
     return body ? req.send(body) : req;
   }
 
+  const previousSecret = process.env.JWT_ACCESS_SECRET;
+
   before(async () => {
     process.env.JWT_ACCESS_SECRET = SECRET;
     const { Test } = await import('@nestjs/testing');
@@ -161,7 +163,8 @@ describe('RBAC HTTP — guard toàn cục trên route quản trị', () => {
 
   after(async () => {
     await app?.close();
-    delete process.env.JWT_ACCESS_SECRET;
+    if (previousSecret === undefined) delete process.env.JWT_ACCESS_SECRET;
+    else process.env.JWT_ACCESS_SECRET = previousSecret;
   });
 
   it('phát hiện đủ route quản trị và route nào cũng khai báo @Permissions', () => {
