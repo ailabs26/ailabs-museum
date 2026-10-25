@@ -37,8 +37,12 @@ lưu User-Agent + IP để nhận ra thiết bị.
 
 ## Lưu ý vận hành
 
-- **Chạy migration trên DB dùng chung trước khi deploy code** (backup trước bằng `back-end/tools/db/backup.sh`).
-  Code mới đọc các cột mới; chưa migrate thì login/refresh lỗi.
+- **Migration đã chạy trên DB dùng chung ngày 25/10/2026 lúc 23:07** (sau khi backup
+  `~/aura-backups/aura-2026-10-25-2307.dump` bằng `back-end/tools/db/backup.sh`, đã kiểm đọc lại được).
+  Trước khi chạy chỉ có đúng migration này đang chờ; sau khi chạy `migration:show` báo `[X] 6 AddRefreshSessionDeviceInfo1792943375524`,
+  bảng có đủ 4 cột mới và index `IDX_refresh_sessions_family_live`. Hoàn tác: `npm run migration:revert` hoặc khôi phục từ bản backup.
+- Code mới đọc các cột mới: môi trường nào khác (DB riêng) phải chạy migration trước khi deploy, nếu không login/refresh lỗi.
+- Phiên tạo trước migration có `signed_in_at`/`created_at` = thời điểm migrate và chưa có User-Agent/IP cho tới lần refresh đầu với code mới.
 - Sau deploy, access token cũ (không có `sid`) bị 401 một lần; frontend tự refresh lấy token mới, người dùng không phải đăng nhập lại.
 - Mỗi request đã đăng nhập thêm 1 truy vấn `EXISTS` theo index partial.
 - IP/User-Agent là dữ liệu cá nhân: chỉ chủ tài khoản xem được; vòng đời theo refresh session.
