@@ -26,6 +26,15 @@ export class RefreshSessionsRepository {
     await manager.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [familyId]);
   }
 
+  /**
+   * Khóa theo user: refresh giữ khóa chia sẻ, thu hồi toàn bộ giữ khóa độc quyền.
+   * Nhờ đó token vừa xoay vòng trong lúc Admin reset mật khẩu/khóa user vẫn bị thu hồi.
+   */
+  async lockUser(userId: string, manager: EntityManager, exclusive = false): Promise<void> {
+    const fn = exclusive ? 'pg_advisory_xact_lock' : 'pg_advisory_xact_lock_shared';
+    await manager.query(`SELECT ${fn}(hashtextextended($1, 0))`, [`user-sessions:${userId}`]);
+  }
+
   create(
     session: Partial<RefreshSession>,
     manager?: EntityManager,
@@ -47,6 +56,15 @@ export class RefreshSessionsRepository {
   async revokeFamily(familyId: string, manager: EntityManager): Promise<void> {
     await this.getRepository(manager).update(
       { familyId, revokedAt: IsNull() },
+      { revokedAt: new Date() },
+    );
+  }
+
+  /** Thu hồi mọi session còn hiệu lực của user (mọi thiết bị). */
+  async revokeAllForUser(userId: string, manager: EntityManager): Promise<void> {
+    await this.lockUser(userId, manager, true);
+    await this.getRepository(manager).update(
+      { userId, revokedAt: IsNull() },
       { revokedAt: new Date() },
     );
   }

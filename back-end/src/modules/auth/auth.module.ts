@@ -10,12 +10,11 @@ import { AuthController } from './controllers/auth.controller';
 import { RefreshCookieOriginGuard } from './guards/refresh-cookie-origin.guard';
 import { AuthRateLimiter } from './services/auth-rate-limiter.service';
 import { AuthService } from './services/auth.service';
-import { RefreshSessionsRepository } from './repositories/refresh-sessions.repository';
 import { TokenService } from './services/token.service';
 
 @Module({
   imports: [
-    UsersModule, // tái sử dụng UsersRepository để đăng nhập
+    UsersModule, // tái sử dụng UsersRepository + RefreshSessionsRepository
     JwtModule.register({}), // secret/expiresIn truyền tường minh ở TokenService
     TypeOrmModule.forFeature([RefreshSession]),
   ],
@@ -24,7 +23,6 @@ import { TokenService } from './services/token.service';
     AuthService,
     TokenService,
     AuthRateLimiter,
-    RefreshSessionsRepository,
     RefreshCookieOriginGuard,
     // Guard toàn cục: JwtAuthGuard xác thực trước, PermissionsGuard kiểm quyền sau.
     { provide: APP_GUARD, useClass: JwtAuthGuard },

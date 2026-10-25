@@ -81,6 +81,7 @@ export class TokenService {
       }
 
       await this.sessions.lockFamily(found.familyId, manager);
+      await this.sessions.lockUser(found.userId, manager);
       const current = await this.sessions.findByTokenHash(tokenHash, manager, true);
       if (!current) {
         return null;

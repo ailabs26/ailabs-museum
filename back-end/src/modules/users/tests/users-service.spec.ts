@@ -12,6 +12,7 @@ import { toUserResponse } from '../dto/user-response.dto';
 import { User, UserStatus } from '../entities/user.entity';
 import { UserRolesRepository } from '../repositories/user-roles.repository';
 import { UsersRepository } from '../repositories/users.repository';
+import { RefreshSessionsRepository } from '../../auth/repositories/refresh-sessions.repository';
 import { UsersService } from '../services/users.service';
 import { toAuthUser } from '../user-access.util';
 
@@ -99,6 +100,13 @@ function harness(initial: User[] = [], options: { emailTaken?: boolean } = {}): 
     },
   } as unknown as UserRolesRepository;
 
+  const sessions = {
+    revokeAllForUser: async (userId: string, manager: EntityManager) => {
+      assert.ok(inTx && manager === MANAGER, 'thu hồi phiên phải chạy trong transaction');
+      log.push(`revokeSessions:${userId}`);
+    },
+  } as unknown as RefreshSessionsRepository;
+
   const passwords = { hash: async (plain: string) => `hashed(${plain})` } as unknown as PasswordService;
   const tx = {
     run: async <T>(work: (manager: EntityManager) => Promise<T>) => {
@@ -112,7 +120,7 @@ function harness(initial: User[] = [], options: { emailTaken?: boolean } = {}): 
   } as unknown as TransactionManager;
 
   return {
-    service: new UsersService(usersRepo, userRolesRepo, passwords, tx),
+    service: new UsersService(usersRepo, userRolesRepo, passwords, tx, sessions),
     log,
     users,
     setActiveAdmins: (count) => void (activeAdmins = count),
@@ -197,6 +205,43 @@ describe('UsersService', () => {
     const result = await service.update('u1', { roleIds: ['r-admin'] }, ACTOR);
     assert.deepEqual(result.roles, ['admin']);
     assert.ok(log.includes('replace:tx:r-admin'));
+  });
+
+  describe('thu hồi phiên khi đổi thông tin đăng nhập', () => {
+    const revoked = (log: string[]) => log.filter((entry) => entry.startsWith('revokeSessions:'));
+
+    it('đổi mật khẩu → thu hồi mọi phiên của user, sau khi ghi hash mới', async () => {
+      const { service, log } = harness([makeUser('u1', ['r-editor'])]);
+      await service.update('u1', { password: 'NewPassw0rd' }, ACTOR);
+      assert.deepEqual(revoked(log), ['revokeSessions:u1']);
+      assert.ok(log.indexOf('update:tx:passwordHash') < log.indexOf('revokeSessions:u1'));
+    });
+
+    it('khóa user → thu hồi mọi phiên', async () => {
+      const { service, log } = harness([makeUser('u1', ['r-editor'])]);
+      await service.update('u1', { status: UserStatus.DISABLED }, ACTOR);
+      assert.deepEqual(revoked(log), ['revokeSessions:u1']);
+    });
+
+    it('xóa mềm user → thu hồi mọi phiên', async () => {
+      const { service, log, setActiveAdmins } = harness([makeUser('u1', ['r-editor'])]);
+      setActiveAdmins(2);
+      await service.remove('u1');
+      assert.deepEqual(revoked(log), ['revokeSessions:u1']);
+    });
+
+    it('đổi tên, mở khóa, đổi role → KHÔNG đăng xuất user', async () => {
+      const { service, log } = harness([makeUser('u1', ['r-editor'], UserStatus.DISABLED)]);
+      await service.update('u1', { displayName: 'X', status: UserStatus.ACTIVE, roleIds: ['r-editor'] }, ACTOR);
+      assert.deepEqual(revoked(log), []);
+    });
+
+    it('bị chặn vì Admin cuối → không thu hồi gì', async () => {
+      const { service, log } = harness([makeUser('admin', ['r-admin'])]);
+      await assert.rejects(service.update('admin', { status: UserStatus.DISABLED }, ACTOR), ConflictException);
+      await assert.rejects(service.remove('admin'), ConflictException);
+      assert.deepEqual(revoked(log), []);
+    });
   });
 
   describe('bảo vệ Admin hoạt động cuối cùng', () => {

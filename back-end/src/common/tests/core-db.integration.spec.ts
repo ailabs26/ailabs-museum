@@ -325,6 +325,37 @@ describe('Core DB (PostgreSQL thật)', { skip }, () => {
       assert.ok(row.revokedAt);
     });
 
+    it('revokeAllForUser thu hồi mọi thiết bị của user, không đụng user khác', async () => {
+      const sessions = new RefreshSessionsRepository(db.getRepository(RefreshSession));
+      const otherId = (await createUser('token-other')).id;
+      const laptop = await service.issueRefresh(userId);
+      const phone = await service.issueRefresh(userId);
+      const other = await service.issueRefresh(otherId);
+      await tx.run((manager) => sessions.revokeAllForUser(userId, manager));
+      await assert.rejects(service.rotate(laptop.raw), UnauthorizedException);
+      await assert.rejects(service.rotate(phone.raw), UnauthorizedException);
+      await service.rotate(other.raw);
+    });
+
+    it('refresh đang chạy song song với revokeAllForUser: token vừa xoay vòng cũng bị thu hồi', async () => {
+      const sessions = new RefreshSessionsRepository(db.getRepository(RefreshSession));
+      for (let round = 0; round < 5; round++) {
+        const issued = await service.issueRefresh(userId);
+        const [rotation] = await Promise.allSettled([
+          service.rotate(issued.raw),
+          tx.run((manager) => sessions.revokeAllForUser(userId, manager)),
+        ]);
+        if (rotation.status === 'fulfilled') {
+          await assert.rejects(service.rotate(rotation.value.raw), UnauthorizedException);
+        }
+        const alive = await db.query(
+          'SELECT count(*)::int AS n FROM refresh_sessions WHERE user_id = $1 AND revoked_at IS NULL',
+          [userId],
+        );
+        assert.equal(alive[0].n, 0, `vòng ${round}: không session nào của user còn sống`);
+      }
+    });
+
     it('logout (revokeByRaw) thu hồi cả token kế tiếp trong family', async () => {
       const issued = await service.issueRefresh(userId);
       const rotated = await service.rotate(issued.raw);
