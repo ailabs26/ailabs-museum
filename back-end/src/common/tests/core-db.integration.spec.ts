@@ -356,6 +356,51 @@ describe('Core DB (PostgreSQL thật)', { skip }, () => {
       }
     });
 
+    it('migration tạo index partial cho ActiveSessionGuard', async () => {
+      const rows = await db.query(
+        `SELECT indexdef FROM pg_indexes WHERE tablename = 'refresh_sessions' AND indexname = 'IDX_refresh_sessions_family_live'`,
+      );
+      assert.equal(rows.length, 1);
+      assert.match(rows[0].indexdef, /WHERE \(revoked_at IS NULL\)/);
+    });
+
+    it('listLiveForUser: 1 dòng/thiết bị (token đầu), giữ signedInAt, UA/IP mới nhất; isFamilyLive qua xoay vòng', async () => {
+      const sessions = new RefreshSessionsRepository(db.getRepository(RefreshSession));
+      const deviceUser = (await createUser('devices')).id;
+      const laptop = await service.issueRefresh(deviceUser, undefined, undefined, { userAgent: 'Laptop', ip: '10.0.0.1' });
+      const phone = await service.issueRefresh(deviceUser, undefined, undefined, { userAgent: 'Phone', ip: '10.0.0.2' });
+      const rotated = await service.rotate(laptop.raw, { userAgent: 'Laptop v2', ip: '10.0.0.3' });
+
+      const live = await sessions.listLiveForUser(deviceUser);
+      assert.deepEqual(live.map((row) => row.familyId).sort(), [laptop.session.familyId, phone.session.familyId].sort());
+      const laptopRow = live.find((row) => row.familyId === laptop.session.familyId)!;
+      assert.equal(laptopRow.id, rotated.session.id, 'chỉ trả token đầu của family');
+      assert.equal(laptopRow.userAgent, 'Laptop v2');
+      assert.equal(laptopRow.ip, '10.0.0.3');
+      assert.equal(laptopRow.signedInAt.getTime(), laptop.session.signedInAt.getTime());
+      assert.equal(await sessions.isFamilyLive(laptop.session.familyId), true, 'xoay vòng không làm family chết');
+    });
+
+    it('revokeAllForUser(except) giữ phiên hiện tại; revokeFamilyOfUser không thu hồi được phiên người khác', async () => {
+      const sessions = new RefreshSessionsRepository(db.getRepository(RefreshSession));
+      const owner = (await createUser('owner')).id;
+      const intruder = (await createUser('intruder')).id;
+      const current = await service.issueRefresh(owner);
+      const other = await service.issueRefresh(owner);
+      const foreign = await service.issueRefresh(intruder);
+
+      assert.equal(await tx.run((manager) => sessions.revokeFamilyOfUser(owner, foreign.session.familyId, manager)), false);
+      assert.equal(await sessions.isFamilyLive(foreign.session.familyId), true);
+
+      await tx.run((manager) => sessions.revokeAllForUser(owner, manager, current.session.familyId));
+      assert.equal(await sessions.isFamilyLive(current.session.familyId), true);
+      assert.equal(await sessions.isFamilyLive(other.session.familyId), false);
+
+      assert.equal(await tx.run((manager) => sessions.revokeFamilyOfUser(owner, current.session.familyId, manager)), true);
+      assert.equal(await sessions.isFamilyLive(current.session.familyId), false);
+      assert.equal(await tx.run((manager) => sessions.revokeFamilyOfUser(owner, current.session.familyId, manager)), false, 'đã thu hồi rồi');
+    });
+
     it('logout (revokeByRaw) thu hồi cả token kế tiếp trong family', async () => {
       const issued = await service.issueRefresh(userId);
       const rotated = await service.rotate(issued.raw);

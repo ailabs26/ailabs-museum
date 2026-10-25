@@ -102,11 +102,12 @@ describe('TokenService', () => {
   it('signAccess ký JWT mang roles + permissions với secret/TTL từ config', async () => {
     const token = await service.signAccess({
       id: 'u1', email: 'e@x', displayName: 'E', roles: ['editor'], permissions: ['room:read'],
-    });
+    }, 'fam-9');
     const payload = await jwt.verifyAsync<JwtAccessPayload & { exp: number; iat: number }>(token, { secret: SECRET });
     assert.equal(payload.sub, 'u1');
     assert.deepEqual(payload.roles, ['editor']);
     assert.deepEqual(payload.permissions, ['room:read']);
+    assert.equal(payload.sid, 'fam-9');
     assert.equal(payload.exp - payload.iat, 15 * 60);
   });
 
@@ -120,6 +121,27 @@ describe('TokenService', () => {
     const ttl = session.expiresAt.getTime() - before;
     assert.ok(ttl >= 7 * DAY_MS - 1000 && ttl <= 7 * DAY_MS + 1000);
     assert.equal(service.refreshCookieMaxAgeMs(), 7 * DAY_MS);
+  });
+
+  it('issueRefresh lưu User-Agent/IP (cắt độ dài) và signedInAt', async () => {
+    const signedInAt = new Date('2026-10-01T00:00:00Z');
+    const { session } = await service.issueRefresh('user-1', undefined, undefined, { userAgent: 'x'.repeat(600), ip: '1.2.3.4' }, signedInAt);
+    assert.equal(session.userAgent?.length, 512);
+    assert.equal(session.ip, '1.2.3.4');
+    assert.equal(session.signedInAt, signedInAt);
+  });
+
+  it('rotate: giữ signedInAt của lần đăng nhập, cập nhật UA/IP theo request; access token mang sid = familyId', async () => {
+    const signedInAt = new Date('2026-10-01T00:00:00Z');
+    const issued = await service.issueRefresh('user-1', undefined, undefined, { userAgent: 'old', ip: '1.1.1.1' }, signedInAt);
+    const rotated = await service.rotate(issued.raw, { userAgent: 'new', ip: '2.2.2.2' });
+    assert.equal(rotated.session.signedInAt, signedInAt);
+    assert.equal(rotated.session.userAgent, 'new');
+    assert.equal(rotated.session.ip, '2.2.2.2');
+    const payload = await jwt.verifyAsync<JwtAccessPayload>(rotated.accessToken, { secret: SECRET });
+    assert.equal(payload.sid, issued.session.familyId);
+    const keep = await service.rotate(rotated.raw);
+    assert.equal(keep.session.userAgent, 'new', 'request không gửi UA thì giữ UA cũ');
   });
 
   it('issueRefresh giữ familyId khi được truyền, mỗi lần sinh token khác nhau', async () => {

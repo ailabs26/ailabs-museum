@@ -10,4 +10,6 @@ export interface JwtAccessPayload {
   roles: string[];
   /** danh sách permission dạng 'resource:action'. */
   permissions: string[];
+  /** familyId của refresh session phát hành token — ActiveSessionGuard kiểm phiên còn sống. */
+  sid?: string;
 }
