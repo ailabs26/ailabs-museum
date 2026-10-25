@@ -1,4 +1,4 @@
-import { IconDevices, IconLogout, IconSearch, IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
+import { IconDevices, IconLock, IconLogout, IconSearch, IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
 import {
   AppShell, Avatar, Badge, Box, Burger, Group, Indicator, Kbd, Menu, NavLink,
   ScrollArea, Text, Tooltip, UnstyledButton, useComputedColorScheme, useMantineColorScheme,
@@ -98,6 +98,9 @@ export function AdminLayout() {
                 </UnstyledButton>
               </Menu.Target>
               <Menu.Dropdown>
+                <Menu.Item leftSection={<IconLock size={16} />} onClick={() => navigate('/admin/change-password')}>
+                  Đổi mật khẩu
+                </Menu.Item>
                 <Menu.Item leftSection={<IconDevices size={16} />} onClick={() => navigate('/admin/sessions')}>
                   Phiên đăng nhập
                 </Menu.Item>
