@@ -47,7 +47,9 @@ for (const failure of ['webgl', 'context', 'chunk']) {
       }
       if (failure === 'context') await expect(page.getByText('Đang khôi phục không gian 3D. Bạn có thể tiếp tục đọc danh mục.')).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible({ timeout: failure === 'context' ? 12_000 : 5000 });
-      await expect(page).toHaveURL(/\/tour\?room=sculpture$/);
+      await expect(page).toHaveURL(selected
+        ? `/tour?room=sculpture&exhibit=${roomA.exhibits[1].id}`
+        : '/tour?room=sculpture');
       const link = page.getByRole('link', { name: 'Tiếp tục đọc trong giao diện 2D', exact: true });
       await expect(link).toHaveAttribute('href', selected
         ? `/collection/sculpture/exhibits/${roomA.exhibits[1].id}` : '/collection?room=sculpture');

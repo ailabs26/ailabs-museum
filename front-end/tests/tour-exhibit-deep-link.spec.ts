@@ -26,6 +26,35 @@ test('a direct public exhibit URL selects the exhibit without opening WebGL', as
   await expect(page.locator('canvas')).toHaveCount(0);
 });
 
+test('a deep-linked exhibit keeps its 2D target when the lazy WebGL scene fails', async ({ page }) => {
+  await page.route('**/*MuseumScene*', (route) => route.abort());
+  const exhibit = roomA.exhibits[1];
+  await page.goto(`/tour?room=sculpture&exhibit=${exhibit.id}`, { waitUntil: 'domcontentloaded' });
+
+  await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
+
+  await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
+  await expect(page).toHaveURL(`/tour?room=sculpture&exhibit=${exhibit.id}`);
+  await expect(page.getByRole('link', { name: 'Tiếp tục đọc trong giao diện 2D', exact: true }))
+    .toHaveAttribute('href', `/collection/sculpture/exhibits/${exhibit.id}`);
+  await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText(exhibit.name);
+  await expect(page.getByRole('button', { name: `Xem chi tiết ${exhibit.name}`, exact: true }))
+    .toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('canvas')).toHaveCount(0);
+});
+
+test('opening 3D from a deep link keeps the selected exhibit in the catalogue', async ({ page }) => {
+  const exhibit = roomA.exhibits[1];
+  await page.goto(`/tour?room=sculpture&exhibit=${exhibit.id}`, { waitUntil: 'domcontentloaded' });
+  await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
+
+  await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible();
+  await expect(page.locator('[data-selected="true"]')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: `Xem chi tiết ${exhibit.name}`, exact: true }))
+    .toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText(exhibit.name);
+});
+
 test('the 2D detail link opens the same public exhibit in the tour', async ({ page }) => {
   const exhibit = roomA.exhibits[0];
   await page.goto(`/collection/sculpture/exhibits/${exhibit.id}`);
@@ -94,6 +123,31 @@ test('a valid deep link recovers after the room API fails and is retried', async
   await expect(page.getByRole('button', { name: `Xem chi tiết ${exhibit.name}`, exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText(exhibit.name);
   expect(requests).toBe(2);
+});
+
+test('changing rooms hides the old deep-linked exhibit while the new room is pending', async ({ page }) => {
+  let releaseRoom!: () => void;
+  let signalRoomRequest!: () => void;
+  const roomRequested = new Promise<void>((resolve) => { signalRoomRequest = resolve; });
+  const responseGate = new Promise<void>((resolve) => { releaseRoom = resolve; });
+  await page.route('**/api/rooms/ceramics', async (route) => {
+    signalRoomRequest();
+    await responseGate;
+    await fulfillMuseum(route, envelope(roomB));
+  });
+  const exhibit = roomA.exhibits[0];
+  await page.goto(`/tour?room=sculpture&exhibit=${exhibit.id}`);
+  await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toBeVisible();
+
+  await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
+  await roomRequested;
+  await expect(page).toHaveURL('/tour?room=ceramics');
+  await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: exhibit.name, exact: true })).toHaveCount(0);
+
+  releaseRoom();
+  await expect(page.getByRole('button', { name: `Xem chi tiết ${roomB.exhibits[0].name}`, exact: true })).toBeVisible();
+  await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);
 });
 
 test('manual selection and close sync the URL and preserve unrelated parameters', async ({ page }) => {
