@@ -15,6 +15,7 @@ import { PermissionDeniedFilter } from '../../modules/audit/filters/permission-d
 import { AuthController } from '../../modules/auth/controllers/auth.controller';
 import { AuthService } from '../../modules/auth/services/auth.service';
 import { TokenService } from '../../modules/auth/services/token.service';
+import { AuthRateLimiter } from '../../modules/auth/services/auth-rate-limiter.service';
 import { HealthController } from '../../modules/health/health.controller';
 import { PermissionsController } from '../../modules/roles/controllers/permissions.controller';
 import { RolesController } from '../../modules/roles/controllers/roles.controller';
@@ -144,6 +145,7 @@ describe('RBAC HTTP — guard toàn cục trên route quản trị', () => {
         { provide: RolesService, useValue: recordingService('roles') },
         { provide: AuthService, useValue: { me: (id: string) => Promise.resolve({ id }) } },
         { provide: TokenService, useValue: { refreshCookieMaxAgeMs: () => 1000 } },
+        AuthRateLimiter,
         {
           provide: AuditService,
           useValue: { recordAccessDenied: async (input: RecordAccessDeniedInput) => void denied.push(input) },
