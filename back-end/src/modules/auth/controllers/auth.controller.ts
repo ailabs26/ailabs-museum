@@ -1,10 +1,13 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpException,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
   Post,
   UnauthorizedException,
   Req,
@@ -14,6 +17,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import {
   ApiBearerAuth,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -24,10 +28,14 @@ import type { CookieOptions, Request, Response } from 'express';
 import type { AuthUser } from '../../../common/types/auth-user.type';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Public } from '../../../common/decorators/public.decorator';
+import { Audit } from '../../audit/decorators/audit.decorator';
 import { AuthService } from '../services/auth.service';
 import { LoginDto } from '../dto/login.dto';
+import { SessionResponse } from '../dto/session-response.dto';
 import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard';
 import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
+import { SessionsService } from '../services/sessions.service';
+import type { SessionClient } from '../services/token.service';
 import { TokenService } from '../services/token.service';
 
 type RequestWithCookies = Request & { cookies?: Record<string, string> };
@@ -40,6 +48,7 @@ export class AuthController {
     private readonly tokens: TokenService,
     private readonly config: ConfigService,
     private readonly limiter: AuthRateLimiter,
+    private readonly sessions: SessionsService,
   ) {}
 
   @Public()
@@ -63,7 +72,7 @@ export class AuthController {
 
     let result;
     try {
-      result = await this.auth.login(dto);
+      result = await this.auth.login(dto, this.clientOf(req));
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         this.limiter.recordEmailFailure(dto.email);
@@ -92,7 +101,7 @@ export class AuthController {
   ): Promise<{ accessToken: string }> {
     this.limitOrRetryAfter(res, () => this.limiter.consumeIp(req.ip ?? 'unknown'));
     try {
-      const result = await this.auth.refresh(this.readRefreshCookie(req));
+      const result = await this.auth.refresh(this.readRefreshCookie(req), this.clientOf(req));
       this.setRefreshCookie(res, result.refreshToken);
       return { accessToken: result.accessToken };
     } catch (error) {
@@ -147,6 +156,58 @@ export class AuthController {
       }
       throw error;
     }
+  }
+
+  @Get('sessions')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Các thiết bị đang đăng nhập của chính mình' })
+  @ApiOkResponse({ type: SessionResponse, isArray: true })
+  listSessions(@CurrentUser() user: AuthUser): Promise<SessionResponse[]> {
+    return this.sessions.list(user);
+  }
+
+  @Delete('sessions/:id')
+  @ApiBearerAuth()
+  @Audit('auth.session_revoke', 'session')
+  @ApiOperation({ summary: 'Đăng xuất một thiết bị của chính mình (có hiệu lực ngay)' })
+  @ApiNotFoundResponse({ description: 'Không có phiên này trong các phiên của bạn.' })
+  async revokeSession(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<null> {
+    if (await this.sessions.revoke(user, id)) this.clearRefreshCookie(res);
+    return null;
+  }
+
+  @Post('sessions/revoke-others')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @Audit('auth.session_revoke_others', 'user')
+  @ApiOperation({ summary: 'Đăng xuất mọi thiết bị khác, giữ thiết bị hiện tại' })
+  @ApiOkResponse({ description: '`id` là người dùng vừa bị đăng xuất các thiết bị khác (dùng cho audit).' })
+  async revokeOtherSessions(@CurrentUser() user: AuthUser): Promise<{ id: string }> {
+    await this.sessions.revokeOthers(user);
+    return { id: user.id };
+  }
+
+  @Post('logout-all')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @Audit('auth.logout_all', 'user')
+  @ApiOperation({ summary: 'Đăng xuất khỏi tất cả thiết bị, kể cả thiết bị hiện tại' })
+  @ApiOkResponse({ description: '`id` là người dùng vừa bị đăng xuất (dùng cho audit). Cookie refresh bị xóa.' })
+  async logoutAll(
+    @CurrentUser() user: AuthUser,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ id: string }> {
+    await this.sessions.revokeAll(user);
+    this.clearRefreshCookie(res);
+    return { id: user.id };
+  }
+
+  private clientOf(req: Request): SessionClient {
+    return { userAgent: req.get('user-agent') ?? null, ip: req.ip ?? null };
   }
 
   private cookieName(): string {

@@ -13,6 +13,7 @@ import { AuthController } from '../controllers/auth.controller';
 import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard';
 import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
 import { AuthService } from '../services/auth.service';
+import { SessionsService } from '../services/sessions.service';
 import { TokenService } from '../services/token.service';
 
 const COOKIE = 'aura_rt';
@@ -41,6 +42,7 @@ describe('AuthController HTTP — refresh cookie', () => {
       providers: [
         RefreshCookieOriginGuard,
         AuthRateLimiter,
+        { provide: SessionsService, useValue: {} },
         { provide: AuthService, useValue: auth },
         { provide: TokenService, useValue: { refreshCookieMaxAgeMs: () => 7 * 24 * 3600 * 1000 } },
       ],
