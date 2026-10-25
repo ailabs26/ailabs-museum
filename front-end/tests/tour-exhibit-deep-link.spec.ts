@@ -95,3 +95,54 @@ test('a valid deep link recovers after the room API fails and is retried', async
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText(exhibit.name);
   expect(requests).toBe(2);
 });
+
+test('manual selection and close sync the URL and preserve unrelated parameters', async ({ page }) => {
+  const exhibit = roomA.exhibits[0];
+  await page.goto('/tour?room=sculpture&campaign=summer');
+
+  const trigger = page.getByRole('button', { name: `Xem chi tiết ${exhibit.name}`, exact: true });
+  await trigger.click();
+  await expect(page).toHaveURL(`/tour?room=sculpture&campaign=summer&exhibit=${exhibit.id}`);
+  await expect(trigger).toHaveAttribute('aria-pressed', 'true');
+
+  await page.getByRole('button', { name: 'Đóng chi tiết hiện vật' }).click();
+  await expect(page).toHaveURL('/tour?room=sculpture&campaign=summer');
+  await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
+test('Escape closes a direct deep link and focuses the 3D start button', async ({ page }) => {
+  const exhibit = roomA.exhibits[0];
+  await page.goto(`/tour?room=sculpture&exhibit=${exhibit.id}&campaign=summer`);
+  await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toBeVisible();
+
+  await page.keyboard.press('Escape');
+
+  await expect(page).toHaveURL('/tour?room=sculpture&campaign=summer');
+  await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Mở phòng 3D' })).toBeFocused();
+});
+
+test('selection replaces history while room changes push and restore URL selection', async ({ page }) => {
+  await page.goto('/collection', { waitUntil: 'domcontentloaded' });
+  await page.goto('/tour?room=sculpture', { waitUntil: 'domcontentloaded' });
+
+  for (const exhibit of roomA.exhibits.slice(0, 2)) {
+    await page.getByRole('button', { name: `Xem chi tiết ${exhibit.name}`, exact: true }).click();
+    await expect(page).toHaveURL(`/tour?room=sculpture&exhibit=${exhibit.id}`);
+  }
+  await page.goBack({ waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/collection$/);
+
+  await page.goto(`/tour?room=sculpture&exhibit=${roomA.exhibits[0].id}&campaign=summer`, { waitUntil: 'domcontentloaded' });
+  await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
+  await expect(page).toHaveURL('/tour?room=ceramics&campaign=summer');
+  await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);
+
+  await page.goBack({ waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(`/tour?room=sculpture&exhibit=${roomA.exhibits[0].id}&campaign=summer`);
+  await expect(page.getByRole('button', { name: `Xem chi tiết ${roomA.exhibits[0].name}`, exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.goForward({ waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL('/tour?room=ceramics&campaign=summer');
+  await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);
+});

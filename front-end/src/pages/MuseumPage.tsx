@@ -35,10 +35,9 @@ export function MuseumPage() {
   const handleUnavailable = useCallback(() => {
     if (currentRoomId) setFailedRoomId(currentRoomId);
   }, [currentRoomId]);
-  const [selection, setSelection] = useState<{ roomId: string; id: string } | null>(null);
-  const selectedDisplay = detail && requestedExhibitId !== null
-    ? isRequestedExhibitValid ? displays.find((display) => display.id === requestedExhibitId) : undefined
-    : detail && selection?.roomId === detail.id ? displays.find((display) => display.id === selection.id) : undefined;
+  const selectedDisplay = detail && isRequestedExhibitValid
+    ? displays.find((display) => display.id === requestedExhibitId)
+    : undefined;
   const exhibitLinkMessage = detail && requestedExhibitId !== null && !selectedDisplay
     ? isRequestedExhibitValid ? 'Không tìm thấy hiện vật trong phòng này.' : 'Mã hiện vật trong đường dẫn không hợp lệ.'
     : null;
@@ -46,15 +45,19 @@ export function MuseumPage() {
     exhibitId: selectedDisplay.id,
     reportedRevisionId: selectedDisplay.revisionId,
   } : null;
-  useEffect(() => setSelection(null), [selectedSlug]);
   const selectionTriggerRef = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const handleSelectDisplay = (id: string) => {
+    if (!detail || !displays.some((display) => display.id === id)) return;
     selectionTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    if (detail) setSelection({ roomId: detail.id, id });
+    const next = new URLSearchParams(searchParams);
+    next.set('exhibit', id);
+    setSearchParams(next, { replace: true });
   };
   const handleCloseDetail = () => {
-    setSelection(null);
+    const next = new URLSearchParams(searchParams);
+    next.delete('exhibit');
+    setSearchParams(next, { replace: true });
     if (selectionTriggerRef.current?.isConnected) selectionTriggerRef.current.focus();
     else (startButtonRef.current ?? headingRef.current)?.focus();
   };
@@ -67,6 +70,7 @@ export function MuseumPage() {
   const handleSelectRoom = (slug: string) => {
     const next = new URLSearchParams(searchParams);
     next.set('room', slug);
+    next.delete('exhibit');
     setSearchParams(next);
   };
   const read2dHref = detail ? selectedDisplay
