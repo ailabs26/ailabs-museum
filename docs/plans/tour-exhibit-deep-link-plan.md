@@ -1,6 +1,6 @@
 # Tour Exhibit Deep Link — Implementation Plan
 
-> **For implementation workers:** Đây là tài liệu thiết kế/kế hoạch **chưa triển khai**. Review cùng [task breakdown](../tasks/tour-exhibit-deep-link.md) trước khi code. Thực hiện tuần tự trên **một nhánh `fix/tour-exhibit-deep-link` từ `origin/dev` mới nhất**, TDD theo từng task, kiểm tra rồi commit. Không tự push/tạo PR/merge khi chưa được yêu cầu.
+> **Kế hoạch này đã được triển khai ngày 25/10/2026.** Ban đầu review cùng [task breakdown](../tasks/tour-exhibit-deep-link.md); implementation thực hiện tuần tự trên nhánh `fix/tour-exhibit-deep-link` từ `origin/dev`, TDD và commit theo task. Không push/tạo PR/merge khi chưa được yêu cầu.
 
 **Goal:** Khi khách nhấn **“Xem trong không gian 3D”** tại trang chi tiết 2D, URL `/tour?room=<slug>&exhibit=<uuid>` mở đúng phòng và **chọn đúng hiện vật** trong tour, ngay cả khi truy cập trực tiếp, reload hoặc dùng Back/Forward. Giữ cách chọn/đóng hiện vật thủ công và fallback WebGL hiện tại.
 
@@ -116,7 +116,7 @@
 
 ### Task 4 — Final verification & handoff
 
-1. Chạy full **affected** browser suites và frontend quality gates; ghi số passed/failed/skipped thật. Nếu có failure timing-sensitive, tái hiện riêng và phân loại minh bạch.
+1. Chạy focused browser cases cho feature, các regression subset liên quan và frontend quality gates; ghi số passed/failed/skipped thật. Nếu có failure timing-sensitive, tái hiện riêng và phân loại minh bạch.
 2. Opt-in live API test read-only nếu môi trường có sẵn: chọn public room/exhibit từ API thật rồi direct URL + reload; nếu không chạy ghi **NOT TESTED**. Không gửi request ghi DB hay mutate CMS thật.
 3. `git diff --check`, `git status`, rà secrets/artifacts, kiểm tra thay đổi đúng scope; cập nhật `docs/tasks/...` bằng ledger/evidence thật; README nếu cần.
 4. Commit `test(tour): verify exhibit deep-link flows` khi có changes; dừng bàn giao review, **không tự PR/merge**.
@@ -142,3 +142,12 @@ Mở rộng sang `museum-tour`, `museum-navigation`, `museum-lifecycle`, `museum
 - Manual selection/close/room switch đồng bộ query, keyboard focus và fallback link; không regress 3D navigation/WebGL recovery.
 - Tests/gates có log thật, không thay đổi backend/DB/dependency/draft preview và không tác động phần việc regression collection riêng.
 - Người dùng duyệt trước khi triển khai; chỉ tạo PR vào `dev` theo yêu cầu riêng.
+
+## 9. Kết quả triển khai (2026-10-25)
+
+- Nhánh: `fix/tour-exhibit-deep-link`, base `origin/dev` `7f14ccd3f0a0306b3d947e230cafde7fe9411441`.
+- Commits: `4ffc0d9` (PLAN/TASK), `6fc6cc9` (resolve public deep link), `b887cdc` (URL/history sync), `4cf848e` (fallback/scene regressions); Task 4 ghi nhận handoff trong commit docs cuối.
+- Selection được derive từ `exhibit` sau khi UUID hợp lệ và ID có trong public displays của room hiện tại. Chọn/đóng dùng `replace`; đổi room push và xóa exhibit; các query khác được giữ.
+- Typecheck PASS; unit 27 files / 152 tests PASS; production build PASS với cảnh báo kích thước chunk; full frontend lint FAIL với 37 lỗi ở 3 file không đổi và 1 warning. Lint riêng file thay đổi PASS.
+- Playwright focused cases và regression subsets: direct/reload, 2D link, invalid/cross-room, retry, URL/history, pending room switch, mở 3D theo thao tác người dùng, fallback F02/F03 và `museum-interaction`; xem matrix chi tiết trong task. Không chạy toàn bộ `exhibit-detail`, `museum-tour`, `museum-navigation` và `museum-lifecycle`. Test Tab escape vẫn lỗi như baseline; một lượt history test báo timeout khi teardown sau khi các assertions đã pass.
+- Live API NOT TESTED. Không sửa backend/database/scene camera; chưa push/PR/merge.

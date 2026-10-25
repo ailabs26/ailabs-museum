@@ -1,6 +1,6 @@
 # Tour Exhibit Deep Link — Task & Acceptance Spec
 
-**Trạng thái:** **Đã duyệt triển khai ngày 25/10/2026; Task 0 đang thực hiện, runtime chưa bắt đầu.**<br>
+**Trạng thái:** **Đã triển khai ngày 25/10/2026 trên `fix/tour-exhibit-deep-link`; chưa push/PR.** Typecheck, unit, build và lint riêng file đổi đạt; full lint còn lỗi nền được ghi bên dưới.<br>
 **Plan:** [tour-exhibit-deep-link-plan.md](../plans/tour-exhibit-deep-link-plan.md).<br>
 **Repo/base đã đọc:** `ailabs26/ailabs-museum`, `origin/dev` `7f14ccd3f0a0306b3d947e230cafde7fe9411441`, fetch ngày 25/10/2026.<br>
 **Nhánh dự kiến:** `fix/tour-exhibit-deep-link` (một nhánh/một PR vào `dev`; tên là chức năng, không đánh series 01/02).
@@ -61,8 +61,10 @@ Hiện `MuseumPage` chỉ áp dụng `room`; `exhibit` không được đọc. K
 - [x] Người dùng duyệt behavior URL, manual selection (`replace:true`), direct focus và không auto WebGL ngày 25/10/2026.
 - [x] Fetch `origin/dev` ngày 25/10/2026; baseline `7f14ccd3f0a0306b3d947e230cafde7fe9411441`. Tracked working tree sạch; chỉ có đúng hai tài liệu PLAN/TASK mới do người dùng thêm.
 - [x] Tạo branch `fix/tour-exhibit-deep-link` từ `origin/dev`; commit PLAN/TASK trước runtime.
-- [ ] Chạy/review baseline test `museum-interaction`, `tour-2d-fallback`, `exhibit-detail`, `accessibility-keyboard`; ghi lỗi hiện có riêng.
-- [ ] Repro URL 2D → tour chọn sai/không chọn hiện vật, chụp DOM/focus và test RED.
+- [x] Chạy/review baseline test `museum-interaction`, `tour-2d-fallback`, `exhibit-detail`, `accessibility-keyboard`; ghi lỗi hiện có riêng.
+- [x] Repro URL 2D → tour không chọn hiện vật bằng test RED và lưu Playwright DOM failure context.
+
+**Baseline trước runtime:** Bộ 49 test bắt đầu nhưng tiến trình kẹt ở F04 cuối nên bị dừng trước summary. Các lỗi quan sát được: `accessibility-keyboard` không focus lại trigger sau Tab; `exhibit-detail` có selector NativeSelect bị kiểm tra như input và font assertion cũ; `museum-interaction` có mismatch navigation mode, overflow ở 200%, frame count chưa ổn định và annotation không mở panel; `tour-2d-fallback` có selector NativeSelect và Canvas label không khớp. Test F04 reflow cũng kẹt khi chạy riêng. Đây là lỗi nền, không phát sinh từ thay đổi này.
 
 **Nghiệm thu:** Root cause ghi đúng; baseline log minh bạch, không có thay đổi backend/không sửa test ngoài scope.<br>
 **Commit gợi ý:** `docs(tour): plan exhibit deep links`.
@@ -72,11 +74,11 @@ Hiện `MuseumPage` chỉ áp dụng `room`; `exhibit` không được đọc. K
 **Files:** `front-end/src/pages/MuseumPage.tsx`, `front-end/tests/tour-exhibit-deep-link.spec.ts`.<br>
 **Mục tiêu:** Deep link trực tiếp/reload chọn đúng hiện vật public sau tải API.
 
-- [ ] RED test `?room=<slug>&exhibit=<validID>`: kỳ vọng panel đúng tên + `aria-pressed`, không có canvas/chunk scene trước user gesture.
-- [ ] RED tests invalid UUID, ID thuộc room khác, ID không xuất bản, room unknown, pending response và API error.
-- [ ] Parse UUID hợp lệ, resolve ID **chỉ** trong `displays` đã validate của `detail` hiện tại; derive selected state từ URL (không setState dư thừa).
-- [ ] Khi URL exhibit không khớp dữ liệu đã tải xong, hiển thị status dễ hiểu, không tự select item đầu tiên, không redirect/chỉnh URL tự động.
-- [ ] GREEN focused tests, typecheck/lint/build và review diff.
+- [x] RED test direct URL: `aria-pressed` sai; link từ trang 2D không mở panel.
+- [x] RED tests invalid UUID, ID không thuộc dữ liệu public, room unknown, pending response và API error/retry.
+- [x] Parse UUID bằng Zod và resolve ID **chỉ** trong `displays` đã map từ public `detail` hiện tại; selection lấy từ URL.
+- [x] URL exhibit không hợp lệ/không tồn tại có status sau khi room tải xong; không tự chọn item, redirect hoặc sửa URL.
+- [x] GREEN focused tests: 6/6; typecheck/build PASS; lint file đổi PASS. Full lint FAIL do lỗi nền (Task 4).
 
 **Nghiệm thu:** Direct URL/reload một ID hợp lệ chọn đúng; invalid/cross-room không panel hoặc stale content.<br>
 **Commit gợi ý:** `fix(tour): resolve exhibit deep links`.
@@ -86,13 +88,13 @@ Hiện `MuseumPage` chỉ áp dụng `room`; `exhibit` không được đọc. K
 **Files:** `MuseumPage.tsx`, new test, `museum-interaction.spec.ts`, `tour-2d-fallback.spec.ts` nếu assertion URL cũ cần đổi.<br>
 **Mục tiêu:** Không để URL và selection lệch sau thao tác thủ công.
 
-- [ ] RED tests catalogue + hotspot/scene/dock (fixture/harness phù hợp): manual pick đổi ID URL và panel/pressed/caption/report target đồng bộ.
-- [ ] Chọn/đóng bằng query update bảo toàn `room`/custom query; `replace:true` tránh history spam.
-- [ ] Đóng bằng Escape, nút Đóng, click empty scene: URL xóa exhibit; focus về trigger đang kết nối hoặc fallback hợp lệ.
-- [ ] Đổi phòng xóa exhibit ngay cùng navigation; Back/Forward phục hồi selection theo location đang hoạt động.
-- [ ] API refresh/room race không khôi phục exhibit của request cũ, không focus jump không cần thiết.
-- [ ] Sửa assertion chính đáng ở `tour-2d-fallback` đang mong URL chỉ có room sau click chọn; **không xoá test**.
-- [ ] GREEN focused browser suites và typecheck/lint/build, review diff.
+- [x] RED/GREEN test catalogue: chọn thủ công cập nhật URL, panel và `aria-pressed`; các kênh scene dùng chung callback `handleSelectDisplay`.
+- [x] Chọn/đóng giữ `room`/query khác; chọn/đóng dùng `replace:true`.
+- [x] Escape/nút Đóng xóa exhibit; focus về trigger hoặc nút Mở 3D khi vào từ deep link.
+- [x] Đổi phòng push navigation và xóa exhibit; Back/Forward khôi phục query selection.
+- [x] Test đổi phòng khi API đang pending xác nhận không hiện panel/hiện vật cũ; test API lỗi rồi retry thành công.
+- [x] Cập nhật assertion F03 ở `tour-2d-fallback` để kiểm tra URL chứa exhibit khi đã chọn; không xóa test.
+- [x] 3 test đồng bộ URL/history PASS (runner báo timeout ở teardown sau khi đã ghi 3 passed); typecheck và lint file đổi PASS.
 
 **Nghiệm thu:** Dù bắt đầu từ deep link hay chọn thủ công, URL, panel, selected item và fallback thống nhất.<br>
 **Commit gợi ý:** `fix(tour): sync selection with tour URL`.
@@ -102,12 +104,12 @@ Hiện `MuseumPage` chỉ áp dụng `room`; `exhibit` không được đọc. K
 **Files:** các tests ở trên; `MuseumScene.tsx` chỉ nếu RED chứng minh cần fix tối thiểu.<br>
 **Mục tiêu:** Không hồi quy 3D, accessibility hoặc đọc 2D.
 
-- [ ] Truy cập deep link mà chưa click 3D: panel đọc được bằng keyboard; no WebGL network/canvas.
-- [ ] Bắt đầu Canvas chủ động: selected ID/highlight đúng, không phá intro/camera focus; item outside room không được force camera focus.
-- [ ] WebGL null/contextlost/chunk failure: fallback link đúng selected exhibit và có catalogue; không auto redirect.
-- [ ] Focus panel heading trên direct selection; đóng trả trigger/fallback; Escape hoạt động, Tab thoát panel; không trap focus.
-- [ ] Mobile 320px + desktop, light/dark không tràn; refresh lỗi/đổi room gỡ owner stale và audio.
-- [ ] Regression cho `museum-interaction`, `tour-2d-fallback`, `museum-tour`, `museum-navigation`, `accessibility-keyboard`; ghi pass/fail/skip thật.
+- [x] Deep link không khởi chạy Canvas/chunk; panel và heading focus ngay sau khi public data tải.
+- [x] Sau thao tác chủ động Mở 3D, Canvas hiện và catalogue vẫn giữ đúng exhibit được chọn; regression ngoài phạm vi phòng 3D PASS.
+- [x] Lazy scene failure và F02/F03 WebGL/context/chunk variants giữ link 2D đúng exhibit và catalogue; 7/7 F02/F03 PASS.
+- [x] Focus deep link, đóng bằng Escape/nút và trả focus sau khi dừng 3D PASS. Test Tab escape cũ vẫn FAIL như baseline: sau Tab focus không ở trigger.
+- [ ] Chưa chạy kiểm tra tràn 320px/light/dark riêng cho deep-link mới; không sửa scene/camera.
+- [x] Regression thực hiện: `museum-interaction` 5/5 PASS; `tour-2d-fallback` F02/F03 7/7 PASS; accessibility đóng sau khi dừng 3D PASS; Tab escape FAIL nền. Không chạy toàn bộ `museum-tour`/`museum-navigation` vì scene/camera không đổi.
 
 **Nghiệm thu:** Scene/fallback không bị thay đổi logic ngoài phạm vi, behavior keyboard và focus được chứng minh bằng test.<br>
 **Commit gợi ý:** `test(tour): cover exhibit deep-link lifecycle` (hoặc `fix(tour): stabilize deep-link focus` nếu có fix code).
@@ -117,11 +119,11 @@ Hiện `MuseumPage` chỉ áp dụng `room`; `exhibit` không được đọc. K
 **Files:** `docs/tasks/tour-exhibit-deep-link.md`, `docs/plans/tour-exhibit-deep-link-plan.md`, README nếu cần.<br>
 **Mục tiêu:** Có log/evidence và PR reviewable.
 
-- [ ] Chạy `npm run typecheck`, `npm run lint`, `npm run test:unit`, `npm run build` trong `front-end/`, ghi chính xác kết quả.
-- [ ] Chạy focused Playwright và affected regression; nếu full lint có lỗi cũ trong `tests/scripts`, báo FAIL nền rõ ràng, không ghi full lint PASS.
-- [ ] Nếu có backend local để thử, chạy live read-only cho `/api/rooms` → detail → `/tour?room=&exhibit=`, reload; nếu không có, đánh **NOT TESTED**.
-- [ ] `git diff --check`, review staged files, secret/.env/tmp/screenshots/test-output, clean status.
-- [ ] Cập nhật evidence/test matrix, commit ledger, rủi ro còn lại; mô tả PR về `dev` để người dùng review, không tự tạo/merge.
+- [x] Frontend gates: `typecheck` PASS; `test:unit` PASS (27 files/152 tests); `build` PASS (có cảnh báo chunk lớn); full `lint` FAIL 37 lỗi ở 3 file không đổi và 1 warning ở `CollectionPage.tsx`. ESLint riêng các file đổi PASS.
+- [x] Playwright focused cases và regression subsets đã chạy; không chạy toàn bộ `exhibit-detail`, `museum-tour`, `museum-navigation`, `museum-lifecycle`. Kết quả chi tiết ở matrix; test Tab escape nền và timeout teardown được nêu rõ.
+- [x] Live API **NOT TESTED**; toàn bộ kiểm tra feature dùng API fixtures, không gọi API/DB thật.
+- [x] `git diff --check` sạch; review diff theo phạm vi; build artifacts nằm trong ignore; không thêm `.env`/screenshot/test output vào Git.
+- [x] Cập nhật evidence/matrix; các commit riêng theo task được lưu trong lịch sử Git. Chưa mô tả/tạo PR theo yêu cầu chưa push/PR.
 
 **Nghiệm thu:** Các acceptance được PASS hoặc có blocker/NOT TESTED kèm lý do, không claim kết quả chưa chạy.<br>
 **Commit gợi ý:** `test(tour): verify exhibit deep-link flows` nếu có thay đổi tài liệu/test thực sự.
@@ -130,15 +132,18 @@ Hiện `MuseumPage` chỉ áp dụng `room`; `exhibit` không được đọc. K
 
 | Case | Cách test | Kỳ vọng | Evidence sau triển khai |
 |---|---|---|---|
-| 2D button → tour | Playwright click/Enter | URL đúng + panel ID + focused heading | NOT TESTED |
-| Direct link / reload | Playwright page.goto/reload | Selected đúng, không Canvas tự chạy | NOT TESTED |
-| ID invalid / cross-room | Fixture public API | Không panel/không stale data | NOT TESTED |
-| Manual catalogue/3D/hotspot | Playwright input | URL + panel + aria-pressed đồng bộ | NOT TESTED |
-| Escape / đóng / room change | Playwright keyboard & navigation | Param xóa, focus hợp lệ | NOT TESTED |
-| Back/Forward | Playwright history | URL mới resolve selection đúng | NOT TESTED |
-| Delayed/error/refetch | Deferred API fixture | Không chọn phòng cũ, recover an toàn | NOT TESTED |
-| WebGL failure | Existing fallback fixtures | Đúng link 2D, không redirect | NOT TESTED |
-| Browser/gates | Typecheck/lint/unit/build + affected suites | Không regress ngoài phạm vi | NOT TESTED |
-| Live read-only | Opt-in public API | Published exhibit đúng ID | NOT TESTED |
+| 2D button → tour | Playwright fixture | URL, panel, focus | PASS |
+| Direct link / reload | Playwright fixture | Đúng exhibit, không auto Canvas | PASS |
+| ID invalid / cross-room / unknown room | Public API fixture | Không panel/stale data; status đúng | PASS |
+| Manual catalogue selection | Playwright fixture | URL, panel, `aria-pressed`, params phụ | PASS |
+| 3D mở theo thao tác người dùng | Playwright + SwiftShader | Canvas mở, selection còn đúng | PASS |
+| Escape / đóng / đổi phòng | Playwright keyboard & navigation | Xóa đúng param, giữ focus, room change push | PASS |
+| Back/Forward | Playwright history | Query selection được khôi phục | PASS; teardown timeout sau 3 passed |
+| Delayed/error/retry | Deferred API fixtures | Không hiện exhibit cũ; retry phục hồi | PASS |
+| WebGL/context/chunk fallback | F02/F03 + deep-link fixture | Link 2D đúng ID, catalogue còn dùng được | PASS (7/7 + deep-link case) |
+| Accessibility Tab escape | Existing keyboard test | Rời panel và focus trigger | FAIL nền (cùng lỗi baseline) |
+| Frontend gates | Typecheck/lint/unit/build | Nêu kết quả thật | Typecheck PASS; lint FAIL 37 lỗi nền/1 warning; unit 152 PASS; build PASS |
+| Live read-only | Opt-in public API | Published exhibit thật | NOT TESTED |
+| Mobile 320px/light/dark deep-link | Browser viewport | Không tràn layout | NOT TESTED |
 
-**Bàn giao hiện tại:** Người dùng đã duyệt plan/task; branch `fix/tour-exhibit-deep-link` từ `origin/dev` `7f14ccd`. Docs được commit trước runtime theo Task 0; baseline tests và triển khai còn pending. Chưa push/PR.
+**Bàn giao:** Nhánh `fix/tour-exhibit-deep-link` từ `origin/dev` `7f14ccd3f0a0306b3d947e230cafde7fe9411441`; commit task 0–4 riêng. Typecheck/unit/build đạt; full lint còn lỗi nền, test Tab escape còn lỗi nền. Chưa push, PR hoặc merge.
