@@ -9,7 +9,9 @@ import { DataSource } from 'typeorm';
 import { dataSource as appDataSource } from '../../config/data-source';
 import { RefreshSession } from '../../modules/auth/entities/refresh-session.entity';
 import { RefreshSessionsRepository } from '../../modules/auth/repositories/refresh-sessions.repository';
+import { AuthService } from '../../modules/auth/services/auth.service';
 import { TokenService } from '../../modules/auth/services/token.service';
+import { PasswordService } from '../security/password.service';
 import { Permission } from '../../modules/roles/entities/permission.entity';
 import { RolePermission } from '../../modules/roles/entities/role-permission.entity';
 import { Role } from '../../modules/roles/entities/role.entity';
@@ -399,6 +401,24 @@ describe('Core DB (PostgreSQL thật)', { skip }, () => {
       assert.equal(await tx.run((manager) => sessions.revokeFamilyOfUser(owner, current.session.familyId, manager)), true);
       assert.equal(await sessions.isFamilyLive(current.session.familyId), false);
       assert.equal(await tx.run((manager) => sessions.revokeFamilyOfUser(owner, current.session.familyId, manager)), false, 'đã thu hồi rồi');
+    });
+
+    it('tự đổi mật khẩu: hash mới được lưu, thiết bị khác bị thu hồi, thiết bị hiện tại giữ; đăng nhập lại bằng mật khẩu mới', async () => {
+      const sessions = new RefreshSessionsRepository(db.getRepository(RefreshSession));
+      const passwords = new PasswordService({ getOrThrow: () => 4 } as unknown as ConfigService);
+      const auth = new AuthService(users, passwords, service, tx, sessions);
+      const owner = await createUser('change-pw', { passwordHash: await passwords.hash('Old-Passw0rd') });
+      const current = await service.issueRefresh(owner.id);
+      const other = await service.issueRefresh(owner.id);
+      const actor = { id: owner.id, email: owner.email, displayName: owner.displayName, roles: [], permissions: [], sessionId: current.session.familyId };
+
+      await auth.changePassword(actor, { currentPassword: 'Old-Passw0rd', newPassword: 'New-Passw0rd' });
+
+      assert.equal(await sessions.isFamilyLive(current.session.familyId), true);
+      assert.equal(await sessions.isFamilyLive(other.session.familyId), false);
+      const login = await auth.login({ email: owner.email, password: 'New-Passw0rd' });
+      assert.ok(login.accessToken);
+      await assert.rejects(auth.login({ email: owner.email, password: 'Old-Passw0rd' }), UnauthorizedException);
     });
 
     it('logout (revokeByRaw) thu hồi cả token kế tiếp trong family', async () => {

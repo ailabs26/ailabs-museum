@@ -1,11 +1,13 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { AuthUser } from '../../../common/types/auth-user.type';
 import { UserStatus } from '../../users/entities/user.entity';
 import { PasswordService } from '../../../common/security/password.service';
 import { UsersRepository } from '../../users/repositories/users.repository';
 import { toAuthUser } from '../../users/user-access.util';
+import { ChangePasswordDto } from '../dto/change-password.dto';
 import { LoginDto } from '../dto/login.dto';
+import { WrongCurrentPasswordException } from '../exceptions/wrong-current-password.exception';
 import { RefreshSessionsRepository } from '../repositories/refresh-sessions.repository';
 import { SessionClient, TokenService } from './token.service';
 
@@ -70,6 +72,39 @@ export class AuthService {
 
     const rotated = await this.tokens.rotate(rawToken, client);
     return { accessToken: rotated.accessToken, refreshToken: rotated.raw };
+  }
+
+  /**
+   * Người dùng tự đổi mật khẩu: kiểm mật khẩu hiện tại, ghi hash mới và đăng xuất mọi thiết bị
+   * khác (giữ thiết bị đang dùng) trong cùng transaction.
+   */
+  async changePassword(actor: AuthUser, dto: ChangePasswordDto): Promise<void> {
+    const user = await this.users.findByIdWithAccess(actor.id);
+    if (!user || user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException('Phiên đăng nhập không hợp lệ');
+    }
+    if (!(await this.passwords.compare(dto.currentPassword, user.passwordHash))) {
+      throw new WrongCurrentPasswordException();
+    }
+    if (await this.passwords.compare(dto.newPassword, user.passwordHash)) {
+      throw new BadRequestException({
+        message: 'Mật khẩu mới phải khác mật khẩu hiện tại',
+        errors: [{ code: 'same_password', field: 'newPassword', message: 'Mật khẩu mới phải khác mật khẩu hiện tại' }],
+      });
+    }
+
+    const newHash = await this.passwords.hash(dto.newPassword);
+    await this.tx.run(async (manager) => {
+      // Khóa độc quyền theo user (cùng key với refresh/login) rồi đọc lại: nếu Admin vừa đặt lại
+      // mật khẩu hoặc khóa tài khoản trong lúc so bcrypt thì không ghi đè.
+      await this.sessions.lockUser(user.id, manager, true);
+      const fresh = await this.users.findByIdWithAccess(user.id, manager);
+      if (!fresh || fresh.status !== UserStatus.ACTIVE || fresh.passwordHash !== user.passwordHash) {
+        throw new ConflictException('Mật khẩu vừa được thay đổi ở nơi khác, vui lòng thử lại');
+      }
+      await this.users.update(user.id, { passwordHash: newHash }, manager);
+      await this.sessions.revokeAllForUser(user.id, manager, actor.sessionId);
+    });
   }
 
   async me(userId: string): Promise<AuthUser> {

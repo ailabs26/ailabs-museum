@@ -30,7 +30,9 @@ import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Public } from '../../../common/decorators/public.decorator';
 import { Audit } from '../../audit/decorators/audit.decorator';
 import { AuthService } from '../services/auth.service';
+import { ChangePasswordDto } from '../dto/change-password.dto';
 import { LoginDto } from '../dto/login.dto';
+import { WrongCurrentPasswordException } from '../exceptions/wrong-current-password.exception';
 import { SessionResponse } from '../dto/session-response.dto';
 import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard';
 import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
@@ -156,6 +158,30 @@ export class AuthController {
       }
       throw error;
     }
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @Audit('auth.password_change', 'user')
+  @ApiOperation({ summary: 'Tự đổi mật khẩu; đăng xuất mọi thiết bị khác, giữ thiết bị hiện tại' })
+  @ApiOkResponse({ description: '`id` là người dùng vừa đổi mật khẩu (dùng cho audit).' })
+  @ApiTooManyRequestsResponse({ description: 'Nhập sai mật khẩu hiện tại quá nhiều lần; xem Retry-After.' })
+  async changePassword(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: ChangePasswordDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ id: string }> {
+    // Sai mật khẩu hiện tại tính chung bộ đếm với đăng nhập sai theo email (chống dò mật khẩu).
+    this.limitOrRetryAfter(res, () => this.limiter.assertEmailAllowed(user.email));
+    try {
+      await this.auth.changePassword(user, dto);
+    } catch (error) {
+      if (error instanceof WrongCurrentPasswordException) this.limiter.recordEmailFailure(user.email);
+      throw error;
+    }
+    this.limiter.resetEmail(user.email);
+    return { id: user.id };
   }
 
   @Get('sessions')
