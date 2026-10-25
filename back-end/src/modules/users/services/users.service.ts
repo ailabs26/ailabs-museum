@@ -12,6 +12,7 @@ import type { AuthUser } from '../../../common/types/auth-user.type';
 import type { Paginated } from '../../../common/types/paginated.type';
 import { PasswordService } from '../../../common/security/password.service';
 import { TransactionManager } from '../../../common/database/transaction.manager';
+import { RefreshSessionsRepository } from '../../auth/repositories/refresh-sessions.repository';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { ListUsersQueryDto } from '../dto/list-users-query.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
@@ -27,6 +28,7 @@ export class UsersService {
     private readonly userRoles: UserRolesRepository,
     private readonly passwords: PasswordService,
     private readonly tx: TransactionManager,
+    private readonly sessions: RefreshSessionsRepository,
   ) {}
 
   async list(query: ListUsersQueryDto): Promise<Paginated<UserResponse>> {
@@ -73,6 +75,10 @@ export class UsersService {
       await this.ensureAdminRemains(current, dto.status ?? current.status, nextCodes, manager);
       if (Object.keys(patch).length) await this.users.update(id, patch, manager);
       if (dto.roleIds !== undefined) await this.userRoles.replace(id, dto.roleIds, manager);
+      // Đổi mật khẩu hoặc khóa → đăng xuất mọi thiết bị ngay, cùng transaction.
+      if (dto.password !== undefined || dto.status === UserStatus.DISABLED) {
+        await this.sessions.revokeAllForUser(id, manager);
+      }
       return toUserResponse(await this.requireDetail(id, manager));
     });
   }
@@ -83,6 +89,7 @@ export class UsersService {
       const current = await this.requireDetail(id, manager);
       await this.ensureAdminRemains(current, UserStatus.DISABLED, [], manager);
       await this.users.update(id, { isDeleted: true, deletedAt: new Date() }, manager);
+      await this.sessions.revokeAllForUser(id, manager);
     });
   }
 

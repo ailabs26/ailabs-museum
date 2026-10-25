@@ -37,6 +37,7 @@ class InMemorySessions {
     return {
       findByTokenHash: async (hash: string) => [...this.rows.values()].find((row) => row.tokenHash === hash) ?? null,
       lockFamily: async (familyId: string) => void this.locks.push(familyId),
+      lockUser: async () => undefined,
       create: async (session: Partial<RefreshSession>) => {
         const row = { id: `s${++this.seq}`, usedAt: null, revokedAt: null, replacedById: null, ...session } as RefreshSession;
         this.rows.set(row.id, row);
