@@ -500,7 +500,8 @@ export class ExhibitsService {
     try {
       await this.tx.run(async (manager) => {
         const blocked: BlockedDeletion[] = [];
-        for (const id of ids) {
+        // Khóa theo thứ tự ID cố định để hai lệnh xóa hàng loạt chồng nhau không deadlock.
+        for (const id of [...ids].sort()) {
           const exhibit = await this.exhibits.findForUpdate(id, manager);
           if (!exhibit || exhibit.isDeleted) {
             blocked.push({ id, reason: 'Không tìm thấy hiện vật', notFound: true });

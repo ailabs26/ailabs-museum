@@ -158,7 +158,8 @@ export class MediaService {
     await this.tx.run(async (manager) => {
       const deletable: Media[] = [];
       const blocked: BlockedDeletion[] = [];
-      for (const id of ids) {
+      // Khóa theo thứ tự ID cố định để hai lệnh xóa hàng loạt chồng nhau không deadlock.
+      for (const id of [...ids].sort()) {
         const media = await this.mediaRepo.lockActiveById(id, manager);
         if (!media) {
           blocked.push({ id, reason: 'Không tìm thấy media', notFound: true });

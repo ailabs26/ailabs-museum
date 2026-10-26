@@ -502,8 +502,8 @@ describe('MediaService', () => {
       await assert.rejects(service.removeMany([first.id, ghost]), (error: unknown) => {
         assert.ok(error instanceof ConflictException);
         const body = error.getResponse() as { errors: Array<{ field: string; message: string }> };
-        assert.deepEqual(body.errors.map((e) => e.field), [first.id, ghost]);
-        assert.match(body.errors[0].message, /BR-21/);
+        assert.deepEqual(body.errors.map((e) => e.field).sort(), [first.id, ghost].sort());
+        assert.match(body.errors.find((e) => e.field === first.id)!.message, /BR-21/);
         return true;
       });
       assert.equal(repo.rows.get(first.id)?.isDeleted, false);
