@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
   Center,
   Code,
   Divider,
@@ -73,7 +74,9 @@ import { HotspotEditor } from '@/components/cms/HotspotEditor';
 import { TourOrderModal } from '@/components/cms/TourOrderModal';
 import { roomsService } from '@/services/rooms.service';
 import { moderationService } from '@/services/moderation.service';
-import { Column, DataTable } from '@/shared/components/data';
+import { BulkActionBar, BulkDeleteFailures, Column, DataTable } from '@/shared/components/data';
+import { useBulkDelete } from '@/shared/hooks/useBulkDelete';
+import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { confirmAction, notify } from '@/shared/components/feedback';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { MediaPreview } from '@/shared/components/media/MediaPreview';
@@ -114,7 +117,7 @@ type EditLoadState = 'ready' | 'loading' | 'error';
 
 function deletionBlock(exhibit: ExhibitRow, revisions: ExhibitDetail['revisions'] = []): string | null {
   if (exhibit.publishedRevisionId || exhibit.visibility === 'visible' || exhibit.revisionState === 'approved' || revisions.some(r => r.state === 'approved')) {
-    return 'Hiện vật có lịch sử xuất bản hoặc phê duyệt nên không thể xóa vĩnh viễn. Có thể ẩn hiện vật đang công khai khỏi bảo tàng.';
+    return 'Hiện vật có lịch sử xuất bản hoặc phê duyệt nên không thể xóa. Có thể ẩn hiện vật đang công khai khỏi bảo tàng.';
   }
   return exhibit.revisionState === 'in_review' || revisions.some(r => r.state === 'in_review')
     ? 'Hiện vật có phiên bản đang chờ kiểm duyệt, không thể xóa.' : null;
@@ -504,6 +507,23 @@ export function ExhibitsPage() {
     ['moderation'], ['museum-tour'], ['public-room'],
   ].map(queryKey => queryClient.invalidateQueries({ queryKey })));
 
+  const selection = useRowSelection(`${page}|${search}|${statusFilter}|${roomFilter}`);
+  const bulk = useBulkDelete({
+    removeMany: exhibitsService.removeMany,
+    noun: 'hiện vật',
+    nameOf: (id) => {
+      const row = exhibitsQuery.data?.items.find((item) => item.id === id);
+      return row ? getDisplayText(row.content.name, 'vi') || 'Chưa đặt tên' : undefined;
+    },
+    onSuccess: selection.clear,
+    onSettled: refreshLifecycleQueries,
+  });
+  const toggleSelected = (id: string) => selection.setSelectedIds(
+    selection.selectedIds.includes(id)
+      ? selection.selectedIds.filter((item) => item !== id)
+      : [...selection.selectedIds, id],
+  );
+
   const hideMutation = useMutation({
     mutationFn: async (id: string) => {
       const detail = await exhibitsService.get(id);
@@ -689,9 +709,9 @@ export function ExhibitsPage() {
       const reason = deletionBlock(detail, detail.revisions);
       if (reason) { notify.error(reason); void refreshLifecycleQueries(); return; }
       confirmAction({
-        message: `Xóa vĩnh viễn hiện vật "${getDisplayText(detail.content.name, 'vi')}" và toàn bộ revisions/hotspots? Media vẫn được giữ trong thư viện.`,
+        message: `Xóa hiện vật "${getDisplayText(detail.content.name, 'vi')}"? Hiện vật được xóa mềm (ẩn khỏi hệ thống), lịch sử phiên bản và media vẫn được giữ.`,
         danger: true,
-        confirmLabel: 'Xóa vĩnh viễn bản nháp',
+        confirmLabel: 'Xóa bản nháp',
         onConfirm: () => {
           if (request !== actionRequestRef.current || actionBusyRef.current) return;
           actionBusyRef.current = true; setIsActionBusy(true);
@@ -858,7 +878,7 @@ export function ExhibitsPage() {
 
             {canDelete && (
               <Tooltip
-                label={deleteReason ?? 'Xóa vĩnh viễn bản nháp hiện vật'}
+                label={deleteReason ?? 'Xóa bản nháp hiện vật'}
               >
                 <ActionIcon
                   variant="subtle"
@@ -966,12 +986,26 @@ export function ExhibitsPage() {
           ]} />
       </Group>
 
+      {canDelete && (
+        <>
+          <BulkActionBar count={selection.selectedIds.length} onClear={selection.clear}
+            onDelete={() => bulk.confirmDelete(selection.selectedIds)} loading={bulk.isPending} />
+          <BulkDeleteFailures failures={bulk.failures} onClose={bulk.dismissFailures} />
+        </>
+      )}
+
       {view === 'table' ? (
         <Card withBorder p={0} radius="sm">
           <DataTable
             columns={columns}
             data={exhibitsQuery.data?.items ?? []}
             rowKey={(r) => r.id}
+            selection={canDelete ? {
+              selectedIds: selection.selectedIds,
+              onChange: selection.setSelectedIds,
+              disabledReason: (r) => deletionBlock(r),
+              rowLabel: (r) => getDisplayText(r.content.name) || 'Chưa đặt tên',
+            } : undefined}
             total={exhibitsQuery.data?.total ?? 0}
             page={page}
             pageSize={15}
@@ -990,6 +1024,11 @@ export function ExhibitsPage() {
                 <Card key={r.id} withBorder radius="md" p="md">
                   <Group justify="space-between" wrap="nowrap" mb={6}>
                     <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+                      {canDelete && (
+                        <Checkbox aria-label={`Chọn ${getDisplayText(r.content.name) || 'hiện vật'}`}
+                          checked={selection.selectedIds.includes(r.id)} disabled={!!deleteReason}
+                          title={deleteReason ?? undefined} onChange={() => toggleSelected(r.id)} />
+                      )}
                       <Box style={{ width: 16, height: 16, flexShrink: 0,
                         borderRadius: r.content.placeholderShape === 'sphere' ? '50%' : 3,
                         backgroundColor: r.content.placeholderColor || '#8b7355' }} />

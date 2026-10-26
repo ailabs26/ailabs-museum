@@ -11,7 +11,9 @@ import { ApiException } from '@/core/api/api-error';
 import { useAuth } from '@/core/auth/use-auth';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { confirmAction, notify } from '@/shared/components/feedback';
-import { DataTable, type Column } from '@/shared/components/data';
+import { BulkActionBar, BulkDeleteFailures, DataTable, type Column } from '@/shared/components/data';
+import { useBulkDelete } from '@/shared/hooks/useBulkDelete';
+import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { FormPassword, FormTextField } from '@/shared/components/form';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { rolesService } from '@/services/roles.service';
@@ -40,6 +42,10 @@ const STATUS_OPTIONS = [
 const EMPTY_FORM: UserFormValues = {
   email: '', displayName: '', password: '', status: 'active', roleIds: [],
 };
+
+/** Tài khoản Admin không xóa được (back-end cũng chặn): phải bỏ vai trò Admin trước. */
+const adminDeleteBlock = (user: UserRow) =>
+  user.roles.includes('admin') ? 'Không thể xóa tài khoản Admin. Hãy bỏ vai trò Admin trước.' : null;
 
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof ApiException ? error.message : fallback;
@@ -132,7 +138,16 @@ export function UsersPage() {
     onError: (error) => notify.error(errorMessage(error, 'Xóa tài khoản thất bại')),
   });
 
-  const isBusy = saveMutation.isPending || removeMutation.isPending;
+  const selection = useRowSelection(`${page}|${debouncedSearch}|${status ?? ''}`);
+  const bulk = useBulkDelete({
+    removeMany: usersService.removeMany,
+    noun: 'tài khoản',
+    nameOf: (id) => usersQuery.data?.items.find((user) => user.id === id)?.displayName,
+    onSuccess: selection.clear,
+    onSettled: invalidate,
+  });
+
+  const isBusy = saveMutation.isPending || removeMutation.isPending || bulk.isPending;
   const canSelectRoles = canAssignRoles && canReadRoles
     && rolesQuery.isSuccess && rolesInitialized;
   const canSave = !editing || canUpdate || canSelectRoles;
@@ -200,7 +215,8 @@ export function UsersPage() {
           </ActionIcon>
         )}
         {canDelete && (
-          <ActionIcon variant="subtle" color="red" aria-label="Xóa tài khoản" disabled={isBusy}
+          <ActionIcon variant="subtle" color="red" aria-label="Xóa tài khoản" disabled={isBusy || !!adminDeleteBlock(user)}
+            title={adminDeleteBlock(user) ?? undefined}
             onClick={() => confirmAction({
               message: `Xóa mềm tài khoản "${user.displayName}"? Tài khoản sẽ bị loại khỏi danh sách và không đăng nhập được. Để khóa tạm thời, dùng Sửa → Trạng thái.`,
               danger: true,
@@ -238,10 +254,25 @@ export function UsersPage() {
           </Stack>
         </Alert>
       ) : (
+        <>
+        {canDelete && (
+          <>
+            <BulkActionBar count={selection.selectedIds.length} onClear={selection.clear}
+              onDelete={() => bulk.confirmDelete(selection.selectedIds)} loading={bulk.isPending} />
+            <BulkDeleteFailures failures={bulk.failures} onClose={bulk.dismissFailures} />
+          </>
+        )}
         <DataTable columns={columns} data={data?.items ?? []} rowKey={(user) => user.id}
+          selection={canDelete ? {
+            selectedIds: selection.selectedIds,
+            onChange: selection.setSelectedIds,
+            disabledReason: adminDeleteBlock,
+            rowLabel: (user) => user.displayName,
+          } : undefined}
           loading={usersQuery.isFetching} page={data?.page} pageSize={data?.pageSize}
           total={data?.total} onPageChange={setPage}
           emptyText={debouncedSearch || status ? 'Không có tài khoản phù hợp' : 'Chưa có tài khoản'} />
+        </>
       )}
       <Drawer ref={drawerRef} opened={opened} onClose={closeForm} position="right"
         onExitTransitionEnd={() => {
