@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Euler, PerspectiveCamera, Vector3 } from 'three';
 import { useReducedMotion } from '@mantine/hooks';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { MUSEUM_ROOM_SIZE } from '@/interfaces/museumScene';
-import { getExhibitView, INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET, type ModelFocusBounds } from '@/helpers/museumCamera';
+import { getExhibitView, getMuseumFov, INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET, type ModelFocusBounds } from '@/helpers/museumCamera';
 import { applyLook, findNavigationPath, findSafeNavigationPoint, getDisplayColliders, isNavigationPositionSafe, moveWithCollisions, NAVIGATION, stepMovement, type NavigationInput, type NavigationVector } from '@/helpers/museumNavigation';
 import { attachNavigationInput, type NavigationAction } from '@/helpers/attachNavigationInput';
 import type { NavigationGestures } from '@/helpers/navigationGestures';
@@ -45,6 +45,12 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
     desired: new Vector3(), target: new Vector3(), direction: new Vector3(), isWalking: false,
   }), []);
   const callbacks = useRef({ onModeChange, onActiveChange }); callbacks.current = { onModeChange, onActiveChange };
+
+  useLayoutEffect(() => {
+    if (!enabled || !(camera instanceof PerspectiveCamera)) return;
+    camera.fov = getMuseumFov(size.width / size.height);
+    camera.updateProjectionMatrix(); invalidate();
+  }, [enabled, camera, size.width, size.height, invalidate]);
 
   useEffect(() => {
     if (!enabled) {
