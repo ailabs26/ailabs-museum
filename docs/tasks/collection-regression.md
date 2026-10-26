@@ -188,7 +188,7 @@ PowerShell: thay `npm` bằng `npm.cmd` nếu cần; khi dùng `-g`, quote patte
 | Loading & stale data | Skeleton, pending, no stale cards | PASS; product a11y gap recorded (no initial loading announcement) | Playwright gates; `CollectionPage` / `ExhibitSkeleton` |
 | Cross-page D05 / F04 | Về collection đúng phòng | PASS (D05: 2, F04: 3) | Focused Playwright runs |
 | Report & featured | Không regression | Public report PASS; related 5-file run 29/34 pass, 5 unrelated failures | Playwright run; failures noted below |
-| Related suite exceptions | Preserve existing coverage | FAIL: keyboard focus 1; homepage stale copy 2; public-tour link selectors 2. Deep-link tests pass. | `accessibility-keyboard`, `home-featured`, `public-tour-navigation`, `tour-exhibit-deep-link` |
+| Follow-up: five related failures | Keep assertions aligned to current UI; preserve focus and responsive navigation | All 5 original failure assertions pass in focused reruns. Fixed a real 768px breakpoint gap; Playwright runner then hung after browser close, so runs were interrupted after assertions completed. | Focused `accessibility-keyboard`, `home-featured`, `public-tour-navigation`; debug logs |
 | Mobile/light/dark | 320/375/768/1024/1440 × light/dark; no horizontal overflow | PASS (10 combinations) | Playwright responsive case |
 | Frontend typecheck | PASS | PASS | `npm run typecheck` |
 | Frontend unit | PASS | PASS (28 files, 160 tests) | `npm run test:unit` |
@@ -196,6 +196,8 @@ PowerShell: thay `npm` bằng `npm.cmd` nếu cần; khi dùng `-g`, quote patte
 | Targeted ESLint | PASS | PASS | collection, exhibit-detail, tour-2d-fallback specs |
 | Full frontend lint | Ghi PASS/FAIL thật, không giấu lỗi nền | FAIL: 37 errors in `scripts/e2e-cms-workflow.mjs`, `tests/fixtures/cmsExhibitsApi.ts`, `tests/fixtures/cmsReportsWorkflowApi.ts`; 1 existing hooks warning in unchanged `CollectionPage.tsx` | `npm run lint` |
 | Live API | Optional, read-only | NOT TESTED | Không bật môi trường live API |
+
+**Follow-up after initial related-suite run:** Four test failures were stale expectations: the nonmodal detail panel's Tab order includes “Báo nội dung”, the homepage copy had changed, and mobile hides the desktop navigation behind its menu. Updated those tests to current UI. The responsive test exposed a real breakpoint gap at exactly 768px: CSS hid the nav at `48em` while Mantine hid the burger from `sm` at the same width. The public layout breakpoint is now `47.99em`, keeping the desktop nav available at 768px and leaving the burger for narrower viewports. All five formerly failing assertions completed successfully in focused reruns; the Playwright process did not exit after browser close, so the runs were manually interrupted after the assertions completed.
 
 ## 7. Definition of Done / review gate
 
@@ -205,7 +207,7 @@ PowerShell: thay `npm` bằng `npm.cmd` nếu cần; khi dùng `-g`, quote patte
 - [x] D05, F04 destination và các regressions quan trọng được chạy và phân loại chính xác.
 - [x] Product a11y gap loading được ghi rõ, không che bằng cách xóa assertion.
 - [x] Các gate có evidence thực tế; lint và các suite có lỗi nền được báo đúng trạng thái.
-- [x] Chỉ docs/test thay đổi; không có production code fix.
+- [x] Chỉ thêm production thay đổi tối thiểu ở responsive nav: lỗi mất mọi Tour link tại 768px đã được tái hiện và xác nhận bằng regression test; các thay đổi còn lại là docs/tests.
 - [x] Mỗi task đã hoàn thành có commit; không push hoặc tạo/merge PR.
 
 ## 8. Ngoài phạm vi

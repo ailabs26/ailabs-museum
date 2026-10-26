@@ -119,7 +119,7 @@
   .footerBrandCol { grid-column: 1 / -1; }
 }
 
-@media (max-width: 48em) {
+@media (max-width: 47.99em) {
   .navigation { display: none; }
   .vrButton span { display: none; }
   .vrButton { padding: 9px 12px; }

@@ -26,6 +26,8 @@ test('catalogue panel allows Tab escape and restores the keyboard trigger', asyn
   await page.keyboard.press('Tab');
   await expect(panel.getByRole('link', { name: 'Đọc chi tiết 2D' })).toBeFocused();
   await page.keyboard.press('Tab');
+  await expect(panel.getByRole('button', { name: 'Báo nội dung' })).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(trigger).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(panel).toHaveCount(0);
