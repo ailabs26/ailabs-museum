@@ -21,7 +21,6 @@ import { NavigationGestures } from '@/helpers/navigationGestures';
 import { NavigationHud, type NavigationMode } from '@/components/museum/NavigationHud';
 import { SpatialMinimap } from '@/components/museum/SpatialMinimap';
 import { ArtifactDock } from '@/components/museum/ArtifactDock';
-import { CinematicIntro } from '@/components/museum/CinematicIntro';
 import { PhotoCapture } from '@/components/museum/PhotoCapture';
 import { downloadScenePhoto } from '@/helpers/scenePhoto';
 import { notify } from '@/shared/components/feedback';
@@ -136,7 +135,6 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
       <MuseumXr available={webglStatus === 'ready'} displays={displays} selectedId={selectedId} onSelect={onSelect}
         onController={setXrOwner} onStatus={setXrStatus} onHover={setXrHoveredId} onRendererReset={handleRendererReset} />
       <PhotoCapture bind={(fn) => { captureRef.current = fn; }} />
-      <CinematicIntro input={input} enabled={isWebInputEnabled} />
       <MuseumControls enabled={isWebInputEnabled} command={command} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
         displays={displays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} />
       <GallerySurfaces anisotropy={quality.anisotropy}>
