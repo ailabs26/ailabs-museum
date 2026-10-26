@@ -92,7 +92,7 @@ Sau đợt UI redesign, Collection đổi từ `NativeSelect` sang **room filter
 
 **Mục tiêu:** RED do stale selector trở thành GREEN mà không thay UI.
 
-- [ ] Đổi `getByLabel(...).selectOption('ceramics')` của Collection thành:
+- [x] Đổi `getByLabel(...).selectOption('ceramics')` của Collection thành:
 
 ```ts
 const rooms = page.getByRole('group', { name: 'Chọn phòng trưng bày' });
@@ -101,12 +101,14 @@ await expect(rooms.getByRole('button', { name: roomB.name, exact: true }))
   .toHaveAttribute('aria-pressed', 'true');
 ```
 
-- [ ] Đổi test `toHaveValue(roomSlug)` thành `aria-pressed=true` và kiểm room tương ứng `false`.
-- [ ] Test `?source=home` giữ nguyên khi chọn phòng, URL/reload/Back/Forward.
-- [ ] Test unknown room không request dữ liệu không có, bấm pill hợp lệ phục hồi.
-- [ ] Test delayed API room switch không giữ cards A hoặc pressed A.
-- [ ] Thay ArrowDown cũ bằng keyboard Enter/Space của button. Kiểm focus visible và không trap.
-- [ ] Chạy focused cases đến GREEN và ghi số bài thực tế.
+- [x] Đổi test `toHaveValue(roomSlug)` thành `aria-pressed=true` và kiểm room tương ứng `false`.
+- [x] Test `?source=home` giữ nguyên khi chọn phòng, URL/reload/Back/Forward.
+- [x] Test unknown room không request dữ liệu không có, bấm pill hợp lệ phục hồi.
+- [x] Test delayed API room switch không giữ cards A hoặc pressed A.
+- [x] Thay ArrowDown cũ bằng keyboard Enter/Space của button; kiểm Tab, focus-visible và không trap.
+- [x] Chạy lại 5 focused cases trên preview: cả 5 PASS. Một lần chạy riêng trước đó timeout ở lúc chờ detail; diagnostic rerun xác nhận request `ceramics` được fixture trả 200 và test PASS, không tái hiện lỗi ứng dụng.
+
+**Task 1 execution:** `PLAYWRIGHT_PREVIEW=1 npx playwright test tests/collection.spec.ts -g "selecting a room|browser back and forward|invalid URL selection|switching rooms|room pills support" --reporter=line --timeout=20000` — 5 passed (31.6s). Diagnostic single-case run logged GET `/api/rooms/ceramics` → 200; earlier timeout was transient and not reproducible. Targeted ESLint and production build also pass.
 
 **Commit gợi ý:** `test(collection): align room selection with filter pills`.
 
@@ -177,9 +179,9 @@ PowerShell: thay `npm` bằng `npm.cmd` nếu cần; khi dùng `-g`, quote patte
 
 | Gate / scenario | Kỳ vọng | Actual | Evidence |
 |---|---|---|---|
-| Collection room pills | click, pressed state, URL, reload, Back/Forward | Baseline: stale `selectOption`/`toHaveValue` failures | Playwright context + trace trong ignored `test-results/` |
-| Keyboard pills | Tab, Enter, Space, focus visible | Baseline: test dừng ở `toHaveValue`, keyboard không được kiểm | `collection.spec.ts` |
-| Invalid room & retry | Không fetch unknown, recover đúng | Retry trước đó đi qua; phục hồi pill fail do stale selector | `collection.spec.ts` |
+| Collection room pills | click, pressed state, URL, reload, Back/Forward | PASS | 5 focused Playwright cases |
+| Keyboard pills | Tab, Enter, Space, focus visible | PASS | Focused Playwright run |
+| Invalid room & retry | Không fetch unknown, recover đúng | PASS | Focused Playwright run |
 | Search | name/description, count, empty, reset | NOT RUN at baseline | — |
 | Loading & stale data | Skeleton + a11y status quyết định rõ | Baseline test đòi `role=status` không có; responsive case runner hang | `collection.spec.ts`, `CollectionPage` source |
 | Cross-page D05 / F04 | Về collection đúng phòng | D05/F04 fail ở stale `toHaveValue`; runner không kết thúc sạch | Playwright context + trace trong ignored `test-results/` |

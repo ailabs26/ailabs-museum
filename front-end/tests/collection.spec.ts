@@ -27,14 +27,40 @@ test('collection renders validated API exhibits in display order without loading
 
 test('selecting a room preserves URL parameters and reload restores the selection', async ({ page }) => {
   await page.goto('/collection?source=home');
-  await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
+  const rooms = page.getByRole('group', { name: 'Chọn phòng trưng bày' });
+  const sculpture = rooms.getByRole('button', { name: roomA.name, exact: true });
+  const ceramics = rooms.getByRole('button', { name: roomB.name, exact: true });
+  await expect(sculpture).toHaveAttribute('aria-pressed', 'true');
+  await expect(ceramics).toHaveAttribute('aria-pressed', 'false');
+  await ceramics.click();
   await expect(page).toHaveURL(/source=home&room=ceramics$/);
+  await expect(ceramics).toHaveAttribute('aria-pressed', 'true');
+  await expect(sculpture).toHaveAttribute('aria-pressed', 'false');
   await expect(page.getByRole('heading', { name: roomB.name, exact: true, level: 2 })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Bình gốm', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Hiện vật 1', exact: true })).toHaveCount(0);
   await page.reload();
-  await expect(page.getByLabel('Chọn phòng trưng bày')).toHaveValue('ceramics');
+  await expect(rooms.getByRole('button', { name: roomB.name, exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('link', { name: 'Tham quan phòng này trong 3D', exact: true })).toHaveAttribute('href', '/tour?room=ceramics');
+});
+
+test('browser back and forward restore the selected room pill and cards', async ({ page }) => {
+  await page.goto('/collection?source=home&room=sculpture');
+  const rooms = page.getByRole('group', { name: 'Chọn phòng trưng bày' });
+  const sculpture = rooms.getByRole('button', { name: roomA.name, exact: true });
+  const ceramics = rooms.getByRole('button', { name: roomB.name, exact: true });
+  await ceramics.click();
+  await expect(page).toHaveURL(/source=home&room=ceramics$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/source=home&room=sculpture$/);
+  await expect(sculpture).toHaveAttribute('aria-pressed', 'true');
+  await expect(ceramics).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByRole('heading', { name: roomA.exhibits[0].name, exact: true })).toBeVisible();
+  await page.goForward();
+  await expect(page).toHaveURL(/source=home&room=ceramics$/);
+  await expect(ceramics).toHaveAttribute('aria-pressed', 'true');
+  await expect(sculpture).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByRole('heading', { name: roomB.exhibits[0].name, exact: true })).toBeVisible();
 });
 
 test('room and exhibit loading states remain readable until responses arrive', async ({ page }) => {
@@ -90,7 +116,8 @@ test('invalid URL selection fetches no unknown room and lets visitors select a p
   await page.goto('/collection?room=unknown');
   await expect(page.getByRole('alert')).toContainText('Phòng được chọn không có trong danh sách công khai');
   expect(paths).toEqual([]);
-  await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
+  await page.getByRole('group', { name: 'Chọn phòng trưng bày' })
+    .getByRole('button', { name: roomB.name, exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Bình gốm', exact: true })).toBeVisible();
 });
 
@@ -117,26 +144,39 @@ test('switching rooms hides old cards while the new room loads', async ({ page }
   await page.route('**/api/rooms/ceramics', async (route) => { await gate; await fulfillMuseum(route, envelope(roomB)); });
   await page.goto('/collection');
   await expect(page.getByRole('heading', { name: 'Hiện vật 1', exact: true })).toBeVisible();
-  await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
-  await expect(page.getByRole('status')).toHaveText('Đang tải hiện vật…');
+  const rooms = page.getByRole('group', { name: 'Chọn phòng trưng bày' });
+  const sculpture = rooms.getByRole('button', { name: roomA.name, exact: true });
+  const ceramics = rooms.getByRole('button', { name: roomB.name, exact: true });
+  await ceramics.click();
+  await expect(ceramics).toHaveAttribute('aria-pressed', 'true');
+  await expect(sculpture).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('ul[aria-hidden="true"]')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Hiện vật 1', exact: true })).toHaveCount(0);
   release();
   await expect(page.getByRole('heading', { name: 'Bình gốm', exact: true })).toBeVisible();
 });
 
-test('keyboard selection and tour link preserve the selected room', async ({ page }) => {
+test('room pills support Tab, Enter and Space and the tour link keeps the selected room', async ({ page }) => {
   await page.goto('/collection');
-  const select = page.getByLabel('Chọn phòng trưng bày');
-  await expect(select).toHaveValue('sculpture');
-  await select.focus();
-  await select.press('ArrowDown');
-  await select.press('Enter');
-  await expect(select).toHaveValue('ceramics');
+  const rooms = page.getByRole('group', { name: 'Chọn phòng trưng bày' });
+  const sculpture = rooms.getByRole('button', { name: roomA.name, exact: true });
+  const ceramics = rooms.getByRole('button', { name: roomB.name, exact: true });
+  await sculpture.focus();
+  await page.keyboard.press('Tab');
+  await expect(ceramics).toBeFocused();
+  expect(await ceramics.evaluate((button) => button.matches(':focus-visible'))).toBe(true);
+  await expect(ceramics).toHaveCSS('outline-style', 'solid');
+  await page.keyboard.press('Enter');
+  await expect(ceramics).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Shift+Tab');
+  await expect(sculpture).toBeFocused();
+  await page.keyboard.press('Space');
+  await expect(sculpture).toHaveAttribute('aria-pressed', 'true');
   const tourLink = page.getByRole('link', { name: 'Tham quan phòng này trong 3D', exact: true });
   await tourLink.focus();
   await tourLink.press('Enter');
-  await expect(page).toHaveURL(/\/tour\?room=ceramics$/);
-  await expect(page.getByRole('heading', { name: roomB.name, exact: true, level: 1 })).toBeVisible();
+  await expect(page).toHaveURL(/\/tour\?room=sculpture$/);
+  await expect(page.getByRole('heading', { name: roomA.name, exact: true, level: 1 })).toBeVisible();
   await expect(page.locator('canvas')).toHaveCount(0);
 });
 
