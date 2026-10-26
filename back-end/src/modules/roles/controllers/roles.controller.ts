@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -13,6 +15,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Audit } from '../../audit/decorators/audit.decorator';
 import { PERMISSIONS } from '../../../common/constants/permissions.constant';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
+import { BulkIdsDto } from '../../../common/dto/bulk-ids.dto';
 import { CreateRoleDto } from '../dto/create-role.dto';
 import { SetPermissionsDto } from '../dto/set-permissions.dto';
 import { SetPermissionMatrixDto } from '../dto/set-permission-matrix.dto';
@@ -71,10 +74,19 @@ export class RolesController {
     return this.roles.update(id, dto);
   }
 
+  @Post('bulk-delete')
+  @HttpCode(HttpStatus.OK)
+  @Permissions(PERMISSIONS.ROLE_DELETE)
+  @Audit('role.delete', 'role')
+  @ApiOperation({ summary: 'Xóa mềm nhiều vai trò (tất cả hoặc không; chặn Admin / đang gán, 409 kèm lý do từng ID)' })
+  removeMany(@Body() dto: BulkIdsDto) {
+    return this.roles.removeMany(dto.ids);
+  }
+
   @Delete(':id')
   @Permissions(PERMISSIONS.ROLE_DELETE)
   @Audit('role.delete', 'role')
-  @ApiOperation({ summary: 'Xóa vai trò (chặn vai trò hệ thống / đang dùng)' })
+  @ApiOperation({ summary: 'Xóa mềm vai trò (chặn Admin / đang gán cho người dùng)' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.roles.remove(id);
   }

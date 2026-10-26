@@ -10,16 +10,22 @@ export class RolesRepository extends BaseRepository<Role> {
     super(repo);
   }
 
+  /** Mọi truy vấn vai trò chỉ thấy vai trò chưa xóa mềm. */
+  override findById(id: string, relations: string[] = []): Promise<Role | null> {
+    return this.repo.findOne({ where: { id, isDeleted: false }, relations });
+  }
+
   findByCode(code: string): Promise<Role | null> {
-    return this.repo.findOne({ where: { code } });
+    return this.repo.findOne({ where: { code, isDeleted: false } });
   }
 
   existsByCode(code: string): Promise<boolean> {
-    return this.exists({ code });
+    return this.exists({ code, isDeleted: false });
   }
 
   listWithPermissions(): Promise<Role[]> {
     return this.repo.find({
+      where: { isDeleted: false },
       relations: ['rolePermissions', 'rolePermissions.permission'],
       order: { code: 'ASC' },
     });
@@ -27,13 +33,34 @@ export class RolesRepository extends BaseRepository<Role> {
 
   findWithPermissions(id: string): Promise<Role | null> {
     return this.repo.findOne({
-      where: { id },
+      where: { id, isDeleted: false },
       relations: ['rolePermissions', 'rolePermissions.permission'],
     });
   }
 
   findManyByIds(ids: string[], manager: EntityManager): Promise<Role[]> {
     if (ids.length === 0) return Promise.resolve([]);
-    return manager.getRepository(Role).find({ where: { id: In(ids) } });
+    return manager.getRepository(Role).find({ where: { id: In(ids), isDeleted: false } });
+  }
+
+  /** Khóa dòng các vai trò chưa xóa (chặn gán vai trò đồng thời qua FK user_roles → roles). */
+  lockActiveByIds(ids: string[], manager: EntityManager): Promise<Role[]> {
+    return manager.getRepository(Role).find({
+      where: { id: In(ids), isDeleted: false },
+      lock: { mode: 'pessimistic_write' },
+    });
+  }
+
+  /** Số người dùng đang được gán từng vai trò. */
+  async countAssignments(ids: string[], manager: EntityManager): Promise<Map<string, number>> {
+    const rows: Array<{ roleId: string; count: number }> = await manager.query(
+      'SELECT role_id AS "roleId", COUNT(*)::int AS count FROM user_roles WHERE role_id = ANY($1) GROUP BY role_id',
+      [ids],
+    );
+    return new Map(rows.map((row) => [row.roleId, row.count]));
+  }
+
+  async markDeleted(ids: string[], manager: EntityManager): Promise<void> {
+    await manager.getRepository(Role).update({ id: In(ids) }, { isDeleted: true, deletedAt: new Date() });
   }
 }

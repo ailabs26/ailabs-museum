@@ -7,8 +7,7 @@ import {
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { RoleKey } from '../../../common/enums/role.enum';
 import { Permission } from '../entities/permission.entity';
-import { RolePermission } from '../entities/role-permission.entity';
-import { UserRole } from '../../users/entities/user-role.entity';
+import { assertNothingBlocked, type BlockedDeletion } from '../../../common/exceptions/deletion-blocked';
 import { CreateRoleDto } from '../dto/create-role.dto';
 import { RoleResponse, toRoleResponse } from '../dto/role-response.dto';
 import { SetPermissionsDto } from '../dto/set-permissions.dto';
@@ -21,9 +20,8 @@ import { Role } from '../entities/role.entity';
 import { PermissionsRepository } from '../repositories/permissions.repository';
 import { RolesRepository } from '../repositories/roles.repository';
 
-/** Role hệ thống mặc định — không cho xóa. */
-const SYSTEM_ROLE_CODES = new Set<string>(Object.values(RoleKey));
-const PROTECTED_PERMISSION_ROLE_CODE = RoleKey.ADMIN;
+/** Vai trò Admin: không được xóa và không được sửa quyền. editor/moderator chỉ là vai trò mặc định, xóa được khi không ai dùng. */
+const PROTECTED_ROLE_CODE = RoleKey.ADMIN;
 
 export interface PermissionMatrixResponse {
   roleIds: string[];
@@ -62,19 +60,36 @@ export class RolesService {
     return toRoleResponse(await this.requireWithPermissions(id));
   }
 
-  async remove(id: string): Promise<void> {
-    const role = await this.requireRole(id);
-    if (SYSTEM_ROLE_CODES.has(role.code)) {
-      throw new ConflictException('Không thể xóa vai trò hệ thống mặc định');
-    }
+  /** Xóa mềm một vai trò (giữ role_permissions để truy vết). */
+  remove(id: string): Promise<void> {
+    return this.softDelete([id], true);
+  }
+
+  /** Xóa mềm nhiều vai trò: tất cả hoặc không. Trả lại danh sách ID để audit ghi từng vai trò. */
+  async removeMany(ids: string[]): Promise<{ ids: string[] }> {
+    await this.softDelete(ids, false);
+    return { ids };
+  }
+
+  private async softDelete(ids: string[], single: boolean): Promise<void> {
     await this.tx.run(async (manager) => {
-      const inUse = await manager.getRepository(UserRole).count({ where: { roleId: id } });
-      if (inUse > 0) {
-        throw new ConflictException('Vai trò đang được gán cho người dùng');
-      }
-      await manager.getRepository(RolePermission).delete({ roleId: id });
-      await manager.getRepository(Role).delete({ id });
+      const roles = new Map((await this.roles.lockActiveByIds(ids, manager)).map((role) => [role.id, role]));
+      const assignments = await this.roles.countAssignments(ids, manager);
+      const blocked = ids.flatMap((id): BlockedDeletion[] => {
+        const role = roles.get(id);
+        if (!role) return [{ id, reason: 'Không tìm thấy vai trò', notFound: true }];
+        const reason = this.deletionBlock(role, assignments.get(id) ?? 0);
+        return reason ? [{ id, reason }] : [];
+      });
+      assertNothingBlocked(blocked, single);
+      await this.roles.markDeleted(ids, manager);
     });
+  }
+
+  private deletionBlock(role: Role, assignedUsers: number): string | null {
+    if (role.code === PROTECTED_ROLE_CODE) return 'Không thể xóa vai trò Admin';
+    if (assignedUsers > 0) return `Vai trò "${role.name}" đang được gán cho ${assignedUsers} người dùng`;
+    return null;
   }
 
   async getPermissions(id: string): Promise<string[]> {
@@ -138,7 +153,7 @@ export class RolesService {
   }
 
   private assertPermissionsAreEditable(role: Role): void {
-    if (role.code === PROTECTED_PERMISSION_ROLE_CODE) {
+    if (role.code === PROTECTED_ROLE_CODE) {
       throw new ConflictException('Không thể thay đổi quyền của vai trò Admin hệ thống');
     }
   }
