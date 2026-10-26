@@ -1,6 +1,6 @@
 # Collection Regression — Task & Acceptance Spec
 
-**Trạng thái:** Đã duyệt ngày 26/10/2026; đang triển khai trên `test/collection-regression`.
+**Trạng thái:** Đã triển khai trên `test/collection-regression`; affected browser suites PASS 34/34 ngày 26/10/2026. Các lỗi lint nền và a11y gap loading được ghi riêng bên dưới.
 
 **Plan:** [collection-regression-plan.md](../plans/collection-regression-plan.md)<br>
 **Branch:** `test/collection-regression` từ `origin/dev` mới nhất → PR vào `dev`.<br>
@@ -135,8 +135,8 @@ await expect(rooms.getByRole('button', { name: roomB.name, exact: true }))
 - [x] Sửa D05 `exhibit-detail.spec.ts`: sau `Quay lại bộ sưu tập`, kiểm pill đúng `aria-pressed`; giữ URL/history và heading chi tiết.
 - [x] Sửa assertion F04 `tour-2d-fallback.spec.ts` **chỉ ở Collection**. Giữ select thật trong Tour.
 - [x] Chạy regressions `home-featured`, `public-report-modal`, `public-tour-navigation`, `tour-exhibit-deep-link`, `accessibility-keyboard`.
-- [x] Ghi lại test nền ngoài phạm vi; giữ nguyên các assertions, không sửa WebGL/focus/homepage navigation trong task này.
-- [ ] Không xóa case/hạ expectation để tránh phải sửa lỗi thực tế.
+- [x] Sửa đủ 5 lỗi của lượt chạy ban đầu trong commit `4c8942d`: cập nhật assertions lệch UI và sửa responsive nav tại 768px.
+- [x] Không xóa case/hạ expectation để tránh phải sửa lỗi thực tế.
 
 **Commit gợi ý:** `test(collection): update cross-page navigation regressions`.
 
@@ -145,12 +145,12 @@ await expect(rooms.getByRole('button', { name: roomB.name, exact: true }))
 **Mục tiêu:** Có evidence đủ review và scope gọn.
 
 - [x] Chạy focused collection và D05/F04; các case sửa được đều PASS.
-- [x] Chạy affected browser suites; ghi rõ 5 lỗi ngoài phạm vi trong matrix, không hạ assertions.
+- [x] Chạy lại đầy đủ 5 affected browser suites: **34 passed (1.9m), exit code 0**, không còn 5 lỗi ban đầu.
 - [x] Chạy `typecheck`, `test:unit`, `build`, targeted ESLint và `npm run lint`; phân biệt 37 lỗi lint với thay đổi task.
 - [x] Live collection được đánh dấu `NOT TESTED` (optional/read-only).
 - [x] `git diff --check` sạch; artifacts `dist`/`test-results` bị ignore và không được commit.
 - [x] Ghi matrix kết quả thực tế bên dưới.
-- [x] Handoff sẵn sàng review; không push và không tạo PR.
+- [x] Nhánh đã push theo yêu cầu người dùng; chưa tạo PR.
 
 **Commit gợi ý:** `docs(test): record collection regression verification`.
 
@@ -187,8 +187,7 @@ PowerShell: thay `npm` bằng `npm.cmd` nếu cần; khi dùng `-g`, quote patte
 | Search | name/description, count, empty, reset | PASS | Playwright search case; no extra request while typing |
 | Loading & stale data | Skeleton, pending, no stale cards | PASS; product a11y gap recorded (no initial loading announcement) | Playwright gates; `CollectionPage` / `ExhibitSkeleton` |
 | Cross-page D05 / F04 | Về collection đúng phòng | PASS (D05: 2, F04: 3) | Focused Playwright runs |
-| Report & featured | Không regression | Public report PASS; related 5-file run 29/34 pass, 5 unrelated failures | Playwright run; failures noted below |
-| Follow-up: five related failures | Keep assertions aligned to current UI; preserve focus and responsive navigation | All 5 original failure assertions pass in focused reruns. Fixed a real 768px breakpoint gap; Playwright runner then hung after browser close, so runs were interrupted after assertions completed. | Focused `accessibility-keyboard`, `home-featured`, `public-tour-navigation`; debug logs |
+| Affected browser suites | Keyboard, featured, report modal, public tour navigation, exhibit deep links | **PASS 34/34 (1.9m), exit code 0**; cả 5 lỗi ban đầu đã qua trong lượt chạy chung | Source `4c8942d`; full run ngày 26/10/2026, dùng preview server mở riêng |
 | Mobile/light/dark | 320/375/768/1024/1440 × light/dark; no horizontal overflow | PASS (10 combinations) | Playwright responsive case |
 | Frontend typecheck | PASS | PASS | `npm run typecheck` |
 | Frontend unit | PASS | PASS (28 files, 160 tests) | `npm run test:unit` |
@@ -197,7 +196,19 @@ PowerShell: thay `npm` bằng `npm.cmd` nếu cần; khi dùng `-g`, quote patte
 | Full frontend lint | Ghi PASS/FAIL thật, không giấu lỗi nền | FAIL: 37 errors in `scripts/e2e-cms-workflow.mjs`, `tests/fixtures/cmsExhibitsApi.ts`, `tests/fixtures/cmsReportsWorkflowApi.ts`; 1 existing hooks warning in unchanged `CollectionPage.tsx` | `npm run lint` |
 | Live API | Optional, read-only | NOT TESTED | Không bật môi trường live API |
 
-**Follow-up after initial related-suite run:** Four test failures were stale expectations: the nonmodal detail panel's Tab order includes “Báo nội dung”, the homepage copy had changed, and mobile hides the desktop navigation behind its menu. Updated those tests to current UI. The responsive test exposed a real breakpoint gap at exactly 768px: CSS hid the nav at `48em` while Mantine hid the burger from `sm` at the same width. The public layout breakpoint is now `47.99em`, keeping the desktop nav available at 768px and leaving the burger for narrower viewports. All five formerly failing assertions completed successfully in focused reruns; the Playwright process did not exit after browser close, so the runs were manually interrupted after the assertions completed.
+**Kết quả cuối:** Commit `4c8942d` sửa assertions về thứ tự Tab (có nút “Báo nội dung”), copy homepage và nhãn link hiện tại; đồng thời sửa khoảng trống breakpoint ở đúng 768px khiến nav và burger cùng bị ẩn. Lượt full mới trên cả 5 file `accessibility-keyboard`, `home-featured`, `public-report-modal`, `public-tour-navigation`, `tour-exhibit-deep-link` trả **34 passed (1.9m)** và kết thúc bình thường với mã 0.
+
+**Nguyên nhân runner treo trước đó:** Log `pw:webserver,pw:test:task` xác nhận tests và worker teardown hoàn tất; runner kẹt ở `Terminating the WebServer`. Windows từ chối `taskkill` với tiến trình Vite do lượt test tạo (`Access denied`), nên runner chờ đóng server. Không cần đổi assertions hoặc config ứng dụng để xử lý việc này. Lượt full đã hoàn tất bằng cách mở preview server riêng và dùng `reuseExistingServer` có sẵn:
+
+```powershell
+# Terminal 1, từ front-end/ sau build
+node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4173 --strictPort
+
+# Terminal 2, từ front-end/; CI để trống cho phép reuse server
+$env:CI = ''
+$env:PLAYWRIGHT_PREVIEW = '1'
+npx.cmd playwright test tests/home-featured.spec.ts tests/public-report-modal.spec.ts tests/public-tour-navigation.spec.ts tests/tour-exhibit-deep-link.spec.ts tests/accessibility-keyboard.spec.ts --reporter=line --timeout=45000
+```
 
 ## 7. Definition of Done / review gate
 
@@ -208,7 +219,7 @@ PowerShell: thay `npm` bằng `npm.cmd` nếu cần; khi dùng `-g`, quote patte
 - [x] Product a11y gap loading được ghi rõ, không che bằng cách xóa assertion.
 - [x] Các gate có evidence thực tế; lint và các suite có lỗi nền được báo đúng trạng thái.
 - [x] Chỉ thêm production thay đổi tối thiểu ở responsive nav: lỗi mất mọi Tour link tại 768px đã được tái hiện và xác nhận bằng regression test; các thay đổi còn lại là docs/tests.
-- [x] Mỗi task đã hoàn thành có commit; không push hoặc tạo/merge PR.
+- [x] Mỗi task đã hoàn thành có commit; nhánh đã push theo yêu cầu, chưa tạo/merge PR.
 
 ## 8. Ngoài phạm vi
 
