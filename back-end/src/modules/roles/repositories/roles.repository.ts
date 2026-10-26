@@ -51,10 +51,13 @@ export class RolesRepository extends BaseRepository<Role> {
     });
   }
 
-  /** Số người dùng đang được gán từng vai trò. */
+  /** Số người dùng (chưa xóa mềm) đang được gán từng vai trò; user đã xóa vẫn giữ dòng user_roles nên phải loại ra. */
   async countAssignments(ids: string[], manager: EntityManager): Promise<Map<string, number>> {
     const rows: Array<{ roleId: string; count: number }> = await manager.query(
-      'SELECT role_id AS "roleId", COUNT(*)::int AS count FROM user_roles WHERE role_id = ANY($1) GROUP BY role_id',
+      `SELECT ur.role_id AS "roleId", COUNT(*)::int AS count
+         FROM user_roles ur JOIN users u ON u.id = ur.user_id
+        WHERE ur.role_id = ANY($1) AND u.is_deleted = false
+        GROUP BY ur.role_id`,
       [ids],
     );
     return new Map(rows.map((row) => [row.roleId, row.count]));

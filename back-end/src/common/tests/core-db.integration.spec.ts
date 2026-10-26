@@ -323,7 +323,8 @@ describe('Core DB (PostgreSQL thật)', { skip }, () => {
       const after = await db.getRepository(Role).findBy({ id: In([free.id, used.id]) });
       assert.ok(after.every((item) => !item.isDeleted), 'không vai trò nào bị xóa');
 
-      await db.getRepository(UserRole).delete({ userId: user.id, roleId: used.id });
+      // User đã xóa mềm vẫn giữ dòng user_roles nhưng không còn tính là "đang gán".
+      await db.getRepository(User).update(user.id, { isDeleted: true, deletedAt: new Date() });
       assert.deepEqual(await rolesService.removeMany([free.id, used.id]), { ids: [free.id, used.id] });
       const done = await db.getRepository(Role).findBy({ id: In([free.id, used.id]) });
       assert.ok(done.every((item) => item.isDeleted));
