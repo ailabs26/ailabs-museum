@@ -2,13 +2,13 @@ import { createHash } from 'node:crypto';
 import { Readable } from 'node:stream';
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
   PayloadTooLargeException,
 } from '@nestjs/common';
 import { TransactionManager } from '../../../common/database/transaction.manager';
+import { assertNothingBlocked, type BlockedDeletion } from '../../../common/exceptions/deletion-blocked';
 import { DomainValidationException } from '../../../common/exceptions/validation.exception';
 import { Paginated } from '../../../common/types/paginated.type';
 import { ListMediaQueryDto } from '../dto/list-media-query.dto';
@@ -18,7 +18,7 @@ import { UploadMediaDto } from '../dto/upload-media.dto';
 import { Media, MediaProcessingState } from '../entities/media.entity';
 import { MediaErrorCode, MediaFormatError } from '../inspection/media-format.error';
 import { MEGABYTE, MediaFormatSpec } from '../inspection/media-formats';
-import { MediaRepository } from '../repositories/media.repository';
+import { MediaRepository, type MediaUsage } from '../repositories/media.repository';
 import { MediaInspectionService } from './media-inspection.service';
 import { MediaStorageService } from './media-storage.service';
 import { MediaUrlService } from './media-url.service';
@@ -142,36 +142,50 @@ export class MediaService {
   /**
    * Xóa mềm media. BR-21: từ chối nếu exhibit đã xuất bản đang dùng; cũng từ chối khi
    * nội dung chờ duyệt đang dùng. Kiểm tra và xóa chạy trong transaction có khóa dòng.
+   * File trên storage được GIỮ LẠI để khôi phục được (xóa mềm đúng nghĩa); dọn file là việc riêng.
    */
-  async remove(id: string): Promise<void> {
-    const storageKey = await this.tx.run(async (manager) => {
-      const media = await this.mediaRepo.lockActiveById(id, manager);
-      if (!media) throw new NotFoundException('Không tìm thấy media');
+  remove(id: string): Promise<void> {
+    return this.softDelete([id], true);
+  }
 
-      const usage = await this.mediaRepo.countUsage(id, manager);
-      if (usage.publishedExhibits > 0) {
-        throw new ConflictException(
-          `Media đang được ${usage.publishedExhibits} hiện vật đã xuất bản sử dụng nên không thể xóa (BR-21)`,
-        );
-      }
-      if (usage.pendingRevisions > 0) {
-        throw new ConflictException(
-          `Media đang nằm trong ${usage.pendingRevisions} bản nội dung chờ duyệt nên không thể xóa`,
-        );
-      }
+  /** Xóa mềm nhiều media: tất cả hoặc không (BR-21 cho từng media). Trả lại danh sách ID để audit ghi từng media. */
+  async removeMany(ids: string[]): Promise<{ ids: string[] }> {
+    await this.softDelete(ids, false);
+    return { ids };
+  }
 
-      media.isDeleted = true;
-      media.deletedAt = new Date();
-      await this.mediaRepo.save(media, manager);
-      return media.storageKey;
+  private async softDelete(ids: string[], single: boolean): Promise<void> {
+    await this.tx.run(async (manager) => {
+      const deletable: Media[] = [];
+      const blocked: BlockedDeletion[] = [];
+      for (const id of ids) {
+        const media = await this.mediaRepo.lockActiveById(id, manager);
+        if (!media) {
+          blocked.push({ id, reason: 'Không tìm thấy media', notFound: true });
+          continue;
+        }
+        const reason = this.deletionBlock(await this.mediaRepo.countUsage(id, manager));
+        if (reason) blocked.push({ id, reason });
+        else deletable.push(media);
+      }
+      assertNothingBlocked(blocked, single);
+
+      for (const media of deletable) {
+        media.isDeleted = true;
+        media.deletedAt = new Date();
+        await this.mediaRepo.save(media, manager);
+      }
     });
+  }
 
-    // Database là nguồn sự thật; dọn file sau khi commit, lỗi dọn file chỉ ghi log.
-    try {
-      await this.storage.remove(storageKey);
-    } catch (error) {
-      this.logger.warn(`Không xóa được file ${storageKey}: ${(error as Error).message}`);
+  private deletionBlock(usage: MediaUsage): string | null {
+    if (usage.publishedExhibits > 0) {
+      return `Media đang được ${usage.publishedExhibits} hiện vật đã xuất bản sử dụng nên không thể xóa (BR-21)`;
     }
+    if (usage.pendingRevisions > 0) {
+      return `Media đang nằm trong ${usage.pendingRevisions} bản nội dung chờ duyệt nên không thể xóa`;
+    }
+    return null;
   }
 
   private identifyOrReject(buffer: Buffer): MediaFormatSpec {

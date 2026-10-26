@@ -423,7 +423,7 @@ describe('MediaService', () => {
 
   // ---------------------------------------------------------------- remove (BR-21)
   describe('remove — BR-21', () => {
-    it('media không được dùng → xóa mềm, xóa file, chạy trong transaction', async () => {
+    it('media không được dùng → xóa mềm, GIỮ file để khôi phục được, chạy trong transaction', async () => {
       const uploaded = await service.upload(file(buildPng()), dto(), ACTOR_ID);
       const key = repo.only().storageKey;
       await service.remove(uploaded.id);
@@ -431,7 +431,8 @@ describe('MediaService', () => {
       const row = repo.rows.get(uploaded.id);
       assert.equal(row?.isDeleted, true);
       assert.ok(row?.deletedAt instanceof Date);
-      assert.equal(existsSync(join(publicRoot, key)), false);
+      assert.equal(existsSync(join(publicRoot, key)), true, 'xóa mềm không xóa file');
+      assert.deepEqual(storage.removed, []);
       assert.equal(tx.runs, 1);
       assert.deepEqual(repo.lockCalls, [{ id: uploaded.id, manager: FAKE_MANAGER }]);
       assert.equal(repo.usageCalls[0].manager, FAKE_MANAGER, 'kiểm tra tham chiếu phải cùng transaction');
@@ -469,18 +470,43 @@ describe('MediaService', () => {
       await assert.rejects(service.remove(uploaded.id), NotFoundException);
     });
 
-    it('xóa file thất bại sau khi commit → vẫn thành công (chỉ ghi log)', async () => {
+    it('storage lỗi cũng không ảnh hưởng: xóa mềm không gọi tới storage', async () => {
       const uploaded = await service.upload(file(buildPng()), dto(), ACTOR_ID);
       storage.removeError = new Error('EACCES');
       await assert.doesNotReject(service.remove(uploaded.id));
       assert.equal(repo.rows.get(uploaded.id)?.isDeleted, true);
     });
 
-    it('xóa media quarantine → xóa file trong vùng cách ly', async () => {
+    it('xóa media quarantine → xóa mềm, file vẫn nằm trong vùng cách ly', async () => {
       inspection.structureError = new Error('x');
       await assert.rejects(service.upload(file(buildPng()), dto(), ACTOR_ID));
       await service.remove(repo.only().id);
-      assert.deepEqual(listFiles(quarantineRoot), []);
+      assert.equal(repo.only().isDeleted, true);
+      assert.equal(listFiles(quarantineRoot).length, 1);
+    });
+
+    it('removeMany: hợp lệ hết → xóa mềm tất cả trong MỘT transaction, giữ file, trả { ids }', async () => {
+      const first = await service.upload(file(buildPng()), dto(), ACTOR_ID);
+      const second = await service.upload(file(buildPng()), dto(), ACTOR_ID);
+      const runsBefore = tx.runs;
+      assert.deepEqual(await service.removeMany([first.id, second.id]), { ids: [first.id, second.id] });
+      assert.equal(tx.runs - runsBefore, 1);
+      assert.equal(repo.rows.get(first.id)?.isDeleted && repo.rows.get(second.id)?.isDeleted, true);
+      assert.deepEqual(storage.removed, []);
+    });
+
+    it('removeMany: 1 media bị chặn (BR-21) hoặc không tồn tại → 409 liệt kê từng ID, không media nào bị xóa', async () => {
+      const first = await service.upload(file(buildPng()), dto(), ACTOR_ID);
+      const ghost = randomUUID();
+      repo.usage = { publishedExhibits: 1, pendingRevisions: 0 };
+      await assert.rejects(service.removeMany([first.id, ghost]), (error: unknown) => {
+        assert.ok(error instanceof ConflictException);
+        const body = error.getResponse() as { errors: Array<{ field: string; message: string }> };
+        assert.deepEqual(body.errors.map((e) => e.field), [first.id, ghost]);
+        assert.match(body.errors[0].message, /BR-21/);
+        return true;
+      });
+      assert.equal(repo.rows.get(first.id)?.isDeleted, false);
     });
   });
 });
