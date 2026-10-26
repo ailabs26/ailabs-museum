@@ -1,7 +1,7 @@
 import { Canvas, events } from '@react-three/fiber';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button, Group, Text } from '@mantine/core';
-import { ACESFilmicToneMapping } from 'three';
+import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from 'three';
 import { MuseumRoom } from '@/components/museum/MuseumRoom';
 import { ExhibitionDisplay } from '@/components/museum/ExhibitionDisplay';
 import { MuseumLighting } from '@/components/museum/MuseumLighting';
@@ -30,6 +30,7 @@ import { MuseumXr } from '@/components/museum/MuseumXr';
 import type { XrSessionController, XrSnapshot } from '@/helpers/xrSession';
 import type { WebglStatus } from '@/helpers/webglRecovery';
 import { GallerySurfaces } from '@/components/museum/GallerySurfaces';
+import { useMuseumQuality } from '@/hooks/useMuseumQuality';
 
 // Labels render over solid geometry. Picking follows that same visual order;
 // intersecting labels still use nearest-first ordering within their layer.
@@ -45,6 +46,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
   immersive?: boolean;
   onXrChange?: (snapshot: XrSnapshot, owner: XrSessionController | null) => void;
 }) {
+  const quality = useMuseumQuality();
   const [command, setCommand] = useState<CameraCommand | null>(null);
   const [webglStatus, setWebglStatus] = useState<WebglStatus>('ready');
   const [xrOwner, setXrOwner] = useState<XrSessionController | null>(null);
@@ -110,7 +112,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
   };
   if (webglStatus === 'failed') return fallback;
   return (
-    <div className={`${classes.scene} ${immersive ? classes.immersive : ''}`} data-webgl-status={webglStatus} data-xr-phase={xrStatus.phase}>
+    <div className={`${classes.scene} ${immersive ? classes.immersive : ''}`} data-quality-tier={quality.tier} data-webgl-status={webglStatus} data-xr-phase={xrStatus.phase}>
     <div className={classes.canvasFrame}
       onPointerDownCapture={event => { gestures.start(event.pointerId, event.clientX, event.clientY); if (event.pointerType === 'touch') setHasTouch(true); }}
       onPointerMoveCapture={event => gestures.move(event.pointerId, event.clientX, event.clientY)}
@@ -119,16 +121,17 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
     {!isRendererRestarting && <Canvas key={canvasEpoch}
       events={createMuseumEvents}
       frameloop="demand"
-      dpr={[1, 1.5]}
+      dpr={[1, quality.dpr]}
+      shadows={quality.shadowSize ? { type: PCFSoftShadowMap } : false}
       camera={{ position: INITIAL_CAMERA_POSITION, fov: 60, near: 0.1, far: 40 }}
-      gl={{ antialias: true, alpha: false, powerPreference: 'low-power', preserveDrawingBuffer: true, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1 }}
+      gl={{ antialias: true, alpha: false, powerPreference: 'low-power', preserveDrawingBuffer: true, outputColorSpace: SRGBColorSpace, toneMapping: ACESFilmicToneMapping, toneMappingExposure: .96 }}
       // R3F mounts this inside <canvas> even when WebGL works; no failure callbacks here.
       fallback="Trình duyệt không hiển thị được canvas. Nội dung hiện vật vẫn có trong danh mục bên dưới."
       onPointerMissed={(event) => { if (isWebInputEnabled && event.type === 'click' && gestures.canSelect) onClear(); }}
       onCreated={({ camera }) => camera.lookAt(...INITIAL_CAMERA_TARGET)}
     >
       <color attach="background" args={['#eee9df']} />
-      <MuseumLighting />
+      <MuseumLighting shadowSize={quality.shadowSize} isRecovering={webglStatus === 'recovering'} />
       <SceneLifecycle onStatus={handleWebglStatus} />
       <MuseumXr available={webglStatus === 'ready'} displays={displays} selectedId={selectedId} onSelect={onSelect}
         onController={setXrOwner} onStatus={setXrStatus} onHover={setXrHoveredId} onRendererReset={handleRendererReset} />
@@ -136,7 +139,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
       <CinematicIntro input={input} enabled={isWebInputEnabled} />
       <MuseumControls enabled={isWebInputEnabled} command={command} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
         displays={displays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} />
-      <GallerySurfaces>
+      <GallerySurfaces anisotropy={quality.anisotropy}>
       <MuseumRoom />
       {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={handleSceneSelect}
         modelState={display.model ? models[display.model.checksumSha256] : undefined} renderAttempt={renderStates[display.id]?.attempts}

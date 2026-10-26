@@ -9,7 +9,7 @@ interface GalleryMaterials {
 const GallerySurfaceContext = createContext<GalleryMaterials | null>(null);
 
 /** Committed room owner: no global cache and no shared model-material mutations. */
-export function GallerySurfaces({ children }: { children: ReactNode }) {
+export function GallerySurfaces({ children, anisotropy = 4 }: { children: ReactNode; anisotropy?: number }) {
   const { gl, invalidate } = useThree();
   const [materials, setMaterials] = useState<GalleryMaterials | null>(null);
   useLayoutEffect(() => {
@@ -31,7 +31,7 @@ export function GallerySurfaces({ children }: { children: ReactNode }) {
       texture.name = name;
       texture.wrapS = texture.wrapT = RepeatWrapping;
       texture.repeat.set(repeat, repeat);
-      texture.anisotropy = Math.min(4, gl.capabilities.getMaxAnisotropy());
+      texture.anisotropy = Math.min(anisotropy, gl.capabilities.getMaxAnisotropy());
       if (channel === 'map' && material) texture.colorSpace = SRGBColorSpace;
       textures.push(texture);
       return texture;
@@ -50,7 +50,7 @@ export function GallerySurfaces({ children }: { children: ReactNode }) {
       textures.forEach(texture => texture.dispose());
       [stone, plaster, walnut, bronze, charcoal, grout].forEach(material => material.dispose());
     };
-  }, [gl, invalidate]);
+  }, [gl, invalidate, anisotropy]);
   return materials && <GallerySurfaceContext.Provider value={materials}>{children}</GallerySurfaceContext.Provider>;
 }
 
