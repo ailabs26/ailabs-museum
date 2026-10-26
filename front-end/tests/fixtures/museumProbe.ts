@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import type { Camera, Object3D, WebGLRenderer, Mesh, Sprite } from 'three';
 
 interface ObservedRenderer {
@@ -65,4 +65,21 @@ export async function readRendererProbe(page: Page) {
       labels,
     };
   }));
+}
+
+/** Texture assignment happens after image decode; do not measure half-loaded rooms. */
+export async function waitForGallerySurfaces(page: Page) {
+  await expect.poll(() => page.evaluate(() => {
+    const maps = new Set<string>();
+    window.museumProbe.at(-1)?.scene?.deref()?.traverse(object => {
+      const material = (object as Mesh).material;
+      for (const item of !material ? [] : Array.isArray(material) ? material : [material]) {
+        const surface = item as import('three').MeshStandardMaterial;
+        for (const map of [surface.map, surface.normalMap, surface.roughnessMap]) {
+          if (map?.name && map.image?.width === 512) maps.add(map.uuid);
+        }
+      }
+    });
+    return maps.size;
+  })).toBe(8);
 }

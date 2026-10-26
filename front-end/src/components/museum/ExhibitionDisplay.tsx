@@ -34,7 +34,7 @@ export function ExhibitionDisplay({ display, isSelected, isXrHovered = false, on
       onPointerOut={() => setIsHovered(false)}
       onClick={(event) => { if (event.delta > 5) return; event.stopPropagation(); onSelect(display.id); }}>
       {/* Edge-transparent soft contact occlusion is also retained in the low tier. */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.007, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.007, 0]} raycast={() => {}} userData={{ xrIgnore: true }}>
         <planeGeometry args={[isCenterpiece ? 3.5 : 2.4, isCenterpiece ? 3.5 : 2.4]} />
         <meshBasicMaterial map={contact} transparent opacity={.65} depthWrite={false} />
       </mesh>
