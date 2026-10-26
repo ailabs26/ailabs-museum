@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Container, Group, NativeSelect, Stack, Text, Title } from '@mantine/core';
 import { useSearchParams } from 'react-router-dom';
+import { z } from 'zod';
 import { PublicReportModal } from '@/shared/components/feedback/PublicReportModal';
 import { MuseumCatalogue } from '@/components/museum/MuseumCatalogue';
 import { ExhibitDetailPanel } from '@/components/museum/ExhibitDetailPanel';
@@ -13,6 +14,7 @@ import { ErrorBoundary } from '@/shared/components/feedback/ErrorBoundary';
 import classes from './MuseumPage.module.css';
 
 const LazyMuseumScene = lazy(() => import('@/components/MuseumScene').then((module) => ({ default: module.MuseumScene })));
+const exhibitIdSchema = z.string().uuid();
 
 export function MuseumPage() {
   const [reportTarget, setReportTarget] = useState<{ exhibitId: string; reportedRevisionId: string } | null>(null);
@@ -20,6 +22,8 @@ export function MuseumPage() {
   const { rooms, room, selectedRoom, selectedSlug, refresh } = useMuseumRooms(searchParams.get('room'));
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const displays = useMemo(() => detail ? mapRoomDisplays(detail) : [], [detail]);
+  const requestedExhibitId = searchParams.get('exhibit');
+  const isRequestedExhibitValid = requestedExhibitId !== null && exhibitIdSchema.safeParse(requestedExhibitId).success;
   const [isSceneOpen, setIsSceneOpen] = useState(false);
   const [failedRoomId, setFailedRoomId] = useState<string | null>(null);
   const [sceneAttempt, setSceneAttempt] = useState(0);
@@ -31,21 +35,29 @@ export function MuseumPage() {
   const handleUnavailable = useCallback(() => {
     if (currentRoomId) setFailedRoomId(currentRoomId);
   }, [currentRoomId]);
-  const [selection, setSelection] = useState<{ roomId: string; id: string } | null>(null);
-  const selectedDisplay = detail && selection?.roomId === detail.id ? displays.find((display) => display.id === selection.id) : undefined;
+  const selectedDisplay = detail && isRequestedExhibitValid
+    ? displays.find((display) => display.id === requestedExhibitId)
+    : undefined;
+  const exhibitLinkMessage = detail && requestedExhibitId !== null && !selectedDisplay
+    ? isRequestedExhibitValid ? 'Không tìm thấy hiện vật trong phòng này.' : 'Mã hiện vật trong đường dẫn không hợp lệ.'
+    : null;
   const selectedReportTarget = selectedDisplay?.revisionId ? {
     exhibitId: selectedDisplay.id,
     reportedRevisionId: selectedDisplay.revisionId,
   } : null;
-  useEffect(() => setSelection(null), [selectedSlug]);
   const selectionTriggerRef = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const handleSelectDisplay = (id: string) => {
+    if (!detail || !displays.some((display) => display.id === id)) return;
     selectionTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    if (detail) setSelection({ roomId: detail.id, id });
+    const next = new URLSearchParams(searchParams);
+    next.set('exhibit', id);
+    setSearchParams(next, { replace: true });
   };
   const handleCloseDetail = () => {
-    setSelection(null);
+    const next = new URLSearchParams(searchParams);
+    next.delete('exhibit');
+    setSearchParams(next, { replace: true });
     if (selectionTriggerRef.current?.isConnected) selectionTriggerRef.current.focus();
     else (startButtonRef.current ?? headingRef.current)?.focus();
   };
@@ -58,6 +70,7 @@ export function MuseumPage() {
   const handleSelectRoom = (slug: string) => {
     const next = new URLSearchParams(searchParams);
     next.set('room', slug);
+    next.delete('exhibit');
     setSearchParams(next);
   };
   const read2dHref = detail ? selectedDisplay
@@ -98,6 +111,7 @@ export function MuseumPage() {
         {detail && <>
         {detail.description && <Text>{detail.description}</Text>}
         <Text size="sm" c="dimmed">{displays.length} hiện vật · {displays.some(display => display.model) ? 'Mở phòng 3D để khám phá mô hình hiện vật' : 'Hình khối thay thế cho ảnh hoặc mô hình chưa khả dụng'}</Text>
+        {exhibitLinkMessage && <Text role="status">{exhibitLinkMessage}</Text>}
         {room.isFetching && <Text role="status">Đang cập nhật phòng…</Text>}
         <div className={`${classes.stage} ${selectedDisplay ? classes.stageDetails : ''}`}>
         <div className={classes.viewport}>
