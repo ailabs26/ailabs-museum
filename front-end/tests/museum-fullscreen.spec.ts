@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
-import { installMuseumApi } from './fixtures/museumApi';
+import { installMuseumApi, fulfillMuseum } from './fixtures/museumApi';
+import { roomB, envelope } from './fixtures/museumContent';
 import { installRendererProbe, readRendererProbe } from './fixtures/museumProbe';
 
 async function useOverlay(page: Page) {
@@ -92,4 +93,20 @@ test('closing preserves selected exhibit for the readable page', async ({ page }
   await page.getByRole('button', { name: 'Thoát tham quan', exact: true }).click();
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toBeVisible();
   expect(new URL(page.url()).searchParams.has('exhibit')).toBe(true);
+});
+
+test('room loading preserves native fullscreen and its reachable exit', async ({ page }) => {
+  let release!: () => void;
+  const wait = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/rooms/ceramics', async route => { await wait; await fulfillMuseum(route, envelope(roomB)); });
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible();
+  await page.getByLabel('Chọn phòng trưng bày', { exact: true }).selectOption('ceramics');
+  await expect(page.getByRole('dialog', { name: 'Tham quan bảo tàng' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Thoát tham quan', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.fullscreenElement?.getAttribute('data-immersive-tour'))).toBe('true');
+  release();
+  await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Tham quan bảo tàng' }).getByRole('heading', { name: 'Gốm Việt' })).toBeVisible();
 });

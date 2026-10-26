@@ -50,6 +50,7 @@
 .immersiveCatalogue summary { cursor: pointer; min-height: 44px; padding: 10px 14px; font-size: 13px; }
 .immersiveCatalogue[open] { width: min(680px, calc(100% - 48px)); max-height: calc(100dvh - 270px); overflow: auto; }
 .immersiveCatalogue section { padding: 16px; }
+.immersiveLoading { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: #eee8dc; }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .immersiveCatalogue section :global(.mantine-SimpleGrid-root) { grid-template-columns: 1fr 1fr; }
 @media (max-width: 600px) {

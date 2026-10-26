@@ -159,23 +159,29 @@ export function MuseumPage() {
         </div>
         </>}
       </Stack>
-      {isSceneOpen && detail && <ImmersiveTour containerRef={containerRef} roomName={detail.name} hasModal={!!reportTarget}
+      {isSceneOpen && <ImmersiveTour containerRef={containerRef} roomName={detail?.name ?? selectedRoom?.name ?? 'Phòng trưng bày'} hasModal={!!reportTarget}
         onClose={() => { setReportTarget(null); closeScene(); }} onEscape={() => {
           if (isXrPresentingRef.current) { void xrOwnerRef.current?.exit(); return; }
           if (selectedDisplay) handleCloseDetail(); else closeScene();
         }}>
-        <ErrorBoundary key={`${detail.id}:${sceneAttempt}`} fallback={sceneFallback}>
+        {detail ? <ErrorBoundary key={`${detail.id}:${sceneAttempt}`} fallback={sceneFallback}>
           <Suspense fallback={<MuseumLoading text="Đang mở phòng 3D…" />}>
             <LazyMuseumScene displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay}
               onClear={handleCloseDetail} fallback={sceneFallback} immersive onXrChange={handleXrChange} />
           </Suspense>
-        </ErrorBoundary>
+        </ErrorBoundary> : <div className={classes.immersiveLoading}>
+          {room.isError || rooms.isError ? <Alert color="red" title="Không tải được phòng trưng bày">
+            <Text>{room.error?.message ?? rooms.error?.message}</Text><Button onClick={() => void refresh()}>Thử lại</Button>
+          </Alert> : <MuseumLoading text="Đang tải phòng trưng bày…" />}
+        </div>}
         <div className={classes.immersiveRoomSelect}>
           <NativeSelect aria-label="Chọn phòng trưng bày" value={selectedSlug ?? ''}
             onChange={event => handleSelectRoom(event.currentTarget.value)} data={rooms.data?.map(item => ({ value: item.slug, label: item.name })) ?? []} />
         </div>
         <div className={classes.immersiveDetail}>{detailPanel}</div>
-        <details data-catalogue className={classes.immersiveCatalogue}><summary>Danh mục hiện vật</summary>{catalogue}</details>
+        <details data-catalogue className={classes.immersiveCatalogue}><summary>Danh mục hiện vật</summary>
+          <Button m="sm" variant="default" disabled={rooms.isFetching || room.isFetching} onClick={() => void refresh()}>Làm mới</Button>{catalogue}
+        </details>
         <p id="museum-controls-help" className={classes.srOnly}>WASD di chuyển, kéo chuột hoặc vuốt để nhìn, F tập trung, Home đặt lại. Escape đóng chi tiết rồi thoát tham quan.</p>
         {reportModal}
       </ImmersiveTour>}
