@@ -28,6 +28,12 @@ export function MuseumPage() {
   const requestedExhibitId = searchParams.get('exhibit');
   const isRequestedExhibitValid = requestedExhibitId !== null && exhibitIdSchema.safeParse(requestedExhibitId).success;
   const { isOpen: isSceneOpen, containerRef, isXrPresentingRef, open: openScene, close: closeScene } = useImmersiveTour();
+  const catalogueContainerRef = useRef<HTMLDivElement>(null);
+  const catalogueHeightRef = useRef(0);
+  const handleOpenScene = () => {
+    catalogueHeightRef.current = catalogueContainerRef.current?.getBoundingClientRect().height ?? 0;
+    openScene();
+  };
   const xrOwnerRef = useRef<XrSessionController | null>(null);
   const handleXrChange = useCallback((snapshot: XrSnapshot, owner: XrSessionController | null) => {
     isXrPresentingRef.current = snapshot.phase !== 'idle';
@@ -37,7 +43,7 @@ export function MuseumPage() {
   const [sceneAttempt, setSceneAttempt] = useState(0);
   const handleRetry3d = () => {
     if (sceneAttempt >= 2) return;
-    setSceneAttempt(attempt => attempt + 1); setFailedRoomId(null); openScene();
+    setSceneAttempt(attempt => attempt + 1); setFailedRoomId(null); handleOpenScene();
   };
   const currentRoomId = detail?.id;
   const handleUnavailable = useCallback(() => {
@@ -58,7 +64,8 @@ export function MuseumPage() {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const handleSelectDisplay = (id: string) => {
     if (!detail || !displays.some((display) => display.id === id)) return;
-    selectionTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    selectionTriggerRef.current = active?.closest('details[data-catalogue]')?.querySelector('summary') ?? active;
     containerRef.current?.querySelector('details[data-catalogue]')?.removeAttribute('open');
     const next = new URLSearchParams(searchParams);
     next.set('exhibit', id);
@@ -142,7 +149,7 @@ export function MuseumPage() {
               <Text className={classes.eyebrow} size="xs" fw={700}>KHÔNG GIAN KHÁM PHÁ</Text>
               <Title order={2} className={classes.introTitle}>Bước vào phòng trưng bày</Title>
               <Text maw={420}>Khám phá {detail.name} trong không gian 3D.</Text>
-              <Button ref={startButtonRef} color="teal.9" size="lg" onClick={openScene}>Mở phòng 3D</Button>
+              <Button ref={startButtonRef} color="teal.9" size="lg" onClick={handleOpenScene}>Mở phòng 3D</Button>
               <Text size="sm">Bạn cũng có thể đọc toàn bộ nội dung ngay bên dưới.</Text>
             </Stack>
           )}
@@ -154,9 +161,7 @@ export function MuseumPage() {
           Chọn hiện vật để xem chi tiết. Khi chọn khung 3D: WASD di chuyển, Shift đi nhanh, mũi tên xoay, +/− đến gần/lùi xa,
           F tập trung hiện vật đã chọn, Home về ban đầu. Escape đóng chi tiết · Tab để rời khung.
         </Text>
-        <div style={{ visibility: isSceneOpen ? 'hidden' : undefined }} aria-hidden={isSceneOpen || undefined}>
-          <MuseumCatalogue displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay} idPrefix={isSceneOpen ? 'background-' : ''} />
-        </div>
+        <div ref={catalogueContainerRef} style={{ height: isSceneOpen ? catalogueHeightRef.current : undefined }}>{!isSceneOpen && catalogue}</div>
         </>}
       </Stack>
       {isSceneOpen && <ImmersiveTour containerRef={containerRef} roomName={detail?.name ?? selectedRoom?.name ?? 'Phòng trưng bày'} hasModal={!!reportTarget}
@@ -179,7 +184,7 @@ export function MuseumPage() {
             onChange={event => handleSelectRoom(event.currentTarget.value)} data={rooms.data?.map(item => ({ value: item.slug, label: item.name })) ?? []} />
         </div>
         <div className={classes.immersiveDetail}>{detailPanel}</div>
-        <details data-catalogue className={classes.immersiveCatalogue}><summary>Danh mục hiện vật</summary>
+        <details data-catalogue className={classes.immersiveCatalogue} open={displays.length === 0 ? true : undefined}><summary>Danh mục hiện vật</summary>
           <Button m="sm" variant="default" disabled={rooms.isFetching || room.isFetching} onClick={() => void refresh()}>Làm mới</Button>{catalogue}
         </details>
         <p id="museum-controls-help" className={classes.srOnly}>WASD di chuyển, kéo chuột hoặc vuốt để nhìn, F tập trung, Home đặt lại. Escape đóng chi tiết rồi thoát tham quan.</p>

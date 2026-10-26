@@ -51,6 +51,9 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
   const [xrOwner, setXrOwner] = useState<XrSessionController | null>(null);
   const [xrStatus, setXrStatus] = useState<XrSnapshot>({ capability: 'checking', phase: 'idle', message: '' });
   useEffect(() => { onXrChange?.(xrStatus, xrOwner); }, [onXrChange, xrStatus, xrOwner]);
+  useEffect(() => () => {
+    onXrChange?.({ capability: 'unavailable', phase: 'idle', message: '' }, null);
+  }, [onXrChange]);
   const [xrHoveredId, setXrHoveredId] = useState<string | null>(null);
   const [isRendererRestarting, setIsRendererRestarting] = useState(false);
   const [canvasEpoch, setCanvasEpoch] = useState(0);
@@ -164,8 +167,8 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
         <div>
           <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('in')}>Đến gần</Button>
           <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('out')}>Lùi xa</Button>
-          <Text size="xs" role="status">{xrStatus.message || (xrStatus.capability === 'checking' ? 'Đang kiểm tra VR…'
-            : xrStatus.capability === 'unavailable' ? 'VR không khả dụng trong trình duyệt hoặc thiết bị này. Bạn vẫn có thể tham quan 3D.' : '')}</Text>
+          <Text size="xs">{xrStatus.capability === 'checking' ? 'Đang kiểm tra VR…'
+            : xrStatus.capability === 'unavailable' ? 'VR không khả dụng trong trình duyệt hoặc thiết bị này. Bạn vẫn có thể tham quan 3D.' : ''}</Text>
         </div>
       </details>
       {xrStatus.capability === 'ready' && xrStatus.phase === 'idle' && <Button disabled={webglStatus !== 'ready' || !xrOwner} onClick={() => {
@@ -174,7 +177,9 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
       {xrStatus.phase === 'requesting' && <Button disabled>Đang vào VR…</Button>}
       {(xrStatus.phase === 'active' || xrStatus.phase === 'ending') && <Button disabled={xrStatus.phase === 'ending'} onClick={() => { void xrOwner?.exit(); }}>Exit VR</Button>}
     </Group>
-    <details className={classes.hotspotMenu}><summary>Điểm tương tác</summary>
+    {xrStatus.message && <Text className={classes.xrFeedback} size="xs" role="status">{xrStatus.message}</Text>}
+    {displays.some(display => !display.model) && <p className={classes.illustrationNote}>Hình khối minh họa cho hiện vật chưa có mô hình</p>}
+    <details data-hotspots className={classes.hotspotMenu}><summary>Điểm tương tác</summary>
       <ArtifactHotspotControls displays={displays} selectedId={selectedId} onSelect={onSelect} />
     </details>
     <div className={classes.modelStatus}><ModelLoadingStatus displays={displays} models={models} onRetry={retry} renderStates={renderStates} onRetryRender={handleRetryRender} /></div>

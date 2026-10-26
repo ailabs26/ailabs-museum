@@ -3,6 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { installMuseumApi, fulfillMuseum } from './fixtures/museumApi';
 import { roomB, envelope } from './fixtures/museumContent';
 import { installRendererProbe, readRendererProbe } from './fixtures/museumProbe';
+import { installXrSimulation } from './fixtures/museumXr';
 
 async function useOverlay(page: Page) {
   await page.addInitScript(() => {
@@ -109,4 +110,20 @@ test('room loading preserves native fullscreen and its reachable exit', async ({
   release();
   await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Tham quan bảo tàng' }).getByRole('heading', { name: 'Gốm Việt' })).toBeVisible();
+});
+
+test('Escape can close the tour after an XR scene unmounts during room loading', async ({ page }) => {
+  await useOverlay(page); await installXrSimulation(page);
+  let release!: () => void;
+  const wait = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/rooms/ceramics', async route => { await wait; await fulfillMuseum(route, envelope(roomB)); });
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  await page.getByRole('button', { name: 'Enter VR', exact: true }).click();
+  await expect(page.locator('[data-xr-phase="active"]')).toBeVisible();
+  await page.getByLabel('Chọn phòng trưng bày', { exact: true }).selectOption('ceramics');
+  await expect(page.locator('canvas')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  try { await expect(page.locator('[data-immersive-tour]')).toHaveCount(0); }
+  finally { release(); }
 });

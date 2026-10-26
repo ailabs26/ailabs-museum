@@ -1,4 +1,4 @@
-import { useLayoutEffect, type ReactNode, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { Button, FocusTrap } from '@mantine/core';
 import classes from './ImmersiveTour.module.css';
@@ -7,6 +7,16 @@ export function ImmersiveTour({ containerRef, roomName, onClose, onEscape, hasMo
   containerRef: RefObject<HTMLDivElement>; roomName: string; onClose: () => void;
   onEscape: () => void; hasModal: boolean; children: ReactNode;
 }) {
+  useEffect(() => {
+    // Removing a focused canvas/XR button can temporarily leave focus on body.
+    // Keep Escape owned by the active tour even during loading and recovery.
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented || hasModal) return;
+      event.preventDefault(); event.stopPropagation(); onEscape();
+    };
+    document.addEventListener('keydown', escape);
+    return () => document.removeEventListener('keydown', escape);
+  }, [onEscape, hasModal]);
   useLayoutEffect(() => {
     const host = containerRef.current!;
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -26,10 +36,7 @@ export function ImmersiveTour({ containerRef, roomName, onClose, onEscape, hasMo
   return createPortal(
     <FocusTrap active={!hasModal} innerRef={containerRef}>
       <div className={classes.immersive} data-immersive-tour="true" role="dialog" aria-modal="true"
-        aria-label="Tham quan bảo tàng" tabIndex={-1} onKeyDown={event => {
-          if (event.key !== 'Escape' || event.defaultPrevented || hasModal) return;
-          event.preventDefault(); event.stopPropagation(); onEscape();
-        }}>
+        aria-label="Tham quan bảo tàng" tabIndex={-1}>
         <header className={classes.header}>
           <div className={classes.identity}><span>AURA MUSEUM / KHÔNG GIAN DI SẢN</span><h2>{roomName}</h2></div>
           <Button variant="default" onClick={onClose} aria-label="Thoát tham quan">Thoát tham quan <span aria-hidden="true"> ×</span></Button>

@@ -4,16 +4,15 @@ import { EmptyState } from '@/shared/components/data/EmptyState';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import classes from './MuseumCatalogue.module.css';
 
-export function MuseumCatalogue({ displays, selectedId, onSelect, idPrefix = '' }: {
+export function MuseumCatalogue({ displays, selectedId, onSelect }: {
   displays: readonly MuseumDisplay[];
   selectedId: string | null;
   onSelect: (id: string) => void;
-  idPrefix?: string;
 }) {
   return (
-    <section aria-labelledby={`${idPrefix}catalogue-title`} id={`${idPrefix}museum-catalogue`} tabIndex={-1}>
+    <section aria-labelledby="catalogue-title" id="museum-catalogue" tabIndex={-1}>
       <Stack gap="md">
-        <Title order={2} id={`${idPrefix}catalogue-title`}>Trong phòng trưng bày</Title>
+        <Title order={2} id="catalogue-title">Trong phòng trưng bày</Title>
         <Text c="dimmed">{displays.some(display => display.model) ? 'Các mô hình hiện vật có thể khám phá trong phòng 3D. Danh mục vẫn đọc được khi không dùng 3D.' : 'Chưa có ảnh hoặc mô hình 3D; đang hiển thị hình khối thay thế.'}</Text>
         {displays.some((display) => display.isOutsideRoom) && <Text role="status" c="orange.8">Một số hiện vật chỉ có thể đọc trong danh mục bên dưới vì nằm ngoài phạm vi phòng 3D.</Text>}
         {displays.length === 0 && <EmptyState text="Phòng này chưa có hiện vật được xuất bản." />}
