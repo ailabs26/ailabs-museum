@@ -12,6 +12,7 @@ export function PhotoCapture({ bind }: { bind: (capture: (() => string | null) |
   useEffect(() => {
     bind(() => {
       try {
+        if (gl.getContext().isContextLost()) return null;
         gl.render(scene, camera);
         return gl.domElement.toDataURL('image/png');
       } catch {
