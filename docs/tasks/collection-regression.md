@@ -144,13 +144,13 @@ await expect(rooms.getByRole('button', { name: roomB.name, exact: true }))
 
 **Mục tiêu:** Có evidence đủ review và scope gọn.
 
-- [ ] Chạy focused collection và D05/F04; đảm bảo mỗi case sửa được kiểm lại.
-- [ ] Chạy affected browser suites; nếu test không ổn định, tái hiện riêng và ghi flake, không coi timed-out teardown là clean PASS.
-- [ ] Chạy `typecheck`, `test:unit`, `build`, targeted ESLint và `npm run lint`; phân biệt lỗi nền 37 lint errors với lỗi mới.
-- [ ] Test live collection (nếu bật) chỉ read-only, có published seed; nếu thiếu môi trường: `NOT TESTED`, không ngầm tính PASS.
-- [ ] Kiểm `git diff --check`, không commit `.env`, `dist`, `test-results` hoặc screenshots.
-- [ ] Ghi matrix thực tế dưới đây (counts, SHA, lệnh, PASS/FAIL/SKIP, blocker, screenshot refs nếu có).
-- [ ] Hoàn tất PR-ready handoff; **không tự push hoặc mở PR** nếu chưa có yêu cầu.
+- [x] Chạy focused collection và D05/F04; các case sửa được đều PASS.
+- [x] Chạy affected browser suites; ghi rõ 5 lỗi ngoài phạm vi trong matrix, không hạ assertions.
+- [x] Chạy `typecheck`, `test:unit`, `build`, targeted ESLint và `npm run lint`; phân biệt 37 lỗi lint với thay đổi task.
+- [x] Live collection được đánh dấu `NOT TESTED` (optional/read-only).
+- [x] `git diff --check` sạch; artifacts `dist`/`test-results` bị ignore và không được commit.
+- [x] Ghi matrix kết quả thực tế bên dưới.
+- [x] Handoff sẵn sàng review; không push và không tạo PR.
 
 **Commit gợi ý:** `docs(test): record collection regression verification`.
 
@@ -177,7 +177,7 @@ npm run lint
 
 PowerShell: thay `npm` bằng `npm.cmd` nếu cần; khi dùng `-g`, quote pattern đúng PowerShell. Playwright fixture mặc định trên `127.0.0.1:4173`; không bật `MUSEUM_LIVE_TEST=1` cho fixture. Nếu chạy full browser suite phải kiểm kết quả thật và phân loại lỗi ngoài scope.
 
-## 6. Execution evidence matrix (chưa chạy)
+## 6. Execution evidence matrix
 
 | Gate / scenario | Kỳ vọng | Actual | Evidence |
 |---|---|---|---|
@@ -190,23 +190,23 @@ PowerShell: thay `npm` bằng `npm.cmd` nếu cần; khi dùng `-g`, quote patte
 | Report & featured | Không regression | Public report PASS; related 5-file run 29/34 pass, 5 unrelated failures | Playwright run; failures noted below |
 | Related suite exceptions | Preserve existing coverage | FAIL: keyboard focus 1; homepage stale copy 2; public-tour link selectors 2. Deep-link tests pass. | `accessibility-keyboard`, `home-featured`, `public-tour-navigation`, `tour-exhibit-deep-link` |
 | Mobile/light/dark | 320/375/768/1024/1440 × light/dark; no horizontal overflow | PASS (10 combinations) | Playwright responsive case |
-| Frontend typecheck | PASS | NOT RUN | — |
-| Frontend unit | PASS | NOT RUN | — |
-| Production build | PASS | NOT RUN | — |
-| Targeted ESLint | PASS | NOT RUN | — |
-| Full frontend lint | Ghi PASS/FAIL thật, không giấu lỗi nền | NOT RUN | — |
-| Live API | Optional, read-only | NOT RUN | — |
+| Frontend typecheck | PASS | PASS | `npm run typecheck` |
+| Frontend unit | PASS | PASS (28 files, 160 tests) | `npm run test:unit` |
+| Production build | PASS | PASS; existing large-chunk warning | `npm run build` |
+| Targeted ESLint | PASS | PASS | collection, exhibit-detail, tour-2d-fallback specs |
+| Full frontend lint | Ghi PASS/FAIL thật, không giấu lỗi nền | FAIL: 37 errors in `scripts/e2e-cms-workflow.mjs`, `tests/fixtures/cmsExhibitsApi.ts`, `tests/fixtures/cmsReportsWorkflowApi.ts`; 1 existing hooks warning in unchanged `CollectionPage.tsx` | `npm run lint` |
+| Live API | Optional, read-only | NOT TESTED | Không bật môi trường live API |
 
 ## 7. Definition of Done / review gate
 
-- [ ] Không còn test dùng `selectOption`/`toHaveValue` trên **Collection room filter pills**; select thật của Tour và PublicReportModal không thay đổi.
-- [ ] Collection test phản ánh UI 2.0 mà không mất các ca API/error/empty/keyboard/URL đã có.
-- [ ] Search và room switching có test mới, không render stale content hoặc Canvas.
-- [ ] D05, F04 destination và các regressions quan trọng được chạy và phân loại chính xác.
-- [ ] Không có product a11y bug bị giấu bằng cách xóa assertion; vấn đề loading nếu còn phải được ghi blocker/issue.
-- [ ] Các gate có evidence từ lần chạy thực tế, không claim full PASS vì test timeout hoặc lint cũ.
-- [ ] Chỉ docs/test trong diff theo mặc định; mọi code production fix phải có bug repro và duyệt scope.
-- [ ] Có commit ledger, không tự tạo/merge PR.
+- [x] Không còn test dùng `selectOption`/`toHaveValue` trên **Collection room filter pills**; select thật của Tour và PublicReportModal không thay đổi.
+- [x] Collection test phản ánh UI 2.0 mà không mất các ca API/error/empty/keyboard/URL đã có.
+- [x] Search và room switching có test mới, không render stale content hoặc Canvas.
+- [x] D05, F04 destination và các regressions quan trọng được chạy và phân loại chính xác.
+- [x] Product a11y gap loading được ghi rõ, không che bằng cách xóa assertion.
+- [x] Các gate có evidence thực tế; lint và các suite có lỗi nền được báo đúng trạng thái.
+- [x] Chỉ docs/test thay đổi; không có production code fix.
+- [x] Mỗi task đã hoàn thành có commit; không push hoặc tạo/merge PR.
 
 ## 8. Ngoài phạm vi
 
