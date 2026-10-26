@@ -10,6 +10,7 @@ import { ArtifactHotspot } from './ArtifactHotspot';
 import { ArtifactFallback3D } from './ArtifactFallback3D';
 import { ArtifactModelBoundary } from './ArtifactModelBoundary';
 import { useGallerySurfaces } from './GallerySurfaces';
+import { ExhibitPlaceholder } from './ExhibitPlaceholder';
 
 export function ExhibitionDisplay({ display, isSelected, isXrHovered = false, onSelect, modelState, renderAttempt = 0, hasRenderError = false, onRenderError }: {
   isXrHovered?: boolean;
@@ -54,16 +55,8 @@ export function ExhibitionDisplay({ display, isSelected, isXrHovered = false, on
         <ArtifactModelBoundary key={`${display.model.checksumSha256}:${renderAttempt}`} onError={onRenderError} fallback={<ArtifactFallback3D artifactId={display.id} />}>
           <ArtifactModel asset={modelState.asset} artifactId={display.id} />
         </ArtifactModelBoundary> :
-        <ArtifactFallback3D artifactId={display.id} isLoading={modelState?.status !== 'error'} /> : <mesh castShadow receiveShadow position={[0, isCenterpiece ? 2.16 : 1.73, 0]} rotation={[0, 0, display.shape === 'cube' ? 0.12 : 0]}>
-        {display.shape === 'torus' && <torusGeometry args={[0.8, 0.2, 16, 48]} />}
-        {display.shape === 'sphere' && <sphereGeometry args={[0.57, 24, 16]} />}
-        {display.shape === 'cube' && <boxGeometry args={[0.9, 0.9, 0.9]} />}
-        {display.shape === 'cone' && <coneGeometry args={[0.52, 1.2, 24]} />}
-        {display.shape === 'cylinder' && <cylinderGeometry args={[0.45, 0.45, 1.1, 24]} />}
-        {display.shape === 'icosahedron' && <icosahedronGeometry args={[0.64, 0]} />}
-        <meshStandardMaterial color={display.color} roughness={isCenterpiece ? 0.44 : display.shape === 'cylinder' ? 0.55 : 0.7} metalness={isCenterpiece ? 0.48 : 0.06}
-          emissive={isSelected ? '#25645c' : '#b69761'} emissiveIntensity={isSelected ? 0.15 : isHovered ? 0.12 : 0} />
-      </mesh>}
+        <ArtifactFallback3D artifactId={display.id} isLoading={modelState?.status !== 'error'} />
+        : <ExhibitPlaceholder shape={display.shape} color={display.color} isSelected={isSelected} isHovered={isHovered} />}
       <ExhibitLabel title={display.title} isSelected={isSelected} isCenterpiece={isCenterpiece} />
       {getArtifactHotspots(display, !hasRenderError && modelState?.status === 'ready' ? modelState.asset.normalization : undefined).map(hotspot =>
         <ArtifactHotspot key={hotspot.id} hotspot={hotspot} artifactTitle={display.title} isSelected={isSelected} isXrHovered={isXrHovered} onSelect={onSelect} />)}
