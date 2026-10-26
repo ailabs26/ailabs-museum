@@ -335,22 +335,11 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
   }
 
   /**
-   * Xóa liên hoàn một hiện vật Draft (BR-20):
-   * Trong cùng 1 transaction: Xóa hotspots -> Xóa revisions -> Xóa exhibit.
+   * Xóa mềm hiện vật (BR-20 đã kiểm ở service): giữ nguyên revisions/hotspots để khôi phục và truy vết.
+   * Mọi truy vấn hiện vật đều lọc `is_deleted = false`.
    */
-  async deleteCascadeDraft(exhibitId: string, manager?: EntityManager): Promise<void> {
-    const revisions = await this.scopedRevision(manager).find({
-      where: { exhibitId },
-      select: ['id'],
-    });
-
-    const revisionIds = revisions.map((r) => r.id);
-    if (revisionIds.length > 0) {
-      await this.deleteHotspotsByRevisionIds(revisionIds, manager);
-      await this.deleteRevisionsByExhibitId(exhibitId, manager);
-    }
-
-    await this.scoped(manager).delete(exhibitId);
+  async markDeleted(exhibitIds: string[], manager: EntityManager): Promise<void> {
+    await this.scoped(manager).update({ id: In(exhibitIds) }, { isDeleted: true, deletedAt: new Date() });
   }
 
   /**
