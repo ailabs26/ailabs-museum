@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(Element.prototype, 'requestFullscreen', { value: undefined }));
 });
 
-for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
+for (const viewport of [{ width: 1440, height: 900 }, { width: 320, height: 568 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
   test(`immersive controls remain reachable at ${viewport.width}x${viewport.height}`, async ({ page }, info) => {
     await page.setViewportSize(viewport);
     await page.goto('/tour');
@@ -23,6 +23,10 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 
       expect(box.height).toBeGreaterThanOrEqual(44);
       expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
       expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+      expect(await control.evaluate(node => {
+        const box = node.getBoundingClientRect();
+        return node.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+      })).toBe(true);
     }
     await page.screenshot({ path: info.outputPath('immersive.png') });
     await page.getByRole('button', { name: 'Lia camera tới Hiện vật 2', exact: true }).click();

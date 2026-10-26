@@ -54,7 +54,7 @@
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .immersiveCatalogue section :global(.mantine-SimpleGrid-root) { grid-template-columns: 1fr 1fr; }
 @media (max-width: 600px) {
-  .immersiveRoomSelect { top: 84px; left: 12px; max-width: 160px; }
+  .immersiveRoomSelect { top: 84px; left: 12px; max-width: min(160px, calc(100% - 216px)); }
   .immersiveCatalogue { top: 136px; left: 12px; }
   .immersiveDetail { top: auto; right: 12px; left: 12px; bottom: 110px; width: auto; height: min(42dvh, 380px); }
   .immersiveDetail > aside { padding: 16px; }

@@ -12,11 +12,15 @@ export function ImmersiveTour({ containerRef, roomName, onClose, onEscape, hasMo
     // Keep Escape owned by the active tour even during loading and recovery.
     const escape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented || hasModal) return;
+      // Mantine may close/unmount a modal in the capture phase. Its original
+      // event path still owns this Escape even after React updates hasModal.
+      if (event.composedPath().some(node => node instanceof HTMLElement && node !== containerRef.current
+        && node.getAttribute('role') === 'dialog' && node.getAttribute('aria-modal') === 'true')) return;
       event.preventDefault(); event.stopPropagation(); onEscape();
     };
     document.addEventListener('keydown', escape);
     return () => document.removeEventListener('keydown', escape);
-  }, [onEscape, hasModal]);
+  }, [onEscape, hasModal, containerRef]);
   useLayoutEffect(() => {
     const host = containerRef.current!;
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;

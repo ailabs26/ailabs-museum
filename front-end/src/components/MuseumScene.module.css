@@ -22,6 +22,6 @@
 .immersive .hotspotMenu { position: absolute; z-index: 5; top: 204px; left: 24px; max-width: min(320px, calc(100% - 48px)); max-height: calc(100% - 320px); overflow: auto; }
 .immersive .modelStatus { position: absolute; z-index: 4; left: 24px; bottom: 100px; max-width: min(380px, calc(100% - 48px)); max-height: 150px; overflow: auto; border-radius: 8px; background: #f7f3eaf0; padding-inline: 10px; }
 .immersive .modelStatus:empty { display: none; }
-@media (max-width: 600px) { .immersive .toolbar { top: 80px; right: 12px; max-width: 192px; padding: 4px; } .immersive .toolbar button { padding: 8px; } .immersive .hotspotMenu { top: 188px; left: 12px; max-width: 160px; } .immersive .modelStatus { bottom: 96px; left: 144px; max-width: calc(100% - 156px); font-size: 11px; } }
+@media (max-width: 600px) { .immersive .toolbar { top: 80px; right: 12px; max-width: 192px; padding: 4px; gap: 2px; } .immersive .toolbar button { padding: 8px; } .immersive .hotspotMenu { top: 188px; left: 12px; max-width: 160px; } .immersive .modelStatus { bottom: 96px; left: 144px; max-width: calc(100% - 156px); font-size: 11px; } }
 @media (max-height: 500px) { .immersive .hotspotMenu { top: 196px; max-height: calc(100% - 250px); } .immersive .modelStatus { left: 210px; bottom: 90px; } }
 @media (max-width: 600px) { .illustrationNote { left: 12px; top: 232px; max-width: 155px; } .xrFeedback { right: 12px; max-width: 180px; } }
