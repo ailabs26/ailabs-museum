@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
   Center,
   Code,
   Divider,
@@ -28,7 +29,9 @@ import { ApiException } from '@/core/api/api-error';
 import { useAuth } from '@/core/auth/use-auth';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { confirmAction, notify } from '@/shared/components/feedback';
-import { Column, DataTable, EmptyState } from '@/shared/components/data';
+import { BulkActionBar, BulkDeleteFailures, Column, DataTable, EmptyState } from '@/shared/components/data';
+import { useBulkDelete } from '@/shared/hooks/useBulkDelete';
+import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import {
   CreateRoomInput,
@@ -118,6 +121,22 @@ export function RoomsPage() {
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['rooms'] });
+  const selection = useRowSelection(`${page}|${search}|${statusFilter}`);
+  const bulk = useBulkDelete({
+    removeMany: roomsService.removeMany,
+    noun: 'phòng',
+    nameOf: (id) => roomsQuery.data?.items.find((room) => room.id === id)?.name,
+    onSuccess: selection.clear,
+    onSettled: invalidate,
+  });
+  /** BR-20: phòng còn hiện vật (đã bỏ qua hiện vật xóa mềm) thì không chọn để xóa được. */
+  const deleteBlock = (room: RoomRow) =>
+    room.exhibitsCount > 0 ? `Phòng chứa ${room.exhibitsCount} hiện vật (BR-20)` : null;
+  const toggleSelected = (id: string) => selection.setSelectedIds(
+    selection.selectedIds.includes(id)
+      ? selection.selectedIds.filter((item) => item !== id)
+      : [...selection.selectedIds, id],
+  );
 
   const saveMutation = useMutation({
     mutationFn: (values: RoomFormValues) => {
@@ -369,12 +388,26 @@ export function RoomsPage() {
         />
       </Flex>
 
+      {canDelete && (
+        <>
+          <BulkActionBar count={selection.selectedIds.length} onClear={selection.clear}
+            onDelete={() => bulk.confirmDelete(selection.selectedIds)} loading={bulk.isPending} />
+          <BulkDeleteFailures failures={bulk.failures} onClose={bulk.dismissFailures} />
+        </>
+      )}
+
       {/* Giao diện Desktop (Table) */}
       <Box visibleFrom="sm">
         <DataTable
           columns={columns}
           data={data?.items ?? []}
           rowKey={(r) => r.id}
+          selection={canDelete ? {
+            selectedIds: selection.selectedIds,
+            onChange: selection.setSelectedIds,
+            disabledReason: deleteBlock,
+            rowLabel: (r) => r.name,
+          } : undefined}
           loading={roomsQuery.isLoading}
           page={data?.page}
           pageSize={data?.pageSize}
@@ -397,6 +430,12 @@ export function RoomsPage() {
           (data?.items ?? []).map((room) => (
             <Card key={room.id} withBorder radius="md" p="sm" shadow="xs">
               <Group justify="space-between" align="flex-start" wrap="nowrap" mb="xs">
+                {canDelete && (
+                  <Checkbox mt={2} aria-label={`Chọn ${room.name}`}
+                    checked={selection.selectedIds.includes(room.id)}
+                    disabled={!!deleteBlock(room)}
+                    onChange={() => toggleSelected(room.id)} />
+                )}
                 <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                   <Text fw={600} size="sm" lineClamp={1}>
                     {room.name}
