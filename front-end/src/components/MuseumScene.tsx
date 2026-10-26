@@ -38,14 +38,17 @@ const createMuseumEvents: typeof events = (store) => ({
     Number(right.object.userData.museumLabel === true) - Number(left.object.userData.museumLabel === true) || left.distance - right.distance),
 });
 
-export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback }: {
+export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback, immersive = false, onXrChange }: {
   displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void; onClear: () => void;
   fallback: ReactNode;
+  immersive?: boolean;
+  onXrChange?: (snapshot: XrSnapshot, owner: XrSessionController | null) => void;
 }) {
   const [command, setCommand] = useState<CameraCommand | null>(null);
   const [webglStatus, setWebglStatus] = useState<WebglStatus>('ready');
   const [xrOwner, setXrOwner] = useState<XrSessionController | null>(null);
   const [xrStatus, setXrStatus] = useState<XrSnapshot>({ capability: 'checking', phase: 'idle', message: '' });
+  useEffect(() => { onXrChange?.(xrStatus, xrOwner); }, [onXrChange, xrStatus, xrOwner]);
   const [xrHoveredId, setXrHoveredId] = useState<string | null>(null);
   const [isRendererRestarting, setIsRendererRestarting] = useState(false);
   const [canvasEpoch, setCanvasEpoch] = useState(0);
@@ -106,7 +109,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
   };
   if (webglStatus === 'failed') return fallback;
   return (
-    <div className={classes.scene} data-webgl-status={webglStatus} data-xr-phase={xrStatus.phase}>
+    <div className={`${classes.scene} ${immersive ? classes.immersive : ''}`} data-webgl-status={webglStatus} data-xr-phase={xrStatus.phase}>
     <div className={classes.canvasFrame}
       onPointerDownCapture={event => { gestures.start(event.pointerId, event.clientX, event.clientY); if (event.pointerType === 'touch') setHasTouch(true); }}
       onPointerMoveCapture={event => gestures.move(event.pointerId, event.clientX, event.clientY)}
@@ -151,7 +154,9 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback 
       <Button color="teal.9" disabled={!isWebInputEnabled || !selectedDisplay || selectedDisplay.isOutsideRoom} onClick={() => handleCommand('focus')}>Tập trung hiện vật</Button>
       <Button variant="default" leftSection={<IconCamera size={16} aria-hidden="true" />} disabled={!isWebInputEnabled || isCapturing}
         loading={isCapturing} onClick={() => void handlePhoto()}>Chụp ảnh</Button>
-      {xrStatus.capability === 'ready' && xrStatus.phase === 'idle' && <Button disabled={webglStatus !== 'ready' || !xrOwner} onClick={() => { void xrOwner?.enter(); }}>Enter VR</Button>}
+      {xrStatus.capability === 'ready' && xrStatus.phase === 'idle' && <Button disabled={webglStatus !== 'ready' || !xrOwner} onClick={() => {
+        onXrChange?.({ ...xrStatus, phase: 'requesting' }, xrOwner); void xrOwner?.enter();
+      }}>Enter VR</Button>}
       {xrStatus.phase === 'requesting' && <Button disabled>Đang vào VR…</Button>}
       {(xrStatus.phase === 'active' || xrStatus.phase === 'ending') && <Button disabled={xrStatus.phase === 'ending'} onClick={() => { void xrOwner?.exit(); }}>Exit VR</Button>}
       <Text size="sm" role="status">{xrStatus.message || (xrStatus.capability === 'checking' ? 'Đang kiểm tra VR…'

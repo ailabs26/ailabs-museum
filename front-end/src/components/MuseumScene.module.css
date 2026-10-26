@@ -6,3 +6,9 @@
 .toolbar :global(.mantine-Button-label) { white-space: normal; }
 .scene > :global([aria-label="Điểm tương tác hiện vật"]) button { min-height: 44px; height: auto; max-width: 100%; }
 .scene > :global([aria-label="Điểm tương tác hiện vật"]) :global(.mantine-Button-label) { white-space: normal; }
+.immersive { position: absolute; inset: 0; }
+.immersive .canvasFrame { position: absolute; inset: 0; height: 100%; }
+.immersive .toolbar { position: absolute; z-index: 4; right: 24px; top: 100px; max-width: calc(100% - 310px); max-height: 110px; overflow: auto; border: 1px solid #d1b78c80; border-radius: 8px; padding: 8px; }
+.immersive > :global([aria-label="Điểm tương tác hiện vật"]), .immersive > :global([aria-label="Trạng thái mô hình 3D"]) { position: absolute; z-index: 4; bottom: 100px; left: 24px; max-width: 420px; max-height: 120px; overflow: auto; color: #30392f; background: #f6f1e8ed; border-radius: 8px; }
+.immersive > :global([aria-label="Trạng thái mô hình 3D"]) { bottom: 230px; }
+@media (max-width: 600px) { .immersive .toolbar { top: 84px; right: 12px; max-width: calc(100% - 190px); max-height: 100px; } }
