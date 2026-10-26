@@ -132,10 +132,10 @@ await expect(rooms.getByRole('button', { name: roomB.name, exact: true }))
 
 **Mục tiêu:** Bảo vệ các trang liên quan sau đổi Collection UI.
 
-- [ ] Sửa D05 `exhibit-detail.spec.ts`: sau `Quay lại bộ sưu tập`, kiểm pill đúng `aria-pressed`; giữ URL/history và heading chi tiết.
-- [ ] Sửa assertion F04 `tour-2d-fallback.spec.ts` **chỉ ở Collection**. Giữ select của `MuseumPage` trong các test F02/F03.
-- [ ] Chạy regressions `home-featured`, `public-report-modal`, `public-tour-navigation`, `tour-exhibit-deep-link`, `accessibility-keyboard` subset liên quan.
-- [ ] Với lỗi test liên quan WebGL/lifecycle/Tab focus nền, ghi rõ không do task này và bảo tồn coverage cũ.
+- [x] Sửa D05 `exhibit-detail.spec.ts`: sau `Quay lại bộ sưu tập`, kiểm pill đúng `aria-pressed`; giữ URL/history và heading chi tiết.
+- [x] Sửa assertion F04 `tour-2d-fallback.spec.ts` **chỉ ở Collection**. Giữ select thật trong Tour.
+- [x] Chạy regressions `home-featured`, `public-report-modal`, `public-tour-navigation`, `tour-exhibit-deep-link`, `accessibility-keyboard`.
+- [x] Ghi lại test nền ngoài phạm vi; giữ nguyên các assertions, không sửa WebGL/focus/homepage navigation trong task này.
 - [ ] Không xóa case/hạ expectation để tránh phải sửa lỗi thực tế.
 
 **Commit gợi ý:** `test(collection): update cross-page navigation regressions`.
@@ -186,8 +186,9 @@ PowerShell: thay `npm` bằng `npm.cmd` nếu cần; khi dùng `-g`, quote patte
 | Invalid room & retry | Không fetch unknown, recover đúng | PASS | Focused Playwright run |
 | Search | name/description, count, empty, reset | PASS | Playwright search case; no extra request while typing |
 | Loading & stale data | Skeleton, pending, no stale cards | PASS; product a11y gap recorded (no initial loading announcement) | Playwright gates; `CollectionPage` / `ExhibitSkeleton` |
-| Cross-page D05 / F04 | Về collection đúng phòng | D05/F04 fail ở stale `toHaveValue`; runner không kết thúc sạch | Playwright context + trace trong ignored `test-results/` |
-| Report & featured | Không regression | NOT RUN | — |
+| Cross-page D05 / F04 | Về collection đúng phòng | PASS (D05: 2, F04: 3) | Focused Playwright runs |
+| Report & featured | Không regression | Public report PASS; related 5-file run 29/34 pass, 5 unrelated failures | Playwright run; failures noted below |
+| Related suite exceptions | Preserve existing coverage | FAIL: keyboard focus 1; homepage stale copy 2; public-tour link selectors 2. Deep-link tests pass. | `accessibility-keyboard`, `home-featured`, `public-tour-navigation`, `tour-exhibit-deep-link` |
 | Mobile/light/dark | 320/375/768/1024/1440 × light/dark; no horizontal overflow | PASS (10 combinations) | Playwright responsive case |
 | Frontend typecheck | PASS | NOT RUN | — |
 | Frontend unit | PASS | NOT RUN | — |

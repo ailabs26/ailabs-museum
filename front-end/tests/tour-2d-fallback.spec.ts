@@ -94,7 +94,8 @@ test('[F04] missing WebGL cancels pending models and focuses collection after de
   await link.press('Enter');
   await expect(page).toHaveURL(/\/collection\?room=sculpture$/);
   await expect(page.getByRole('heading', { name: 'Bộ sưu tập', level: 1, exact: true })).toBeFocused();
-  await expect(page.getByLabel('Chọn phòng trưng bày')).toHaveValue('sculpture');
+  await expect(page.getByRole('group', { name: 'Chọn phòng trưng bày' })
+    .getByRole('button', { name: roomA.name, exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.goBack();
   await expect(page.getByRole('button', { name: 'Mở phòng 3D', exact: true })).toBeVisible();
   await expect(page.locator('canvas')).toHaveCount(0);
