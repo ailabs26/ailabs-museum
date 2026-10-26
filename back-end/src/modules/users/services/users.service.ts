@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
 import { PERMISSIONS } from '../../../common/constants/permissions.constant';
+import { assertNothingBlocked, type BlockedDeletion } from '../../../common/exceptions/deletion-blocked';
 import { PermissionDeniedException } from '../../../common/exceptions/permission-denied.exception';
 import { RoleKey } from '../../../common/enums/role.enum';
 import type { AuthUser } from '../../../common/types/auth-user.type';
@@ -83,13 +84,33 @@ export class UsersService {
     });
   }
 
-  async remove(id: string): Promise<void> {
+  /** Xóa mềm một tài khoản và đăng xuất mọi thiết bị của tài khoản đó. */
+  remove(id: string): Promise<void> {
+    return this.softDelete([id], true);
+  }
+
+  /** Xóa mềm nhiều tài khoản: tất cả hoặc không. Trả lại danh sách ID để audit ghi từng tài khoản. */
+  async removeMany(ids: string[]): Promise<{ ids: string[] }> {
+    await this.softDelete(ids, false);
+    return { ids };
+  }
+
+  private async softDelete(ids: string[], single: boolean): Promise<void> {
     await this.tx.run(async (manager) => {
       await this.users.lockManagement(manager);
-      const current = await this.requireDetail(id, manager);
-      await this.ensureAdminRemains(current, UserStatus.DISABLED, [], manager);
-      await this.users.update(id, { isDeleted: true, deletedAt: new Date() }, manager);
-      await this.sessions.revokeAllForUser(id, manager);
+      const blocked: BlockedDeletion[] = [];
+      for (const id of ids) {
+        const user = await this.users.findDetail(id, manager);
+        if (!user) blocked.push({ id, reason: 'Không tìm thấy người dùng', notFound: true });
+        else if (toUserResponse(user).roles.includes(RoleKey.ADMIN)) {
+          blocked.push({ id, reason: `Không thể xóa tài khoản Admin "${user.displayName}". Hãy bỏ vai trò Admin trước.` });
+        }
+      }
+      assertNothingBlocked(blocked, single);
+      for (const id of ids) {
+        await this.users.update(id, { isDeleted: true, deletedAt: new Date() }, manager);
+        await this.sessions.revokeAllForUser(id, manager);
+      }
     });
   }
 
