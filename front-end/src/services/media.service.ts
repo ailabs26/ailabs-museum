@@ -95,4 +95,8 @@ export const mediaService = {
   delete(id: string): Promise<void> {
     return http.delete<void>(`/admin/media/${id}`);
   },
+  /** Xóa mềm nhiều media (giữ file): tất cả hoặc không (409 kèm lý do từng ID). */
+  async removeMany(ids: string[]): Promise<void> {
+    await http.post<unknown>('/admin/media/bulk-delete', { ids });
+  },
 };
