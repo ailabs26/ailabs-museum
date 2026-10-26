@@ -41,7 +41,11 @@ Ngoài phạm vi: xóa một revision nháp bên trong hiện vật (`DELETE /ad
 
 `SoftDeleteRoles1793033761577`: `roles` thêm `is_deleted`, `deleted_at`, CHECK `CHK_roles_deleted`; bỏ unique `code` toàn bảng,
 thay bằng unique index `UQ_roles_code_active` chỉ cho vai trò chưa xóa. `down()` từ chối nếu đã có mã trùng.
-**Chưa chạy trên DB dùng chung** — cần backup (`back-end/tools/db/backup.sh`) rồi chạy trước khi deploy.
+**Đã chạy trên DB dùng chung ngày 27/10/2026 lúc 00:27**, sau khi backup `~/aura-backups/aura-2026-10-27-0027.dump`
+bằng `back-end/tools/db/backup.sh` (đã kiểm đọc lại được). Trước khi chạy chỉ có đúng migration này đang chờ; sau khi chạy
+`migration:show` báo `[X] 7 SoftDeleteRoles1793033761577`, bảng `roles` có đủ 2 cột mới và index `UQ_roles_code_active`,
+dữ liệu không đổi (3 vai trò, chưa vai trò nào bị xóa, 47 dòng `role_permissions`).
+Hoàn tác: `npm run migration:revert` hoặc khôi phục từ bản backup. Môi trường dùng DB riêng phải chạy migration này trước khi deploy.
 
 ## Giao diện
 
