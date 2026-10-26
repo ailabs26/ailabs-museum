@@ -71,12 +71,50 @@ test('room and exhibit loading states remain readable until responses arrive', a
   await page.route('**/api/rooms', async (route) => { await listGate; await fulfillMuseum(route, envelope(roomSummaries)); });
   await page.route('**/api/rooms/sculpture', async (route) => { await detailGate; await fulfillMuseum(route, envelope(roomA)); });
   await page.goto('/collection');
-  await expect(page.getByRole('status')).toHaveText('Đang tải danh sách phòng…');
+  await expect(page.locator('ul[aria-hidden="true"]')).toBeVisible();
   releaseList();
-  await expect(page.getByRole('status')).toHaveText('Đang tải hiện vật…');
+  await expect(page.locator('ul[aria-hidden="true"]')).toBeVisible();
   await expect(page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' })).toHaveCount(0);
   releaseDetail();
   await expect(page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' }).getByRole('listitem')).toHaveCount(5);
+});
+
+test('search filters names and descriptions locally, reports counts, clears and resets on room change', async ({ page }) => {
+  const namedExhibits = roomA.exhibits.map((item, index) => index === 0
+    ? { ...item, name: 'Tượng Đồng', description: 'Hoa văn cổ đại' } : item);
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: namedExhibits })));
+  const requests: string[] = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname.startsWith('/api/rooms')) requests.push(new URL(request.url()).pathname);
+  });
+  await page.goto('/collection');
+  const input = page.getByRole('textbox', { name: 'Tìm kiếm hiện vật' });
+  const cards = page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' }).getByRole('listitem');
+  await expect(cards).toHaveCount(5);
+  const initialRequests = [...requests];
+
+  await input.fill('  TƯỢNG ĐỒNG  ');
+  await expect(page.getByText('1/5 hiện vật khớp tìm kiếm')).toBeVisible();
+  await expect(cards).toHaveCount(1);
+  await expect(cards.getByRole('heading', { name: 'Tượng Đồng' })).toBeVisible();
+  await input.fill('  HOA VĂN CỔ  ');
+  await expect(page.getByText('1/5 hiện vật khớp tìm kiếm')).toBeVisible();
+  await expect(cards.getByRole('heading', { name: 'Tượng Đồng' })).toBeVisible();
+  await input.fill('geen match');
+  await expect(page.getByRole('status')).toContainText('Không có hiện vật nào khớp');
+  await expect(page.getByText('0/5 hiện vật khớp tìm kiếm')).toBeVisible();
+  await input.fill('');
+  await expect(cards).toHaveCount(5);
+  await expect(page.getByText('5 hiện vật đã xuất bản')).toBeVisible();
+  await input.fill('tượng');
+  await page.getByRole('group', { name: 'Chọn phòng trưng bày' })
+    .getByRole('button', { name: roomB.name, exact: true }).click();
+  await expect(input).toHaveValue('');
+  await expect(page.getByRole('heading', { name: roomB.exhibits[0].name, exact: true })).toBeVisible();
+  await expect(page.getByText('1 hiện vật đã xuất bản')).toBeVisible();
+  expect(requests.filter((path) => path === '/api/rooms/sculpture').length).toBe(1);
+  expect(requests.filter((path) => path === '/api/rooms/ceramics').length).toBe(1);
+  expect(requests).toEqual([...initialRequests, '/api/rooms/ceramics']);
 });
 
 test('empty public rooms and empty exhibit collections have distinct states', async ({ page }) => {
@@ -186,12 +224,15 @@ test('collection remains responsive in light and dark with long API content', as
   })));
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme });
-    for (const width of [320, 768, 1024, 1440]) {
+    for (const width of [320, 375, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/collection');
       await expect(page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' }).getByRole('listitem')).toHaveCount(1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+      await expect(page.getByRole('group', { name: 'Chọn phòng trưng bày' })).toBeVisible();
+      await expect(page.getByRole('textbox', { name: 'Tìm kiếm hiện vật' })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Tham quan phòng này trong 3D' })).toBeVisible();
     }
   }
 });

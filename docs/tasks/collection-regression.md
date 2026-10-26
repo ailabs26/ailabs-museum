@@ -116,13 +116,15 @@ await expect(rooms.getByRole('button', { name: roomB.name, exact: true }))
 
 **Mục tiêu:** Test phản ánh skeleton/search mới mà không che bug UX.
 
-- [ ] Chạy test pending API và xem DOM thực tế ở list/detail loading (skeleton/`aria-hidden`).
-- [ ] Không gọi `getByRole('status')` cho skeleton khi source không có status; phân loại một requirement a11y thiếu và quyết định có cần fix production nhỏ hay tách issue.
-- [ ] Kiểm trực quan skeleton thật xuất hiện rồi biến mất, API pending không có cards stale.
-- [ ] Nếu chấp thuận cải thiện a11y: trước hết test RED cho text status screen-reader-only, sau đó bổ sung tối thiểu tại `CollectionPage` và giữ skeleton; ghi rõ PR từ test-only thành test+a11y fix.
-- [ ] Test search theo tên, mô tả, hoa/thường, whitespace, non-match và count.
-- [ ] Test clear search và room change reset search; theo dõi chỉ những request API cần thiết.
-- [ ] Bổ sung test responsive 320/375/768/1024/1440 × light/dark: overflow, pills, search, text dài, focus.
+- [x] Chặn list/detail API bằng gate; xác nhận skeleton `aria-hidden` xuất hiện và cards stale không xuất hiện khi request pending.
+- [x] Xác nhận skeleton không cung cấp thông báo loading cho screen reader; ghi product a11y gap bên dưới, giữ nguyên scope test-only đã duyệt.
+- [x] Loading skeleton biến mất sau response và exhibit cards hiển thị.
+- [x] Chưa thêm status production; đề xuất xử lý ở task a11y riêng với test RED trước khi sửa.
+- [x] Test search theo tên/mô tả, hoa thường, khoảng trắng, non-match, count và empty state.
+- [x] Test clear search, room change reset search; xác nhận chỉ gọi thêm detail endpoint của phòng mới.
+- [x] Bổ sung test responsive 320/375/768/1024/1440 × light/dark: overflow, pills, search, link tour và text dài.
+
+**Product a11y gap (ghi nhận, không sửa trong scope này):** Khi tải danh sách hoặc chi tiết lần đầu, `ExhibitSkeleton` có `aria-hidden="true"` và `CollectionPage` không phát thông báo `role="status"`; người dùng screen reader không được báo trạng thái đang tải. Cần task riêng bổ sung thông báo loading có thể đọc được và test tương ứng. Test hiện tại vẫn xác nhận skeleton, dữ liệu cũ không hiện khi pending, và dữ liệu mới sau khi tải.
 
 **Commit gợi ý:** `test(collection): cover loading search and keyboard`.
 
@@ -182,11 +184,11 @@ PowerShell: thay `npm` bằng `npm.cmd` nếu cần; khi dùng `-g`, quote patte
 | Collection room pills | click, pressed state, URL, reload, Back/Forward | PASS | 5 focused Playwright cases |
 | Keyboard pills | Tab, Enter, Space, focus visible | PASS | Focused Playwright run |
 | Invalid room & retry | Không fetch unknown, recover đúng | PASS | Focused Playwright run |
-| Search | name/description, count, empty, reset | NOT RUN at baseline | — |
-| Loading & stale data | Skeleton + a11y status quyết định rõ | Baseline test đòi `role=status` không có; responsive case runner hang | `collection.spec.ts`, `CollectionPage` source |
+| Search | name/description, count, empty, reset | PASS | Playwright search case; no extra request while typing |
+| Loading & stale data | Skeleton, pending, no stale cards | PASS; product a11y gap recorded (no initial loading announcement) | Playwright gates; `CollectionPage` / `ExhibitSkeleton` |
 | Cross-page D05 / F04 | Về collection đúng phòng | D05/F04 fail ở stale `toHaveValue`; runner không kết thúc sạch | Playwright context + trace trong ignored `test-results/` |
 | Report & featured | Không regression | NOT RUN | — |
-| Mobile/light/dark | 10 tổ hợp không overflow | Baseline responsive case bị runner hang; chưa có kết luận visual | `collection.spec.ts` |
+| Mobile/light/dark | 320/375/768/1024/1440 × light/dark; no horizontal overflow | PASS (10 combinations) | Playwright responsive case |
 | Frontend typecheck | PASS | NOT RUN | — |
 | Frontend unit | PASS | NOT RUN | — |
 | Production build | PASS | NOT RUN | — |
