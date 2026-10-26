@@ -16,3 +16,12 @@
 .dot:focus-visible, .dotActive:focus-visible { outline: 2px solid var(--aura-cyan-bright, #06b6d4); outline-offset: 1px; }
 
 @media (max-width: 48em) { .map { width: 116px; top: 8px; right: 8px; } }
+.map { top: auto; right: auto; left: 24px; bottom: 100px; width: 120px; border-radius: 8px; background: #f7f3eae6; border-color: #bdab8d70; box-shadow: none; }
+.caption { color: #6b634f; font-size: 9px; }
+.room { fill: #e3dfd2; stroke: #8e887a; }
+.dot circle { fill: #696957; }
+.dotActive circle { fill: #987439; }
+.hitArea { fill: transparent !important; }
+.halo { fill: #bf9c5950 !important; animation: none; }
+@media (max-width: 600px), (pointer: coarse) { .map { left: auto; right: 12px; bottom: 234px; width: 100px; padding: 6px; } }
+@media (max-height: 500px) { .map { left: auto; right: 12px; bottom: 100px; width: 90px; } }

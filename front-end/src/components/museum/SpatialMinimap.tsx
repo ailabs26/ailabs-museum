@@ -29,7 +29,7 @@ export function SpatialMinimap({ displays, selectedId, onSelect }: {
   return (
     <div className={classes.map} role="group" aria-label="Sơ đồ mặt bằng phòng trưng bày">
       <p className={classes.caption}>Sơ đồ phòng</p>
-      <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className={classes.svg} role="img" aria-label={`Sơ đồ ${inRoom.length} hiện vật trong phòng`}>
+      <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className={classes.svg} aria-label={`Sơ đồ ${inRoom.length} hiện vật trong phòng`}>
         <rect x="2" y="2" width={VB_W - 4} height={VB_H - 4} rx="6" className={classes.room} />
         {inRoom.map((d) => {
           const { cx, cy } = toPlan(d.position[0], d.position[2]);
@@ -38,6 +38,7 @@ export function SpatialMinimap({ displays, selectedId, onSelect }: {
             <g key={d.id} className={active ? classes.dotActive : classes.dot} onClick={() => onSelect(d.id)}
               role="button" tabIndex={0} aria-label={`Đi tới ${d.title}`} aria-pressed={active}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(d.id); } }}>
+              <circle cx={cx} cy={cy} r="12" className={classes.hitArea} />
               {active && <circle cx={cx} cy={cy} r="7" className={classes.halo} />}
               <circle cx={cx} cy={cy} r={active ? 3.4 : 2.4} />
               <title>{d.title}</title>

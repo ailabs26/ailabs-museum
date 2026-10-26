@@ -25,7 +25,7 @@ import { CinematicIntro } from '@/components/museum/CinematicIntro';
 import { PhotoCapture } from '@/components/museum/PhotoCapture';
 import { downloadScenePhoto } from '@/helpers/scenePhoto';
 import { notify } from '@/shared/components/feedback';
-import { IconCamera } from '@tabler/icons-react';
+import { IconCamera, IconFocus2, IconHome, IconAdjustmentsHorizontal } from '@tabler/icons-react';
 import { MuseumXr } from '@/components/museum/MuseumXr';
 import type { XrSessionController, XrSnapshot } from '@/helpers/xrSession';
 import type { WebglStatus } from '@/helpers/webglRecovery';
@@ -143,27 +143,37 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
     </Canvas>}
     {isRendererRestarting && <div className={classes.recovering} role="status">Đang khởi tạo lại phần hiển thị sau lỗi VR.</div>}
     {webglStatus !== 'ready' && <div className={classes.recovering} role="status">Đang khôi phục không gian 3D. Bạn có thể tiếp tục đọc danh mục.</div>}
-    {isWebInputEnabled && <NavigationHud input={input} mode={mode} isActive={isActive} hasTouch={hasTouch} />}
+    {isWebInputEnabled && <NavigationHud input={input} mode={mode} isActive={isActive} hasTouch={hasTouch} immersive={immersive} />}
     {isWebInputEnabled && <SpatialMinimap displays={displays} selectedId={selectedId} onSelect={onSelect} />}
-    {isWebInputEnabled && <ArtifactDock displays={displays} selectedId={selectedId} onSelect={onSelect} onFocus={() => handleCommand('focus')} />}
+    {isWebInputEnabled && <ArtifactDock displays={displays} selectedId={selectedId} onSelect={onSelect} />}
     </div>
     <Group className={classes.toolbar} gap="xs" aria-label="Điều khiển góc nhìn">
-      <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('reset')}>Góc nhìn ban đầu</Button>
-      <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('in')}>Đến gần</Button>
-      <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('out')}>Lùi xa</Button>
-      <Button color="teal.9" disabled={!isWebInputEnabled || !selectedDisplay || selectedDisplay.isOutsideRoom} onClick={() => handleCommand('focus')}>Tập trung hiện vật</Button>
-      <Button variant="default" leftSection={<IconCamera size={16} aria-hidden="true" />} disabled={!isWebInputEnabled || isCapturing}
-        loading={isCapturing} onClick={() => void handlePhoto()}>Chụp ảnh</Button>
+      <Button variant="default" aria-label="Góc nhìn ban đầu" title="Góc nhìn ban đầu (Home)" disabled={!isWebInputEnabled} onClick={() => handleCommand('reset')}>
+        <IconHome size={18} aria-hidden="true" />{!immersive && 'Góc nhìn ban đầu'}
+      </Button>
+      <Button variant="default" aria-label="Tập trung hiện vật" title="Tập trung hiện vật (F)" disabled={!isWebInputEnabled || !selectedDisplay || selectedDisplay.isOutsideRoom} onClick={() => handleCommand('focus')}>
+        <IconFocus2 size={18} aria-hidden="true" />{!immersive && 'Tập trung hiện vật'}
+      </Button>
+      <Button variant="default" aria-label="Chụp ảnh" title="Chụp ảnh" disabled={!isWebInputEnabled || isCapturing}
+        loading={isCapturing} onClick={() => void handlePhoto()}><IconCamera size={18} aria-hidden="true" />{!immersive && 'Chụp ảnh'}</Button>
+      <details className={classes.moreControls}><summary aria-label="Thêm điều khiển" title="Thêm điều khiển"><IconAdjustmentsHorizontal size={18} aria-hidden="true" /></summary>
+        <div>
+          <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('in')}>Đến gần</Button>
+          <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('out')}>Lùi xa</Button>
+          <Text size="xs" role="status">{xrStatus.message || (xrStatus.capability === 'checking' ? 'Đang kiểm tra VR…'
+            : xrStatus.capability === 'unavailable' ? 'VR không khả dụng trong trình duyệt hoặc thiết bị này. Bạn vẫn có thể tham quan 3D.' : '')}</Text>
+        </div>
+      </details>
       {xrStatus.capability === 'ready' && xrStatus.phase === 'idle' && <Button disabled={webglStatus !== 'ready' || !xrOwner} onClick={() => {
         onXrChange?.({ ...xrStatus, phase: 'requesting' }, xrOwner); void xrOwner?.enter();
       }}>Enter VR</Button>}
       {xrStatus.phase === 'requesting' && <Button disabled>Đang vào VR…</Button>}
       {(xrStatus.phase === 'active' || xrStatus.phase === 'ending') && <Button disabled={xrStatus.phase === 'ending'} onClick={() => { void xrOwner?.exit(); }}>Exit VR</Button>}
-      <Text size="sm" role="status">{xrStatus.message || (xrStatus.capability === 'checking' ? 'Đang kiểm tra VR…'
-        : xrStatus.capability === 'unavailable' ? 'VR không khả dụng trong trình duyệt hoặc thiết bị này. Bạn vẫn có thể tham quan 3D.' : '')}</Text>
     </Group>
-    <ArtifactHotspotControls displays={displays} selectedId={selectedId} onSelect={onSelect} />
-    <ModelLoadingStatus displays={displays} models={models} onRetry={retry} renderStates={renderStates} onRetryRender={handleRetryRender} />
+    <details className={classes.hotspotMenu}><summary>Điểm tương tác</summary>
+      <ArtifactHotspotControls displays={displays} selectedId={selectedId} onSelect={onSelect} />
+    </details>
+    <div className={classes.modelStatus}><ModelLoadingStatus displays={displays} models={models} onRetry={retry} renderStates={renderStates} onRetryRender={handleRetryRender} /></div>
     </div>
   );
 }

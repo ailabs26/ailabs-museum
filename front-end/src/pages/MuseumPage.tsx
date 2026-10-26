@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Container, Group, NativeSelect, Stack, Text, Title } from '@mantine/core';
 import { useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
@@ -59,6 +59,7 @@ export function MuseumPage() {
   const handleSelectDisplay = (id: string) => {
     if (!detail || !displays.some((display) => display.id === id)) return;
     selectionTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    containerRef.current?.querySelector('details[data-catalogue]')?.removeAttribute('open');
     const next = new URLSearchParams(searchParams);
     next.set('exhibit', id);
     setSearchParams(next, { replace: true });
@@ -72,6 +73,17 @@ export function MuseumPage() {
     else (startButtonRef.current ?? headingRef.current)?.focus({ preventScroll: true });
   };
   const startButtonRef = useRef<HTMLButtonElement>(null);
+  const wasSceneOpenRef = useRef(false);
+  useEffect(() => {
+    if (wasSceneOpenRef.current && !isSceneOpen && failedRoomId !== currentRoomId) {
+      // The readable detail panel mounts on exit and focuses its title first.
+      // Restore the user's opener after those panel effects have completed.
+      const frame = requestAnimationFrame(() => startButtonRef.current?.focus({ preventScroll: true }));
+      wasSceneOpenRef.current = isSceneOpen;
+      return () => cancelAnimationFrame(frame);
+    }
+    wasSceneOpenRef.current = isSceneOpen;
+  }, [isSceneOpen, failedRoomId, currentRoomId]);
   const handleSelectRoom = (slug: string) => {
     const next = new URLSearchParams(searchParams);
     next.set('room', slug);
@@ -98,7 +110,7 @@ export function MuseumPage() {
         <Text className={classes.lead}>Nội dung bảo tàng đã xuất bản</Text>
         <Group justify="space-between" align="flex-end" className={classes.toolbar}>
           {rooms.data && rooms.data.length > 0 && (
-            <NativeSelect className={classes.roomSelect} label="Chọn phòng trưng bày" value={selectedSlug ?? ''} onChange={(event) => handleSelectRoom(event.currentTarget.value)}
+            <NativeSelect className={classes.roomSelect} label={isSceneOpen ? 'Phòng trưng bày (trang)' : 'Chọn phòng trưng bày'} value={selectedSlug ?? ''} onChange={(event) => handleSelectRoom(event.currentTarget.value)}
               data={[
                 ...(!selectedRoom ? [{ value: selectedSlug ?? '', label: 'Phòng không khả dụng', disabled: true }] : []),
                 ...rooms.data.map((item) => ({ value: item.slug, label: item.name })),
@@ -163,7 +175,7 @@ export function MuseumPage() {
             onChange={event => handleSelectRoom(event.currentTarget.value)} data={rooms.data?.map(item => ({ value: item.slug, label: item.name })) ?? []} />
         </div>
         <div className={classes.immersiveDetail}>{detailPanel}</div>
-        <details className={classes.immersiveCatalogue}><summary>Danh mục hiện vật</summary>{catalogue}</details>
+        <details data-catalogue className={classes.immersiveCatalogue}><summary>Danh mục hiện vật</summary>{catalogue}</details>
         <p id="museum-controls-help" className={classes.srOnly}>WASD di chuyển, kéo chuột hoặc vuốt để nhìn, F tập trung, Home đặt lại. Escape đóng chi tiết rồi thoát tham quan.</p>
         {reportModal}
       </ImmersiveTour>}

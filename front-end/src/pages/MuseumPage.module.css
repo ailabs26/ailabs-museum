@@ -51,9 +51,11 @@
 .immersiveCatalogue[open] { width: min(680px, calc(100% - 48px)); max-height: calc(100dvh - 270px); overflow: auto; }
 .immersiveCatalogue section { padding: 16px; }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.immersiveCatalogue section :global(.mantine-SimpleGrid-root) { grid-template-columns: 1fr 1fr; }
 @media (max-width: 600px) {
   .immersiveRoomSelect { top: 84px; left: 12px; max-width: 160px; }
   .immersiveCatalogue { top: 136px; left: 12px; }
   .immersiveDetail { top: auto; right: 12px; left: 12px; bottom: 110px; width: auto; height: min(42dvh, 380px); }
   .immersiveDetail > aside { padding: 16px; }
 }
+@media (max-height: 500px) { .immersiveDetail { top: 156px; right: 120px; bottom: 90px; width: min(380px, 48vw); height: auto; } .immersiveDetail > aside { padding: 12px; } .immersiveCatalogue[open] { max-height: calc(100dvh - 180px); } }
