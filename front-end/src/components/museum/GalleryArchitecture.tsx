@@ -1,20 +1,23 @@
-import { useLayoutEffect, useRef, type ReactNode } from 'react';
-import { Euler, Matrix4, type InstancedMesh, type Vector3Tuple } from 'three';
+import { useLayoutEffect, useRef } from 'react';
+import { Euler, Matrix4, type InstancedMesh, type Material, type Vector3Tuple } from 'three';
+import { useGallerySurfaces } from './GallerySurfaces';
+import { GallerySign } from './GallerySign';
 
-const RAILS: Vector3Tuple[] = [-4, 0, 4].map((x) => [x, 4.94, 0]);
-const STRIPS: Vector3Tuple[] = [-4, 0, 4].map((x) => [x, 4.875, 0]);
-const SKIRTING: Vector3Tuple[] = [-6.92, 6.92].map((x) => [x, 0.16, 0]);
-const PILASTERS: Vector3Tuple[] = [-6.92, 6.92].flatMap((x) => [-6, -2, 2, 6].map((z): Vector3Tuple => [x, 2.65, z]));
-const PANELS: Vector3Tuple[] = [-1, 1].flatMap((side) => [-4, 0, 4].map((z): Vector3Tuple => [side * 6.9, 2.45, z]));
-const INSETS: Vector3Tuple[] = PANELS.map(([x, y, z]) => [x - Math.sign(x) * 0.05, y, z]);
-const ACCENTS: Vector3Tuple[] = PANELS.map(([x, y, z]) => [x - Math.sign(x) * 0.08, y + 1.58, z]);
-const COFFERS: Vector3Tuple[] = [-6, -2, 2, 6].map((z) => [0, 4.88, z]);
-const SEAMS_X: Vector3Tuple[] = [-6, -4, -2, 0, 2, 4, 6].map((x) => [x, 0.003, 0]);
-const SEAMS_Z: Vector3Tuple[] = [-6, -4, -2, 0, 2, 4, 6].map((z) => [0, 0.004, z]);
+const BAYS = [-4.8, 0, 4.8];
+const RIBS: Vector3Tuple[] = [-1, 1].flatMap(side => Array.from({ length: 65 }, (_, i): Vector3Tuple => [side * 6.88, 2.5, -7.68 + i * .24]));
+const BAY_PANELS: Vector3Tuple[] = [-1, 1].flatMap(side => BAYS.map((z): Vector3Tuple => [side * 6.82, 2.5, z]));
+const BAY_TOPS: Vector3Tuple[] = [-1, 1].flatMap(side => BAYS.map((z): Vector3Tuple => [side * 6.77, 4.13, z]));
+const BAY_SIDES: Vector3Tuple[] = [-1, 1].flatMap(side => BAYS.flatMap(z => [-1, 1].map((edge): Vector3Tuple => [side * 6.78, 2.5, z + edge * 1.58])));
+const SKIRTING: Vector3Tuple[] = [-1, 1].map(side => [side * 6.88, .12, 0]);
+const CORNICE: Vector3Tuple[] = [-1, 1].map(side => [side * 6.82, 4.65, 0]);
+const COFFERS: Vector3Tuple[] = [-5.4, 0, 5.4].map(z => [0, 4.96, z]);
+const CEILING_RIBS: Vector3Tuple[] = [-6.6, -3.3, 0, 3.3, 6.6].map(x => [x, 4.88, 0]);
+const SEAMS_X: Vector3Tuple[] = [-6, -4, -2, 0, 2, 4, 6].map(x => [x, .002, 0]);
+const SEAMS_Z: Vector3Tuple[] = [-6, -4, -2, 0, 2, 4, 6].map(z => [0, .003, z]);
 
-/** One draw/geometry/material per repeated finish, owned by this R3F mount. */
-function GalleryInstances({ positions, rotationX = 0, children }: {
-  positions: readonly Vector3Tuple[]; rotationX?: number; children: ReactNode;
+/** Shared geometry/material for each architectural finish, independent of exhibit count. */
+function GalleryInstances({ positions, size, material, rotationX = 0 }: {
+  positions: readonly Vector3Tuple[]; size: Vector3Tuple; material: Material; rotationX?: number;
 }) {
   const meshRef = useRef<InstancedMesh>(null);
   useLayoutEffect(() => {
@@ -25,65 +28,43 @@ function GalleryInstances({ positions, rotationX = 0, children }: {
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
   }, [positions, rotationX]);
-  return <instancedMesh ref={meshRef} args={[undefined, undefined, positions.length]}>{children}</instancedMesh>;
+  return <instancedMesh ref={meshRef} args={[undefined, undefined, positions.length]} material={material} receiveShadow>
+    <boxGeometry args={size} />
+  </instancedMesh>;
 }
 
-/** Inset panels and coffers retain their dimensions, normals and finishes. */
+/** All decorative projections stay outside the existing walkable envelope. */
 export function GalleryArchitecture() {
-  return (
-    <group>
-      <mesh position={[0, 5.12, 0]}>
-        <boxGeometry args={[14.4, 0.24, 16.4]} />
-        <meshStandardMaterial color="#eee8dc" roughness={0.95} />
+  const { stone, walnut, bronze, plaster, charcoal, grout } = useGallerySurfaces();
+  return <group name="Gallery architecture">
+    <mesh position={[0, 5.12, 0]} material={plaster}><boxGeometry args={[14.4, .24, 16.4]} /></mesh>
+    {[-1, 1].map(side => <mesh key={side} position={[side * 6.97, 2.5, 0]} material={walnut} receiveShadow>
+      <boxGeometry args={[.05, 4.6, 16]} />
+    </mesh>)}
+    <GalleryInstances positions={RIBS} size={[.08, 4.25, .055]} material={walnut} />
+    <GalleryInstances positions={BAY_PANELS} size={[.045, 3.2, 3.08]} material={stone} />
+    <GalleryInstances positions={BAY_TOPS} size={[.08, .035, 3.22]} material={bronze} />
+    <GalleryInstances positions={BAY_SIDES} size={[.055, 3.3, .025]} material={bronze} />
+    <GalleryInstances positions={SKIRTING} size={[.16, .24, 16]} material={charcoal} />
+    <GalleryInstances positions={CORNICE} size={[.24, .12, 16]} material={plaster} />
+    <GalleryInstances positions={CEILING_RIBS} size={[.1, .22, 16]} material={walnut} />
+    <GalleryInstances positions={COFFERS} size={[12.9, .08, 3.8]} material={charcoal} />
+    {[-5.4, 0, 5.4].map(z => <group key={z}>
+      <mesh position={[0, 4.91, z]} rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[5.8, 2.6]} /><meshStandardMaterial color="#f7f3e6" emissive="#fff5de" emissiveIntensity={.6} roughness={1} />
       </mesh>
-      <GalleryInstances positions={RAILS}>
-        <boxGeometry args={[0.14, 0.12, 15.8]} />
-        <meshStandardMaterial color="#524f46" roughness={0.8} />
-      </GalleryInstances>
-      <GalleryInstances positions={STRIPS} rotationX={Math.PI / 2}>
-        <planeGeometry args={[0.075, 14.5]} />
-        <meshStandardMaterial color="#fff3dd" emissive="#fff3dd" emissiveIntensity={1.2} />
-      </GalleryInstances>
-      <GalleryInstances positions={SKIRTING}>
-        <boxGeometry args={[0.1, 0.32, 16]} />
-        <meshStandardMaterial color="#766955" roughness={0.75} metalness={0.1} />
-      </GalleryInstances>
-      <GalleryInstances positions={PILASTERS}>
-        <boxGeometry args={[0.12, 4.7, 0.18]} />
-        <meshStandardMaterial color="#d8cfbe" roughness={0.92} />
-      </GalleryInstances>
-      <GalleryInstances positions={PANELS}>
-        <boxGeometry args={[0.09, 3.4, 2.9]} />
-        <meshStandardMaterial color="#d4cbb9" roughness={0.95} />
-      </GalleryInstances>
-      <GalleryInstances positions={INSETS}>
-        <boxGeometry args={[0.04, 3.15, 2.65]} />
-        <meshStandardMaterial color="#e6dfd1" roughness={0.92} />
-      </GalleryInstances>
-      <GalleryInstances positions={ACCENTS}>
-        <boxGeometry args={[0.04, 0.025, 2.6]} />
-        <meshBasicMaterial color="#f6e5c8" />
-      </GalleryInstances>
-      <GalleryInstances positions={COFFERS}>
-        <boxGeometry args={[13.6, 0.22, 0.22]} />
-        <meshStandardMaterial color="#d6cdbd" roughness={0.95} />
-      </GalleryInstances>
-      <GalleryInstances positions={SEAMS_X} rotationX={-Math.PI / 2}>
-        <planeGeometry args={[0.012, 16]} />
-        <meshStandardMaterial color="#bfb5a2" roughness={0.9} />
-      </GalleryInstances>
-      <GalleryInstances positions={SEAMS_Z} rotationX={-Math.PI / 2}>
-        <planeGeometry args={[14, 0.012]} />
-        <meshStandardMaterial color="#bfb5a2" roughness={0.9} />
-      </GalleryInstances>
-      <mesh position={[0, 2.5, -7.97]}>
-        <boxGeometry args={[4.4, 2.8, 0.05]} />
-        <meshStandardMaterial color="#3e5a55" roughness={1} />
-      </mesh>
-      <mesh position={[0, 2.5, -7.91]}>
-        <torusGeometry args={[0.9, 0.025, 8, 48]} />
-        <meshStandardMaterial color="#cba871" metalness={0.4} roughness={0.4} />
-      </mesh>
-    </group>
-  );
+      {[-1, 1].map(side => <mesh key={side} position={[side * 3.08, 4.87, z]} material={bronze}>
+        <boxGeometry args={[.03, .08, 3.2]} />
+      </mesh>)}
+    </group>)}
+    <GalleryInstances positions={SEAMS_X} size={[.008, .002, 16]} material={grout} />
+    <GalleryInstances positions={SEAMS_Z} size={[14, .002, .008]} material={grout} />
+    <mesh position={[0, 2.55, -7.94]} material={charcoal}><boxGeometry args={[8.2, 4.5, .1]} /></mesh>
+    {[-1, 1].map(side => <group key={side}>
+      <mesh position={[side * 4.16, 2.55, -7.85]} material={bronze}><boxGeometry args={[.035, 4.5, .035]} /></mesh>
+      <mesh position={[0, 2.55 + side * 2.26, -7.85]} material={bronze}><boxGeometry args={[8.35, .035, .035]} /></mesh>
+      <mesh position={[side * 5.6, 2.5, -7.94]} material={walnut}><boxGeometry args={[2.2, 4.5, .08]} /></mesh>
+    </group>)}
+    <GallerySign />
+  </group>;
 }

@@ -29,6 +29,7 @@ import { IconCamera, IconFocus2, IconHome, IconAdjustmentsHorizontal } from '@ta
 import { MuseumXr } from '@/components/museum/MuseumXr';
 import type { XrSessionController, XrSnapshot } from '@/helpers/xrSession';
 import type { WebglStatus } from '@/helpers/webglRecovery';
+import { GallerySurfaces } from '@/components/museum/GallerySurfaces';
 
 // Labels render over solid geometry. Picking follows that same visual order;
 // intersecting labels still use nearest-first ordering within their layer.
@@ -135,11 +136,13 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
       <CinematicIntro input={input} enabled={isWebInputEnabled} />
       <MuseumControls enabled={isWebInputEnabled} command={command} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
         displays={displays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} />
+      <GallerySurfaces>
       <MuseumRoom />
       {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={handleSceneSelect}
         modelState={display.model ? models[display.model.checksumSha256] : undefined} renderAttempt={renderStates[display.id]?.attempts}
         hasRenderError={renderStates[display.id]?.checksum === display.model?.checksumSha256 && renderStates[display.id]?.failed}
         isXrHovered={xrHoveredId === display.id} onRenderError={() => handleRenderError(display)} />)}
+      </GallerySurfaces>
     </Canvas>}
     {isRendererRestarting && <div className={classes.recovering} role="status">Đang khởi tạo lại phần hiển thị sau lỗi VR.</div>}
     {webglStatus !== 'ready' && <div className={classes.recovering} role="status">Đang khôi phục không gian 3D. Bạn có thể tiếp tục đọc danh mục.</div>}
