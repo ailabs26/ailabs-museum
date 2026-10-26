@@ -17,6 +17,7 @@ import { Audit } from '../../audit/decorators/audit.decorator';
 import { PERMISSIONS } from '../../../common/constants/permissions.constant';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
+import { BulkIdsDto } from '../../../common/dto/bulk-ids.dto';
 import { AuthUser } from '../../../common/types/auth-user.type';
 import { CreateExhibitDto } from '../dto/create-exhibit.dto';
 import { ListExhibitsQueryDto } from '../dto/list-exhibits-query.dto';
@@ -113,11 +114,22 @@ export class AdminExhibitsController {
     return this.exhibitsService.submitDraftForReview(id);
   }
 
+  @Post('bulk-delete')
+  @HttpCode(HttpStatus.OK)
+  @Permissions(PERMISSIONS.EXHIBIT_UPDATE)
+  @Audit('exhibit.delete', 'exhibit')
+  @ApiOperation({
+    summary: 'Xóa mềm nhiều hiện vật nháp (tất cả hoặc không; BR-20, 409 kèm lý do từng ID)',
+  })
+  removeMany(@Body() dto: BulkIdsDto) {
+    return this.exhibitsService.removeMany(dto.ids);
+  }
+
   @Delete(':id')
   @Permissions(PERMISSIONS.EXHIBIT_UPDATE)
   @Audit('exhibit.delete', 'exhibit')
   @ApiOperation({
-    summary: 'Xóa bản nháp hiện vật (SRS BR-20: chặn xóa nếu đã xuất bản, cascade nếu là nháp)',
+    summary: 'Xóa mềm bản nháp hiện vật (SRS BR-20: chặn xóa nếu đã xuất bản/chờ duyệt/có báo cáo; giữ revisions)',
   })
   deleteDraft(@Param('id', ParseUUIDPipe) id: string) {
     return this.exhibitsService.deleteExhibitDraft(id);

@@ -17,6 +17,7 @@ import {
   toExhibitResponse,
 } from '../dto/exhibit-response.dto';
 import { UpdateExhibitDto } from '../dto/update-exhibit.dto';
+import { assertNothingBlocked, type BlockedDeletion } from '../../../common/exceptions/deletion-blocked';
 import { Exhibit, ExhibitVisibility } from '../entities/exhibit.entity';
 import {
   ExhibitRevision,
@@ -475,40 +476,63 @@ export class ExhibitsService {
   // =========================================================================
 
   /**
-   * Xóa bản nháp hiện vật (BR-20):
-   * Chặn xóa nếu hiện vật đã xuất bản (ném ConflictException).
-   * Xóa cascade an toàn (hotspots -> revisions -> exhibit) trong transaction khi chỉ có draft.
+   * Xóa mềm hiện vật (BR-20):
+   * Chặn nếu hiện vật đã xuất bản/đang hiển thị/có bản đã duyệt, có bản chờ duyệt hoặc có báo cáo liên quan.
+   * Chỉ đánh dấu `is_deleted` trong transaction có khóa dòng; revisions/hotspots được giữ để khôi phục.
    */
   async deleteExhibitDraft(
     id: string,
   ): Promise<{ success: boolean; message: string }> {
-    try {
-      await this.tx.run(async (manager) => {
-        const exhibit = await this.exhibits.findForUpdate(id, manager);
-        if (!exhibit || exhibit.isDeleted) throw new NotFoundException('Không tìm thấy hiện vật');
-        const revisions = await this.exhibits.findRevisionsForDeletion(id, manager);
-        if (exhibit.publishedRevisionId !== null || exhibit.visibility === ExhibitVisibility.VISIBLE || revisions.some(r => r.state === RevisionState.APPROVED)) {
-          throw new ConflictException('Hiện vật có lịch sử xuất bản hoặc phê duyệt nên không thể xóa vĩnh viễn. Có thể ẩn hiện vật đang công khai khỏi bảo tàng.');
-        }
-        if (revisions.some(r => r.state === RevisionState.IN_REVIEW)) {
-          throw new ConflictException('Hiện vật có phiên bản đang chờ kiểm duyệt, không thể xóa.');
-        }
-        if (await this.exhibits.hasReportReferences(id, revisions.map(r => r.id), manager)) {
-          throw new ConflictException('Hiện vật hoặc phiên bản có báo cáo liên quan nên không thể xóa vĩnh viễn.');
-        }
-        await this.exhibits.deleteCascadeDraft(id, manager);
-      });
-    } catch (error) {
-      if (this.exhibits.isReportReferenceConflict(error)) {
-        throw new ConflictException('Hiện vật hoặc phiên bản có báo cáo liên quan nên không thể xóa vĩnh viễn.');
-      }
-      throw error;
-    }
-
+    await this.softDelete([id], true);
     return {
       success: true,
       message: 'Đã xóa bản nháp hiện vật thành công',
     };
+  }
+
+  /** Xóa mềm nhiều hiện vật: tất cả hoặc không (BR-20 cho từng hiện vật). Trả lại danh sách ID để audit ghi từng hiện vật. */
+  async removeMany(ids: string[]): Promise<{ ids: string[] }> {
+    await this.softDelete(ids, false);
+    return { ids };
+  }
+
+  private async softDelete(ids: string[], single: boolean): Promise<void> {
+    try {
+      await this.tx.run(async (manager) => {
+        const blocked: BlockedDeletion[] = [];
+        // Khóa theo thứ tự ID cố định để hai lệnh xóa hàng loạt chồng nhau không deadlock.
+        for (const id of [...ids].sort()) {
+          const exhibit = await this.exhibits.findForUpdate(id, manager);
+          if (!exhibit || exhibit.isDeleted) {
+            blocked.push({ id, reason: 'Không tìm thấy hiện vật', notFound: true });
+            continue;
+          }
+          const revisions = await this.exhibits.findRevisionsForDeletion(id, manager);
+          const reason = this.deletionBlock(exhibit, revisions)
+            ?? (await this.exhibits.hasReportReferences(id, revisions.map(r => r.id), manager)
+              ? 'Hiện vật hoặc phiên bản có báo cáo liên quan nên không thể xóa.'
+              : null);
+          if (reason) blocked.push({ id, reason });
+        }
+        assertNothingBlocked(blocked, single);
+        await this.exhibits.markDeleted(ids, manager);
+      });
+    } catch (error) {
+      if (this.exhibits.isReportReferenceConflict(error)) {
+        throw new ConflictException('Hiện vật hoặc phiên bản có báo cáo liên quan nên không thể xóa.');
+      }
+      throw error;
+    }
+  }
+
+  private deletionBlock(exhibit: Exhibit, revisions: ExhibitRevision[]): string | null {
+    if (exhibit.publishedRevisionId !== null || exhibit.visibility === ExhibitVisibility.VISIBLE || revisions.some(r => r.state === RevisionState.APPROVED)) {
+      return 'Hiện vật có lịch sử xuất bản hoặc phê duyệt nên không thể xóa. Có thể ẩn hiện vật đang công khai khỏi bảo tàng.';
+    }
+    if (revisions.some(r => r.state === RevisionState.IN_REVIEW)) {
+      return 'Hiện vật có phiên bản đang chờ kiểm duyệt, không thể xóa.';
+    }
+    return null;
   }
 
   /**

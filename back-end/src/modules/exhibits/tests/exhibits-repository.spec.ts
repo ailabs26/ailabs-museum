@@ -1513,84 +1513,37 @@ describe('Task 7.2 — ExhibitsRepository Comprehensive Test Suite (105 Test Cas
       assert.equal(managerUsed, true);
     });
 
-    it('TC-E091: deleteCascadeDraft tìm danh sách revisions trước khi xóa', async () => {
-      const mockExhibitRepo = new MockRepository<Exhibit>(Exhibit);
-      const mockRevRepo = new MockRepository<ExhibitRevision>(ExhibitRevision);
-      const mockHotspotRepo = new MockRepository<Hotspot>(Hotspot);
-      mockRevRepo.mockFindResult = [createSampleRevision({ id: 'rev-1' })];
-
+    it('TC-E091: markDeleted đánh dấu is_deleted/deleted_at cho mọi ID qua manager của transaction', async () => {
+      const updates: Array<{ criteria: { id: { value: string[] } }; patch: Partial<Exhibit> }> = [];
+      const manager = {
+        getRepository: () => ({ update: async (criteria: never, patch: Partial<Exhibit>) => void updates.push({ criteria, patch }) }),
+      } as unknown as EntityManager;
       const repo = new ExhibitsRepository(
-        mockExhibitRepo as unknown as Repository<Exhibit>,
-        mockRevRepo as unknown as Repository<ExhibitRevision>,
-        mockHotspotRepo as unknown as Repository<Hotspot>,
+        new MockRepository<Exhibit>(Exhibit) as unknown as Repository<Exhibit>,
+        new MockRepository<ExhibitRevision>(ExhibitRevision) as unknown as Repository<ExhibitRevision>,
+        new MockRepository<Hotspot>(Hotspot) as unknown as Repository<Hotspot>,
       );
 
-      await repo.deleteCascadeDraft(EXHIBIT_ID);
-      assert.deepEqual(mockRevRepo.lastFindOptions?.where, { exhibitId: EXHIBIT_ID });
+      await repo.markDeleted([EXHIBIT_ID, 'exhibit-2'], manager);
+      assert.equal(updates.length, 1);
+      assert.deepEqual(updates[0].criteria.id.value, [EXHIBIT_ID, 'exhibit-2']);
+      assert.equal(updates[0].patch.isDeleted, true);
+      assert.ok(updates[0].patch.deletedAt instanceof Date);
     });
 
-    it('TC-E092: deleteCascadeDraft xóa hotspots của các revisions tìm thấy', async () => {
-      const mockExhibitRepo = new MockRepository<Exhibit>(Exhibit);
+    it('TC-E092: markDeleted KHÔNG xóa revisions/hotspots (giữ để khôi phục)', async () => {
       const mockRevRepo = new MockRepository<ExhibitRevision>(ExhibitRevision);
       const mockHotspotRepo = new MockRepository<Hotspot>(Hotspot);
-      mockRevRepo.mockFindResult = [createSampleRevision({ id: 'rev-1' })];
-
+      const manager = { getRepository: () => ({ update: async () => undefined }) } as unknown as EntityManager;
       const repo = new ExhibitsRepository(
-        mockExhibitRepo as unknown as Repository<Exhibit>,
+        new MockRepository<Exhibit>(Exhibit) as unknown as Repository<Exhibit>,
         mockRevRepo as unknown as Repository<ExhibitRevision>,
         mockHotspotRepo as unknown as Repository<Hotspot>,
       );
 
-      await repo.deleteCascadeDraft(EXHIBIT_ID);
-      assert.ok(mockHotspotRepo.lastDeleteCondition);
-    });
-
-    it('TC-E093: deleteCascadeDraft xóa các revisions sau khi xóa hotspots', async () => {
-      const mockExhibitRepo = new MockRepository<Exhibit>(Exhibit);
-      const mockRevRepo = new MockRepository<ExhibitRevision>(ExhibitRevision);
-      const mockHotspotRepo = new MockRepository<Hotspot>(Hotspot);
-      mockRevRepo.mockFindResult = [createSampleRevision({ id: 'rev-1' })];
-
-      const repo = new ExhibitsRepository(
-        mockExhibitRepo as unknown as Repository<Exhibit>,
-        mockRevRepo as unknown as Repository<ExhibitRevision>,
-        mockHotspotRepo as unknown as Repository<Hotspot>,
-      );
-
-      await repo.deleteCascadeDraft(EXHIBIT_ID);
-      assert.deepEqual(mockRevRepo.lastDeleteCondition, { exhibitId: EXHIBIT_ID });
-    });
-
-    it('TC-E094: deleteCascadeDraft xóa exhibit ở bước cuối cùng', async () => {
-      const mockExhibitRepo = new MockRepository<Exhibit>(Exhibit);
-      const mockRevRepo = new MockRepository<ExhibitRevision>(ExhibitRevision);
-      const mockHotspotRepo = new MockRepository<Hotspot>(Hotspot);
-
-      const repo = new ExhibitsRepository(
-        mockExhibitRepo as unknown as Repository<Exhibit>,
-        mockRevRepo as unknown as Repository<ExhibitRevision>,
-        mockHotspotRepo as unknown as Repository<Hotspot>,
-      );
-
-      await repo.deleteCascadeDraft(EXHIBIT_ID);
-      assert.equal(mockExhibitRepo.lastDeleteCondition, EXHIBIT_ID);
-    });
-
-    it('TC-E095: deleteCascadeDraft xử lý đúng khi exhibit chưa có revision nào (chỉ xóa exhibit)', async () => {
-      const mockExhibitRepo = new MockRepository<Exhibit>(Exhibit);
-      const mockRevRepo = new MockRepository<ExhibitRevision>(ExhibitRevision);
-      const mockHotspotRepo = new MockRepository<Hotspot>(Hotspot);
-      mockRevRepo.mockFindResult = []; // Không có revision
-
-      const repo = new ExhibitsRepository(
-        mockExhibitRepo as unknown as Repository<Exhibit>,
-        mockRevRepo as unknown as Repository<ExhibitRevision>,
-        mockHotspotRepo as unknown as Repository<Hotspot>,
-      );
-
-      await repo.deleteCascadeDraft(EXHIBIT_ID);
+      await repo.markDeleted([EXHIBIT_ID], manager);
+      assert.equal(mockRevRepo.lastDeleteCondition, undefined);
       assert.equal(mockHotspotRepo.lastDeleteCondition, undefined);
-      assert.equal(mockExhibitRepo.lastDeleteCondition, EXHIBIT_ID);
     });
   });
 
