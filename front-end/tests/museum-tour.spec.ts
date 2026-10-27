@@ -1,3 +1,4 @@
+import { exitMuseumIfOpen, openMuseumTools } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { installMuseumApi } from './fixtures/museumApi';
 import { installRendererProbe } from './fixtures/museumProbe';
@@ -11,7 +12,7 @@ test('opening and stopping the scene keep keyboard focus in the tour', async ({ 
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByLabel('Phòng trưng bày 3D')).toBeFocused();
-  await page.getByRole('button', { name: 'Dừng 3D' }).click();
+  await page.getByRole('button', { name: 'Thoát tham quan' }).click();
   await expect(page.getByRole('button', { name: 'Mở phòng 3D' })).toBeFocused();
 });
 
@@ -38,6 +39,7 @@ test('zoom stops at both safe boundaries', async ({ page }) => {
   const canvas = page.getByLabel('Phòng trưng bày 3D');
   await expect(canvas).toBeVisible();
   for (const label of ['Đến gần', 'Lùi xa']) {
+    await openMuseumTools(page);
     for (let i = 0; i < 12; i++) await page.getByRole('button', { name: label }).click();
     const boundary = await canvas.screenshot(SCENE_CAPTURE);
     await page.getByRole('button', { name: label }).click();
@@ -75,7 +77,7 @@ test('unrecovered context exits the renderer after its deadline and focuses a re
   await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible({ timeout: 12_000 });
   await expect(page.locator('canvas')).toHaveCount(0);
   await expect(page.getByRole('status')).toBeFocused();
-  await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);
+  await expect(page.locator('#museum-catalogue li')).toHaveCount(5);
 });
 
 test('unavailable WebGL preserves the API catalogue', async ({ page }) => {
@@ -89,7 +91,7 @@ test('unavailable WebGL preserves the API catalogue', async ({ page }) => {
   await page.goto('/tour.html');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
-  await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);
+  await expect(page.locator('#museum-catalogue li')).toHaveCount(5);
 });
 
 test('failed scene chunk leaves navigation and catalogue available', async ({ page }) => {
@@ -98,7 +100,7 @@ test('failed scene chunk leaves navigation and catalogue available', async ({ pa
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
   await expect(page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true })).toBeVisible();
-  await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);
+  await expect(page.locator('#museum-catalogue li')).toHaveCount(5);
 });
 
 test('focused keyboard navigation and reset work without trapping focus', async ({ page }) => {
@@ -117,7 +119,7 @@ test('focused keyboard navigation and reset work without trapping focus', async 
   // Toolbar commands reach the camera through a React effect after the click.
   await expect.poll(readCamera).toEqual(initialCamera);
   await expect.poll(async () => (await canvas.screenshot(SCENE_CAPTURE)).equals(initial)).toBe(true);
-  await page.getByRole('button', { name: 'Dừng 3D' }).focus();
+  await page.getByRole('button', { name: 'Thoát tham quan' }).focus();
   await page.keyboard.press('ArrowLeft');
   // Focus can scroll the canvas beneath a stationary pointer and change hover
   // pixels. The outside shortcut invariant is that camera transform stays put.
@@ -148,7 +150,7 @@ test('API catalogue stays readable without starting WebGL', async ({ page }) => 
   });
   await page.goto('/tour.html');
   await expect(page.getByRole('heading', { name: 'Trong phòng trưng bày' })).toBeVisible();
-  await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);
+  await expect(page.locator('#museum-catalogue li')).toHaveCount(5);
   await expect(page.locator('canvas')).toHaveCount(0);
   expect(sceneRequests).toEqual([]);
 });
@@ -159,7 +161,7 @@ test('scene starts on demand and releases canvas when stopped', async ({ page })
   await page.goto('/tour.html');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.locator('canvas')).toBeVisible();
-  await page.getByRole('button', { name: 'Dừng 3D' }).click();
+  await page.getByRole('button', { name: 'Thoát tham quan' }).click();
   await expect(page.locator('canvas')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Trong phòng trưng bày' })).toBeVisible();
   expect(errors).toEqual([]);
@@ -171,8 +173,9 @@ test('HTML entry and SPA route expose the museum with public navigation', async 
     await expect(page.getByRole('heading', { name: 'Không gian của hình khối' })).toBeVisible();
     await expect(page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true })).toBeVisible();
   }
+  await exitMuseumIfOpen(page);
   await page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true }).click();
-  await expect(page.getByRole('heading', { name: /Mỗi hiện vật,.*một câu chuyện/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Chạm vào Di sản/ })).toBeVisible();
   await page.goto('/admin/login');
   await expect(page.locator('input[type="password"]')).toBeVisible();
 });

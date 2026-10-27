@@ -1,3 +1,4 @@
+import { museumExhibitButton, museumHotspotButton, openMuseumHotspots, refreshMuseum, selectMuseumHotspot } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { installFiveModels } from './fixtures/museumGlb';
 import { installRendererProbe, readRendererProbe } from './fixtures/museumProbe';
@@ -30,7 +31,7 @@ test('3D hotspot mouse picking shares selection, hover tooltip and drag rejectio
   await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true });
   for (const item of exhibits) {
-    await page.getByRole('button', { name: `Điểm tương tác ${item.name}`, exact: true }).click();
+    await selectMuseumHotspot(page, `Điểm tương tác ${item.name}`);
     await page.keyboard.press('Escape'); await canvas.scrollIntoViewIfNeeded();
     const point = await projectedPoint(page, item.id, 'hotspot'); const box = (await canvas.boundingBox())!;
     expect(Math.abs(point[0])).toBeLessThan(1); expect(Math.abs(point[1])).toBeLessThan(1);
@@ -51,7 +52,7 @@ test('a camera drag away from a hotspot and back to its starting point never sel
   const { exhibits } = await installFiveModels(page); await installRendererProbe(page); await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/tour.html'); await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
-  await page.getByRole('button', { name: 'Điểm tương tác Hiện vật 2', exact: true }).click(); await page.keyboard.press('Escape');
+  await selectMuseumHotspot(page, 'Điểm tương tác Hiện vật 2'); await page.keyboard.press('Escape');
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true }); await canvas.scrollIntoViewIfNeeded();
   const point = await projectedPoint(page, exhibits[1].id, 'hotspot'); const box = (await canvas.boundingBox())!;
   const x = box.x + (point[0] + 1) * box.width / 2, y = box.y + (1 - point[1]) * box.height / 2;
@@ -65,12 +66,12 @@ test.describe('touch hotspot controls', () => {
     const { exhibits } = await installFiveModels(page, { failIndex: 1, failure: 404 }); await installRendererProbe(page);
     await page.emulateMedia({ reducedMotion: 'reduce' }); await page.goto('/tour.html'); await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
     await expect(page.getByText('Đã tải 4/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
-    await page.getByRole('button', { name: 'Điểm tương tác Hiện vật 2', exact: true }).click(); await page.keyboard.press('Escape');
+    await selectMuseumHotspot(page, 'Điểm tương tác Hiện vật 2'); await page.keyboard.press('Escape');
     const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true }); await canvas.scrollIntoViewIfNeeded();
     const point = await projectedPoint(page, exhibits[1].id, 'hotspot'); const box = (await canvas.boundingBox())!;
     await page.touchscreen.tap(box.x + (point[0] + 1) * box.width / 2, box.y + (1 - point[1]) * box.height / 2);
     await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText(exhibits[1].name);
-    const button = page.getByRole('button', { name: 'Điểm tương tác Hiện vật 3', exact: true }); await button.focus(); await page.keyboard.press('Space');
+    const button = museumHotspotButton(page, 'Điểm tương tác Hiện vật 3'); await button.focus(); await page.keyboard.press('Space');
     await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText(exhibits[2].description);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath('hotspots-mobile.png'), fullPage: true });
@@ -82,8 +83,8 @@ test('metadata refresh updates annotations without downloading healthy GLBs agai
   await page.goto('/tour.html'); await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
   await page.route('**/api/rooms/sculpture', route => fulfillMuseum(route, envelope({ ...roomA, exhibits: exhibits.map((item, index) => index === 1 ? { ...item, name: 'Tên đã cập nhật', description: 'Nội dung đã cập nhật' } : item) })));
-  await page.getByRole('button', { name: 'Làm mới', exact: true }).click();
-  await page.getByRole('button', { name: 'Điểm tương tác Tên đã cập nhật', exact: true }).click();
+  await refreshMuseum(page);
+  await selectMuseumHotspot(page, 'Điểm tương tác Tên đã cập nhật');
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText('Nội dung đã cập nhật');
   expect(requests).toEqual([1, 1, 1, 1, 1]);
 });
@@ -104,7 +105,7 @@ test('multiple published annotations preserve coordinates and bind their labels 
   expect(points[annotations[0].id][1]).toBeCloseTo(1.14 + 0.6 * 1.8);
   expect(points[annotations[0].id][2]).toBeCloseTo(0.4 * 1.8);
   for (const annotation of annotations) {
-    await page.getByRole('button', { name: `Điểm tương tác Hiện vật 2: ${annotation.label}`, exact: true }).click();
+    await selectMuseumHotspot(page, `Điểm tương tác Hiện vật 2: ${annotation.label}`);
     await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText(annotation.body);
   }
 });
@@ -115,7 +116,7 @@ test('a genuine GLTFLoader parser rejection falls back per artifact after header
   await page.goto('/tour.html'); await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByText('Đã tải 4/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
   expect(diagnostics.some(message => message.includes('stage: parse'))).toBe(true);
-  await page.getByRole('button', { name: 'Điểm tương tác Hiện vật 2', exact: true }).click();
+  await selectMuseumHotspot(page, 'Điểm tương tác Hiện vật 2');
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText('Mô tả hiện vật 2');
 });
 
@@ -138,7 +139,7 @@ test('hover tooltips release their textures and mounted hotspots preserve demand
   const { exhibits } = await installFiveModels(page); await installRendererProbe(page); await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/tour.html'); await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
-  await page.getByRole('button', { name: 'Điểm tương tác Hiện vật 2', exact: true }).click(); await page.keyboard.press('Escape');
+  await selectMuseumHotspot(page, 'Điểm tương tác Hiện vật 2'); await page.keyboard.press('Escape');
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true }); await canvas.scrollIntoViewIfNeeded();
   await page.mouse.move(0, 0); await page.waitForTimeout(200);
   const before = (await readRendererProbe(page)).at(-1)!;
@@ -164,11 +165,12 @@ test('five parsed models expose identity-bound 3D and keyboard hotspots with one
   });
   expect(markers.sort()).toEqual(exhibits.map(item => item.id).sort());
   for (const item of exhibits) {
-    const hotspot = page.getByRole('button', { name: `Điểm tương tác ${item.name}`, exact: true });
+    const hotspot = museumHotspotButton(page, `Điểm tương tác ${item.name}`);
+    await openMuseumHotspots(page);
     await hotspot.focus(); await page.keyboard.press('Enter');
     await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText(item.description);
     await expect(hotspot).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByRole('button', { name: `Xem chi tiết ${item.name}`, exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(museumExhibitButton(page, `Xem chi tiết ${item.name}`)).toHaveAttribute('aria-pressed', 'true');
   }
   expect(requests).toEqual([1, 1, 1, 1, 1]);
 });
@@ -206,7 +208,7 @@ test('a model clone/render exception is contained per artifact and retries witho
   release();
   await expect(page.getByText('Đã tải 4/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText('Lỗi hiển thị mô hình.', { exact: false })).toBeVisible();
-  await page.getByRole('button', { name: 'Điểm tương tác Hiện vật 2', exact: true }).click();
+  await selectMuseumHotspot(page, 'Điểm tương tác Hiện vật 2');
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText('Mô tả hiện vật 2');
   await page.evaluate(() => Reflect.set(window, 'allowModelClone', true));
   await page.getByRole('button', { name: 'Thử lại Hiện vật 2', exact: true }).click();
@@ -229,7 +231,7 @@ for (const failure of [403, 404, 502, 'network', 'corrupt'] as const) test(`one 
   // Download status can precede the first canvas frame and probe observation.
   await expect.poll(async () => Object.keys((await snapshot()).models)).toHaveLength(4);
   const before = await snapshot(); expect(Object.keys(before.models)).toHaveLength(4); expect(before.fallbacks).toEqual([exhibits[1].id]);
-  await page.getByRole('button', { name: `Điểm tương tác ${exhibits[1].name}`, exact: true }).click();
+  await selectMuseumHotspot(page, `Điểm tương tác ${exhibits[1].name}`);
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText(exhibits[1].description);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('button', { name: 'Tập trung hiện vật', exact: true }).click();

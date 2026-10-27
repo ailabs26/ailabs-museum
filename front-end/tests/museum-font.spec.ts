@@ -1,3 +1,4 @@
+import { museumExhibitButton } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
 import { envelope, roomA } from './fixtures/museumContent';
@@ -14,7 +15,7 @@ test.beforeEach(async ({ page }) => {
 
 test('Vietnamese tour headings use a consistent serif font and keep detail keyboard behavior', async ({ page }) => {
   await page.goto('/tour');
-  const trigger = page.getByRole('button', { name: `Xem chi tiết ${vietnameseTitle}`, exact: true });
+  const trigger = museumExhibitButton(page, `Xem chi tiết ${vietnameseTitle}`);
   await trigger.click();
   const selectors = ['#museum-catalogue li:nth-child(2) h3', 'aside h2', 'main h1', '[class*="introTitle"]'];
   for (const selector of selectors) {

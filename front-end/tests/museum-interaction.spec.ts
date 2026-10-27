@@ -1,8 +1,9 @@
+import { museumExhibitButton, refreshMuseum, selectMuseumExhibit } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { installMuseumApi, fulfillMuseum } from './fixtures/museumApi';
 import { envelope, roomA } from './fixtures/museumContent';
 import { PerspectiveCamera, Vector3 } from 'three';
-import { installRendererProbe } from './fixtures/museumProbe';
+import { installRendererProbe, waitForGallerySurfaces, waitForRendererIdle } from './fixtures/museumProbe';
 
 test.beforeEach(async ({ page }) => { await installMuseumApi(page); });
 
@@ -17,16 +18,16 @@ test('short mobile viewport keeps the gallery and touch controls at the intended
 
 test('keyboard catalogue selection has one pressed item and clears on room change', async ({ page }) => {
   await page.goto('/tour');
-  const first = page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true });
+  const first = museumExhibitButton(page, 'Xem chi tiết Hiện vật 1');
   await first.focus();
   await first.press('Enter');
   await expect(first).toHaveAttribute('aria-pressed', 'true');
-  const second = page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true });
+  const second = museumExhibitButton(page, 'Xem chi tiết Hiện vật 2');
   await second.press('Space');
   await expect(second).toHaveAttribute('aria-pressed', 'true');
   await expect(first).toHaveAttribute('aria-pressed', 'false');
   await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
-  await expect(page.getByRole('button', { name: 'Xem chi tiết Bình gốm', exact: true })).toHaveAttribute('aria-pressed', 'false');
+  await expect(museumExhibitButton(page, 'Xem chi tiết Bình gốm')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('canvas')).toHaveCount(0);
 });
 
@@ -36,7 +37,7 @@ test('detail uses published text, stays nonmodal and Escape restores its trigger
     hotspots: [{ id: '20000000-0000-4000-8000-000000000001', label: 'Bề mặt', body: 'Dấu khắc gốc', positionX: 0, positionY: 1, positionZ: 0, displayOrder: 0 }],
   }] })));
   await page.goto('/tour');
-  const trigger = page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true });
+  const trigger = museumExhibitButton(page, 'Xem chi tiết Hiện vật 1');
   await trigger.click();
   const panel = page.getByRole('complementary', { name: 'Chi tiết hiện vật' });
   await expect(panel).toBeVisible();
@@ -53,13 +54,13 @@ test('detail uses published text, stays nonmodal and Escape restores its trigger
 
 test('room changes and failed refresh remove selected details', async ({ page }) => {
   await page.goto('/tour');
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 1');
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toBeVisible();
   await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Xem chi tiết Bình gốm', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Bình gốm');
   await page.route('**/api/rooms/ceramics', (route) => fulfillMuseum(route, { success: false, data: null, message: 'Unavailable' }, 503));
-  await page.getByRole('button', { name: 'Làm mới', exact: true }).click();
+  await refreshMuseum(page);
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);
 });
@@ -74,7 +75,7 @@ test('real scene picking selects the plinth and hover gives pointer feedback', a
   await expect(canvas).toHaveCSS('cursor', 'pointer');
   await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.64);
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText('Hiện vật 1');
-  await expect(page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(museumExhibitButton(page, 'Xem chi tiết Hiện vật 1')).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Đóng chi tiết hiện vật' }).click();
   await expect(canvas).toBeFocused();
 });
@@ -87,7 +88,7 @@ test('selecting an exhibit focuses the camera and reset retains published detail
   const canvas = page.getByLabel('Phòng trưng bày 3D');
   await expect(canvas).toBeVisible();
   const initialFrames = await page.evaluate(() => window.museumProbe.at(-1)?.frames ?? 0);
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
   const panel = page.getByRole('complementary', { name: 'Chi tiết hiện vật' });
   await expect(panel).toContainText('Hiện vật 2');
   // Detail DOM can appear before the focus effect and its demand frame finish.
@@ -120,12 +121,12 @@ test('outside-room exhibits retain detail but cannot focus the camera outside th
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible();
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 1');
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText('ngoài phạm vi');
   await expect(page.getByRole('button', { name: 'Tập trung hiện vật', exact: true })).toBeDisabled();
 });
 
-test('narrow screens keep touch controls outside the scene and detail below it', async ({ page }, testInfo) => {
+test('narrow screens keep controls and detail over the fullscreen scene', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 320, height: 740 });
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
@@ -134,13 +135,16 @@ test('narrow screens keep touch controls outside the scene and detail below it',
   const frame = (await canvas.boundingBox())!;
   const toolbar = page.getByLabel('Điều khiển góc nhìn');
   const toolbarBox = (await toolbar.boundingBox())!;
-  expect(toolbarBox.y).toBeGreaterThanOrEqual(frame.y + frame.height - 1);
+  expect(toolbarBox.y).toBeGreaterThanOrEqual(frame.y);
+  expect(toolbarBox.y + toolbarBox.height).toBeLessThanOrEqual(frame.y + frame.height);
   for (const button of await toolbar.getByRole('button').all()) expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 1');
   const panel = page.getByRole('complementary', { name: 'Chi tiết hiện vật' });
   const panelBox = (await panel.boundingBox())!;
   const selectedFrame = (await canvas.boundingBox())!;
-  expect(panelBox.y).toBeGreaterThan(selectedFrame.y + selectedFrame.height);
+  expect(selectedFrame).toEqual(frame);
+  expect(panelBox.y).toBeGreaterThan(selectedFrame.y);
+  expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(selectedFrame.y + selectedFrame.height);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.screenshot({ path: testInfo.outputPath('day3-mobile-detail.png'), fullPage: true });
@@ -164,6 +168,7 @@ test('dragging a display navigates without selecting it', async ({ page }) => {
 });
 
 test('focus settles, manual input cancels motion and unmount stays usable', async ({ page }) => {
+  await installRendererProbe(page);
   await page.addInitScript(() => {
     Reflect.set(window, '__museumDraws', 0);
     const draw = WebGL2RenderingContext.prototype.drawElements;
@@ -178,24 +183,27 @@ test('focus settles, manual input cancels motion and unmount stays usable', asyn
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D');
   await expect(canvas).toBeVisible();
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
-  await page.waitForTimeout(800); // Observe beyond the 550ms transition.
+  await waitForGallerySurfaces(page);
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
+  await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'inspect');
+  await waitForRendererIdle(page);
   const settled = await page.evaluate(() => Reflect.get(window, '__museumDraws'));
   await page.waitForTimeout(350);
   expect(await page.evaluate(() => Reflect.get(window, '__museumDraws'))).toBe(settled);
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 3');
   await canvas.press('ArrowLeft');
-  await page.waitForTimeout(100);
+  await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'explore');
+  await waitForRendererIdle(page);
   const cancelled = await page.evaluate(() => Reflect.get(window, '__museumDraws'));
   await page.waitForTimeout(650);
   expect(await page.evaluate(() => Reflect.get(window, '__museumDraws'))).toBe(cancelled);
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 4', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 4');
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.getByRole('button', { name: 'Dừng 3D' }).click();
+  await page.getByRole('button', { name: 'Thoát tham quan' }).click();
   await expect(page.locator('canvas')).toHaveCount(0);
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(canvas).toBeVisible();
-  await page.getByRole('button', { name: 'Dừng 3D' }).click();
+  await page.getByRole('button', { name: 'Thoát tham quan' }).click();
   expect(errors).toEqual([]);
 });
 
@@ -225,14 +233,16 @@ test('desktop detail leaves the scene visible and long published text wraps', as
   const canvas = page.getByLabel('Phòng trưng bày 3D');
   // Cold production imports and software WebGL can take longer than 5 seconds.
   await expect(canvas).toBeVisible({ timeout: 15_000 });
+  await page.getByText('Danh mục hiện vật', { exact: true }).click();
   await page.getByRole('list', { name: 'Các hiện vật' }).getByRole('button').first().click();
   const panel = page.getByRole('complementary', { name: 'Chi tiết hiện vật' });
   await expect(panel).toBeVisible();
-  // Canvas follows the grid resize asynchronously through ResizeObserver.
+  // Detail overlays the scene without changing Canvas dimensions.
   await expect(async () => {
     const sceneBox = (await canvas.boundingBox())!;
     const panelBox = (await panel.boundingBox())!;
-    expect(panelBox.x).toBeGreaterThan(sceneBox.x + sceneBox.width);
+    expect(panelBox.x).toBeGreaterThan(sceneBox.x);
+    expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(sceneBox.x + sceneBox.width);
     expect(sceneBox.width).toBeGreaterThan(600);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }).toPass({ timeout: 5_000 });
@@ -244,7 +254,7 @@ test('desktop detail leaves the scene visible and long published text wraps', as
 test('selecting a lower catalogue card reveals focused detail and closing reveals the trigger', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 740 });
   await page.goto('/tour');
-  const trigger = page.getByRole('button', { name: 'Xem chi tiết Hiện vật 5', exact: true });
+  const trigger = museumExhibitButton(page, 'Xem chi tiết Hiện vật 5');
   await trigger.scrollIntoViewIfNeeded();
   await trigger.press('Enter');
   const heading = page.getByRole('complementary', { name: 'Chi tiết hiện vật' }).getByRole('heading', { name: 'Hiện vật 5', exact: true });
@@ -275,7 +285,7 @@ test('automatic dark scheme preserves contrast in the tour and warm detail surfa
   };
   expect(await page.getByRole('heading', { level: 1 }).evaluate(contrast)).toBeGreaterThanOrEqual(4.5);
   expect(await page.getByRole('heading', { name: 'Bước vào phòng trưng bày' }).evaluate(contrast)).toBeGreaterThanOrEqual(4.5);
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 1');
   expect(await page.getByRole('complementary', { name: 'Chi tiết hiện vật' }).getByRole('heading', { name: 'Hiện vật 1', exact: true }).evaluate(contrast)).toBeGreaterThanOrEqual(4.5);
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.screenshot({ path: testInfo.outputPath('day3-dark-detail.png'), fullPage: true });

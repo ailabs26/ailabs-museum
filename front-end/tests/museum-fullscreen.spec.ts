@@ -75,6 +75,34 @@ test('rejected native fullscreen keeps a usable overlay', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Mở phòng 3D' })).toBeFocused();
 });
 
+test('a late native fullscreen grant after closing is released without reopening the tour', async ({ page }) => {
+  await page.addInitScript(() => {
+    const nativeFullscreen: { element: Element | null } = { element: null };
+    Reflect.set(window, 'lateFullscreenExits', 0);
+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, get: () => nativeFullscreen.element });
+    document.exitFullscreen = async () => {
+      nativeFullscreen.element = null;
+      Reflect.set(window, 'lateFullscreenExits', Reflect.get(window, 'lateFullscreenExits') + 1);
+      document.dispatchEvent(new Event('fullscreenchange'));
+    };
+    Element.prototype.requestFullscreen = function () {
+      return new Promise<void>(resolve => {
+        Reflect.set(window, 'grantLateFullscreen', () => {
+          nativeFullscreen.element = this; document.dispatchEvent(new Event('fullscreenchange')); resolve();
+        });
+      });
+    };
+  });
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  await page.getByRole('button', { name: 'Thoát tham quan', exact: true }).click();
+  await page.evaluate(() => Reflect.get(window, 'grantLateFullscreen')());
+  await expect.poll(() => page.evaluate(() => Reflect.get(window, 'lateFullscreenExits'))).toBe(1);
+  expect(await page.evaluate(() => document.fullscreenElement)).toBeNull();
+  await expect(page.locator('[data-immersive-tour]')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Mở phòng 3D' })).toBeFocused();
+});
+
 test('external native fullscreen exit reconciles tour state', async ({ page }) => {
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();

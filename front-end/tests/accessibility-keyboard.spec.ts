@@ -1,3 +1,4 @@
+import { museumHotspotButton, openMuseumHotspots } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { installMuseumApi } from './fixtures/museumApi';
 
@@ -37,10 +38,11 @@ test('catalogue panel allows Tab escape and restores the keyboard trigger', asyn
 test('closing details after stopping 3D falls back to the start control', async ({ page }) => {
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).press('Enter');
-  const hotspot = page.getByRole('button', { name: 'Điểm tương tác Hiện vật 1', exact: true });
+  await openMuseumHotspots(page);
+  const hotspot = museumHotspotButton(page, 'Điểm tương tác Hiện vật 1');
   await hotspot.press('Enter');
   await expect(page.getByRole('complementary')).toBeVisible();
-  await page.getByRole('button', { name: 'Dừng 3D', exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'Thoát tham quan', exact: true }).press('Enter');
   await expect(hotspot).toHaveCount(0);
   await page.getByRole('button', { name: 'Đóng chi tiết hiện vật' }).press('Enter');
   await expect(page.getByRole('complementary')).toHaveCount(0);
@@ -50,7 +52,8 @@ test('closing details after stopping 3D falls back to the start control', async 
 test('closing details after the recovery deadline keeps focus in readable tour content', async ({ page }) => {
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).press('Enter');
-  await page.getByRole('button', { name: 'Điểm tương tác Hiện vật 1', exact: true }).press('Enter');
+  await openMuseumHotspots(page);
+  await museumHotspotButton(page, 'Điểm tương tác Hiện vật 1').press('Enter');
   await page.getByLabel('Phòng trưng bày 3D', { exact: true }).evaluate(canvas => {
     canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
   });

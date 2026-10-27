@@ -1,3 +1,4 @@
+import { selectMuseumExhibit } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
 import { envelope, roomA, roomB } from './fixtures/museumContent';
@@ -6,14 +7,14 @@ test.beforeEach(async ({ page }) => { await installMuseumApi(page); });
 
 test('[F02] panel link follows selected exhibit and navigates to readable 2D detail', async ({ page }) => {
   await page.goto('/tour?room=sculpture');
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
   const link = page.getByRole('link', { name: 'Đọc chi tiết 2D', exact: true });
   await expect(link).toHaveAttribute('href', `/collection/sculpture/exhibits/${roomA.exhibits[1].id}`);
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 3');
   await expect(link).toHaveAttribute('href', `/collection/sculpture/exhibits/${roomA.exhibits[2].id}`);
   await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
   await expect(link).toHaveCount(0);
-  await page.getByRole('button', { name: 'Xem chi tiết Bình gốm', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Bình gốm');
   await expect(link).toHaveAttribute('href', `/collection/ceramics/exhibits/${roomB.exhibits[0].id}`);
   await link.focus();
   await link.press('Enter');
@@ -34,7 +35,7 @@ for (const failure of ['webgl', 'context', 'chunk']) {
       });
       if (failure === 'chunk') await page.route('**/*MuseumScene*', (route) => route.abort());
       await page.goto('/tour?room=sculpture');
-      if (selected) await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
+      if (selected) await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
       await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
       if (failure === 'context') {
         const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true });
@@ -56,7 +57,7 @@ for (const failure of ['webgl', 'context', 'chunk']) {
       await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);
       await expect(page.getByRole('link', { name: 'Đọc nội dung phòng trưng bày' })).toHaveAttribute('href', '#museum-catalogue');
       // The fallback follows subsequent DOM selection too, including an ErrorBoundary's fallback.
-      await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true }).click();
+      await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 3');
       await expect(link).toHaveAttribute('href', `/collection/sculpture/exhibits/${roomA.exhibits[2].id}`);
       await page.getByRole('button', { name: 'Đóng chi tiết hiện vật' }).click();
       await expect(link).toHaveAttribute('href', '/collection?room=sculpture');
@@ -117,7 +118,7 @@ test('[F04] unrecovered context retains selection and releases in-flight GLBs af
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true });
   await expect(canvas).toBeVisible();
   await expect.poll(() => pending).toBe(1);
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 1');
   await canvas.evaluate((element: HTMLCanvasElement) => {
     const extension = element.getContext('webgl2')?.getExtension('WEBGL_lose_context');
     if (!extension) throw new Error('Context-loss extension required');

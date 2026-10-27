@@ -1,3 +1,4 @@
+import { museumExhibitButton, selectMuseumExhibit } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import type { Mesh } from 'three';
@@ -75,7 +76,7 @@ test('five actual private Storage GLBs render, normalize, pick and focus in one 
   await canvas.screenshot({ path: testInfo.outputPath('five-live-glbs.png') });
   const selectionEvidence = [];
   for (const exhibit of room.exhibits) {
-    await page.getByRole('button', { name: `Xem chi tiết ${exhibit.name}`, exact: true }).click();
+    await selectMuseumExhibit(page, `Xem chi tiết ${exhibit.name}`);
     await page.waitForTimeout(800);
     const projected = (await readModels(page)).find(model => model.id === exhibit.id)!;
     expect(Math.abs(projected.screen[0])).toBeLessThan(0.08);
@@ -89,7 +90,7 @@ test('five actual private Storage GLBs render, normalize, pick and focus in one 
     const box = (await canvas.boundingBox())!;
     await page.mouse.click(box.x + (point.screen[0] + 1) * box.width / 2, box.y + (1 - point.screen[1]) * box.height / 2);
     await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText(exhibit.name);
-    await expect(page.getByRole('button', { name: `Xem chi tiết ${exhibit.name}`, exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(museumExhibitButton(page, `Xem chi tiết ${exhibit.name}`)).toHaveAttribute('aria-pressed', 'true');
     selectionEvidence.push({ id: exhibit.id, name: exhibit.name, storageKey: exhibit.model!.storageKey, focusPosition: focusedPosition });
     await canvas.screenshot({ path: testInfo.outputPath(`focus-${exhibit.displayOrder}.png`) });
     await page.keyboard.press('Escape');
@@ -108,7 +109,7 @@ test('five actual private Storage GLBs render, normalize, pick and focus in one 
   const frameTimes = (await readRendererProbe(page)).at(-1)!.times.filter(time => time >= interactionStart && time <= interactionEnd);
   const observedInteractionFps = frameTimes.length > 1 ? (frameTimes.length - 1) * 1000 / (frameTimes.at(-1)! - frameTimes[0]) : null;
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole('button', { name: `Xem chi tiết ${room.exhibits[3].name}`, exact: true }).click();
+  await selectMuseumExhibit(page, `Xem chi tiết ${room.exhibits[3].name}`);
   await page.waitForTimeout(800);
   const portrait = (await readModels(page)).find(model => model.id === room.exhibits[3].id)!;
   expect(Math.abs(portrait.screen[0])).toBeLessThan(0.08);
@@ -126,7 +127,7 @@ test('five actual private Storage GLBs render, normalize, pick and focus in one 
   const evidencePath = testInfo.outputPath('live-glb-evidence.json');
   await writeFile(evidencePath, JSON.stringify({ models, selectionEvidence, profile, loadMilliseconds, observedInteractionFps, downloads: downloads.length }, null, 2));
   await testInfo.attach('live-glb-evidence', { path: evidencePath, contentType: 'application/json' });
-  await page.getByRole('button', { name: 'Dừng 3D' }).click();
+  await page.getByRole('button', { name: 'Thoát tham quan' }).click();
   await expect(page.locator('canvas')).toHaveCount(0);
   await expect.poll(async () => (await readRendererProbe(page)).filter(value => value.live).length).toBe(0);
   expect(errors).toEqual([]);
@@ -145,7 +146,7 @@ test('reopening the actual five-model room releases old contexts and keeps GPU r
     const current = (await readRendererProbe(page)).at(-1)!;
     profiles.push({ geometries: current.geometries, textures: current.textures, calls: current.calls, triangles: current.triangles });
     expect((await readRendererProbe(page)).filter(value => value.live)).toHaveLength(1);
-    await page.getByRole('button', { name: 'Dừng 3D' }).click();
+    await page.getByRole('button', { name: 'Thoát tham quan' }).click();
     await expect.poll(async () => (await readRendererProbe(page)).filter(value => value.live).length).toBe(0);
   }
   expect(profiles[1]).toEqual(profiles[0]);

@@ -6,7 +6,7 @@ test('loads only selected public room, renders API exhibits and switches without
   const requests = await installMuseumApi(page);
   await page.goto('/tour.html');
   await expect(page.getByLabel('Chọn phòng trưng bày')).toBeVisible();
-  await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);
+  await expect(page.locator('#museum-catalogue li')).toHaveCount(5);
   await expect(page.getByText('Nội dung bảo tàng đã xuất bản', { exact: true })).toBeVisible();
   expect(requests.filter((path) => path !== '/api/rooms')).toEqual(['/api/rooms/sculpture']);
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
