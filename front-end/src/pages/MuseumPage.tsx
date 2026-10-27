@@ -175,7 +175,9 @@ export function MuseumPage() {
               onClear={handleCloseDetail} fallback={sceneFallback} immersive onXrChange={handleXrChange} />
           </Suspense>
         </ErrorBoundary> : <div className={classes.immersiveLoading}>
-          {room.isError || rooms.isError ? <Alert color="red" title="Không tải được phòng trưng bày">
+          {rooms.isSuccess && !selectedRoom ? <Alert color="orange" title="Phòng không khả dụng">
+            Phòng này không còn trong danh sách công khai. Hãy chọn phòng khác hoặc thoát tham quan.
+          </Alert> : room.isError || rooms.isError ? <Alert color="red" title="Không tải được phòng trưng bày">
             <Text>{room.error?.message ?? rooms.error?.message}</Text><Button onClick={() => void refresh()}>Thử lại</Button>
           </Alert> : <MuseumLoading text="Đang tải phòng trưng bày…" />}
         </div>}
@@ -184,9 +186,9 @@ export function MuseumPage() {
             onChange={event => handleSelectRoom(event.currentTarget.value)} data={rooms.data?.map(item => ({ value: item.slug, label: item.name })) ?? []} />
         </div>
         <div className={classes.immersiveDetail}>{detailPanel}</div>
-        <details data-catalogue className={classes.immersiveCatalogue} open={displays.length === 0 ? true : undefined}><summary>Danh mục hiện vật</summary>
+        {detail && <details data-catalogue className={classes.immersiveCatalogue} open={displays.length === 0 ? true : undefined}><summary>Danh mục hiện vật</summary>
           <Button m="sm" variant="default" disabled={rooms.isFetching || room.isFetching} onClick={() => void refresh()}>Làm mới</Button>{catalogue}
-        </details>
+        </details>}
         <p id="museum-controls-help" className={classes.srOnly}>WASD di chuyển, kéo chuột hoặc vuốt để nhìn, F tập trung, Home đặt lại. Escape đóng chi tiết rồi thoát tham quan.</p>
         {reportModal}
       </ImmersiveTour>}
