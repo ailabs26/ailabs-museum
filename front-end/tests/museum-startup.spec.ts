@@ -40,7 +40,8 @@ async function openDashboard(page: Page) {
 
 test('deferred chart code still renders dashboard charts on demand', async ({ page }) => {
   await openDashboard(page);
-  await expect(page.locator('.apexcharts-canvas')).toHaveCount(4, { timeout: 15_000 });
+  // Four primary charts and the two nonempty statistic sparklines.
+  await expect(page.locator('.apexcharts-canvas')).toHaveCount(6, { timeout: 15_000 });
 });
 
 test('failed chart chunk leaves the dashboard usable with local error feedback', async ({ page }) => {
@@ -48,5 +49,7 @@ test('failed chart chunk leaves the dashboard usable with local error feedback',
   await page.route('**/assets/react-apexcharts*', (route) => route.abort());
   await openDashboard(page);
   await expect(page.getByText('Không tải được biểu đồ. Hãy tải lại trang để thử lại.')).toHaveCount(4);
+  await expect(page.getByRole('img', { name: 'Không tải được xu hướng', exact: true })).toHaveCount(2);
   await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Làm mới', exact: true })).toBeEnabled();
 });
