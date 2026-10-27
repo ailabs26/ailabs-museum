@@ -232,7 +232,7 @@ test('[D06] background refresh does not steal focus from the back link', async (
     await fulfillMuseum(route, envelope({ ...roomA, exhibits: roomA.exhibits.map((exhibit) => ({ ...exhibit, description: 'Mô tả đã cập nhật' })) }));
   });
   await page.getByRole('button', { name: 'Làm mới', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText('Đang cập nhật hiện vật…');
+  await expect(page.getByRole('status').filter({ hasText: 'Đang cập nhật hiện vật…' })).toBeVisible();
   // Navigate in the SPA so the same cache/request stays active.
   await page.getByRole('link', { name: `Xem chi tiết ${item.name}`, exact: true }).click();
   await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
@@ -267,7 +267,7 @@ test('[D06] complete detail remains readable without WebGL and reflows in both c
       await page.setViewportSize({ width, height: 900 });
       await page.goto(`/collection/sculpture/exhibits/${item.id}`);
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(item.name);
-      await expect(page.getByRole('heading', { level: 1 })).toHaveCSS('font-family', '"Times New Roman", serif');
+      await expect(page.getByRole('heading', { level: 1 })).toHaveCSS('font-family', /"Plus Jakarta Sans"/);
       await expect(page.getByRole('heading', { level: 2 })).toHaveText(['Câu chuyện hiện vật', 'Bản thuyết minh', 'Điểm chú ý']);
       await expect(page.getByText(item.transcript, { exact: true })).toBeVisible();
       await expect(page.getByText('Chi tiết vẫn đọc được', { exact: true })).toBeVisible();

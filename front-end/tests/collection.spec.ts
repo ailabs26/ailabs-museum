@@ -77,6 +77,8 @@ test('room and exhibit loading states remain readable until responses arrive', a
   await expect(loadingStatus).toHaveAttribute('aria-live', 'polite');
   await expect(loadingStatus).toHaveAttribute('aria-atomic', 'true');
   await expect(loadingStatus).toBeVisible();
+  expect(await loadingStatus.boundingBox()).toMatchObject({ width: 1, height: 1 });
+  await expect(loadingStatus).toHaveCSS('overflow', 'hidden');
   expect(await loadingStatus.evaluate((node) => node.closest('[aria-hidden="true"], [hidden]') === null)).toBe(true);
   const initialRegion = await loadingStatus.elementHandle();
   await expect(loadingStatus).toHaveText('Đang tải danh sách phòng trưng bày…');
@@ -132,22 +134,34 @@ test('search filters names and descriptions locally, reports counts, clears and 
 });
 
 test('empty public rooms and empty exhibit collections have distinct states', async ({ page }) => {
+  const loadingStatus = page.getByRole('status', { name: 'Trạng thái tải bộ sưu tập' });
   await page.route('**/api/rooms', (route) => fulfillMuseum(route, envelope([])));
   await page.goto('/collection');
   await expect(page.getByRole('status').filter({ hasText: 'Chưa có phòng trưng bày công khai.' })).toBeVisible();
+  await expect(loadingStatus).toBeEmpty();
   await expect(page.getByRole('link', { name: 'Tham quan phòng này trong 3D' })).toHaveCount(0);
   await page.unroute('**/api/rooms');
   await page.goto('/collection?room=empty');
   await expect(page.getByRole('status').filter({ hasText: 'Phòng này chưa có hiện vật được xuất bản.' })).toBeVisible();
+  await expect(loadingStatus).toBeEmpty();
   await expect(page.getByText('0 hiện vật đã xuất bản')).toBeVisible();
 });
 
 test('list API errors and malformed detail responses can be retried without demo substitution', async ({ page }) => {
   let failList = true;
-  await page.route('**/api/rooms', (route) => fulfillMuseum(route,
-    failList ? { success: false, data: null, message: 'Unavailable' } : envelope(roomSummaries), failList ? 503 : 200));
+  let releaseList!: () => void;
+  const listGate = new Promise<void>((resolve) => { releaseList = resolve; });
+  await page.route('**/api/rooms', async (route) => {
+    if (failList) await listGate;
+    await fulfillMuseum(route,
+      failList ? { success: false, data: null, message: 'Unavailable' } : envelope(roomSummaries), failList ? 503 : 200);
+  });
   await page.goto('/collection');
+  const loadingStatus = page.getByRole('status', { name: 'Trạng thái tải bộ sưu tập' });
+  await expect(loadingStatus).toHaveText('Đang tải danh sách phòng trưng bày…');
+  releaseList();
   await expect(page.getByRole('alert')).toContainText('Không tải được danh sách phòng');
+  await expect(loadingStatus).toBeEmpty();
   await expect(page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' })).toHaveCount(0);
   failList = false;
   await page.getByRole('button', { name: 'Thử lại' }).click();
@@ -156,10 +170,25 @@ test('list API errors and malformed detail responses can be retried without demo
   await page.getByRole('button', { name: 'Làm mới', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Không tải được hiện vật');
   await expect(page.getByRole('alert')).toContainText('Dữ liệu phòng không hợp lệ');
+  await expect(loadingStatus).toBeEmpty();
   await expect(page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' })).toHaveCount(0);
   await page.unroute('**/api/rooms/sculpture');
   await page.getByRole('button', { name: 'Thử lại' }).click();
   await expect(page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' }).getByRole('listitem')).toHaveCount(5);
+  await expect(loadingStatus).toBeEmpty();
+});
+
+test('malformed room lists clear the loading status and recover on retry', async ({ page }) => {
+  await page.route('**/api/rooms', (route) => fulfillMuseum(route, envelope([{ ...roomSummaries[0], name: 42 }])));
+  await page.goto('/collection');
+  await expect(page.getByRole('alert')).toContainText('Không tải được danh sách phòng');
+  const loadingStatus = page.getByRole('status', { name: 'Trạng thái tải bộ sưu tập' });
+  await expect(loadingStatus).toBeEmpty();
+  await expect(page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' })).toHaveCount(0);
+  await page.unroute('**/api/rooms');
+  await page.getByRole('button', { name: 'Thử lại' }).click();
+  await expect(page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' }).getByRole('listitem')).toHaveCount(5);
+  await expect(loadingStatus).toBeEmpty();
 });
 
 test('invalid URL selection fetches no unknown room and lets visitors select a public room', async ({ page }) => {
@@ -167,6 +196,7 @@ test('invalid URL selection fetches no unknown room and lets visitors select a p
   page.on('request', (request) => { if (request.url().includes('/api/rooms/')) paths.push(new URL(request.url()).pathname); });
   await page.goto('/collection?room=unknown');
   await expect(page.getByRole('alert')).toContainText('Phòng được chọn không có trong danh sách công khai');
+  await expect(page.getByRole('status', { name: 'Trạng thái tải bộ sưu tập' })).toBeEmpty();
   expect(paths).toEqual([]);
   await page.getByRole('group', { name: 'Chọn phòng trưng bày' })
     .getByRole('button', { name: roomB.name, exact: true }).click();
@@ -174,9 +204,18 @@ test('invalid URL selection fetches no unknown room and lets visitors select a p
 });
 
 test('detail HTTP errors and failed list refresh hide previous content until retry succeeds', async ({ page }) => {
-  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, { success: false, data: null, message: 'Phòng không còn khả dụng' }, 404));
+  let releaseDetail!: () => void;
+  const detailGate = new Promise<void>((resolve) => { releaseDetail = resolve; });
+  await page.route('**/api/rooms/sculpture', async (route) => {
+    await detailGate;
+    await fulfillMuseum(route, { success: false, data: null, message: 'Phòng không còn khả dụng' }, 404);
+  });
   await page.goto('/collection');
+  const loadingStatus = page.getByRole('status', { name: 'Trạng thái tải bộ sưu tập' });
+  await expect(loadingStatus).toHaveText(`Đang tải hiện vật của phòng ${roomA.name}…`);
+  releaseDetail();
   await expect(page.getByRole('alert')).toContainText('Không tải được hiện vật');
+  await expect(loadingStatus).toBeEmpty();
   await expect(page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' })).toHaveCount(0);
   await page.unroute('**/api/rooms/sculpture');
   await page.getByRole('button', { name: 'Thử lại' }).click();
@@ -184,10 +223,56 @@ test('detail HTTP errors and failed list refresh hide previous content until ret
   await page.route('**/api/rooms', (route) => fulfillMuseum(route, { success: false, data: null, message: 'Unavailable' }, 503));
   await page.getByRole('button', { name: 'Làm mới', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Không tải được danh sách phòng');
+  await expect(loadingStatus).toBeEmpty();
   await expect(page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' })).toHaveCount(0);
   await page.unroute('**/api/rooms');
   await page.getByRole('button', { name: 'Thử lại' }).click();
   await expect(page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' }).getByRole('listitem')).toHaveCount(5);
+  await expect(loadingStatus).toBeEmpty();
+});
+
+test('background refresh and local search do not repeat initial loading announcements or steal focus', async ({ page }) => {
+  await page.goto('/collection');
+  const cards = page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' }).getByRole('listitem');
+  await expect(cards).toHaveCount(5);
+  const loadingStatus = page.getByRole('status', { name: 'Trạng thái tải bộ sưu tập' });
+  await expect(loadingStatus).toBeEmpty();
+  const messages = await loadingStatus.evaluateHandle((node) => {
+    const changes: string[] = [];
+    new MutationObserver(() => changes.push(node.textContent ?? ''))
+      .observe(node, { childList: true, characterData: true, subtree: true });
+    return changes;
+  });
+  let releaseList!: () => void;
+  let releaseDetail!: () => void;
+  const listGate = new Promise<void>((resolve) => { releaseList = resolve; });
+  const detailGate = new Promise<void>((resolve) => { releaseDetail = resolve; });
+  await page.route('**/api/rooms', async (route) => { await listGate; await fulfillMuseum(route, envelope(roomSummaries)); });
+  await page.route('**/api/rooms/sculpture', async (route) => { await detailGate; await fulfillMuseum(route, envelope(roomA)); });
+  await Promise.all([
+    page.waitForRequest('**/api/rooms'),
+    page.waitForRequest('**/api/rooms/sculpture'),
+    page.getByRole('button', { name: 'Làm mới', exact: true }).click(),
+  ]);
+  const updatingStatus = page.getByRole('status').filter({ hasText: 'Đang cập nhật hiện vật…' });
+  await expect(updatingStatus).toHaveCount(1);
+  await expect(page.getByRole('status')).toHaveCount(2);
+  await expect(loadingStatus).toBeEmpty();
+  await expect(cards).toHaveCount(5);
+  const search = page.getByRole('textbox', { name: 'Tìm kiếm hiện vật' });
+  await search.focus();
+  const listResponse = page.waitForResponse('**/api/rooms');
+  releaseList();
+  await listResponse;
+  await expect(loadingStatus).toBeEmpty();
+  await expect(updatingStatus).toHaveCount(1);
+  releaseDetail();
+  await expect(updatingStatus).toHaveCount(0);
+  await expect(search).toBeFocused();
+  await search.fill('geen match');
+  await expect(page.getByRole('status').filter({ hasText: 'Không có hiện vật nào khớp' })).toBeVisible();
+  await expect(loadingStatus).toBeEmpty();
+  expect(await messages.jsonValue()).toEqual([]);
 });
 
 test('switching rooms hides old cards while the new room loads', async ({ page }) => {

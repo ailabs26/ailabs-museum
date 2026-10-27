@@ -115,13 +115,13 @@
 
 **Mục tiêu:** Xác nhận không phát lời đọc trùng/lỗi và không làm hỏng UI đã nghiệm thu.
 
-- [ ] Test list/detail HTTP error và retry: loading text không còn sau error, alert có thông tin chính xác.
-- [ ] Test `rooms=[]`, room empty, invalid room, search không có kết quả; role=status cũ hoạt động đúng.
-- [ ] Test background refresh với `room.isFetching`/`rooms.isFetching`: không duplicate loading status.
-- [ ] Test room switching, reload, Back/Forward, Tab/Enter/Space; không steal focus.
-- [ ] Chạy `collection.spec.ts`, `accessibility-keyboard.spec.ts`, `exhibit-detail.spec.ts`, `tour-2d-fallback.spec.ts`, `public-report-modal.spec.ts`.
-- [ ] Kiểm tra viewport 320px và desktop, light/dark nếu CSS thay đổi; không horizontal overflow mới.
-- [ ] Nếu có NVDA/VoiceOver, nghiệm thu nghe status thật khi API delay, ghi phiên bản browser/OS và kết quả; nếu không có, ghi `NOT TESTED` chứ không ghi PASS từ DOM test.
+- [x] Test list/detail HTTP/schema error và retry: status được clear, alert và retry vẫn đúng.
+- [x] Test `rooms=[]`, room empty, invalid room, no-match search; status cũ được scope theo text.
+- [x] Gate cả list/detail refetch; MutationObserver xác nhận live region không đổi text trong refetch/search; update status cũ chỉ có một.
+- [x] Room switching, reload, Back/Forward, Tab/Enter/Space và focus PASS.
+- [x] Chạy đủ 5 suite: **50 passed / 1 failed (4.0m), exit 1** trên production preview; Collection **14/14 PASS**, các suite còn lại **36/37**. Lỗi F04 tái hiện trên base `dev` như phần evidence bên dưới.
+- [x] Existing responsive regression bao phủ 320–1440px, light/dark, không overflow; named status 1×1px và không bị ẩn khỏi a11y tree; không sửa CSS.
+- [x] Manual listening: **NOT TESTED**, không đánh đồng DOM PASS với phát âm trên NVDA/VoiceOver.
 
 **Commit đề xuất:** `test(a11y): cover collection loading lifecycle`
 
@@ -159,25 +159,38 @@ npx playwright test tests/accessibility-keyboard.spec.ts tests/exhibit-detail.sp
 
 | Gate / scenario | Kỳ vọng | Actual | Evidence |
 |---|---|---|---|
-| AC-01 List pending | Live status + skeleton | NOT RUN | — |
-| AC-02 Detail pending | Status đúng phòng | NOT RUN | — |
-| AC-03 Load success | Status clear + cards | NOT RUN | — |
-| AC-04 Room switch pending | Không stale / status B | NOT RUN | — |
-| AC-05 Error + retry | Alert, không loading giả | NOT RUN | — |
-| AC-06 Empty/invalid/search | Existing statuses giữ đúng | NOT RUN | — |
-| AC-07 Background refetch | Không thông báo trùng | NOT RUN | — |
-| AC-08 Keyboard/focus | Không cướp focus | NOT RUN | — |
-| AC-09 Existing status tests | Không strict-mode failure | NOT RUN | — |
-| Collection Playwright | PASS | NOT RUN | — |
-| Affected public suites | PASS | NOT RUN | — |
-| Frontend typecheck | PASS | NOT RUN | — |
-| Frontend lint | Exit 0; ghi warning | NOT RUN | — |
-| Frontend unit tests | PASS | NOT RUN | — |
-| Production build | PASS | NOT RUN | — |
-| Manual screen reader | PASS/FAIL/NOT TESTED có lý do | NOT TESTED | — |
+| AC-01 List pending | Live status + skeleton | PASS | Promise gate list; named polite/atomic status, skeleton `aria-hidden` |
+| AC-02 Detail pending | Status đúng phòng | PASS | Cùng node đổi message sang room A |
+| AC-03 Load success | Status clear + cards | PASS | Cùng node rỗng, 5 cards, skeleton biến mất |
+| AC-04 Room switch pending | Không stale / status B | PASS | Gate ceramics; status B, pressed pill và focus giữ nguyên |
+| AC-05 Error + retry | Alert, không loading giả | PASS | List/detail HTTP và malformed schema; recovery |
+| AC-06 Empty/invalid/search | Existing statuses giữ đúng | PASS | List/room empty, unknown room không fetch, search empty |
+| AC-07 Background refetch | Không thông báo trùng | PASS | Gate list/detail; MutationObserver không ghi nhận text mutation |
+| AC-08 Keyboard/focus | Không cướp focus | PASS | Pills/skip link/detail return/URL history; search focus qua refresh |
+| AC-09 Existing status tests | Không strict-mode failure | PASS | Scope 3 Collection assertions và 1 D06 assertion theo text |
+| Collection Playwright | PASS | 14/14 PASS | Lượt production preview cuối, thuộc cùng run 51 tests |
+| Affected public suites | PASS | 36 PASS / 1 FAIL | Tổng cùng Collection: 50/51, exit 1; F04 cũng FAIL tại base `fcb2b4d`, chưa đủ điều kiện báo toàn bộ PASS |
+| Frontend typecheck | PASS | PASS, exit 0 | `npm.cmd run typecheck`; code runtime cuối |
+| Frontend lint | Exit 0; ghi warning | PASS, exit 0 | 0 errors; 1 warning `react-hooks/exhaustive-deps` cũ tại `CollectionPage` |
+| Frontend unit tests | PASS | PASS, exit 0 | `npm.cmd run test:unit`: 31 files / 170 tests, 13.20s |
+| Production build | PASS | PASS, exit 0 | `npm.cmd run build`: Vite 1m47s; warning chunks >500 kB hiện hữu |
+| Manual screen reader | PASS/FAIL/NOT TESTED có lý do | NOT TESTED | Không thực hiện lượt nghe NVDA/VoiceOver trong môi trường agent Windows; không suy ra speech từ DOM assertions |
 | Git diff | Không lan scope | NOT RUN | — |
 
 **Quy tắc ghi nhận:** Những giá trị `NOT RUN` là trạng thái của tài liệu **tại thời điểm soạn**. Không điền PASS chỉ vì PR #99/#104 từng chạy xanh. Nếu browser test dùng API mocked thì gọi đúng là browser/UI test với mocked API, không ghi là live API.
+
+### Ghi nhận thực thi — 27/10/2026
+
+- Nhánh `fix/public-a11y-loading`, base sau fetch `fcb2b4d247f73c59c1cde5d01046f29d80aaf075`.
+- Baseline focused: **5/5 PASS**, exit 0. DOM khi list đang pending: skeleton `aria-hidden=true`, named loading status **0**.
+- RED trước production: **2/2 FAIL** do named loading status count 0 thay vì 1. GREEN sau production: **2/2 PASS**, exit 0.
+- Chỉ thêm Mantine `VisuallyHidden` và state/effect ánh xạ pending trong `CollectionPage`; không cần CSS riêng. Effect dùng message string làm dependency nên list/detail refetch với dữ liệu đã có không tạo lại thông báo ban đầu.
+- Regression ban đầu trên Vite dev: **48 PASS / 3 FAIL**, exit 1 (5.7m). Hai assertion D06 được sửa trong test: scope status cập nhật khi còn ở Collection; thay kỳ vọng font Times New Roman cũ bằng display font Plus Jakarta Sans đang có từ base. Runtime/CSS trang detail không thay đổi.
+- Lượt cuối trên production preview: **50 PASS / 1 FAIL (4.0m), exit 1**, không skipped. Hai ca D06 đã PASS trong lượt đầy đủ. Lệnh: `npx.cmd playwright test tests/collection.spec.ts tests/accessibility-keyboard.spec.ts tests/exhibit-detail.spec.ts tests/tour-2d-fallback.spec.ts tests/public-report-modal.spec.ts --reporter=line`; `PLAYWRIGHT_PREVIEW=1`, `CI`/`MUSEUM_LIVE_TEST` rỗng; preview mở riêng trên `127.0.0.1:4173`.
+- **Lỗi còn mở:** `tour-2d-fallback.spec.ts:105` — `[F04] unrecovered context retains selection and releases in-flight GLBs after the bounded recovery deadline`. Timeout 5s tại dòng 119 vì không tìm thấy canvas có nhãn `Phòng trưng bày 3D`, trước khi test giả lập mất context. Diagnostic xác nhận có `<canvas>` nhưng chưa có nhãn; chưa kết luận nguyên nhân renderer. Không đổi timeout hoặc bỏ assertion để ép PASS.
+- **Đối chiếu baseline:** export đúng source `fcb2b4d` bằng `git archive`, dùng cùng dependencies/env local và Edge **156.0.4314.42** trên Windows; chỉ đổi port fixture/dev server sang **4174** trong bản sao tạm. Chạy `node node_modules/@playwright/test/cli.js test tests/tour-2d-fallback.spec.ts -g 'unrecovered context' --reporter=line` tại bản sao: **1 FAIL, exit 1**, cùng lỗi tại dòng 119. Lỗi đã có trên base; không sửa runtime 3D trong task Collection. Source baseline/log/trace giữ trong workspace tạm git-ignored để đối chiếu.
+- Review độc lập toàn diff: không có Critical/Important/Minor; phạm vi quyết định font/locator được review cùng. Kết quả chạy cuối và QA nghe screen reader do người triển khai ghi riêng.
+- Browser tests dùng public API fixtures; không gọi live API hay ghi database. Log/trace/snapshot là artifacts cục bộ, không đưa vào Git.
 
 ## 8. Definition of Done
 
