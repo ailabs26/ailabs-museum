@@ -8,6 +8,11 @@ export interface MuseumCameraView { target: Point; position: Point }
 export interface ModelFocusBounds { center: Point; radius: number }
 export const INITIAL_CAMERA_POSITION: Point = [0, 2.6, 5.8];
 export const INITIAL_CAMERA_TARGET: Point = [0, 1.35, 0];
+/** Preserve architectural context in portrait without moving CMS/camera coordinates. */
+export function getMuseumFov(aspect: number): number {
+  if (!Number.isFinite(aspect) || aspect >= 1 || aspect <= 0) return 60;
+  return Math.min(82, 2 * Math.atan(Math.tan(Math.PI / 6) / aspect) * 180 / Math.PI);
+}
 export const CAMERA_MIN_POLAR = 1.25;
 export const CAMERA_MAX_POLAR = 1.55;
 const WALL_MARGIN = 0.4;

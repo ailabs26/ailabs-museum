@@ -1,5 +1,15 @@
 # Aura Museum Web
 
+## Tham quan immersive
+
+Tại `/tour`, **Mở phòng 3D** mở một Portal phủ toàn viewport và xin native fullscreen ngay trong thao tác người dùng. Nếu API không có hoặc bị từ chối, cùng không gian vẫn hoạt động trong fixed overlay. **Thoát tham quan** trả lại trang, scroll và focus; selection trên URL được giữ. Escape ưu tiên modal báo nội dung, phiên XR, chi tiết hiện vật, rồi tour. Trình duyệt có thể dành riêng Escape để kết thúc native fullscreen và đóng tour trực tiếp.
+
+HUD gồm tên/phòng hiện tại, room selector, reset/focus/photo/VR, minimap và dải hiện vật theo thứ tự CMS. Danh mục, điểm tương tác, zoom và hướng dẫn có thể mở khi cần. Panel chi tiết cuộn độc lập trên scene; không đổi kích thước Canvas. Tab được giữ trong tour khi mở, nền inert; không dùng pointer lock. Trong lúc đổi phòng/lỗi renderer, nút thoát và Escape vẫn có hiệu lực.
+
+Phòng giữ kích thước 14 × 16 × 5 m và toàn bộ tọa độ/bệ/collider CMS. Kiến trúc dùng limestone, lime plaster, walnut và bronze với texture tự tạo CC0 tại `public/textures/gallery/` (có script tái tạo và provenance). GLB thực vẫn dùng pipeline kiểm chứng/loading/normalization/fallback hiện có; các hình khối minh họa không phải mô hình lịch sử. Rendering giữ demand loop, ACES/sRGB, môi trường phản xạ được dispose theo renderer và tối đa một shadow map. Tier balanced giới hạn DPR 1.5, shadow 1024, anisotropy 4; tier low dùng DPR 1, contact shadow và anisotropy 2. Không thêm postprocessing. Camera entrance 700 ms nằm trong giới hạn navigation, bỏ qua nếu bị CMS placement chặn hoặc bật reduced motion; lens portrait giới hạn 82° và không ghi đè projection XR.
+
+Regression mới: `npm.cmd test -- museum-fullscreen.spec.ts museum-immersive-ui.spec.ts museum-gallery.spec.ts museum-xr.spec.ts`. Dùng bản build production để đánh giá chính thức (`PLAYWRIGHT_PREVIEW=1`); software WebGL không đại diện GPU/điện thoại/headset thật. Kế hoạch và bằng chứng: [immersive museum redesign](../docs/plans/261026-immersive-museum-redesign/plan.md).
+
 ## Phòng GLB từ Storage private
 
 Sau khi backend được cấu hình Storage và seed bộ model đã xác minh (xem `../back-end/README.md`), chạy `npm run dev` và mở `http://localhost:5173/tour.html?room=bo-suu-tap-glb`. Nhấn **Mở phòng 3D**; chờ **Đã tải 5/5 mô hình 3D**, click/tap vào hiện vật hoặc chọn từ danh mục. Chọn khung 3D rồi dùng **WASD** để đi, **Shift** để đi nhanh; giữ và kéo chuột để nhìn. Trên thiết bị touch, dùng joystick trái và vuốt vùng nhìn bên phải đồng thời. **F / Tập trung hiện vật** để xem gần, **Home / Góc nhìn ban đầu** để đặt lại; mũi tên xoay, **+/−** hoặc cuộn chuột để tiến/lùi. **Escape** đóng chi tiết, **Tab** rời khung. HUD có thể ẩn hướng dẫn. Không cần pointer lock; tap/click vẫn chọn hiện vật/hotspot, drag không chọn.

@@ -31,7 +31,7 @@ export const initialTestReports: TestContentReport[] = [
 ];
 
 export async function installCmsReportsWorkflowApi(page: Page) {
-  let reports: TestContentReport[] = [...initialTestReports];
+  const reports: TestContentReport[] = [...initialTestReports];
   const writes: Array<{ method: string; path: string; data?: unknown }> = [];
 
   await page.route('**/api/auth/me', async (route) => {

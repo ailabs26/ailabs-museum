@@ -1,3 +1,4 @@
+import { exitMuseumIfOpen, refreshMuseum } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { installMuseumApi, fulfillMuseum } from './fixtures/museumApi';
 import { envelope, roomA, roomB, roomSummaries } from './fixtures/museumContent';
@@ -41,9 +42,9 @@ test('rapid switching cancels the obsolete request and late data cannot replace 
   await expect(page.locator('canvas')).toHaveCount(0);
   await page.getByLabel('Chọn phòng trưng bày').selectOption('empty');
   await expect.poll(() => wasCancelled).toBe(true);
-  await expect(page.getByRole('heading', { name: 'Phòng mới', exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Tham quan bảo tàng' }).getByRole('heading', { name: 'Phòng mới', exact: true })).toBeVisible();
   release();
-  await expect(page.getByRole('heading', { name: 'Phòng mới', exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Tham quan bảo tàng' }).getByRole('heading', { name: 'Phòng mới', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Bình gốm' })).toHaveCount(0);
   await expect(page.locator('canvas')).toHaveCount(1);
 });
@@ -60,10 +61,11 @@ test('leaving the page aborts active detail requests', async ({ page }) => {
   await page.route('**/api/rooms/ceramics', async (route) => { started = true; await delayed; await fulfillMuseum(route, envelope(roomB)); });
   await page.goto('/tour?room=ceramics');
   await expect.poll(() => started).toBe(true);
+  await exitMuseumIfOpen(page);
   await page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true }).click();
   await expect.poll(() => wasCancelled).toBe(true);
   release();
-  await expect(page.getByRole('heading', { name: /Mỗi hiện vật,.*một câu chuyện/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Chạm vào Di sản/ })).toBeVisible();
   await expect(page.locator('canvas')).toHaveCount(0);
 });
 
@@ -74,13 +76,13 @@ test('failed refresh hides cached detail and allows manual recovery', async ({ p
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.locator('canvas')).toBeVisible();
   await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, { success: false, data: null, message: 'Server unavailable' }, 503));
-  await page.getByRole('button', { name: 'Làm mới' }).click();
-  await expect(page.getByRole('alert')).toContainText('Không tải được phòng trưng bày');
+  await refreshMuseum(page);
+  await expect(page.getByRole('dialog', { name: 'Tham quan bảo tàng' }).getByRole('alert')).toContainText('Không tải được phòng trưng bày');
   await expect(page.locator('canvas')).toHaveCount(0);
   await expect(page.getByRole('listitem')).toHaveCount(0);
   await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, name: 'Phòng cập nhật' })));
-  await page.getByRole('button', { name: 'Thử lại' }).click();
-  await expect(page.getByRole('heading', { name: 'Phòng cập nhật', exact: true })).toBeVisible();
+  await page.getByRole('dialog', { name: 'Tham quan bảo tàng' }).getByRole('button', { name: 'Thử lại' }).click();
+  await expect(page.getByRole('dialog', { name: 'Tham quan bảo tàng' }).getByRole('heading', { name: 'Phòng cập nhật', exact: true })).toBeVisible();
   await expect(page.locator('canvas')).toHaveCount(1);
 });
 
@@ -89,7 +91,7 @@ test('refresh removes a room that is no longer public without retaining its cont
   await page.goto('/tour?room=ceramics');
   await expect(page.getByRole('heading', { name: 'Bình gốm' })).toBeVisible();
   await page.route('**/api/rooms', (route) => fulfillMuseum(route, envelope([roomSummaries[0]])));
-  await page.getByRole('button', { name: 'Làm mới' }).click();
+  await refreshMuseum(page);
   await expect(page.getByRole('alert')).toContainText('Phòng được chọn không có trong danh sách công khai');
   await expect(page.getByRole('listitem')).toHaveCount(0);
   await expect(page.locator('canvas')).toHaveCount(0);
@@ -137,7 +139,7 @@ test('switching during refresh cancels old detail and keeps the chosen room thro
     await fulfillMuseum(route, envelope({ ...roomA, name: 'Phòng sau cập nhật' }));
     detailFinished = true;
   });
-  await page.getByRole('button', { name: 'Làm mới' }).click();
+  await refreshMuseum(page);
   await expect.poll(() => listStarted && detailStarted).toBe(true);
   await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
   await expect.poll(() => wasCancelled).toBe(true);

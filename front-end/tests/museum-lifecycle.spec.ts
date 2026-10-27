@@ -1,11 +1,15 @@
+import { exitMuseumIfOpen } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { installMuseumApi } from './fixtures/museumApi';
+import { installRendererProbe, waitForGallerySurfaces, waitForRendererIdle } from './fixtures/museumProbe';
 
 test.beforeEach(async ({ page }) => { await installMuseumApi(page); });
 
 test.use({ deviceScaleFactor: 3 });
 
 test('idle scene stops GPU draw calls and repeated start/stop stays usable', async ({ page }) => {
+  test.setTimeout(60_000);
+  await installRendererProbe(page);
   await page.addInitScript(() => {
     Reflect.set(window, '__museumDraws', 0);
     const original = WebGL2RenderingContext.prototype.drawElements;
@@ -26,14 +30,14 @@ test('idle scene stops GPU draw calls and repeated start/stop stays usable', asy
     expect(dpr).toBeGreaterThan(1);
     expect(dpr).toBeLessThanOrEqual(1.5);
     await expect.poll(() => page.evaluate(() => Reflect.get(window, '__museumDraws'))).toBeGreaterThan(0);
-    // Deliberate observation interval: prove demand rendering becomes idle.
-    await page.waitForTimeout(700);
+    await waitForGallerySurfaces(page);
+    await waitForRendererIdle(page);
     const draws = await page.evaluate(() => Reflect.get(window, '__museumDraws'));
     await page.waitForTimeout(350);
     expect(await page.evaluate(() => Reflect.get(window, '__museumDraws'))).toBe(draws);
     await canvas.press('ArrowRight');
     await expect.poll(() => page.evaluate(() => Reflect.get(window, '__museumDraws'))).toBeGreaterThan(draws);
-    await page.getByRole('button', { name: 'Dừng 3D' }).click();
+    await page.getByRole('button', { name: 'Thoát tham quan' }).click();
     await expect(page.locator('canvas')).toHaveCount(0);
   }
   expect(errors).toEqual([]);
@@ -43,6 +47,7 @@ test('leaving the tour releases its canvas and returning starts in DOM mode', as
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible();
+  await exitMuseumIfOpen(page);
   await page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true }).click();
   await expect(page.locator('canvas')).toHaveCount(0);
   await page.getByRole('banner').getByRole('link', { name: 'Tham quan 3D', exact: true }).click();
