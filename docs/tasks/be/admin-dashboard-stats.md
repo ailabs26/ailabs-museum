@@ -16,6 +16,7 @@ hay migration riêng.
 |---|---|---|---|
 | `GET` | `/api/admin/stats/overview` | Đăng nhập (không gắn `@Permissions`) | `OverviewStatsDto` |
 | `GET` | `/api/admin/stats/charts` | Đăng nhập (không gắn `@Permissions`) | `StatsChartsDto` |
+| `GET` | `/api/admin/stats/storage` | Đăng nhập (không gắn `@Permissions`) | `StorageStatsDto` |
 
 Mọi tài khoản quản trị đã đăng nhập đều xem được Dashboard; guard JWT toàn cục vẫn chặn
 khách chưa đăng nhập (401).
@@ -51,16 +52,31 @@ trạng thái. (Các phép đếm khác vẫn cần DB.)
 
 Các truy vấn trong mỗi endpoint chạy song song bằng `Promise.all`.
 
+### `StorageStatsDto`
+
+Bổ sung sau Task 21, phục vụ thẻ dung lượng lưu trữ trên Dashboard.
+
+| Field | Ý nghĩa |
+|---|---|
+| `byKind[]` | `{ kind, bytes, count }` cho mỗi loại media (`model`, `image`, `audio`, `subtitle`) |
+| `totalBytes` | tổng `bytes` của mọi loại |
+| `totalCount` | tổng số tệp |
+
+- Một truy vấn `media` GROUP BY `kind`, `SUM(size_bytes)` (`COALESCE` về 0), bỏ bản xóa mềm.
+- Loại chưa có tệp nào **không xuất hiện** trong `byKind` (FE tự coi là 0).
+- Tính theo bản ghi `media` trong DB, không quét storage thật; file của media đã xóa mềm vẫn
+  nằm trên storage nhưng không được tính.
+
 ## Ghi chú kiến trúc
 
-`StatsService` inject thẳng `Repository<Room|Exhibit|ExhibitRevision|ContentReport>` và
+`StatsService` inject thẳng `Repository<Room|Exhibit|ExhibitRevision|ContentReport|Media>` và
 `DataSource`, không qua repository riêng. Đây là ngoại lệ so với quy ước
 Controller → Service → Repository: module chỉ đọc số liệu tổng hợp từ nhiều bảng của module
 khác. Nếu thêm truy vấn phức tạp, cân nhắc tách `StatsRepository`.
 
 ## Front-end
 
-- Service: `front-end/src/services/stats.service.ts` (`overview`, `charts`).
+- Service: `front-end/src/services/stats.service.ts` (`overview`, `charts`, `storage`).
 - Màn hình: `front-end/src/pages/admin/DashboardPage.tsx` (trang đầu `/admin`).
 
 ## Kiểm thử
