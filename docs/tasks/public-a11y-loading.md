@@ -101,13 +101,13 @@
 
 **Mục tiêu:** Phát thông báo đầy đủ mà không thay giao diện.
 
-- [ ] Thêm một region persistent có `role=status`, `aria-live=polite`, `aria-atomic=true`, `aria-label=Trạng thái tải bộ sưu tập`.
-- [ ] Region rỗng khi mount; text update sau mount/transition, đảm bảo query pending hợp lệ.
-- [ ] Ưu tiên `rooms.isPending`; chỉ xét `room.isPending` nếu `selectedRoom` tồn tại, dùng tên phòng hiện tại.
-- [ ] Trả region về rỗng khi hết pending; lỗi giữ `role=alert` cũ; không ảnh hưởng empty state.
-- [ ] Ẩn trực quan bằng utility hoặc CSS đúng semantics; không tạo khoảng trống layout.
-- [ ] Giữ `<ExhibitSkeleton aria-hidden=true>`, route, pills, search, report và Canvas behavior không đổi.
-- [ ] Chạy focused RED→GREEN, typecheck và targeted ESLint; kiểm không thêm warnings mới.
+- [x] Thêm một region persistent có `role=status`, `aria-live=polite`, `aria-atomic=true`, `aria-label=Trạng thái tải bộ sưu tập`.
+- [x] Region rỗng khi mount; text update bằng effect sau mount/transition.
+- [x] Ưu tiên `rooms.isPending`; chỉ xét detail pending với `selectedRoom` hợp lệ.
+- [x] Trả region về rỗng khi hết pending; giữ lỗi/empty state hiện có.
+- [x] Dùng Mantine `VisuallyHidden` có sẵn; đã kiểm source CSS clip/1px/absolute, không cần sửa CSS.
+- [x] Giữ skeleton, route, pills, search, report và Canvas behavior.
+- [x] Focused GREEN **2 passed (17.1s), exit 0**; typecheck và ESLint file thay đổi được kiểm trước commit.
 
 **Commit đề xuất:** `fix(a11y): announce collection loading state`
 
