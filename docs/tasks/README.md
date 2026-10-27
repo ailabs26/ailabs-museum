@@ -12,13 +12,16 @@ Kế hoạch trước khi làm nằm ở [`../plans/`](../plans/); kiến trúc 
 
 | Task | Tài liệu |
 |---|---|
-| T-AUTH — đăng nhập, JWT, refresh token | [admin-be-auth.md](admin-be-auth.md) · sửa luồng: [be](be/admin-auth-flow.md) / [fe](fe/admin-auth-flow.md) · lỗi biên: [be](be/admin-auth-edge-cases.md) / [fe](fe/admin-auth-edge-cases.md) |
+| T-AUTH — đăng nhập, JWT, refresh token, rate limit | [admin-be-auth.md](admin-be-auth.md) · sửa luồng: [be](be/admin-auth-flow.md) / [fe](fe/admin-auth-flow.md) · lỗi biên: [be](be/admin-auth-edge-cases.md) / [fe](fe/admin-auth-edge-cases.md) |
+| Phiên đăng nhập — đăng xuất thiết bị khác / tất cả | [be](be/auth-session-management.md) / [fe](fe/auth-sessions-page.md) |
+| Tự đổi mật khẩu | [auth-change-password.md](auth-change-password.md) |
 | T-USERS — người dùng, gán vai trò | [admin-be-users.md](admin-be-users.md) · hoàn thiện: [be](be/admin-user-management.md) / [fe](fe/admin-user-management.md) |
 | T-ROLES — vai trò, ma trận quyền | [admin-be-roles-permissions.md](admin-be-roles-permissions.md) · ma trận: [be](be/admin-permission-matrix.md) / [fe](fe/admin-permission-matrix.md) |
 | T-AUDIT — nhật ký thao tác | [admin-be-audit.md](admin-be-audit.md) · [be/audit-forbidden-access.md](be/audit-forbidden-access.md) |
 | T-SEED — quyền, vai trò, admin đầu tiên | [admin-be-seed.md](admin-be-seed.md) |
 | T-FE — khung FE Admin | [admin-fe-skeleton.md](admin-fe-skeleton.md) |
-| Task 21 — Dashboard stats | [be/admin-dashboard-stats.md](be/admin-dashboard-stats.md) |
+| Task 21 — Dashboard stats (gồm dung lượng lưu trữ) | [be/admin-dashboard-stats.md](be/admin-dashboard-stats.md) |
+| Xóa mềm & xóa hàng loạt (users, roles, phòng, hiện vật, media) | [admin-bulk-delete.md](admin-bulk-delete.md) |
 
 ## CMS nội dung
 
@@ -46,6 +49,8 @@ Kế hoạch trước khi làm nằm ở [`../plans/`](../plans/); kiến trúc 
 | Task 22 — kiểm duyệt revision | [be/moderation.md](be/moderation.md) · sửa hàng đợi: [moderation-queue-fix.md](moderation-queue-fix.md) |
 | Task 23 — báo cáo nội dung sai | [be/content-reports.md](be/content-reports.md) |
 | Task 25 — kiểm thử tích hợp CMS | [admin-cms-testing.md](admin-cms-testing.md) |
+| Task 34 & 35 — E2E luồng CMS Admin + bug log | [admin-cms-e2e-qa.md](admin-cms-e2e-qa.md) |
+| Modal báo cáo nội dung (phía khách) | [public-report-modal.md](public-report-modal.md) |
 
 ## Trang khách tham quan (2D)
 
@@ -53,10 +58,11 @@ Kế hoạch trước khi làm nằm ở [`../plans/`](../plans/); kiến trúc 
 |---|---|
 | T-HOME — trang chủ | [client-homepage.md](client-homepage.md) |
 | T-HOME-FEATURED — hiện vật nổi bật | [home-featured-exhibits.md](home-featured-exhibits.md) |
-| T-COLLECTION — bộ sưu tập | [client-collection.md](client-collection.md) |
+| T-COLLECTION — bộ sưu tập | [client-collection.md](client-collection.md) · regression: [collection-regression.md](collection-regression.md) |
 | T-DETAIL-2D — chi tiết hiện vật | [exhibit-detail-2d.md](exhibit-detail-2d.md) |
 | T-PREVIEW — minh họa 2D dùng chung | [shared-exhibit-preview.md](shared-exhibit-preview.md) |
-| AUDIO-01 — trình phát thuyết minh | [audio-player-01.md](audio-player-01.md) |
+| MEDIA-01 — ảnh và audio thật qua API | [public-image-audio.md](public-image-audio.md) |
+| AUDIO-01 — trình phát thuyết minh | [audio-player-01.md](audio-player-01.md) · tua & bố cục: [audio-player-seek-ui.md](audio-player-seek-ui.md) |
 
 ## Tour 3D / WebXR
 
@@ -64,6 +70,7 @@ Kế hoạch trước khi làm nằm ở [`../plans/`](../plans/); kiến trúc 
 |---|---|
 | Điều hướng WASD + cảm ứng | [tour-navigation.md](tour-navigation.md) |
 | Khôi phục điều hướng tour | [public-tour-navigation.md](public-tour-navigation.md) |
+| Deep link tới hiện vật trong tour | [tour-exhibit-deep-link.md](tour-exhibit-deep-link.md) |
 | T-FALLBACK — 3D sang 2D | [tour-2d-fallback.md](tour-2d-fallback.md) |
 | Font tiếng Việt trong tour | [tour-vietnamese-font.md](tour-vietnamese-font.md) |
 | Tour WebXR | [tour-webxr.md](tour-webxr.md) |
