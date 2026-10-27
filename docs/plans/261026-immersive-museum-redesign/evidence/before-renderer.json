@@ -1,0 +1,24 @@
+[
+  {
+    "live": true,
+    "frames": 3,
+    "times": [
+      1897.8999999761581,
+      1909.7999999523163,
+      2118.1999999284744
+    ],
+    "calls": 58,
+    "triangles": 6272,
+    "geometries": 54,
+    "textures": 5,
+    "materials": 58,
+    "objects": 77,
+    "labels": {
+      "c38e6d8c-12b5-47a4-802f-957d52fadc63": 5,
+      "cef53a25-e9a6-4ecd-a4a4-054bd7471713": 6,
+      "f8cb1d0f-8c29-4e23-8fb1-1711128df5a6": 7,
+      "b9348847-a5c0-4e20-9cd3-e23dfd3f024f": 8,
+      "99a2b3b0-65d2-46b6-8539-70928865eb8e": 9
+    }
+  }
+]

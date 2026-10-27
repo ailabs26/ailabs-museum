@@ -47,11 +47,11 @@ Art direction selected by implementer from the supplied palette: pale natural li
 
 ## Tasks / progress
 
-- [ ] Phase 01: fullscreen lifecycle and lifecycle regression tests.
-- [ ] Phase 02: immersive HUD, responsive detail overlay and accessible controls.
-- [ ] Phase 03: gallery architecture, original surface assets and plinth finishes.
-- [ ] Phase 04: lighting, PBR renderer settings and bounded shadow quality.
-- [ ] Phase 05: safe cinematic entrance and adaptive rendering.
-- [ ] Phase 06: complete focused regression suite, production gates, visual review and delivery evidence.
+- [x] Phase 01: fullscreen lifecycle and lifecycle regression tests.
+- [x] Phase 02: immersive HUD, responsive detail overlay and accessible controls.
+- [x] Phase 03: gallery architecture, original surface assets and plinth finishes.
+- [x] Phase 04: lighting, PBR renderer settings and bounded shadow quality.
+- [x] Phase 05: safe cinematic entrance and adaptive rendering.
+- [x] Phase 06: complete focused regression suite, production gates, visual review and delivery evidence.
 
 See the phase documents for steps, interfaces, risk handling and acceptance gates; see commit-plan.md for atomic boundaries. Update execution evidence in verification.md. Review the entire diff before final delivery.
