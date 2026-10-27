@@ -1,6 +1,6 @@
 # Public Collection Loading Accessibility — Implementation Plan
 
-> **Trạng thái:** Đã triển khai trên `fix/public-a11y-loading`; Collection 14/14 PASS. Tổng affected 50/51 do F04 cũng fail trên base `dev`; chưa đủ điều kiện merge. Xem evidence trong TASK.
+> **Trạng thái:** Đã triển khai trên `fix/public-a11y-loading`; Collection 14/14 và tổng affected **51/51 PASS**, exit 0 sau khi sửa startup wait trong test F04. Người dùng xác nhận kiểm tra thực tế OK; chưa push/PR/merge. Xem evidence trong TASK.
 >
 > **Task / Acceptance:** [public-a11y-loading.md](../tasks/public-a11y-loading.md)
 
@@ -164,8 +164,8 @@ Không chạy migration, seed hoặc ghi database. `npm run lint` ở mốc PR #
 - [x] Success/empty/error/retry/invalid room/refetch/switch không giữ loading sai hay dữ liệu phòng cũ.
 - [x] URL/search/report/keyboard focus giữ nguyên; không tự mở 3D/Canvas.
 - [x] RED 2 FAIL → GREEN 2 PASS; các status assertions cũ được scope, không bỏ case.
-- [ ] Required gates PASS toàn bộ: typecheck/lint/unit/build exit 0; Collection 14/14 nhưng affected 50/51. **F04 đã tái hiện trên base `fcb2b4d`; chưa đủ điều kiện báo toàn bộ PASS/merge.** Chi tiết trong TASK.
-- [x] Manual screen-reader QA ghi **NOT TESTED**, tách khỏi DOM semantics.
+- [x] Required checks: typecheck/lint/unit/build exit 0; Collection **14/14**, affected **51/51 PASS** sau test-only fix cho F04. Lịch sử thất bại và RED/GREEN ghi trong TASK.
+- [x] Manual QA: người dùng xác nhận kiểm tra thực tế **OK**; agent không tự nghe NVDA/VoiceOver, tách khỏi DOM semantics.
 - [x] Tài liệu ghi đúng evidence; không push/PR/merge ngoài yêu cầu.
 
 ## 8. Gợi ý commit và review

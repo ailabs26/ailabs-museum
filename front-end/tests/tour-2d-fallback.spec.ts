@@ -116,7 +116,8 @@ test('[F04] unrecovered context retains selection and releases in-flight GLBs af
   await page.goto('/tour?room=sculpture');
   await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true });
-  await expect(canvas).toBeVisible();
+  // Software WebGL startup can exceed the default assertion timeout.
+  await expect(canvas).toBeVisible({ timeout: 15_000 });
   await expect.poll(() => pending).toBe(1);
   await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 1');
   await canvas.evaluate((element: HTMLCanvasElement) => {
