@@ -152,7 +152,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
     {webglStatus !== 'ready' && <div className={classes.recovering} role="status">Đang khôi phục không gian 3D. Bạn có thể tiếp tục đọc danh mục.</div>}
     {isWebInputEnabled && <NavigationHud input={input} mode={mode} isActive={isActive} hasTouch={hasTouch} immersive={immersive} />}
     {isWebInputEnabled && <SpatialMinimap displays={displays} selectedId={selectedId} onSelect={onSelect} />}
-    {isWebInputEnabled && <ArtifactDock displays={displays} selectedId={selectedId} onSelect={onSelect} />}
+    {isWebInputEnabled && <ArtifactDock displays={displays} selectedId={selectedId} onSelect={onSelect} onFocus={() => handleCommand('focus')} />}
     </div>
     <Group className={classes.toolbar} gap="xs" aria-label="Điều khiển góc nhìn">
       <Button variant="default" aria-label="Góc nhìn ban đầu" title="Góc nhìn ban đầu (Home)" disabled={!isWebInputEnabled} onClick={() => handleCommand('reset')}>

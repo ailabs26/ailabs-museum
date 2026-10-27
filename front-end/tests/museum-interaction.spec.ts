@@ -116,6 +116,29 @@ test('selecting an exhibit focuses the camera and reset retains published detail
   expect(focused.equals(reset)).toBe(false);
 });
 
+test('reselecting the dock exhibit refocuses after manual camera input', async ({ page }) => {
+  await installRendererProbe(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const canvas = page.getByLabel('Phòng trưng bày 3D');
+  await expect(canvas).toBeVisible();
+  const dockButton = page.getByRole('button', { name: 'Lia camera tới Hiện vật 2', exact: true });
+  await dockButton.click();
+  await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'inspect');
+  const readCamera = () => page.evaluate(() => {
+    const camera = window.museumProbe.at(-1)!.camera!.deref()!;
+    return { position: camera.position.toArray(), rotation: camera.quaternion.toArray() };
+  });
+  const focused = await readCamera();
+  await canvas.press('ArrowLeft');
+  await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'explore');
+  expect(await readCamera()).not.toEqual(focused);
+  await dockButton.click();
+  await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'inspect');
+  await expect.poll(readCamera).toEqual(focused);
+});
+
 test('outside-room exhibits retain detail but cannot focus the camera outside the gallery', async ({ page }) => {
   await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: [{ ...roomA.exhibits[0], positionX: 20 }] })));
   await page.goto('/tour');
