@@ -57,8 +57,10 @@ export function GalleryArchitecture() {
         <boxGeometry args={[.03, .08, 3.2]} />
       </mesh>)}
     </group>)}
-    <GalleryInstances positions={SEAMS_X} size={[.008, .002, 16]} material={grout} />
-    <GalleryInstances positions={SEAMS_Z} size={[14, .002, .008]} material={grout} />
+    <group userData={{ xrIgnore: true }}>
+      <GalleryInstances positions={SEAMS_X} size={[.008, .002, 16]} material={grout} />
+      <GalleryInstances positions={SEAMS_Z} size={[14, .002, .008]} material={grout} />
+    </group>
     <mesh position={[0, 2.55, -7.94]} material={charcoal}><boxGeometry args={[8.2, 4.5, .1]} /></mesh>
     {[-1, 1].map(side => <group key={side}>
       <mesh position={[side * 4.16, 2.55, -7.85]} material={bronze}><boxGeometry args={[.035, 4.5, .035]} /></mesh>
