@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -15,6 +17,7 @@ import { Audit } from '../../audit/decorators/audit.decorator';
 import { PERMISSIONS } from '../../../common/constants/permissions.constant';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
+import { BulkIdsDto } from '../../../common/dto/bulk-ids.dto';
 import type { AuthUser } from '../../../common/types/auth-user.type';
 import { AssignRolesDto } from '../dto/assign-roles.dto';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -61,6 +64,15 @@ export class UsersController {
     @CurrentUser() actor: AuthUser,
   ) {
     return this.users.update(id, dto, actor);
+  }
+
+  @Post('bulk-delete')
+  @HttpCode(HttpStatus.OK)
+  @Permissions(PERMISSIONS.USER_DELETE)
+  @Audit('user.delete', 'user')
+  @ApiOperation({ summary: 'Xóa mềm nhiều tài khoản (tất cả hoặc không; chặn tài khoản Admin, 409 kèm lý do từng ID)' })
+  removeMany(@Body() dto: BulkIdsDto) {
+    return this.users.removeMany(dto.ids);
   }
 
   @Delete(':id')

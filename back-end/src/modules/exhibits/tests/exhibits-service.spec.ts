@@ -314,8 +314,9 @@ class MockExhibitsRepository {
     this.deletedRevisionIds.push(revisionId);
   }
 
-  async deleteCascadeDraft(exhibitId: string): Promise<void> {
-    this.deletedCascadeExhibitIds.push(exhibitId);
+  /** Xóa mềm (thay cho xóa cứng cascade trước đây). */
+  async markDeleted(exhibitIds: string[]): Promise<void> {
+    this.deletedCascadeExhibitIds.push(...exhibitIds);
   }
 
   async countByRoom(): Promise<number> {
@@ -1419,16 +1420,17 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       );
     });
 
-    it('TC-S095: deleteExhibitDraft explains that hiding does not unlock permanent deletion', async () => {
+    it('TC-S095: deleteExhibitDraft explains that hiding does not unlock deletion', async () => {
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit({ publishedRevisionId: REV_ID_1 });
       await assert.rejects(
         () => service.deleteExhibitDraft(EXHIBIT_ID_1),
-        (err: Error) => err instanceof ConflictException && err.message.includes('không thể xóa vĩnh viễn'),
+        (err: Error) => err instanceof ConflictException && err.message.includes('không thể xóa')
+          && err.message.includes('ẩn hiện vật đang công khai'),
       );
     });
 
-    it('TC-S096: deleteExhibitDraft calls deleteCascadeDraft in transaction when exhibit is purely draft', async () => {
+    it('TC-S096: deleteExhibitDraft soft-deletes (markDeleted) in transaction when exhibit is purely draft', async () => {
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit({
         publishedRevisionId: null,
@@ -1459,7 +1461,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       assert.ok(res.message.includes('thành công'));
     });
 
-    it('TC-S099: deleteExhibitDraft executes cascade deletion inside tx.run', async () => {
+    it('TC-S099: deleteExhibitDraft executes soft deletion inside tx.run', async () => {
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit({
         publishedRevisionId: null,
@@ -1469,7 +1471,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       assert.equal(mockTx.calls, 1);
     });
 
-    it('TC-S100: deleteExhibitDraft does not call deleteCascadeDraft if BR-20 conflict is thrown', async () => {
+    it('TC-S100: deleteExhibitDraft does not soft-delete if BR-20 conflict is thrown', async () => {
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit({ publishedRevisionId: REV_ID_1 });
       await assert.rejects(

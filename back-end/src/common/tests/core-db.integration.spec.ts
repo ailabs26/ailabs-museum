@@ -5,7 +5,7 @@ import { after, before, describe, it } from 'node:test';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { dataSource as appDataSource } from '../../config/data-source';
 import { RefreshSession } from '../../modules/auth/entities/refresh-session.entity';
 import { RefreshSessionsRepository } from '../../modules/auth/repositories/refresh-sessions.repository';
@@ -17,6 +17,7 @@ import { RolePermission } from '../../modules/roles/entities/role-permission.ent
 import { Role } from '../../modules/roles/entities/role.entity';
 import { PermissionsRepository } from '../../modules/roles/repositories/permissions.repository';
 import { RolesRepository } from '../../modules/roles/repositories/roles.repository';
+import { RolesService } from '../../modules/roles/services/roles.service';
 import { UserRole } from '../../modules/users/entities/user-role.entity';
 import { User, UserStatus } from '../../modules/users/entities/user.entity';
 import { UserRolesRepository } from '../../modules/users/repositories/user-roles.repository';
@@ -271,6 +272,62 @@ describe('Core DB (PostgreSQL thật)', { skip }, () => {
       assert.deepEqual((await tx.run((manager) => roles.findManyByIds([role.id, randomUUID()], manager))).map((r) => r.id), [role.id]);
       assert.deepEqual(await tx.run((manager) => roles.findManyByIds([], manager)), []);
       assert.ok((await roles.listWithPermissions()).some((item) => item.id === role.id));
+    });
+  });
+
+  describe('Vai trò xóa mềm (migration SoftDeleteRoles)', () => {
+    let rolesService: RolesService;
+    before(() => {
+      rolesService = new RolesService(roles, permissions, tx);
+    });
+
+    it('migration: có cột is_deleted/deleted_at, CHECK và unique code chỉ cho vai trò chưa xóa', async () => {
+      const [row] = await db.query(`SELECT
+        (SELECT count(*)::int FROM information_schema.columns WHERE table_name = 'roles' AND column_name IN ('is_deleted', 'deleted_at')) AS cols,
+        (SELECT indexdef FROM pg_indexes WHERE indexname = 'UQ_roles_code_active') AS idx,
+        (SELECT count(*)::int FROM pg_constraint WHERE conname = 'CHK_roles_deleted') AS chk`);
+      assert.equal(row.cols, 2);
+      assert.equal(row.chk, 1);
+      assert.match(row.idx, /UNIQUE INDEX .* WHERE \(is_deleted = false\)/);
+    });
+
+    it('xóa mềm: không còn ở danh sách/ma trận/tìm theo code, không gán được; tạo lại cùng mã được; quyền cũ giữ để truy vết', async () => {
+      const code = `${tag}-soft`;
+      const role = await createRole('soft');
+      await db.getRepository(RolePermission).save({ roleId: role.id, permissionId: created.permissions[0] });
+      await rolesService.remove(role.id);
+
+      const stored = await db.getRepository(Role).findOneByOrFail({ id: role.id });
+      assert.equal(stored.isDeleted, true);
+      assert.ok(stored.deletedAt);
+      assert.equal(await db.getRepository(RolePermission).count({ where: { roleId: role.id } }), 1);
+      assert.equal((await roles.listWithPermissions()).some((item) => item.id === role.id), false);
+      assert.equal(await roles.findById(role.id), null);
+      assert.equal(await roles.findByCode(code), null);
+      assert.deepEqual(await tx.run((manager) => roles.findManyByIds([role.id], manager)), []);
+      assert.deepEqual(await userRoles.findMissingRoleIds([role.id]), [role.id]);
+
+      const again = await rolesService.create({ code, name: 'Tạo lại' });
+      created.roles.push(again.id);
+      assert.notEqual(again.id, role.id);
+      await assert.rejects(rolesService.create({ code, name: 'Trùng' }), ConflictException);
+    });
+
+    it('xóa hàng loạt tất cả hoặc không: 1 vai trò đang gán → không vai trò nào bị xóa; hết vướng thì xóa cả', async () => {
+      const free = await createRole('bulk-free');
+      const used = await createRole('bulk-used');
+      const user = await createUser('bulk-role-user');
+      await db.getRepository(UserRole).save({ userId: user.id, roleId: used.id });
+
+      await assert.rejects(rolesService.removeMany([free.id, used.id]), ConflictException);
+      const after = await db.getRepository(Role).findBy({ id: In([free.id, used.id]) });
+      assert.ok(after.every((item) => !item.isDeleted), 'không vai trò nào bị xóa');
+
+      // User đã xóa mềm vẫn giữ dòng user_roles nhưng không còn tính là "đang gán".
+      await db.getRepository(User).update(user.id, { isDeleted: true, deletedAt: new Date() });
+      assert.deepEqual(await rolesService.removeMany([free.id, used.id]), { ids: [free.id, used.id] });
+      const done = await db.getRepository(Role).findBy({ id: In([free.id, used.id]) });
+      assert.ok(done.every((item) => item.isDeleted));
     });
   });
 

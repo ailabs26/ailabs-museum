@@ -8,12 +8,17 @@ import { ApiException } from '@/core/api/api-error';
 import { useAuth } from '@/core/auth/use-auth';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { confirmAction, notify } from '@/shared/components/feedback';
-import { Column, DataTable } from '@/shared/components/data';
+import { BulkActionBar, BulkDeleteFailures, Column, DataTable } from '@/shared/components/data';
+import { useBulkDelete } from '@/shared/hooks/useBulkDelete';
+import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { FormTextField } from '@/shared/components/form';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { RoleRow, rolesService } from '@/services/roles.service';
 
-const SYSTEM_ROLES = new Set(['admin', 'moderator', 'editor']);
+/** Vai trò có sẵn khi cài đặt (chỉ để gắn nhãn). */
+const DEFAULT_ROLES = new Set(['admin', 'moderator', 'editor']);
+/** Chỉ vai trò Admin không xóa được; editor/moderator xóa được khi không ai dùng (back-end kiểm). */
+const deleteBlock = (role: RoleRow) => (role.code === 'admin' ? 'Không thể xóa vai trò Admin' : null);
 
 interface RoleFormValues {
   code: string;
@@ -32,6 +37,14 @@ export function RolesPage() {
 
   const rolesQuery = useQuery({ queryKey: ['roles'], queryFn: () => rolesService.list() });
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['roles'] });
+  const selection = useRowSelection('roles');
+  const bulk = useBulkDelete({
+    removeMany: rolesService.removeMany,
+    noun: 'vai trò',
+    nameOf: (id) => rolesQuery.data?.find((role) => role.id === id)?.name,
+    onSuccess: selection.clear,
+    onSettled: invalidate,
+  });
 
   const form = useForm<RoleFormValues>({
     initialValues: { code: '', name: '' },
@@ -82,9 +95,9 @@ export function RolesPage() {
       render: (r) => (
         <Group gap={6}>
           <strong>{r.code}</strong>
-          {SYSTEM_ROLES.has(r.code) && (
+          {DEFAULT_ROLES.has(r.code) && (
             <Badge size="xs" color="gray" variant="outline">
-              hệ thống
+              mặc định
             </Badge>
           )}
         </Group>
@@ -112,14 +125,14 @@ export function RolesPage() {
               <IconEdit size={18} />
             </ActionIcon>
           )}
-          {canDelete && !SYSTEM_ROLES.has(r.code) && (
+          {canDelete && !deleteBlock(r) && (
             <ActionIcon
               variant="subtle"
               color="red"
               aria-label="Xóa"
               onClick={() =>
                 confirmAction({
-                  message: `Xóa vai trò "${r.name}"?`,
+                  message: `Xóa vai trò "${r.name}"? Vai trò đang gán cho người dùng sẽ không xóa được.`,
                   danger: true,
                   onConfirm: () => removeMutation.mutate(r.id),
                 })
@@ -148,10 +161,23 @@ export function RolesPage() {
         }
       />
 
+      {canDelete && (
+        <>
+          <BulkActionBar count={selection.selectedIds.length} onClear={selection.clear}
+            onDelete={() => bulk.confirmDelete(selection.selectedIds)} loading={bulk.isPending} />
+          <BulkDeleteFailures failures={bulk.failures} onClose={bulk.dismissFailures} />
+        </>
+      )}
       <DataTable
         columns={columns}
         data={rolesQuery.data ?? []}
         rowKey={(r) => r.id}
+        selection={canDelete ? {
+          selectedIds: selection.selectedIds,
+          onChange: selection.setSelectedIds,
+          disabledReason: deleteBlock,
+          rowLabel: (r) => r.name,
+        } : undefined}
         loading={rolesQuery.isLoading}
         emptyText="Chưa có vai trò"
       />

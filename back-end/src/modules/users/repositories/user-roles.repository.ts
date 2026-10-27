@@ -18,14 +18,14 @@ export class UserRolesRepository {
   async findMissingRoleIds(roleIds: string[], manager?: EntityManager): Promise<string[]> {
     if (roleIds.length === 0) return [];
     const repository = manager ? manager.getRepository(Role) : this.roles;
-    const found = await repository.find({ where: { id: In(roleIds) } });
+    const found = await repository.find({ where: { id: In(roleIds), isDeleted: false } });
     const foundIds = new Set(found.map((role) => role.id));
     return roleIds.filter((id) => !foundIds.has(id));
   }
 
   async findCodes(roleIds: string[], manager: EntityManager): Promise<string[]> {
     if (roleIds.length === 0) return [];
-    const roles = await manager.getRepository(Role).find({ where: { id: In(roleIds) } });
+    const roles = await manager.getRepository(Role).find({ where: { id: In(roleIds), isDeleted: false } });
     return roles.map((role) => role.code);
   }
 

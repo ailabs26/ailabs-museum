@@ -263,17 +263,47 @@ describe('UsersService', () => {
       assert.equal(log.some((entry) => entry.startsWith('update')), false);
     });
 
-    it('cho phép khi còn Admin hoạt động khác', async () => {
+    it('không xóa mềm được tài khoản Admin kể cả khi còn Admin khác (phải bỏ vai trò Admin trước)', async () => {
       const { service, setActiveAdmins, users } = lastAdmin();
       setActiveAdmins(2);
-      await service.remove('admin');
-      assert.equal(users.get('admin')!.isDeleted, true);
-      assert.ok(users.get('admin')!.deletedAt instanceof Date);
+      await assert.rejects(service.remove('admin'), /Không thể xóa tài khoản Admin/);
+      assert.equal(users.get('admin')!.isDeleted, undefined);
     });
 
     it('Admin đã bị khóa thì không bị chặn', async () => {
       const { service } = harness([makeUser('admin', ['r-admin'], UserStatus.DISABLED)]);
       await service.setRoles('admin', []);
+    });
+  });
+
+  describe('xóa mềm hàng loạt', () => {
+    const updates = (log: string[]) => log.filter((entry) => entry.startsWith('update'));
+
+    it('hợp lệ hết → khóa quản trị 1 lần, xóa mềm + đăng xuất từng tài khoản, trả { ids }', async () => {
+      const { service, log, users } = harness([makeUser('u1', ['r-editor']), makeUser('u2', [])]);
+      assert.deepEqual(await service.removeMany(['u1', 'u2']), { ids: ['u1', 'u2'] });
+      assert.equal(log.filter((entry) => entry === 'lock').length, 1);
+      assert.deepEqual(updates(log), ['update:tx:deletedAt,isDeleted', 'update:tx:deletedAt,isDeleted']);
+      assert.deepEqual(log.filter((entry) => entry.startsWith('revokeSessions')), ['revokeSessions:u1', 'revokeSessions:u2']);
+      assert.equal(users.get('u1')!.isDeleted && users.get('u2')!.isDeleted, true);
+    });
+
+    it('tất cả hoặc không: có Admin hoặc ID không tồn tại → 409 liệt kê từng ID, không ai bị xóa/đăng xuất', async () => {
+      const { service, log, users } = harness([makeUser('u1', ['r-editor']), makeUser('admin', ['r-admin'])]);
+      await assert.rejects(service.removeMany(['u1', 'admin', 'ghost']), (error: unknown) => {
+        assert.ok(error instanceof ConflictException);
+        const body = error.getResponse() as { errors: Array<{ field: string; message: string }> };
+        assert.deepEqual(body.errors.map((e) => e.field), ['admin', 'ghost']);
+        assert.match(body.errors[0].message, /Không thể xóa tài khoản Admin/);
+        return true;
+      });
+      assert.deepEqual(updates(log), []);
+      assert.equal(log.some((entry) => entry.startsWith('revokeSessions')), false);
+      assert.equal(users.get('u1')!.isDeleted, undefined);
+    });
+
+    it('xóa lẻ: không tồn tại → 404', async () => {
+      await assert.rejects(harness().service.remove('ghost'), NotFoundException);
     });
   });
 

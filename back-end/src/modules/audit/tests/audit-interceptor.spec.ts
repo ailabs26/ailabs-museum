@@ -100,6 +100,12 @@ describe('AuditInterceptor trong chuỗi interceptor thật', () => {
     assign() {
       return { roleIds: ['role-1', 'role-2'] };
     }
+
+    @Post('bulk-delete')
+    @Audit('thing.delete', 'thing')
+    bulkDelete() {
+      return { ids: ['thing-1', 'thing-2', 'thing-3'] };
+    }
   }
 
   async function startApp(recorded: RecordAuditInput[]): Promise<INestApplication> {
@@ -134,6 +140,20 @@ describe('AuditInterceptor trong chuỗi interceptor thật', () => {
     try {
       await request(app.getHttpServer()).post('/things/thing-1/roles').expect(201);
       assert.deepEqual(recorded.map((entry) => entry.resourceId), ['role-1', 'role-2']);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('thao tác hàng loạt trả { ids } → ghi 1 bản ghi cho mỗi ID', async () => {
+    const recorded: RecordAuditInput[] = [];
+    const app = await startApp(recorded);
+    try {
+      await request(app.getHttpServer()).post('/things/bulk-delete').expect(201);
+      assert.deepEqual(
+        recorded.map((entry) => [entry.action, entry.resourceId]),
+        [['thing.delete', 'thing-1'], ['thing.delete', 'thing-2'], ['thing.delete', 'thing-3']],
+      );
     } finally {
       await app.close();
     }
