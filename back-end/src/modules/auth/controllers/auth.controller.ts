@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Patch,
   HttpCode,
   HttpException,
   HttpStatus,
@@ -34,6 +35,7 @@ import { ChangePasswordDto } from '../dto/change-password.dto';
 import { LoginDto } from '../dto/login.dto';
 import { WrongCurrentPasswordException } from '../exceptions/wrong-current-password.exception';
 import { SessionResponse } from '../dto/session-response.dto';
+import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard';
 import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
 import { SessionsService } from '../services/sessions.service';
@@ -145,6 +147,15 @@ export class AuthController {
   @ApiOkResponse({ description: 'User hiện tại trong ApiResponse.' })
   me(@CurrentUser() user: AuthUser): Promise<AuthUser> {
     return this.auth.me(user.id);
+  }
+
+  @Patch('me')
+  @ApiBearerAuth()
+  @Audit('auth.profile_update', 'user')
+  @ApiOperation({ summary: 'Tự sửa hồ sơ (tên hiển thị) của tài khoản đang đăng nhập' })
+  @ApiOkResponse({ description: 'AuthUser sau khi cập nhật.' })
+  updateProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto): Promise<AuthUser> {
+    return this.auth.updateProfile(user.id, dto);
   }
 
   /** Chạy kiểm tra giới hạn; nếu 429 thì gắn header Retry-After rồi ném lại. */
