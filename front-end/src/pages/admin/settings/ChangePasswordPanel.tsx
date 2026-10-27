@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Button, Paper, Stack } from '@mantine/core';
+import { Alert, Button, Paper, Stack, Text } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconLock } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -7,7 +7,6 @@ import { ApiException } from '@/core/api/api-error';
 import { authService } from '@/services/auth.service';
 import { notify } from '@/shared/components/feedback';
 import { FormPassword } from '@/shared/components/form';
-import { PageHeader } from '@/shared/components/layout/PageHeader';
 
 interface ChangePasswordValues {
   currentPassword: string;
@@ -16,7 +15,7 @@ interface ChangePasswordValues {
 }
 
 /** Người dùng tự đổi mật khẩu; các thiết bị khác bị đăng xuất ngay, thiết bị này giữ đăng nhập. */
-export function ChangePasswordPage() {
+export function ChangePasswordPanel() {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const form = useForm<ChangePasswordValues>({
@@ -52,9 +51,8 @@ export function ChangePasswordPage() {
   });
 
   return (
-    <>
-      <PageHeader title="Đổi mật khẩu"
-        description="Sau khi đổi, mọi thiết bị khác sẽ bị đăng xuất ngay. Thiết bị này vẫn giữ đăng nhập." />
+    <Stack gap="sm">
+      <Text size="sm" c="dimmed">Sau khi đổi, mọi thiết bị khác sẽ bị đăng xuất ngay. Thiết bị này vẫn giữ đăng nhập.</Text>
       <Paper withBorder p="lg" radius="md" maw={480}>
         <form noValidate onSubmit={form.onSubmit((values) => { setError(null); mutation.mutate(values); })}>
           <Stack>
@@ -71,6 +69,6 @@ export function ChangePasswordPage() {
           </Stack>
         </form>
       </Paper>
-    </>
+    </Stack>
   );
 }

@@ -13,6 +13,8 @@ export interface AuthContextValue {
   logout: () => Promise<void>;
   /** Đăng xuất mọi thiết bị (kể cả thiết bị này) rồi kết thúc phiên cục bộ. */
   logoutAll: () => Promise<void>;
+  /** Tự đổi tên hiển thị; cập nhật user trong context để header đổi ngay. */
+  updateProfile: (input: { displayName: string }) => Promise<void>;
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
 }
@@ -100,6 +102,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const updateProfile = useCallback(async (input: { displayName: string }) => {
+    setUser(await authService.updateProfile(input));
+  }, []);
+
   const value = useMemo<AuthContextValue>(() => {
     const granted = new Set(user?.permissions ?? []);
     return {
@@ -109,10 +115,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       logoutAll,
+      updateProfile,
       hasPermission: (permission) => granted.has(permission),
       hasAnyPermission: (permissions) => permissions.some((p) => granted.has(p)),
     };
-  }, [user, isLoading, isLoggingOut, login, logout, logoutAll]);
+  }, [user, isLoading, isLoggingOut, login, logout, logoutAll, updateProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

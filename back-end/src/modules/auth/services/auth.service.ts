@@ -7,6 +7,7 @@ import { UsersRepository } from '../../users/repositories/users.repository';
 import { toAuthUser } from '../../users/user-access.util';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { LoginDto } from '../dto/login.dto';
+import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { WrongCurrentPasswordException } from '../exceptions/wrong-current-password.exception';
 import { RefreshSessionsRepository } from '../repositories/refresh-sessions.repository';
 import { SessionClient, TokenService } from './token.service';
@@ -105,6 +106,13 @@ export class AuthService {
       await this.users.update(user.id, { passwordHash: newHash }, manager);
       await this.sessions.revokeAllForUser(user.id, manager, actor.sessionId);
     });
+  }
+
+  /** Người dùng tự đổi tên hiển thị; trả AuthUser mới để giao diện cập nhật ngay. */
+  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<AuthUser> {
+    const current = await this.me(userId);
+    await this.users.update(current.id, { displayName: dto.displayName });
+    return this.me(userId);
   }
 
   async me(userId: string): Promise<AuthUser> {
