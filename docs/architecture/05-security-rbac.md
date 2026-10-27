@@ -2,10 +2,14 @@
 
 ## 5.1 Xác thực (Authentication) — JWT access + refresh
 
-- **Access token** (JWT, ngắn hạn ~15 phút): mang `sub` (userId), `roles`, `permissions`.
-- **Refresh token** (dài hạn ~7 ngày, lưu DB có thể thu hồi): xoay vòng (rotation) mỗi lần refresh,
-  phát hiện token cũ bị tái dùng → thu hồi cả chuỗi. Lưu qua **httpOnly cookie** (hoặc store có phòng XSS).
-- Endpoint: `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me`.
+- **Access token** (JWT, ngắn hạn ~15 phút): mang `sub` (userId), `roles`, `permissions` và `sid`
+  (id **phiên** = `family_id` của refresh token đã phát hành nó).
+- **Refresh token** (dài hạn ~7 ngày, bảng `refresh_sessions`, chỉ lưu SHA-256): xoay vòng mỗi lần refresh,
+  phát hiện token cũ bị tái dùng → thu hồi cả chuỗi (family). Lưu qua **httpOnly cookie** `SameSite=Lax`.
+- **Phiên (session) = một family** = một thiết bị/trình duyệt. Một tài khoản đăng nhập được nhiều thiết bị.
+- Endpoint: `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me`,
+  `POST /auth/change-password`, `GET /auth/sessions`, `DELETE /auth/sessions/:id`,
+  `POST /auth/sessions/revoke-others`, `POST /auth/logout-all` (chi tiết: [06 — API](06-api-contract.md)).
 - Nhiều tab refresh đồng thời: khóa mềm (single-flight) ở FE `http-client` để tránh đăng xuất nhầm.
 
 ```mermaid
@@ -13,13 +17,13 @@ sequenceDiagram
     participant U as Admin UI
     participant A as AuthController
     participant S as AuthService
-    participant DB as DB (users, refresh_tokens)
+    participant DB as DB (users, refresh_sessions)
 
     U->>A: POST /auth/login (email, password)
     A->>S: validate
     S->>DB: tìm user + so khớp passwordHash (argon2/bcrypt)
     DB-->>S: user + roles + permissions
-    S-->>A: accessToken + refreshToken(rotate)
+    S-->>A: accessToken(sid) + refreshToken(rotate)
     A-->>U: 200 { accessToken } + set httpOnly cookie(refresh)
     Note over U,A: access hết hạn
     U->>A: POST /auth/refresh (cookie)
@@ -28,10 +32,41 @@ sequenceDiagram
     S-->>U: accessToken mới
 ```
 
-## 5.2 Phân quyền (Authorization) — RBAC theo action + scope
+### 5.1.1 Thu hồi phiên có hiệu lực ngay — `ActiveSessionGuard`
+
+Access JWT không tra DB, nên nếu chỉ thu hồi refresh token thì thiết bị cũ vẫn dùng được tới hết TTL.
+`ActiveSessionGuard` (APP_GUARD, chạy sau `JwtAuthGuard`) kiểm family `sid` còn token chưa thu hồi và chưa hết hạn
+(1 truy vấn `EXISTS` theo index partial `IDX_refresh_sessions_family_live`). Hết sống hoặc token không có `sid` → **401**;
+FE thử refresh, thất bại thì về trang đăng nhập.
+
+Các sự kiện thu hồi **mọi phiên** của một tài khoản (trong cùng transaction, khóa advisory theo user để token đang
+xoay vòng song song cũng bị thu hồi):
+
+| Sự kiện | Phiên bị thu hồi |
+|---|---|
+| Admin đặt lại mật khẩu / khóa / xóa (mềm) tài khoản | tất cả |
+| Người dùng tự đổi mật khẩu | tất cả **trừ** phiên hiện tại |
+| "Đăng xuất các thiết bị khác" | tất cả trừ phiên hiện tại |
+| "Đăng xuất tất cả" | tất cả |
+| Đăng xuất / đăng xuất 1 thiết bị | family đó |
+
+Đăng nhập phát hành refresh dưới khóa user (shared) và đọc lại user: nếu Admin vừa đổi mật khẩu/khóa trong lúc so
+bcrypt thì không cấp phiên bằng mật khẩu cũ.
+
+### 5.1.2 Chống dò mật khẩu (NFR-57)
+
+`AuthRateLimiter` (cửa sổ trượt trong bộ nhớ, module auth): **20 request/phút/IP** cho login và refresh;
+**5 lần sai/15 phút/email** cho login và cho mật khẩu hiện tại khi tự đổi mật khẩu → **429** + `Retry-After`.
+Một instance là đủ; scale ngang cần store dùng chung (Redis). Sau reverse proxy phải bật `trust proxy` (issue #82).
+
+## 5.2 Phân quyền (Authorization) — RBAC theo action
 
 **Permission = `resource:action`.** Role gom nhiều permission. User gán nhiều role.
-Guard đọc `@Permissions(...)` trên route và đối chiếu với quyền của user (và scope phòng nếu có).
+Guard đọc `@Permissions(...)` trên route và đối chiếu với quyền của user.
+
+> **Không có phân quyền theo phòng (scope phòng).** `requirements.md` chỉ yêu cầu RBAC theo permission (FR-99, NFR-55);
+> mọi permission áp dụng cho **tất cả** phòng — vd Editor có `exhibit:update` sửa được hiện vật ở mọi phòng.
+> Giới hạn quyền theo từng phòng nằm ngoài phạm vi MVP.
 
 ```ts
 @Post(':id/publish')
@@ -40,6 +75,10 @@ publish(@Param('id') id: string, @CurrentUser() user: AuthUser) { ... }
 ```
 
 ### Danh mục role mặc định
+
+Role là **xóa mềm** (`is_deleted`). Không xóa được vai trò `admin` và vai trò đang gán cho tài khoản chưa xóa;
+editor/moderator chỉ là vai trò có sẵn, xóa được khi không ai dùng. Mã vai trò chỉ duy nhất trong các vai trò chưa xóa.
+Tài khoản có vai trò `admin` không xóa được (phải bỏ vai trò trước); không khóa/bỏ vai trò Admin hoạt động cuối cùng.
 
 | Role | Quyền chính |
 |---|---|
@@ -72,15 +111,17 @@ sự kiện, không đại diện một bản ghi nội dung. Không lưu token/
 Nếu ghi audit thất bại, ghi cảnh báo theo request ID và vẫn trả 403. Lỗi 401 hoặc
 403 do Origin của refresh/logout không thuộc loại sự kiện này.
 
+Thứ tự `APP_GUARD`: **JwtAuthGuard → ActiveSessionGuard → PermissionsGuard** (route `@Public()` bỏ qua cả ba).
+
 ```mermaid
 flowchart LR
     req[Request + Bearer] --> jwt{JwtAuthGuard<br/>token hợp lệ?}
     jwt -- Không --> e401[401 Unauthorized]
-    jwt -- Có --> perm{PermissionsGuard<br/>có 'resource:action'?}
+    jwt -- Có --> sess{ActiveSessionGuard<br/>phiên sid còn sống?}
+    sess -- Không --> e401
+    sess -- Có --> perm{PermissionsGuard<br/>có 'resource:action'?}
     perm -- Không --> e403[403 Forbidden + audit]
-    perm -- Có --> scope{Đúng scope phòng?}
-    scope -- Không --> e403
-    scope -- Có --> ok[Controller xử lý]
+    perm -- Có --> ok[Controller xử lý]
 ```
 
 ## 5.4 Bảo mật upload (media pipeline)
@@ -96,7 +137,7 @@ flowchart LR
 ## 5.5 Bảo mật chung
 
 - Mật khẩu: hash **argon2id** (hoặc bcrypt), không log plaintext.
-- Rate limit: login, refresh, report (chống brute-force/spam) — `@nestjs/throttler`.
+- Rate limit: login/refresh/đổi mật khẩu qua `AuthRateLimiter` (mục 5.1.2); báo cáo public qua `@nestjs/throttler` (5 lần/phút).
 - CORS giới hạn `FRONTEND_ORIGIN`; Helmet headers.
 - Validate mọi input bằng `class-validator`; chống SQLi nhờ TypeORM parameterized.
 - Secret qua env, không commit `.env` (đã trong `.gitignore`).

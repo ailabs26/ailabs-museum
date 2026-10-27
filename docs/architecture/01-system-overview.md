@@ -28,7 +28,7 @@ không gian trực tuyến. Mục tiêu MVP (đề tài 3D-WEB-03):
 | **Hiệu năng API** | Đọc public p95 ≤ 500ms, error rate < 1% (100–200 CCU) |
 | **Hiệu năng 3D** | Desktop ≥ 60 FPS, Mobile ≥ 30 FPS; scene load ≤ 8s; UI tương tác ≤ 3s |
 | **Khả dụng** | 2D hoạt động không cần WebGL; XR từ chối vẫn giữ nội dung; bắt context-loss |
-| **Bảo mật** | JWT access/refresh, RBAC theo action+scope, chống MIME spoof/SVG-XSS/GLB độc hại, rate-limit |
+| **Bảo mật** | JWT access/refresh (thu hồi phiên có hiệu lực ngay), RBAC theo permission `resource:action`, chống MIME spoof/SVG-XSS/GLB độc hại, rate-limit |
 | **Accessibility** | WCAG 2.2 AA: điều hướng 100% bàn phím, focus trap modal, screen reader (NVDA/VoiceOver) |
 | **Dữ liệu** | Draft/Published tách biệt, audit append-only, revision có lịch sử, backup RPO/RTO kiểm chứng |
 | **Media** | GLB ≤ 20MB, ảnh JPEG/PNG/WebP ≤ 5MB, audio MP3/OGG ≤ 20MB, quarantine trước khi publish |

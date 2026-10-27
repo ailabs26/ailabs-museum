@@ -27,7 +27,7 @@ Lỗi:
 | 401 | chưa/đã hết hạn đăng nhập |
 | 403 | thiếu quyền (RBAC) |
 | 404 | không tìm thấy |
-| 409 | xung đột (sửa đồng thời, slug trùng) — FE hiện cảnh báo reload |
+| 409 | xung đột (sửa đồng thời, slug trùng) — FE hiện cảnh báo reload; xóa bị chặn (kể cả xóa hàng loạt) |
 | 422 | validation thất bại (chi tiết trong `errors`) |
 | 429 | vượt rate limit |
 
@@ -39,15 +39,56 @@ Lỗi:
 ### Auth & quản trị hệ thống (phân hệ dựng trước)
 ```
 POST   /auth/login            POST /auth/refresh    POST /auth/logout    GET /auth/me
+POST   /auth/change-password                                     # tự đổi mật khẩu
+GET    /auth/sessions         DELETE /auth/sessions/:id          # thiết bị đang đăng nhập của chính mình
+POST   /auth/sessions/revoke-others   POST /auth/logout-all
 GET    /users                 POST /users           GET /users/:id       PATCH /users/:id     DELETE /users/:id
+POST   /users/bulk-delete                                        # xóa mềm nhiều tài khoản
 POST   /users/:id/roles       DELETE /users/:id/roles/:roleId
 GET    /roles                 POST /roles           PATCH /roles/:id     DELETE /roles/:id
+POST   /roles/bulk-delete                                        # xóa mềm nhiều vai trò
 GET    /roles/:id/permissions PUT  /roles/:id/permissions        # set ma trận quyền
 GET    /permissions                                              # danh mục permission
 GET    /audit                 GET  /audit/:id                    # nhật ký (lọc theo actor/action/thời gian)
 GET    /admin/stats/overview                                     # số liệu tổng quan Dashboard
 GET    /admin/stats/charts                                       # dữ liệu biểu đồ Dashboard
 ```
+
+#### Xác thực, phiên đăng nhập và đổi mật khẩu
+
+Mọi route dưới đây (trừ login/refresh/logout là `@Public`) chỉ thao tác trên **chính tài khoản đang đăng nhập**, không cần permission.
+Cơ chế phiên, thu hồi và rate limit: [05 — Bảo mật](05-security-rbac.md#511-thu-hồi-phiên-có-hiệu-lực-ngay--activesessionguard).
+
+| Route | Body / kết quả | Ghi chú | Audit |
+|---|---|---|---|
+| `POST /auth/login` | `{ email, password }` → `{ accessToken, user }` + cookie refresh | 401 sai/khóa; 429 khi vượt ngưỡng | — |
+| `POST /auth/refresh` | cookie → `{ accessToken }` + cookie mới | xoay vòng; 401 thì xóa cookie; chặn Origin lạ (403) | — |
+| `POST /auth/logout` | cookie → `null` | thu hồi family hiện tại, xóa cookie; gọi lại vẫn 200 | — |
+| `POST /auth/change-password` | `{ currentPassword, newPassword }` → `{ id }` | mới 8–128 ký tự, khác cũ; sai mật khẩu hiện tại → **400** gắn field `currentPassword` (không dùng 401 để FE không đăng xuất); 409 nếu Admin vừa đặt lại; đăng xuất mọi thiết bị khác | `auth.password_change` |
+| `GET /auth/sessions` | → `[{ id, userAgent, ip, signedInAt, lastActiveAt, expiresAt, current }]` | `id` = family; mỗi dòng một thiết bị còn đăng nhập | — |
+| `DELETE /auth/sessions/:id` | → `null` | 404 nếu không phải phiên của mình; là phiên hiện tại thì xóa cookie | `auth.session_revoke` |
+| `POST /auth/sessions/revoke-others` | → `{ id }` (userId) | giữ phiên hiện tại | `auth.session_revoke_others` |
+| `POST /auth/logout-all` | → `{ id }` (userId) | thu hồi tất cả, xóa cookie | `auth.logout_all` |
+
+#### Xóa mềm và xóa hàng loạt
+
+Mọi tài nguyên quản trị **xóa mềm** (`is_deleted`/`deleted_at`; truy vấn luôn lọc bản ghi chưa xóa). Chưa có API khôi phục.
+
+| Tài nguyên | Xóa lẻ | Xóa hàng loạt | Permission | Bị chặn khi |
+|---|---|---|---|---|
+| Tài khoản | `DELETE /users/:id` | `POST /users/bulk-delete` | `user:delete` | có vai trò Admin; xóa xong đăng xuất mọi thiết bị |
+| Vai trò | `DELETE /roles/:id` | `POST /roles/bulk-delete` | `role:delete` | là `admin`; đang gán cho tài khoản chưa xóa |
+| Phòng | `DELETE /admin/rooms/:id` | `POST /admin/rooms/bulk-delete` | `room:delete` | còn hiện vật chưa xóa (BR-20) |
+| Media | `DELETE /admin/media/:id` | `POST /admin/media/bulk-delete` | `media:upload` | hiện vật đã xuất bản/bản chờ duyệt đang dùng (BR-21); **file trên storage được giữ** |
+| Hiện vật | `DELETE /admin/exhibits/:id` | `POST /admin/exhibits/bulk-delete` | `exhibit:update` | đã xuất bản/đang hiển thị/đã duyệt, đang chờ duyệt, có báo cáo (BR-20); revisions/hotspots được giữ |
+
+- Body hàng loạt `{ "ids": [uuid, …] }` (1–100, không trùng). Thành công → `{ ids }`.
+- **Tất cả hoặc không**: có mục bị chặn hoặc không tồn tại → **409**, không mục nào bị xóa:
+  ```json
+  { "success": false, "message": "Không xóa được 2 mục đã chọn. Không mục nào bị xóa.",
+    "errors": [ { "code": "delete_blocked", "field": "<id>", "message": "<lý do>" } ] }
+  ```
+- Xóa lẻ giữ 404 (không tồn tại) / 409 (bị chặn) như cũ. Kiểm tra chạy trong transaction có khóa dòng.
 
 #### Stats (Dashboard Admin) — Task 21
 
@@ -129,8 +170,12 @@ Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. 
 | revision.reject | revision | = resourceId | RevisionsController |
 | exhibit.hide / exhibit.unhide | exhibit | — | ExhibitRevisionsController |
 | report.assign/resolve/dismiss | report | — | ReportsController |
+| user.delete, role.delete, media.delete, exhibit.delete | user / role / media / exhibit | — | xóa lẻ và `bulk-delete` |
+| auth.password_change, auth.session_revoke_others, auth.logout_all | user | — | AuthController |
+| auth.session_revoke | session | — | AuthController (`resourceId` = family) |
 
 > Với `resourceType='revision'`, interceptor lưu thêm FK `revisionId` để join `audit_logs → exhibit_revisions`.
+> Response có mảng `ids` (xóa hàng loạt) hoặc `roleIds` → interceptor ghi **1 bản ghi cho mỗi ID**.
 
 ### Public (client — chỉ đọc nội dung published)
 ```

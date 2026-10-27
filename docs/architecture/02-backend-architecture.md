@@ -36,7 +36,7 @@ back-end/src/
 │   │   └── all-exceptions.filter.ts        # chuẩn hóa mọi lỗi -> ApiResponse lỗi
 │   ├── auth/
 │   │   ├── jwt-auth.guard.ts                # xác thực access token
-│   │   ├── permissions.guard.ts            # RBAC theo action+scope
+│   │   ├── permissions.guard.ts            # RBAC theo permission resource:action
 │   │   ├── permissions.decorator.ts        # @Permissions('exhibit:update')
 │   │   ├── public.decorator.ts             # @Public() bỏ qua auth
 │   │   └── current-user.decorator.ts       # @CurrentUser()
@@ -154,8 +154,9 @@ sequenceDiagram
 
     C->>G: HTTP + Bearer token
     G->>G: verify access token (bỏ qua nếu @Public)
+    G->>G: ActiveSessionGuard: phiên (sid) còn sống?
     G->>P: user + roles
-    P->>P: khớp @Permissions('exhibit:update') + scope phòng
+    P->>P: khớp @Permissions('exhibit:update')
     P->>V: pass
     V->>Ctl: DTO đã validate
     Ctl->>Svc: gọi nghiệp vụ (DTO)
