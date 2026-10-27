@@ -9,7 +9,6 @@ import { describeUserAgent } from '@/helpers/userAgent';
 import { authService } from '@/services/auth.service';
 import { DataTable, type Column } from '@/shared/components/data';
 import { confirmAction, notify } from '@/shared/components/feedback';
-import { PageHeader } from '@/shared/components/layout/PageHeader';
 
 const SESSIONS_KEY = ['auth', 'sessions'] as const;
 
@@ -22,7 +21,7 @@ function errorMessage(error: unknown, fallback: string): string {
 }
 
 /** Người dùng xem các thiết bị đang đăng nhập và đăng xuất từ xa (có hiệu lực ngay ở back-end). */
-export function SessionsPage() {
+export function SessionsPanel() {
   const { logout, logoutAll } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -98,11 +97,10 @@ export function SessionsPage() {
   ];
 
   return (
-    <>
-      <PageHeader title="Phiên đăng nhập"
-        description="Các thiết bị đang đăng nhập tài khoản của bạn. Đăng xuất từ xa có hiệu lực ngay."
-        actions={(
-          <>
+    <Stack gap="sm">
+      <Group justify="space-between" align="flex-end" wrap="wrap">
+        <Text size="sm" c="dimmed">Các thiết bị đang đăng nhập tài khoản của bạn. Đăng xuất từ xa có hiệu lực ngay.</Text>
+        <Group gap="xs">
             <Button variant="light" leftSection={<IconDeviceDesktopOff size={16} />}
               disabled={isBusy || !hasOthers} loading={othersMutation.isPending}
               onClick={() => confirmAction({
@@ -123,8 +121,8 @@ export function SessionsPage() {
               })}>
               Đăng xuất tất cả
             </Button>
-          </>
-        )} />
+        </Group>
+      </Group>
       {sessionsQuery.isError ? (
         <Alert color="red" title="Không tải được phiên đăng nhập" role="alert">
           <Stack gap="xs">
@@ -137,6 +135,6 @@ export function SessionsPage() {
         <DataTable columns={columns} data={sessions} rowKey={(session) => session.id}
           loading={sessionsQuery.isLoading} emptyText="Không có phiên đăng nhập nào" />
       )}
-    </>
+    </Stack>
   );
 }

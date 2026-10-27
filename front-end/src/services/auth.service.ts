@@ -23,6 +23,10 @@ export const authService = {
   async me(): Promise<AuthUser> {
     return parseAuthResponse(authUserSchema, await http.get<unknown>('/auth/me'));
   },
+  /** Tự sửa hồ sơ (tên hiển thị); trả AuthUser mới. */
+  async updateProfile(input: { displayName: string }): Promise<AuthUser> {
+    return parseAuthResponse(authUserSchema, await http.patch<unknown>('/auth/me', input));
+  },
   async sessions(): Promise<AuthSession[]> {
     return parseAuthResponse(sessionsResultSchema, await http.get<unknown>('/auth/sessions'));
   },

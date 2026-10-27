@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { Container, Text, Title, Stack } from '@mantine/core';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { AdminLayout } from '@/layouts/AdminLayout';
@@ -19,8 +19,7 @@ import { PermissionsPage } from '@/pages/admin/PermissionsPage';
 import { AuditPage } from '@/pages/admin/AuditPage';
 import { ModerationPage } from '@/pages/admin/ModerationPage';
 import { ReportsPage } from '@/pages/admin/ReportsPage';
-import { SessionsPage } from '@/pages/admin/SessionsPage';
-import { ChangePasswordPage } from '@/pages/admin/ChangePasswordPage';
+import { SettingsPage } from '@/pages/admin/SettingsPage';
 import { RequirePermission } from '@/core/auth/RequirePermission';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -107,8 +106,11 @@ export function AppRouter() {
             }
           />
           {/* Phiên của chính mình: mọi tài khoản đăng nhập đều xem được, không cần permission. */}
-          <Route path="sessions" element={<SessionsPage />} />
-          <Route path="change-password" element={<ChangePasswordPage />} />
+          <Route path="settings" element={<Navigate to="/admin/settings/profile" replace />} />
+          <Route path="settings/:tab" element={<SettingsPage />} />
+          {/* Link cũ trước khi gom vào trang Cài đặt. */}
+          <Route path="sessions" element={<Navigate to="/admin/settings/sessions" replace />} />
+          <Route path="change-password" element={<Navigate to="/admin/settings/password" replace />} />
           <Route
             path="users"
             element={
