@@ -1,6 +1,6 @@
 # Public Collection Loading Accessibility — Implementation Plan
 
-> **Trạng thái:** Đã duyệt — đang triển khai trên `fix/public-a11y-loading`.
+> **Trạng thái:** Đã triển khai trên `fix/public-a11y-loading`; Collection 14/14 PASS. Tổng affected 50/51 do F04 cũng fail trên base `dev`; chưa đủ điều kiện merge. Xem evidence trong TASK.
 >
 > **Task / Acceptance:** [public-a11y-loading.md](../tasks/public-a11y-loading.md)
 
@@ -159,14 +159,14 @@ Không chạy migration, seed hoặc ghi database. `npm run lint` ở mốc PR #
 
 ## 7. Gate bàn giao / Definition of Done
 
-- [ ] Initial list pending và selected room detail pending đều có thông báo lịch sự, đúng ngữ cảnh, qua **một live region ổn định**.
-- [ ] Skeleton UI vẫn hiển thị và có `aria-hidden="true"`; không duplicate announcements.
-- [ ] Success/empty/error/retry/invalid room/refetch/room switch không giữ thông báo tải sai hay lẫn dữ liệu phòng cũ.
-- [ ] Không thay URL/search/report/keyboard focus; không tự mở 3D/Canvas.
-- [ ] TDD có evidence RED → GREEN; assertions `role="status"` cũ được cập nhật theo ngữ nghĩa mới, không bị bỏ qua.
-- [ ] Required quality gates PASS trên code cuối; mọi hạn chế/suite không chạy được ghi rõ.
-- [ ] Manual screen-reader QA: ghi PASS/FAIL/NOT TESTED riêng, không đánh đồng với DOM semantics.
-- [ ] Tài liệu nghiệm thu phản ánh đúng kết quả, chỉ sửa tối thiểu frontend public; không push/PR/merge ngoài yêu cầu.
+- [x] Initial list/detail pending có thông báo polite đúng ngữ cảnh qua **một live region ổn định**.
+- [x] Skeleton UI và `aria-hidden="true"` giữ nguyên; không duplicate announcements.
+- [x] Success/empty/error/retry/invalid room/refetch/switch không giữ loading sai hay dữ liệu phòng cũ.
+- [x] URL/search/report/keyboard focus giữ nguyên; không tự mở 3D/Canvas.
+- [x] RED 2 FAIL → GREEN 2 PASS; các status assertions cũ được scope, không bỏ case.
+- [ ] Required gates PASS toàn bộ: typecheck/lint/unit/build exit 0; Collection 14/14 nhưng affected 50/51. **F04 đã tái hiện trên base `fcb2b4d`; chưa đủ điều kiện báo toàn bộ PASS/merge.** Chi tiết trong TASK.
+- [x] Manual screen-reader QA ghi **NOT TESTED**, tách khỏi DOM semantics.
+- [x] Tài liệu ghi đúng evidence; không push/PR/merge ngoài yêu cầu.
 
 ## 8. Gợi ý commit và review
 

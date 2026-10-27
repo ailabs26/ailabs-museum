@@ -1,6 +1,6 @@
 # Public Collection Loading Accessibility — Task Breakdown & Acceptance
 
-> **Trạng thái:** Đã duyệt — đang triển khai; evidence được cập nhật theo từng task.\
+> **Trạng thái:** Đã triển khai Collection loading; browser gate còn lỗi F04 đã tái hiện trên base `dev`, chưa đủ điều kiện báo toàn bộ PASS hoặc merge.\
 > **PLAN:** [public-a11y-loading-plan.md](../plans/public-a11y-loading-plan.md)\
 > **Repository:** `ailabs26/ailabs-museum` — baseline `dev` SHA `fcb2b4d247f73c59c1cde5d01046f29d80aaf075` (27/10/2026); triển khai từ `origin/dev` mới nhất.\
 > **Branch:** `fix/public-a11y-loading`; PR dự kiến tới `dev` (không tự tạo/merge).
@@ -129,14 +129,14 @@
 
 **Mục tiêu:** Bàn giao có evidence, không để open checkbox chưa kiểm chứng mà đánh xong.
 
-- [ ] `npm run typecheck` — ghi exit code.
-- [ ] `npm run lint` — ghi exit code, cảnh báo còn lại nếu có; không cần `--max-warnings 0` ngoài phạm vi.
-- [ ] `npm run test:unit` — ghi tổng số file/tests PASS.
-- [ ] `npm run build` — ghi exit code, warning chunk nếu có.
-- [ ] Focused + affected Playwright — ghi tổng passed/failed/skipped cùng log/trace khi fail.
-- [ ] `git diff --check`, xem changed files; không thay backend/schema/3D/audio/CMS, không commit dist/test-results/log.
-- [ ] Cập nhật matrix mục 7 bên dưới, checklist FR/AC và mục 4.1.3 của accessibility checklist đúng phạm vi.
-- [ ] Chuẩn bị PR description; chỉ push/mở/merge PR khi được yêu cầu rõ.
+- [x] `npm run typecheck` — exit 0 trên runtime cuối.
+- [x] `npm run lint` — exit 0, 0 errors / 1 warning cũ; targeted ESLint cho cả hai test files sau sửa D06 cũng exit 0.
+- [x] `npm run test:unit` — 31 files / 170 tests PASS, exit 0.
+- [x] `npm run build` — exit 0; ghi warning chunk hiện hữu.
+- [x] Focused + affected Playwright — RED/GREEN và kết quả cuối 50 PASS / 1 FAIL / 0 SKIP ghi rõ; F04 có baseline reproduction.
+- [x] `git diff --check`; chỉ 1 runtime file Collection, 2 test files và docs; không commit dist/test-results/log.
+- [x] Cập nhật matrix FR/AC và mục 4.1.3 trong accessibility checklist, không tuyên bố toàn website PASS.
+- [x] Chuẩn bị mô tả PR ở mục 10; chưa push, tạo PR hay merge.
 
 **Commit đề xuất:** `docs(a11y): record collection loading verification`
 
@@ -194,14 +194,15 @@ npx playwright test tests/accessibility-keyboard.spec.ts tests/exhibit-detail.sp
 
 ## 8. Definition of Done
 
-- [ ] FR-01 → FR-10 và AC-01 → AC-10 đã được kiểm chứng phù hợp, hoặc ghi ngoại lệ có evidence.
-- [ ] Chỉ **một** named live region persistent cho collection loading; không `aria-hidden`/`display:none`; skeleton unchanged.
-- [ ] Đủ list/detail pending, error/retry, empty, invalid URL, room switch, no stale data; không duplicate background refetch.
-- [ ] Không ảnh hưởng keyboard navigation, focus, deep link, public report hay visual layout.
-- [ ] Không thay API/backend/DB/3D/audio; không thêm dependencies.
-- [ ] Test RED trước/GREEN sau và quality gates có kết quả mới nhất cùng exit code/log.
-- [ ] Ghi riêng manual screen-reader QA và giới hạn kiểm chứng; không tuyên bố toàn bộ WCAG 2.2 AA đã được chứng nhận.
-- [ ] Tài liệu cập nhật đúng kết quả; scope PR gọn, review trước merge.
+- [x] FR-01 → FR-10 và AC-01 → AC-09 PASS bằng browser DOM/transition tests; AC-10 có ngoại lệ F04 đã tái hiện trên base và ghi evidence.
+- [x] Một named live region persistent, visually hidden nhưng accessible; skeleton unchanged.
+- [x] Đủ list/detail pending, error/retry, empty, invalid URL, room switch, no stale data; không duplicate background refetch.
+- [x] Các assertions keyboard/focus/URL/public report/layout chạy PASS; không sửa luồng 3D.
+- [x] Không thay API/backend/DB/3D/audio; không thêm dependencies.
+- [x] RED/GREEN và quality gates có kết quả mới nhất cùng exit code; **không** đánh đồng 50/51 với toàn bộ PASS.
+- [x] Manual screen-reader QA **NOT TESTED** được ghi riêng; không tuyên bố chứng nhận WCAG toàn website.
+- [x] Review độc lập không có finding; tài liệu ghi đúng kết quả và giới hạn.
+- [ ] **Merge gate:** affected browser suites xanh toàn bộ. F04 còn mở trên cả base và branch; cần xử lý/đánh giá riêng trước merge.
 
 ## 9. Ngoài phạm vi / review notes
 
@@ -210,3 +211,15 @@ npx playwright test tests/accessibility-keyboard.spec.ts tests/exhibit-detail.sp
 - Không tự động tạo báo cáo hoặc giao dịch DB để kiểm tra; mọi browser test trong task là public fixture.
 - Không yêu cầu chạy lại Audio/WebVTT, 3D camera, Auth hoặc Bulk Delete nếu các file đó không bị tác động.
 - Nếu cần thay đổi thông điệp ngoài ngữ cảnh loading (ví dụ bổ sung success announcement), hãy ghi bug/evidence và quyết định scope trước khi implement.
+
+## 10. Bàn giao / mô tả PR dự kiến
+
+**Tiêu đề:** `fix(a11y): announce collection loading state`
+
+Collection trước đây chỉ có skeleton ẩn khỏi screen reader. Bổ sung một live region polite/atomic, rỗng khi mount và cập nhật sau mount cho list/detail pending; xóa message khi hoàn tất/lỗi. Giữ skeleton, URL, search, focus và API hiện có. Dùng `VisuallyHidden` có sẵn của Mantine.
+
+Regression kiểm DOM identity, error/retry/empty/unknown room, room switch, focus và không phát loading message mới khi refetch/search; scope lại status selectors, cập nhật font assertion D06 đã cũ. Typecheck/lint/unit/build exit 0; Collection 14/14, tổng affected 50/51. F04 context-loss cũng fail trên base `fcb2b4d` và chưa được sửa trong phạm vi Collection; chưa đủ điều kiện merge. Manual NVDA/VoiceOver NOT TESTED.
+
+**Commit theo task:** Task 0 `3e453d6`; Task 1 RED `d301fec`; Task 2 fix `105b8ac`; Task 3 regression `f14b43a`; Task 4 là commit `docs(a11y): record collection loading verification` chứa phần bàn giao này.
+
+**Quyết định phạm vi:** sửa hai assertions D06 theo UI/semantics hiện tại; giữ ràng buộc font chính Plus Jakarta Sans để không mất kiểm tra typography. Giữ F04 ngoài runtime diff vì đã tái hiện trên base và plan loại trừ thay đổi 3D; rủi ro là full browser gate vẫn đỏ. Không có review finding nhỏ nào bị hoãn.
