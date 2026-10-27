@@ -111,3 +111,27 @@ JS heap sau GC qua bốn lượt vẫn tăng khoảng 10.49 → 12.10 MB; chưa 
 - Không push, tạo PR hoặc merge theo chỉ dẫn trực tiếp của người dùng. URL PR và kết quả merge: không có.
 
 Danh sách commit theo thứ tự và mục đích nằm trong [commit-plan.md](commit-plan.md). Commit tài liệu cuối và working-tree status được cung cấp cùng thông báo bàn giao để không phải tự tham chiếu SHA của chính commit này.
+
+## Cập nhật tích hợp PR #104
+
+Theo yêu cầu tiếp theo ngày 2026-10-27, người dùng cho phép push, tạo PR vào `dev`, review rồi merge nếu đạt; yêu cầu giữ nguyên các commit. Trạng thái không push/PR/merge ở báo cáo bàn giao phía trên mô tả thời điểm bàn giao ban đầu.
+
+[PR #104](https://github.com/ailabs26/ailabs-museum/pull/104) dùng base `dev`. Nhánh đã nhận `origin/dev` mới nhất `6af93e5` bằng merge commit `d0c7bab`; không rebase hoặc rewrite 20 commit tính năng. Các thay đổi database/backend vốn thuộc `dev` không nằm trong PR diff và không có migration nào được chạy.
+
+Review độc lập phát hiện P2 ở dock: chọn hiện vật, xoay camera thủ công rồi chọn lại cùng hiện vật không refocus vì selection không đổi. Regression test đã thất bại đúng triệu chứng trước sửa và pass sau sửa `f20b8b2`. Bản sửa gọi camera command hiện có khi reselect, còn selection mới vẫn dùng auto-focus; reviewer kiểm tra lại không còn blocker.
+
+Để đáp ứng lint gate bắt buộc, `05fec4d` thêm `.mjs` vào cấu hình Node globals hiện có và đổi hai fixture array sang `const`, không thay logic CMS. Lint toàn frontend hiện exit 0, còn một hook warning có sẵn ở `CollectionPage.tsx`.
+
+Trên code đã đồng bộ dev và sửa dock: typecheck/build pass, 31 unit files / 170 tests pass. Bộ E2E rộng gồm toàn bộ `museum-*`, accessibility keyboard và 2D fallback. Hai API assertions được cập nhật để mở catalogue đang thu gọn qua UI; font checks giữ Times New Roman/CDP cho tiêu đề hiện vật và xác nhận font thương hiệu đã có trên dev cho tiêu đề trang. Reviewer xác nhận các thay đổi test không bỏ các kiểm chứng nội dung/cache/Canvas/font/NFC/bàn phím.
+
+Smoke dashboard còn phát hiện lỗi nền: hai sparkline không có error boundary, nên khi chunk `react-apexcharts` bị chặn, dashboard rơi vào global fallback dù bốn chart chính có boundary riêng. `f0c09de` bọc sparkline bằng `ErrorBoundary` có sẵn, giữ chiều cao và cung cấp fallback có accessible label. Test vẫn yêu cầu bốn alert của chart chính, thêm hai fallback sparkline và kiểm tra heading/nút refresh còn dùng được. Kỳ vọng khi tải thành công được cập nhật thành sáu charts theo UI hiện có (bốn chart chính + hai sparkline). Reviewer kiểm tra lại không còn blocker.
+
+Kết quả trước merge:
+
+- `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run test:unit`, `npm.cmd run build`: exit 0 trên code cuối. Unit: 31 files, 170/170 pass. Lint: 0 errors, một warning cũ. Build còn cảnh báo chunk >500 kB.
+- Lượt rộng: `npm.cmd test -- museum- accessibility-keyboard.spec.ts tour-2d-fallback.spec.ts --reporter=line --output=test-results/immersive-premerge`: 132 pass, 5 fail, 5 live tests skip; 13.6 phút. Không tuyên bố đây là một lượt 142/142 xanh.
+- Sau sửa, chạy trọn ba file chứa cả năm ca lỗi: `npm.cmd test -- museum-api.spec.ts museum-font.spec.ts museum-startup.spec.ts --reporter=line --output=test-results/immersive-merge-final`: **12/12 pass**. Toàn bộ ca lỗi của lượt rộng đã được kiểm chứng lại xanh; các assertion nội dung/cache/Canvas/font/keyboard và dashboard fallback được giữ hoặc bổ sung.
+- Lỗi dock có test riêng RED trước sửa, GREEN sau sửa và pass trong lượt rộng. Các nhóm fullscreen, navigation, GLB, hotspot, resource, WebXR và fallback đều pass trong lượt rộng.
+- Log gate cuối: `front-end/tmp/immersive-merge-{typecheck,lint,unit,build,final}.log`; log diện rộng: `front-end/tmp/immersive-premerge-e2e.log`. Các lượt browser dùng production preview và SwiftShader; giới hạn thiết bị thật/CMS ở trên vẫn áp dụng.
+
+GitHub hiện không có status checks hoặc Actions workflow run cho PR head; không bypass check hoặc branch protection. Merge dùng `merge_method=merge`, ghim expected head SHA và kiểm tra ancestry sau merge để giữ lịch sử. Kết quả merge và SHA được cung cấp cùng thông báo hoàn thành; báo cáo này được commit trước merge.

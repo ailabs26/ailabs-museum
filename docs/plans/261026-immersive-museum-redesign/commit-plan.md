@@ -37,3 +37,18 @@ Boundaries may combine only when code correctness requires it. Never add empty/a
 | `673ecf2` | test(tour): measure restored scroll at fullscreen activation | Capture scroll at the opening activation, retaining exact pixel equality. |
 
 Final documentation commit: `docs: record immersive museum delivery evidence`. Its SHA is supplied in the final delivery message, together with the final working-tree status. No push, PR or merge.
+
+## PR #104 follow-up (authorized after initial delivery)
+
+The original twenty commits remain unchanged. New commits preserve their ancestry; integration into `dev` uses a merge commit.
+
+| SHA | Message | Purpose |
+| --- | --- | --- |
+| `189f83a` | docs: record immersive museum delivery evidence | Original delivery documentation commit referenced above. |
+| `d0c7bab` | chore: merge latest dev before immersive integration | Include current dev without rewriting the feature history; no conflicts. |
+| `05fec4d` | chore(frontend): restore the required lint gate | Node globals for `.mjs` and behavior-preserving fixture `const` declarations. |
+| `f20b8b2` | fix(tour): refocus the selected exhibit from the dock | Resolve the reviewed P2 with an explicit reselect focus command and regression. |
+| `7ccbb67` | test(tour): align API and typography checks with the active UI | Open collapsed catalogue, scope the portal heading, retain exhibit fonts and existing branded headings. |
+| `f0c09de` | fix(charts): contain deferred sparkline load failures | Keep Dashboard usable when the shared chart chunk fails; verify main-chart and sparkline fallbacks. |
+
+Final integration evidence commit: `docs: record PR review and integration checks`. Its SHA and the GitHub merge SHA are reported with completion.
