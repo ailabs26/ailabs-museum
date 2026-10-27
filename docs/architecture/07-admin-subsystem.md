@@ -7,7 +7,7 @@
 
 | Module BE | Màn hình CMS (FE) | Người phụ trách (theo plan) |
 |---|---|---|
-| `auth` | `LoginPage` | Thắng (task #2) |
+| `auth` | `LoginPage`, `ChangePasswordPage`, `SessionsPage` | Thắng (task #2) |
 | `users` | `UsersPage` (accounts.html) | Thắng (task #3) |
 | `roles` + `permissions` | `RolesPage`, `PermissionsPage`, `PermissionMatrixPage` | Thắng (task #4) |
 | RBAC guard | (áp cho toàn bộ Admin API) | Thắng (task #5) |
@@ -107,8 +107,10 @@ sequenceDiagram
 |---|---|
 | **LoginPage** | `FormTextField` (email), password, `Button`; xử lý 401; focus-trap; a11y |
 | **DashboardPage** | `StatCard` ×4 (phòng, hiện vật, báo cáo mở, chờ duyệt), `@mantine/charts`, trạng thái hệ thống |
-| **UsersPage** | `DataTable` (list user, trạng thái, role), `ConfirmModal` khóa/xóa, drawer tạo/sửa + `FormSelect` role |
-| **RolesPage** | `DataTable` role + mô tả, tạo/sửa role |
+| **UsersPage** | `DataTable` (list user, trạng thái, role) có chọn nhiều + `BulkActionBar` xóa hàng loạt (tài khoản Admin không chọn được), `ConfirmModal` khóa/xóa, drawer tạo/sửa + `FormSelect` role |
+| **RolesPage** | `DataTable` role + mô tả có chọn nhiều + xóa hàng loạt (vai trò Admin không chọn được), tạo/sửa role |
+| **ChangePasswordPage** (`/admin/change-password`) | menu tài khoản → Đổi mật khẩu; form mật khẩu hiện tại / mới / nhập lại |
+| **SessionsPage** (`/admin/sessions`) | menu tài khoản → Phiên đăng nhập; `DataTable` thiết bị (User-Agent, IP, đăng nhập lúc, hoạt động gần nhất, "Thiết bị này"); đăng xuất từng thiết bị / các thiết bị khác / tất cả |
 | **PermissionMatrixPage** | `PermissionTree`/bảng checkbox role×permission, lưu `PUT /roles/:id/permissions` |
 | **AuditPage** | `DataTable` nhật ký + filter (actor/action/khoảng thời gian), xem chi tiết before/after |
 
