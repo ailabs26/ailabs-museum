@@ -29,7 +29,7 @@ Lỗi:
 | 404 | không tìm thấy |
 | 409 | xung đột (sửa đồng thời, slug trùng) — FE hiện cảnh báo reload |
 | 422 | validation thất bại (chi tiết trong `errors`) |
-| 429 | vượt rate limit |
+| 429 | vượt rate limit — auth trả kèm header `Retry-After` (giây) và `retryAfter` trong body |
 
 **Phân trang:** `?page=1&pageSize=20&sort=createdAt:desc&q=keyword`.
 **Optimistic concurrency:** sửa revision gửi kèm `version`; lệch → 409.
@@ -39,10 +39,16 @@ Lỗi:
 ### Auth & quản trị hệ thống (phân hệ dựng trước)
 ```
 POST   /auth/login            POST /auth/refresh    POST /auth/logout    GET /auth/me
+POST   /auth/change-password                                     # tự đổi mật khẩu, giữ thiết bị hiện tại
+GET    /auth/sessions         DELETE /auth/sessions/:id          # thiết bị đang đăng nhập của chính mình
+POST   /auth/sessions/revoke-others                              # đăng xuất mọi thiết bị khác
+POST   /auth/logout-all                                          # đăng xuất mọi thiết bị, kể cả hiện tại
 GET    /users                 POST /users           GET /users/:id       PATCH /users/:id     DELETE /users/:id
+POST   /users/bulk-delete                                        # xóa mềm nhiều tài khoản (user:delete)
 POST   /users/:id/roles       PUT  /users/:id/roles              # thêm / thay toàn bộ ([] = bỏ hết, bảo vệ Admin cuối)
 DELETE /users/:id/roles/:roleId
-GET    /roles                 POST /roles           PATCH /roles/:id     DELETE /roles/:id
+GET    /roles                 POST /roles           PATCH /roles/:id     DELETE /roles/:id (xóa mềm)
+POST   /roles/bulk-delete                                        # xóa mềm nhiều vai trò (role:delete)
 GET    /roles/:id/permissions PUT  /roles/:id/permissions        # set quyền của 1 vai trò
 PUT    /roles/permission-matrix                                  # cập nhật nhiều vai trò trong 1 transaction
 GET    /permissions                                              # danh mục permission
@@ -50,7 +56,84 @@ GET    /health                                                   # @Public, tr�
 GET    /audit                 GET  /audit/:id                    # nhật ký (lọc theo actor/action/thời gian)
 GET    /admin/stats/overview                                     # số liệu tổng quan Dashboard
 GET    /admin/stats/charts                                       # dữ liệu biểu đồ Dashboard
+GET    /admin/stats/storage                                      # dung lượng media theo loại tệp
 ```
+
+#### Auth — phiên đăng nhập, đổi mật khẩu, rate limit
+
+Mỗi lần đăng nhập tạo một **phiên** (một `familyId` của chuỗi refresh token xoay vòng). Access
+token mang `sid` = `familyId`; `ActiveSessionGuard` từ chối token của phiên đã bị thu hồi, nên
+mọi thao tác thu hồi có hiệu lực ngay (không chờ access token hết hạn).
+
+| Route | Body | Trả về | Ghi vết |
+|---|---|---|---|
+| `POST /auth/change-password` | `{ currentPassword, newPassword }` (`newPassword` 8–128 ký tự) | `{ id }` | `auth.password_change` |
+| `GET /auth/sessions` | — | `SessionResponse[]` | — |
+| `DELETE /auth/sessions/:id` | — (`id` = `familyId`, UUID) | `null` | `auth.session_revoke` |
+| `POST /auth/sessions/revoke-others` | — | `{ id }` | `auth.session_revoke_others` |
+| `POST /auth/logout-all` | — | `{ id }` | `auth.logout_all` |
+
+Tất cả cần Bearer token và chỉ thao tác trên phiên **của chính người gọi** (không cần permission).
+
+```json
+// SessionResponse — không lộ token hash hay id từng lần xoay vòng
+{ "id": "familyId-uuid", "userAgent": "Mozilla/5.0 …", "ip": "203.0.113.4",
+  "signedInAt": "…", "lastActiveAt": "…", "expiresAt": "…", "current": true }
+```
+
+- **Đổi mật khẩu:** sai mật khẩu hiện tại → **400** với
+  `errors[0] = { code: "wrong_current_password", field: "currentPassword" }`. Cố ý không dùng 401
+  vì FE coi 401 là hết phiên và tự đăng xuất. Thành công → thu hồi mọi phiên khác, giữ phiên hiện tại.
+- **`DELETE /auth/sessions/:id`:** phiên không thuộc người gọi → 404. Nếu là phiên hiện tại thì
+  xóa luôn cookie refresh.
+- **`logout-all`:** thu hồi mọi phiên và xóa cookie refresh.
+- **Thu hồi do quản trị:** Admin đổi mật khẩu, khóa (`status = disabled`) hoặc xóa tài khoản →
+  mọi phiên của tài khoản đó bị thu hồi trong cùng transaction.
+
+**Rate limit** (`AuthRateLimiter`, cửa sổ trượt trong bộ nhớ, một instance):
+
+| Áp dụng | Giới hạn | Khi vượt |
+|---|---|---|
+| `POST /auth/login`, `POST /auth/refresh` theo IP | 20 request / 60 giây | 429 + `Retry-After` |
+| Đăng nhập sai theo email | 5 lần / 15 phút | 429 + `Retry-After` |
+| Sai mật khẩu hiện tại khi đổi mật khẩu | chung bộ đếm với đăng nhập sai theo email | 429 + `Retry-After` |
+
+Đăng nhập (hoặc đổi mật khẩu) thành công thì reset bộ đếm theo email. Body 429:
+`{ "message": "Quá nhiều yêu cầu, vui lòng thử lại sau", "retryAfter": 42 }`.
+
+> Chi tiết: [`docs/tasks/be/auth-session-management.md`](../tasks/be/auth-session-management.md),
+> [`docs/tasks/auth-change-password.md`](../tasks/auth-change-password.md),
+> [`docs/tasks/fe/auth-sessions-page.md`](../tasks/fe/auth-sessions-page.md).
+
+#### Xóa hàng loạt (`POST …/bulk-delete`)
+
+Áp dụng cho `/users`, `/roles`, `/admin/rooms`, `/admin/exhibits`, `/admin/media`.
+
+- Body `BulkIdsDto`: `{ "ids": ["uuid", …] }` — 1–100 phần tử, không trùng, mỗi phần tử là UUID;
+  sai → 400 (`ValidationPipe`).
+- **Tất cả hoặc không**, trong một transaction: chỉ cần một ID không xóa được thì không mục nào
+  bị xóa và trả **409**, liệt kê từng ID bị chặn (kể cả ID không tồn tại):
+
+```json
+{ "success": false, "message": "Không xóa được 2 mục đã chọn. Không mục nào bị xóa.",
+  "errors": [
+    { "code": "delete_blocked", "field": "<uuid>", "message": "Phòng \"Phòng A\" đang chứa 3 hiện vật. …" },
+    { "code": "delete_blocked", "field": "<uuid>", "message": "Không tìm thấy phòng trưng bày" } ] }
+```
+
+- Thành công → `{ "ids": [...] }`; `@Audit` ghi **một bản ghi cho từng ID** với cùng action như
+  xóa lẻ.
+- Xóa lẻ (`DELETE …/:id`) dùng chung luật chặn: không tồn tại → 404, bị chặn → 409.
+
+| Route | Quyền | Audit | Bị chặn khi |
+|---|---|---|---|
+| `POST /users/bulk-delete` | `user:delete` | `user.delete` | tài khoản có vai trò Admin; xóa xong thu hồi mọi phiên của tài khoản |
+| `POST /roles/bulk-delete` | `role:delete` | `role.delete` | vai trò Admin; vai trò đang gán cho người dùng |
+| `POST /admin/rooms/bulk-delete` | `room:delete` | `room.delete` | phòng còn hiện vật chưa xóa (BR-20) |
+| `POST /admin/exhibits/bulk-delete` | `exhibit:update` | `exhibit.delete` | vi phạm chính sách xóa hiện vật (BR-20) hoặc có báo cáo liên quan |
+| `POST /admin/media/bulk-delete` | `media:upload` | `media.delete` | media đang được hiện vật đã xuất bản dùng (BR-21); file trên storage được giữ lại |
+
+> Chi tiết: [`docs/tasks/admin-bulk-delete.md`](../tasks/admin-bulk-delete.md).
 
 #### Stats (Dashboard Admin) — Task 21
 
@@ -74,6 +157,14 @@ GET    /admin/stats/charts                                       # dữ liệu b
   "activityLast14Days": [ { "date": "2026-10-12", "revisions": 3, "reports": 1 } ]
 }
 ```
+`GET /admin/stats/storage` → `StorageStatsDto` (bỏ media đã xóa mềm):
+```json
+{
+  "byKind":     [ { "kind": "model", "bytes": 10485760, "count": 4 } ],
+  "totalBytes": 52428800,
+  "totalCount": 37
+}
+```
 > Chỉ đọc (count/GROUP BY), không đổi schema. Yêu cầu đăng nhập; mọi role quản trị xem được.
 > Chi tiết: [`docs/tasks/be/admin-dashboard-stats.md`](../tasks/be/admin-dashboard-stats.md).
 
@@ -86,6 +177,7 @@ Route CMS thực tế dùng prefix `/admin/*` (bản thiết kế ban đầu `/r
 # Phòng — room:read|create|update|delete, audit room.*
 GET    /admin/rooms               GET /admin/rooms/:id
 POST   /admin/rooms               PATCH /admin/rooms/:id (slug bất biến)    DELETE /admin/rooms/:id (xóa mềm, BR-20)
+POST   /admin/rooms/bulk-delete                  # xóa mềm nhiều phòng, tất cả hoặc không
 
 # Hiện vật & revision — exhibit:read|create|update, revision:submit
 GET    /admin/exhibits            GET /admin/exhibits/:id                   # lọc phòng/trạng thái/tìm kiếm
@@ -95,6 +187,7 @@ POST   /admin/exhibits                           # tạo hiện vật + Revision
 PATCH  /admin/exhibits/:id                       # sửa nháp; đã xuất bản → fork revision mới (BR-21); gắn media qua modelId, imageId, audioViId...
 POST   /admin/exhibits/:id/submit-review         # draft -> in_review
 DELETE /admin/exhibits/:id                       # xóa cả hiện vật — chặn nếu đã public/được bảo vệ (BR-20)
+POST   /admin/exhibits/bulk-delete               # xóa mềm nhiều hiện vật, tất cả hoặc không
 DELETE /admin/exhibits/:id/revisions/:revId      # xóa 1 revision nháp
 PUT    /admin/exhibits/rooms/:roomId/reorder     # thứ tự guided tour (displayOrder)
 
@@ -103,7 +196,10 @@ GET    /admin/media               GET /admin/media/:id     GET /admin/media/:id/
 POST   /admin/media/upload  (multipart)          # kiểm định dạng thật, dung lượng, cấu trúc file
 PATCH  /admin/media/:id                          # metadata: nguồn, tác giả, giấy phép, alt text
 DELETE /admin/media/:id                          # xóa mềm; 409 nếu hiện vật đã xuất bản đang dùng (BR-21)
+POST   /admin/media/bulk-delete                  # xóa mềm nhiều media, tất cả hoặc không
 ```
+
+Luật chung của `bulk-delete`: xem mục **Xóa hàng loạt** ở trên.
 
 Chi tiết: [`docs/tasks/be/rooms-crud.md`](../tasks/be/rooms-crud.md),
 [`cms-exhibits-management.md`](../tasks/be/cms-exhibits-management.md),
@@ -150,7 +246,12 @@ Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. 
 
 | action | resourceType | revisionId | Nguồn |
 |---|---|---|---|
-| room.create/update/delete | room | — | AdminRoomsController |
+| room.create/update/delete | room | — | AdminRoomsController (bulk-delete ghi `room.delete` từng ID) |
+| exhibit.delete | exhibit | — | AdminExhibitsController (bulk-delete, từng ID) |
+| media.delete | media | — | AdminMediaController (bulk-delete, từng ID) |
+| user.delete / role.delete | user / role | — | UsersController / RolesController (bulk-delete, từng ID) |
+| auth.password_change, auth.session_revoke_others, auth.logout_all | user | — | AuthController |
+| auth.session_revoke | session | — | AuthController |
 | revision.publish | revision | = resourceId | RevisionsController |
 | revision.reject | revision | = resourceId | RevisionsController |
 | exhibit.hide / exhibit.unhide | exhibit | — | ExhibitRevisionsController |
