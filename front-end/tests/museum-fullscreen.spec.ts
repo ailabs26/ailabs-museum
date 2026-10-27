@@ -46,10 +46,15 @@ test('three open/close cycles restore scroll, focus, background and release rend
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/tour');
   const opener = page.getByRole('button', { name: 'Mở phòng 3D' });
+  // Keyboard activation can scroll a focused control before its click handler.
+  // Capture the opening position in that event, just as the lifecycle owner does.
+  await opener.evaluate(node => node.addEventListener('click', () => {
+    node.setAttribute('data-opening-scroll', String(window.scrollY));
+  }, true));
   for (let cycle = 0; cycle < 3; cycle++) {
     await opener.focus();
-    const scroll = await page.evaluate(() => window.scrollY);
     await opener.press('Enter');
+    const scroll = Number(await opener.getAttribute('data-opening-scroll'));
     await expect(page.getByLabel('Phòng trưng bày 3D')).toBeFocused();
     await expect(page.locator('canvas')).toHaveCount(1);
     await expect.poll(async () => (await readRendererProbe(page)).filter(item => item.live).length).toBe(1);
