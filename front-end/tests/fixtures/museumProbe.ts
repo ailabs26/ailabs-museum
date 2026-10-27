@@ -83,3 +83,11 @@ export async function waitForGallerySurfaces(page: Page) {
     return maps.size;
   })).toBe(8);
 }
+
+export async function waitForRendererIdle(page: Page) {
+  await expect(async () => {
+    const frames = (await readRendererProbe(page)).at(-1)!.frames;
+    await page.waitForTimeout(1000); // Longer than a software renderer's active frame interval.
+    expect((await readRendererProbe(page)).at(-1)!.frames).toBe(frames);
+  }).toPass({ timeout: 10_000, intervals: [100, 200] });
+}
