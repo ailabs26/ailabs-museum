@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 import { installMuseumApi } from './fixtures/museumApi';
-import { installRendererProbe, readRendererProbe, waitForGallerySurfaces } from './fixtures/museumProbe';
+import { installRendererProbe, readRendererProbe, waitForGallerySurfaces, waitForRendererIdle } from './fixtures/museumProbe';
 
 test('gallery uses local PBR finishes and shared instanced architecture', async ({ page }, info) => {
   await installMuseumApi(page); await installRendererProbe(page);
@@ -58,4 +59,61 @@ test('contact shadow outside the plinth leaves walkable floor unselected', async
   const bounds = (await canvas.boundingBox())!;
   await page.mouse.click(bounds.width / 2, bounds.height / 2);
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);
+});
+
+test('photo exports a PNG matching the fullscreen drawing buffer', async ({ page }) => {
+  await installMuseumApi(page); await installRendererProbe(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const canvas = page.getByLabel('Phòng trưng bày 3D');
+  await expect(canvas).toBeVisible(); await waitForGallerySurfaces(page);
+  const buffer = await canvas.evaluate((node: HTMLCanvasElement) => ({ width: node.width, height: node.height }));
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Chụp ảnh', exact: true }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^aura-museum-\d+\.png$/);
+  const data = await readFile((await download.path())!);
+  expect(data.subarray(1, 4).toString()).toBe('PNG');
+  expect(data.readUInt32BE(16)).toBe(buffer.width);
+  expect(data.readUInt32BE(20)).toBe(buffer.height);
+});
+
+test('decoded gallery finishes reach the GPU without a camera action', async ({ page }) => {
+  await installMuseumApi(page); await installRendererProbe(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'hardwareConcurrency', { value: 8 });
+    Object.defineProperty(navigator, 'deviceMemory', { value: 8 });
+    Object.defineProperty(Element.prototype, 'requestFullscreen', { value: undefined });
+  });
+  await page.goto('/tour');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible();
+  await waitForGallerySurfaces(page); await waitForRendererIdle(page);
+  expect((await readRendererProbe(page)).at(-1)!.textures).toBeGreaterThanOrEqual(14);
+});
+
+test('late surface downloads repaint an idle room without camera input', async ({ page }) => {
+  await installMuseumApi(page); await installRendererProbe(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  let releaseTextures!: () => void;
+  const downloads = new Promise<void>(resolve => { releaseTextures = resolve; });
+  await page.route('**/textures/gallery/*.png', async route => {
+    await downloads;
+    await route.continue();
+  });
+  try {
+    await page.goto('/tour');
+    await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+    const canvas = page.getByLabel('Phòng trưng bày 3D');
+    await expect(canvas).toBeVisible();
+    await expect.poll(async () => (await readRendererProbe(page)).at(-1)?.calls ?? 0).toBeGreaterThan(0);
+    await waitForRendererIdle(page);
+    const before = await canvas.evaluate((node: HTMLCanvasElement) => node.toDataURL());
+    releaseTextures();
+    await waitForGallerySurfaces(page); await waitForRendererIdle(page);
+    expect((await readRendererProbe(page)).at(-1)!.textures).toBeGreaterThanOrEqual(14);
+    expect(await canvas.evaluate((node: HTMLCanvasElement) => node.toDataURL())).not.toBe(before);
+  } finally { releaseTextures(); }
 });

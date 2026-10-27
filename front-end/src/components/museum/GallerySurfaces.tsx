@@ -12,20 +12,28 @@ const GallerySurfaceContext = createContext<GalleryMaterials | null>(null);
 export function GallerySurfaces({ children, anisotropy = 4 }: { children: ReactNode; anisotropy?: number }) {
   const { gl, invalidate } = useThree();
   const [materials, setMaterials] = useState<GalleryMaterials | null>(null);
+  useLayoutEffect(() => { if (materials) invalidate(); }, [materials, invalidate]);
   useLayoutEffect(() => {
     let isDisposed = false;
     const textures: Texture[] = [];
     const loader = new TextureLoader();
-    const stone = new MeshStandardMaterial({ name: 'Gallery limestone', color: '#ffffff', roughness: .76, normalScale: new Vector2(.07, .07) });
-    const plaster = new MeshStandardMaterial({ name: 'Gallery lime plaster', color: '#ffffff', roughness: .92, normalScale: new Vector2(.12, .12) });
-    const walnut = new MeshStandardMaterial({ name: 'Gallery walnut', color: '#ffffff', roughness: .48, normalScale: new Vector2(.12, .12) });
+    const stone = new MeshStandardMaterial({ name: 'Gallery limestone', color: '#cac4b6', roughness: .76, normalScale: new Vector2(.07, .07) });
+    const plaster = new MeshStandardMaterial({ name: 'Gallery lime plaster', color: '#e5e0d5', roughness: .92, normalScale: new Vector2(.12, .12) });
+    const walnut = new MeshStandardMaterial({ name: 'Gallery walnut', color: '#533826', roughness: .48, normalScale: new Vector2(.12, .12) });
     const bronze = new MeshStandardMaterial({ name: 'Gallery brushed bronze', color: '#a68b59', metalness: .72, roughness: .38 });
     const charcoal = new MeshStandardMaterial({ name: 'Gallery charcoal stone', color: '#30342f', roughness: .62 });
     const grout = new MeshStandardMaterial({ name: 'Gallery stone joints', color: '#aaa394', roughness: .95 });
     const load = (name: string, material: MeshStandardMaterial | null, channel: 'map' | 'normalMap' | 'roughnessMap' = 'map', repeat = 1) => {
       const texture = loader.load(`/textures/gallery/${name}.png`, () => {
         if (isDisposed) { texture.dispose(); return; }
-        if (material) { material[channel] = texture; material.needsUpdate = true; }
+        if (material) {
+          material[channel] = texture;
+          if (channel === 'map') material.color.set('#ffffff');
+          material.needsUpdate = true;
+        }
+        // Publish async material changes through the committed R3F consumers.
+        // A bare invalidate can precede their initial frame in demand mode.
+        setMaterials(previous => previous ? { ...previous } : previous);
         invalidate();
       }, undefined, () => { /* Flat PBR finishes remain readable if a local image fails. */ });
       texture.name = name;
