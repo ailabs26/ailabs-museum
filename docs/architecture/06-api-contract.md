@@ -38,7 +38,7 @@ Lỗi:
 
 ### Auth & quản trị hệ thống (phân hệ dựng trước)
 ```
-POST   /auth/login            POST /auth/refresh    POST /auth/logout    GET /auth/me
+POST   /auth/login            POST /auth/refresh    POST /auth/logout    GET /auth/me    PATCH /auth/me
 POST   /auth/change-password                                     # tự đổi mật khẩu
 GET    /auth/sessions         DELETE /auth/sessions/:id          # thiết bị đang đăng nhập của chính mình
 POST   /auth/sessions/revoke-others   POST /auth/logout-all
@@ -64,6 +64,7 @@ Cơ chế phiên, thu hồi và rate limit: [05 — Bảo mật](05-security-rba
 | `POST /auth/login` | `{ email, password }` → `{ accessToken, user }` + cookie refresh | 401 sai/khóa; 429 khi vượt ngưỡng | — |
 | `POST /auth/refresh` | cookie → `{ accessToken }` + cookie mới | xoay vòng; 401 thì xóa cookie; chặn Origin lạ (403) | — |
 | `POST /auth/logout` | cookie → `null` | thu hồi family hiện tại, xóa cookie; gọi lại vẫn 200 | — |
+| `PATCH /auth/me` | `{ displayName }` (trim, 1–160) → AuthUser | chỉ sửa tên hiển thị của chính mình; gửi kèm trường khác → 400 | `auth.profile_update` |
 | `POST /auth/change-password` | `{ currentPassword, newPassword }` → `{ id }` | mới 8–128 ký tự, khác cũ; sai mật khẩu hiện tại → **400** gắn field `currentPassword` (không dùng 401 để FE không đăng xuất); 409 nếu Admin vừa đặt lại; đăng xuất mọi thiết bị khác | `auth.password_change` |
 | `GET /auth/sessions` | → `[{ id, userAgent, ip, signedInAt, lastActiveAt, expiresAt, current }]` | `id` = family; mỗi dòng một thiết bị còn đăng nhập | — |
 | `DELETE /auth/sessions/:id` | → `null` | 404 nếu không phải phiên của mình; là phiên hiện tại thì xóa cookie | `auth.session_revoke` |
