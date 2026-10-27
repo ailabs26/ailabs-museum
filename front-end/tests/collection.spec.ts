@@ -72,11 +72,25 @@ test('room and exhibit loading states remain readable until responses arrive', a
   await page.route('**/api/rooms/sculpture', async (route) => { await detailGate; await fulfillMuseum(route, envelope(roomA)); });
   await page.goto('/collection');
   await expect(page.locator('ul[aria-hidden="true"]')).toBeVisible();
+  const loadingStatus = page.getByRole('status', { name: 'Trạng thái tải bộ sưu tập' });
+  await expect(loadingStatus).toHaveCount(1);
+  await expect(loadingStatus).toHaveAttribute('aria-live', 'polite');
+  await expect(loadingStatus).toHaveAttribute('aria-atomic', 'true');
+  await expect(loadingStatus).toBeVisible();
+  expect(await loadingStatus.evaluate((node) => node.closest('[aria-hidden="true"], [hidden]') === null)).toBe(true);
+  const initialRegion = await loadingStatus.elementHandle();
+  await expect(loadingStatus).toHaveText('Đang tải danh sách phòng trưng bày…');
   releaseList();
+  await expect(loadingStatus).toHaveText(`Đang tải hiện vật của phòng ${roomA.name}…`);
+  expect(await loadingStatus.evaluate((node, original) => node === original, initialRegion)).toBe(true);
   await expect(page.locator('ul[aria-hidden="true"]')).toBeVisible();
   await expect(page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' })).toHaveCount(0);
   releaseDetail();
   await expect(page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' }).getByRole('listitem')).toHaveCount(5);
+  await expect(loadingStatus).toHaveCount(1);
+  await expect(loadingStatus).toBeEmpty();
+  expect(await loadingStatus.evaluate((node, original) => node === original, initialRegion)).toBe(true);
+  await expect(page.locator('ul[aria-hidden="true"]')).toHaveCount(0);
 });
 
 test('search filters names and descriptions locally, reports counts, clears and resets on room change', async ({ page }) => {
@@ -101,7 +115,7 @@ test('search filters names and descriptions locally, reports counts, clears and 
   await expect(page.getByText('1/5 hiện vật khớp tìm kiếm')).toBeVisible();
   await expect(cards.getByRole('heading', { name: 'Tượng Đồng' })).toBeVisible();
   await input.fill('geen match');
-  await expect(page.getByRole('status')).toContainText('Không có hiện vật nào khớp');
+  await expect(page.getByRole('status').filter({ hasText: 'Không có hiện vật nào khớp' })).toBeVisible();
   await expect(page.getByText('0/5 hiện vật khớp tìm kiếm')).toBeVisible();
   await input.fill('');
   await expect(cards).toHaveCount(5);
@@ -120,11 +134,11 @@ test('search filters names and descriptions locally, reports counts, clears and 
 test('empty public rooms and empty exhibit collections have distinct states', async ({ page }) => {
   await page.route('**/api/rooms', (route) => fulfillMuseum(route, envelope([])));
   await page.goto('/collection');
-  await expect(page.getByRole('status')).toHaveText('Chưa có phòng trưng bày công khai.');
+  await expect(page.getByRole('status').filter({ hasText: 'Chưa có phòng trưng bày công khai.' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Tham quan phòng này trong 3D' })).toHaveCount(0);
   await page.unroute('**/api/rooms');
   await page.goto('/collection?room=empty');
-  await expect(page.getByRole('status')).toHaveText('Phòng này chưa có hiện vật được xuất bản.');
+  await expect(page.getByRole('status').filter({ hasText: 'Phòng này chưa có hiện vật được xuất bản.' })).toBeVisible();
   await expect(page.getByText('0 hiện vật đã xuất bản')).toBeVisible();
 });
 
@@ -182,6 +196,10 @@ test('switching rooms hides old cards while the new room loads', async ({ page }
   await page.route('**/api/rooms/ceramics', async (route) => { await gate; await fulfillMuseum(route, envelope(roomB)); });
   await page.goto('/collection');
   await expect(page.getByRole('heading', { name: 'Hiện vật 1', exact: true })).toBeVisible();
+  const loadingStatus = page.getByRole('status', { name: 'Trạng thái tải bộ sưu tập' });
+  await expect(loadingStatus).toHaveCount(1);
+  await expect(loadingStatus).toBeEmpty();
+  const initialRegion = await loadingStatus.elementHandle();
   const rooms = page.getByRole('group', { name: 'Chọn phòng trưng bày' });
   const sculpture = rooms.getByRole('button', { name: roomA.name, exact: true });
   const ceramics = rooms.getByRole('button', { name: roomB.name, exact: true });
@@ -189,9 +207,14 @@ test('switching rooms hides old cards while the new room loads', async ({ page }
   await expect(ceramics).toHaveAttribute('aria-pressed', 'true');
   await expect(sculpture).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('ul[aria-hidden="true"]')).toBeVisible();
+  await expect(loadingStatus).toHaveText(`Đang tải hiện vật của phòng ${roomB.name}…`);
+  await expect(ceramics).toBeFocused();
   await expect(page.getByRole('heading', { name: 'Hiện vật 1', exact: true })).toHaveCount(0);
   release();
   await expect(page.getByRole('heading', { name: 'Bình gốm', exact: true })).toBeVisible();
+  await expect(loadingStatus).toBeEmpty();
+  expect(await loadingStatus.evaluate((node, original) => node === original, initialRegion)).toBe(true);
+  await expect(ceramics).toBeFocused();
 });
 
 test('room pills support Tab, Enter and Space and the tour link keeps the selected room', async ({ page }) => {

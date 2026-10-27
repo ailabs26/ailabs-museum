@@ -88,12 +88,12 @@
 
 **Mục tiêu:** Test thất bại vì thiếu live region trước khi sửa production.
 
-- [ ] Dùng fixture `installMuseumApi`, `fulfillMuseum`, `envelope`, `roomSummaries`, `roomA`, `roomB` sẵn có; chặn API bằng Promise gate.
-- [ ] Viết test list pending: skeleton tồn tại, named `role=status` hiện diện, text đúng, `aria-live=polite`, `aria-atomic=true`, không `aria-hidden`.
-- [ ] Viết transition list → room pending → success; status node không thay đổi identity, sau success rỗng, 5 cards hiện.
-- [ ] Viết test room switch A→B pending với status tên phòng B; không stale cards.
-- [ ] Rà các assert `page.getByRole('status')` hiện có cho empty/list/no-match/refresh; thay bằng scope/text/accessible name rõ, **không xóa assertion**.
-- [ ] Chạy focused và lưu RED thật (nếu fail ngoài dự kiến: phân loại fixture/runner thay vì sửa bừa logic).
+- [x] Dùng fixture có sẵn và Promise gate cho list/detail/room switch.
+- [x] Test list pending kiểm skeleton, named status duy nhất, polite/atomic và không nằm trong ancestor ẩn.
+- [x] Test transition list → room pending → success kiểm identity của cùng DOM node, status rỗng và 5 cards.
+- [x] Test room switch kiểm status tên phòng B, không stale cards và focus giữ trên pill.
+- [x] Ba assertion empty/no-match được scope theo text; vẫn giữ các trạng thái lỗi/retry cũ.
+- [x] RED: `npx.cmd playwright test tests/collection.spec.ts -g 'loading states|switching rooms' --reporter=line` — **2 failed, exit 1**; cả hai `toHaveCount(1)` nhận **0** do chưa có named status. Log và trace cục bộ, không commit artifacts.
 
 **Commit đề xuất:** `test(a11y): reproduce missing collection loading status`
 
