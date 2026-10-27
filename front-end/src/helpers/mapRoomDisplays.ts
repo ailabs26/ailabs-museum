@@ -13,10 +13,13 @@ export function mapRoomDisplays(room: RoomDetail): MuseumDisplay[] {
   return exhibits.map((exhibit, index) => {
     const display: MuseumDisplay = {
       id: exhibit.id,
+      revisionId: exhibit.revisionId,
       roomId: room.id,
       title: exhibit.name,
       description: exhibit.description,
-      transcript: exhibit.transcript,
+      transcript: exhibit.audio?.vi?.transcript ?? (exhibit.i18n ? exhibit.i18n.vi.transcript : exhibit.transcript),
+      audio: exhibit.audio?.vi ?? null,
+      audioLocale: 'vi',
       ...(exhibit.image ? { image: { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } } : {}),
       hotspots: [...exhibit.hotspots].sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
         .map(({ id, label, body, positionX, positionY, positionZ }) => ({ id, label, body, position: [positionX, positionY, positionZ] })),

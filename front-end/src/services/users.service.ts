@@ -54,6 +54,10 @@ export const usersService = {
   remove(id: string): Promise<void> {
     return http.delete<void>(`/users/${id}`);
   },
+  /** Xóa mềm nhiều tài khoản: tất cả hoặc không (409 kèm lý do từng ID). */
+  async removeMany(ids: string[]): Promise<void> {
+    await http.post<unknown>('/users/bulk-delete', { ids });
+  },
   async assignRoles(id: string, roleIds: string[]): Promise<UserRow> {
     return parseUser((await http.raw.post<unknown>(`/users/${id}/roles`, { roleIds })).data);
   },

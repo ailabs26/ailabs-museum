@@ -38,10 +38,14 @@ import { ApiException } from '@/core/api/api-error';
 import { formatBytes, hasMediaRights, MEDIA_ACCEPT, uploadSizeError } from '@/helpers/mediaLibrary';
 import type { MediaItem, MediaKind, MediaProcessingState } from '@/services/media.service';
 import { MEDIA_KIND_LABEL, MEDIA_STATE_LABEL, mediaService } from '@/services/media.service';
-import { Column, DataTable } from '@/shared/components/data';
+import { BulkActionBar, BulkDeleteFailures, Column, DataTable } from '@/shared/components/data';
+import { useBulkDelete } from '@/shared/hooks/useBulkDelete';
+import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { confirmAction, notify } from '@/shared/components/feedback';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { MediaPreview } from '@/shared/components/media/MediaPreview';
+import { UploadDropzone } from '@/components/cms/UploadDropzone';
+import { StorageQuotaBar } from '@/components/cms/StorageQuotaBar';
 
 const PAGE_SIZE = 15;
 
@@ -133,6 +137,15 @@ export function MediaPage() {
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin-media'] });
+  const selection = useRowSelection(`${page}|${search}|${kindFilter ?? ''}|${stateFilter ?? ''}`);
+  // Media đang được dùng (BR-21) chỉ back-end biết: không khóa trước, lý do hiện trong danh sách bị chặn.
+  const bulk = useBulkDelete({
+    removeMany: mediaService.removeMany,
+    noun: 'media',
+    nameOf: (id) => mediaQuery.data?.items.find((media) => media.id === id)?.originalName ?? undefined,
+    onSuccess: selection.clear,
+    onSettled: invalidate,
+  });
 
   const openEdit = (media: MediaItem) => {
     setEditing(media);
@@ -313,6 +326,8 @@ export function MediaPage() {
         description="Thư viện model 3D, ảnh, audio thuyết minh và phụ đề dùng cho hiện vật"
       />
 
+      <StorageQuotaBar />
+
       <Card withBorder p="md" mb="md" radius="sm">
         <Text fw={600} size="sm" mb="xs">
           Tải lên media mới
@@ -337,6 +352,10 @@ export function MediaPage() {
             GLB ≤ 10 MB (tài nguyên nhúng) · Ảnh JPEG/PNG/WebP ≤ 2 MB · MP3 ≤ 10 MB · WebVTT ≤ 1 MB
           </Text>
         </Group>
+        <div style={{ marginTop: 12 }}>
+          <UploadDropzone onFile={handleFile} disabled={uploadMutation.isPending}
+            hint={`Hoặc thả tệp ${MEDIA_KIND_LABEL[uploadKind]} (${MEDIA_ACCEPT[uploadKind]}) vào vùng này`} />
+        </div>
         {uploadProgress !== null && (
           <Progress value={uploadProgress * 100} mt="sm" size="sm" animated aria-label="Tiến độ tải lên" />
         )}
@@ -397,11 +416,19 @@ export function MediaPage() {
         </Grid>
       </Card>
 
+      <BulkActionBar count={selection.selectedIds.length} onClear={selection.clear}
+        onDelete={() => bulk.confirmDelete(selection.selectedIds)} loading={bulk.isPending} />
+      <BulkDeleteFailures failures={bulk.failures} onClose={bulk.dismissFailures} />
       <Card withBorder p={0} radius="sm">
         <DataTable
           columns={columns}
           data={mediaQuery.data?.items ?? []}
           rowKey={(m) => m.id}
+          selection={{
+            selectedIds: selection.selectedIds,
+            onChange: selection.setSelectedIds,
+            rowLabel: (m) => m.originalName ?? m.id,
+          }}
           total={mediaQuery.data?.total ?? 0}
           page={page}
           pageSize={PAGE_SIZE}

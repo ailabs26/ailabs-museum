@@ -1,5 +1,6 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   Index,
   JoinColumn,
@@ -11,6 +12,7 @@ import { User } from '../../users/entities/user.entity';
 
 @Entity('refresh_sessions')
 @Index('IDX_refresh_sessions_user_family', ['userId', 'familyId'])
+@Index('IDX_refresh_sessions_family_live', ['familyId'], { where: '"revoked_at" IS NULL' })
 export class RefreshSession {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -45,4 +47,18 @@ export class RefreshSession {
 
   @Column({ name: 'expires_at', type: 'timestamptz' })
   expiresAt!: Date;
+
+  /** Thời điểm tạo row (mỗi lần xoay vòng) — "hoạt động cuối" của thiết bị. */
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt!: Date;
+
+  /** Thời điểm đăng nhập; giữ nguyên qua các lần xoay vòng cùng family. */
+  @Column({ name: 'signed_in_at', type: 'timestamptz', default: () => 'now()' })
+  signedInAt!: Date;
+
+  @Column({ name: 'user_agent', type: 'varchar', length: 512, nullable: true })
+  userAgent!: string | null;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  ip!: string | null;
 }

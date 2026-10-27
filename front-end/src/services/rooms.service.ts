@@ -53,6 +53,10 @@ export const roomsService = {
   remove(id: string): Promise<void> {
     return http.delete<void>(`/admin/rooms/${id}`);
   },
+  /** Xóa mềm nhiều phòng: tất cả hoặc không (409 kèm lý do từng ID). */
+  async removeMany(ids: string[]): Promise<void> {
+    await http.post<unknown>('/admin/rooms/bulk-delete', { ids });
+  },
 
   getPublicList(): Promise<RoomRow[]> {
     return http.get<RoomRow[]>('/public/rooms');

@@ -1,12 +1,12 @@
-.page { --mantine-color-dimmed: var(--public-muted, #60695f); color: var(--public-ink, #263b36); }
+.page { --mantine-color-dimmed: var(--aura-muted, #64748b); color: var(--aura-ink, #0f172a); }
 .page :global(.mantine-Button-root) { min-height: 44px; }
-.heading { font-family: 'Times New Roman', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 500; line-height: 1.2; overflow-wrap: anywhere; }
-.eyebrow { color: var(--public-muted, #786344); letter-spacing: 0.14em; }
-.lead { color: var(--public-muted, #60695f); }
-.toolbar { padding: 18px 0; border-block: 1px solid var(--public-border, #ddd5c6); }
+.heading { font-family: var(--aura-font-display); font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; overflow-wrap: anywhere; color: var(--aura-ink); }
+.eyebrow { color: var(--aura-emerald, #0d9488); letter-spacing: 0.14em; }
+.lead { color: var(--aura-muted, #64748b); }
+.toolbar { padding: 18px 0; border-block: 1px solid var(--aura-glass-border, #e2e8f0); }
 .roomSelect { width: min(100%, 360px); }
 .roomSelect select { min-height: 44px; background: #fcfaf5; border-color: #c6bcaa; color: #263b36; color-scheme: light; }
-.introTitle { font-family: 'Times New Roman', serif; font-size: clamp(1.7rem, 3vw, 2.5rem); font-weight: 500; }
+.introTitle { font-family: var(--aura-font-display); font-size: clamp(1.7rem, 3vw, 2.5rem); font-weight: 800; letter-spacing: -0.02em; color: var(--aura-ink); }
 .stage { display: grid; gap: 16px; min-width: 0; }
 .stageDetails { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); }
 @media (max-width: 800px) {
@@ -17,14 +17,15 @@
   min-height: clamp(360px, 64svh, 740px);
   position: relative;
   overflow: hidden;
-  background: #eee8dc;
-  color: #243e3f;
-  border: 1px solid #cdc5b7;
-  border-radius: 16px;
+  background: var(--aura-surface-2, #f1f5f9);
+  color: var(--aura-ink, #0f172a);
+  border: 1px solid var(--aura-glass-border, #e2e8f0);
+  border-radius: 20px;
+  box-shadow: var(--aura-shadow-card);
 }
 
 .viewport canvas:focus-visible {
-  outline: 3px solid #2b6865;
+  outline: 3px solid var(--aura-emerald-bright, #10b981);
   outline-offset: -5px;
 }
 
@@ -33,8 +34,29 @@
 }
 
 .intro {
-  --public-muted: #60695f;
-  color: #263b36;
+  color: var(--aura-ink);
   min-height: clamp(360px, 64svh, 740px);
-  background: radial-gradient(ellipse at 50% 100%, #d4c3a5 0%, transparent 70%), linear-gradient(135deg, #f3eee2, #e9e1d1);
+  background:
+    radial-gradient(ellipse at 50% 110%, rgba(16, 185, 129, 0.22) 0%, transparent 65%),
+    radial-gradient(ellipse at 85% -10%, rgba(245, 158, 11, 0.15) 0%, transparent 55%),
+    linear-gradient(135deg, var(--aura-bg-alt), var(--aura-surface));
 }
+
+.immersiveRoomSelect { position: absolute; z-index: 5; top: 100px; left: 24px; max-width: 240px; }
+.immersiveRoomSelect select { background: #f6f1e8ed; color: #30392f; min-height: 44px; }
+.immersiveDetail { position: absolute; z-index: 6; top: 160px; right: 24px; bottom: 124px; width: min(360px, 38vw); pointer-events: none; }
+.immersiveDetail > aside { pointer-events: auto; max-height: 100%; overflow: auto; box-shadow: 0 16px 60px #0004; }
+.immersiveCatalogue { position: absolute; z-index: 7; left: 24px; top: 152px; color: #30392f; background: #f6f1e8f5; border: 1px solid #d1b78c80; border-radius: 8px; max-width: calc(100% - 48px); }
+.immersiveCatalogue summary { cursor: pointer; min-height: 44px; padding: 10px 14px; font-size: 13px; }
+.immersiveCatalogue[open] { width: min(680px, calc(100% - 48px)); max-height: calc(100dvh - 270px); overflow: auto; }
+.immersiveCatalogue section { padding: 16px; }
+.immersiveLoading { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: #eee8dc; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.immersiveCatalogue section :global(.mantine-SimpleGrid-root) { grid-template-columns: 1fr 1fr; }
+@media (max-width: 600px) {
+  .immersiveRoomSelect { top: 84px; left: 12px; max-width: min(160px, calc(100% - 216px)); }
+  .immersiveCatalogue { top: 136px; left: 12px; }
+  .immersiveDetail { top: auto; right: 12px; left: 12px; bottom: 110px; width: auto; height: min(42dvh, 380px); }
+  .immersiveDetail > aside { padding: 16px; }
+}
+@media (max-height: 500px) { .immersiveDetail { top: 156px; right: 120px; bottom: 90px; width: min(380px, 48vw); height: auto; } .immersiveDetail > aside { padding: 12px; } .immersiveCatalogue[open] { max-height: calc(100dvh - 180px); } }

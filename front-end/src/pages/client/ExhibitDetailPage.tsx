@@ -1,20 +1,26 @@
 import { Button, Container, Title } from '@mantine/core';
-import { useEffect, useRef } from 'react';
+import { IconCube } from '@tabler/icons-react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { z } from 'zod';
 import { MediaCreditList } from '@/components/museum/MediaCreditList';
 import { collectMediaCredits } from '@/helpers/mediaCredits';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
-import { ExhibitPreview } from '@/shared/components/data/ExhibitPreview';
+import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
+import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
+import { PublicReportModal } from '@/shared/components/feedback/PublicReportModal';
 import classes from './ExhibitDetailPage.module.css';
 
 export function ExhibitDetailPage() {
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const { roomSlug, exhibitId } = useParams<{ roomSlug: string; exhibitId: string }>();
   const { rooms, room, selectedRoom } = useMuseumRooms(roomSlug ?? '');
   const isValidId = z.string().uuid().safeParse(exhibitId).success;
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const exhibit = detail && isValidId ? detail.exhibits.find((item) => item.id === exhibitId) : undefined;
   const credits = exhibit ? collectMediaCredits(exhibit) : [];
+  const audio = exhibit?.audio?.vi;
+  const transcript = audio?.transcript ?? (exhibit?.i18n ? exhibit.i18n.vi.transcript : exhibit?.transcript);
 
   let statusTitle: string | undefined;
   let statusMessage: string | undefined;
@@ -64,17 +70,28 @@ export function ExhibitDetailPage() {
         <header className={classes.header}>
           <p className={classes.roomName}>{detail.name}</p>
           <Title ref={titleRef} tabIndex={-1} order={1} id="exhibit-title" className={classes.title}>{exhibit.name}</Title>
+          <div className={classes.headerActions}>
+            <Link className={classes.jump3d}
+              to={`/tour?${new URLSearchParams({ room: detail.slug, exhibit: exhibit.id })}`}>
+              <IconCube size={18} aria-hidden="true" /> Xem trong không gian 3D
+            </Link>
+            <Button variant="default" onClick={() => setIsReportOpen(true)}>Báo nội dung</Button>
+          </div>
         </header>
         <div className={classes.content}>
-          <ExhibitPreview shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
+          <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } : null}
+            shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
           <div className={classes.sections}>
+            <div className={classes.audioDock}>
+              <AudioPlayer key={`${detail.id}:${exhibit.id}:vi`} src={audio?.audio.url} subtitleUrl={audio?.subtitle?.url} locale="vi" />
+            </div>
             <section aria-labelledby="exhibit-description-title">
               <Title order={2} id="exhibit-description-title" className={classes.sectionTitle}>Câu chuyện hiện vật</Title>
               <p className={classes.body}>{exhibit.description || 'Chưa có mô tả.'}</p>
             </section>
-            {exhibit.transcript && <section aria-labelledby="exhibit-transcript-title">
+            {transcript && <section aria-labelledby="exhibit-transcript-title">
               <Title order={2} id="exhibit-transcript-title" className={classes.sectionTitle}>Bản thuyết minh</Title>
-              <p className={classes.body}>{exhibit.transcript}</p>
+              <p className={classes.body}>{transcript}</p>
             </section>}
             {exhibit.hotspots.length > 0 && <section aria-labelledby="exhibit-hotspots-title">
               <Title order={2} id="exhibit-hotspots-title" className={classes.sectionTitle}>Điểm chú ý</Title>
@@ -93,6 +110,8 @@ export function ExhibitDetailPage() {
           </div>
         </div>
       </article> : null}
+      {exhibit && isReportOpen && <PublicReportModal key={`${exhibit.id}:${exhibit.revisionId}`} exhibitId={exhibit.id}
+        reportedRevisionId={exhibit.revisionId} opened onClose={() => setIsReportOpen(false)} />}
     </Container>
   );
 }

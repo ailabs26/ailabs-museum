@@ -12,6 +12,12 @@ import { UsersRepository } from '../../users/repositories/users.repository';
 import { UserStatus } from '../../users/entities/user.entity';
 import { toAuthUser } from '../../users/user-access.util';
 
+/** Thông tin thiết bị lưu kèm refresh session (màn "Phiên đăng nhập"). */
+export interface SessionClient {
+  userAgent?: string | null;
+  ip?: string | null;
+}
+
 export interface IssuedRefresh {
   raw: string;
   session: RefreshSession;
@@ -34,14 +40,15 @@ export class TokenService {
     private readonly tx: TransactionManager,
   ) {}
 
-  /** Ký access token mang roles + permissions. */
-  signAccess(user: AuthUser): Promise<string> {
+  /** Ký access token mang roles + permissions và `sid` = familyId của phiên. */
+  signAccess(user: AuthUser, sessionId: string): Promise<string> {
     const payload: JwtAccessPayload = {
       sub: user.id,
       email: user.email,
       displayName: user.displayName,
       roles: user.roles,
       permissions: user.permissions,
+      sid: sessionId,
     };
     return this.jwt.signAsync(payload, {
       secret: this.config.getOrThrow<string>('jwt.accessSecret'),
@@ -54,6 +61,8 @@ export class TokenService {
     userId: string,
     familyId?: string,
     manager?: EntityManager,
+    client: SessionClient = {},
+    signedInAt = new Date(),
   ): Promise<IssuedRefresh> {
     const raw = randomBytes(32).toString('hex');
     const session = await this.sessions.create(
@@ -62,6 +71,9 @@ export class TokenService {
         familyId: familyId ?? randomUUID(),
         tokenHash: this.hash(raw),
         expiresAt: this.refreshExpiry(),
+        signedInAt,
+        userAgent: client.userAgent?.slice(0, 512) ?? null,
+        ip: client.ip?.slice(0, 64) ?? null,
       },
       manager,
     );
@@ -72,7 +84,7 @@ export class TokenService {
    * Xoay vòng refresh token. Token cũ đã dùng/bị thu hồi → thu hồi cả family
    * và từ chối (reuse-detection). Token hợp lệ → phát hành token mới cùng family.
    */
-  async rotate(raw: string): Promise<RotatedRefresh> {
+  async rotate(raw: string, client: SessionClient = {}): Promise<RotatedRefresh> {
     const tokenHash = this.hash(raw);
     const result = await this.tx.run(async (manager): Promise<RotatedRefresh | null> => {
       const found = await this.sessions.findByTokenHash(tokenHash, manager);
@@ -81,6 +93,7 @@ export class TokenService {
       }
 
       await this.sessions.lockFamily(found.familyId, manager);
+      await this.sessions.lockUser(found.userId, manager);
       const current = await this.sessions.findByTokenHash(tokenHash, manager, true);
       if (!current) {
         return null;
@@ -102,8 +115,14 @@ export class TokenService {
         return null;
       }
 
-      const accessToken = await this.signAccess(toAuthUser(user));
-      const next = await this.issueRefresh(current.userId, current.familyId, manager);
+      const accessToken = await this.signAccess(toAuthUser(user), current.familyId);
+      const next = await this.issueRefresh(
+        current.userId,
+        current.familyId,
+        manager,
+        { userAgent: client.userAgent ?? current.userAgent, ip: client.ip ?? current.ip },
+        current.signedInAt,
+      );
       await this.sessions.markUsed(current.id, next.session.id, manager);
       return { userId: current.userId, raw: next.raw, session: next.session, accessToken };
     });

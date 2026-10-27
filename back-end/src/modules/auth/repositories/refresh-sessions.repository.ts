@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, IsNull, Repository } from 'typeorm';
+import { EntityManager, IsNull, MoreThan, Not, Repository } from 'typeorm';
 import { RefreshSession } from '../entities/refresh-session.entity';
 
 @Injectable()
@@ -26,6 +26,15 @@ export class RefreshSessionsRepository {
     await manager.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [familyId]);
   }
 
+  /**
+   * Khóa theo user: refresh giữ khóa chia sẻ, thu hồi toàn bộ giữ khóa độc quyền.
+   * Nhờ đó token vừa xoay vòng trong lúc Admin reset mật khẩu/khóa user vẫn bị thu hồi.
+   */
+  async lockUser(userId: string, manager: EntityManager, exclusive = false): Promise<void> {
+    const fn = exclusive ? 'pg_advisory_xact_lock' : 'pg_advisory_xact_lock_shared';
+    await manager.query(`SELECT ${fn}(hashtextextended($1, 0))`, [`user-sessions:${userId}`]);
+  }
+
   create(
     session: Partial<RefreshSession>,
     manager?: EntityManager,
@@ -49,6 +58,43 @@ export class RefreshSessionsRepository {
       { familyId, revokedAt: IsNull() },
       { revokedAt: new Date() },
     );
+  }
+
+  /**
+   * Thu hồi mọi session còn hiệu lực của user (mọi thiết bị); `exceptFamilyId` giữ lại
+   * phiên hiện tại ("đăng xuất các thiết bị khác").
+   */
+  async revokeAllForUser(userId: string, manager: EntityManager, exceptFamilyId?: string): Promise<void> {
+    await this.lockUser(userId, manager, true);
+    await this.getRepository(manager).update(
+      { userId, revokedAt: IsNull(), ...(exceptFamilyId ? { familyId: Not(exceptFamilyId) } : {}) },
+      { revokedAt: new Date() },
+    );
+  }
+
+  /** Thu hồi một thiết bị của chính user; trả false nếu family không thuộc user hoặc đã chết. */
+  async revokeFamilyOfUser(userId: string, familyId: string, manager: EntityManager): Promise<boolean> {
+    await this.lockFamily(familyId, manager);
+    const result = await this.getRepository(manager).update(
+      { userId, familyId, revokedAt: IsNull() },
+      { revokedAt: new Date() },
+    );
+    return (result.affected ?? 0) > 0;
+  }
+
+  /** Family còn ít nhất một token chưa thu hồi và chưa hết hạn (ActiveSessionGuard gọi mỗi request). */
+  isFamilyLive(familyId: string): Promise<boolean> {
+    return this.repository.exists({
+      where: { familyId, revokedAt: IsNull(), expiresAt: MoreThan(new Date()) },
+    });
+  }
+
+  /** Token đầu (đang dùng) của mỗi thiết bị còn đăng nhập, hoạt động gần nhất trước. */
+  listLiveForUser(userId: string): Promise<RefreshSession[]> {
+    return this.repository.find({
+      where: { userId, usedAt: IsNull(), revokedAt: IsNull(), expiresAt: MoreThan(new Date()) },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   private getRepository(manager?: EntityManager): Repository<RefreshSession> {

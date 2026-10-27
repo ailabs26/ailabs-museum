@@ -68,6 +68,17 @@ describe('AuditInterceptor', () => {
     await lastValueFrom(interceptor.intercept(context, next));
     assert.deepEqual(recorded.map((entry) => entry.resourceId), ['room-7']);
   });
+
+  it('ghi nhận reason hoặc resolution từ request.body vào bản ghi nhật ký', async () => {
+    const recorded: RecordAuditInput[] = [];
+    const audit = { record: async (input: RecordAuditInput) => void recorded.push(input) } as unknown as AuditService;
+    const interceptor = new AuditInterceptor(fakeReflector({ action: 'exhibit.hide', resourceType: 'exhibit' }), audit);
+    const context = buildContext('ex-10');
+    (context.switchToHttp().getRequest() as { body?: object }).body = { version: 2, reason: '  Bảo trì định kỳ  ' };
+    const next: CallHandler = { handle: () => of({ id: 'ex-10' }) };
+    await lastValueFrom(interceptor.intercept(context, next));
+    assert.equal(recorded[0].reason, 'Bảo trì định kỳ');
+  });
 });
 
 /**
@@ -88,6 +99,12 @@ describe('AuditInterceptor trong chuỗi interceptor thật', () => {
     @Audit('thing.assign', 'thing')
     assign() {
       return { roleIds: ['role-1', 'role-2'] };
+    }
+
+    @Post('bulk-delete')
+    @Audit('thing.delete', 'thing')
+    bulkDelete() {
+      return { ids: ['thing-1', 'thing-2', 'thing-3'] };
     }
   }
 
@@ -123,6 +140,20 @@ describe('AuditInterceptor trong chuỗi interceptor thật', () => {
     try {
       await request(app.getHttpServer()).post('/things/thing-1/roles').expect(201);
       assert.deepEqual(recorded.map((entry) => entry.resourceId), ['role-1', 'role-2']);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('thao tác hàng loạt trả { ids } → ghi 1 bản ghi cho mỗi ID', async () => {
+    const recorded: RecordAuditInput[] = [];
+    const app = await startApp(recorded);
+    try {
+      await request(app.getHttpServer()).post('/things/bulk-delete').expect(201);
+      assert.deepEqual(
+        recorded.map((entry) => [entry.action, entry.resourceId]),
+        [['thing.delete', 'thing-1'], ['thing.delete', 'thing-2'], ['thing.delete', 'thing-3']],
+      );
     } finally {
       await app.close();
     }

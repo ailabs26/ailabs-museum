@@ -19,6 +19,8 @@ import { PermissionsPage } from '@/pages/admin/PermissionsPage';
 import { AuditPage } from '@/pages/admin/AuditPage';
 import { ModerationPage } from '@/pages/admin/ModerationPage';
 import { ReportsPage } from '@/pages/admin/ReportsPage';
+import { SessionsPage } from '@/pages/admin/SessionsPage';
+import { ChangePasswordPage } from '@/pages/admin/ChangePasswordPage';
 import { RequirePermission } from '@/core/auth/RequirePermission';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -104,6 +106,9 @@ export function AppRouter() {
               </RequirePermission>
             }
           />
+          {/* Phiên của chính mình: mọi tài khoản đăng nhập đều xem được, không cần permission. */}
+          <Route path="sessions" element={<SessionsPage />} />
+          <Route path="change-password" element={<ChangePasswordPage />} />
           <Route
             path="users"
             element={

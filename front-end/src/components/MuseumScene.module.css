@@ -1,8 +1,27 @@
 .scene { display: flex; flex-direction: column; }
 .canvasFrame { position: relative; height: clamp(300px, 52svh, 620px); flex-shrink: 0; }
-.recovering { position: absolute; inset: 0; display: grid; place-items: center; padding: 2rem; text-align: center; background: #f7f3eaf2; color: #253a36; }
-.toolbar { flex-shrink: 0; padding: 12px; border-top: 1px solid #d3c7b1; background: #f7f3ea; }
-.toolbar button { min-height: 44px; height: auto; padding-block: 10px; max-width: 100%; }
+.recovering { position: absolute; z-index: 8; inset: 0; display: grid; place-items: center; padding: 2rem; text-align: center; background: #f7f3eaf2; color: #253a36; }
+.toolbar { flex-shrink: 0; padding: 8px; background: #f7f3eaf0; border: 1px solid #b9aa8c80; backdrop-filter: blur(12px); }
+.toolbar button { min-height: 44px; min-width: 44px; height: auto; padding: 10px 12px; }
 .toolbar :global(.mantine-Button-label) { white-space: normal; }
-.scene > :global([aria-label="Điểm tương tác hiện vật"]) button { min-height: 44px; height: auto; max-width: 100%; }
-.scene > :global([aria-label="Điểm tương tác hiện vật"]) :global(.mantine-Button-label) { white-space: normal; }
+.moreControls { position: relative; }
+.moreControls summary { display: grid; place-items: center; width: 44px; height: 44px; cursor: pointer; list-style: none; color: #30392f; border-radius: 5px; }
+.moreControls summary::-webkit-details-marker { display: none; }
+.moreControls[open] summary { background: #e8dfcd; }
+.moreControls > div { position: absolute; top: 52px; right: 0; padding: 12px; display: grid; gap: 8px; width: 250px; background: #faf7ef; border: 1px solid #c9baa1; border-radius: 8px; box-shadow: 0 12px 36px #0003; color: #30392f; }
+.hotspotMenu { color: #30392f; background: #f7f3eaf0; border: 1px solid #b9aa8c80; border-radius: 8px; }
+.hotspotMenu summary { min-height: 44px; padding: 12px; font-size: 12px; cursor: pointer; }
+.hotspotMenu button { min-height: 44px; height: auto; }
+.hotspotMenu :global(.mantine-Button-label) { white-space: normal; }
+.modelStatus { color: #30392f; }
+.xrFeedback { position: absolute; z-index: 5; right: 24px; top: 160px; max-width: 280px; padding: 8px 12px; border-radius: 6px; background: #f7f3eaf2; color: #30392f; }
+.illustrationNote { position: absolute; z-index: 1; left: 24px; top: 250px; max-width: 210px; font-size: 10px; color: #fff8e8; text-shadow: 0 1px 4px #000; pointer-events: none; }
+.immersive { position: absolute; inset: 0; }
+.immersive .canvasFrame { position: absolute; inset: 0; height: 100%; }
+.immersive .toolbar { position: absolute; z-index: 8; right: 24px; top: 96px; max-width: calc(100% - 300px); border-radius: 10px; gap: 4px; }
+.immersive .hotspotMenu { position: absolute; z-index: 5; top: 204px; left: 24px; max-width: min(320px, calc(100% - 48px)); max-height: calc(100% - 320px); overflow: auto; }
+.immersive .modelStatus { position: absolute; z-index: 4; left: 24px; bottom: 100px; max-width: min(380px, calc(100% - 48px)); max-height: 150px; overflow: auto; border-radius: 8px; background: #f7f3eaf0; padding-inline: 10px; }
+.immersive .modelStatus:empty { display: none; }
+@media (max-width: 600px) { .immersive .toolbar { top: 80px; right: 12px; max-width: 192px; padding: 4px; gap: 2px; } .immersive .toolbar button { padding: 8px; } .immersive .hotspotMenu { top: 188px; left: 12px; max-width: 160px; } .immersive .modelStatus { bottom: 96px; left: 144px; max-width: calc(100% - 156px); font-size: 11px; } }
+@media (max-height: 500px) { .immersive .hotspotMenu { top: 196px; max-height: calc(100% - 250px); } .immersive .modelStatus { left: 210px; bottom: 90px; } }
+@media (max-width: 600px) { .illustrationNote { left: 12px; top: 232px; max-width: 155px; } .xrFeedback { right: 12px; max-width: 180px; } }

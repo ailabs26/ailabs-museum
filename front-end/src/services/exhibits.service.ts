@@ -195,6 +195,10 @@ export const exhibitsService = {
   delete(id: string): Promise<{ success: boolean; message: string }> {
     return http.delete<{ success: boolean; message: string }>(`/admin/exhibits/${id}`);
   },
+  /** Xóa mềm nhiều hiện vật nháp: tất cả hoặc không (409 kèm lý do từng ID). */
+  async removeMany(ids: string[]): Promise<void> {
+    await http.post<unknown>('/admin/exhibits/bulk-delete', { ids });
+  },
 
   reorder(roomId: string, exhibitIds: string[]): Promise<{ success: boolean; message: string }> {
     return http.put<{ success: boolean; message: string }>(

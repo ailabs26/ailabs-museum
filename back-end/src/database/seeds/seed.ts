@@ -39,7 +39,7 @@ async function seedRoles(permissions: Map<string, Permission>): Promise<Map<Role
   const byKey = new Map<RoleKey, Role>();
 
   for (const key of Object.values(RoleKey)) {
-    let role = await roleRepo.findOne({ where: { code: key } });
+    let role = await roleRepo.findOne({ where: { code: key, isDeleted: false } });
     if (!role) {
       role = await roleRepo.save(roleRepo.create({ code: key, name: ROLE_NAMES[key] }));
       console.log(`  + role ${key}`);

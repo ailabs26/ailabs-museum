@@ -6,12 +6,14 @@ import {
 } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
 import { PERMISSIONS } from '../../../common/constants/permissions.constant';
+import { assertNothingBlocked, type BlockedDeletion } from '../../../common/exceptions/deletion-blocked';
 import { PermissionDeniedException } from '../../../common/exceptions/permission-denied.exception';
 import { RoleKey } from '../../../common/enums/role.enum';
 import type { AuthUser } from '../../../common/types/auth-user.type';
 import type { Paginated } from '../../../common/types/paginated.type';
 import { PasswordService } from '../../../common/security/password.service';
 import { TransactionManager } from '../../../common/database/transaction.manager';
+import { RefreshSessionsRepository } from '../../auth/repositories/refresh-sessions.repository';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { ListUsersQueryDto } from '../dto/list-users-query.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
@@ -27,6 +29,7 @@ export class UsersService {
     private readonly userRoles: UserRolesRepository,
     private readonly passwords: PasswordService,
     private readonly tx: TransactionManager,
+    private readonly sessions: RefreshSessionsRepository,
   ) {}
 
   async list(query: ListUsersQueryDto): Promise<Paginated<UserResponse>> {
@@ -73,16 +76,41 @@ export class UsersService {
       await this.ensureAdminRemains(current, dto.status ?? current.status, nextCodes, manager);
       if (Object.keys(patch).length) await this.users.update(id, patch, manager);
       if (dto.roleIds !== undefined) await this.userRoles.replace(id, dto.roleIds, manager);
+      // Đổi mật khẩu hoặc khóa → đăng xuất mọi thiết bị ngay, cùng transaction.
+      if (dto.password !== undefined || dto.status === UserStatus.DISABLED) {
+        await this.sessions.revokeAllForUser(id, manager);
+      }
       return toUserResponse(await this.requireDetail(id, manager));
     });
   }
 
-  async remove(id: string): Promise<void> {
+  /** Xóa mềm một tài khoản và đăng xuất mọi thiết bị của tài khoản đó. */
+  remove(id: string): Promise<void> {
+    return this.softDelete([id], true);
+  }
+
+  /** Xóa mềm nhiều tài khoản: tất cả hoặc không. Trả lại danh sách ID để audit ghi từng tài khoản. */
+  async removeMany(ids: string[]): Promise<{ ids: string[] }> {
+    await this.softDelete(ids, false);
+    return { ids };
+  }
+
+  private async softDelete(ids: string[], single: boolean): Promise<void> {
     await this.tx.run(async (manager) => {
       await this.users.lockManagement(manager);
-      const current = await this.requireDetail(id, manager);
-      await this.ensureAdminRemains(current, UserStatus.DISABLED, [], manager);
-      await this.users.update(id, { isDeleted: true, deletedAt: new Date() }, manager);
+      const blocked: BlockedDeletion[] = [];
+      for (const id of ids) {
+        const user = await this.users.findDetail(id, manager);
+        if (!user) blocked.push({ id, reason: 'Không tìm thấy người dùng', notFound: true });
+        else if (toUserResponse(user).roles.includes(RoleKey.ADMIN)) {
+          blocked.push({ id, reason: `Không thể xóa tài khoản Admin "${user.displayName}". Hãy bỏ vai trò Admin trước.` });
+        }
+      }
+      assertNothingBlocked(blocked, single);
+      for (const id of ids) {
+        await this.users.update(id, { isDeleted: true, deletedAt: new Date() }, manager);
+        await this.sessions.revokeAllForUser(id, manager);
+      }
     });
   }
 

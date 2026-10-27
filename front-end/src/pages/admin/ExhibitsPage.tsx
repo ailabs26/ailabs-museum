@@ -6,6 +6,8 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
+  Center,
   Code,
   Divider,
   Drawer,
@@ -14,7 +16,10 @@ import {
   Group,
   Loader,
   NumberInput,
+  Pagination,
+  SegmentedControl,
   Select,
+  SimpleGrid,
   Stack,
   Tabs,
   Text,
@@ -33,12 +38,14 @@ import {
   IconEye,
   IconEyeOff,
   IconInfoCircle,
+  IconLayoutGrid,
   IconListNumbers,
   IconMapPin,
   IconPhoto,
   IconPlus,
   IconSearch,
   IconSend,
+  IconTable,
   IconTrash,
 } from '@tabler/icons-react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -67,7 +74,9 @@ import { HotspotEditor } from '@/components/cms/HotspotEditor';
 import { TourOrderModal } from '@/components/cms/TourOrderModal';
 import { roomsService } from '@/services/rooms.service';
 import { moderationService } from '@/services/moderation.service';
-import { Column, DataTable } from '@/shared/components/data';
+import { BulkActionBar, BulkDeleteFailures, Column, DataTable } from '@/shared/components/data';
+import { useBulkDelete } from '@/shared/hooks/useBulkDelete';
+import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { confirmAction, notify } from '@/shared/components/feedback';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { MediaPreview } from '@/shared/components/media/MediaPreview';
@@ -108,7 +117,7 @@ type EditLoadState = 'ready' | 'loading' | 'error';
 
 function deletionBlock(exhibit: ExhibitRow, revisions: ExhibitDetail['revisions'] = []): string | null {
   if (exhibit.publishedRevisionId || exhibit.visibility === 'visible' || exhibit.revisionState === 'approved' || revisions.some(r => r.state === 'approved')) {
-    return 'Hiện vật có lịch sử xuất bản hoặc phê duyệt nên không thể xóa vĩnh viễn. Có thể ẩn hiện vật đang công khai khỏi bảo tàng.';
+    return 'Hiện vật có lịch sử xuất bản hoặc phê duyệt nên không thể xóa. Có thể ẩn hiện vật đang công khai khỏi bảo tàng.';
   }
   return exhibit.revisionState === 'in_review' || revisions.some(r => r.state === 'in_review')
     ? 'Hiện vật có phiên bản đang chờ kiểm duyệt, không thể xóa.' : null;
@@ -224,6 +233,7 @@ export function ExhibitsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roomFilter, setRoomFilter] = useState<string>('all');
+  const [view, setView] = useState<'table' | 'card'>('table');
 
   const [editing, setEditing] = useState<ExhibitRow | null>(null);
   const [opened, drawer] = useDisclosure(false);
@@ -497,6 +507,23 @@ export function ExhibitsPage() {
     ['moderation'], ['museum-tour'], ['public-room'],
   ].map(queryKey => queryClient.invalidateQueries({ queryKey })));
 
+  const selection = useRowSelection(`${page}|${search}|${statusFilter}|${roomFilter}`);
+  const bulk = useBulkDelete({
+    removeMany: exhibitsService.removeMany,
+    noun: 'hiện vật',
+    nameOf: (id) => {
+      const row = exhibitsQuery.data?.items.find((item) => item.id === id);
+      return row ? getDisplayText(row.content.name, 'vi') || 'Chưa đặt tên' : undefined;
+    },
+    onSuccess: selection.clear,
+    onSettled: refreshLifecycleQueries,
+  });
+  const toggleSelected = (id: string) => selection.setSelectedIds(
+    selection.selectedIds.includes(id)
+      ? selection.selectedIds.filter((item) => item !== id)
+      : [...selection.selectedIds, id],
+  );
+
   const hideMutation = useMutation({
     mutationFn: async (id: string) => {
       const detail = await exhibitsService.get(id);
@@ -682,9 +709,9 @@ export function ExhibitsPage() {
       const reason = deletionBlock(detail, detail.revisions);
       if (reason) { notify.error(reason); void refreshLifecycleQueries(); return; }
       confirmAction({
-        message: `Xóa vĩnh viễn hiện vật "${getDisplayText(detail.content.name, 'vi')}" và toàn bộ revisions/hotspots? Media vẫn được giữ trong thư viện.`,
+        message: `Xóa hiện vật "${getDisplayText(detail.content.name, 'vi')}"? Hiện vật được xóa mềm (ẩn khỏi hệ thống), lịch sử phiên bản và media vẫn được giữ.`,
         danger: true,
-        confirmLabel: 'Xóa vĩnh viễn bản nháp',
+        confirmLabel: 'Xóa bản nháp',
         onConfirm: () => {
           if (request !== actionRequestRef.current || actionBusyRef.current) return;
           actionBusyRef.current = true; setIsActionBusy(true);
@@ -851,7 +878,7 @@ export function ExhibitsPage() {
 
             {canDelete && (
               <Tooltip
-                label={deleteReason ?? 'Xóa vĩnh viễn bản nháp hiện vật'}
+                label={deleteReason ?? 'Xóa bản nháp hiện vật'}
               >
                 <ActionIcon
                   variant="subtle"
@@ -951,19 +978,110 @@ export function ExhibitsPage() {
         </Grid>
       </Card>
 
-      <Card withBorder p={0} radius="sm">
-        <DataTable
-          columns={columns}
-          data={exhibitsQuery.data?.items ?? []}
-          rowKey={(r) => r.id}
-          total={exhibitsQuery.data?.total ?? 0}
-          page={page}
-          pageSize={15}
-          onPageChange={setPage}
-          loading={exhibitsQuery.isLoading}
-          emptyText="Không tìm thấy hiện vật nào phù hợp với bộ lọc."
-        />
-      </Card>
+      <Group justify="flex-end" mb="sm">
+        <SegmentedControl size="xs" value={view} onChange={(v) => setView(v as 'table' | 'card')}
+          data={[
+            { value: 'table', label: <Center style={{ gap: 6 }}><IconTable size={14} /> Bảng</Center> },
+            { value: 'card', label: <Center style={{ gap: 6 }}><IconLayoutGrid size={14} /> Thẻ</Center> },
+          ]} />
+      </Group>
+
+      {canDelete && (
+        <>
+          <BulkActionBar count={selection.selectedIds.length} onClear={selection.clear}
+            onDelete={() => bulk.confirmDelete(selection.selectedIds)} loading={bulk.isPending} />
+          <BulkDeleteFailures failures={bulk.failures} onClose={bulk.dismissFailures} />
+        </>
+      )}
+
+      {view === 'table' ? (
+        <Card withBorder p={0} radius="sm">
+          <DataTable
+            columns={columns}
+            data={exhibitsQuery.data?.items ?? []}
+            rowKey={(r) => r.id}
+            selection={canDelete ? {
+              selectedIds: selection.selectedIds,
+              onChange: selection.setSelectedIds,
+              disabledReason: (r) => deletionBlock(r),
+              rowLabel: (r) => getDisplayText(r.content.name) || 'Chưa đặt tên',
+            } : undefined}
+            total={exhibitsQuery.data?.total ?? 0}
+            page={page}
+            pageSize={15}
+            onPageChange={setPage}
+            loading={exhibitsQuery.isLoading}
+            emptyText="Không tìm thấy hiện vật nào phù hợp với bộ lọc."
+          />
+        </Card>
+      ) : (
+        <>
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
+            {(exhibitsQuery.data?.items ?? []).map((r) => {
+              const deleteReason = deletionBlock(r);
+              const isInReview = r.revisionState === 'in_review';
+              return (
+                <Card key={r.id} withBorder radius="md" p="md">
+                  <Group justify="space-between" wrap="nowrap" mb={6}>
+                    <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+                      {canDelete && (
+                        <Checkbox aria-label={`Chọn ${getDisplayText(r.content.name) || 'hiện vật'}`}
+                          checked={selection.selectedIds.includes(r.id)} disabled={!!deleteReason}
+                          title={deleteReason ?? undefined} onChange={() => toggleSelected(r.id)} />
+                      )}
+                      <Box style={{ width: 16, height: 16, flexShrink: 0,
+                        borderRadius: r.content.placeholderShape === 'sphere' ? '50%' : 3,
+                        backgroundColor: r.content.placeholderColor || '#8b7355' }} />
+                      <Text fw={700} size="sm" lineClamp={1}>{getDisplayText(r.content.name) || 'Chưa đặt tên'}</Text>
+                    </Group>
+                    <Badge color={REVISION_STATE_COLOR[r.revisionState] ?? 'gray'} variant="light" size="sm">
+                      {REVISION_STATE_LABEL[r.revisionState] ?? r.revisionState}
+                    </Badge>
+                  </Group>
+                  <Group gap={6} mb="xs">
+                    <Badge variant="light" color="blue" size="xs">{roomMap.get(r.roomId) ?? r.roomId.slice(0, 8)}</Badge>
+                    <Badge color={r.status === 'published' ? 'teal' : 'gray'} variant={r.status === 'published' ? 'filled' : 'light'} size="xs">
+                      {r.status === 'published' ? 'Đã xuất bản' : r.visibility === 'hidden' && r.publishedRevisionId ? 'Đã XB · Ẩn' : 'Bản nháp'}
+                    </Badge>
+                    <Badge variant="subtle" color="indigo" size="xs">{r.hotspotsCount} hotspot</Badge>
+                    <Badge size="xs" variant="outline" color="dark">#{r.displayOrder}</Badge>
+                  </Group>
+                  <Group gap={4} justify="flex-end">
+                    <Tooltip label="Xem chi tiết"><ActionIcon variant="subtle" color="blue" onClick={() => openDetail(r)}><IconEye size={18} /></ActionIcon></Tooltip>
+                    {canUpdate && (
+                      <Tooltip label={isInReview ? 'Đang chờ kiểm duyệt (BR-26)' : 'Chỉnh sửa'}>
+                        <ActionIcon variant="subtle" disabled={isInReview} color={isInReview ? 'gray' : 'aura'} onClick={() => openEdit(r)}><IconEdit size={18} /></ActionIcon>
+                      </Tooltip>
+                    )}
+                    {canSubmit && (r.revisionState === 'draft' || r.revisionState === 'rejected') && (
+                      <Tooltip label="Gửi kiểm duyệt"><ActionIcon variant="subtle" color="yellow" onClick={() => handleSubmitReview(r)}><IconSend size={18} /></ActionIcon></Tooltip>
+                    )}
+                    {canHide && r.visibility === 'visible' && r.publishedRevisionId && (
+                      <Tooltip label="Ẩn khỏi bảo tàng"><ActionIcon variant="subtle" color="gray" disabled={isActionBusy} onClick={() => handleHide(r)}><IconEyeOff size={18} /></ActionIcon></Tooltip>
+                    )}
+                    {canHide && r.visibility === 'hidden' && r.publishedRevisionId && (
+                      <Tooltip label="Bỏ ẩn"><ActionIcon variant="subtle" color="teal" disabled={isActionBusy} onClick={() => handleUnhide(r)}><IconEye size={18} /></ActionIcon></Tooltip>
+                    )}
+                    {canDelete && (
+                      <Tooltip label={deleteReason ?? 'Xóa bản nháp'}>
+                        <ActionIcon variant="subtle" color={deleteReason ? 'gray' : 'red'} disabled={!!deleteReason || isActionBusy} onClick={() => handleDelete(r)}><IconTrash size={18} /></ActionIcon>
+                      </Tooltip>
+                    )}
+                  </Group>
+                </Card>
+              );
+            })}
+          </SimpleGrid>
+          {!exhibitsQuery.isLoading && (exhibitsQuery.data?.items.length ?? 0) === 0 && (
+            <Text c="dimmed" ta="center" py="xl">Không tìm thấy hiện vật nào phù hợp với bộ lọc.</Text>
+          )}
+          {exhibitsQuery.data && exhibitsQuery.data.total > 15 && (
+            <Group justify="center" mt="md">
+              <Pagination value={page} total={Math.ceil(exhibitsQuery.data.total / 15)} onChange={setPage} />
+            </Group>
+          )}
+        </>
+      )}
 
       {/* Drawer Thêm / Chỉnh sửa hiện vật */}
       <Drawer

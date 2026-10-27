@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -13,6 +15,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Audit } from '../../audit/decorators/audit.decorator';
 import { PERMISSIONS } from '../../../common/constants/permissions.constant';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
+import { BulkIdsDto } from '../../../common/dto/bulk-ids.dto';
 import { CreateRoomDto } from '../dto/create-room.dto';
 import { ListRoomsQueryDto } from '../dto/list-rooms-query.dto';
 import { UpdateRoomDto } from '../dto/update-room.dto';
@@ -55,6 +58,15 @@ export class AdminRoomsController {
     @Body() dto: UpdateRoomDto,
   ) {
     return this.roomsService.update(id, dto);
+  }
+
+  @Post('bulk-delete')
+  @HttpCode(HttpStatus.OK)
+  @Permissions(PERMISSIONS.ROOM_DELETE)
+  @Audit('room.delete', 'room')
+  @ApiOperation({ summary: 'Xóa mềm nhiều phòng (tất cả hoặc không; BR-20, 409 kèm lý do từng ID)' })
+  removeMany(@Body() dto: BulkIdsDto) {
+    return this.roomsService.removeMany(dto.ids);
   }
 
   @Delete(':id')

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import {
+  Alert,
   Badge,
   Button,
   Divider,
@@ -12,7 +13,7 @@ import {
   Textarea,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconCheck, IconUserCheck, IconX } from '@tabler/icons-react';
+import { IconCheck, IconMessage2, IconUserCheck, IconX } from '@tabler/icons-react';
 import {
   keepPreviousData,
   useMutation,
@@ -25,7 +26,7 @@ import { PERMISSIONS } from '@/core/auth/permissions';
 import { notify } from '@/shared/components/feedback';
 import { Column, DataTable } from '@/shared/components/data';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
-import { ContentReport, reportsService, ReportStatus } from '@/services/reports.service';
+import { ContentReport, reportCategoryLabel, reportsService, ReportStatus } from '@/services/reports.service';
 import { resolveBilingualText } from '@/helpers/exhibitHotspots';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -55,6 +56,20 @@ function formatTime(iso: string): string {
 }
 
 type CloseKind = 'resolve' | 'dismiss';
+
+/** Mẫu phản hồi nhanh (canned responses) để điền kết luận chỉ với một cú nhấp. */
+const CANNED: Record<CloseKind, { label: string; text: string }[]> = {
+  resolve: [
+    { label: 'Đã gỡ/sửa nội dung', text: 'Nội dung vi phạm đã được gỡ bỏ hoặc chỉnh sửa. Cảm ơn bạn đã báo cáo.' },
+    { label: 'Đã tạm ẩn hiện vật', text: 'Hiện vật đã được tạm ẩn khỏi không gian công khai để rà soát và xử lý.' },
+    { label: 'Đã nhắc nhở biên tập', text: 'Chúng tôi đã yêu cầu biên tập viên điều chỉnh nội dung theo quy định.' },
+  ],
+  dismiss: [
+    { label: 'Không vi phạm', text: 'Sau khi rà soát, nội dung không vi phạm quy định hiện hành nên báo cáo được đóng.' },
+    { label: 'Trùng lặp', text: 'Báo cáo trùng với một báo cáo khác đang được xử lý nên được đóng lại.' },
+    { label: 'Thiếu thông tin', text: 'Báo cáo chưa đủ thông tin để xác minh vi phạm. Vui lòng gửi lại kèm mô tả chi tiết.' },
+  ],
+};
 
 export function ReportsPage() {
   const { hasPermission } = useAuth();
@@ -138,7 +153,7 @@ export function ReportsPage() {
       render: (r) => (
         <Stack gap={2}>
           <Badge variant="light" size="sm">
-            {r.category}
+            {reportCategoryLabel(r.category)}
           </Badge>
           <Text size="xs" c="dimmed" lineClamp={1}>
             {r.message}
@@ -171,6 +186,16 @@ export function ReportsPage() {
         titleRef={titleRef}
         title="Báo cáo vi phạm"
         description="Tiếp nhận và xử lý báo cáo nội dung sai từ người dùng"
+        actions={
+          <Button
+            variant="default"
+            loading={listQuery.isFetching}
+            disabled={listQuery.isFetching}
+            onClick={() => void listQuery.refetch()}
+          >
+            Làm mới
+          </Button>
+        }
       />
 
       <Group mb="md">
@@ -187,19 +212,28 @@ export function ReportsPage() {
         />
       </Group>
 
-      <DataTable
-        columns={columns}
-        data={data?.items ?? []}
-        rowKey={(r) => r.id}
-        loading={listQuery.isLoading}
-        onRowClick={(r) => setDetailId(r.id)}
-        page={data?.page}
-        pageSize={data?.pageSize}
-        total={data?.total}
-        onPageChange={setPage}
-        emptyText="Chưa có báo cáo nào"
-        minWidth={680}
-      />
+      {listQuery.isError ? (
+        <Alert color="red" role="alert" title="Không tải được danh sách báo cáo">
+          <Text>{listQuery.error.message}</Text>
+          <Button mt="sm" onClick={() => void listQuery.refetch()}>
+            Thử lại
+          </Button>
+        </Alert>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={data?.items ?? []}
+          rowKey={(r) => r.id}
+          loading={listQuery.isLoading}
+          onRowClick={(r) => setDetailId(r.id)}
+          page={data?.page}
+          pageSize={data?.pageSize}
+          total={data?.total}
+          onPageChange={setPage}
+          emptyText="Chưa có báo cáo nào"
+          minWidth={680}
+        />
+      )}
 
       <Drawer
         opened={!!detailId}
@@ -228,6 +262,7 @@ export function ReportsPage() {
               <Field label="Người tiếp nhận" value={detail.assignedTo.displayName} />
             )}
             {detail.resolution && <Field label="Kết luận" value={detail.resolution} />}
+            {detail.resolvedAt && <Field label="Xử lý lúc" value={formatTime(detail.resolvedAt)} />}
 
             <Divider label="Phiên bản bị báo cáo" labelPosition="left" my="xs" />
             {detail.reportedRevision ? (
@@ -290,6 +325,18 @@ export function ReportsPage() {
         title={closeKind === 'resolve' ? 'Xử lý xong báo cáo' : 'Đóng/bác báo cáo'}
       >
         <Stack>
+          <div>
+            <Group gap={6} mb={6}>
+              <IconMessage2 size={14} aria-hidden />
+              <Text size="xs" c="dimmed" fw={600}>Mẫu phản hồi nhanh</Text>
+            </Group>
+            <Group gap={6}>
+              {CANNED[closeKind].map((tpl) => (
+                <Button key={tpl.label} size="compact-xs" variant="light"
+                  onClick={() => setResolution(tpl.text)}>{tpl.label}</Button>
+              ))}
+            </Group>
+          </div>
           <Textarea
             ref={resolutionRef}
             label="Kết luận xử lý"

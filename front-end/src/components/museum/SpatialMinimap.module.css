@@ -1,0 +1,27 @@
+.map {
+  pointer-events: auto; position: absolute; top: 12px; right: 12px; z-index: 3; width: 148px; padding: 10px;
+  border-radius: 14px; background: var(--aura-glass-strong, rgba(15, 23, 42, 0.82));
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--aura-glass-border, rgba(255, 255, 255, 0.12)); box-shadow: 0 14px 40px -18px rgba(0, 0, 0, 0.7);
+}
+.caption { margin: 0 0 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--aura-muted, #94a3b8); }
+.svg { display: block; width: 100%; height: auto; }
+.room { fill: color-mix(in srgb, var(--aura-accent, #10b981) 8%, transparent); stroke: var(--aura-glass-border, rgba(255, 255, 255, 0.18)); stroke-width: 0.8; }
+
+.dot, .dotActive { cursor: pointer; }
+.dot circle { fill: var(--aura-muted, #94a3b8); transition: fill 0.2s ease, r 0.2s ease; }
+.dot:hover circle { fill: var(--aura-emerald-bright, #10b981); }
+.dotActive circle { fill: var(--aura-gold-bright, #f59e0b); }
+.halo { fill: color-mix(in srgb, var(--aura-gold-bright, #f59e0b) 30%, transparent); animation: aura-glow-pulse 2s ease-in-out infinite; }
+.dot:focus-visible, .dotActive:focus-visible { outline: 2px solid var(--aura-cyan-bright, #06b6d4); outline-offset: 1px; }
+
+@media (max-width: 48em) { .map { width: 116px; top: 8px; right: 8px; } }
+.map { top: auto; right: auto; left: 24px; bottom: 100px; width: 120px; border-radius: 8px; background: #f7f3eae6; border-color: #bdab8d70; box-shadow: none; }
+.caption { color: #6b634f; font-size: 9px; }
+.room { fill: #e3dfd2; stroke: #8e887a; }
+.dot circle { fill: #696957; }
+.dotActive circle { fill: #987439; }
+.hitArea { fill: transparent !important; }
+.halo { fill: #bf9c5950 !important; animation: none; }
+@media (max-width: 600px), (pointer: coarse) { .map { left: auto; right: 12px; bottom: 234px; width: 100px; padding: 6px; } }
+@media (max-height: 500px) { .map { left: auto; right: 12px; bottom: 100px; width: 90px; } }

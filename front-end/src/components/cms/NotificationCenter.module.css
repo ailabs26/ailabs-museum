@@ -1,0 +1,8 @@
+.head { padding: 12px 14px; border-bottom: 1px solid var(--mantine-color-default-border); }
+.list { padding: 6px; }
+.item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px; border-radius: 8px; }
+.item:hover { background: var(--mantine-color-default-hover); }
+.body { display: flex; flex-direction: column; }
+.iconReview, .iconReport { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0; }
+.iconReview { color: var(--mantine-color-yellow-7); background: var(--mantine-color-yellow-light); }
+.iconReport { color: var(--mantine-color-red-7); background: var(--mantine-color-red-light); }

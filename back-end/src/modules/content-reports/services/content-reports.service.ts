@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -41,6 +42,9 @@ export class ContentReportsService {
   async create(dto: CreateReportDto): Promise<ReportResponseDto> {
     if (!(await this.repo.exhibitExists(dto.exhibitId))) {
       throw new NotFoundException('Không tìm thấy hiện vật cần báo cáo');
+    }
+    if (dto.reportedRevisionId && !(await this.repo.revisionBelongsToExhibit(dto.reportedRevisionId, dto.exhibitId))) {
+      throw new BadRequestException('Phiên bản báo cáo không thuộc hiện vật đã chọn');
     }
     const report = this.repo.create({
       exhibitId: dto.exhibitId,

@@ -21,7 +21,7 @@ test('homepage shows the first three ordered public exhibits and links to their 
   expect(requests.filter((url) => url.includes('/api/rooms/ceramics'))).toEqual([]);
   expect(requests.filter((url) => url.includes('/components/MuseumScene'))).toEqual([]);
   await expect(page.locator('canvas')).toHaveCount(0);
-  await expect(page.getByText(/tại trang Bộ sưu tập/)).toBeVisible();
+  await expect(featured.getByText('Một số hiện vật theo thứ tự trưng bày')).toBeVisible();
   await link.focus();
   await link.press('Enter');
   await expect(page).toHaveURL(/\/collection\?room=sculpture$/);
@@ -83,7 +83,7 @@ test('list HTTP error and malformed detail response retry without sample substit
   await page.goto('/');
   const featured = page.getByRole('region', { name: 'Hiện vật nổi bật' });
   await expect(featured.getByRole('alert')).toContainText('Không tải được danh sách phòng');
-  await expect(page.getByRole('heading', { name: 'Mỗi hiện vật, một câu chuyện.' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Khám phá Không giới hạn.');
   await expect(featured.getByRole('listitem')).toHaveCount(0);
   failList = false;
   await featured.getByRole('button', { name: 'Thử lại' }).click();

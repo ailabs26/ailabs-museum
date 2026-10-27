@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { ConflictException, UnprocessableEntityException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { dataSource as appDataSource } from '../../../config/data-source';
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { REVISION_MEDIA_SLOTS } from '../../exhibits/constants/revision-media-slots';
@@ -18,6 +18,7 @@ import { ExhibitsService } from '../../exhibits/services/exhibits.service';
 import { RevisionPublishGate } from '../../exhibits/services/revision-publish.gate';
 import { Room, RoomStatus } from '../../rooms/entities/room.entity';
 import { RoomsRepository } from '../../rooms/repositories/rooms.repository';
+import { RoomsService } from '../../rooms/services/rooms.service';
 import { User } from '../../users/entities/user.entity';
 import { Media, MediaKind, MediaProcessingState } from '../entities/media.entity';
 import { MediaRepository } from '../repositories/media.repository';
@@ -178,6 +179,41 @@ describe('Task 9 — media gắn revision (PostgreSQL thật)', { skip }, () => 
     if (created.users.length) await db.query('DELETE FROM users WHERE id = ANY($1)', [created.users]);
     await db.destroy();
     await rm(workDir, { recursive: true, force: true });
+  });
+
+  describe('Xóa mềm hàng loạt Phòng / Media / Hiện vật (SQL thật)', () => {
+    it('hiện vật nháp xóa mềm: giữ revision; phòng chỉ còn hiện vật đã xóa thì xóa được', async () => {
+      const room = await createRoom();
+      const { exhibit, revision } = await createExhibit({}, { room: room.id });
+      const roomsService = new RoomsService(new RoomsRepository(db.getRepository(Room)), new TransactionManager(db));
+
+      await assert.rejects(roomsService.removeMany([room.id]), ConflictException);
+      assert.deepEqual(await exhibitsService.removeMany([exhibit.id]), { ids: [exhibit.id] });
+      const stored = await db.getRepository(Exhibit).findOneByOrFail({ id: exhibit.id });
+      assert.equal(stored.isDeleted, true);
+      assert.ok(await db.getRepository(ExhibitRevision).findOneBy({ id: revision.id }), 'revision được giữ');
+
+      assert.deepEqual(await roomsService.removeMany([room.id]), { ids: [room.id] });
+      assert.equal((await db.getRepository(Room).findOneByOrFail({ id: room.id })).isDeleted, true);
+    });
+
+    it('tất cả hoặc không: hiện vật đã xuất bản lẫn trong danh sách → không hiện vật nào bị xóa', async () => {
+      const draft = await createExhibit({});
+      const published = await createExhibit({}, { publish: true });
+      await assert.rejects(exhibitsService.removeMany([draft.exhibit.id, published.exhibit.id]), ConflictException);
+      const rows = await db.getRepository(Exhibit).findBy({ id: In([draft.exhibit.id, published.exhibit.id]) });
+      assert.ok(rows.every((row) => !row.isDeleted));
+    });
+
+    it('media: xóa mềm hàng loạt trong một transaction; media của hiện vật đã xuất bản chặn cả lô', async () => {
+      const free = await createMedia();
+      const used = await createMedia(MediaKind.MODEL);
+      await createExhibit({ modelMediaId: used.id }, { publish: true });
+      await assert.rejects(mediaService.removeMany([free.id, used.id]), ConflictException);
+      assert.equal((await db.getRepository(Media).findOneByOrFail({ id: free.id })).isDeleted, false);
+      assert.deepEqual(await mediaService.removeMany([free.id]), { ids: [free.id] });
+      assert.equal((await db.getRepository(Media).findOneByOrFail({ id: free.id })).isDeleted, true);
+    });
   });
 
   describe('isPubliclyReferenced (điều kiện phân phối file — FR-68/AC-36)', () => {

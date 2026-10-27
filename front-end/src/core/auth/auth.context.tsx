@@ -11,6 +11,8 @@ export interface AuthContextValue {
   isLoading: boolean;
   login: (payload: LoginPayload) => Promise<void>;
   logout: () => Promise<void>;
+  /** Đăng xuất mọi thiết bị (kể cả thiết bị này) rồi kết thúc phiên cục bộ. */
+  logoutAll: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
 }
@@ -88,6 +90,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const logoutAll = useCallback(async () => {
+    // Gọi API trước khi xóa token: endpoint cần access token còn hiệu lực.
+    try {
+      await authService.logoutAll();
+    } finally {
+      tokenStore.clear();
+      setUser(null);
+    }
+  }, []);
+
   const value = useMemo<AuthContextValue>(() => {
     const granted = new Set(user?.permissions ?? []);
     return {
@@ -96,10 +108,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: isLoading || isLoggingOut,
       login,
       logout,
+      logoutAll,
       hasPermission: (permission) => granted.has(permission),
       hasAnyPermission: (permissions) => permissions.some((p) => granted.has(p)),
     };
-  }, [user, isLoading, isLoggingOut, login, logout]);
+  }, [user, isLoading, isLoggingOut, login, logout, logoutAll]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

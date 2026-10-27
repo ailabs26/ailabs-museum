@@ -42,9 +42,10 @@ it('keeps explicit primitive positions and generates distinct positions for unpo
 
 it('preserves API hotspot coordinates and order in the room mapper', () => {
   const result = mapRoomDisplays({ id: 'room', slug: 'test', name: 'Room', description: null, exhibits: [{
-    id: 'item', roomId: 'room', name: 'Name', description: '', displayOrder: 1, transcript: null,
+    id: 'item', revisionId: '20000000-0000-4000-8000-000000000001', roomId: 'room', name: 'Name', description: '', displayOrder: 1, transcript: null,
     placeholderShape: 'box', placeholderColor: '#ffffff', model: null, image: null, audio: null,
     hotspots: [{ id: 'h', label: 'Label', body: 'Body', displayOrder: 0, positionX: 1, positionY: 2, positionZ: 3 }],
   }] });
+  expect(result[0].revisionId).toBe('20000000-0000-4000-8000-000000000001');
   expect(result[0].hotspots?.[0]).toMatchObject({ id: 'h', position: [1, 2, 3] });
 });

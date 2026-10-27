@@ -43,6 +43,7 @@ export class AuditInterceptor implements NestInterceptor {
               resourceId,
               // Với hành động trên revision, lưu thêm FK revisionId để truy vết chéo.
               revisionId: meta.resourceType === 'revision' ? resourceId : null,
+              reason: this.resolveReason(request),
               requestId: this.resolveRequestId(request),
             });
           }
@@ -65,13 +66,18 @@ export class AuditInterceptor implements NestInterceptor {
     return data;
   }
 
-  /** Ưu tiên danh sách id, rồi id trả về (tạo mới), sau đó tới param :id. */
+  /**
+   * Ưu tiên danh sách id (`roleIds` của ma trận quyền, `ids` của thao tác hàng loạt → 1 bản ghi/ID),
+   * rồi id trả về (tạo mới), sau đó tới param :id.
+   */
   private resolveResourceIds(request: AuditRequest, result: unknown): string[] {
     const data = this.unwrapEnvelope(result);
-    if (data && typeof data === 'object' && 'roleIds' in data) {
-      const roleIds = (data as { roleIds?: unknown }).roleIds;
-      if (Array.isArray(roleIds)) {
-        return roleIds.filter((id): id is string => typeof id === 'string');
+    for (const key of ['roleIds', 'ids'] as const) {
+      if (data && typeof data === 'object' && key in data) {
+        const ids = (data as Record<string, unknown>)[key];
+        if (Array.isArray(ids)) {
+          return ids.filter((id): id is string => typeof id === 'string');
+        }
       }
     }
     if (data && typeof data === 'object' && 'id' in data) {
@@ -80,6 +86,18 @@ export class AuditInterceptor implements NestInterceptor {
     }
     const paramId = (request.params as Record<string, string> | undefined)?.id;
     return paramId ? [paramId] : [];
+  }
+
+  private resolveReason(request: AuditRequest): string | null {
+    const body = request.body as Record<string, unknown> | undefined;
+    if (!body || typeof body !== 'object') return null;
+    if (typeof body.reason === 'string' && body.reason.trim().length > 0) {
+      return body.reason.trim();
+    }
+    if (typeof body.resolution === 'string' && body.resolution.trim().length > 0) {
+      return body.resolution.trim();
+    }
+    return null;
   }
 
   private resolveRequestId(request: AuditRequest): string {

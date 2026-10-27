@@ -45,6 +45,10 @@ export const rolesService = {
   remove(id: string): Promise<void> {
     return http.delete<void>(`/roles/${id}`);
   },
+  /** Xóa mềm nhiều vai trò: tất cả hoặc không (409 kèm lý do từng ID). */
+  async removeMany(ids: string[]): Promise<void> {
+    await http.post<unknown>('/roles/bulk-delete', { ids });
+  },
   getPermissions(id: string): Promise<string[]> {
     return http.get<string[]>(`/roles/${id}/permissions`);
   },

@@ -63,6 +63,26 @@ describe('Reports HTTP', () => {
     assert.equal(res.body.data.status, 'open');
   });
 
+  it('public POST /public/reports: 400 khi category không nằm trong danh mục cố định', async () => {
+    const app = await makeApp({ create: () => Promise.resolve({} as never) });
+    apps.push(app);
+
+    await request(app.getHttpServer())
+      .post('/public/reports')
+      .send({ exhibitId: 'e1111111-1111-4111-8111-111111111111', category: 'tự nhập', message: 'Sai' })
+      .expect(400);
+  });
+
+  it('public POST /public/reports: 400 khi message chỉ có khoảng trắng', async () => {
+    const app = await makeApp({ create: () => Promise.resolve({} as never) });
+    apps.push(app);
+
+    await request(app.getHttpServer())
+      .post('/public/reports')
+      .send({ exhibitId: 'e1111111-1111-4111-8111-111111111111', category: 'wrong_info', message: '   ' })
+      .expect(400);
+  });
+
   it('POST /reports/:id/assign: 409 khi báo cáo không còn mở', async () => {
     const app = await makeApp({
       assign: () => Promise.reject(new ConflictException('Chỉ có thể tiếp nhận báo cáo đang mở')),

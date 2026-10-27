@@ -26,4 +26,10 @@ describe('cmsErrorMessage', () => {
   it('mã khác dùng fallback nếu có', () => {
     expect(cmsErrorMessage(500, 'Lỗi máy chủ')).toBe('Lỗi máy chủ');
   });
+
+  it('404, 413, 429 có thông điệp mặc định tiếng Việt rõ ràng', () => {
+    expect(cmsErrorMessage(404)).toMatch(/Không tìm thấy/);
+    expect(cmsErrorMessage(413)).toMatch(/vượt quá giới hạn/);
+    expect(cmsErrorMessage(429)).toMatch(/quá nhanh/);
+  });
 });

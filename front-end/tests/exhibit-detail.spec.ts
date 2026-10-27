@@ -159,6 +159,7 @@ test('[D05] collection and featured card links open details and return to the co
   for (const source of ['/collection?room=ceramics', '/']) {
     const item = source === '/' ? roomA.exhibits[0] : roomB.exhibits[0];
     const slug = source === '/' ? 'sculpture' : 'ceramics';
+    const roomName = source === '/' ? roomA.name : roomB.name;
     await page.goto(source);
     const link = page.getByRole('link', { name: `Xem chi tiết ${item.name}`, exact: true });
     await expect(link).toHaveAttribute('href', `/collection/${slug}/exhibits/${item.id}`);
@@ -169,7 +170,8 @@ test('[D05] collection and featured card links open details and return to the co
     const back = page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true });
     await expect(back).toHaveAttribute('href', `/collection?room=${slug}`);
     await back.click();
-    await expect(page.getByLabel('Chọn phòng trưng bày')).toHaveValue(slug);
+    await expect(page.getByRole('group', { name: 'Chọn phòng trưng bày' })
+      .getByRole('button', { name: roomName, exact: true })).toHaveAttribute('aria-pressed', 'true');
     await page.goBack();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(item.name);
   }
