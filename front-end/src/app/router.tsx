@@ -19,6 +19,8 @@ import { PermissionsPage } from '@/pages/admin/PermissionsPage';
 import { AuditPage } from '@/pages/admin/AuditPage';
 import { ModerationPage } from '@/pages/admin/ModerationPage';
 import { ReportsPage } from '@/pages/admin/ReportsPage';
+import { TranslationsPage } from '@/pages/admin/TranslationsPage';
+import { ApiKeysPage } from '@/pages/admin/ApiKeysPage';
 import { SettingsPage } from '@/pages/admin/SettingsPage';
 import { RequirePermission } from '@/core/auth/RequirePermission';
 import { PERMISSIONS } from '@/core/auth/permissions';
@@ -86,6 +88,22 @@ export function AppRouter() {
             element={
               <RequirePermission anyOf={[PERMISSIONS.MEDIA_UPLOAD]} fallback={<NoAccess />}>
                 <MediaPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="translations"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.TRANSLATION_READ, PERMISSIONS.EXHIBIT_READ]} fallback={<NoAccess />}>
+                <TranslationsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="api-keys"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.APIKEY_READ, PERMISSIONS.USER_READ]} fallback={<NoAccess />}>
+                <ApiKeysPage />
               </RequirePermission>
             }
           />

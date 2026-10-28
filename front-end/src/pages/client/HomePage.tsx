@@ -1,12 +1,17 @@
 import { Container, Title } from '@mantine/core';
-import type { CSSProperties } from 'react';
+import { useMediaQuery } from '@mantine/hooks';
+import { lazy, Suspense, useEffect, useState, type CSSProperties } from 'react';
 import {
   IconAccessible, IconArrowRight, IconCube, IconDeviceGamepad2,
   IconHeadphones, IconPlayerPlayFilled, IconSparkles,
 } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
+import { supportsWebgl } from '@/helpers/webglSupport';
 import { HomeFeaturedExhibits } from './HomeFeaturedExhibits';
 import classes from './HomePage.module.css';
+
+// Tách cảnh 3D ra chunk riêng: three.js nặng, chỉ tải khi hero thực sự dựng được WebGL.
+const HeroCanvas = lazy(() => import('@/components/home/HeroCanvas'));
 
 const STATS = [
   { value: '5+', label: 'Phòng trưng bày ảo' },
@@ -16,6 +21,11 @@ const STATS = [
 ];
 
 export function HomePage() {
+  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)') ?? false;
+  // Chỉ bật cảnh 3D sau khi mount phía client và xác nhận có WebGL (tránh SSR/crash).
+  const [canRender3d, setCanRender3d] = useState(false);
+  useEffect(() => { setCanRender3d(supportsWebgl()); }, []);
+
   return (
     <Container size="lg">
       {/* ============================ Hero Banner ============================ */}
@@ -59,7 +69,15 @@ export function HomePage() {
           <div className={classes.showcaseGlow} />
           <div className={classes.showcaseCard}>
             <div className={classes.showcaseScreen}>
-              <span className={classes.showcaseOrb} />
+              {canRender3d ? (
+                <Suspense fallback={<span className={classes.showcaseOrb} />}>
+                  <div className={classes.showcaseCanvas}>
+                    <HeroCanvas reducedMotion={reducedMotion} />
+                  </div>
+                </Suspense>
+              ) : (
+                <span className={classes.showcaseOrb} />
+              )}
               <div className={classes.soundwave}>
                 {Array.from({ length: 7 }).map((_, i) => (
                   <span key={i} style={{ animationDelay: `${i * 0.12}s` }} />
