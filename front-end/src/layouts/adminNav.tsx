@@ -1,6 +1,6 @@
 import {
   IconLayoutDashboard, IconBuildingArch, IconArtboard, IconPhoto, IconChecklist,
-  IconFlag, IconUsers, IconShieldLock, IconKey, IconHistory,
+  IconFlag, IconUsers, IconShieldLock, IconKey, IconHistory, IconLanguage, IconPlugConnected,
 } from '@tabler/icons-react';
 import { PERMISSIONS } from '@/core/auth/permissions';
 
@@ -27,6 +27,7 @@ export const ADMIN_NAV: { section: string; items: NavItem[] }[] = [
       { label: 'Phòng trưng bày', to: '/admin/rooms', icon: IconBuildingArch, anyOf: [PERMISSIONS.ROOM_READ], keywords: 'room gallery' },
       { label: 'Hiện vật', to: '/admin/exhibits', icon: IconArtboard, anyOf: [PERMISSIONS.EXHIBIT_READ], keywords: 'exhibit artifact co vat' },
       { label: 'Media', to: '/admin/media', icon: IconPhoto, anyOf: [PERMISSIONS.MEDIA_UPLOAD], keywords: 'anh audio glb file' },
+      { label: 'Bản dịch đa ngôn ngữ', to: '/admin/translations', icon: IconLanguage, anyOf: [PERMISSIONS.TRANSLATION_READ, PERMISSIONS.EXHIBIT_READ], keywords: 'translation i18n dich ngon ngu locale song song' },
       { label: 'Kiểm duyệt', to: '/admin/moderation', icon: IconChecklist, anyOf: [PERMISSIONS.REVISION_PUBLISH], badgeKey: 'inReview', keywords: 'duyet review publish' },
       { label: 'Báo cáo vi phạm', to: '/admin/reports', icon: IconFlag, anyOf: [PERMISSIONS.REPORT_READ], badgeKey: 'reportsOpen', keywords: 'report vi pham' },
     ],
@@ -38,6 +39,7 @@ export const ADMIN_NAV: { section: string; items: NavItem[] }[] = [
       { label: 'Vai trò', to: '/admin/roles', icon: IconShieldLock, anyOf: [PERMISSIONS.ROLE_READ], keywords: 'role rbac' },
       { label: 'Danh sách quyền', to: '/admin/permissions', icon: IconKey, anyOf: [PERMISSIONS.PERMISSION_READ], keywords: 'permission quyen' },
       { label: 'Ma trận phân quyền', to: '/admin/permission-matrix', icon: IconShieldLock, allOf: [PERMISSIONS.PERMISSION_READ, PERMISSIONS.ROLE_READ], keywords: 'matrix rbac' },
+      { label: 'API Key đối tác', to: '/admin/api-keys', icon: IconPlugConnected, anyOf: [PERMISSIONS.APIKEY_READ, PERMISSIONS.USER_READ], keywords: 'api key doi tac partner token tich hop integration' },
       { label: 'Nhật ký hệ thống', to: '/admin/audit', icon: IconHistory, anyOf: [PERMISSIONS.AUDIT_READ], keywords: 'audit log nhat ky' },
     ],
   },
