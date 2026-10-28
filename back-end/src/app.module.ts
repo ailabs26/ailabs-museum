@@ -11,9 +11,11 @@ import { ExhibitsModule } from './modules/exhibits/exhibits.module';
 import { HealthController } from './modules/health/health.controller';
 import { MediaModule } from './modules/media/media.module';
 import { ModerationModule } from './modules/moderation/moderation.module';
+import { PartnerApiKeysModule } from './modules/partner-api-keys/partner-api-keys.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
 import { StatsModule } from './modules/stats/stats.module';
+import { TranslationsModule } from './modules/translations/translations.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -40,6 +42,10 @@ import { UsersModule } from './modules/users/users.module';
     ContentReportsModule,
     // Số liệu tổng quan cho Dashboard Admin.
     StatsModule,
+    // Bản dịch đa ngôn ngữ (CMS i18n).
+    TranslationsModule,
+    // API key cấp cho đối tác tích hợp.
+    PartnerApiKeysModule,
   ],
   controllers: [HealthController],
 })
