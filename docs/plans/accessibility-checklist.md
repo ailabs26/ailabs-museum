@@ -2,7 +2,7 @@
 **Dự án:** Aura Museum (Giai đoạn 1 - MVP)  
 **Phụ trách:** Đinh Quang Tiến (Frontend / Client UI Lead)  
 **Tiêu chuẩn đối chiếu:** [W3C WCAG 2.2 Level AA](https://www.w3.org/TR/WCAG22/) & [WAI-ARIA APG](https://www.w3.org/WAI/ARIA/apg/)  
-**Ngày cập nhật:** 24/10/2026  
+**Ngày cập nhật:** 27/10/2026\
 **Phạm vi:** Client Public Pages (`/`, `/collection`, `/collection/:roomSlug/:exhibitId`, `/tour`) & Admin CMS Overlays.
 
 ---
@@ -35,6 +35,9 @@ Bảo đảm mọi người dùng, kể cả người khuyết tật vận độ
 | **1.4.11 Non-text Contrast** | Level AA | Các thành phần UI và icon tương tác có độ tương phản tối thiểu 3:1 với nền kế cận. | Các nút bấm viền Mantine, icon điều hướng, thanh trượt audio đạt tương phản >= 3.5:1 | **ĐẠT (PASS)** |
 | **1.2.2 Captions / Transcripts** | Level A | Cung cấp bản thuyết minh (transcript) hoặc phụ đề WebVTT kèm theo âm thanh. | `AudioPlayer.tsx` tích hợp đồng bộ phụ đề WebVTT và hiển thị toàn văn Transcript bên dưới hiện vật | **ĐẠT (PASS)** |
 | **4.1.2 Name, Role, Value** | Level A | Các control tùy chỉnh có accessible name, role và state thông báo được qua Assistive Tech. | Nút đóng `aria-label="Đóng"`, tab chọn phòng có `aria-selected`, modal có `role="dialog"` | **ĐẠT (PASS)** |
+| **4.1.3 Status Messages** | Level AA | Trạng thái tải có thể được nhận biết mà không chuyển focus. | Collection có một live region persistent `status`/polite/atomic, visually hidden ngoài skeleton; list/detail pending đúng phòng, clear khi thành công/lỗi; không duplicate refetch/search. | **DOM/transition PASS; người dùng xác nhận kiểm tra thực tế OK** |
+
+Bằng chứng Collection ngày 27/10/2026: [Public loading task](../tasks/public-a11y-loading.md) — Collection 14/14, typecheck/lint/unit/build exit 0. Tổng affected browser **51/51 PASS**, exit 0 sau khi sửa startup wait trong test F04. Manual OK theo xác nhận người dùng; agent không tự nghe NVDA/VoiceOver và chưa có metadata phiên bản AT/browser. Không tuyên bố chứng nhận WCAG toàn website.
 
 ---
 

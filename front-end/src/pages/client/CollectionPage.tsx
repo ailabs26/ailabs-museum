@@ -1,4 +1,4 @@
-import { Alert, Button, Container, Text, TextInput, Title } from '@mantine/core';
+import { Alert, Button, Container, Text, TextInput, Title, VisuallyHidden } from '@mantine/core';
 import { IconArrowRight, IconSearch } from '@tabler/icons-react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -11,11 +11,20 @@ import classes from './CollectionPage.module.css';
 export function CollectionPage() {
   const [reportTarget, setReportTarget] = useState<{ exhibitId: string; reportedRevisionId: string } | null>(null);
   const [query, setQuery] = useState('');
+  const [loadingAnnouncement, setLoadingAnnouncement] = useState('');
   const location = useLocation();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const focusedLocation = useRef<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { rooms, room, selectedRoom, selectedSlug, refresh } = useMuseumRooms(searchParams.get('room'));
+  const loadingMessage = rooms.isPending
+    ? 'Đang tải danh sách phòng trưng bày…'
+    : selectedRoom && room.isPending
+      ? `Đang tải hiện vật của phòng ${selectedRoom.name}…`
+      : '';
+  useEffect(() => {
+    setLoadingAnnouncement(loadingMessage);
+  }, [loadingMessage]);
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const exhibits = detail ? [...detail.exhibits].sort((left, right) =>
     left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)) : [];
@@ -41,6 +50,9 @@ export function CollectionPage() {
 
   return (
     <Container size="lg" className={classes.page}>
+      <VisuallyHidden role="status" aria-live="polite" aria-atomic="true" aria-label="Trạng thái tải bộ sưu tập">
+        {loadingAnnouncement}
+      </VisuallyHidden>
       <header className={classes.intro}>
         <p className={classes.eyebrow}>Aura Museum / Khám phá hiện vật</p>
         <Title ref={titleRef} tabIndex={-1} order={1} className={classes.title}>Bộ sưu tập</Title>
