@@ -28,7 +28,11 @@ chưa có rate limit theo key, `last_used_at` không bao giờ cập nhật, xó
 
 - `analytics:read` chưa gắn route nào — phụ thuộc task dọn dẹp và tổng hợp analytics.
 - Bộ đếm rate limit trong bộ nhớ: mất khi restart, chạy nhiều instance cần Redis; sau reverse proxy không ảnh hưởng (đếm theo key, không theo IP).
-- **Migration `1793400000000` chưa chạy trên DB dùng chung** (migration tạo bảng `1793300000000` của Quang đã chạy). Cần backup rồi chạy trước khi deploy code; chưa chạy thì API quản lý key lỗi vì thiếu cột.
+- **Migration `1793400000000` đã chạy trên DB dùng chung ngày 28/10/2026 lúc 23:05**, sau khi backup
+  `~/aura-backups/aura-2026-10-28-2305.dump` (đã kiểm đọc lại được). Trước khi chạy chỉ có đúng migration này đang chờ; sau khi chạy
+  `migration:show` báo `[X] 9 PartnerApiKeyRateLimitAndSoftDelete1793400000000`, bảng `partner_api_keys` có đủ 3 cột mới,
+  2 key hiện có giữ nguyên (chưa xóa, giới hạn mặc định 60/phút). Hoàn tác: `npm run migration:revert` hoặc khôi phục từ bản backup.
+  Môi trường dùng DB riêng phải chạy migration này trước khi deploy.
 
 ## Kiểm chứng ngày 28/10/2026
 
