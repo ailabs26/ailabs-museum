@@ -66,10 +66,13 @@
   animation: aura-float 6s ease-in-out infinite;
 }
 .showcaseScreen {
-  position: relative; height: 220px; border-radius: 16px; overflow: hidden; display: grid; place-items: center;
-  background: linear-gradient(160deg, #0f172a, #134e4a 120%);
+  position: relative; height: 248px; border-radius: 16px; overflow: hidden; display: grid; place-items: center;
+  background: radial-gradient(120% 90% at 50% 15%, #0f2a2a 0%, #0f172a 60%, #050a14 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
+/* Khung chứa cảnh 3D (react-three-fiber) — phủ kín màn hình showcase. */
+.showcaseCanvas { position: absolute; inset: 0; z-index: 0; }
+.showcaseScreen .soundwave { z-index: 1; }
 .showcaseOrb {
   width: 120px; height: 120px; border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #fbbf24, #d97706 55%, #78350f 90%);
