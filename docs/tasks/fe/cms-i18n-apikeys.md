@@ -46,9 +46,26 @@
 | Front-end `build` | Thành công; `HeroCanvas` tách chunk, three tải theo yêu cầu |
 | Back-end `typecheck` | Sạch |
 
-## Giới hạn / ghi chú
+## Backend thật (bổ sung — thay localStorage)
 
-- Backend chưa có endpoint cho i18n và API key, nên hai tính năng tạm lưu phía client qua
-  `services/clientStore.ts` (localStorage, bọc try/catch). Khi có BE, chỉ cần thay thân hàm service bằng `http.*`;
-  **khóa API thật phải hash phía server, không lưu khóa thô.**
-- Cần chạy lại `npm run seed` để gán quyền `translation:*` / `apikey:*` cho role trong DB đang chạy.
+- **Module `translations`** (bảng `translations`): entity (namespace unique, category CHECK, `values` jsonb theo
+  locale), repository/service/controller; endpoint `/translations` GET (`translation:read`),
+  POST/PATCH/DELETE (`translation:manage`). `sanitizeValues` lọc locale hợp lệ trước khi lưu jsonb.
+- **Module `partner-api-keys`** (bảng `partner_api_keys`): sinh khóa bằng `crypto.randomBytes`, lưu **SHA-256
+  hash** (unique) + prefix/last4, **không lưu khóa thô**; trả `plaintext` đúng một lần khi tạo. Endpoint
+  `/partner-api-keys` GET (`apikey:read`), POST/`:id/revoke`/DELETE (`apikey:manage`); mọi thao tác ghi có `@Audit`.
+- **Migration** `1793300000000-AddTranslationsAndPartnerApiKeys` tạo 2 bảng + unique index; entity đăng ký trong
+  `data-source.ts`, module nối vào `AppModule`.
+- **Seed** idempotent thêm 4 chuỗi dịch mẫu + 2 API key đối tác mẫu khi bảng trống.
+- **FE** đổi `translations.service` / `apiKeys.service` sang gọi `http.*`; xóa `services/clientStore.ts`.
+
+## Vận hành
+
+Để tính năng chạy trên DB đang có, chạy trong `back-end/`:
+
+```
+npm run migration:run   # tạo 2 bảng mới
+npm run seed            # cấp quyền translation:* / apikey:* cho role + seed dữ liệu mẫu
+```
+
+(Quyền đọc/ghi đều chốt ở BE; admin nhận quyền mới sau khi seed vì ADMIN = ALL_PERMISSIONS.)
