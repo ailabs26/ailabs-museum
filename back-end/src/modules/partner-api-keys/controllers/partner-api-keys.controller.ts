@@ -40,7 +40,7 @@ export class PartnerApiKeysController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Permissions(PERMISSIONS.APIKEY_MANAGE)
   @Audit('apikey.delete', 'apikey')
-  @ApiOperation({ summary: 'Xóa vĩnh viễn API key' })
+  @ApiOperation({ summary: 'Xóa mềm API key (thu hồi nếu đang hoạt động, ẩn khỏi danh sách)' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.keys.remove(id);
   }

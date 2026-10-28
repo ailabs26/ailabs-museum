@@ -10,6 +10,7 @@ import {
   IconRefresh, IconTrash,
 } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { env } from '@/core/config/env';
 import { useAuth } from '@/core/auth/use-auth';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import {
@@ -93,6 +94,7 @@ export function ApiKeysPage() {
     { key: 'created', header: 'Ngày tạo', render: (row) => formatDate(row.createdAt) },
     { key: 'expires', header: 'Hết hạn', render: (row) => formatDate(row.expiresAt) },
     { key: 'lastUsed', header: 'Dùng gần nhất', render: (row) => formatDate(row.lastUsedAt) },
+    { key: 'rateLimit', header: 'Giới hạn', align: 'right', render: (row) => `${row.rateLimitPerMinute}/phút` },
     {
       key: 'actions', header: '', align: 'right',
       render: (row) => canManage ? (
@@ -107,10 +109,10 @@ export function ApiKeysPage() {
                 })}>Thu hồi</Button>
             </Tooltip>
           )}
-          <Tooltip label="Xóa vĩnh viễn">
-            <Button variant="subtle" color="red" size="compact-sm"
+          <Tooltip label="Xóa (thu hồi và ẩn khỏi danh sách)">
+            <Button variant="subtle" color="red" size="compact-sm" aria-label={`Xóa khóa của ${row.partnerName}`}
               onClick={() => confirmAction({
-                danger: true, message: `Xóa vĩnh viễn khóa của "${row.partnerName}"?`,
+                danger: true, message: `Xóa khóa của "${row.partnerName}"? Khóa bị thu hồi ngay và ẩn khỏi danh sách (vẫn lưu để truy vết).`,
                 confirmLabel: 'Xóa', onConfirm: () => removeMutation.mutate(row.id),
               })}><IconTrash size={16} /></Button>
           </Tooltip>
@@ -161,9 +163,10 @@ function CreateApiKeyDrawer({ opened, onClose, onCreated }: {
   const queryClient = useQueryClient();
   const [neverExpires, setNeverExpires] = useState(true);
   const form = useForm({
-    initialValues: { partnerName: '', label: '', scopes: ['public:read'] as string[], expiresInDays: 365 },
+    initialValues: { partnerName: '', label: '', scopes: ['public:read'] as string[], expiresInDays: 365, rateLimitPerMinute: 60 },
     validate: {
       partnerName: (value) => (value.trim() ? null : 'Nhập tên đối tác'),
+      rateLimitPerMinute: (value) => (Number.isInteger(value) && value >= 1 && value <= 10000 ? null : 'Từ 1 đến 10000 request/phút'),
       scopes: (value) => (value.length > 0 ? null : 'Chọn ít nhất một phạm vi'),
     },
   });
@@ -185,6 +188,7 @@ function CreateApiKeyDrawer({ opened, onClose, onCreated }: {
       <form onSubmit={form.onSubmit((values) => createMutation.mutate({
         partnerName: values.partnerName, label: values.label, scopes: values.scopes,
         expiresInDays: neverExpires ? null : values.expiresInDays,
+        rateLimitPerMinute: values.rateLimitPerMinute,
       }))}>
         <Stack>
           <TextInput label="Tên đối tác" withAsterisk placeholder="Ví dụ: VietnamPlus"
@@ -194,6 +198,8 @@ function CreateApiKeyDrawer({ opened, onClose, onCreated }: {
           <MultiSelect label="Phạm vi (scopes)" withAsterisk searchable
             data={API_SCOPES.map((scope) => ({ value: scope.value, label: scope.label }))}
             {...form.getInputProps('scopes')} />
+          <NumberInput label="Giới hạn request/phút" description="Vượt giới hạn, đối tác nhận lỗi 429"
+            min={1} max={10000} allowDecimal={false} {...form.getInputProps('rateLimitPerMinute')} />
           <Switch label="Không hết hạn" checked={neverExpires}
             onChange={(event) => setNeverExpires(event.currentTarget.checked)} />
           {!neverExpires && (
@@ -235,6 +241,13 @@ function RevealKeyModal({ created, onClose }: { created: CreatedApiKey | null; o
                 )}
               </CopyButton>
             </Group>
+          </div>
+          <div>
+            <Text size="sm" fw={600} mb={4}>Cách đối tác gọi API</Text>
+            <Code block>{`curl -H "X-API-Key: <khóa>" ${env.apiBaseUrl}/partner/v1/rooms`}</Code>
+            <Text size="xs" c="dimmed" mt={4}>
+              Các route: /partner/v1/rooms, /rooms/:slug, /rooms/:slug/tour, /rooms/:slug/exhibits/:id/model — theo phạm vi đã cấp.
+            </Text>
           </div>
           <Group justify="flex-end">
             <Button onClick={onClose}>Tôi đã lưu khóa</Button>

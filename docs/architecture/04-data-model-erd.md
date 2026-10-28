@@ -166,7 +166,7 @@ erDiagram
 
 | Bảng | Mục đích |
 |---|---|
-| `API_KEY` | key đối tác: `hashedKey`, `scopes[]`, `rateLimit`, `revokedAt` |
+| `API_KEY` → **đã có**: bảng `partner_api_keys` | `key_hash` (SHA-256), `scopes` (jsonb), `status`, `rate_limit_per_minute`, `expires_at`, `last_used_at`, `revoked_at`, xóa mềm `is_deleted`/`deleted_at` |
 | `TRANSLATION` | bản dịch hiện vật (en/zh/ko/ja) — hoặc dùng cột `translations` JSONB trong revision |
 | `ANALYTICS_EVENT` | sự kiện truy cập để báo cáo + scheduled cleanup |
 

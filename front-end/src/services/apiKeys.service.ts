@@ -39,6 +39,8 @@ export interface PartnerApiKey {
   expiresAt: string | null;
   lastUsedAt: string | null;
   revokedAt: string | null;
+  /** Số request tối đa mỗi phút qua cổng /partner/v1. */
+  rateLimitPerMinute: number;
 }
 
 export interface CreateApiKeyInput {
@@ -47,6 +49,8 @@ export interface CreateApiKeyInput {
   scopes: string[];
   /** Số ngày hiệu lực; null = không hết hạn. */
   expiresInDays: number | null;
+  /** Số request tối đa mỗi phút (1–10000). */
+  rateLimitPerMinute: number;
 }
 
 /** Kết quả tạo khóa: bản ghi + khóa thô chỉ trả về một lần. */

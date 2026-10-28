@@ -59,6 +59,19 @@ bcrypt thì không cấp phiên bằng mật khẩu cũ.
 **5 lần sai/15 phút/email** cho login và cho mật khẩu hiện tại khi tự đổi mật khẩu → **429** + `Retry-After`.
 Một instance là đủ; scale ngang cần store dùng chung (Redis). Sau reverse proxy phải bật `trust proxy` (issue #82).
 
+### 5.1.3 API key cho đối tác (cổng `/partner/v1`)
+
+Đối tác không đăng nhập; họ gọi `/api/partner/v1/*` kèm header `X-API-Key`. Route đối tác là `@Public()` (bỏ qua
+guard JWT của admin), chốt chặn là `PartnerApiKeyGuard`, chạy theo thứ tự:
+
+1. **Xác thực:** băm SHA-256 khóa (`ak_live_…`) rồi tra `key_hash`; chỉ nhận key `active`, chưa xóa, chưa hết hạn → sai/thu hồi/hết hạn/xóa: **401** (hiệu lực ngay).
+2. **Rate limit theo key:** `rate_limit_per_minute` (mặc định 60, 1–10000), cửa sổ trượt trong bộ nhớ → **429** + `Retry-After`; mọi response có `X-RateLimit-Limit`, `X-RateLimit-Remaining`.
+3. **Scope của route** (`@PartnerScope`): thiếu → **403**. `public:read` bao trùm `rooms:read`, `exhibits:read`, `media:read`, `tour:embed` (không gồm `analytics:read`).
+4. Cập nhật `last_used_at` (tối đa mỗi phút một lần/key).
+
+Khóa thô chỉ hiện một lần khi tạo; DB chỉ lưu hash. Quản lý key (tạo/thu hồi/xóa mềm) cần `apikey:read`/`apikey:manage`.
+Một instance là đủ cho bộ đếm; scale ngang cần store dùng chung (Redis).
+
 ## 5.2 Phân quyền (Authorization) — RBAC theo action
 
 **Permission = `resource:action`.** Role gom nhiều permission. User gán nhiều role.

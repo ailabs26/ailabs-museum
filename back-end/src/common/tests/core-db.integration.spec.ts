@@ -18,6 +18,9 @@ import { Role } from '../../modules/roles/entities/role.entity';
 import { PermissionsRepository } from '../../modules/roles/repositories/permissions.repository';
 import { RolesRepository } from '../../modules/roles/repositories/roles.repository';
 import { RolesService } from '../../modules/roles/services/roles.service';
+import { PartnerApiKey } from '../../modules/partner-api-keys/entities/partner-api-key.entity';
+import { PartnerApiKeysRepository } from '../../modules/partner-api-keys/repositories/partner-api-keys.repository';
+import { PartnerApiKeysService } from '../../modules/partner-api-keys/services/partner-api-keys.service';
 import { UserRole } from '../../modules/users/entities/user-role.entity';
 import { User, UserStatus } from '../../modules/users/entities/user.entity';
 import { UserRolesRepository } from '../../modules/users/repositories/user-roles.repository';
@@ -328,6 +331,41 @@ describe('Core DB (PostgreSQL thật)', { skip }, () => {
       assert.deepEqual(await rolesService.removeMany([free.id, used.id]), { ids: [free.id, used.id] });
       const done = await db.getRepository(Role).findBy({ id: In([free.id, used.id]) });
       assert.ok(done.every((item) => item.isDeleted));
+    });
+  });
+
+  describe('API key đối tác (SQL thật)', () => {
+    it('authenticate chỉ nhận key active, chưa xóa, chưa hết hạn; xóa mềm giữ bản ghi và ẩn khỏi danh sách', async () => {
+      const service = new PartnerApiKeysService(new PartnerApiKeysRepository(db.getRepository(PartnerApiKey)));
+      const created: string[] = [];
+      try {
+        const make = async (extra: { expiresInDays?: number } = {}) => {
+          const key = await service.create({ partnerName: `${tag}-partner`, scopes: ['rooms:read'], ...extra });
+          created.push(key.id);
+          return key;
+        };
+        const live = await make({ expiresInDays: 30 });
+        const noExpiry = await make();
+        const revoked = await make();
+        const expired = await make({ expiresInDays: 1 });
+        const deleted = await make();
+        await service.revoke(revoked.id);
+        await db.getRepository(PartnerApiKey).update(expired.id, { expiresAt: new Date(Date.now() - 1000) });
+        await service.remove(deleted.id);
+
+        assert.equal((await service.authenticate(live.plaintext))?.id, live.id);
+        assert.equal((await service.authenticate(noExpiry.plaintext))?.id, noExpiry.id);
+        for (const blocked of [revoked, expired, deleted]) assert.equal(await service.authenticate(blocked.plaintext), null);
+        assert.equal(await service.authenticate(`${live.plaintext}x`), null);
+
+        const row = await db.getRepository(PartnerApiKey).findOneByOrFail({ id: deleted.id });
+        assert.equal(row.isDeleted, true);
+        assert.equal(row.status, 'revoked');
+        assert.equal((await service.list()).some((key) => key.id === deleted.id), false);
+        assert.equal(row.rateLimitPerMinute, 60);
+      } finally {
+        await db.getRepository(PartnerApiKey).delete(created);
+      }
     });
   });
 

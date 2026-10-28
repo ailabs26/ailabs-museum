@@ -14,6 +14,7 @@ export interface PartnerApiKeyResponse {
   expiresAt: string | null;
   lastUsedAt: string | null;
   revokedAt: string | null;
+  rateLimitPerMinute: number;
 }
 
 /** Trả về khi tạo mới: kèm khóa thô `plaintext` (chỉ lần này). */
@@ -35,5 +36,6 @@ export function toPartnerApiKeyResponse(entity: PartnerApiKey): PartnerApiKeyRes
     expiresAt: entity.expiresAt ? entity.expiresAt.toISOString() : null,
     lastUsedAt: entity.lastUsedAt ? entity.lastUsedAt.toISOString() : null,
     revokedAt: entity.revokedAt ? entity.revokedAt.toISOString() : null,
+    rateLimitPerMinute: entity.rateLimitPerMinute,
   };
 }

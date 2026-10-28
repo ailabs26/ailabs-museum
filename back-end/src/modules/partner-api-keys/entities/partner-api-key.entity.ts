@@ -10,6 +10,8 @@ export type ApiKeyStatus = (typeof API_KEY_STATUSES)[number];
  */
 @Entity('partner_api_keys')
 @Check('CHK_partner_api_keys_status', `"status" IN ('active', 'revoked')`)
+@Check('CHK_partner_api_keys_rate_limit', '"rate_limit_per_minute" BETWEEN 1 AND 10000')
+@Check('CHK_partner_api_keys_deleted', '"is_deleted" = ("deleted_at" IS NOT NULL)')
 export class PartnerApiKey {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -48,4 +50,14 @@ export class PartnerApiKey {
 
   @Column({ name: 'revoked_at', type: 'timestamptz', nullable: true })
   revokedAt!: Date | null;
+
+  /** Số request tối đa mỗi phút cho key này (cổng /partner/v1). */
+  @Column({ name: 'rate_limit_per_minute', type: 'integer', default: 60 })
+  rateLimitPerMinute!: number;
+
+  @Column({ name: 'is_deleted', type: 'boolean', default: false })
+  isDeleted!: boolean;
+
+  @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt!: Date | null;
 }

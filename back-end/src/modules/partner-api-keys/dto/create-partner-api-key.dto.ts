@@ -31,4 +31,11 @@ export class CreatePartnerApiKeyDto {
   @Min(1)
   @Max(3650)
   expiresInDays?: number | null;
+
+  @ApiProperty({ required: false, minimum: 1, maximum: 10000, default: 60, description: 'Số request tối đa mỗi phút' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(10000)
+  rateLimitPerMinute?: number;
 }
