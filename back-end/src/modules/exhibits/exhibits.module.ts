@@ -21,7 +21,7 @@ import { ModelStorageService } from '../media/services/model-storage.service';
   ],
   controllers: [ExhibitsController, AdminExhibitsController],
   providers: [ExhibitsService, ExhibitsRepository, RevisionPublishGate, PublicModelsService, ModelStorageService],
-  exports: [ExhibitsService, ExhibitsRepository, RevisionPublishGate],
+  exports: [ExhibitsService, ExhibitsRepository, RevisionPublishGate, PublicModelsService],
 })
 export class ExhibitsModule {}
 
