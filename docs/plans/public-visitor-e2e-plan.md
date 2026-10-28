@@ -1,6 +1,6 @@
 # PUBLIC-E2E — Implementation Plan: Visitor Journey 2D → Audio → Transcript → Report
 
-> **Trạng thái:** **DONE** sau khi người dùng duyệt ngày 28/10/2026; triển khai trên `test/public-visitor-e2e`. Affected dev 69/69, preview 15/15 và unit 170/170 PASS; xem [báo cáo bàn giao](reports/public-visitor-e2e-report.md). Chưa push/PR/merge.
+> **Trạng thái:** **DONE** sau khi người dùng duyệt ngày 28/10/2026; triển khai trên `test/public-visitor-e2e`. Affected dev 69/69, preview 15/15 và unit 170/170 PASS; xem [báo cáo bàn giao](reports/public-visitor-e2e-report.md). Người dùng đã xác nhận test DB thật OK và yêu cầu push nhánh; chưa tạo PR/merge.
 >
 > **Source audit:** `ailabs26/ailabs-museum`, `origin/dev` / GitHub `dev` tại `702aeb75d20ceae7c1cd5ef4e909c4eae77e2d19` (28/10/2026). **Fetch lại `origin/dev` và kiểm tra diff khi triển khai.**
 >

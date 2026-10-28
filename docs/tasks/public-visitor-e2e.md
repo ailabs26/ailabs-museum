@@ -1,6 +1,7 @@
 # PUBLIC-E2E — Task Breakdown & Acceptance: Visitor Journey 2D / Audio / Transcript / Report
 
 > **Trạng thái:** **DONE** — người dùng duyệt ngày 28/10/2026; triển khai trên `test/public-visitor-e2e`, base `702aeb7`.
+> **Nghiệm thu bổ sung (28/10/2026):** Người dùng xác nhận đã test DB thật và mọi thứ OK (**USER-REPORTED PASS**); đã yêu cầu chốt và push nhánh, chưa tạo PR. Các số liệu automated bên dưới vẫn là kết quả API mock do Codex chạy.
 >
 > **Repo/base đã audit:** `ailabs26/ailabs-museum`, `dev` tại `702aeb75d20ceae7c1cd5ef4e909c4eae77e2d19` (28/10/2026). **Khi implement: fetch mới, ghi SHA base thực tế.**
 >
@@ -226,6 +227,7 @@ Báo cáo đầy đủ: [public-visitor-e2e-report.md](../plans/reports/public-v
 | Typecheck/lint/unit/build | PASS; lint 0 errors/1 warning; unit 31 files/170 tests; build chunk warning | 0 | gate logs in report |
 | Targeted ESLint/diff/review | PASS; independent reviewer: no actionable finding | 0 | targeted-lint.log, git diff --check |
 | Optional live / screen readers | NOT TESTED, outside approved scope | See report | Limitations in report |
+| Người dùng kiểm thử DB thật (nghiệm thu bổ sung) | USER-REPORTED PASS — người dùng xác nhận mọi thứ OK | — | Xác nhận trực tiếp ngày 28/10/2026; không phải automated live run của Codex |
 
 Initial expanded preview run was aborted because component HTML fixtures are dev-only; replaced by the approved dev/preview matrix, not counted as passing evidence. D06 media-request filter was corrected after a real baseline repro; production runtime unchanged.
 

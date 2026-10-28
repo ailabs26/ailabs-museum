@@ -130,8 +130,10 @@ Không thêm sleep hoặc giả playback để làm xanh test.
 
 ## Giới hạn và bàn giao
 
-Live media [`public-image-audio-live.spec.ts`](../../../front-end/tests/public-image-audio-live.spec.ts): **NOT TESTED** trong task này.
-Không chứng minh ghi report vào DB, loa vật lý, GPU/điện thoại thật hoặc WCAG 2.2 AA/NVDA/VoiceOver.
+**Nghiệm thu DB thật — USER-REPORTED PASS (28/10/2026):** người dùng xác nhận “Đã test chạy trên db thật, mọi thứ cũng đã ok rồi” và duyệt chốt nhiệm vụ để push nhánh, chưa tạo PR. Đây là kết quả kiểm thử do người dùng xác nhận; không quy thành lượt automated live do Codex chạy hoặc suy diễn thêm môi trường/các bước kiểm tra chưa được cung cấp.
+
+Live media [`public-image-audio-live.spec.ts`](../../../front-end/tests/public-image-audio-live.spec.ts): **NOT RUN BY CODEX** trong task này; độc lập với nghiệm thu DB thật của người dùng.
+Các automated suites ở trên dùng API mock, không chứng minh ghi report vào DB. Loa vật lý, GPU/điện thoại thật hoặc WCAG 2.2 AA/NVDA/VoiceOver không được xác minh trong các lượt automated này.
 Các manual checks cũ của người dùng là historical evidence; không dùng làm kết quả run mới, không yêu cầu kiểm tra lại chung.
 Không chạy `home-featured.spec.ts`, nên không khẳng định có lỗi homepage mới. Cảnh báo chunk size và hook dependency có từ trước, ngoài phạm vi test/docs.
 
@@ -141,6 +143,6 @@ Giới hạn: cùng checkout có thể chịu thay đổi từ công việc khá
 Reviewer độc lập rà code journey và D06 theo plan: không có finding cần xử lý. Live DB/loa vật lý/screen reader nằm ngoài scope được duyệt; tác giả đối chiếu báo cáo cuối với JSON/log.
 Không có minor finding bị hoãn. Lượt preview sai matrix được ghi rõ và thay bằng hai lượt đúng môi trường, không thay đổi phạm vi sản phẩm.
 
-Push/PR/merge: chưa thực hiện; chờ yêu cầu cụ thể của người dùng.
+**Chốt bàn giao:** DONE; người dùng đã nghiệm thu DB thật và yêu cầu push `test/public-visitor-e2e`. Chưa tạo PR hoặc merge. Trạng thái push thực tế được xác nhận bằng remote branch sau khi push.
 
 Commits theo task: T0 `df13494`; T1–T3 `f8b92f9`; T4 `e402ae6`; T5 là commit chứa báo cáo này (xem `git log -1 -- docs/plans/reports/public-visitor-e2e-report.md`).
