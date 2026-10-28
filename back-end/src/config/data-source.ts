@@ -13,6 +13,8 @@ import { RefreshSession } from '../modules/auth/entities/refresh-session.entity'
 import { RolePermission } from '../modules/roles/entities/role-permission.entity';
 import { Role } from '../modules/roles/entities/role.entity';
 import { Room } from '../modules/rooms/entities/room.entity';
+import { Translation } from '../modules/translations/entities/translation.entity';
+import { PartnerApiKey } from '../modules/partner-api-keys/entities/partner-api-key.entity';
 import { UserRole } from '../modules/users/entities/user-role.entity';
 import { User } from '../modules/users/entities/user.entity';
 
@@ -46,6 +48,8 @@ export const dataSource = new DataSource({
     RefreshSession,
     ContentReport,
     AuditLog,
+    Translation,
+    PartnerApiKey,
   ],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   synchronize: false,
