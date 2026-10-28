@@ -1,12 +1,11 @@
-import { makeId, readCollection, writeCollection } from './clientStore';
+import { http } from '@/core/api/http-client';
 
 /**
  * Dịch vụ quản lý danh sách API Key của đối tác (CMS).
  *
- * Mô phỏng quy ước an toàn thường gặp: khóa đầy đủ chỉ hiện MỘT LẦN ngay sau khi
- * tạo; sau đó chỉ lưu tiền tố + 4 ký tự cuối để hiển thị dạng che. Hiện lưu phía
- * client (xem clientStore) chờ endpoint backend; khi có BE, chỗ sinh khóa cần
- * chuyển sang hash phía server và không bao giờ lưu khóa thô.
+ * Khóa đầy đủ chỉ được backend trả về MỘT LẦN ngay sau khi tạo; sau đó máy chủ chỉ
+ * lưu SHA-256 hash + tiền tố + 4 ký tự cuối, nên FE hiển thị dạng che. Dữ liệu lưu
+ * ở backend (bảng `partner_api_keys`) qua các endpoint `/partner-api-keys`.
  */
 
 export type ApiKeyStatus = 'active' | 'revoked';
@@ -57,121 +56,23 @@ export interface CreatedApiKey {
   plaintext: string;
 }
 
-const STORE_KEY = 'apiKeys';
-const KEY_PREFIX = 'ak_live_';
-
-/** Sinh chuỗi ngẫu nhiên an toàn (ưu tiên Web Crypto, fallback Math.random). */
-function randomToken(bytes = 24): string {
-  try {
-    const buf = new Uint8Array(bytes);
-    crypto.getRandomValues(buf);
-    return Array.from(buf, (b) => b.toString(16).padStart(2, '0')).join('');
-  } catch {
-    let out = '';
-    while (out.length < bytes * 2) out += Math.random().toString(16).slice(2);
-    return out.slice(0, bytes * 2);
-  }
-}
-
-function mask(last4: string): string {
-  return `${KEY_PREFIX}••••${last4}`;
-}
-
-function seed(): PartnerApiKey[] {
-  const now = Date.now();
-  const iso = (offsetDays: number) => new Date(now + offsetDays * 86_400_000).toISOString();
-  return [
-    {
-      id: makeId('key'),
-      partnerName: 'VietnamPlus',
-      label: 'Nhúng tour cho báo điện tử',
-      scopes: ['public:read', 'exhibits:read', 'tour:embed'],
-      status: 'active',
-      prefix: KEY_PREFIX,
-      last4: '9f3c',
-      maskedKey: mask('9f3c'),
-      createdAt: iso(-42),
-      expiresAt: iso(323),
-      lastUsedAt: iso(-1),
-      revokedAt: null,
-    },
-    {
-      id: makeId('key'),
-      partnerName: 'EduTech Labs',
-      label: 'Tích hợp giáo trình số',
-      scopes: ['public:read', 'media:read', 'analytics:read'],
-      status: 'active',
-      prefix: KEY_PREFIX,
-      last4: '27ab',
-      maskedKey: mask('27ab'),
-      createdAt: iso(-12),
-      expiresAt: null,
-      lastUsedAt: iso(-5),
-      revokedAt: null,
-    },
-    {
-      id: makeId('key'),
-      partnerName: 'Hanoi Tourism',
-      label: 'Thử nghiệm (đã thu hồi)',
-      scopes: ['public:read'],
-      status: 'revoked',
-      prefix: KEY_PREFIX,
-      last4: 'ee10',
-      maskedKey: mask('ee10'),
-      createdAt: iso(-90),
-      expiresAt: null,
-      lastUsedAt: iso(-60),
-      revokedAt: iso(-30),
-    },
-  ];
-}
-
 export const apiKeysService = {
-  async list(): Promise<PartnerApiKey[]> {
-    const rows = await readCollection<PartnerApiKey>(STORE_KEY, seed);
-    return [...rows].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  list(): Promise<PartnerApiKey[]> {
+    return http.get<PartnerApiKey[]>('/partner-api-keys');
   },
 
   async create(input: CreateApiKeyInput): Promise<CreatedApiKey> {
-    const rows = await readCollection<PartnerApiKey>(STORE_KEY, seed);
-    const token = randomToken();
-    const plaintext = KEY_PREFIX + token;
-    const last4 = token.slice(-4);
-    const record: PartnerApiKey = {
-      id: makeId('key'),
-      partnerName: input.partnerName.trim(),
-      label: input.label.trim(),
-      scopes: input.scopes,
-      status: 'active',
-      prefix: KEY_PREFIX,
-      last4,
-      maskedKey: mask(last4),
-      createdAt: new Date().toISOString(),
-      expiresAt: input.expiresInDays
-        ? new Date(Date.now() + input.expiresInDays * 86_400_000).toISOString()
-        : null,
-      lastUsedAt: null,
-      revokedAt: null,
-    };
-    await writeCollection(STORE_KEY, [record, ...rows]);
+    const { plaintext, ...record } = await http.post<PartnerApiKey & { plaintext: string }>(
+      '/partner-api-keys', input,
+    );
     return { record, plaintext };
   },
 
-  async revoke(id: string): Promise<PartnerApiKey> {
-    const rows = await readCollection<PartnerApiKey>(STORE_KEY, seed);
-    let updated: PartnerApiKey | undefined;
-    const next = rows.map((row) => {
-      if (row.id !== id) return row;
-      updated = { ...row, status: 'revoked' as const, revokedAt: new Date().toISOString() };
-      return updated;
-    });
-    await writeCollection(STORE_KEY, next);
-    if (!updated) throw new Error('Không tìm thấy API key');
-    return updated;
+  revoke(id: string): Promise<PartnerApiKey> {
+    return http.post<PartnerApiKey>(`/partner-api-keys/${id}/revoke`);
   },
 
-  async remove(id: string): Promise<void> {
-    const rows = await readCollection<PartnerApiKey>(STORE_KEY, seed);
-    await writeCollection(STORE_KEY, rows.filter((row) => row.id !== id));
+  remove(id: string): Promise<void> {
+    return http.delete<void>(`/partner-api-keys/${id}`);
   },
 };
