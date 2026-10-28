@@ -71,6 +71,25 @@ Cơ chế phiên, thu hồi và rate limit: [05 — Bảo mật](05-security-rba
 | `POST /auth/sessions/revoke-others` | → `{ id }` (userId) | giữ phiên hiện tại | `auth.session_revoke_others` |
 | `POST /auth/logout-all` | → `{ id }` (userId) | thu hồi tất cả, xóa cookie | `auth.logout_all` |
 
+#### Cổng API đối tác `/partner/v1` (API key)
+
+Header `X-API-Key: ak_live_…`; cơ chế xác thực/scope/rate limit: [05 — Bảo mật](05-security-rbac.md#513-api-key-cho-đối-tác-cổng-partnerv1).
+Nội dung giống API công khai (chỉ revision Published hiện hành).
+
+| Route | Scope | Kết quả |
+|---|---|---|
+| `GET /partner/v1/rooms` | `rooms:read` | danh sách phòng công khai |
+| `GET /partner/v1/rooms/:slug` | `exhibits:read` | phòng + hiện vật đã xuất bản (kèm URL media) |
+| `GET /partner/v1/rooms/:slug/tour` | `tour:embed` | `{ room, stops: [{ exhibitId, displayOrder, name, i18n }] }` theo `displayOrder` |
+| `GET /partner/v1/rooms/:slug/exhibits/:exhibitId/model` | `media:read` | tệp GLB |
+
+Mã lỗi: **401** key sai/thu hồi/hết hạn/đã xóa · **403** thiếu scope · **429** vượt `rate_limit_per_minute` (kèm `Retry-After`).
+Ví dụ: `curl -H "X-API-Key: ak_live_…" https://<host>/api/partner/v1/rooms`.
+
+Quản lý key (Admin): `GET /partner-api-keys` (`apikey:read`); `POST /partner-api-keys` body
+`{ partnerName, label?, scopes[], expiresInDays?, rateLimitPerMinute? }` → kèm `plaintext` (một lần); `POST /partner-api-keys/:id/revoke`;
+`DELETE /partner-api-keys/:id` (**xóa mềm**: thu hồi nếu đang hoạt động, ẩn khỏi danh sách) — đều cần `apikey:manage`, có audit `apikey.*`.
+
 #### Xóa mềm và xóa hàng loạt
 
 Mọi tài nguyên quản trị **xóa mềm** (`is_deleted`/`deleted_at`; truy vấn luôn lọc bản ghi chưa xóa). Chưa có API khôi phục.
