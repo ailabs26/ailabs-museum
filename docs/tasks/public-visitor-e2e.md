@@ -1,6 +1,6 @@
 # PUBLIC-E2E — Task Breakdown & Acceptance: Visitor Journey 2D / Audio / Transcript / Report
 
-> **Trạng thái:** **APPROVED / IN PROGRESS** — người dùng duyệt ngày 28/10/2026; triển khai trên `test/public-visitor-e2e`, base `702aeb7`.
+> **Trạng thái:** **DONE** — người dùng duyệt ngày 28/10/2026; triển khai trên `test/public-visitor-e2e`, base `702aeb7`.
 >
 > **Repo/base đã audit:** `ailabs26/ailabs-museum`, `dev` tại `702aeb75d20ceae7c1cd5ef4e909c4eae77e2d19` (28/10/2026). **Khi implement: fetch mới, ghi SHA base thực tế.**
 >
@@ -18,14 +18,14 @@
 
 | Mã | Task | Deliverable | Trạng thái |
 |---|---|---|---|
-| T0 | Baseline/branch/source audit | Commit SHA, baseline logs, test coverage map | NOT RUN |
-| T1 | Journey test — collection → detail | Phần đầu `public-visitor-journey.spec.ts` | NOT RUN |
-| T2 | Journey test — audio → VTT → transcript | Assertions media thật/DOM và no autoplay | NOT RUN |
-| T3 | Journey test — report submit | Mocked POST + payload revision + success UX | NOT RUN |
-| T4 | Focused/affected regression + gates | Test counts, failures phân loại, diff review | NOT RUN |
-| T5 | E2E report / script handoff | `public-visitor-e2e-report.md` + PR-ready summary | NOT RUN |
+| T0 | Baseline/branch/source audit | Commit SHA, baseline logs, test coverage map | DONE |
+| T1 | Journey test — collection → detail | Phần đầu `public-visitor-journey.spec.ts` | DONE |
+| T2 | Journey test — audio → VTT → transcript | Assertions media thật/DOM và no autoplay | DONE |
+| T3 | Journey test — report submit | Mocked POST + payload revision + success UX | DONE |
+| T4 | Focused/affected regression + gates | Test counts, failures phân loại, diff review | DONE |
+| T5 | E2E report / script handoff | `public-visitor-e2e-report.md` + PR-ready summary | DONE |
 
-**Quy tắc chung:** Chỉ đánh `[x]` khi có lệnh thực tế và bằng chứng. Những lệnh trong plan **chưa chạy**. Không chỉnh runtime để che test drift; không bắt người dùng test lại mọi tính năng đã xác nhận trước.
+**Quy tắc chung:** Chỉ đánh `[x]` khi có lệnh thực tế và bằng chứng. Kết quả thực tế: affected dev 69/69, preview 15/15, unit 170/170 PASS; xem báo cáo bàn giao. Không chỉnh runtime để che test drift; không bắt người dùng test lại mọi tính năng đã xác nhận trước.
 
 ---
 
@@ -37,18 +37,18 @@
 
 ### Steps
 
-- [ ] `git fetch origin`; xác nhận `origin/dev` HEAD mới và working tree; ghi SHA + thời gian ở execution ledger.
-- [ ] Tạo nhánh **một nhiệm vụ** `test/public-visitor-e2e` từ `origin/dev` cập nhật. Không push/PR khi chưa được người dùng yêu cầu.
-- [ ] Rà lại routes `GET /api/rooms`, `GET /api/rooms/:slug`, `POST /api/public/reports`, `**/media/uploads/**` cùng fixture, xác minh chính xác action selectors.
-- [ ] Chạy baseline trước khi sửa: ít nhất `collection.spec.ts`, `exhibit-detail.spec.ts`, `public-audio.spec.ts`, `public-report-modal.spec.ts`; ghi counts/exit/môi trường, không tự tuyên bố PASS.
-- [ ] Xác minh browser runner: Chromium/Edge version, OS, Vite dev/preview, env `MUSEUM_LIVE_TEST` unset và trạng thái dependencies.
-- [ ] Ghi coverage hiện có: collection, detail, audio/captions/transcript, report, error/429, live media optional; highlight **thiếu journey trong cùng browser session**.
-- [ ] Review PLAN/TASK với người dùng trước khi viết test/code nếu triển khai trên repo.
+- [x] `git fetch origin`; xác nhận `origin/dev` HEAD mới và working tree; ghi SHA + thời gian ở execution ledger.
+- [x] Tạo nhánh **một nhiệm vụ** `test/public-visitor-e2e` từ `origin/dev` cập nhật. Không push/PR khi chưa được người dùng yêu cầu.
+- [x] Rà lại routes `GET /api/rooms`, `GET /api/rooms/:slug`, `POST /api/public/reports`, `**/media/uploads/**` cùng fixture, xác minh chính xác action selectors.
+- [x] Chạy baseline trước khi sửa: ít nhất `collection.spec.ts`, `exhibit-detail.spec.ts`, `public-audio.spec.ts`, `public-report-modal.spec.ts`; ghi counts/exit/môi trường, không tự tuyên bố PASS.
+- [x] Xác minh browser runner: Chromium/Edge version, OS, Vite dev/preview, env `MUSEUM_LIVE_TEST` unset và trạng thái dependencies.
+- [x] Ghi coverage hiện có: collection, detail, audio/captions/transcript, report, error/429, live media optional; highlight **thiếu journey trong cùng browser session**.
+- [x] Review PLAN/TASK với người dùng trước khi viết test/code nếu triển khai trên repo.
 
 ### Acceptance
 
-- [ ] Base SHA, exact command và baseline outcome được ghi; mọi lỗi đã có trước được tách khỏi lỗi mới.
-- [ ] Không đổi code ngoài scope và không ghi DB.
+- [x] Base SHA, exact command và baseline outcome được ghi; mọi lỗi đã có trước được tách khỏi lỗi mới.
+- [x] Không đổi code ngoài scope và không ghi DB.
 
 **Commit đề xuất (nếu đã được duyệt để thao tác repo):** `docs(test): plan public visitor e2e journey`.
 
@@ -62,20 +62,20 @@
 
 ### Steps
 
-- [ ] Import `test`, `expect` từ `@playwright/test`, `installMedia` và `fulfillMuseum` đã có; không tạo media fixture mới trùng lặp.
-- [ ] Tạo một primary `test('visitor follows 2D detail, audio, transcript and reports content', async ({ page }) => {...})` (tên có thể rút gọn, giữ intent).
-- [ ] `const room = await installMedia(page)`; dùng `const exhibit = room.exhibits[0]`; guard dữ liệu fixture nếu cần, không hardcode URL room/exhibit.
-- [ ] Gắn `page.route('**/api/public/reports', ...)` **trước** `page.goto`, chặn POST ra ngoài và thu payload/call count; 201 response phải theo ApiResponse envelope như test hiện có.
-- [ ] `page.goto('/collection')`; kiểm H1 `Bộ sưu tập`, room/card đúng và danh sách đã render.
-- [ ] Scope card theo `getByRole('list', { name: 'Hiện vật trong bộ sưu tập' })`, tìm heading `exhibit.name` hoặc `getByRole('link', {name: ...})`; tránh `.first()` khi có nhiều card.
-- [ ] Dùng hành vi người dùng `click()` hoặc `focus()` + `press('Enter')` trên link `Xem chi tiết ${exhibit.name}`; không dùng `page.goto('/collection/...')` cho bước chuyển trang.
-- [ ] `await expect(page).toHaveURL(...)` với `encodeURIComponent(room.slug/exhibit.id)`; kiểm H1, mô tả, link quay lại room.
-- [ ] Đảm bảo phần public 2D không mount Tour 3D; nếu kiểm Canvas, dùng scope/dự đoán hợp lệ, tránh sai lệch vì Hero 3D ở `/`.
+- [x] Import `test`, `expect` từ `@playwright/test`, `installMedia` và `fulfillMuseum` đã có; không tạo media fixture mới trùng lặp.
+- [x] Tạo một primary `test('visitor follows 2D detail, audio, transcript and reports content', async ({ page }) => {...})` (tên có thể rút gọn, giữ intent).
+- [x] `const room = await installMedia(page)`; dùng `const exhibit = room.exhibits[0]`; guard dữ liệu fixture nếu cần, không hardcode URL room/exhibit.
+- [x] Gắn `page.route('**/api/public/reports', ...)` **trước** `page.goto`, chặn POST ra ngoài và thu payload/call count; 201 response phải theo ApiResponse envelope như test hiện có.
+- [x] `page.goto('/collection')`; kiểm H1 `Bộ sưu tập`, room/card đúng và danh sách đã render.
+- [x] Scope card theo `getByRole('list', { name: 'Hiện vật trong bộ sưu tập' })`, tìm heading `exhibit.name` hoặc `getByRole('link', {name: ...})`; tránh `.first()` khi có nhiều card.
+- [x] Dùng hành vi người dùng `click()` hoặc `focus()` + `press('Enter')` trên link `Xem chi tiết ${exhibit.name}`; không dùng `page.goto('/collection/...')` cho bước chuyển trang.
+- [x] `await expect(page).toHaveURL(...)` với `encodeURIComponent(room.slug/exhibit.id)`; kiểm H1, mô tả, link quay lại room.
+- [x] Đảm bảo phần public 2D không mount Tour 3D; nếu kiểm Canvas, dùng scope/dự đoán hợp lệ, tránh sai lệch vì Hero 3D ở `/`.
 
 ### Acceptance
 
-- [ ] **AC-01/02:** Collection → Detail chạy trong **một page**, route + identity đúng, không sử dụng demo fallback hoặc fake click.
-- [ ] Không request admin API/room khác không liên quan; nếu đếm network, không dựa vào thứ tự ngẫu nhiên.
+- [x] **AC-01/02:** Collection → Detail chạy trong **một page**, route + identity đúng, không sử dụng demo fallback hoặc fake click.
+- [x] Không request admin API/room khác không liên quan; nếu đếm network, không dựa vào thứ tự ngẫu nhiên.
 
 **Commit đề xuất sau khi có test đã kiểm:** `test(public): cover 2d visitor navigation` (có thể gộp T1–T3 thành một commit vì cùng một spec).
 
@@ -89,19 +89,19 @@
 
 ### Steps
 
-- [ ] Trong cùng visitor test sau T1, scope vùng `Thuyết minh audio`; audio element ban đầu `paused = true` / chưa playback, không autoplay.
-- [ ] Có thể ghi `request.url()` cho `/media/uploads/audio/` và xác minh không fetch trước tương tác, nếu deterministic với fixture hiện tại.
-- [ ] Click nút `Phát` theo accessible name. Kiểm `expect.poll(() => page.locator('audio').evaluate((el: HTMLAudioElement) => el.currentTime)).toBeGreaterThan(0)`; không mock `play()`/tự set `currentTime`.
-- [ ] Kiểm cue hiển thị `page.getByLabel('Phụ đề hiện tại')` có text `Thuyết minh đồng bộ`; dùng polling nếu browser cần thời gian.
-- [ ] Kiểm section `Bản thuyết minh`/region theo heading, nội dung từ `exhibit.audio?.vi?.transcript` (hoặc `exhibit.i18n.vi.transcript` theo source fallback), không nhầm với caption.
-- [ ] Pause qua nút `Tạm dừng` trước khi mở report nếu test cần ổn định; không assert report làm audio dừng khi spec không yêu cầu.
-- [ ] Không copy toàn bộ trường hợp Stop/replay/404/VTT404/locale từ `public-audio.spec.ts` — chỉ chạy regression các case ấy ở T4.
+- [x] Trong cùng visitor test sau T1, scope vùng `Thuyết minh audio`; audio element ban đầu `paused = true` / chưa playback, không autoplay.
+- [x] Có thể ghi `request.url()` cho `/media/uploads/audio/` và xác minh không fetch trước tương tác, nếu deterministic với fixture hiện tại.
+- [x] Click nút `Phát` theo accessible name. Kiểm `expect.poll(() => page.locator('audio').evaluate((el: HTMLAudioElement) => el.currentTime)).toBeGreaterThan(0)`; không mock `play()`/tự set `currentTime`.
+- [x] Kiểm cue hiển thị `page.getByLabel('Phụ đề hiện tại')` có text `Thuyết minh đồng bộ`; dùng polling nếu browser cần thời gian.
+- [x] Kiểm section `Bản thuyết minh`/region theo heading, nội dung từ `exhibit.audio?.vi?.transcript` (hoặc `exhibit.i18n.vi.transcript` theo source fallback), không nhầm với caption.
+- [x] Pause qua nút `Tạm dừng` trước khi mở report nếu test cần ổn định; không assert report làm audio dừng khi spec không yêu cầu.
+- [x] Không copy toàn bộ trường hợp Stop/replay/404/VTT404/locale từ `public-audio.spec.ts` — chỉ chạy regression các case ấy ở T4.
 
 ### Acceptance
 
-- [ ] **AC-03:** HTMLMediaElement thật tăng `currentTime`, audio không autoplay.
-- [ ] **AC-04:** Cue được render đúng từ VTT, transcript đọc được độc lập trong section 2D.
-- [ ] Không có `waitForTimeout()` để chờ playback; không yêu cầu sound output/loa vật lý trong automated test.
+- [x] **AC-03:** HTMLMediaElement thật tăng `currentTime`, audio không autoplay.
+- [x] **AC-04:** Cue được render đúng từ VTT, transcript đọc được độc lập trong section 2D.
+- [x] Không có `waitForTimeout()` để chờ playback; không yêu cầu sound output/loa vật lý trong automated test.
 
 **Commit đề xuất:** cùng commit journey hoặc `test(public): verify journey audio and transcript`.
 
@@ -115,18 +115,18 @@
 
 ### Steps
 
-- [ ] Tại trang Detail hiện tại, click `Báo nội dung`, kiểm `getByRole('dialog', { name: 'Báo cáo nội dung' })` visible; mọi locator input/button scope trong dialog.
-- [ ] Chọn `Danh mục` → `wrong_info`, điền `Nội dung bổ sung` → `'  Sai niên đại  '`.
-- [ ] Submit `Gửi báo cáo`; route handler ghi phương thức POST, request JSON và số lần gọi, trả HTTP **201** với envelope thành công/ID giả hợp lệ.
-- [ ] Assert đúng **một** POST, payload *deep equal*: `{ exhibitId: exhibit.id, reportedRevisionId: exhibit.revisionId, category: 'wrong_info', message: 'Sai niên đại' }`.
-- [ ] Check modal đóng và notification `Đã gửi báo cáo nội dung` xuất hiện; URL/H1 Detail vẫn đúng.
-- [ ] Đảm bảo request report **không escape** mock ra real server. Không bật `MUSEUM_LIVE_TEST` hoặc dùng test account/DB thật để chạy happy path.
-- [ ] Không viết lặp validation empty và 429 trong primary journey vì đã có `public-report-modal.spec.ts`; nếu run phát hiện bug mới, ghi separate repro và xin scope nếu phải sửa runtime.
+- [x] Tại trang Detail hiện tại, click `Báo nội dung`, kiểm `getByRole('dialog', { name: 'Báo cáo nội dung' })` visible; mọi locator input/button scope trong dialog.
+- [x] Chọn `Danh mục` → `wrong_info`, điền `Nội dung bổ sung` → `'  Sai niên đại  '`.
+- [x] Submit `Gửi báo cáo`; route handler ghi phương thức POST, request JSON và số lần gọi, trả HTTP **201** với envelope thành công/ID giả hợp lệ.
+- [x] Assert đúng **một** POST, payload *deep equal*: `{ exhibitId: exhibit.id, reportedRevisionId: exhibit.revisionId, category: 'wrong_info', message: 'Sai niên đại' }`.
+- [x] Check modal đóng và notification `Đã gửi báo cáo nội dung` xuất hiện; URL/H1 Detail vẫn đúng.
+- [x] Đảm bảo request report **không escape** mock ra real server. Không bật `MUSEUM_LIVE_TEST` hoặc dùng test account/DB thật để chạy happy path.
+- [x] Không viết lặp validation empty và 429 trong primary journey vì đã có `public-report-modal.spec.ts`; nếu run phát hiện bug mới, ghi separate repro và xin scope nếu phải sửa runtime.
 
 ### Acceptance
 
-- [ ] **AC-05/06/07/08:** Complete submit flow có request thật từ browser tới mocked endpoint, đúng revision, UI thành công và không ghi DB.
-- [ ] Không giả `POST` bằng direct HTTP client trong test thay cho thao tác người dùng.
+- [x] **AC-05/06/07/08:** Complete submit flow có request thật từ browser tới mocked endpoint, đúng revision, UI thành công và không ghi DB.
+- [x] Không giả `POST` bằng direct HTTP client trong test thay cho thao tác người dùng.
 
 **Commit đề xuất:** `test(public): add visitor journey report submission` (khuyến nghị một commit cuối cho toàn spec).
 
@@ -140,37 +140,37 @@
 
 | Test group | Lệnh từ `front-end/` | Bắt buộc? | Status |
 |---|---|---|---|
-| Focused journey dev | `npx playwright test tests/public-visitor-journey.spec.ts --reporter=line` | YES | NOT RUN |
-| Collection | `npx playwright test tests/collection.spec.ts --reporter=line` | YES | NOT RUN |
-| Detail | `npx playwright test tests/exhibit-detail.spec.ts --reporter=line` | YES | NOT RUN |
-| Public audio | `npx playwright test tests/public-audio.spec.ts --reporter=line` | YES | NOT RUN |
-| Report modal | `npx playwright test tests/public-report-modal.spec.ts --reporter=line` | YES | NOT RUN |
-| Audio standalone | `npx playwright test tests/audio-player.spec.ts --reporter=line` | YES | NOT RUN |
-| Keyboard subset | `npx playwright test tests/accessibility-keyboard.spec.ts --reporter=line` | YES | NOT RUN |
-| Production preview focused | `PLAYWRIGHT_PREVIEW=1 npx playwright test tests/public-visitor-journey.spec.ts tests/public-audio.spec.ts tests/public-report-modal.spec.ts --reporter=line` (Unix; Windows xem PLAN) | YES | NOT RUN |
-| Typecheck | `npm run typecheck` | YES | NOT RUN |
-| Lint | `npm run lint` | YES | NOT RUN |
-| Unit | `npm run test:unit` | YES | NOT RUN |
-| Production build | `npm run build` (trước preview) | YES | NOT RUN |
-| Targeted ESLint | `npx eslint tests/public-visitor-journey.spec.ts` | YES | NOT RUN |
-| Diff | `git diff --check` | YES | NOT RUN |
+| Focused journey dev + D06 | `npx playwright test tests/public-visitor-journey.spec.ts tests/exhibit-detail.spec.ts --grep 'visitor follows\|D06' --reporter=line` | YES | 4/4 PASS |
+| Collection | `npx playwright test tests/collection.spec.ts --reporter=line` | YES | PASS |
+| Detail | `npx playwright test tests/exhibit-detail.spec.ts --reporter=line` | YES | PASS |
+| Public audio | `npx playwright test tests/public-audio.spec.ts --reporter=line` | YES | PASS |
+| Report modal | `npx playwright test tests/public-report-modal.spec.ts --reporter=line` | YES | PASS |
+| Audio standalone | `npx playwright test tests/audio-player.spec.ts --reporter=line` | YES | PASS |
+| Keyboard subset | `npx playwright test tests/accessibility-keyboard.spec.ts --reporter=line` | YES | PASS |
+| Production preview focused | `PLAYWRIGHT_PREVIEW=1 npx playwright test tests/public-visitor-journey.spec.ts tests/public-audio.spec.ts tests/public-report-modal.spec.ts --reporter=line` (Unix; Windows xem PLAN) | YES | PASS |
+| Typecheck | `npm run typecheck` | YES | PASS |
+| Lint | `npm run lint` | YES | PASS |
+| Unit | `npm run test:unit` | YES | PASS |
+| Production build | `npm run build` (trước preview) | YES | PASS |
+| Targeted ESLint | `npx eslint tests/public-visitor-journey.spec.ts` | YES | PASS |
+| Diff | `git diff --check` | YES | PASS |
 | Optional live media | `MUSEUM_LIVE_TEST=1 ... public-image-audio-live.spec.ts` read-only | OPTIONAL; không ghi DB | NOT TESTED |
 
 ### Steps
 
-- [ ] Chạy focused test sau khi T1–T3 hoàn tất; lưu counts, exit, trace lỗi nếu có, sửa chỉ test implementation drift hợp lệ.
-- [ ] Chạy các affected suites và ghi rõ **per-suite PASS/FAIL/SKIP**; có thể batch thay vì từng lệnh nhưng báo cáo phải phân tách số liệu đúng.
-- [ ] Chạy typecheck/lint/unit/build từ đúng frontend checkout. Nếu warning nền có sẵn, phân biệt errors và warnings, không ghi lint clean tuyệt đối nếu có warning.
-- [ ] Chạy production preview **sau build mới**, kiểm `MUSEUM_LIVE_TEST` không bật, ghi chính xác browser channel/OS/port.
-- [ ] Nếu timeout media, dùng trace/request timeline/response headers, kiểm đối chiếu fixture WAV/VTT rồi rerun focused; không tăng timeout vô hạn hoặc `sleep` để che lỗi.
-- [ ] Nếu `home-featured.spec.ts` fail vì Hero 3D canvas mới, ghi known external test drift; không kéo homepage refactor vào PR. Nếu hồi quy thực tế ảnh hưởng journey, tạo issue đề nghị xử lý riêng.
-- [ ] Rà source diff có đúng test/docs; không commit `dist/`, `.env`, output media, `test-results/`, API key/credential.
-- [ ] `git diff --check`, review diff lần cuối, lưu thống kê `git status`/`git log` và chỉ commit đã được duyệt.
+- [x] Chạy focused test sau khi T1–T3 hoàn tất; lưu counts, exit, trace lỗi nếu có, sửa chỉ test implementation drift hợp lệ.
+- [x] Chạy các affected suites và ghi rõ **per-suite PASS/FAIL/SKIP**; có thể batch thay vì từng lệnh nhưng báo cáo phải phân tách số liệu đúng.
+- [x] Chạy typecheck/lint/unit/build từ đúng frontend checkout. Nếu warning nền có sẵn, phân biệt errors và warnings, không ghi lint clean tuyệt đối nếu có warning.
+- [x] Chạy production preview **sau build mới**, kiểm `MUSEUM_LIVE_TEST` không bật, ghi chính xác browser channel/OS/port.
+- [x] Nếu timeout media, dùng trace/request timeline/response headers, kiểm đối chiếu fixture WAV/VTT rồi rerun focused; không tăng timeout vô hạn hoặc `sleep` để che lỗi.
+- [x] Nếu `home-featured.spec.ts` fail vì Hero 3D canvas mới, ghi known external test drift; không kéo homepage refactor vào PR. Nếu hồi quy thực tế ảnh hưởng journey, tạo issue đề nghị xử lý riêng.
+- [x] Rà source diff có đúng test/docs; không commit `dist/`, `.env`, output media, `test-results/`, API key/credential.
+- [x] `git diff --check`, review diff lần cuối, lưu thống kê `git status`/`git log` và chỉ commit đã được duyệt.
 
 ### Acceptance
 
-- [ ] **AC-09/10/12:** Focused + affected suites và gates xanh hoặc có failure/blocker ghi đúng, được review; không có thay đổi production không được duyệt.
-- [ ] Không có số liệu test “ước lượng”, không dùng baseline historical làm kết quả run mới.
+- [x] **AC-09/10/12:** Focused + affected suites và gates xanh hoặc có failure/blocker ghi đúng, được review; không có thay đổi production không được duyệt.
+- [x] Không có số liệu test “ước lượng”, không dùng baseline historical làm kết quả run mới.
 
 **Commit đề xuất:** `test(public): verify visitor journey regressions` (chỉ nếu thực sự có test/evidence thay đổi).
 
@@ -195,46 +195,51 @@
 
 ### Steps
 
-- [ ] Tạo `docs/plans/reports/public-visitor-e2e-report.md` sau khi có logs, điền đầy đủ theo structure trên.
-- [ ] Nêu rằng Browser/UI E2E với API mock là kiểm thử giao diện thật; không tuyên bố kiểm thử DB end-to-end.
-- [ ] Link nguồn test scripts tương ứng và bổ sung lệnh cài/chạy trong báo cáo, không cần ZIP source repo (PR đã chứa scripts).
-- [ ] Ghi rõ lịch sử test người dùng đã thực hiện trước đây là **historical evidence**, không yêu cầu lặp lại manual UI test chung nếu không phát hiện lỗi mới.
-- [ ] Có verdict có điều kiện: `DONE` nếu tất cả bắt buộc đã PASS, `PARTIAL` nếu lỗi ngoài scope đã được chấp nhận, `BLOCKED` nếu không thể chứng minh AC chính.
-- [ ] Review report và PLAN/TASK so với diff/commits, không có chữ “chưa làm” sai sau khi task thực thi.
-- [ ] Bàn giao branch, commit, tài liệu, counts và đề xuất PR vào `dev`; **không tự push/PR/merge** khi người dùng chưa yêu cầu.
+- [x] Tạo `docs/plans/reports/public-visitor-e2e-report.md` sau khi có logs, điền đầy đủ theo structure trên.
+- [x] Nêu rằng Browser/UI E2E với API mock là kiểm thử giao diện thật; không tuyên bố kiểm thử DB end-to-end.
+- [x] Link nguồn test scripts tương ứng và bổ sung lệnh cài/chạy trong báo cáo, không cần ZIP source repo (PR đã chứa scripts).
+- [x] Ghi rõ lịch sử test người dùng đã thực hiện trước đây là **historical evidence**, không yêu cầu lặp lại manual UI test chung nếu không phát hiện lỗi mới.
+- [x] Có verdict có điều kiện: `DONE` nếu tất cả bắt buộc đã PASS, `PARTIAL` nếu lỗi ngoài scope đã được chấp nhận, `BLOCKED` nếu không thể chứng minh AC chính.
+- [x] Review report và PLAN/TASK so với diff/commits, không có chữ “chưa làm” sai sau khi task thực thi.
+- [x] Bàn giao branch, commit, tài liệu, counts và đề xuất PR vào `dev`; **không tự push/PR/merge** khi người dùng chưa yêu cầu.
 
 ### Acceptance
 
-- [ ] **AC-11:** report đầy đủ; người review có thể tự rerun; số liệu có execution evidence.
-- [ ] Handoff nêu đúng giới hạn, không tự gọi PASS cho task WCAG/NVDA bị hoãn hoặc live-DB report chưa làm.
+- [x] **AC-11:** report đầy đủ; người review có thể tự rerun; số liệu có execution evidence.
+- [x] Handoff nêu đúng giới hạn, không tự gọi PASS cho task WCAG/NVDA bị hoãn hoặc live-DB report chưa làm.
 
 **Commit đề xuất:** `docs(test): hand off public visitor e2e evidence`.
 
 ---
 
-## 6. Execution ledger (để người triển khai điền — chưa thực thi)
+## 6. Execution ledger — 28/10/2026
 
-| Date/time | Branch/SHA | Command/step | Expected | Actual | Exit | Evidence/link |
-|---|---|---|---|---|---|---|
-| NOT RUN | TBD | Fetch latest `origin/dev` | Fresh baseline | NOT RUN | — | — |
-| NOT RUN | TBD | Baseline affected suites | Actual count recorded | NOT RUN | — | — |
-| NOT RUN | TBD | Focused visitor journey | New test PASS | NOT RUN | — | — |
-| NOT RUN | TBD | Production preview run | Actual count recorded | NOT RUN | — | — |
-| NOT RUN | TBD | Affected regression | Actual count recorded | NOT RUN | — | — |
-| NOT RUN | TBD | Typecheck / lint / unit / build | Gates complete | NOT RUN | — | — |
-| NOT RUN | TBD | Diff review/report | Handoff ready | NOT RUN | — | — |
+Báo cáo đầy đủ: [public-visitor-e2e-report.md](../plans/reports/public-visitor-e2e-report.md).
 
-### Final QA matrix (chưa điền)
+| Step | Kết quả thực tế | Exit | Evidence |
+|---|---|---:|---|
+| Fetch/base/branch | origin/dev `702aeb7`, branch `test/public-visitor-e2e` | 0 | git log/status |
+| Baseline dev | 41 PASS / 1 FAIL (D06 false positive), 0 SKIP | 1 | baseline.json |
+| Focused journey + D06 | 4/4 PASS (23.7s) | 0 | focused-dev.log |
+| Affected dev (7 suites) | 69/69 PASS (6.2m), 0 SKIP/flaky | 0 | affected-dev.json |
+| Preview (journey/audio/report) | 15/15 PASS (36.0s), 0 SKIP/flaky | 0 | preview.json |
+| Typecheck/lint/unit/build | PASS; lint 0 errors/1 warning; unit 31 files/170 tests; build chunk warning | 0 | gate logs in report |
+| Targeted ESLint/diff/review | PASS; independent reviewer: no actionable finding | 0 | targeted-lint.log, git diff --check |
+| Optional live / screen readers | NOT TESTED, outside approved scope | See report | Limitations in report |
+
+Initial expanded preview run was aborted because component HTML fixtures are dev-only; replaced by the approved dev/preview matrix, not counted as passing evidence. D06 media-request filter was corrected after a real baseline repro; production runtime unchanged.
+
+### Final QA matrix
 
 | Acceptance | Status | Evidence |
 |---|---|---|
-| AC-01/02 — Collection→Detail | NOT RUN | — |
-| AC-03/04 — Audio / WebVTT / transcript | NOT RUN | — |
-| AC-05/06/07 — Report / revision / UX | NOT RUN | — |
-| AC-08 — No live writes | NOT RUN | — |
-| AC-09/10 — Regression & quality gates | NOT RUN | — |
-| AC-11 — Report handoff | NOT RUN | — |
-| AC-12 — Scope/diff | NOT RUN | — |
+| AC-01/02 — Collection→Detail | PASS | Journey dev + preview |
+| AC-03/04 — Audio / WebVTT / transcript | PASS | Real WAV playback + scoped DOM assertions |
+| AC-05/06/07 — Report / revision / UX | PASS | Captured POST deep equality + 201 mocked + UX |
+| AC-08 — No live writes | PASS | Interceptors before navigation; live env unset |
+| AC-09/10 — Regression & quality gates | PASS | 69/69 dev, 15/15 preview, gates exit 0 |
+| AC-11 — Report handoff | PASS | Linked report, environment/commands/counts |
+| AC-12 — Scope/diff | PASS | Only tests/docs, fresh review |
 
 ## 7. Known risks và quyết định phạm vi
 
