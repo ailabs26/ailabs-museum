@@ -4,6 +4,7 @@ import {
   IconTrash, IconUpload as _IconUpload, IconUserPlus, IconX,
 } from '@tabler/icons-react';
 import type { AuditRow } from '@/services/audit.service';
+import { actorLabel } from '@/services/audit.service';
 
 const VERB_ICON: Record<string, typeof IconPlus> = {
   create: IconPlus, update: IconPencil, delete: IconTrash, publish: _IconUpload,
@@ -15,7 +16,8 @@ function actionColor(action: string): string {
   const verb = action.split('.').pop() ?? '';
   if (['create', 'publish', 'resolve', 'unhide'].includes(verb)) return 'teal';
   if (['update', 'assign'].includes(verb)) return 'blue';
-  if (['delete', 'reject'].includes(verb)) return 'red';
+  if (['delete', 'reject', 'denied', 'login_failed', 'login_blocked'].includes(verb)) return 'red';
+  if (['login', 'logout'].includes(verb)) return 'indigo';
   if (['hide', 'dismiss'].includes(verb)) return 'orange';
   return 'gray';
 }
@@ -44,7 +46,7 @@ export function AuditTimeline({ rows, onSelect }: { rows: readonly AuditRow[]; o
                 <Text span size="sm" c="dimmed">{r.resourceType}</Text>
               </span>
             }>
-            <Text size="xs" c="dimmed">{formatTime(r.occurredAt)} · {r.actor?.email ?? 'hệ thống'}</Text>
+            <Text size="xs" c="dimmed">{formatTime(r.occurredAt)} · {actorLabel(r)}</Text>
             {r.reason && <Text size="sm" mt={2} lineClamp={2}>{r.reason}</Text>}
           </Timeline.Item>
         );
