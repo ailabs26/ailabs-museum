@@ -8,7 +8,7 @@ import { env } from '../config/env';
 import { tokenStore } from '../auth/token-store';
 import { parseAuthResponse, refreshResultSchema } from '../auth/authSchema';
 import type { ApiResponse, Page } from './api-response';
-import { ApiException, toApiException } from './api-error';
+import { ApiException, endsSession, toApiException } from './api-error';
 import { loadingStore } from './loading-store';
 
 /** Axios instance dùng chung: gắn token, gửi cookie refresh, tự refresh khi 401. */
@@ -51,6 +51,15 @@ const refreshEnvelopeSchema = z.object({
   data: refreshResultSchema,
 });
 
+/** Lỗi refresh cho UI; 429 kèm số giây chờ theo header Retry-After. */
+function refreshError(error: unknown): ApiException {
+  const apiError = toApiException(error);
+  if (apiError.status !== 429) return apiError;
+  const retryAfter = Number((error as { response?: { headers?: Record<string, unknown> } }).response?.headers?.['retry-after']);
+  const wait = Number.isFinite(retryAfter) && retryAfter > 0 ? ` sau ${Math.ceil(retryAfter)} giây` : ' sau ít phút';
+  return new ApiException(`Làm mới phiên quá nhiều lần trong thời gian ngắn. Vui lòng thử lại${wait}.`, 429);
+}
+
 async function refreshAccessToken(): Promise<string> {
   if (!refreshing) {
     const version = tokenStore.getVersion();
@@ -73,11 +82,12 @@ async function refreshAccessToken(): Promise<string> {
         return data.accessToken;
       })
       .catch((error: unknown) => {
-        if (version === tokenStore.getVersion()) {
+        // Chỉ 401 mới là hết phiên; 429/5xx/mất mạng giữ phiên (refresh cookie còn) để lần sau thử lại.
+        if (endsSession(error) && version === tokenStore.getVersion()) {
           tokenStore.clear();
         }
 
-        throw toApiException(error);
+        throw refreshError(error);
       })
       .finally(() => {
         refreshing = null;

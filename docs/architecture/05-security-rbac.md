@@ -67,6 +67,9 @@ bcrypt thì không cấp phiên bằng mật khẩu cũ.
 Refresh **tách khỏi login** (issue #126): front-end giữ access token trong bộ nhớ nên mỗi lần tải lại trang tốn một
 refresh; nếu chung bộ đếm IP với login, nhân viên ngồi chung IP văn phòng sẽ bị văng phiên. Bị chặn ghi audit
 `auth.login_blocked` / `auth.refresh_blocked` một lần mỗi cửa sổ cho mỗi khóa.
+Front-end (issue #128) chỉ kết thúc phiên khi refresh trả **401**; 429 / 5xx / mất mạng giữ phiên (refresh cookie còn) —
+đang dùng thì request báo lỗi và lần sau refresh lại; khi tải lại trang thì hiện "Chưa khôi phục được phiên" kèm số giây
+chờ (`Retry-After`, đã mở qua CORS `exposedHeaders`) và nút Thử lại / Đăng nhập lại.
 Một instance là đủ; scale ngang cần store dùng chung (Redis). Sau reverse proxy phải đặt `TRUST_PROXY` (mục 5.5).
 
 ### 5.1.3 API key cho đối tác (cổng `/partner/v1`)

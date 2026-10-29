@@ -31,6 +31,8 @@ async function bootstrap() {
   app.enableCors({
     origin: config.getOrThrow<string>('app.frontendOrigin'),
     credentials: true,
+    // Retry-After không thuộc header CORS mặc định: phải mở để FE báo đúng số giây chờ khi bị 429.
+    exposedHeaders: ['Retry-After'],
   });
 
   // Validation + chuẩn hóa response + chuẩn hóa lỗi (global)
