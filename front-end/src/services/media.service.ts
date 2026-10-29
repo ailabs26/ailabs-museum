@@ -22,6 +22,8 @@ export interface MediaItem {
   license: string | null;
   createdById: string | null;
   createdAt: string;
+  /** Chỉ có khi xem mục Đã xóa. */
+  deletedAt?: string | null;
 }
 
 export interface ListMediaParams {
@@ -30,6 +32,8 @@ export interface ListMediaParams {
   q?: string;
   kind?: MediaKind;
   state?: MediaProcessingState;
+  /** true: mục Đã xóa (thùng rác). */
+  deleted?: boolean;
 }
 
 /** Metadata mô tả & quyền sử dụng (FR-97). `null` = xóa giá trị. File không bao giờ bị thay. */
@@ -98,5 +102,9 @@ export const mediaService = {
   /** Xóa mềm nhiều media (giữ file): tất cả hoặc không (409 kèm lý do từng ID). */
   async removeMany(ids: string[]): Promise<void> {
     await http.post<unknown>('/admin/media/bulk-delete', { ids });
+  },
+  /** Khôi phục media đã xóa (file được giữ): tất cả hoặc không (409 kèm lý do từng ID). */
+  async restoreMany(ids: string[]): Promise<void> {
+    await http.post<unknown>('/admin/media/bulk-restore', { ids });
   },
 };

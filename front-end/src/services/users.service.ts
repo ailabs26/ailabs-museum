@@ -13,6 +13,8 @@ export interface ListUsersParams {
   pageSize?: number;
   q?: string;
   status?: UserStatus;
+  /** true: mục Đã xóa (thùng rác). */
+  deleted?: boolean;
 }
 
 export interface CreateUserInput {
@@ -57,6 +59,10 @@ export const usersService = {
   /** Xóa mềm nhiều tài khoản: tất cả hoặc không (409 kèm lý do từng ID). */
   async removeMany(ids: string[]): Promise<void> {
     await http.post<unknown>('/users/bulk-delete', { ids });
+  },
+  /** Khôi phục tài khoản đã xóa: tất cả hoặc không (409 kèm lý do từng ID). */
+  async restoreMany(ids: string[]): Promise<void> {
+    await http.post<unknown>('/users/bulk-restore', { ids });
   },
   async assignRoles(id: string, roleIds: string[]): Promise<UserRow> {
     return parseUser((await http.raw.post<unknown>(`/users/${id}/roles`, { roleIds })).data);

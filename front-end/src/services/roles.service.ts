@@ -11,6 +11,8 @@ export interface RoleRow {
   code: string;
   name: string;
   permissions: string[];
+  /** Chỉ có khi xem mục Đã xóa. */
+  deletedAt?: string | null;
 }
 
 export interface PermissionRow {
@@ -30,8 +32,9 @@ export interface PermissionMatrixUpdate {
 }
 
 export const rolesService = {
-  async list(): Promise<RoleRow[]> {
-    const response = await http.raw.get<unknown>('/roles');
+  /** `deleted` → mục Đã xóa (thùng rác). */
+  async list(deleted = false): Promise<RoleRow[]> {
+    const response = await http.raw.get<unknown>('/roles', deleted ? { params: { deleted: true } } : undefined);
     const result = roleListResponseSchema.safeParse(response.data);
     if (!result.success) throw new ApiException('Danh sách vai trò từ máy chủ không hợp lệ', 502);
     return result.data.data;
@@ -48,6 +51,10 @@ export const rolesService = {
   /** Xóa mềm nhiều vai trò: tất cả hoặc không (409 kèm lý do từng ID). */
   async removeMany(ids: string[]): Promise<void> {
     await http.post<unknown>('/roles/bulk-delete', { ids });
+  },
+  /** Khôi phục vai trò đã xóa: tất cả hoặc không (chặn trùng mã, 409 kèm lý do từng ID). */
+  async restoreMany(ids: string[]): Promise<void> {
+    await http.post<unknown>('/roles/bulk-restore', { ids });
   },
   getPermissions(id: string): Promise<string[]> {
     return http.get<string[]>(`/roles/${id}/permissions`);

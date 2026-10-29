@@ -1,6 +1,6 @@
 # Task: Thùng rác và khôi phục ở trang quản trị
 
-Người phụ trách: Nguyễn Văn Thắng. PR: back-end `feat/trash-restore-api`, giao diện (PR sau).
+Người phụ trách: Nguyễn Văn Thắng. PR: #123 back-end (`feat/trash-restore-api`), giao diện `feat/admin-trash-tab`.
 Phòng/Media/Hiện vật là module của Nguyễn Trọng Thành — thay đổi nằm trong phạm vi task, quy tắc nghiệp vụ cũ giữ nguyên.
 
 ## Bối cảnh
@@ -40,6 +40,18 @@ email/mã/slug khi khôi phục.
 - Tạo phòng với slug của phòng đã xóa trước đây lọt qua kiểm tra (chỉ tìm phòng chưa xóa) rồi vi phạm unique của DB → lỗi 500.
   Nay trả 409: "Slug … thuộc phòng đã xóa …. Khôi phục phòng đó trong mục Đã xóa hoặc dùng slug khác."
 
+## Giao diện
+
+- Mỗi trang (Tài khoản, Vai trò, Phòng, Media, Hiện vật) có công tắc **Đang dùng / Đã xóa** (`TrashToggle`), chỉ hiện khi có
+  quyền xóa. Ở mục Đã xóa: thêm cột "Ngày xóa" (giờ Việt Nam), mỗi dòng có nút khôi phục (`RestoreRowButton`), ô chọn
+  mọi dòng, thanh "Khôi phục đã chọn (n)"; ẩn nút tạo mới, sửa, xóa.
+- `useBulkRestore` (cùng file `useBulkDelete`): xác nhận → gửi mảng ID → thông báo; 409 liệt kê "tên — lý do"
+  (`BulkDeleteFailures` với `action="restore"`, đọc `restore_blocked`).
+- Phòng/Hiện vật: cả chế độ thẻ (mobile/Thẻ) cũng có nút khôi phục. Hiện vật thuộc phòng đã xóa ghi "Phòng đã xóa".
+- Media đã xóa không còn được phân phối → mục Đã xóa hiện biểu tượng loại thay cho ảnh thu nhỏ.
+- Tạo phòng trùng slug của phòng đã xóa: lỗi hiện ngay dưới ô Slug kèm gợi ý khôi phục.
+- Hộp xác nhận xóa ghi rõ "chuyển vào mục Đã xóa, khôi phục được". Nhật ký: hành động `*.restore` màu xanh.
+
 ## Ngoài phạm vi
 
 Xóa vĩnh viễn, tự dọn thùng rác theo thời gian, khôi phục revision nháp lẻ bên trong hiện vật.
@@ -53,3 +65,12 @@ Xóa vĩnh viễn, tự dọn thùng rác theo thời gian, khôi phục revisio
   mất liên kết vai trò đã xóa, vai trò đã xóa không cấp quyền; tạo phòng trùng slug phòng đã xóa → 409; hiện vật trong phòng
   đã xóa bị chặn, khôi phục phòng rồi hiện vật về cuối thứ tự. `src/common/tests/deleted-filter.spec.ts`: `deleted=yes/1/''` → 400.
 - Không có migration.
+- Front-end: typecheck, build đạt; lint 0 lỗi (1 cảnh báo có sẵn); vitest 173/173 (thêm test `restore_blocked`, `formatDeletedAt`).
+- E2E Playwright (back-end + PostgreSQL tạm, dữ liệu tạo qua API thật), 19/19 hai lượt liên tiếp: mục Đã xóa của Tài khoản
+  có cột Ngày xóa, ẩn nút tạo; khôi phục lẻ + chọn tất cả rồi khôi phục 2 tài khoản, cả 3 trở lại danh sách; vai trò trùng mã
+  → Alert nêu vai trò đang giữ mã, vai trò cũ vẫn trong thùng rác; tạo phòng trùng slug phòng đã xóa → lỗi gợi ý khôi phục;
+  hiện vật trong phòng đã xóa → bị chặn, khôi phục phòng rồi hiện vật thành công và trở lại danh sách của phòng; media chọn
+  rồi khôi phục; audit `user.restore` đủ một bản ghi/ID; response lỗi chỉ gồm 401 chưa đăng nhập ở trang login và 3 lỗi 409
+  chủ đích. Mobile 390px (Phòng, chế độ thẻ): không tràn ngang, nút khôi phục hiển thị.
+- Lưu ý khi viết E2E: mỗi lần tải lại trang tốn 1 lần `/auth/refresh` (giới hạn 20/phút/IP) — điều hướng trong SPA thay vì
+  `page.goto` liên tục, nếu không sẽ bị 429 và văng về trang đăng nhập.

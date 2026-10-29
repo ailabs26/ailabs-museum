@@ -74,8 +74,11 @@ import { HotspotEditor } from '@/components/cms/HotspotEditor';
 import { TourOrderModal } from '@/components/cms/TourOrderModal';
 import { roomsService } from '@/services/rooms.service';
 import { moderationService } from '@/services/moderation.service';
-import { BulkActionBar, BulkDeleteFailures, Column, DataTable } from '@/shared/components/data';
-import { useBulkDelete } from '@/shared/hooks/useBulkDelete';
+import {
+  BulkActionBar, BulkDeleteFailures, Column, DataTable, RestoreRowButton, TrashToggle,
+} from '@/shared/components/data';
+import { formatDeletedAt } from '@/helpers/bulkDelete';
+import { useBulkDelete, useBulkRestore } from '@/shared/hooks/useBulkDelete';
 import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { confirmAction, notify } from '@/shared/components/feedback';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
@@ -234,6 +237,8 @@ export function ExhibitsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roomFilter, setRoomFilter] = useState<string>('all');
   const [view, setView] = useState<'table' | 'card'>('table');
+  // Mục Đã xóa (thùng rác): xem và khôi phục hiện vật đã xóa mềm.
+  const [trash, setTrash] = useState(false);
 
   const [editing, setEditing] = useState<ExhibitRow | null>(null);
   const [opened, drawer] = useDisclosure(false);
@@ -280,6 +285,8 @@ export function ExhibitsPage() {
   const roomMap = new Map<string, string>(
     roomsQuery.data?.items.map((r) => [r.id, r.name]) ?? [],
   );
+  // Danh sách phòng chỉ gồm phòng chưa xóa: hiện vật trong thùng rác có thể thuộc phòng đã xóa.
+  const roomLabel = (roomId: string) => roomMap.get(roomId) ?? (trash ? 'Phòng đã xóa' : roomId.slice(0, 8));
 
   const queryStatus =
     statusFilter !== 'all' ? (statusFilter as ExhibitStatus) : undefined;
@@ -287,7 +294,7 @@ export function ExhibitsPage() {
 
   // Danh sách hiện vật
   const exhibitsQuery = useQuery({
-    queryKey: ['admin-exhibits', page, search, queryStatus, queryRoomId],
+    queryKey: ['admin-exhibits', page, search, queryStatus, queryRoomId, trash],
     queryFn: () =>
       exhibitsService.list({
         page,
@@ -295,6 +302,7 @@ export function ExhibitsPage() {
         q: search.trim() || undefined,
         status: queryStatus,
         roomId: queryRoomId,
+        deleted: trash || undefined,
       }),
     placeholderData: keepPreviousData,
   });
@@ -507,17 +515,22 @@ export function ExhibitsPage() {
     ['moderation'], ['museum-tour'], ['public-room'],
   ].map(queryKey => queryClient.invalidateQueries({ queryKey })));
 
-  const selection = useRowSelection(`${page}|${search}|${statusFilter}|${roomFilter}`);
+  const selection = useRowSelection(`${page}|${search}|${statusFilter}|${roomFilter}|${trash}`);
+  const nameOf = (id: string) => {
+    const row = exhibitsQuery.data?.items.find((item) => item.id === id);
+    return row ? getDisplayText(row.content.name, 'vi') || 'Chưa đặt tên' : undefined;
+  };
   const bulk = useBulkDelete({
-    removeMany: exhibitsService.removeMany,
-    noun: 'hiện vật',
-    nameOf: (id) => {
-      const row = exhibitsQuery.data?.items.find((item) => item.id === id);
-      return row ? getDisplayText(row.content.name, 'vi') || 'Chưa đặt tên' : undefined;
-    },
-    onSuccess: selection.clear,
-    onSettled: refreshLifecycleQueries,
+    removeMany: exhibitsService.removeMany, noun: 'hiện vật', nameOf,
+    onSuccess: selection.clear, onSettled: refreshLifecycleQueries,
   });
+  const restore = useBulkRestore({
+    restoreMany: exhibitsService.restoreMany, noun: 'hiện vật', nameOf,
+    onSuccess: selection.clear, onSettled: refreshLifecycleQueries,
+  });
+  const bulkAction = trash ? restore : bulk;
+  /** Thùng rác: mọi dòng chọn được để khôi phục (back-end chặn nếu phòng đã xóa). */
+  const selectBlock = (r: ExhibitRow) => (trash ? null : deletionBlock(r));
   const toggleSelected = (id: string) => selection.setSelectedIds(
     selection.selectedIds.includes(id)
       ? selection.selectedIds.filter((item) => item !== id)
@@ -762,7 +775,7 @@ export function ExhibitsPage() {
       header: 'Phòng trưng bày',
       render: (r) => (
         <Badge variant="light" color="blue" size="sm">
-          {roomMap.get(r.roomId) ?? r.roomId.slice(0, 8)}
+          {roomLabel(r.roomId)}
         </Badge>
       ),
     },
@@ -826,11 +839,24 @@ export function ExhibitsPage() {
         </Text>
       ),
     },
+    ...(trash ? [{
+      key: 'deletedAt',
+      header: 'Ngày xóa',
+      render: (r: ExhibitRow) => <Text size="xs" c="dimmed">{formatDeletedAt(r.deletedAt)}</Text>,
+    }] : []),
     {
       key: 'actions',
       header: '',
       align: 'right',
       render: (r) => {
+        if (trash) {
+          return (
+            <Group gap={6} justify="flex-end" wrap="nowrap">
+              <RestoreRowButton label={`Khôi phục hiện vật ${getDisplayText(r.content.name) || 'chưa đặt tên'}`}
+                disabled={restore.isPending} onClick={() => restore.confirmRestore([r.id])} />
+            </Group>
+          );
+        }
         const isPublished = r.status === 'published';
         const isInReview = r.revisionState === 'in_review';
         const deleteReason = deletionBlock(r);
@@ -926,7 +952,7 @@ export function ExhibitsPage() {
                 Thứ tự tour
               </Button>
             )}
-            {canCreate && (
+            {canCreate && !trash && (
               <Button leftSection={<IconPlus size={16} />} onClick={openCreate}>
                 Thêm hiện vật
               </Button>
@@ -978,7 +1004,8 @@ export function ExhibitsPage() {
         </Grid>
       </Card>
 
-      <Group justify="flex-end" mb="sm">
+      <Group justify={canDelete ? 'space-between' : 'flex-end'} mb="sm">
+        {canDelete && <TrashToggle trash={trash} onChange={(value) => { setTrash(value); setPage(1); }} />}
         <SegmentedControl size="xs" value={view} onChange={(v) => setView(v as 'table' | 'card')}
           data={[
             { value: 'table', label: <Center style={{ gap: 6 }}><IconTable size={14} /> Bảng</Center> },
@@ -989,8 +1016,10 @@ export function ExhibitsPage() {
       {canDelete && (
         <>
           <BulkActionBar count={selection.selectedIds.length} onClear={selection.clear}
-            onDelete={() => bulk.confirmDelete(selection.selectedIds)} loading={bulk.isPending} />
-          <BulkDeleteFailures failures={bulk.failures} onClose={bulk.dismissFailures} />
+            action={trash ? 'restore' : 'delete'} loading={bulkAction.isPending}
+            onDelete={() => (trash ? restore.confirmRestore : bulk.confirmDelete)(selection.selectedIds)} />
+          <BulkDeleteFailures failures={bulkAction.failures} onClose={bulkAction.dismissFailures}
+            action={trash ? 'restore' : 'delete'} />
         </>
       )}
 
@@ -1003,7 +1032,7 @@ export function ExhibitsPage() {
             selection={canDelete ? {
               selectedIds: selection.selectedIds,
               onChange: selection.setSelectedIds,
-              disabledReason: (r) => deletionBlock(r),
+              disabledReason: selectBlock,
               rowLabel: (r) => getDisplayText(r.content.name) || 'Chưa đặt tên',
             } : undefined}
             total={exhibitsQuery.data?.total ?? 0}
@@ -1011,14 +1040,14 @@ export function ExhibitsPage() {
             pageSize={15}
             onPageChange={setPage}
             loading={exhibitsQuery.isLoading}
-            emptyText="Không tìm thấy hiện vật nào phù hợp với bộ lọc."
+            emptyText={trash ? 'Không có hiện vật đã xóa phù hợp với bộ lọc.' : 'Không tìm thấy hiện vật nào phù hợp với bộ lọc.'}
           />
         </Card>
       ) : (
         <>
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
             {(exhibitsQuery.data?.items ?? []).map((r) => {
-              const deleteReason = deletionBlock(r);
+              const deleteReason = selectBlock(r);
               const isInReview = r.revisionState === 'in_review';
               return (
                 <Card key={r.id} withBorder radius="md" p="md">
@@ -1039,13 +1068,20 @@ export function ExhibitsPage() {
                     </Badge>
                   </Group>
                   <Group gap={6} mb="xs">
-                    <Badge variant="light" color="blue" size="xs">{roomMap.get(r.roomId) ?? r.roomId.slice(0, 8)}</Badge>
+                    <Badge variant="light" color="blue" size="xs">{roomLabel(r.roomId)}</Badge>
                     <Badge color={r.status === 'published' ? 'teal' : 'gray'} variant={r.status === 'published' ? 'filled' : 'light'} size="xs">
                       {r.status === 'published' ? 'Đã xuất bản' : r.visibility === 'hidden' && r.publishedRevisionId ? 'Đã XB · Ẩn' : 'Bản nháp'}
                     </Badge>
                     <Badge variant="subtle" color="indigo" size="xs">{r.hotspotsCount} hotspot</Badge>
                     <Badge size="xs" variant="outline" color="dark">#{r.displayOrder}</Badge>
                   </Group>
+                  {trash ? (
+                  <Group gap={4} justify="space-between">
+                    <Text size="xs" c="dimmed">Xóa lúc {formatDeletedAt(r.deletedAt)}</Text>
+                    <RestoreRowButton label={`Khôi phục hiện vật ${getDisplayText(r.content.name) || 'chưa đặt tên'}`}
+                      disabled={restore.isPending} onClick={() => restore.confirmRestore([r.id])} />
+                  </Group>
+                  ) : (
                   <Group gap={4} justify="flex-end">
                     <Tooltip label="Xem chi tiết"><ActionIcon variant="subtle" color="blue" onClick={() => openDetail(r)}><IconEye size={18} /></ActionIcon></Tooltip>
                     {canUpdate && (
@@ -1068,12 +1104,15 @@ export function ExhibitsPage() {
                       </Tooltip>
                     )}
                   </Group>
+                  )}
                 </Card>
               );
             })}
           </SimpleGrid>
           {!exhibitsQuery.isLoading && (exhibitsQuery.data?.items.length ?? 0) === 0 && (
-            <Text c="dimmed" ta="center" py="xl">Không tìm thấy hiện vật nào phù hợp với bộ lọc.</Text>
+            <Text c="dimmed" ta="center" py="xl">
+              {trash ? 'Không có hiện vật đã xóa phù hợp với bộ lọc.' : 'Không tìm thấy hiện vật nào phù hợp với bộ lọc.'}
+            </Text>
           )}
           {exhibitsQuery.data && exhibitsQuery.data.total > 15 && (
             <Group justify="center" mt="md">
