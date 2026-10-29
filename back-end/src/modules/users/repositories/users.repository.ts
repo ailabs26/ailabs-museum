@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, EntityManager, QueryFailedError, Repository } from 'typeorm';
+import { Brackets, EntityManager, In, QueryFailedError, Repository } from 'typeorm';
 import { RoleKey } from '../../../common/enums/role.enum';
 import { Paginated } from '../../../common/types/paginated.type';
 import { BaseRepository } from '../../../common/repository/base.repository';
@@ -11,6 +11,8 @@ export interface ListUsersOptions {
   pageSize: number;
   q?: string;
   status?: UserStatus;
+  /** true: chỉ tài khoản đã xóa mềm (thùng rác). */
+  deleted?: boolean;
 }
 
 /** Quan hệ cần nạp để dựng AuthUser (roles + permissions gộp). */
@@ -76,6 +78,18 @@ export class UsersRepository extends BaseRepository<User> {
     }
   }
 
+  /** Khóa dòng các tài khoản đang trong thùng rác (đã xóa mềm) để khôi phục. */
+  lockDeletedByIds(ids: string[], manager: EntityManager): Promise<User[]> {
+    return this.scoped(manager).find({
+      where: { id: In(ids), isDeleted: true },
+      lock: { mode: 'pessimistic_write' },
+    });
+  }
+
+  async markRestored(ids: string[], manager: EntityManager): Promise<void> {
+    await this.scoped(manager).update({ id: In(ids) }, { isDeleted: false, deletedAt: null });
+  }
+
   /** Tuần tự hóa các thay đổi tài khoản/Role để bảo vệ Admin cuối cùng. */
   async lockManagement(manager: EntityManager): Promise<void> {
     await manager.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
@@ -103,7 +117,7 @@ export class UsersRepository extends BaseRepository<User> {
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.userRoles', 'userRole')
       .leftJoinAndSelect('userRole.role', 'role')
-      .where('user.isDeleted = false');
+      .where('user.isDeleted = :deleted', { deleted: options.deleted ?? false });
 
     if (options.status) {
       query.andWhere('user.status = :status', { status: options.status });
@@ -120,7 +134,9 @@ export class UsersRepository extends BaseRepository<User> {
     }
 
     const [items, total] = await query
-      .orderBy('user.createdAt', 'DESC')
+      // Thùng rác: mới xóa trước.
+      .orderBy(options.deleted ? 'user.deletedAt' : 'user.createdAt', 'DESC')
+      .addOrderBy('user.id', 'DESC')
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getManyAndCount();

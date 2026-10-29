@@ -17,7 +17,9 @@ export function toUserResponse(user: User): UserResponse {
     email: user.email,
     displayName: user.displayName,
     status: user.status,
+    // Vai trò đã xóa mềm không còn hiệu lực (liên kết cũ của tài khoản đã xóa vẫn giữ trong user_roles).
     roles: (user.userRoles ?? [])
+      .filter((userRole) => !userRole.role?.isDeleted)
       .map((userRole) => userRole.role?.code)
       .filter((code): code is string => Boolean(code)),
     createdAt: user.createdAt,

@@ -7,6 +7,7 @@ import {
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { RoleKey } from '../../../common/enums/role.enum';
 import { Permission } from '../entities/permission.entity';
+import { withDeletedAt, type Trashed } from '../../../common/dto/deleted-filter.dto';
 import { assertNothingBlocked, type BlockedDeletion } from '../../../common/exceptions/deletion-blocked';
 import { CreateRoleDto } from '../dto/create-role.dto';
 import { RoleResponse, toRoleResponse } from '../dto/role-response.dto';
@@ -36,8 +37,10 @@ export class RolesService {
     private readonly tx: TransactionManager,
   ) {}
 
-  async list(): Promise<RoleResponse[]> {
-    return (await this.roles.listWithPermissions()).map(toRoleResponse);
+  /** Danh sách vai trò; `deleted=true` → thùng rác (kèm `deletedAt`). */
+  async list(deleted?: boolean): Promise<Array<RoleResponse | Trashed<RoleResponse>>> {
+    return (await this.roles.listWithPermissions(deleted ?? false))
+      .map((role) => withDeletedAt(toRoleResponse(role), role, deleted));
   }
 
   async getById(id: string): Promise<RoleResponse> {
@@ -84,6 +87,41 @@ export class RolesService {
       assertNothingBlocked(blocked, single);
       await this.roles.markDeleted(ids, manager);
     });
+  }
+
+  /**
+   * Khôi phục vai trò trong thùng rác: tất cả hoặc không. Mã chỉ unique giữa các vai trò chưa xóa nên
+   * chặn khi mã đã thuộc vai trò khác (kể cả hai vai trò cùng mã trong cùng lô). Quyền giữ nguyên như
+   * lúc xóa. Trả lại danh sách ID để audit ghi từng vai trò.
+   */
+  async restoreMany(ids: string[]): Promise<{ ids: string[] }> {
+    try {
+      await this.tx.run(async (manager) => {
+        const roles = new Map((await this.roles.lockDeletedByIds(ids, manager)).map((role) => [role.id, role]));
+        const holders = new Map((await this.roles.findActiveByCodes([...roles.values()].map((role) => role.code), manager))
+          .map((role) => [role.code, role]));
+        const claimed = new Set<string>();
+        const blocked = ids.flatMap((id): BlockedDeletion[] => {
+          const role = roles.get(id);
+          if (!role) return [{ id, reason: 'Không tìm thấy vai trò trong mục đã xóa', notFound: true }];
+          const holder = holders.get(role.code);
+          if (holder) return [{ id, reason: `Mã "${role.code}" đang được vai trò "${holder.name}" sử dụng` }];
+          if (claimed.has(role.code)) {
+            return [{ id, reason: `Mã "${role.code}" trùng với một vai trò khác cũng đang được khôi phục` }];
+          }
+          claimed.add(role.code);
+          return [];
+        });
+        assertNothingBlocked(blocked, false, 'restore');
+        await this.roles.markRestored(ids, manager);
+      });
+    } catch (error) {
+      if (this.roles.isActiveCodeConflict(error)) {
+        throw new ConflictException('Mã vai trò vừa được vai trò khác sử dụng. Tải lại danh sách rồi thử lại.');
+      }
+      throw error;
+    }
+    return { ids };
   }
 
   private deletionBlock(role: Role, assignedUsers: number): string | null {

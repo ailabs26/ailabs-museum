@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
 import { PERMISSIONS } from '../../../common/constants/permissions.constant';
+import { withDeletedAt, type Trashed } from '../../../common/dto/deleted-filter.dto';
 import { assertNothingBlocked, type BlockedDeletion } from '../../../common/exceptions/deletion-blocked';
 import { PermissionDeniedException } from '../../../common/exceptions/permission-denied.exception';
 import { RoleKey } from '../../../common/enums/role.enum';
@@ -32,9 +33,10 @@ export class UsersService {
     private readonly sessions: RefreshSessionsRepository,
   ) {}
 
-  async list(query: ListUsersQueryDto): Promise<Paginated<UserResponse>> {
+  /** Danh sách tài khoản; `deleted=true` → thùng rác (kèm `deletedAt`). */
+  async list(query: ListUsersQueryDto): Promise<Paginated<UserResponse | Trashed<UserResponse>>> {
     const page = await this.users.listPaginated(query);
-    return { ...page, items: page.items.map(toUserResponse) };
+    return { ...page, items: page.items.map((user) => withDeletedAt(toUserResponse(user), user, query.deleted)) };
   }
 
   async getById(id: string): Promise<UserResponse> {
@@ -112,6 +114,25 @@ export class UsersService {
         await this.sessions.revokeAllForUser(id, manager);
       }
     });
+  }
+
+  /**
+   * Khôi phục tài khoản trong thùng rác: tất cả hoặc không. Email unique toàn bảng (kể cả tài khoản
+   * đã xóa) nên không thể trùng. Liên kết tới vai trò đã xóa bị bỏ; phiên cũ đã thu hồi lúc xóa nên
+   * phải đăng nhập lại. Trả lại danh sách ID để audit ghi từng tài khoản.
+   */
+  async restoreMany(ids: string[]): Promise<{ ids: string[] }> {
+    await this.tx.run(async (manager) => {
+      await this.users.lockManagement(manager);
+      const found = new Set((await this.users.lockDeletedByIds(ids, manager)).map((user) => user.id));
+      const blocked = ids
+        .filter((id) => !found.has(id))
+        .map((id): BlockedDeletion => ({ id, reason: 'Không tìm thấy tài khoản trong mục đã xóa', notFound: true }));
+      assertNothingBlocked(blocked, false, 'restore');
+      await this.users.markRestored(ids, manager);
+      await this.userRoles.removeDeletedRoleLinks(ids, manager);
+    });
+    return { ids };
   }
 
   async assignRoles(id: string, roleIds: string[]): Promise<UserResponse> {

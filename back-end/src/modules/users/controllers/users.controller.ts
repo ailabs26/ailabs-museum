@@ -34,7 +34,7 @@ export class UsersController {
 
   @Get()
   @Permissions(PERMISSIONS.USER_READ)
-  @ApiOperation({ summary: 'Danh sách người dùng (phân trang, lọc)' })
+  @ApiOperation({ summary: 'Danh sách người dùng (phân trang, lọc; deleted=true → thùng rác)' })
   list(@Query() query: ListUsersQueryDto) {
     return this.users.list(query);
   }
@@ -73,6 +73,15 @@ export class UsersController {
   @ApiOperation({ summary: 'Xóa mềm nhiều tài khoản (tất cả hoặc không; chặn tài khoản Admin, 409 kèm lý do từng ID)' })
   removeMany(@Body() dto: BulkIdsDto) {
     return this.users.removeMany(dto.ids);
+  }
+
+  @Post('bulk-restore')
+  @HttpCode(HttpStatus.OK)
+  @Permissions(PERMISSIONS.USER_DELETE)
+  @Audit('user.restore', 'user')
+  @ApiOperation({ summary: 'Khôi phục tài khoản đã xóa mềm (tất cả hoặc không; 409 kèm lý do từng ID)' })
+  restoreMany(@Body() dto: BulkIdsDto) {
+    return this.users.restoreMany(dto.ids);
   }
 
   @Delete(':id')
