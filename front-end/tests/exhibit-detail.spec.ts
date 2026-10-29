@@ -259,7 +259,7 @@ test('[D06] complete detail remains readable without WebGL and reflows in both c
   });
   const unwanted: string[] = [];
   page.on('request', (request) => {
-    if (request.url().includes('/components/MuseumScene') || request.url().includes('/media/')) unwanted.push(request.url());
+    if (request.url().includes('/components/MuseumScene') || new URL(request.url()).pathname.startsWith('/media/')) unwanted.push(request.url());
   });
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme });
