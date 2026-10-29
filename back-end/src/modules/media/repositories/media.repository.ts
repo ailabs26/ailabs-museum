@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, EntityManager, Repository, WhereExpressionBuilder } from 'typeorm';
+import { Brackets, EntityManager, In, Repository, WhereExpressionBuilder } from 'typeorm';
 import { BaseRepository } from '../../../common/repository/base.repository';
 import { Paginated } from '../../../common/types/paginated.type';
 import { REVISION_MEDIA_SLOTS } from '../../exhibits/constants/revision-media-slots';
@@ -48,7 +48,7 @@ export class MediaRepository extends BaseRepository<Media> {
 
     const qb = this.repo
       .createQueryBuilder('media')
-      .where('media.isDeleted = :isDeleted', { isDeleted: false });
+      .where('media.isDeleted = :isDeleted', { isDeleted: query.deleted ?? false });
 
     if (query.kind) qb.andWhere('media.kind = :kind', { kind: query.kind });
     if (query.state) qb.andWhere('media.processingState = :state', { state: query.state });
@@ -70,12 +70,26 @@ export class MediaRepository extends BaseRepository<Media> {
     }
 
     const [items, total] = await qb
-      .orderBy('media.createdAt', 'DESC')
+      // Thùng rác: mới xóa trước.
+      .orderBy(query.deleted ? 'media.deletedAt' : 'media.createdAt', 'DESC')
       .addOrderBy('media.id', 'DESC')
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getManyAndCount();
     return { items, total, page, pageSize };
+  }
+
+  /** Khóa dòng các media đang trong thùng rác (đã xóa mềm) để khôi phục. */
+  lockDeletedByIds(ids: string[], manager: EntityManager): Promise<Media[]> {
+    return manager.getRepository(Media).find({
+      where: { id: In(ids), isDeleted: true },
+      order: { id: 'ASC' },
+      lock: { mode: 'pessimistic_write' },
+    });
+  }
+
+  async markRestored(ids: string[], manager: EntityManager): Promise<void> {
+    await manager.getRepository(Media).update({ id: In(ids) }, { isDeleted: false, deletedAt: null });
   }
 
   /** Khóa dòng media (SELECT … FOR UPDATE) trong transaction để kiểm tra & xóa nguyên tử. */

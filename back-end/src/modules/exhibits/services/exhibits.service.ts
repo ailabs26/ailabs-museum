@@ -17,6 +17,7 @@ import {
   toExhibitResponse,
 } from '../dto/exhibit-response.dto';
 import { UpdateExhibitDto } from '../dto/update-exhibit.dto';
+import { withDeletedAt, type Trashed } from '../../../common/dto/deleted-filter.dto';
 import { assertNothingBlocked, type BlockedDeletion } from '../../../common/exceptions/deletion-blocked';
 import { Exhibit, ExhibitVisibility } from '../entities/exhibit.entity';
 import {
@@ -117,7 +118,7 @@ export class ExhibitsService {
    */
   async searchAdminExhibits(
     query: ListExhibitsQueryDto,
-  ): Promise<Paginated<ExhibitAdminResponse>> {
+  ): Promise<Paginated<ExhibitAdminResponse | Trashed<ExhibitAdminResponse>>> {
     const result = await this.exhibits.searchAdminExhibits(query);
     // Hiển thị theo revision mới nhất (giống getAdminDetail) để hiện vật nháp không mất tên.
     const latest = await this.exhibits.findLatestRevisionsByExhibitIds(
@@ -125,7 +126,7 @@ export class ExhibitsService {
     );
     return {
       ...result,
-      items: result.items.map((item) => toExhibitResponse(item, latest.get(item.id))),
+      items: result.items.map((item) => withDeletedAt(toExhibitResponse(item, latest.get(item.id)), item, query.deleted)),
     };
   }
 
@@ -523,6 +524,42 @@ export class ExhibitsService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Khôi phục hiện vật trong thùng rác: tất cả hoặc không. Chặn khi phòng chứa hiện vật đã bị xóa
+   * (khôi phục phòng trước). Hiện vật về cuối thứ tự hiển thị của phòng, revisions/hotspots giữ nguyên
+   * (chỉ bản nháp mới xóa được nên hiện vật khôi phục vẫn là nháp). Trả lại ID để audit ghi từng hiện vật.
+   */
+  async restoreMany(ids: string[]): Promise<{ ids: string[] }> {
+    await this.tx.run(async (manager) => {
+      const blocked: BlockedDeletion[] = [];
+      const restorable: Exhibit[] = [];
+      // Khóa theo thứ tự ID cố định để hai lệnh hàng loạt chồng nhau không deadlock.
+      for (const id of [...ids].sort()) {
+        const exhibit = await this.exhibits.lockDeletedById(id, manager);
+        if (!exhibit) {
+          blocked.push({ id, reason: 'Không tìm thấy hiện vật trong mục đã xóa', notFound: true });
+          continue;
+        }
+        // FOR SHARE: lệnh xóa phòng song song phải chờ, rồi thấy hiện vật vừa khôi phục (BR-20).
+        const room = await this.roomsRepo.lockForShare(exhibit.roomId, manager);
+        if (!room || room.isDeleted) {
+          blocked.push({ id, reason: `Phòng "${room?.name ?? exhibit.roomId}" đã bị xóa. Hãy khôi phục phòng trước.` });
+          continue;
+        }
+        restorable.push(exhibit);
+      }
+      assertNothingBlocked(blocked, false, 'restore');
+
+      const nextOrder = new Map<string, number>();
+      for (const exhibit of restorable) {
+        const order = nextOrder.get(exhibit.roomId) ?? (await this.exhibits.maxDisplayOrder(exhibit.roomId, manager)) + 1;
+        await this.exhibits.markRestored(exhibit.id, order, manager);
+        nextOrder.set(exhibit.roomId, order + 1);
+      }
+    });
+    return { ids };
   }
 
   private deletionBlock(exhibit: Exhibit, revisions: ExhibitRevision[]): string | null {

@@ -124,7 +124,8 @@ class MockRoomsRepository {
     return this.findActiveBySlugResult;
   }
 
-  async findBySlug(slug: string): Promise<Room | null> {
+  /** create() kiểm slug trên toàn bảng (kể cả phòng đã xóa). */
+  async findAnyBySlug(slug: string): Promise<Room | null> {
     this.findBySlugCalls.push(slug);
     if (this.findBySlugError) {
       throw this.findBySlugError;
@@ -893,7 +894,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       assert.strictEqual(res.description, 'Mô tả phòng mới');
     });
 
-    it('TC-S062: Gọi roomsRepo.findBySlug để kiểm tra tính duy nhất của slug trước khi tạo', async () => {
+    it('TC-S062: Gọi roomsRepo.findAnyBySlug để kiểm tra tính duy nhất của slug trước khi tạo', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugResult = null;
       const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
@@ -1041,7 +1042,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       assert.strictEqual(mockRepo.saveCalls.length, 0);
     });
 
-    it('TC-S073: Chuyển tiếp ngoại lệ khi roomsRepo.findBySlug ném lỗi', async () => {
+    it('TC-S073: Chuyển tiếp ngoại lệ khi roomsRepo.findAnyBySlug ném lỗi', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugError = new Error('Slug check DB error');
       const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);

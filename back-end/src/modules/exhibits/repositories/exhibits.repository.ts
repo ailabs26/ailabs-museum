@@ -210,7 +210,7 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
       .createQueryBuilder('exhibit')
       .leftJoinAndSelect('exhibit.room', 'room')
       .leftJoinAndSelect('exhibit.publishedRevision', 'publishedRevision')
-      .where('exhibit.isDeleted = :isDeleted', { isDeleted: false });
+      .where('exhibit.isDeleted = :isDeleted', { isDeleted: query.deleted ?? false });
 
     if (query.roomId) {
       qb.andWhere('exhibit.roomId = :roomId', { roomId: query.roomId });
@@ -251,9 +251,10 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
       );
     }
 
-    qb.orderBy('exhibit.displayOrder', 'ASC')
-      .addOrderBy('exhibit.createdAt', 'DESC')
-      .skip((page - 1) * pageSize)
+    // Thùng rác: mới xóa trước; danh sách thường theo thứ tự hiển thị.
+    if (query.deleted) qb.orderBy('exhibit.deletedAt', 'DESC').addOrderBy('exhibit.id', 'DESC');
+    else qb.orderBy('exhibit.displayOrder', 'ASC').addOrderBy('exhibit.createdAt', 'DESC');
+    qb.skip((page - 1) * pageSize)
       .take(pageSize);
 
     const [items, total] = await qb.getManyAndCount();
@@ -340,6 +341,25 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
    */
   async markDeleted(exhibitIds: string[], manager: EntityManager): Promise<void> {
     await this.scoped(manager).update({ id: In(exhibitIds) }, { isDeleted: true, deletedAt: new Date() });
+  }
+
+  /** Khóa dòng hiện vật đang trong thùng rác (đã xóa mềm) để khôi phục. */
+  lockDeletedById(id: string, manager: EntityManager): Promise<Exhibit | null> {
+    return this.scoped(manager).findOne({ where: { id, isDeleted: true }, lock: { mode: 'pessimistic_write' } });
+  }
+
+  /** Thứ tự hiển thị lớn nhất trong các hiện vật chưa xóa của phòng (0 nếu phòng trống). */
+  async maxDisplayOrder(roomId: string, manager: EntityManager): Promise<number> {
+    const [row]: Array<{ max: number }> = await manager.query(
+      'SELECT COALESCE(MAX(display_order), 0)::int AS max FROM exhibits WHERE room_id = $1 AND is_deleted = false',
+      [roomId],
+    );
+    return row?.max ?? 0;
+  }
+
+  /** Bỏ xóa mềm hiện vật và đặt lại thứ tự hiển thị. */
+  async markRestored(id: string, displayOrder: number, manager: EntityManager): Promise<void> {
+    await this.scoped(manager).update({ id }, { isDeleted: false, deletedAt: null, displayOrder });
   }
 
   /**

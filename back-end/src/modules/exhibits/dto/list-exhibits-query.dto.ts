@@ -1,4 +1,5 @@
 import { IsEnum, IsIn, IsOptional, IsUUID } from 'class-validator';
+import { DeletedFilter } from '../../../common/dto/deleted-filter.dto';
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 import { ExhibitVisibility } from '../entities/exhibit.entity';
 
@@ -24,5 +25,8 @@ export class ListExhibitsQueryDto extends PaginationQueryDto {
     message: 'Trạng thái hiển thị phải là visible hoặc hidden',
   })
   visibility?: ExhibitVisibility;
+
+  @DeletedFilter()
+  deleted?: boolean;
 }
 

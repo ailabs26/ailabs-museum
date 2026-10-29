@@ -34,7 +34,7 @@ export class AdminExhibitsController {
   @Get()
   @Permissions(PERMISSIONS.EXHIBIT_READ)
   @ApiOperation({
-    summary: 'Danh sách hiện vật (phân trang, lọc theo phòng, trạng thái, tìm kiếm)',
+    summary: 'Danh sách hiện vật (phân trang, lọc theo phòng, trạng thái, tìm kiếm; deleted=true → thùng rác)',
   })
   list(@Query() query: ListExhibitsQueryDto) {
     return this.exhibitsService.searchAdminExhibits(query);
@@ -123,6 +123,17 @@ export class AdminExhibitsController {
   })
   removeMany(@Body() dto: BulkIdsDto) {
     return this.exhibitsService.removeMany(dto.ids);
+  }
+
+  @Post('bulk-restore')
+  @HttpCode(HttpStatus.OK)
+  @Permissions(PERMISSIONS.EXHIBIT_UPDATE)
+  @Audit('exhibit.restore', 'exhibit')
+  @ApiOperation({
+    summary: 'Khôi phục hiện vật đã xóa mềm (tất cả hoặc không; chặn khi phòng đã xóa, 409 kèm lý do từng ID)',
+  })
+  restoreMany(@Body() dto: BulkIdsDto) {
+    return this.exhibitsService.restoreMany(dto.ids);
   }
 
   @Delete(':id')

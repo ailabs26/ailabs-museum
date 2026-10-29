@@ -71,7 +71,7 @@ export class AdminMediaController {
 
   @Get()
   @Permissions(PERMISSIONS.MEDIA_UPLOAD)
-  @ApiOperation({ summary: 'Thư viện media (phân trang, lọc kind/state, tìm theo tên & metadata)' })
+  @ApiOperation({ summary: 'Thư viện media (phân trang, lọc kind/state, tìm theo tên & metadata; deleted=true → thùng rác)' })
   list(@Query() query: ListMediaQueryDto) {
     return this.mediaService.list(query);
   }
@@ -137,6 +137,15 @@ export class AdminMediaController {
   @ApiOperation({ summary: 'Xóa mềm nhiều media (tất cả hoặc không; BR-21, 409 kèm lý do từng ID; giữ file)' })
   removeMany(@Body() dto: BulkIdsDto) {
     return this.mediaService.removeMany(dto.ids);
+  }
+
+  @Post('bulk-restore')
+  @HttpCode(HttpStatus.OK)
+  @Permissions(PERMISSIONS.MEDIA_UPLOAD)
+  @Audit('media.restore', 'media')
+  @ApiOperation({ summary: 'Khôi phục media đã xóa mềm (tất cả hoặc không; 409 kèm lý do từng ID)' })
+  restoreMany(@Body() dto: BulkIdsDto) {
+    return this.mediaService.restoreMany(dto.ids);
   }
 
   @Delete(':id')

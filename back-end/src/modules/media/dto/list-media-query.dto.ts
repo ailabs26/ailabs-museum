@@ -1,4 +1,5 @@
 import { IsEnum, IsOptional } from 'class-validator';
+import { DeletedFilter } from '../../../common/dto/deleted-filter.dto';
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 import { MediaKind, MediaProcessingState } from '../entities/media.entity';
 
@@ -10,4 +11,7 @@ export class ListMediaQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsEnum(MediaProcessingState, { message: 'state phải là pending, ready, failed hoặc quarantined' })
   state?: MediaProcessingState;
+
+  @DeletedFilter()
+  deleted?: boolean;
 }

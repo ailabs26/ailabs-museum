@@ -19,6 +19,11 @@ export class RoomsRepository extends BaseRepository<Room> {
     });
   }
 
+  /** Tìm phòng theo slug kể cả phòng đã xóa mềm (slug unique toàn bảng). */
+  async findAnyBySlug(slug: string): Promise<Room | null> {
+    return this.repo.findOne({ where: { slug } });
+  }
+
   /** Tìm phòng đang hoạt động (active) theo slug cho khách tham quan. */
   async findActiveBySlug(slug: string): Promise<Room | null> {
     return this.liveExhibitsOnly(await this.repo.findOne({
@@ -68,7 +73,7 @@ export class RoomsRepository extends BaseRepository<Room> {
     const qb: SelectQueryBuilder<Room> = this.repo
       .createQueryBuilder('room')
       .leftJoinAndSelect('room.exhibits', 'exhibit')
-      .where('room.isDeleted = :isDeleted', { isDeleted: false });
+      .where('room.isDeleted = :isDeleted', { isDeleted: query.deleted ?? false });
 
     if (query.status) {
       qb.andWhere('room.status = :status', { status: query.status });
@@ -85,7 +90,8 @@ export class RoomsRepository extends BaseRepository<Room> {
       );
     }
 
-    qb.orderBy('room.createdAt', 'DESC')
+    // Thùng rác: mới xóa trước.
+    qb.orderBy(query.deleted ? 'room.deletedAt' : 'room.createdAt', 'DESC')
       .skip((page - 1) * pageSize)
       .take(pageSize);
 
@@ -99,6 +105,26 @@ export class RoomsRepository extends BaseRepository<Room> {
       where: { id: In(ids), isDeleted: false },
       lock: { mode: 'pessimistic_write' },
     });
+  }
+
+  /** Khóa dòng các phòng đang trong thùng rác (đã xóa mềm) để khôi phục. */
+  lockDeletedByIds(ids: string[], manager: EntityManager): Promise<Room[]> {
+    return manager.getRepository(Room).find({
+      where: { id: In(ids), isDeleted: true },
+      lock: { mode: 'pessimistic_write' },
+    });
+  }
+
+  /**
+   * Khóa chia sẻ (FOR SHARE) phòng theo ID, kể cả đã xóa: khôi phục hiện vật giữ khóa này để lệnh
+   * xóa phòng chạy song song phải chờ rồi đếm cả hiện vật vừa khôi phục (BR-20).
+   */
+  lockForShare(id: string, manager: EntityManager): Promise<Room | null> {
+    return manager.getRepository(Room).findOne({ where: { id }, lock: { mode: 'pessimistic_read' } });
+  }
+
+  async markRestored(ids: string[], manager: EntityManager): Promise<void> {
+    await manager.getRepository(Room).update({ id: In(ids) }, { isDeleted: false, deletedAt: null });
   }
 
   /** Số hiện vật chưa xóa mềm trong từng phòng (BR-20). */
