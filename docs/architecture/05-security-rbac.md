@@ -57,7 +57,7 @@ bcrypt thì không cấp phiên bằng mật khẩu cũ.
 
 `AuthRateLimiter` (cửa sổ trượt trong bộ nhớ, module auth): **20 request/phút/IP** cho login và refresh;
 **5 lần sai/15 phút/email** cho login và cho mật khẩu hiện tại khi tự đổi mật khẩu → **429** + `Retry-After`.
-Một instance là đủ; scale ngang cần store dùng chung (Redis). Sau reverse proxy phải bật `trust proxy` (issue #82).
+Một instance là đủ; scale ngang cần store dùng chung (Redis). Sau reverse proxy phải đặt `TRUST_PROXY` (mục 5.5).
 
 ### 5.1.3 API key cho đối tác (cổng `/partner/v1`)
 
@@ -153,5 +153,12 @@ flowchart LR
 - Rate limit: login/refresh/đổi mật khẩu qua `AuthRateLimiter` (mục 5.1.2); báo cáo public qua `@nestjs/throttler` (5 lần/phút).
 - CORS giới hạn `FRONTEND_ORIGIN`; Helmet headers.
 - Validate mọi input bằng `class-validator`; chống SQLi nhờ TypeORM parameterized.
-- Secret qua env, không commit `.env` (đã trong `.gitignore`).
+- Secret qua env, không commit `.env` (đã trong `.gitignore`). Khi `NODE_ENV=production`, `validateEnvironment`
+  **từ chối khởi động** nếu `JWT_ACCESS_SECRET` hoặc `MEDIA_URL_SIGNING_SECRET` không được đặt (rơi về khóa dev trong
+  mã nguồn), trùng khóa mẫu của `.env.example` hoặc ngắn hơn 32 ký tự; lỗi chỉ nêu tên biến, không in giá trị.
+- **IP client sau reverse proxy** (`TRUST_PROXY`, áp bằng `app.set('trust proxy', …)` trong `main.ts`): mặc định `false`
+  → `req.ip` là IP kết nối trực tiếp. Sau proxy phải đặt **số hop** (vd `1`) hoặc danh sách IP/subnet của proxy
+  (`loopback`, `10.0.0.0/8`) để rate limit đăng nhập, phiên và audit thấy IP thật thay vì IP proxy (không thì mọi người
+  dùng chung một bộ đếm 20 request/phút). Không đặt `true`/số hop khi API nhận request trực tiếp: client tự giả được
+  `X-Forwarded-For`.
 - Audit append-only cho mọi hành động admin nhạy cảm.
