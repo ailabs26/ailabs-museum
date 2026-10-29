@@ -2,17 +2,22 @@ import 'reflect-metadata';
 import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { TrustProxy } from './config/app.config';
 import { PermissionDeniedFilter } from './modules/audit/filters/permission-denied.filter';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { MEDIA_DELIVERY_ROUTE } from './modules/media/controllers/media-delivery.controller';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get(ConfigService);
+
+  // Sau reverse proxy: lấy IP client thật từ X-Forwarded-For cho rate limit, phiên, audit (TRUST_PROXY).
+  app.set('trust proxy', config.getOrThrow<TrustProxy>('app.trustProxy'));
 
   // Mọi API dưới /api (xem 06-api-contract.md). Riêng file media giữ URL /media/... (ngoài
   // prefix) — được phân phối có kiểm soát bởi MediaDeliveryController.
