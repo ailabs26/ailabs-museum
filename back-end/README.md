@@ -25,6 +25,7 @@ Kiến trúc & plan: [../docs/architecture/](../docs/architecture/), [../docs/pl
 | `JWT_ACCESS_TTL` | Hạn access token (vd `15m`) |
 | `JWT_REFRESH_TTL_DAYS` | Hạn refresh token (ngày, vd `7`) |
 | `REFRESH_COOKIE_NAME` | Tên httpOnly cookie refresh (vd `aura_rt`) |
+| `REFRESH_RATE_LIMIT_PER_SESSION` / `REFRESH_RATE_LIMIT_PER_IP` / `REFRESH_RATE_LIMIT_INVALID_PER_IP` | Số `/auth/refresh` tối đa mỗi phút theo phiên (30) / theo IP (300) / theo IP khi không có hoặc sai cookie (20); xem `docs/architecture/05-security-rbac.md` §5.1.2 |
 | `BCRYPT_ROUNDS` | Cost factor hash mật khẩu (10–15) |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | Tài khoản admin đầu tiên (chỉ dùng khi `npm run seed`) |
 

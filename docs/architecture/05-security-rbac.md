@@ -55,8 +55,18 @@ bcrypt thì không cấp phiên bằng mật khẩu cũ.
 
 ### 5.1.2 Chống dò mật khẩu (NFR-57)
 
-`AuthRateLimiter` (cửa sổ trượt trong bộ nhớ, module auth): **20 request/phút/IP** cho login và refresh;
-**5 lần sai/15 phút/email** cho login và cho mật khẩu hiện tại khi tự đổi mật khẩu → **429** + `Retry-After`.
+`AuthRateLimiter` (cửa sổ trượt trong bộ nhớ, module auth) → **429** + `Retry-After`:
+
+| Endpoint | Giới hạn | Mục đích |
+|---|---|---|
+| `POST /auth/login` | **20 request/phút/IP** + **5 lần sai/15 phút/email** (tính cả sai mật khẩu hiện tại khi tự đổi mật khẩu) | chống dò mật khẩu |
+| `POST /auth/refresh` (mọi request) | **300/phút/IP** (`REFRESH_RATE_LIMIT_PER_IP`) | trần chống flood, kiểm trước khi chạm DB |
+| `POST /auth/refresh` có cookie khớp phiên | **30/phút/phiên** (`REFRESH_RATE_LIMIT_PER_SESSION`) | đếm theo family refresh token |
+| `POST /auth/refresh` không có / sai cookie | **20/phút/IP** (`REFRESH_RATE_LIMIT_INVALID_PER_IP`) | chống dò refresh token |
+
+Refresh **tách khỏi login** (issue #126): front-end giữ access token trong bộ nhớ nên mỗi lần tải lại trang tốn một
+refresh; nếu chung bộ đếm IP với login, nhân viên ngồi chung IP văn phòng sẽ bị văng phiên. Bị chặn ghi audit
+`auth.login_blocked` / `auth.refresh_blocked` một lần mỗi cửa sổ cho mỗi khóa.
 Một instance là đủ; scale ngang cần store dùng chung (Redis). Sau reverse proxy phải đặt `TRUST_PROXY` (mục 5.5).
 
 ### 5.1.3 API key cho đối tác (cổng `/partner/v1`)
