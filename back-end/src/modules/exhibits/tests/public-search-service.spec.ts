@@ -111,7 +111,7 @@ describe('VT-077 ExhibitsService.publicSearch', () => {
     );
     const result = await makeService(repo).publicSearch(QUERY);
     assert.equal(result.items.length, 1);
-    const item = result.items[0] as Record<string, unknown>;
+    const item = result.items[0] as unknown as Record<string, unknown>;
     assert.equal(item.name, 'Trống đồng');
     assert.ok('revisionId' in item && 'displayOrder' in item);
     // Contract an ninh: không rò rỉ entity thô / storage key.

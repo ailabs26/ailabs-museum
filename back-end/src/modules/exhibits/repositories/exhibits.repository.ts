@@ -273,8 +273,56 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
   ): Promise<Paginated<Exhibit>> {
     const page = Math.max(1, query.page ?? 1);
     const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
-    // STUB (RED): chưa triển khai truy vấn — trả rỗng để biên dịch; test phải FAIL.
-    return { items: [], total: 0, page, pageSize };
+
+    // Bước 1: chọn đúng TRANG id theo thứ tự ổn định (chỉ join đủ để lọc/tìm/sắp, không select media).
+    const qb: SelectQueryBuilder<Exhibit> = this.repo
+      .createQueryBuilder('exhibit')
+      .leftJoin('exhibit.room', 'room')
+      .leftJoin('exhibit.publishedRevision', 'publishedRevision')
+      .select(['exhibit.id'])
+      .where('exhibit.isDeleted = :isDeleted', { isDeleted: false })
+      .andWhere('exhibit.visibility = :visibility', { visibility: ExhibitVisibility.VISIBLE })
+      .andWhere('exhibit.archivedAt IS NULL')
+      .andWhere('exhibit.publishedRevisionId IS NOT NULL')
+      .andWhere('publishedRevision.state = :state', { state: RevisionState.APPROVED });
+
+    if (query.roomId) {
+      qb.andWhere('exhibit.roomId = :roomId', { roomId: query.roomId });
+    }
+
+    if (query.q && query.q.trim()) {
+      const search = `%${query.q.trim()}%`;
+      qb.andWhere(
+        new Brackets((sub) => {
+          sub
+            .where('room.name ILIKE :search')
+            .orWhere('CAST(publishedRevision.content AS text) ILIKE :search');
+        }),
+        { search },
+      );
+    }
+
+    // Thứ tự ỔN ĐỊNH: khóa phụ duy nhất `id` → union các trang không trùng/sót (invariant AC-4).
+    qb.orderBy('exhibit.displayOrder', 'ASC')
+      .addOrderBy('exhibit.id', 'ASC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize);
+
+    const [rows, total] = await qb.getManyAndCount();
+    const ids = rows.map((row) => row.id);
+    if (ids.length === 0) return { items: [], total, page, pageSize };
+
+    // Bước 2: nạp đầy đủ media/hotspots cho đúng các id, rồi SẮP LẠI theo thứ tự ổn định của bước 1.
+    const loaded = await this.repo.find({
+      where: { id: In(ids) },
+      relations: { room: true, publishedRevision: { ...REVISION_MEDIA_RELATIONS, hotspots: true } },
+    });
+    const byId = new Map(loaded.map((exhibit) => [exhibit.id, exhibit]));
+    const items = ids
+      .map((id) => byId.get(id))
+      .filter((exhibit): exhibit is Exhibit => exhibit !== undefined);
+
+    return { items, total, page, pageSize };
   }
 
   /**

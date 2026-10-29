@@ -119,8 +119,18 @@ export class ExhibitsService {
   async publicSearch(
     query: PublicSearchQueryDto,
   ): Promise<Paginated<PublicExhibitDto>> {
-    // STUB (RED): chưa gọi repo/map — test phải FAIL.
-    return { items: [], total: 0, page: query.page ?? 1, pageSize: query.pageSize ?? 20 };
+    const result = await this.exhibits.searchPublicExhibits(query);
+    const items = result.items.flatMap(
+      (exhibit) =>
+        toPublicExhibit(
+          exhibit,
+          (storageKey) => this.mediaUrls.publicUrl(storageKey),
+          (exhibitId, mediaId, reason) =>
+            this.logger.warn(`Bỏ qua media ${mediaId} của hiện vật ${exhibitId}: ${reason}`),
+          exhibit.room?.slug ?? '',
+        ) ?? [],
+    );
+    return { items, total: result.total, page: result.page, pageSize: result.pageSize };
   }
 
   // =========================================================================

@@ -4,6 +4,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../../common/decorators/public.decorator';
 import { ExhibitsService } from '../services/exhibits.service';
 import { PublicModelsService } from '../services/public-models.service';
+import { PublicSearchQueryDto } from '../dto/public-search-query.dto';
 
 /**
  * Nội dung công khai cho khách tham quan. `no-cache`: trình duyệt/CDN phải hỏi lại server
@@ -22,6 +23,14 @@ export class ExhibitsController {
   @ApiOperation({ summary: 'Danh sách phòng công khai' })
   listRooms() {
     return this.service.roomsList();
+  }
+
+  // PHẢI đặt TRƯỚC route ':slug' — nếu không '/rooms/search' sẽ bị khớp vào ':slug' (slug='search').
+  @Get('search')
+  @Header('Cache-Control', PUBLIC_CACHE_CONTROL)
+  @ApiOperation({ summary: 'Tìm kiếm hiện vật công khai: lọc + phân trang + thứ tự ổn định (VT-077)' })
+  searchExhibits(@Query() query: PublicSearchQueryDto) {
+    return this.service.publicSearch(query);
   }
 
   @Get(':slug')
