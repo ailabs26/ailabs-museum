@@ -43,5 +43,5 @@ Ngoài phạm vi: bộ đếm vẫn trong bộ nhớ (1 instance) — nhiều in
   |---|---|---|
   | `/auth/refresh` bị 429 | 14/30 | 0/30 |
   | Bị đưa về trang đăng nhập | có | không |
-  | Login sai từ cùng IP bị 429 sau | 1 lần (refresh đã ăn hết hạn mức) | 19 lần (= 20 trừ 2 lần đăng nhập + 1) |
+  | Login sai từ cùng IP bị 429 ở lần thử | thứ 1 (refresh đã dùng hết hạn mức) | thứ 19 (2 lần đăng nhập + 18 lần thử = 20) |
   | Đang dùng vẫn tải lại được khi login của IP bị chặn | không | có |
