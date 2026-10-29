@@ -8,7 +8,7 @@ import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ContentReportsModule } from './modules/content-reports/content-reports.module';
 import { ExhibitsModule } from './modules/exhibits/exhibits.module';
-import { HealthController } from './modules/health/health.controller';
+import { HealthModule } from './modules/health/health.module';
 import { MediaModule } from './modules/media/media.module';
 import { ModerationModule } from './modules/moderation/moderation.module';
 import { PartnerApiKeysModule } from './modules/partner-api-keys/partner-api-keys.module';
@@ -46,8 +46,9 @@ import { UsersModule } from './modules/users/users.module';
     TranslationsModule,
     // API key cấp cho đối tác tích hợp.
     PartnerApiKeysModule,
+    // Liveness + readiness (kiểm tra DB).
+    HealthModule,
   ],
-  controllers: [HealthController],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

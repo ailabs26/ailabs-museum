@@ -20,6 +20,7 @@ import { ActiveSessionGuard } from '../../modules/auth/guards/active-session.gua
 import { RefreshSessionsRepository } from '../../modules/auth/repositories/refresh-sessions.repository';
 import { SessionsService } from '../../modules/auth/services/sessions.service';
 import { HealthController } from '../../modules/health/health.controller';
+import { HealthService } from '../../modules/health/health.service';
 import { PermissionsController } from '../../modules/roles/controllers/permissions.controller';
 import { RolesController } from '../../modules/roles/controllers/roles.controller';
 import { RolesService } from '../../modules/roles/services/roles.service';
@@ -157,6 +158,7 @@ describe('RBAC HTTP — guard toàn cục trên route quản trị', () => {
           useValue: { isFamilyLive: async (familyId: string) => familyId === LIVE_SESSION },
         },
         { provide: SessionsService, useValue: {} },
+        { provide: HealthService, useValue: { pingDatabase: async () => 1 } },
         { provide: UsersService, useValue: recordingService('users') },
         { provide: RolesService, useValue: recordingService('roles') },
         { provide: AuthService, useValue: { me: (id: string) => Promise.resolve({ id }) } },
