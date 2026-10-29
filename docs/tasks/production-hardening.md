@@ -43,6 +43,16 @@ Người phụ trách: Nguyễn Văn Thắng. PR: `feat/production-hardening` (b
 - `.env` local: chỉ thêm `TRUST_PROXY=false` (FE gọi thẳng API, không qua proxy). Môi trường deploy phải đặt
   `NODE_ENV=production`, hai khóa riêng (`openssl rand -hex 32`) và `TRUST_PROXY` theo số proxy thực tế.
 
+### CI — GitHub Actions (`.github/workflows/ci.yml`)
+
+- Chạy trên mọi PR vào `dev`/`main` và mỗi lần push `dev`; PR đẩy commit mới thì hủy lượt cũ. Quyền token chỉ
+  `contents: read`, không secret, không deploy.
+- Job **Back-end**: Node 24, `npm ci` → typecheck → lint → build → `npm test` → `test:coverage` (ngưỡng 80%). Test DB chạy
+  trên service PostgreSQL 16 của runner (`localhost:5432/aura_test`); `DATABASE_URL` cũng trỏ đó để không bao giờ đọc
+  nhầm DB dùng chung.
+- Job **Front-end**: Node 24, `npm ci` → typecheck → lint → `test:unit` (vitest) → build.
+- Không chạy Playwright E2E (cần dựng cả hệ thống). Chưa bật branch protection: CI hiện ✅/❌ trên PR, chưa chặn merge.
+
 ## Kiểm chứng ngày 29/10/2026
 
 - Back-end: typecheck, lint, build đạt; `npm test` 2005/2005 với PostgreSQL 16 tạm; coverage lõi 95,94% line ·
@@ -55,3 +65,5 @@ Người phụ trách: Nguyễn Văn Thắng. PR: `feat/production-hardening` (b
   - đủ khóa → chạy; `/api/health/ready` 200; tắt DB → 503 sau 2 ms, `/api/health` vẫn 200;
   - 22 request `/api/auth/refresh` với 22 `X-Forwarded-For` khác nhau: không đặt `TRUST_PROXY` → request 21–22 bị 429
     (gộp chung 1 IP, đúng hành vi cũ); `TRUST_PROXY=1` → không request nào bị 429 (mỗi IP một bộ đếm).
+- CI giả lập ở máy: git worktree sạch (không có `.env`), `npm ci` mới, chạy đúng các bước của workflow với PostgreSQL 16
+  tạm → front-end 171/171 test, build đạt; back-end 2005/2005 test, coverage 95,94%.
