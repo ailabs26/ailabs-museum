@@ -1,14 +1,14 @@
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import { afterEach, describe, it } from 'node:test';
-import { appConfig } from '../app.config';
+import { appConfig, parseTrustProxy } from '../app.config';
 import { databaseConfig } from '../database.config';
-import { validateEnvironment } from '../env.validation';
+import { DEV_JWT_ACCESS_SECRET, DEV_MEDIA_URL_SIGNING_SECRET, validateEnvironment } from '../env.validation';
 import { jwtConfig } from '../jwt.config';
 
 const BASE = { DATABASE_URL: 'postgres://u:p@localhost:5432/db' };
 const ENV_KEYS = ['PORT', 'FRONTEND_ORIGIN', 'DATABASE_URL', 'JWT_ACCESS_SECRET', 'JWT_ACCESS_TTL',
-  'JWT_REFRESH_TTL_DAYS', 'REFRESH_COOKIE_NAME', 'BCRYPT_ROUNDS', 'SEED_ADMIN_EMAIL', 'SEED_ADMIN_PASSWORD'];
+  'JWT_REFRESH_TTL_DAYS', 'REFRESH_COOKIE_NAME', 'BCRYPT_ROUNDS', 'SEED_ADMIN_EMAIL', 'SEED_ADMIN_PASSWORD', 'TRUST_PROXY'];
 const saved = Object.fromEntries(ENV_KEYS.map((key) => [key, process.env[key]]));
 
 function invalidFields(input: Record<string, unknown>): string {
@@ -51,6 +51,9 @@ describe('validateEnvironment', () => {
     ['FRONTEND_ORIGIN', 'not a url'],
     ['MEDIA_URL_SIGNING_SECRET', 'too-short'],
     ['MEDIA_STORAGE_DRIVER', 's3'],
+    ['NODE_ENV', 'staging'],
+    ['TRUST_PROXY', 'yes'],
+    ['TRUST_PROXY', '10.0.0.0/8, proxy.local'],
   ] as const) {
     it(`từ chối ${field}=${value}`, () => {
       assert.match(invalidFields({ ...BASE, [field]: value }), new RegExp(field));
@@ -70,6 +73,74 @@ describe('validateEnvironment', () => {
   });
 });
 
+describe('validateEnvironment — production', () => {
+  const STRONG_JWT = 'j'.repeat(32);
+  const STRONG_MEDIA = 'm'.repeat(40);
+  const PROD = { ...BASE, NODE_ENV: 'production' };
+
+  it('đủ khóa riêng, đủ dài → chạy được', () => {
+    const env = validateEnvironment({ ...PROD, JWT_ACCESS_SECRET: STRONG_JWT, MEDIA_URL_SIGNING_SECRET: STRONG_MEDIA });
+    assert.equal(env.NODE_ENV, 'production');
+  });
+
+  it('không đặt khóa (rơi về khóa dev mặc định) → từ chối cả hai', () => {
+    const message = invalidFields({ ...PROD });
+    assert.match(message, /JWT_ACCESS_SECRET/);
+    assert.match(message, /MEDIA_URL_SIGNING_SECRET/);
+  });
+
+  for (const [name, input] of [
+    ['khóa dev mặc định', { JWT_ACCESS_SECRET: DEV_JWT_ACCESS_SECRET, MEDIA_URL_SIGNING_SECRET: DEV_MEDIA_URL_SIGNING_SECRET }],
+    ['khóa mẫu của .env.example', {
+      JWT_ACCESS_SECRET: 'đổi-khóa-bí-mật-tối-thiểu-16-ký-tự',
+      MEDIA_URL_SIGNING_SECRET: 'đổi-khóa-ký-url-media-tối-thiểu-32-ký-tự',
+    }],
+    ['khóa ngắn hơn 32 ký tự', { JWT_ACCESS_SECRET: 'x'.repeat(31), MEDIA_URL_SIGNING_SECRET: 'y'.repeat(31) }],
+  ] as const) {
+    it(`từ chối ${name}, thông báo chỉ nêu tên biến`, () => {
+      const fields = invalidFields({ ...PROD, ...input }).replace('Invalid environment: ', '').split(', ');
+      assert.deepEqual(fields.sort(), ['JWT_ACCESS_SECRET', 'MEDIA_URL_SIGNING_SECRET']);
+    });
+  }
+
+  it('chỉ báo đúng khóa yếu, không lặp tên biến đã lỗi', () => {
+    assert.equal(
+      invalidFields({ ...PROD, JWT_ACCESS_SECRET: 'short', MEDIA_URL_SIGNING_SECRET: STRONG_MEDIA }),
+      'Invalid environment: JWT_ACCESS_SECRET',
+    );
+  });
+
+  it('development/test vẫn dùng được khóa mặc định', () => {
+    validateEnvironment({ ...BASE });
+    validateEnvironment({ ...BASE, NODE_ENV: 'test' });
+    validateEnvironment({ ...BASE, NODE_ENV: 'development', JWT_ACCESS_SECRET: DEV_JWT_ACCESS_SECRET });
+  });
+});
+
+describe('parseTrustProxy', () => {
+  for (const [raw, expected] of [
+    [undefined, false],
+    ['', false],
+    ['false', false],
+    ['true', true],
+    ['1', 1],
+    [' 2 ', 2],
+    ['loopback', ['loopback']],
+    ['loopback, 10.0.0.0/8 ,fd00::/8', ['loopback', '10.0.0.0/8', 'fd00::/8']],
+    ['203.0.113.7', ['203.0.113.7']],
+  ] as const) {
+    it(`${JSON.stringify(raw)} → ${JSON.stringify(expected)}`, () => {
+      assert.deepEqual(parseTrustProxy(raw), expected);
+    });
+  }
+
+  for (const raw of ['yes', '-1', '1.5', 'proxy.local', '10.0.0.0/8,,']) {
+    it(`từ chối ${JSON.stringify(raw)}`, () => {
+      assert.throws(() => parseTrustProxy(raw), /TRUST_PROXY/);
+    });
+  }
+});
+
 describe('registerAs config', () => {
   afterEach(() => {
     for (const key of ENV_KEYS) {
@@ -82,10 +153,10 @@ describe('registerAs config', () => {
     Object.assign(process.env, {
       PORT: '4000', FRONTEND_ORIGIN: 'https://museum.example', DATABASE_URL: 'postgres://x',
       JWT_ACCESS_SECRET: 's'.repeat(20), JWT_ACCESS_TTL: '5m', JWT_REFRESH_TTL_DAYS: '3',
-      REFRESH_COOKIE_NAME: 'rt', BCRYPT_ROUNDS: '11', SEED_ADMIN_EMAIL: 'a@b.c',
+      REFRESH_COOKIE_NAME: 'rt', BCRYPT_ROUNDS: '11', SEED_ADMIN_EMAIL: 'a@b.c', TRUST_PROXY: '1',
     });
     assert.deepEqual(appConfig(), {
-      port: 4000, frontendOrigin: 'https://museum.example', apiPrefix: 'api',
+      port: 4000, frontendOrigin: 'https://museum.example', apiPrefix: 'api', trustProxy: 1,
       seedAdminEmail: 'a@b.c', seedAdminPassword: process.env.SEED_ADMIN_PASSWORD,
     });
     assert.deepEqual(databaseConfig(), { url: 'postgres://x' });
@@ -98,6 +169,7 @@ describe('registerAs config', () => {
     for (const key of ENV_KEYS) delete process.env[key];
     assert.equal(appConfig().port, 3001);
     assert.equal(appConfig().frontendOrigin, 'http://localhost:5173');
+    assert.equal(appConfig().trustProxy, false);
     assert.equal(jwtConfig().accessTtl, '15m');
     assert.equal(jwtConfig().bcryptRounds, 12);
     assert.equal(jwtConfig().refreshCookieName, 'aura_rt');

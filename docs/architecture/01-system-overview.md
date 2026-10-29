@@ -114,7 +114,9 @@ graph TB
 | `DATABASE_URL` | BE | `postgres://...supabase...` |
 | `PORT` | BE | `3001` |
 | `FRONTEND_ORIGIN` | BE (CORS) | `http://localhost:5173` |
-| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | BE | (secret) |
+| `NODE_ENV` | BE | `production` (bật kiểm tra khóa bí mật) |
+| `JWT_ACCESS_SECRET` / `MEDIA_URL_SIGNING_SECRET` | BE | (secret, ≥32 ký tự khi production) |
+| `TRUST_PROXY` | BE | `1` khi có 1 reverse proxy; mặc định `false` |
 | `VITE_API_BASE_URL` | FE | `http://localhost:3001/api` |
 | `VITE_MEDIA_BASE_URL` | FE | `http://localhost:3001/media` |
 

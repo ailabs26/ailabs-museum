@@ -18,7 +18,10 @@ Kiến trúc & plan: [../docs/architecture/](../docs/architecture/), [../docs/pl
 | `PORT` | Cổng API (mặc định 3001) |
 | `FRONTEND_ORIGIN` | Origin của FE cho CORS (mặc định `http://localhost:5173`) |
 | `DATABASE_URL` | Chuỗi kết nối PostgreSQL |
-| `JWT_ACCESS_SECRET` | Khóa ký access token (**bắt buộc đổi ở môi trường thật**, ≥16 ký tự) |
+| `NODE_ENV` | `development` / `test` / `production` |
+| `JWT_ACCESS_SECRET` | Khóa ký access token (≥16 ký tự; khi `production` **bắt buộc tự đặt**, ≥32 ký tự, khác khóa mẫu) |
+| `MEDIA_URL_SIGNING_SECRET` | Khóa HMAC ký URL media xem trước (≥32 ký tự; khi `production` **bắt buộc tự đặt**, khác khóa mẫu) |
+| `TRUST_PROXY` | Số reverse proxy trước API để lấy đúng IP client (`false` mặc định, vd `1`); xem `docs/architecture/05-security-rbac.md` §5.5 |
 | `JWT_ACCESS_TTL` | Hạn access token (vd `15m`) |
 | `JWT_REFRESH_TTL_DAYS` | Hạn refresh token (ngày, vd `7`) |
 | `REFRESH_COOKIE_NAME` | Tên httpOnly cookie refresh (vd `aura_rt`) |
@@ -36,7 +39,8 @@ npm run seed             # tạo quyền + 3 vai trò + admin đầu tiên (idem
 npm run dev              # chạy watch mode (tương đương npm run start)
 ```
 
-- Bản production: `npm run build` rồi `npm run start:prod`.
+- Bản production: `npm run build` rồi `npm run start:prod` với `NODE_ENV=production` (sinh khóa: `openssl rand -hex 32`).
+- Health check: `GET /api/health` (liveness, không chạm DB), `GET /api/health/ready` (readiness: 200 khi DB trả lời, 503 khi không).
 - Lùi migration cuối: `npm run migration:revert`.
 
 ### Seed nội dung demo vào phòng hiện có

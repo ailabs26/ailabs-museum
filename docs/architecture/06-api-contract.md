@@ -204,6 +204,13 @@ Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. 
 > Với `resourceType='revision'`, interceptor lưu thêm FK `revisionId` để join `audit_logs → exhibit_revisions`.
 > Response có mảng `ids` (xóa hàng loạt) hoặc `roleIds` → interceptor ghi **1 bản ghi cho mỗi ID**.
 
+### Health check (`@Public()`, không audit)
+```
+GET    /health          # liveness: process còn chạy → 200 { status: "ok" } (không chạm DB)
+GET    /health/ready    # readiness: SELECT 1 (timeout 2s) → 200 { status: "ok", db: "up", latencyMs }
+                        #            DB lỗi/treo → 503 "Cơ sở dữ liệu không sẵn sàng" (không lộ chi tiết lỗi)
+```
+
 ### Public (client — chỉ đọc nội dung published)
 ```
 GET    /public/rooms/:slug                # phòng + danh sách hiện vật published

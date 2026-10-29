@@ -1,4 +1,5 @@
 import { registerAs } from '@nestjs/config';
+import { DEV_MEDIA_URL_SIGNING_SECRET } from './env.validation';
 
 /**
  * Cấu hình phân phối media — namespace 'media'.
@@ -10,8 +11,7 @@ import { registerAs } from '@nestjs/config';
  */
 export const mediaConfig = registerAs('media', () => ({
   publicBaseUrl: process.env.MEDIA_PUBLIC_BASE_URL ?? 'http://localhost:3001',
-  urlSigningSecret:
-    process.env.MEDIA_URL_SIGNING_SECRET ?? 'dev-media-url-signing-secret-change-me-please',
+  urlSigningSecret: process.env.MEDIA_URL_SIGNING_SECRET ?? DEV_MEDIA_URL_SIGNING_SECRET,
   signedUrlTtlSeconds: parseInt(process.env.MEDIA_SIGNED_URL_TTL_SECONDS ?? '900', 10),
   storageDriver: process.env.MEDIA_STORAGE_DRIVER ?? 'local',
   supabase: {

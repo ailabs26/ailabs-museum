@@ -11,8 +11,27 @@ import {
   ValidateIf,
   validateSync,
 } from 'class-validator';
+import { parseTrustProxy } from './app.config';
+
+/** Khóa mặc định chỉ để chạy dev/test; production phải tự đặt khóa riêng. */
+export const DEV_JWT_ACCESS_SECRET = 'dev-access-secret-change-me-please';
+export const DEV_MEDIA_URL_SIGNING_SECRET = 'dev-media-url-signing-secret-change-me-please';
+
+/** Khóa mẫu công khai (mã nguồn + .env.example) — không bao giờ được dùng ở production. */
+const PLACEHOLDER_SECRETS = new Set([
+  DEV_JWT_ACCESS_SECRET,
+  DEV_MEDIA_URL_SIGNING_SECRET,
+  'đổi-khóa-bí-mật-tối-thiểu-16-ký-tự',
+  'đổi-khóa-ký-url-media-tối-thiểu-32-ký-tự',
+]);
+const PRODUCTION_SECRETS = ['JWT_ACCESS_SECRET', 'MEDIA_URL_SIGNING_SECRET'] as const;
+const PRODUCTION_SECRET_MIN_LENGTH = 32;
 
 class Environment {
+  /** Môi trường chạy; `production` bật các kiểm tra khóa bí mật chặt hơn. */
+  @IsIn(['development', 'test', 'production'])
+  NODE_ENV: string = 'development';
+
   @IsInt()
   @Min(1)
   @Max(65535)
@@ -28,6 +47,15 @@ class Environment {
   @IsIn(['true', 'false'])
   DATABASE_SSL: string = 'false';
 
+  /**
+   * Số proxy đứng trước API để Express lấy đúng IP client từ X-Forwarded-For (issue #82):
+   * `false` (mặc định, không proxy) | số hop (vd `1`) | `true` | danh sách IP/subnet/`loopback`.
+   * Kiểm tra cú pháp ở `validateEnvironment` (dùng chung `parseTrustProxy`).
+   */
+  @IsOptional()
+  @IsString()
+  TRUST_PROXY?: string;
+
   /** Đường dẫn file CA để xác thực chứng chỉ DB; bỏ trống thì không xác thực chứng chỉ. */
   @IsOptional()
   @IsString()
@@ -38,7 +66,7 @@ class Environment {
   /** Khóa ký access token JWT. Bắt buộc đặt ở môi trường thật. */
   @IsString()
   @MinLength(16)
-  JWT_ACCESS_SECRET: string = 'dev-access-secret-change-me-please';
+  JWT_ACCESS_SECRET: string = DEV_JWT_ACCESS_SECRET;
 
   /** Hạn access token, theo cú pháp thời lượng của jsonwebtoken (vd 15m, 1h). */
   @IsString()
@@ -69,7 +97,7 @@ class Environment {
   /** Khóa HMAC ký URL xem trước media chưa công khai. Bắt buộc đặt ở môi trường thật. */
   @IsString()
   @MinLength(32)
-  MEDIA_URL_SIGNING_SECRET: string = 'dev-media-url-signing-secret-change-me-please';
+  MEDIA_URL_SIGNING_SECRET: string = DEV_MEDIA_URL_SIGNING_SECRET;
 
   /** Thời hạn URL media đã ký (giây). */
   @IsInt()
@@ -119,12 +147,37 @@ export function validateEnvironment(
   const env = plainToInstance(Environment, input, {
     enableImplicitConversion: true,
   });
-  const errors = validateSync(env, { skipMissingProperties: false });
+  const invalidFields = validateSync(env, { skipMissingProperties: false }).map((item) => item.property);
 
-  if (errors.length || !env.DATABASE_URL) {
-    const invalidFields = errors.map((item) => item.property).join(', ');
-    throw new Error(`Invalid environment: ${invalidFields || 'DATABASE_URL'}`);
+  if (!env.DATABASE_URL && !invalidFields.includes('DATABASE_URL')) invalidFields.push('DATABASE_URL');
+  try {
+    parseTrustProxy(env.TRUST_PROXY);
+  } catch {
+    invalidFields.push('TRUST_PROXY');
+  }
+  if (env.NODE_ENV === 'production') {
+    invalidFields.push(...weakProductionSecrets(input).filter((key) => !invalidFields.includes(key)));
+  }
+
+  // Chỉ nêu tên biến, không bao giờ in giá trị (có thể là khóa bí mật).
+  if (invalidFields.length) {
+    throw new Error(`Invalid environment: ${invalidFields.join(', ')}`);
   }
 
   return env;
+}
+
+/**
+ * Production phải đặt tường minh từng khóa bí mật: không rơi về khóa mặc định của dev, không dùng
+ * khóa mẫu công khai, đủ dài. Nếu không, ai đọc mã nguồn cũng ký được token admin / URL media.
+ */
+function weakProductionSecrets(input: Record<string, unknown>): string[] {
+  return PRODUCTION_SECRETS.filter((key) => {
+    const value = input[key];
+    return (
+      typeof value !== 'string' ||
+      value.length < PRODUCTION_SECRET_MIN_LENGTH ||
+      PLACEHOLDER_SECRETS.has(value)
+    );
+  });
 }
