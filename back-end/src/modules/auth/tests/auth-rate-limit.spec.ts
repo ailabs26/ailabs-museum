@@ -135,6 +135,7 @@ describe('AuthRateLimiter — refresh tách khỏi login (issue #126)', () => {
 describe('AuthController HTTP — rate limit', () => {
   let app: INestApplication;
   let loginCalls = 0;
+  const audits: Array<{ action: string; resourceId: string | null; reason: string | null }> = [];
 
   before(async () => {
     const auth = {
@@ -152,10 +153,17 @@ describe('AuthController HTTP — rate limit', () => {
       providers: [
         RefreshCookieOriginGuard,
         AuthRateLimiter,
-        { provide: AuditService, useValue: { recordSafely: async () => undefined } },
+        { provide: AuditService, useValue: { recordSafely: async (event: (typeof audits)[number]) => { audits.push(event); } } },
         { provide: SessionsService, useValue: {} },
         { provide: AuthService, useValue: auth },
-        { provide: TokenService, useValue: { refreshCookieMaxAgeMs: () => 1000 } },
+        {
+          provide: TokenService,
+          useValue: {
+            refreshCookieMaxAgeMs: () => 1000,
+            // Cookie "fam-…" thuộc phiên cùng tên; còn lại không khớp phiên nào.
+            findSessionOwner: async (raw: string) => (raw.startsWith('fam-') ? { familyId: raw, userId: `user-of-${raw}` } : null),
+          },
+        },
       ],
     }).compile();
     app = moduleRef.createNestApplication();
@@ -187,14 +195,58 @@ describe('AuthController HTTP — rate limit', () => {
     for (let i = 0; i < 4; i++) await login('other@aura.local', 'wrong-password').expect(401);
   });
 
-  it('vượt 20 request/phút từ một IP → 429 cho cả login lẫn refresh', async () => {
-    // Các test trước đã dùng một phần hạn mức IP; bơm đến khi chạm trần.
-    let res = await request(app.getHttpServer()).post('/auth/refresh');
-    for (let i = 0; i < 25 && res.status !== 429; i++) {
-      res = await request(app.getHttpServer()).post('/auth/refresh');
+  const refresh = (cookie?: string) => {
+    const req = request(app.getHttpServer()).post('/auth/refresh');
+    return cookie ? req.set('Cookie', `aura_rt=${cookie}`) : req;
+  };
+
+  it('25 người chung IP văn phòng (mỗi người 1 phiên) làm mới liên tục: không ai bị 429, login của IP vẫn được', async () => {
+    for (let round = 0; round < 2; round++) {
+      for (let i = 0; i < 25; i++) await refresh(`fam-office-${i}`).expect(200);
     }
+    await login('fourth@aura.local', 'Passw0rd!').expect(200);
+  });
+
+  it('một phiên refresh dồn dập: lần 31 trong phút → 429 + Retry-After, audit 1 lần; phiên khác cùng IP vẫn được', async () => {
+    audits.length = 0;
+    for (let i = 0; i < 30; i++) await refresh('fam-busy').expect(200);
+    const res = await refresh('fam-busy').expect(429);
+    assert.ok(Number(res.headers['retry-after']) >= 1);
+    await refresh('fam-busy').expect(429);
+    await refresh('fam-calm').expect(200);
+    assert.deepEqual(audits.map(({ action, resourceId, reason }) => ({ action, resourceId, reason })), [
+      { action: 'auth.refresh_blocked', resourceId: 'user-of-fam-busy', reason: '{"limit":"session"}' },
+    ]);
+  });
+
+  it('không có / sai cookie: 20 lần/phút/IP rồi 429 (chống dò token), không ảnh hưởng phiên hợp lệ cùng IP', async () => {
+    audits.length = 0;
+    for (let i = 0; i < 10; i++) await refresh().expect(200);
+    for (let i = 0; i < 10; i++) await refresh(`guess-${i}`).expect(200);
+    await refresh('guess-x').expect(429);
+    await refresh().expect(429);
+    await refresh('fam-calm').expect(200);
+    assert.deepEqual(audits.map(({ action, reason }) => ({ action, reason })), [
+      { action: 'auth.refresh_blocked', reason: '{"limit":"invalid"}' },
+    ]);
+  });
+
+  it('login vẫn giới hạn 20 request/phút/IP, độc lập với refresh', async () => {
+    // Các test trước đã dùng một phần hạn mức login của IP; bơm đến khi chạm trần.
+    let res = await login('third@aura.local', 'Passw0rd!');
+    for (let i = 0; i < 25 && res.status !== 429; i++) res = await login('third@aura.local', 'Passw0rd!');
     assert.equal(res.status, 429);
     assert.ok(Number(res.headers['retry-after']) >= 1);
-    await login('third@aura.local', 'Passw0rd!').expect(429);
+    await refresh('fam-calm').expect(200);
+  });
+
+  it('trần theo IP (300/phút) cho mọi request refresh: chạm trần thì 429, audit limit=ip', async () => {
+    audits.length = 0;
+    let res = await refresh('fam-cap-0');
+    for (let i = 1; i <= 300 && res.status !== 429; i++) res = await refresh(`fam-cap-${i}`);
+    assert.equal(res.status, 429);
+    assert.deepEqual(audits.map(({ action, reason }) => ({ action, reason })), [
+      { action: 'auth.refresh_blocked', reason: '{"limit":"ip"}' },
+    ]);
   });
 });
