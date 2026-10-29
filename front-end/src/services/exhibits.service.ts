@@ -50,6 +50,8 @@ export interface ExhibitRow {
   hotspotsCount: number;
   createdAt: string;
   updatedAt: string;
+  /** Chỉ có khi xem mục Đã xóa. */
+  deletedAt?: string | null;
 }
 
 /** 6 slot media của revision (khóa trùng `revision-media-slots.ts` của back-end). */
@@ -107,6 +109,8 @@ export interface ListExhibitsParams {
   status?: 'draft' | 'published' | 'all';
   visibility?: ExhibitVisibility;
   sort?: string;
+  /** true: mục Đã xóa (thùng rác). */
+  deleted?: boolean;
 }
 
 export interface CreateExhibitInput {
@@ -198,6 +202,11 @@ export const exhibitsService = {
   /** Xóa mềm nhiều hiện vật nháp: tất cả hoặc không (409 kèm lý do từng ID). */
   async removeMany(ids: string[]): Promise<void> {
     await http.post<unknown>('/admin/exhibits/bulk-delete', { ids });
+  },
+
+  /** Khôi phục hiện vật đã xóa: tất cả hoặc không (chặn khi phòng đã xóa, 409 kèm lý do từng ID). */
+  async restoreMany(ids: string[]): Promise<void> {
+    await http.post<unknown>('/admin/exhibits/bulk-restore', { ids });
   },
 
   reorder(roomId: string, exhibitIds: string[]): Promise<{ success: boolean; message: string }> {

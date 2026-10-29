@@ -39,7 +39,7 @@ function formatTime(iso: string): string {
 /** Màu badge theo nhóm hành động (động từ sau dấu chấm). */
 function actionColor(action: string): string {
   const verb = action.split('.').pop() ?? '';
-  if (['create', 'publish', 'resolve', 'unhide'].includes(verb)) return 'teal';
+  if (['create', 'publish', 'resolve', 'unhide', 'restore'].includes(verb)) return 'teal';
   if (['update', 'assign'].includes(verb)) return 'blue';
   if (['delete', 'reject', 'denied', 'login_failed', 'login_blocked'].includes(verb)) return 'red';
   if (['login', 'logout'].includes(verb)) return 'indigo';

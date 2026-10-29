@@ -8,8 +8,11 @@ import { ApiException } from '@/core/api/api-error';
 import { useAuth } from '@/core/auth/use-auth';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { confirmAction, notify } from '@/shared/components/feedback';
-import { BulkActionBar, BulkDeleteFailures, Column, DataTable } from '@/shared/components/data';
-import { useBulkDelete } from '@/shared/hooks/useBulkDelete';
+import {
+  BulkActionBar, BulkDeleteFailures, Column, DataTable, RestoreRowButton, TrashToggle,
+} from '@/shared/components/data';
+import { formatDeletedAt } from '@/helpers/bulkDelete';
+import { useBulkDelete, useBulkRestore } from '@/shared/hooks/useBulkDelete';
 import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { FormTextField } from '@/shared/components/form';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
@@ -31,20 +34,27 @@ export function RolesPage() {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const [editing, setEditing] = useState<RoleRow | null>(null);
   const [opened, drawer] = useDisclosure(false);
+  // Mục Đã xóa (thùng rác): xem và khôi phục vai trò đã xóa mềm.
+  const [trash, setTrash] = useState(false);
 
   const canCreate = hasPermission(PERMISSIONS.ROLE_UPDATE);
   const canDelete = hasPermission('role:delete');
 
-  const rolesQuery = useQuery({ queryKey: ['roles'], queryFn: () => rolesService.list() });
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['roles'] });
-  const selection = useRowSelection('roles');
-  const bulk = useBulkDelete({
-    removeMany: rolesService.removeMany,
-    noun: 'vai trò',
-    nameOf: (id) => rolesQuery.data?.find((role) => role.id === id)?.name,
-    onSuccess: selection.clear,
-    onSettled: invalidate,
+  // Danh sách đang dùng giữ khóa ['roles'] (dùng chung với form tài khoản); thùng rác là ['roles', 'trash'].
+  const rolesQuery = useQuery({
+    queryKey: trash ? ['roles', 'trash'] : ['roles'],
+    queryFn: () => rolesService.list(trash),
   });
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['roles'] });
+  const selection = useRowSelection(trash ? 'roles-trash' : 'roles');
+  const nameOf = (id: string) => rolesQuery.data?.find((role) => role.id === id)?.name;
+  const bulk = useBulkDelete({
+    removeMany: rolesService.removeMany, noun: 'vai trò', nameOf, onSuccess: selection.clear, onSettled: invalidate,
+  });
+  const restore = useBulkRestore({
+    restoreMany: rolesService.restoreMany, noun: 'vai trò', nameOf, onSuccess: selection.clear, onSettled: invalidate,
+  });
+  const bulkAction = trash ? restore : bulk;
 
   const form = useForm<RoleFormValues>({
     initialValues: { code: '', name: '' },
@@ -114,11 +124,17 @@ export function RolesPage() {
         </Badge>
       ),
     },
+    ...(trash ? [{ key: 'deletedAt', header: 'Ngày xóa', render: (r: RoleRow) => formatDeletedAt(r.deletedAt) }] : []),
     {
       key: 'actions',
       header: '',
       align: 'right',
-      render: (r) => (
+      render: (r) => trash ? (
+        <Group gap={4} justify="flex-end" wrap="nowrap">
+          <RestoreRowButton label={`Khôi phục vai trò ${r.name}`} disabled={restore.isPending}
+            onClick={() => restore.confirmRestore([r.id])} />
+        </Group>
+      ) : (
         <Group gap={4} justify="flex-end" wrap="nowrap">
           {canCreate && (
             <ActionIcon variant="subtle" aria-label="Sửa tên" onClick={() => openEdit(r)}>
@@ -153,7 +169,7 @@ export function RolesPage() {
         title="Vai trò"
         description="Quản lý vai trò; cấu hình ma trận quyền ở tab Phân quyền"
         actions={
-          canCreate ? (
+          canCreate && !trash ? (
             <Button leftSection={<IconPlus size={16} />} onClick={openCreate}>
               Tạo vai trò
             </Button>
@@ -163,9 +179,14 @@ export function RolesPage() {
 
       {canDelete && (
         <>
+          <Group mb="md">
+            <TrashToggle trash={trash} onChange={setTrash} />
+          </Group>
           <BulkActionBar count={selection.selectedIds.length} onClear={selection.clear}
-            onDelete={() => bulk.confirmDelete(selection.selectedIds)} loading={bulk.isPending} />
-          <BulkDeleteFailures failures={bulk.failures} onClose={bulk.dismissFailures} />
+            action={trash ? 'restore' : 'delete'} loading={bulkAction.isPending}
+            onDelete={() => (trash ? restore.confirmRestore : bulk.confirmDelete)(selection.selectedIds)} />
+          <BulkDeleteFailures failures={bulkAction.failures} onClose={bulkAction.dismissFailures}
+            action={trash ? 'restore' : 'delete'} />
         </>
       )}
       <DataTable
@@ -175,11 +196,11 @@ export function RolesPage() {
         selection={canDelete ? {
           selectedIds: selection.selectedIds,
           onChange: selection.setSelectedIds,
-          disabledReason: deleteBlock,
+          disabledReason: trash ? undefined : deleteBlock,
           rowLabel: (r) => r.name,
         } : undefined}
         loading={rolesQuery.isLoading}
-        emptyText="Chưa có vai trò"
+        emptyText={trash ? 'Không có vai trò đã xóa' : 'Chưa có vai trò'}
       />
 
       <Drawer

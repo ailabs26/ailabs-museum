@@ -8,6 +8,8 @@ export const userSchema = z.object({
   roles: z.array(z.string()),
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
+  /** Chỉ có khi xem mục Đã xóa (`deleted=true`). */
+  deletedAt: z.string().datetime({ offset: true }).nullable().optional(),
 });
 
 export const userResponseSchema = z.object({

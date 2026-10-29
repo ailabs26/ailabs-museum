@@ -38,8 +38,11 @@ import { ApiException } from '@/core/api/api-error';
 import { formatBytes, hasMediaRights, MEDIA_ACCEPT, uploadSizeError } from '@/helpers/mediaLibrary';
 import type { MediaItem, MediaKind, MediaProcessingState } from '@/services/media.service';
 import { MEDIA_KIND_LABEL, MEDIA_STATE_LABEL, mediaService } from '@/services/media.service';
-import { BulkActionBar, BulkDeleteFailures, Column, DataTable } from '@/shared/components/data';
-import { useBulkDelete } from '@/shared/hooks/useBulkDelete';
+import {
+  BulkActionBar, BulkDeleteFailures, Column, DataTable, RestoreRowButton, TrashToggle,
+} from '@/shared/components/data';
+import { formatDeletedAt } from '@/helpers/bulkDelete';
+import { useBulkDelete, useBulkRestore } from '@/shared/hooks/useBulkDelete';
 import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { confirmAction, notify } from '@/shared/components/feedback';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
@@ -105,6 +108,8 @@ export function MediaPage() {
   const [search, setSearch] = useState('');
   const [kindFilter, setKindFilter] = useState<MediaKind | null>(null);
   const [stateFilter, setStateFilter] = useState<MediaProcessingState | null>(null);
+  // Mục Đã xóa (thùng rác): xem và khôi phục media đã xóa mềm (file vẫn được giữ).
+  const [trash, setTrash] = useState(false);
 
   const [uploadKind, setUploadKind] = useState<MediaKind>('image');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -114,7 +119,7 @@ export function MediaPage() {
   const [editing, setEditing] = useState<MediaItem | null>(null);
 
   const mediaQuery = useQuery({
-    queryKey: ['admin-media', page, search, kindFilter, stateFilter],
+    queryKey: ['admin-media', page, search, kindFilter, stateFilter, trash],
     queryFn: () =>
       mediaService.list({
         page,
@@ -122,6 +127,7 @@ export function MediaPage() {
         q: search.trim() || undefined,
         kind: kindFilter ?? undefined,
         state: stateFilter ?? undefined,
+        deleted: trash || undefined,
       }),
     placeholderData: keepPreviousData,
   });
@@ -137,15 +143,16 @@ export function MediaPage() {
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin-media'] });
-  const selection = useRowSelection(`${page}|${search}|${kindFilter ?? ''}|${stateFilter ?? ''}`);
+  const selection = useRowSelection(`${page}|${search}|${kindFilter ?? ''}|${stateFilter ?? ''}|${trash}`);
+  const nameOf = (id: string) => mediaQuery.data?.items.find((media) => media.id === id)?.originalName ?? undefined;
   // Media đang được dùng (BR-21) chỉ back-end biết: không khóa trước, lý do hiện trong danh sách bị chặn.
   const bulk = useBulkDelete({
-    removeMany: mediaService.removeMany,
-    noun: 'media',
-    nameOf: (id) => mediaQuery.data?.items.find((media) => media.id === id)?.originalName ?? undefined,
-    onSuccess: selection.clear,
-    onSettled: invalidate,
+    removeMany: mediaService.removeMany, noun: 'media', nameOf, onSuccess: selection.clear, onSettled: invalidate,
   });
+  const restore = useBulkRestore({
+    restoreMany: mediaService.restoreMany, noun: 'media', nameOf, onSuccess: selection.clear, onSettled: invalidate,
+  });
+  const bulkAction = trash ? restore : bulk;
 
   const openEdit = (media: MediaItem) => {
     setEditing(media);
@@ -237,7 +244,8 @@ export function MediaPage() {
       key: 'preview',
       header: '',
       width: 64,
-      render: (m) => <Thumbnail media={m} />,
+      // Media đã xóa không còn được phân phối: hiện biểu tượng loại thay cho ảnh.
+      render: (m) => <Thumbnail media={trash ? { ...m, url: null } : m} />,
     },
     {
       key: 'name',
@@ -292,11 +300,21 @@ export function MediaPage() {
         </Text>
       ),
     },
+    ...(trash ? [{
+      key: 'deletedAt',
+      header: 'Ngày xóa',
+      render: (m: MediaItem) => <Text size="xs" c="dimmed">{formatDeletedAt(m.deletedAt)}</Text>,
+    }] : []),
     {
       key: 'actions',
       header: '',
       align: 'right',
-      render: (m) => (
+      render: (m) => trash ? (
+        <Group gap={6} justify="flex-end" wrap="nowrap">
+          <RestoreRowButton label={`Khôi phục media ${m.originalName ?? m.id}`} disabled={restore.isPending}
+            onClick={() => restore.confirmRestore([m.id])} />
+        </Group>
+      ) : (
         <Group gap={6} justify="flex-end" wrap="nowrap">
           <Tooltip label="Xem trước">
             <ActionIcon variant="subtle" color="blue" aria-label="Xem trước" onClick={() => setPreviewing(m)}>
@@ -414,11 +432,16 @@ export function MediaPage() {
             />
           </Grid.Col>
         </Grid>
+        <Group mt="sm">
+          <TrashToggle trash={trash} onChange={(value) => { setTrash(value); setPage(1); }} />
+        </Group>
       </Card>
 
       <BulkActionBar count={selection.selectedIds.length} onClear={selection.clear}
-        onDelete={() => bulk.confirmDelete(selection.selectedIds)} loading={bulk.isPending} />
-      <BulkDeleteFailures failures={bulk.failures} onClose={bulk.dismissFailures} />
+        action={trash ? 'restore' : 'delete'} loading={bulkAction.isPending}
+        onDelete={() => (trash ? restore.confirmRestore : bulk.confirmDelete)(selection.selectedIds)} />
+      <BulkDeleteFailures failures={bulkAction.failures} onClose={bulkAction.dismissFailures}
+        action={trash ? 'restore' : 'delete'} />
       <Card withBorder p={0} radius="sm">
         <DataTable
           columns={columns}
@@ -434,7 +457,7 @@ export function MediaPage() {
           pageSize={PAGE_SIZE}
           onPageChange={setPage}
           loading={mediaQuery.isLoading}
-          emptyText="Chưa có media nào phù hợp với bộ lọc."
+          emptyText={trash ? 'Không có media đã xóa phù hợp với bộ lọc.' : 'Chưa có media nào phù hợp với bộ lọc.'}
         />
       </Card>
 

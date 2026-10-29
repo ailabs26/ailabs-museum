@@ -11,8 +11,11 @@ import { ApiException } from '@/core/api/api-error';
 import { useAuth } from '@/core/auth/use-auth';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { confirmAction, notify } from '@/shared/components/feedback';
-import { BulkActionBar, BulkDeleteFailures, DataTable, type Column } from '@/shared/components/data';
-import { useBulkDelete } from '@/shared/hooks/useBulkDelete';
+import {
+  BulkActionBar, BulkDeleteFailures, DataTable, RestoreRowButton, TrashToggle, type Column,
+} from '@/shared/components/data';
+import { formatDeletedAt } from '@/helpers/bulkDelete';
+import { useBulkDelete, useBulkRestore } from '@/shared/hooks/useBulkDelete';
 import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { FormPassword, FormTextField } from '@/shared/components/form';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
@@ -61,6 +64,8 @@ export function UsersPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebouncedValue(search, 300);
   const [status, setStatus] = useState<UserStatus | null>(null);
+  // Mục Đã xóa (thùng rác): xem và khôi phục tài khoản đã xóa mềm.
+  const [trash, setTrash] = useState(false);
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [opened, drawer] = useDisclosure(false);
   const [rolesInitialized, setRolesInitialized] = useState(false);
@@ -73,9 +78,10 @@ export function UsersPage() {
   const canReadRoles = hasPermission(PERMISSIONS.ROLE_READ);
 
   const usersQuery = useQuery({
-    queryKey: ['users', page, debouncedSearch, status],
+    queryKey: ['users', page, debouncedSearch, status, trash],
     queryFn: () => usersService.list({
       page, pageSize: 20, q: debouncedSearch.trim() || undefined, status: status ?? undefined,
+      deleted: trash || undefined,
     }),
     placeholderData: keepPreviousData,
   });
@@ -138,16 +144,17 @@ export function UsersPage() {
     onError: (error) => notify.error(errorMessage(error, 'Xóa tài khoản thất bại')),
   });
 
-  const selection = useRowSelection(`${page}|${debouncedSearch}|${status ?? ''}`);
+  const selection = useRowSelection(`${page}|${debouncedSearch}|${status ?? ''}|${trash}`);
+  const nameOf = (id: string) => usersQuery.data?.items.find((user) => user.id === id)?.displayName;
   const bulk = useBulkDelete({
-    removeMany: usersService.removeMany,
-    noun: 'tài khoản',
-    nameOf: (id) => usersQuery.data?.items.find((user) => user.id === id)?.displayName,
-    onSuccess: selection.clear,
-    onSettled: invalidate,
+    removeMany: usersService.removeMany, noun: 'tài khoản', nameOf, onSuccess: selection.clear, onSettled: invalidate,
   });
+  const restore = useBulkRestore({
+    restoreMany: usersService.restoreMany, noun: 'tài khoản', nameOf, onSuccess: selection.clear, onSettled: invalidate,
+  });
+  const bulkAction = trash ? restore : bulk;
 
-  const isBusy = saveMutation.isPending || removeMutation.isPending || bulk.isPending;
+  const isBusy = saveMutation.isPending || removeMutation.isPending || bulk.isPending || restore.isPending;
   const canSelectRoles = canAssignRoles && canReadRoles
     && rolesQuery.isSuccess && rolesInitialized;
   const canSave = !editing || canUpdate || canSelectRoles;
@@ -206,7 +213,13 @@ export function UsersPage() {
         )) : <Badge color="gray" variant="outline">Chưa gán</Badge>}
       </Group>
     ) },
-    { key: 'actions', header: '', align: 'right', render: (user) => (
+    ...(trash ? [{ key: 'deletedAt', header: 'Ngày xóa', render: (user: UserRow) => formatDeletedAt(user.deletedAt) }] : []),
+    { key: 'actions', header: '', align: 'right', render: (user) => trash ? (
+      <Group gap={4} justify="flex-end" wrap="nowrap">
+        <RestoreRowButton label={`Khôi phục tài khoản ${user.displayName}`} disabled={isBusy}
+          onClick={() => restore.confirmRestore([user.id])} />
+      </Group>
+    ) : (
       <Group gap={4} justify="flex-end" wrap="nowrap">
         {(canUpdate || canAssignRoles) && (
           <ActionIcon variant="subtle" aria-label={canUpdate ? 'Sửa' : 'Gán vai trò'}
@@ -233,7 +246,7 @@ export function UsersPage() {
   return (
     <>
       <PageHeader titleRef={titleRef} title="Tài khoản" description="Quản lý tài khoản Admin và vai trò"
-        actions={canCreate ? (
+        actions={canCreate && !trash ? (
           <Button leftSection={<IconPlus size={16} />} disabled={isBusy} onClick={() => openForm(null)}>
             Tạo tài khoản
           </Button>
@@ -244,6 +257,7 @@ export function UsersPage() {
           onChange={(event) => { setPage(1); setSearch(event.currentTarget.value); }} />
         <Select label="Trạng thái" placeholder="Tất cả" clearable data={STATUS_OPTIONS}
           value={status} onChange={(value) => { setPage(1); setStatus(value as UserStatus | null); }} />
+        {canDelete && <TrashToggle trash={trash} onChange={(value) => { setPage(1); setTrash(value); }} />}
       </Group>
       {usersQuery.isError ? (
         <Alert color="red" title="Không tải được tài khoản" role="alert">
@@ -258,20 +272,23 @@ export function UsersPage() {
         {canDelete && (
           <>
             <BulkActionBar count={selection.selectedIds.length} onClear={selection.clear}
-              onDelete={() => bulk.confirmDelete(selection.selectedIds)} loading={bulk.isPending} />
-            <BulkDeleteFailures failures={bulk.failures} onClose={bulk.dismissFailures} />
+              action={trash ? 'restore' : 'delete'} loading={bulkAction.isPending}
+              onDelete={() => (trash ? restore.confirmRestore : bulk.confirmDelete)(selection.selectedIds)} />
+            <BulkDeleteFailures failures={bulkAction.failures} onClose={bulkAction.dismissFailures}
+              action={trash ? 'restore' : 'delete'} />
           </>
         )}
         <DataTable columns={columns} data={data?.items ?? []} rowKey={(user) => user.id}
           selection={canDelete ? {
             selectedIds: selection.selectedIds,
             onChange: selection.setSelectedIds,
-            disabledReason: adminDeleteBlock,
+            disabledReason: trash ? undefined : adminDeleteBlock,
             rowLabel: (user) => user.displayName,
           } : undefined}
           loading={usersQuery.isFetching} page={data?.page} pageSize={data?.pageSize}
           total={data?.total} onPageChange={setPage}
-          emptyText={debouncedSearch || status ? 'Không có tài khoản phù hợp' : 'Chưa có tài khoản'} />
+          emptyText={debouncedSearch || status ? 'Không có tài khoản phù hợp'
+            : trash ? 'Không có tài khoản đã xóa' : 'Chưa có tài khoản'} />
         </>
       )}
       <Drawer ref={drawerRef} opened={opened} onClose={closeForm} position="right"

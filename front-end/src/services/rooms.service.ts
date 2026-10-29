@@ -12,6 +12,8 @@ export interface RoomRow {
   exhibitsCount: number;
   createdAt: string;
   updatedAt: string;
+  /** Chỉ có khi xem mục Đã xóa. */
+  deletedAt?: string | null;
 }
 
 export interface ListRoomsParams {
@@ -19,6 +21,8 @@ export interface ListRoomsParams {
   pageSize?: number;
   q?: string;
   status?: RoomStatus;
+  /** true: mục Đã xóa (thùng rác). */
+  deleted?: boolean;
 }
 
 export interface CreateRoomInput {
@@ -56,6 +60,11 @@ export const roomsService = {
   /** Xóa mềm nhiều phòng: tất cả hoặc không (409 kèm lý do từng ID). */
   async removeMany(ids: string[]): Promise<void> {
     await http.post<unknown>('/admin/rooms/bulk-delete', { ids });
+  },
+
+  /** Khôi phục phòng đã xóa: tất cả hoặc không (409 kèm lý do từng ID). */
+  async restoreMany(ids: string[]): Promise<void> {
+    await http.post<unknown>('/admin/rooms/bulk-restore', { ids });
   },
 
   getPublicList(): Promise<RoomRow[]> {
