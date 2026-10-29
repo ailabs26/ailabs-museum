@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { HttpException, INestApplication, UnauthorizedException, ValidationPipe } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
@@ -11,7 +11,7 @@ import { ResponseInterceptor } from '../../../common/interceptors/response.inter
 import { appConfig, jwtConfig } from '../../../config';
 import { AuthController } from '../controllers/auth.controller';
 import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard';
-import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
+import { AuthRateLimiter, DEFAULT_AUTH_RATE_LIMITS } from '../services/auth-rate-limiter.service';
 import { AuditService } from '../../audit/services/audit.service';
 import { AuthService } from '../services/auth.service';
 import { SessionsService } from '../services/sessions.service';
@@ -67,6 +67,68 @@ describe('AuthRateLimiter', () => {
     assert.equal(status(() => limiter.consumeIp('2.2.2.2')), null);
     advance(60_001);
     assert.equal(status(() => limiter.consumeIp('1.1.1.1')), null);
+  });
+});
+
+describe('AuthRateLimiter — refresh tách khỏi login (issue #126)', () => {
+  const make = (config?: ConfigService) => {
+    const limiter = new AuthRateLimiter(config);
+    let t = 1_000_000;
+    limiter.now = () => t;
+    return { limiter, advance: (ms: number) => (t += ms) };
+  };
+  const exhaust = (fn: () => void, times: number) => { for (let i = 0; i < times; i++) fn(); };
+
+  it('login dùng hết 20/phút/IP không ảnh hưởng refresh của cùng IP, và ngược lại', () => {
+    const { limiter } = make();
+    exhaust(() => limiter.consumeIp('1.1.1.1'), 20);
+    assert.equal(status(() => limiter.consumeIp('1.1.1.1')), 429);
+    assert.equal(status(() => limiter.consumeRefreshIp('1.1.1.1')), null);
+    assert.equal(status(() => limiter.consumeRefreshInvalid('1.1.1.1')), null);
+
+    const other = make().limiter;
+    exhaust(() => other.consumeRefreshInvalid('2.2.2.2'), 20);
+    assert.equal(status(() => other.consumeRefreshInvalid('2.2.2.2')), 429);
+    assert.equal(status(() => other.consumeIp('2.2.2.2')), null);
+  });
+
+  it('mỗi phiên 30 lần/phút: phiên vượt ngưỡng bị 429, phiên khác cùng IP không ảnh hưởng, hết cửa sổ thì mở lại', () => {
+    const { limiter, advance } = make();
+    exhaust(() => limiter.consumeRefreshSession('family-a'), 30);
+    assert.equal(status(() => limiter.consumeRefreshSession('family-a')), 429);
+    assert.equal(status(() => limiter.consumeRefreshSession('family-b')), null);
+    advance(60_001);
+    assert.equal(status(() => limiter.consumeRefreshSession('family-a')), null);
+  });
+
+  it('trần theo IP 300/phút; request không có/sai cookie 20/phút/IP', () => {
+    const { limiter } = make();
+    exhaust(() => limiter.consumeRefreshIp('3.3.3.3'), 300);
+    assert.equal(status(() => limiter.consumeRefreshIp('3.3.3.3')), 429);
+    exhaust(() => limiter.consumeRefreshInvalid('3.3.3.3'), 20);
+    assert.equal(status(() => limiter.consumeRefreshInvalid('3.3.3.3')), 429);
+  });
+
+  it('ngưỡng refresh đọc từ cấu hình jwt.refreshRateLimit; thiếu cấu hình thì dùng mặc định', () => {
+    const config = { get: (key: string) => (key === 'jwt.refreshRateLimit' ? { perSession: 2, perIp: 3, invalidPerIp: 1 } : undefined) };
+    const { limiter } = make(config as unknown as ConfigService);
+    assert.deepEqual(
+      [limiter.limits.refreshPerSession, limiter.limits.refreshPerIp, limiter.limits.refreshInvalidPerIp, limiter.limits.ipRequests],
+      [2, 3, 1, 20],
+    );
+    exhaust(() => limiter.consumeRefreshSession('f'), 2);
+    assert.equal(status(() => limiter.consumeRefreshSession('f')), 429);
+    assert.deepEqual(new AuthRateLimiter().limits, DEFAULT_AUTH_RATE_LIMITS);
+  });
+
+  it('audit "bị chặn" của refresh: 1 lần mỗi cửa sổ 1 phút cho mỗi khóa', () => {
+    const { limiter, advance } = make();
+    assert.equal(limiter.shouldAuditBlock('refresh_session', 'f1'), true);
+    assert.equal(limiter.shouldAuditBlock('refresh_session', 'f1'), false);
+    assert.equal(limiter.shouldAuditBlock('refresh_session', 'f2'), true);
+    assert.equal(limiter.shouldAuditBlock('refresh_invalid', 'f1'), true);
+    advance(60_001);
+    assert.equal(limiter.shouldAuditBlock('refresh_session', 'f1'), true);
   });
 });
 
