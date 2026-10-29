@@ -4,6 +4,7 @@ import { Brackets, EntityManager, In, IsNull, Not, Repository, SelectQueryBuilde
 import { BaseRepository } from '../../../common/repository/base.repository';
 import { Paginated } from '../../../common/types/paginated.type';
 import { ListExhibitsQueryDto } from '../dto/list-exhibits-query.dto';
+import { PublicSearchQueryDto } from '../dto/public-search-query.dto';
 import { Exhibit, ExhibitVisibility } from '../entities/exhibit.entity';
 import { REVISION_MEDIA_RELATIONS } from '../constants/revision-media-slots';
 import { ExhibitRevision, RevisionState } from '../entities/exhibit-revision.entity';
@@ -259,6 +260,21 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
 
     const [items, total] = await qb.getManyAndCount();
     return { items, total, page, pageSize };
+  }
+
+  /**
+   * Tìm kiếm hiện vật CÔNG KHAI: chỉ bản đã xuất bản (APPROVED) + đang hiển thị, chưa xóa/lưu trữ.
+   * Lọc theo `roomId` và từ khóa `q` (ILIKE trên tên phòng + nội dung bản published).
+   * Sắp xếp ỔN ĐỊNH: `displayOrder ASC, id ASC` (tiebreaker duy nhất `id`) — union các trang
+   * không trùng/sót. Trùng khớp với index `IDX_exhibits_room_order_id (roomId, displayOrder, id)`.
+   */
+  async searchPublicExhibits(
+    query: Partial<PublicSearchQueryDto> = {},
+  ): Promise<Paginated<Exhibit>> {
+    const page = Math.max(1, query.page ?? 1);
+    const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
+    // STUB (RED): chưa triển khai truy vấn — trả rỗng để biên dịch; test phải FAIL.
+    return { items: [], total: 0, page, pageSize };
   }
 
   /**

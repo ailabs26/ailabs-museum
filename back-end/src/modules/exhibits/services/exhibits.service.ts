@@ -11,6 +11,7 @@ import { RoomStatus } from '../../rooms/entities/room.entity';
 import { RoomsRepository } from '../../rooms/repositories/rooms.repository';
 import { CreateExhibitDto } from '../dto/create-exhibit.dto';
 import { ListExhibitsQueryDto } from '../dto/list-exhibits-query.dto';
+import { PublicSearchQueryDto } from '../dto/public-search-query.dto';
 import {
   ExhibitAdminDetailResponse,
   ExhibitAdminResponse,
@@ -107,6 +108,19 @@ export class ExhibitsService {
       description: room.description,
       exhibits,
     };
+  }
+
+  /**
+   * Tìm kiếm hiện vật công khai có lọc + phân trang + thứ tự ổn định (VT-077).
+   * Giữ nguyên thứ tự repository trả về (đã sắp ổn định ở tầng SQL) và ánh xạ sang DTO công khai,
+   * loại các bản ghi không đủ điều kiện xuất bản (mapper trả null). Trả `Paginated` để
+   * `ResponseInterceptor` bọc thành envelope `{ success, data, meta }` — không đổi contract cũ.
+   */
+  async publicSearch(
+    query: PublicSearchQueryDto,
+  ): Promise<Paginated<PublicExhibitDto>> {
+    // STUB (RED): chưa gọi repo/map — test phải FAIL.
+    return { items: [], total: 0, page: query.page ?? 1, pageSize: query.pageSize ?? 20 };
   }
 
   // =========================================================================
