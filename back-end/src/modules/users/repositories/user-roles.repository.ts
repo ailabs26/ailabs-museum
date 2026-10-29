@@ -56,6 +56,19 @@ export class UserRolesRepository {
     await manager.getRepository(UserRole).delete({ userId, roleId });
   }
 
+  /**
+   * Bỏ liên kết của các tài khoản tới vai trò đã xóa mềm — khi khôi phục tài khoản, để vai trò đó
+   * được khôi phục sau này cũng không âm thầm cấp lại quyền.
+   */
+  async removeDeletedRoleLinks(userIds: string[], manager: EntityManager): Promise<void> {
+    if (userIds.length === 0) return;
+    await manager.query(
+      `DELETE FROM user_roles ur USING roles r
+        WHERE ur.role_id = r.id AND r.is_deleted = true AND ur.user_id = ANY($1)`,
+      [userIds],
+    );
+  }
+
   async has(userId: string, roleId: string): Promise<boolean> {
     return (await this.userRoles.count({ where: { userId, roleId } })) > 0;
   }

@@ -29,7 +29,7 @@ export class AdminRoomsController {
 
   @Get()
   @Permissions(PERMISSIONS.ROOM_READ)
-  @ApiOperation({ summary: 'Danh sách phòng trưng bày (phân trang, lọc, tìm kiếm)' })
+  @ApiOperation({ summary: 'Danh sách phòng trưng bày (phân trang, lọc, tìm kiếm; deleted=true → thùng rác)' })
   list(@Query() query: ListRoomsQueryDto) {
     return this.roomsService.list(query);
   }
@@ -67,6 +67,15 @@ export class AdminRoomsController {
   @ApiOperation({ summary: 'Xóa mềm nhiều phòng (tất cả hoặc không; BR-20, 409 kèm lý do từng ID)' })
   removeMany(@Body() dto: BulkIdsDto) {
     return this.roomsService.removeMany(dto.ids);
+  }
+
+  @Post('bulk-restore')
+  @HttpCode(HttpStatus.OK)
+  @Permissions(PERMISSIONS.ROOM_DELETE)
+  @Audit('room.restore', 'room')
+  @ApiOperation({ summary: 'Khôi phục phòng đã xóa mềm (tất cả hoặc không; 409 kèm lý do từng ID)' })
+  restoreMany(@Body() dto: BulkIdsDto) {
+    return this.roomsService.restoreMany(dto.ids);
   }
 
   @Delete(':id')

@@ -91,6 +91,8 @@ publish(@Param('id') id: string, @CurrentUser() user: AuthUser) { ... }
 
 Role là **xóa mềm** (`is_deleted`). Không xóa được vai trò `admin` và vai trò đang gán cho tài khoản chưa xóa;
 editor/moderator chỉ là vai trò có sẵn, xóa được khi không ai dùng. Mã vai trò chỉ duy nhất trong các vai trò chưa xóa.
+Vai trò đã xóa **không cấp quyền nào** (kể cả qua liên kết cũ của tài khoản đã xóa); khôi phục tài khoản bỏ các liên kết đó,
+khôi phục vai trò bị chặn khi mã đã thuộc vai trò khác.
 Tài khoản có vai trò `admin` không xóa được (phải bỏ vai trò trước); không khóa/bỏ vai trò Admin hoạt động cuối cùng.
 
 | Role | Quyền chính |

@@ -8,6 +8,7 @@ import {
   PayloadTooLargeException,
 } from '@nestjs/common';
 import { TransactionManager } from '../../../common/database/transaction.manager';
+import { withDeletedAt, type Trashed } from '../../../common/dto/deleted-filter.dto';
 import { assertNothingBlocked, type BlockedDeletion } from '../../../common/exceptions/deletion-blocked';
 import { DomainValidationException } from '../../../common/exceptions/validation.exception';
 import { Paginated } from '../../../common/types/paginated.type';
@@ -68,10 +69,10 @@ export class MediaService {
     private readonly urls: MediaUrlService,
   ) {}
 
-  /** Thư viện media cho Admin CMS (phân trang, lọc kind/trạng thái). */
-  async list(query: ListMediaQueryDto): Promise<Paginated<MediaResponse>> {
+  /** Thư viện media cho Admin CMS (phân trang, lọc kind/trạng thái); `deleted=true` → thùng rác. */
+  async list(query: ListMediaQueryDto): Promise<Paginated<MediaResponse | Trashed<MediaResponse>>> {
     const result = await this.mediaRepo.listPaginated(query);
-    return { ...result, items: result.items.map((media) => this.toResponse(media)) };
+    return { ...result, items: result.items.map((media) => withDeletedAt(this.toResponse(media), media, query.deleted)) };
   }
 
   async getById(id: string): Promise<MediaResponse> {
@@ -177,6 +178,22 @@ export class MediaService {
         await this.mediaRepo.save(media, manager);
       }
     });
+  }
+
+  /**
+   * Khôi phục media trong thùng rác: tất cả hoặc không. File vẫn được giữ khi xóa mềm nên dùng lại
+   * được ngay. Trả lại danh sách ID để audit ghi từng media.
+   */
+  async restoreMany(ids: string[]): Promise<{ ids: string[] }> {
+    await this.tx.run(async (manager) => {
+      const found = new Set((await this.mediaRepo.lockDeletedByIds(ids, manager)).map((media) => media.id));
+      const blocked = ids
+        .filter((id) => !found.has(id))
+        .map((id): BlockedDeletion => ({ id, reason: 'Không tìm thấy media trong mục đã xóa', notFound: true }));
+      assertNothingBlocked(blocked, false, 'restore');
+      await this.mediaRepo.markRestored(ids, manager);
+    });
+    return { ids };
   }
 
   private deletionBlock(usage: MediaUsage): string | null {

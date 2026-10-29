@@ -85,7 +85,7 @@ const ADMIN_ROUTES = [UsersController, RolesController, PermissionsController].f
 /** Body hợp lệ tối thiểu theo DTO để request đi qua ValidationPipe tới service. */
 function validBody(route: RouteSpec): object | undefined {
   const key = `${route.verb} ${route.path}`;
-  if (route.path.endsWith('/bulk-delete')) return { ids: [USER_ID] };
+  if (route.path.endsWith('/bulk-delete') || route.path.endsWith('/bulk-restore')) return { ids: [USER_ID] };
   if (key === 'post /users') return { email: 'new@aura.local', password: 'Str0ng-Passw0rd!', displayName: 'Mới' };
   if (key === 'post /roles') return { code: 'curator', name: 'Curator' };
   if (key === 'put /roles/permission-matrix') return { updates: [{ roleId: ROLE_ID, permissions: [] }] };

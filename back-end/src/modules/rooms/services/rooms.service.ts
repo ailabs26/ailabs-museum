@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { TransactionManager } from '../../../common/database/transaction.manager';
+import { withDeletedAt, type Trashed } from '../../../common/dto/deleted-filter.dto';
 import { assertNothingBlocked, type BlockedDeletion } from '../../../common/exceptions/deletion-blocked';
 import { Paginated } from '../../../common/types/paginated.type';
 import { CreateRoomDto } from '../dto/create-room.dto';
@@ -16,12 +17,12 @@ export class RoomsService {
     private readonly tx: TransactionManager,
   ) {}
 
-  /** Lấy danh sách phòng trưng bày có phân trang & tìm kiếm cho Admin CMS. */
-  async list(query: ListRoomsQueryDto): Promise<Paginated<RoomResponse>> {
+  /** Lấy danh sách phòng trưng bày có phân trang & tìm kiếm cho Admin CMS; `deleted=true` → thùng rác. */
+  async list(query: ListRoomsQueryDto): Promise<Paginated<RoomResponse | Trashed<RoomResponse>>> {
     const result = await this.roomsRepo.searchRooms(query);
     return {
       ...result,
-      items: result.items.map((room) => toRoomResponse(room)),
+      items: result.items.map((room) => withDeletedAt(toRoomResponse(room), room, query.deleted)),
     };
   }
 
@@ -49,9 +50,14 @@ export class RoomsService {
     return toRoomResponse(room);
   }
 
-  /** Tạo phòng trưng bày mới, kiểm tra tính duy nhất của slug. */
+  /** Tạo phòng trưng bày mới, kiểm tra tính duy nhất của slug (unique toàn bảng, kể cả phòng đã xóa). */
   async create(dto: CreateRoomDto): Promise<RoomResponse> {
-    const existing = await this.roomsRepo.findBySlug(dto.slug);
+    const existing = await this.roomsRepo.findAnyBySlug(dto.slug);
+    if (existing?.isDeleted) {
+      throw new ConflictException(
+        `Slug "${dto.slug}" thuộc phòng đã xóa "${existing.name}". Khôi phục phòng đó trong mục Đã xóa hoặc dùng slug khác.`,
+      );
+    }
     if (existing) {
       throw new ConflictException(`Slug "${dto.slug}" đã được sử dụng`);
     }
@@ -125,6 +131,22 @@ export class RoomsService {
       });
       assertNothingBlocked(blocked, false);
       await this.roomsRepo.markDeleted(ids, manager);
+    });
+    return { ids };
+  }
+
+  /**
+   * Khôi phục phòng trong thùng rác: tất cả hoặc không. Slug unique toàn bảng nên không thể trùng.
+   * Hiện vật đã xóa trong phòng vẫn nằm trong thùng rác. Trả lại danh sách ID để audit ghi từng phòng.
+   */
+  async restoreMany(ids: string[]): Promise<{ ids: string[] }> {
+    await this.tx.run(async (manager) => {
+      const found = new Set((await this.roomsRepo.lockDeletedByIds(ids, manager)).map((room) => room.id));
+      const blocked = ids
+        .filter((id) => !found.has(id))
+        .map((id): BlockedDeletion => ({ id, reason: 'Không tìm thấy phòng trong mục đã xóa', notFound: true }));
+      assertNothingBlocked(blocked, false, 'restore');
+      await this.roomsRepo.markRestored(ids, manager);
     });
     return { ids };
   }

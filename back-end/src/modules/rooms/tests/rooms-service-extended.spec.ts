@@ -137,6 +137,13 @@ class InMemoryMockRoomsRepository {
     return room ?? null;
   }
 
+  /** Slug unique toàn bảng: create() kiểm cả phòng đã xóa mềm. */
+  async findAnyBySlug(slug: string): Promise<Room | null> {
+    this.findBySlugCalls.push(slug);
+    if (this.errorToThrow) throw this.errorToThrow;
+    return Array.from(this.rooms.values()).find((r) => r.slug === slug) ?? null;
+  }
+
   create(data: DeepPartial<Room>): Room {
     this.createCalls.push(data);
     const room = new Room();
@@ -994,7 +1001,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       );
     });
 
-    it('TC-E068: Exception tùy chỉnh từ Database trong create (findBySlug) được chuyển tiếp nguyên vẹn', async () => {
+    it('TC-E068: Exception tùy chỉnh từ Database trong create (findAnyBySlug) được chuyển tiếp nguyên vẹn', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.errorToThrow = new Error('Database deadlock occurred');
       const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);

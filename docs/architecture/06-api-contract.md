@@ -43,10 +43,10 @@ POST   /auth/change-password                                     # tự đổi m
 GET    /auth/sessions         DELETE /auth/sessions/:id          # thiết bị đang đăng nhập của chính mình
 POST   /auth/sessions/revoke-others   POST /auth/logout-all
 GET    /users                 POST /users           GET /users/:id       PATCH /users/:id     DELETE /users/:id
-POST   /users/bulk-delete                                        # xóa mềm nhiều tài khoản
+POST   /users/bulk-delete     POST /users/bulk-restore           # xóa mềm / khôi phục nhiều tài khoản
 POST   /users/:id/roles       DELETE /users/:id/roles/:roleId
 GET    /roles                 POST /roles           PATCH /roles/:id     DELETE /roles/:id
-POST   /roles/bulk-delete                                        # xóa mềm nhiều vai trò
+POST   /roles/bulk-delete     POST /roles/bulk-restore           # xóa mềm / khôi phục nhiều vai trò
 GET    /roles/:id/permissions PUT  /roles/:id/permissions        # set ma trận quyền
 GET    /permissions                                              # danh mục permission
 GET    /audit                 GET  /audit/:id                    # nhật ký (lọc theo actor/action/thời gian)
@@ -90,9 +90,9 @@ Quản lý key (Admin): `GET /partner-api-keys` (`apikey:read`); `POST /partner-
 `{ partnerName, label?, scopes[], expiresInDays?, rateLimitPerMinute? }` → kèm `plaintext` (một lần); `POST /partner-api-keys/:id/revoke`;
 `DELETE /partner-api-keys/:id` (**xóa mềm**: thu hồi nếu đang hoạt động, ẩn khỏi danh sách) — đều cần `apikey:manage`, có audit `apikey.*`.
 
-#### Xóa mềm và xóa hàng loạt
+#### Xóa mềm, xóa hàng loạt và khôi phục
 
-Mọi tài nguyên quản trị **xóa mềm** (`is_deleted`/`deleted_at`; truy vấn luôn lọc bản ghi chưa xóa). Chưa có API khôi phục.
+Mọi tài nguyên quản trị **xóa mềm** (`is_deleted`/`deleted_at`; truy vấn mặc định lọc bản ghi chưa xóa).
 
 | Tài nguyên | Xóa lẻ | Xóa hàng loạt | Permission | Bị chặn khi |
 |---|---|---|---|---|
@@ -109,6 +109,22 @@ Mọi tài nguyên quản trị **xóa mềm** (`is_deleted`/`deleted_at`; truy 
     "errors": [ { "code": "delete_blocked", "field": "<id>", "message": "<lý do>" } ] }
   ```
 - Xóa lẻ giữ 404 (không tồn tại) / 409 (bị chặn) như cũ. Kiểm tra chạy trong transaction có khóa dòng.
+
+**Thùng rác & khôi phục** — danh sách thêm query `deleted=true` (chỉ `true`/`false`, giá trị khác → 400): chỉ trả bản ghi
+đã xóa, mỗi mục kèm `deletedAt`, mới xóa trước; quyền như xem danh sách. Khôi phục: `POST <tài nguyên>/bulk-restore`
+body `{ ids }` (1–100), **tất cả hoặc không**, quyền như xóa, audit `<resource>.restore` một bản ghi/ID.
+
+| Tài nguyên | Danh sách đã xóa | Khôi phục | Bị chặn khi | Ghi chú |
+|---|---|---|---|---|
+| Tài khoản | `GET /users?deleted=true` | `POST /users/bulk-restore` | ID không nằm trong thùng rác | email unique toàn bảng nên không thể trùng; bỏ liên kết tới vai trò đã xóa; phiên cũ đã thu hồi → đăng nhập lại |
+| Vai trò | `GET /roles?deleted=true` | `POST /roles/bulk-restore` | mã đang thuộc vai trò chưa xóa khác, hoặc trùng mã trong cùng lô | quyền giữ nguyên như lúc xóa |
+| Phòng | `GET /admin/rooms?deleted=true` | `POST /admin/rooms/bulk-restore` | ID không nằm trong thùng rác | slug unique toàn bảng; hiện vật đã xóa trong phòng vẫn ở thùng rác |
+| Media | `GET /admin/media?deleted=true` | `POST /admin/media/bulk-restore` | ID không nằm trong thùng rác | file được giữ khi xóa nên dùng lại ngay |
+| Hiện vật | `GET /admin/exhibits?deleted=true` | `POST /admin/exhibits/bulk-restore` | phòng chứa hiện vật đã bị xóa (khôi phục phòng trước) | về cuối thứ tự hiển thị của phòng; vẫn là bản nháp |
+
+- 409 khi khôi phục: `"Không khôi phục được n mục đã chọn. Không mục nào được khôi phục."`, `errors[].code = "restore_blocked"`.
+- Tạo phòng với slug của phòng đã xóa → 409 gợi ý khôi phục phòng đó (slug unique toàn bảng); email của tài khoản đã xóa → 409 như cũ.
+- Chưa có xóa vĩnh viễn và tự dọn thùng rác theo thời gian.
 
 #### Stats (Dashboard Admin) — Task 21
 
@@ -193,6 +209,7 @@ Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. 
 | exhibit.hide / exhibit.unhide | exhibit | — | ExhibitRevisionsController |
 | report.assign/resolve/dismiss | report | — | ReportsController |
 | user.delete, role.delete, media.delete, exhibit.delete | user / role / media / exhibit | — | xóa lẻ và `bulk-delete` |
+| user.restore, role.restore, room.restore, media.restore, exhibit.restore | user / role / room / media / exhibit | — | `bulk-restore` (một bản ghi/ID) |
 | auth.password_change, auth.session_revoke_others, auth.logout_all | user | — | AuthController |
 | auth.session_revoke | session | — | AuthController (`resourceId` = family) |
 | auth.login | user | — | đăng nhập thành công; actor = tài khoản |
