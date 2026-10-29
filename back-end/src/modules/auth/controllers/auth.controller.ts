@@ -40,7 +40,7 @@ import { WrongCurrentPasswordException } from '../exceptions/wrong-current-passw
 import { SessionResponse } from '../dto/session-response.dto';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard';
-import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
+import { AuthRateLimiter, type AuthBlockKind } from '../services/auth-rate-limiter.service';
 import { SessionsService } from '../services/sessions.service';
 import type { SessionClient } from '../services/token.service';
 import { TokenService } from '../services/token.service';
@@ -74,8 +74,9 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ accessToken: string; user: AuthUser }> {
     const ip = req.ip ?? 'unknown';
-    await this.limitLogin(req, res, 'ip', ip, () => this.limiter.consumeIp(ip));
-    await this.limitLogin(req, res, 'email', dto.email, () => this.limiter.assertEmailAllowed(dto.email));
+    await this.limitWithAudit(req, res, 'auth.login_blocked', 'ip', ip, null, () => this.limiter.consumeIp(ip));
+    await this.limitWithAudit(req, res, 'auth.login_blocked', 'email', dto.email, null,
+      () => this.limiter.assertEmailAllowed(dto.email));
 
     let result;
     try {
@@ -104,6 +105,9 @@ export class AuthController {
   @ApiUnauthorizedResponse({
     description: 'Cookie bị xóa khi phiên không hợp lệ, hết hạn hoặc bị tái sử dụng.',
   })
+  @ApiTooManyRequestsResponse({
+    description: 'Quá nhiều lần làm mới theo phiên, theo IP, hoặc với cookie sai; xem Retry-After.',
+  })
   @ApiOkResponse({
     description: 'Access token mới trong ApiResponse và refresh cookie đã xoay vòng.',
   })
@@ -111,9 +115,22 @@ export class AuthController {
     @Req() req: RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ accessToken: string }> {
-    this.limitOrRetryAfter(res, () => this.limiter.consumeIp(req.ip ?? 'unknown'));
+    const ip = req.ip ?? 'unknown';
+    const raw = this.readRefreshCookie(req);
+    // Tách khỏi login (issue #126): trần rộng theo IP trước khi chạm DB, rồi đếm theo phiên; không có hoặc
+    // sai cookie thì đếm chặt theo IP (chống dò token).
+    await this.limitWithAudit(req, res, 'auth.refresh_blocked', 'refresh_ip', ip, null,
+      () => this.limiter.consumeRefreshIp(ip));
+    const owner = raw ? await this.tokens.findSessionOwner(raw) : null;
+    if (owner) {
+      await this.limitWithAudit(req, res, 'auth.refresh_blocked', 'refresh_session', owner.familyId, owner.userId,
+        () => this.limiter.consumeRefreshSession(owner.familyId));
+    } else {
+      await this.limitWithAudit(req, res, 'auth.refresh_blocked', 'refresh_invalid', ip, null,
+        () => this.limiter.consumeRefreshInvalid(ip));
+    }
     try {
-      const result = await this.auth.refresh(this.readRefreshCookie(req), this.clientOf(req));
+      const result = await this.auth.refresh(raw, this.clientOf(req));
       this.setRefreshCookie(res, result.refreshToken);
       return { accessToken: result.accessToken };
     } catch (error) {
@@ -167,13 +184,19 @@ export class AuthController {
     return this.auth.updateProfile(user.id, dto);
   }
 
-  /** Kiểm giới hạn đăng nhập; bị chặn thì ghi `auth.login_blocked` (1 lần mỗi cửa sổ) rồi ném 429. */
-  private async limitLogin(req: Request, res: Response, kind: 'ip' | 'email', value: string, check: () => void): Promise<void> {
+  /**
+   * Kiểm giới hạn; bị chặn thì ghi audit `action` (1 lần mỗi cửa sổ cho mỗi khóa) rồi ném 429.
+   * `reason.limit`: ip | email (login), ip | session | invalid (refresh).
+   */
+  private async limitWithAudit(
+    req: Request, res: Response, action: 'auth.login_blocked' | 'auth.refresh_blocked',
+    kind: AuthBlockKind, value: string, resourceId: string | null, check: () => void,
+  ): Promise<void> {
     try {
       this.limitOrRetryAfter(res, check);
     } catch (error) {
       if (this.limiter.shouldAuditBlock(kind, value)) {
-        await this.recordAuthEvent(req, 'auth.login_blocked', null, null, { limit: kind });
+        await this.recordAuthEvent(req, action, null, resourceId, { limit: kind.replace(/^refresh_/, '') });
       }
       throw error;
     }

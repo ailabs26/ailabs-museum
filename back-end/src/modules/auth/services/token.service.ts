@@ -134,6 +134,15 @@ export class TokenService {
     return result;
   }
 
+  /**
+   * Phiên (family) và chủ của refresh token, để giới hạn refresh theo phiên trước khi xoay vòng.
+   * Không kiểm hạn/thu hồi (rotate làm việc đó); null nếu token không tồn tại.
+   */
+  async findSessionOwner(raw: string): Promise<{ familyId: string; userId: string } | null> {
+    const session = await this.sessions.findByTokenHash(this.hash(raw));
+    return session ? { familyId: session.familyId, userId: session.userId } : null;
+  }
+
   /** Thu hồi session theo raw token (dùng khi logout). */
   /** Trả userId của phiên vừa thu hồi; null nếu token không tồn tại. */
   async revokeByRaw(raw: string): Promise<string | null> {
