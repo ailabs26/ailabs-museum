@@ -215,6 +215,7 @@ Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. 
 | auth.login | user | — | đăng nhập thành công; actor = tài khoản |
 | auth.login_failed | user | — | actor null; `resourceId` = tài khoản đích (null nếu email không tồn tại); `reason` `{"reason":"invalid_password\|account_disabled\|unknown_account\|credentials_changed"}`; không ghi email/mật khẩu đã nhập |
 | auth.login_blocked | user | — | bị chặn 429; `resourceId` null; `reason` `{"limit":"ip\|email"}`; **1 lần mỗi cửa sổ chặn** cho mỗi IP/email (chống ngập DB) |
+| auth.refresh_blocked | user | — | `/auth/refresh` bị chặn 429; `reason` `{"limit":"ip\|session\|invalid"}`; `resourceId` = chủ phiên khi `session`, null khi khác; 1 lần mỗi phút cho mỗi IP/phiên |
 | auth.logout | user | — | đăng xuất có phiên; actor = chủ phiên |
 | access.denied | access | — | 403 thiếu quyền; `resourceId` null |
 

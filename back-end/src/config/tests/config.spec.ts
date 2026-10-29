@@ -8,7 +8,8 @@ import { jwtConfig } from '../jwt.config';
 
 const BASE = { DATABASE_URL: 'postgres://u:p@localhost:5432/db' };
 const ENV_KEYS = ['PORT', 'FRONTEND_ORIGIN', 'DATABASE_URL', 'JWT_ACCESS_SECRET', 'JWT_ACCESS_TTL',
-  'JWT_REFRESH_TTL_DAYS', 'REFRESH_COOKIE_NAME', 'BCRYPT_ROUNDS', 'SEED_ADMIN_EMAIL', 'SEED_ADMIN_PASSWORD', 'TRUST_PROXY'];
+  'JWT_REFRESH_TTL_DAYS', 'REFRESH_COOKIE_NAME', 'BCRYPT_ROUNDS', 'SEED_ADMIN_EMAIL', 'SEED_ADMIN_PASSWORD', 'TRUST_PROXY',
+  'REFRESH_RATE_LIMIT_PER_SESSION', 'REFRESH_RATE_LIMIT_PER_IP', 'REFRESH_RATE_LIMIT_INVALID_PER_IP'];
 const saved = Object.fromEntries(ENV_KEYS.map((key) => [key, process.env[key]]));
 
 function invalidFields(input: Record<string, unknown>): string {
@@ -28,6 +29,9 @@ describe('validateEnvironment', () => {
     assert.equal(env.BCRYPT_ROUNDS, 12);
     assert.equal(env.JWT_REFRESH_TTL_DAYS, 7);
     assert.equal(env.MEDIA_STORAGE_DRIVER, 'local');
+    assert.equal(env.REFRESH_RATE_LIMIT_PER_SESSION, 30);
+    assert.equal(env.REFRESH_RATE_LIMIT_PER_IP, 300);
+    assert.equal(env.REFRESH_RATE_LIMIT_INVALID_PER_IP, 20);
   });
 
   it('ép kiểu chuỗi số từ biến môi trường', () => {
@@ -53,6 +57,9 @@ describe('validateEnvironment', () => {
     ['MEDIA_STORAGE_DRIVER', 's3'],
     ['NODE_ENV', 'staging'],
     ['TRUST_PROXY', 'yes'],
+    ['REFRESH_RATE_LIMIT_PER_SESSION', '0'],
+    ['REFRESH_RATE_LIMIT_PER_IP', '10001'],
+    ['REFRESH_RATE_LIMIT_INVALID_PER_IP', 'abc'],
     ['TRUST_PROXY', '10.0.0.0/8, proxy.local'],
   ] as const) {
     it(`từ chối ${field}=${value}`, () => {
@@ -154,6 +161,7 @@ describe('registerAs config', () => {
       PORT: '4000', FRONTEND_ORIGIN: 'https://museum.example', DATABASE_URL: 'postgres://x',
       JWT_ACCESS_SECRET: 's'.repeat(20), JWT_ACCESS_TTL: '5m', JWT_REFRESH_TTL_DAYS: '3',
       REFRESH_COOKIE_NAME: 'rt', BCRYPT_ROUNDS: '11', SEED_ADMIN_EMAIL: 'a@b.c', TRUST_PROXY: '1',
+      REFRESH_RATE_LIMIT_PER_SESSION: '12', REFRESH_RATE_LIMIT_PER_IP: '500', REFRESH_RATE_LIMIT_INVALID_PER_IP: '7',
     });
     assert.deepEqual(appConfig(), {
       port: 4000, frontendOrigin: 'https://museum.example', apiPrefix: 'api', trustProxy: 1,
@@ -162,6 +170,7 @@ describe('registerAs config', () => {
     assert.deepEqual(databaseConfig(), { url: 'postgres://x' });
     assert.deepEqual(jwtConfig(), {
       accessSecret: 's'.repeat(20), accessTtl: '5m', refreshTtlDays: 3, refreshCookieName: 'rt', bcryptRounds: 11,
+      refreshRateLimit: { perSession: 12, perIp: 500, invalidPerIp: 7 },
     });
   });
 
@@ -173,5 +182,6 @@ describe('registerAs config', () => {
     assert.equal(jwtConfig().accessTtl, '15m');
     assert.equal(jwtConfig().bcryptRounds, 12);
     assert.equal(jwtConfig().refreshCookieName, 'aura_rt');
+    assert.deepEqual(jwtConfig().refreshRateLimit, { perSession: 30, perIp: 300, invalidPerIp: 20 });
   });
 });

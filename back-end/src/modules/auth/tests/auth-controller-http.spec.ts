@@ -46,7 +46,14 @@ describe('AuthController HTTP — refresh cookie', () => {
         { provide: AuditService, useValue: { recordSafely: async () => undefined } },
         { provide: SessionsService, useValue: {} },
         { provide: AuthService, useValue: auth },
-        { provide: TokenService, useValue: { refreshCookieMaxAgeMs: () => 7 * 24 * 3600 * 1000 } },
+        {
+          provide: TokenService,
+          useValue: {
+            refreshCookieMaxAgeMs: () => 7 * 24 * 3600 * 1000,
+            // Token không tồn tại → không có phiên (đếm theo IP); còn lại thuộc một phiên.
+            findSessionOwner: async (raw: string) => (raw === 'stolen' ? null : { familyId: 'fam-1', userId: 'u1' }),
+          },
+        },
       ],
     }).compile();
     app = moduleRef.createNestApplication();

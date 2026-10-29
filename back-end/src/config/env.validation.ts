@@ -82,6 +82,25 @@ class Environment {
   @IsString()
   REFRESH_COOKIE_NAME: string = 'aura_rt';
 
+  /**
+   * Giới hạn POST /auth/refresh mỗi phút (issue #126), tách khỏi login: theo phiên (family refresh token),
+   * trần rộng theo IP (văn phòng chung IP vẫn dùng được), và theo IP cho request không có/cookie sai.
+   */
+  @IsInt()
+  @Min(1)
+  @Max(10000)
+  REFRESH_RATE_LIMIT_PER_SESSION: number = 30;
+
+  @IsInt()
+  @Min(1)
+  @Max(10000)
+  REFRESH_RATE_LIMIT_PER_IP: number = 300;
+
+  @IsInt()
+  @Min(1)
+  @Max(10000)
+  REFRESH_RATE_LIMIT_INVALID_PER_IP: number = 20;
+
   /** Cost factor hash bcrypt. */
   @IsInt()
   @Min(10)
