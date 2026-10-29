@@ -35,7 +35,11 @@ Có sửa module audit và trang Nhật ký (phần của Nguyễn Đức Quang)
 
 ## Lưu ý vận hành
 
-- **Migration chưa chạy trên DB dùng chung** — backup rồi chạy trước khi deploy code (code ghi cột `ip`, `user_agent`).
+- **Migration `1793500000000` đã chạy trên DB dùng chung ngày 29/10/2026 lúc 11:59**, sau khi backup
+  `~/aura-backups/aura-2026-10-29-1159.dump` (đã kiểm đọc lại được). Trước khi chạy chỉ có đúng migration này đang chờ; sau khi chạy
+  `migration:show` báo `[X] 10 AuditNullableResourceAndClientInfo1793500000000`, `resource_id` cho phép NULL, có đủ cột `ip`, `user_agent`;
+  370 bản ghi cũ giữ nguyên (chưa bản ghi nào NULL). Hoàn tác: `npm run migration:revert` (chỉ được khi chưa có bản ghi `resource_id` NULL)
+  hoặc khôi phục từ bản backup. Môi trường dùng DB riêng phải chạy migration này trước khi deploy.
 - IP lấy theo Express: sau reverse proxy cần bật `trust proxy` (issue #82), nếu không mọi bản ghi mang IP của proxy.
 
 ## Kiểm chứng ngày 29/10/2026
