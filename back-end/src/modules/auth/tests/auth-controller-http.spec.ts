@@ -12,6 +12,7 @@ import { appConfig, jwtConfig } from '../../../config';
 import { AuthController } from '../controllers/auth.controller';
 import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard';
 import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
+import { AuditService } from '../../audit/services/audit.service';
 import { AuthService } from '../services/auth.service';
 import { SessionsService } from '../services/sessions.service';
 import { TokenService } from '../services/token.service';
@@ -42,6 +43,7 @@ describe('AuthController HTTP — refresh cookie', () => {
       providers: [
         RefreshCookieOriginGuard,
         AuthRateLimiter,
+        { provide: AuditService, useValue: { recordSafely: async () => undefined } },
         { provide: SessionsService, useValue: {} },
         { provide: AuthService, useValue: auth },
         { provide: TokenService, useValue: { refreshCookieMaxAgeMs: () => 7 * 24 * 3600 * 1000 } },

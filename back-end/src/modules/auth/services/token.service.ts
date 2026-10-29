@@ -135,14 +135,15 @@ export class TokenService {
   }
 
   /** Thu hồi session theo raw token (dùng khi logout). */
-  async revokeByRaw(raw: string): Promise<void> {
-    await this.tx.run(async (manager) => {
+  /** Trả userId của phiên vừa thu hồi; null nếu token không tồn tại. */
+  async revokeByRaw(raw: string): Promise<string | null> {
+    return this.tx.run(async (manager) => {
       const session = await this.sessions.findByTokenHash(this.hash(raw), manager);
-      if (session) {
-        await this.sessions.lockFamily(session.familyId, manager);
-        // Cookie cũ vẫn phải thu hồi được token kế tiếp nếu logout đụng refresh.
-        await this.sessions.revokeFamily(session.familyId, manager);
-      }
+      if (!session) return null;
+      await this.sessions.lockFamily(session.familyId, manager);
+      // Cookie cũ vẫn phải thu hồi được token kế tiếp nếu logout đụng refresh.
+      await this.sessions.revokeFamily(session.familyId, manager);
+      return session.userId;
     });
   }
 

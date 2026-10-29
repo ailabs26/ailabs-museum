@@ -164,7 +164,10 @@ describe('RBAC HTTP — guard toàn cục trên route quản trị', () => {
         AuthRateLimiter,
         {
           provide: AuditService,
-          useValue: { recordAccessDenied: async (input: RecordAccessDeniedInput) => void denied.push(input) },
+          useValue: {
+            recordAccessDenied: async (input: RecordAccessDeniedInput) => void denied.push(input),
+            recordSafely: async () => undefined,
+          },
         },
         PermissionDeniedFilter,
       ],

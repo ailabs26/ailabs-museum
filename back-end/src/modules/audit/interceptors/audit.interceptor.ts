@@ -10,6 +10,7 @@ import type { Request } from 'express';
 import { Observable } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
 import { AuthUser } from '../../../common/types/auth-user.type';
+import { userAgentOf } from '../audit-request.util';
 import { AUDIT_KEY, AuditMeta } from '../decorators/audit.decorator';
 import { AuditService } from '../services/audit.service';
 
@@ -45,6 +46,8 @@ export class AuditInterceptor implements NestInterceptor {
               revisionId: meta.resourceType === 'revision' ? resourceId : null,
               reason: this.resolveReason(request),
               requestId: this.resolveRequestId(request),
+              ip: request.ip ?? null,
+              userAgent: userAgentOf(request),
             });
           }
         } catch {

@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { RefreshSession } from './entities/refresh-session.entity';
+import { AuditModule } from '../audit/audit.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './controllers/auth.controller';
 import { ActiveSessionGuard } from './guards/active-session.guard';
@@ -17,6 +18,7 @@ import { TokenService } from './services/token.service';
 @Module({
   imports: [
     UsersModule, // tái sử dụng UsersRepository + RefreshSessionsRepository
+    AuditModule, // ghi audit đăng nhập/đăng xuất
     JwtModule.register({}), // secret/expiresIn truyền tường minh ở TokenService
     TypeOrmModule.forFeature([RefreshSession]),
   ],

@@ -115,8 +115,10 @@ sequenceDiagram
 
 ## 7.6 AuditInterceptor (ghi vết tự động)
 
-- Bọc các route ghi/sửa của admin; sau khi service thành công → tạo `AuditLog`
-  (`actorId`, `action`, `entityType`, `entityId`, `before/after`, `ip`).
+- Bọc các route ghi/sửa của admin có `@Audit(action, resourceType)`; sau khi service thành công → tạo `AuditLog`
+  (`actorId`, `action`, `resourceType`, `resourceId`, `reason` lấy từ body `reason/resolution`, `requestId`, `ip`, `userAgent`).
+  Không lưu ảnh chụp dữ liệu trước/sau.
+- Sự kiện đăng nhập/đăng xuất ghi trực tiếp qua `AuditService.recordSafely` ở `AuthController` (xem [06 — API](06-api-contract.md)).
 - Append-only: chỉ INSERT. Không cho sửa/xóa bản ghi audit.
 - Các hành động nhạy cảm cũng ghi khi **thất bại quyền** (403) để truy vết truy cập trái phép.
 

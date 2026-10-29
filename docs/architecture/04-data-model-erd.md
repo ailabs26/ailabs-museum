@@ -151,14 +151,16 @@ erDiagram
     }
     AUDIT_LOG {
       uuid id PK
-      uuid actorId FK
-      string action "login|exhibit.publish|user.create..."
-      string entityType
-      uuid entityId
-      jsonb before "nullable"
-      jsonb after "nullable"
-      string ip
-      timestamptz createdAt
+      uuid actorId FK "null khi chưa đăng nhập / hệ thống"
+      string action "auth.login|exhibit.publish|user.create..."
+      string resourceType
+      uuid resourceId "null khi không gắn tài nguyên"
+      uuid revisionId FK "nullable"
+      text reason "nullable, JSON chi tiết"
+      string requestId
+      string ip "nullable"
+      string userAgent "nullable"
+      timestamptz occurredAt
     }
 ```
 

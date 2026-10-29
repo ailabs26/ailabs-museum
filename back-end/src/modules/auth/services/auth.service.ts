@@ -8,6 +8,7 @@ import { toAuthUser } from '../../users/user-access.util';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { LoginDto } from '../dto/login.dto';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
+import { LoginFailedException } from '../exceptions/login-failed.exception';
 import { WrongCurrentPasswordException } from '../exceptions/wrong-current-password.exception';
 import { RefreshSessionsRepository } from '../repositories/refresh-sessions.repository';
 import { SessionClient, TokenService } from './token.service';
@@ -39,12 +40,15 @@ export class AuthService {
     // So khớp mật khẩu kể cả khi không tìm thấy user để tránh lộ user tồn tại qua thời gian phản hồi.
     const passwordOk = await this.passwords.compare(dto.password, user?.passwordHash);
 
-    if (!user || !passwordOk) {
-      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
+    if (!user) {
+      throw new LoginFailedException('unknown_account', null);
+    }
+    if (!passwordOk) {
+      throw new LoginFailedException('invalid_password', user.id);
     }
 
     if (user.status !== UserStatus.ACTIVE) {
-      throw new UnauthorizedException('Tài khoản đã bị khóa');
+      throw new LoginFailedException('account_disabled', user.id, 'Tài khoản đã bị khóa');
     }
 
     // Phát hành phiên dưới khóa user và đọc lại: nếu Admin vừa đổi mật khẩu/khóa trong lúc so bcrypt
@@ -58,7 +62,7 @@ export class AuthService {
       return this.tokens.issueRefresh(user.id, undefined, manager, client);
     });
     if (!issued) {
-      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
+      throw new LoginFailedException('credentials_changed', user.id);
     }
 
     const authUser = toAuthUser(user);
@@ -123,9 +127,10 @@ export class AuthService {
     return toAuthUser(user);
   }
 
-  logout(rawToken: string | undefined): Promise<void> {
+  /** Thu hồi phiên của cookie; trả userId của phiên (null nếu không có cookie/phiên) để ghi audit. */
+  logout(rawToken: string | undefined): Promise<string | null> {
     if (!rawToken) {
-      return Promise.resolve();
+      return Promise.resolve(null);
     }
 
     return this.tokens.revokeByRaw(rawToken);

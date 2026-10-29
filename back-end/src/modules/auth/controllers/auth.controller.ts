@@ -30,6 +30,9 @@ import type { AuthUser } from '../../../common/types/auth-user.type';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Public } from '../../../common/decorators/public.decorator';
 import { Audit } from '../../audit/decorators/audit.decorator';
+import { auditClientInfo } from '../../audit/audit-request.util';
+import { AuditService } from '../../audit/services/audit.service';
+import { LoginFailedException } from '../exceptions/login-failed.exception';
 import { AuthService } from '../services/auth.service';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { LoginDto } from '../dto/login.dto';
@@ -53,6 +56,7 @@ export class AuthController {
     private readonly config: ConfigService,
     private readonly limiter: AuthRateLimiter,
     private readonly sessions: SessionsService,
+    private readonly audit: AuditService,
   ) {}
 
   @Public()
@@ -69,10 +73,9 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ accessToken: string; user: AuthUser }> {
-    this.limitOrRetryAfter(res, () => {
-      this.limiter.consumeIp(req.ip ?? 'unknown');
-      this.limiter.assertEmailAllowed(dto.email);
-    });
+    const ip = req.ip ?? 'unknown';
+    await this.limitLogin(req, res, 'ip', ip, () => this.limiter.consumeIp(ip));
+    await this.limitLogin(req, res, 'email', dto.email, () => this.limiter.assertEmailAllowed(dto.email));
 
     let result;
     try {
@@ -81,10 +84,15 @@ export class AuthController {
       if (error instanceof UnauthorizedException) {
         this.limiter.recordEmailFailure(dto.email);
       }
+      if (error instanceof LoginFailedException) {
+        // Không ghi email đã nhập (dữ liệu do người ngoài gửi); tài khoản đích nằm ở resourceId nếu có.
+        await this.recordAuthEvent(req, 'auth.login_failed', null, error.userId, { reason: error.reason });
+      }
       throw error;
     }
     this.limiter.resetEmail(dto.email);
     this.setRefreshCookie(res, result.refreshToken);
+    await this.recordAuthEvent(req, 'auth.login', result.user.id, result.user.id);
     return { accessToken: result.accessToken, user: result.user };
   }
 
@@ -136,8 +144,9 @@ export class AuthController {
     @Req() req: RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
   ): Promise<null> {
-    await this.auth.logout(this.readRefreshCookie(req));
+    const userId = await this.auth.logout(this.readRefreshCookie(req));
     this.clearRefreshCookie(res);
+    if (userId) await this.recordAuthEvent(req, 'auth.logout', userId, userId);
     return null;
   }
 
@@ -156,6 +165,30 @@ export class AuthController {
   @ApiOkResponse({ description: 'AuthUser sau khi cập nhật.' })
   updateProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto): Promise<AuthUser> {
     return this.auth.updateProfile(user.id, dto);
+  }
+
+  /** Kiểm giới hạn đăng nhập; bị chặn thì ghi `auth.login_blocked` (1 lần mỗi cửa sổ) rồi ném 429. */
+  private async limitLogin(req: Request, res: Response, kind: 'ip' | 'email', value: string, check: () => void): Promise<void> {
+    try {
+      this.limitOrRetryAfter(res, check);
+    } catch (error) {
+      if (this.limiter.shouldAuditBlock(kind, value)) {
+        await this.recordAuthEvent(req, 'auth.login_blocked', null, null, { limit: kind });
+      }
+      throw error;
+    }
+  }
+
+  /** Audit sự kiện xác thực kèm IP/User-Agent; lỗi ghi không làm hỏng đăng nhập/đăng xuất. */
+  private recordAuthEvent(
+    req: Request, action: string, actorId: string | null, resourceId: string | null, details?: object,
+  ): Promise<void> {
+    const client = auditClientInfo(req);
+    return this.audit.recordSafely({
+      actorId, action, resourceType: 'user', resourceId,
+      reason: details ? JSON.stringify(details) : null,
+      requestId: client.requestId, ip: client.ip, userAgent: client.userAgent,
+    });
   }
 
   /** Chạy kiểm tra giới hạn; nếu 429 thì gắn header Retry-After rồi ném lại. */
