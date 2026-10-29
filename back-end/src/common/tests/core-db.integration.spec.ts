@@ -18,6 +18,9 @@ import { Role } from '../../modules/roles/entities/role.entity';
 import { PermissionsRepository } from '../../modules/roles/repositories/permissions.repository';
 import { RolesRepository } from '../../modules/roles/repositories/roles.repository';
 import { RolesService } from '../../modules/roles/services/roles.service';
+import { AuditLog } from '../../modules/audit/entities/audit-log.entity';
+import { AuditRepository } from '../../modules/audit/repositories/audit.repository';
+import { AuditService } from '../../modules/audit/services/audit.service';
 import { PartnerApiKey } from '../../modules/partner-api-keys/entities/partner-api-key.entity';
 import { PartnerApiKeysRepository } from '../../modules/partner-api-keys/repositories/partner-api-keys.repository';
 import { PartnerApiKeysService } from '../../modules/partner-api-keys/services/partner-api-keys.service';
@@ -331,6 +334,30 @@ describe('Core DB (PostgreSQL thật)', { skip }, () => {
       assert.deepEqual(await rolesService.removeMany([free.id, used.id]), { ids: [free.id, used.id] });
       const done = await db.getRepository(Role).findBy({ id: In([free.id, used.id]) });
       assert.ok(done.every((item) => item.isDeleted));
+    });
+  });
+
+  describe('Audit (SQL thật)', () => {
+    it('lưu sự kiện không gắn tài nguyên (resource_id NULL) kèm IP/User-Agent; API không lộ passwordHash của actor', async () => {
+      const service = new AuditService(new AuditRepository(db.getRepository(AuditLog)));
+      const actor = await createUser('audit-actor');
+      const requestId = `${tag}-audit`;
+      try {
+        await service.record({ actorId: null, action: 'auth.login_failed', resourceType: 'user', resourceId: null, requestId, ip: '203.0.113.7', userAgent: 'UA-test' });
+        await service.record({ actorId: actor.id, action: 'auth.login', resourceType: 'user', resourceId: actor.id, requestId, ip: '203.0.113.7', userAgent: 'UA-test' });
+        const rows = await db.getRepository(AuditLog).find({ where: { requestId }, order: { occurredAt: 'ASC' } });
+        assert.deepEqual(rows.map((row) => [row.action, row.resourceId, row.ip, row.userAgent]), [
+          ['auth.login_failed', null, '203.0.113.7', 'UA-test'],
+          ['auth.login', actor.id, '203.0.113.7', 'UA-test'],
+        ]);
+        const page = await service.list({ page: 1, pageSize: 50, action: 'auth.login' } as never);
+        const mine = page.items.find((item) => item.requestId === requestId)!;
+        assert.deepEqual(mine.actor, { id: actor.id, email: actor.email, displayName: actor.displayName });
+        assert.equal(JSON.stringify(page).includes('passwordHash'), false);
+        assert.equal(JSON.stringify(await service.getById(mine.id)).includes('not-a-real-hash'), false);
+      } finally {
+        await db.query('DELETE FROM audit_logs WHERE request_id = $1', [requestId]);
+      }
     });
   });
 
