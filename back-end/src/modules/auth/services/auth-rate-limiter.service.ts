@@ -25,6 +25,8 @@ export const DEFAULT_AUTH_RATE_LIMITS: AuthRateLimits = {
 export class AuthRateLimiter {
   private readonly ipHits = new Map<string, number[]>();
   private readonly emailFailures = new Map<string, number[]>();
+  /** Lần ghi audit `auth.login_blocked` gần nhất theo khóa chặn (ip:/email:). */
+  private readonly blockAudits = new Map<string, number>();
 
   /** Ghi đè được trong test; production dùng mặc định. */
   limits: AuthRateLimits = DEFAULT_AUTH_RATE_LIMITS;
@@ -50,6 +52,20 @@ export class AuthRateLimiter {
   recordEmailFailure(email: string): void {
     const key = this.key(email);
     this.prune(this.emailFailures, key, this.limits.emailWindowMs).push(this.now());
+  }
+
+  /**
+   * true cho lần bị chặn đầu tiên trong mỗi cửa sổ của một IP/email: ghi audit 1 lần thay vì mọi request
+   * bị chặn (tránh chính audit làm ngập DB khi bị dò mật khẩu).
+   */
+  shouldAuditBlock(kind: 'ip' | 'email', value: string): boolean {
+    const key = `${kind}:${kind === 'email' ? this.key(value) : value}`;
+    const windowMs = kind === 'ip' ? this.limits.ipWindowMs : this.limits.emailWindowMs;
+    const last = this.blockAudits.get(key);
+    if (last !== undefined && this.now() - last < windowMs) return false;
+    if (this.blockAudits.size > 10_000) this.blockAudits.clear();
+    this.blockAudits.set(key, this.now());
+    return true;
   }
 
   resetEmail(email: string): void {

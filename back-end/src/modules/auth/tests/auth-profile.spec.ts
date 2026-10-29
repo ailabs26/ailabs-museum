@@ -22,6 +22,7 @@ import { ActiveSessionGuard } from '../guards/active-session.guard';
 import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard';
 import { RefreshSessionsRepository } from '../repositories/refresh-sessions.repository';
 import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
+import { AuditService } from '../../audit/services/audit.service';
 import { AuthService } from '../services/auth.service';
 import { SessionsService } from '../services/sessions.service';
 import { TokenService } from '../services/token.service';
@@ -92,6 +93,7 @@ describe('AuthController HTTP — PATCH /auth/me', () => {
         { provide: TokenService, useValue: { refreshCookieMaxAgeMs: () => 1000 } },
         RefreshCookieOriginGuard,
         AuthRateLimiter,
+        { provide: AuditService, useValue: { recordSafely: async () => undefined } },
       ],
     }).compile();
     app = moduleRef.createNestApplication();
