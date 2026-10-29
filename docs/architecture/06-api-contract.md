@@ -181,6 +181,8 @@ POST   /reports/:id/resolve  | /dismiss
 #### Audit (Task 24)
 
 `GET /audit?page&pageSize&actorId&action&resourceType&from&to` + `GET /audit/:id` (`audit:read`). Append-only, không có endpoint sửa/xóa.
+Mỗi bản ghi có `ip`, `userAgent`; `resourceId` là **null** khi sự kiện không gắn tài nguyên. `actor` chỉ gồm `{ id, email, displayName }`
+(không bao giờ trả `passwordHash`/trạng thái tài khoản).
 Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. Ánh xạ hành động CMS:
 
 | action | resourceType | revisionId | Nguồn |
@@ -193,6 +195,11 @@ Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. 
 | user.delete, role.delete, media.delete, exhibit.delete | user / role / media / exhibit | — | xóa lẻ và `bulk-delete` |
 | auth.password_change, auth.session_revoke_others, auth.logout_all | user | — | AuthController |
 | auth.session_revoke | session | — | AuthController (`resourceId` = family) |
+| auth.login | user | — | đăng nhập thành công; actor = tài khoản |
+| auth.login_failed | user | — | actor null; `resourceId` = tài khoản đích (null nếu email không tồn tại); `reason` `{"reason":"invalid_password\|account_disabled\|unknown_account\|credentials_changed"}`; không ghi email/mật khẩu đã nhập |
+| auth.login_blocked | user | — | bị chặn 429; `resourceId` null; `reason` `{"limit":"ip\|email"}`; **1 lần mỗi cửa sổ chặn** cho mỗi IP/email (chống ngập DB) |
+| auth.logout | user | — | đăng xuất có phiên; actor = chủ phiên |
+| access.denied | access | — | 403 thiếu quyền; `resourceId` null |
 
 > Với `resourceType='revision'`, interceptor lưu thêm FK `revisionId` để join `audit_logs → exhibit_revisions`.
 > Response có mảng `ids` (xóa hàng loạt) hoặc `roleIds` → interceptor ghi **1 bản ghi cho mỗi ID**.
