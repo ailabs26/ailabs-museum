@@ -15,6 +15,7 @@ import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { FavoriteButton } from './visitor/FavoriteButton';
 import { VisitorStorageStatus } from './visitor/VisitorStorageStatus';
 import { ReadingControls } from './visitor/ReadingControls';
+import { VisitorNotes } from './visitor/VisitorNotes';
 import classes from './ExhibitDetailPage.module.css';
 
 export function ExhibitDetailPage() {
@@ -131,6 +132,7 @@ export function ExhibitDetailPage() {
             </section>}
           </div>
         </div>
+        <VisitorNotes key={`${detail.id}:${exhibit.id}`} target={{ roomId: detail.id, exhibitId: exhibit.id }} />
       </article> : null}
       {exhibit && isReportOpen && <PublicReportModal key={`${exhibit.id}:${exhibit.revisionId}`} exhibitId={exhibit.id}
         reportedRevisionId={exhibit.revisionId} opened onClose={() => setIsReportOpen(false)} />}
