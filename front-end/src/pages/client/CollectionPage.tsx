@@ -10,6 +10,7 @@ import { favoritesStore, isSameExhibit } from '@/helpers/visitorState';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { FavoriteButton } from './visitor/FavoriteButton';
 import { VisitorStorageStatus } from './visitor/VisitorStorageStatus';
+import { RecentlyViewed } from './visitor/RecentlyViewed';
 import classes from './CollectionPage.module.css';
 
 export function CollectionPage() {
@@ -133,6 +134,7 @@ export function CollectionPage() {
           )}
         </section>
       )}
+      <RecentlyViewed rooms={rooms.data ?? []} isRoomsReady={rooms.isSuccess} />
       {reportTarget && <PublicReportModal key={`${reportTarget.exhibitId}:${reportTarget.reportedRevisionId}`}
         {...reportTarget} opened onClose={() => setReportTarget(null)} />}
     </Container>

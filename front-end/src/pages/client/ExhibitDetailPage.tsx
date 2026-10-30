@@ -9,7 +9,7 @@ import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
 import { PublicReportModal } from '@/shared/components/feedback/PublicReportModal';
-import { favoritesStore } from '@/helpers/visitorState';
+import { favoritesStore, recentStore, rememberExhibit } from '@/helpers/visitorState';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { FavoriteButton } from './visitor/FavoriteButton';
 import { VisitorStorageStatus } from './visitor/VisitorStorageStatus';
@@ -23,6 +23,16 @@ export function ExhibitDetailPage() {
   const isValidId = z.string().uuid().safeParse(exhibitId).success;
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const exhibit = detail && isValidId ? detail.exhibits.find((item) => item.id === exhibitId) : undefined;
+  const viewedRef = useRef<string | null>(null);
+  const validRoomId = exhibit?.roomId;
+  const validExhibitId = exhibit?.id;
+  useEffect(() => {
+    if (!validRoomId || !validExhibitId) return;
+    const key = `${validRoomId}:${validExhibitId}`;
+    if (viewedRef.current === key) return;
+    viewedRef.current = key;
+    recentStore.update(refs => rememberExhibit(refs, { roomId: validRoomId, exhibitId: validExhibitId }));
+  }, [validRoomId, validExhibitId]);
   const credits = exhibit ? collectMediaCredits(exhibit) : [];
   const audio = exhibit?.audio?.vi;
   const transcript = audio?.transcript ?? (exhibit?.i18n ? exhibit.i18n.vi.transcript : exhibit?.transcript);
