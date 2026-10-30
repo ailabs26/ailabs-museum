@@ -28,7 +28,12 @@ export class ExhibitsController {
   // PHẢI đặt TRƯỚC route ':slug' — nếu không '/rooms/search' sẽ bị khớp vào ':slug' (slug='search').
   @Get('search')
   @Header('Cache-Control', PUBLIC_CACHE_CONTROL)
-  @ApiOperation({ summary: 'Tìm kiếm hiện vật công khai: lọc + phân trang + thứ tự ổn định (VT-077)' })
+  @ApiOperation({
+    summary: 'Tìm kiếm hiện vật công khai: lọc + phân trang + thứ tự ổn định (VT-077)',
+    description:
+      'Thứ tự cố định `roomId, displayOrder, id` (ổn định, không trùng/sót giữa các trang). ' +
+      'Tham số `sort` bị bỏ qua. Chỉ trả hiện vật APPROVED + visible thuộc phòng ACTIVE.',
+  })
   searchExhibits(@Query() query: PublicSearchQueryDto) {
     return this.service.publicSearch(query);
   }

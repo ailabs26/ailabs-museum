@@ -207,6 +207,17 @@ describe('Task 6.1 — Rooms DTOs Comprehensive Test Suite (105 Test Cases)', ()
       const errors = await validateDto(CreateRoomDto, { slug: slug121, name: 'Phòng Quá Dài' });
       assert.ok(errors.includes('slug'));
     });
+
+    it('TC-030b (VT-077): Bắt lỗi khi slug trùng từ khóa dành riêng (search)', async () => {
+      // Slug "search" hợp lệ theo regex kebab-case nhưng xung đột route GET /rooms/search → phải chặn.
+      const errors = await validateDto(CreateRoomDto, { slug: 'search', name: 'Phòng Tìm Kiếm' });
+      assert.ok(errors.includes('slug'), 'slug "search" phải bị từ chối');
+    });
+
+    it('TC-030c (VT-077): Vẫn cho phép slug CHỨA từ dành riêng nhưng khác (search-room)', async () => {
+      const errors = await validateDto(CreateRoomDto, { slug: 'search-room', name: 'Phòng' });
+      assert.ok(!errors.includes('slug'), 'chỉ chặn đúng "search", không chặn slug chứa từ đó');
+    });
   });
 
   // ===========================================================================
