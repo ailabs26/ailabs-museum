@@ -3,17 +3,19 @@ import http from 'node:http';
 import { AddressInfo } from 'node:net';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { ResponseInterceptor } from '../../../common/interceptors/response.interceptor';
-import { AllExceptionsFilter } from '../../../common/filters/all-exceptions.filter';
-import { ExhibitsController } from '../controllers/exhibits.controller';
-import { ExhibitsService } from '../services/exhibits.service';
-import { PublicModelsService } from '../services/public-models.service';
+import { ResponseInterceptor } from '../src/common/interceptors/response.interceptor';
+import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
+import { ExhibitsController } from '../src/modules/exhibits/controllers/exhibits.controller';
+import { ExhibitsService } from '../src/modules/exhibits/services/exhibits.service';
+import { PublicModelsService } from '../src/modules/exhibits/services/public-models.service';
 
 /**
  * VT-077 — Harness kiểm chứng tải: 150 tác vụ tìm kiếm ĐỒNG THỜI, mục tiêu p95 ≤ 4.0 s.
+ * Đặt NGOÀI `src/` để không bị `nest build` biên dịch vào `dist`.
  *
- * Chạy:  node -r reflect-metadata -r ts-node/register \
- *          src/modules/exhibits/perf/public-search-load.ts [concurrency] [rounds] [simDbMs]
+ * Chạy (transpile-only để không vướng rootDir của tsconfig):
+ *   node -r reflect-metadata -r ts-node/register/transpile-only \
+ *     perf/public-search-load.ts [concurrency] [rounds] [simDbMs]
  *
  * GIỚI HẠN KẾT LUẬN (trung thực): tầng service/DB được THAY bằng độ trễ mô phỏng
  * (simDbMs, mặc định 25 ms ± jitter) — đây KHÔNG phải Postgres thật. Harness đo overhead
