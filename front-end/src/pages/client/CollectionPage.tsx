@@ -11,6 +11,8 @@ import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { FavoriteButton } from './visitor/FavoriteButton';
 import { VisitorStorageStatus } from './visitor/VisitorStorageStatus';
 import { RecentlyViewed } from './visitor/RecentlyViewed';
+import { useExhibitComparison } from '@/hooks/useExhibitComparison';
+import { ExhibitComparison } from './visitor/ExhibitComparison';
 import classes from './CollectionPage.module.css';
 
 export function CollectionPage() {
@@ -18,6 +20,7 @@ export function CollectionPage() {
   const [query, setQuery] = useState('');
   const [isFavoritesOnly, setIsFavoritesOnly] = useState(false);
   const favorites = useVisitorStore(favoritesStore);
+  const comparison = useExhibitComparison();
   const [loadingAnnouncement, setLoadingAnnouncement] = useState('');
   const location = useLocation();
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -94,6 +97,8 @@ export function CollectionPage() {
       <Checkbox my="md" label="Chỉ hiện vật yêu thích trong phòng này" checked={isFavoritesOnly}
         onChange={event => setIsFavoritesOnly(event.currentTarget.checked)} />
       <VisitorStorageStatus error={favorites.error} />
+      <ExhibitComparison selection={comparison.selection} message={comparison.message} rooms={rooms.isSuccess ? rooms.data : []}
+        onRemove={comparison.toggle} onClear={comparison.clear} />
 
       {rooms.isPending ? <ExhibitSkeleton />
         : rooms.isError ? <Alert color="red" role="alert" title="Không tải được danh sách phòng">
@@ -130,7 +135,12 @@ export function CollectionPage() {
               : `Không có hiện vật nào khớp với “${query}”.`}</p> : (
             <ExhibitGrid exhibits={filtered} roomSlug={detail.slug} onReport={(exhibit) =>
               setReportTarget({ exhibitId: exhibit.id, reportedRevisionId: exhibit.revisionId })}
-              renderActions={exhibit => <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name} />} />
+              renderActions={exhibit => <>
+                <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name} />
+                <Button variant="default" size="sm" aria-label={`So sánh ${exhibit.name}`}
+                  aria-pressed={comparison.selection.some(ref => isSameExhibit(ref, { roomId: detail.id, exhibitId: exhibit.id }))}
+                  onClick={() => comparison.toggle({ roomId: detail.id, exhibitId: exhibit.id })}>So sánh</Button>
+              </>} />
           )}
         </section>
       )}
