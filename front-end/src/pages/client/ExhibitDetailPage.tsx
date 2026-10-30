@@ -9,10 +9,15 @@ import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
 import { PublicReportModal } from '@/shared/components/feedback/PublicReportModal';
+import { favoritesStore } from '@/helpers/visitorState';
+import { useVisitorStore } from '@/hooks/useVisitorStore';
+import { FavoriteButton } from './visitor/FavoriteButton';
+import { VisitorStorageStatus } from './visitor/VisitorStorageStatus';
 import classes from './ExhibitDetailPage.module.css';
 
 export function ExhibitDetailPage() {
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const favorites = useVisitorStore(favoritesStore);
   const { roomSlug, exhibitId } = useParams<{ roomSlug: string; exhibitId: string }>();
   const { rooms, room, selectedRoom } = useMuseumRooms(roomSlug ?? '');
   const isValidId = z.string().uuid().safeParse(exhibitId).success;
@@ -76,7 +81,9 @@ export function ExhibitDetailPage() {
               <IconCube size={18} aria-hidden="true" /> Xem trong không gian 3D
             </Link>
             <Button variant="default" onClick={() => setIsReportOpen(true)}>Báo nội dung</Button>
+            <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name} />
           </div>
+          <VisitorStorageStatus error={favorites.error} />
         </header>
         <div className={classes.content}>
           <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } : null}

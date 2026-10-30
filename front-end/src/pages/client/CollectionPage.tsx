@@ -1,4 +1,4 @@
-import { Alert, Button, Container, Text, TextInput, Title, VisuallyHidden } from '@mantine/core';
+import { Alert, Button, Checkbox, Container, Text, TextInput, Title, VisuallyHidden } from '@mantine/core';
 import { IconArrowRight, IconSearch } from '@tabler/icons-react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -6,11 +6,17 @@ import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitGrid } from '@/shared/components/data/ExhibitGrid';
 import { ExhibitSkeleton } from '@/shared/components/feedback/ExhibitSkeleton';
 import { PublicReportModal } from '@/shared/components/feedback/PublicReportModal';
+import { favoritesStore, isSameExhibit } from '@/helpers/visitorState';
+import { useVisitorStore } from '@/hooks/useVisitorStore';
+import { FavoriteButton } from './visitor/FavoriteButton';
+import { VisitorStorageStatus } from './visitor/VisitorStorageStatus';
 import classes from './CollectionPage.module.css';
 
 export function CollectionPage() {
   const [reportTarget, setReportTarget] = useState<{ exhibitId: string; reportedRevisionId: string } | null>(null);
   const [query, setQuery] = useState('');
+  const [isFavoritesOnly, setIsFavoritesOnly] = useState(false);
+  const favorites = useVisitorStore(favoritesStore);
   const [loadingAnnouncement, setLoadingAnnouncement] = useState('');
   const location = useLocation();
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -30,9 +36,9 @@ export function CollectionPage() {
     left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)) : [];
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return exhibits;
-    return exhibits.filter((e) => `${e.name} ${e.description}`.toLowerCase().includes(q));
-  }, [exhibits, query]);
+    return exhibits.filter((e) => (!q || `${e.name} ${e.description}`.toLowerCase().includes(q))
+      && (!isFavoritesOnly || favorites.value.some(ref => isSameExhibit(ref, { roomId: e.roomId, exhibitId: e.id }))));
+  }, [exhibits, query, isFavoritesOnly, favorites.value]);
   const destinationReady = !rooms.isPending && (!selectedRoom || !room.isPending);
   const fromTourFallback = location.state?.fromTourFallback === true;
   useEffect(() => {
@@ -84,6 +90,10 @@ export function CollectionPage() {
         </div>
       )}
 
+      <Checkbox my="md" label="Chỉ hiện vật yêu thích trong phòng này" checked={isFavoritesOnly}
+        onChange={event => setIsFavoritesOnly(event.currentTarget.checked)} />
+      <VisitorStorageStatus error={favorites.error} />
+
       {rooms.isPending ? <ExhibitSkeleton />
         : rooms.isError ? <Alert color="red" role="alert" title="Không tải được danh sách phòng">
           <Text>{rooms.error.message}</Text>
@@ -114,9 +124,12 @@ export function CollectionPage() {
           </div>
           {room.isFetching && <p role="status">Đang cập nhật hiện vật…</p>}
           {exhibits.length === 0 ? <p role="status" className={classes.empty}>Phòng này chưa có hiện vật được xuất bản.</p>
-            : filtered.length === 0 ? <p role="status" className={classes.empty}>Không có hiện vật nào khớp với “{query}”.</p> : (
+            : filtered.length === 0 ? <p role="status" className={classes.empty}>{isFavoritesOnly
+              ? 'Không có hiện vật yêu thích khớp trong phòng này. Hãy đánh dấu yêu thích hoặc thay đổi tìm kiếm.'
+              : `Không có hiện vật nào khớp với “${query}”.`}</p> : (
             <ExhibitGrid exhibits={filtered} roomSlug={detail.slug} onReport={(exhibit) =>
-              setReportTarget({ exhibitId: exhibit.id, reportedRevisionId: exhibit.revisionId })} />
+              setReportTarget({ exhibitId: exhibit.id, reportedRevisionId: exhibit.revisionId })}
+              renderActions={exhibit => <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name} />} />
           )}
         </section>
       )}
