@@ -43,15 +43,15 @@ GitHub search PR rỗng lần đầu không trả PR; kiểm tra lại bằng `r
 
 ## Thứ tự thực thi
 
-- [ ] T1: Commit bộ kế hoạch và baseline.
-- [ ] T2: Persistence + validation + unit tests read/write/version/error/limits/cross-tab.
-- [ ] T3: Favorites grid/detail + filter + browser tests.
-- [ ] T4: Recent recording/resolver/list/clear + tests.
-- [ ] T5: Comparison selection/tray/dialog + tests.
-- [ ] T6: Reading preferences + scoped CSS + tests.
-- [ ] T7: Private notes autosave/errors/isolation + tests.
-- [ ] T8: Memo warning fix + regression; tổng gates và visitor regressions.
-- [ ] T9: Independent review, fix findings, fetch đối chiếu remote, docs bàn giao.
+- [x] T1: Commit bộ kế hoạch và baseline.
+- [x] T2: Persistence + validation + unit tests read/write/version/error/limits/cross-tab.
+- [x] T3: Favorites grid/detail + filter + browser tests.
+- [x] T4: Recent recording/resolver/list/clear + tests.
+- [x] T5: Comparison selection/tray/dialog + tests.
+- [x] T6: Reading preferences + scoped CSS + tests.
+- [x] T7: Private notes autosave/errors/isolation + tests.
+- [x] T8: Memo warning fix + regression; tổng gates và visitor regressions.
+- [x] T9: Independent review, fix findings, fetch đối chiếu remote, docs bàn giao.
 
 ## Review focus
 

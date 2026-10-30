@@ -12,3 +12,5 @@
 10. `docs(visitor): record verification and handoff`
 
 Mỗi commit review file list, diff --check, cached diff; tests cùng source khi phù hợp; không commit trạng thái fail. Chỉ stage paths rõ ràng. Không artificial split. Không push/PR/merge. Sẽ ghi SHA thực tế trong verification.
+
+Thực tế:11 commit, thêm `fix(visitor): preserve state and focus through recovery` sau memo để xử lý findings có repro của independent review. Danh sách SHA và trách nhiệm cuối ở [handoff.md](handoff.md). Không tách selection/dialog hoặc track/list thành commit giả; mỗi feature là một lát cắt có tests chạy được.
