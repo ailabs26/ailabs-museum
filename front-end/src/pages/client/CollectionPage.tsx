@@ -36,8 +36,8 @@ export function CollectionPage() {
     setLoadingAnnouncement(loadingMessage);
   }, [loadingMessage]);
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
-  const exhibits = detail ? [...detail.exhibits].sort((left, right) =>
-    left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)) : [];
+  const exhibits = useMemo(() => detail ? [...detail.exhibits].sort((left, right) =>
+    left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)) : [], [detail]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return exhibits.filter((e) => (!q || `${e.name} ${e.description}`.toLowerCase().includes(q))
