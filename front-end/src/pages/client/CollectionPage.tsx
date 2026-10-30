@@ -136,7 +136,8 @@ export function CollectionPage() {
             <ExhibitGrid exhibits={filtered} roomSlug={detail.slug} onReport={(exhibit) =>
               setReportTarget({ exhibitId: exhibit.id, reportedRevisionId: exhibit.revisionId })}
               renderActions={exhibit => <>
-                <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name} />
+                <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name}
+                  onRemove={isFavoritesOnly ? () => titleRef.current?.focus() : undefined} />
                 <Button variant="default" size="sm" aria-label={`So sánh ${exhibit.name}`}
                   aria-pressed={comparison.selection.some(ref => isSameExhibit(ref, { roomId: detail.id, exhibitId: exhibit.id }))}
                   onClick={() => comparison.toggle({ roomId: detail.id, exhibitId: exhibit.id })}>So sánh</Button>

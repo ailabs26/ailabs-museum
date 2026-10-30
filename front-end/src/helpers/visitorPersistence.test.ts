@@ -67,4 +67,30 @@ describe('visitor persistence', () => {
     expect(store.update(() => ['one', 'two', 'three'])).toBe(false);
     expect(store.getSnapshot()).toEqual({ value: ['one'], error: 'limit' });
   });
+
+  it('merges a failed edit with unrelated other-tab changes on retry, including deletion', () => {
+    const storage = memoryStorage();
+    let isBlocked = false;
+    const keyedSchema = z.array(z.object({ id: z.string(), text: z.string() }));
+    const first = createVisitorStore('notes', keyedSchema, [], () => ({
+      getItem: storage.getItem,
+      setItem: (key, value) => { if (isBlocked) throw new Error('Quota'); storage.setItem(key, value); },
+    }), (base, local, remote) => {
+      const changed = new Set([...base, ...local].filter(item =>
+        base.find(value => value.id === item.id)?.text !== local.find(value => value.id === item.id)?.text).map(item => item.id));
+      return [...remote.filter(item => !changed.has(item.id)), ...local.filter(item => changed.has(item.id))];
+    });
+    first.update(() => [{ id: 'old', text: 'delete me' }]);
+    isBlocked = true;
+    first.update(() => [{ id: 'draft', text: 'A' }]);
+    const second = createVisitorStore('notes', keyedSchema, [], () => storage);
+    second.update(value => [...value, { id: 'other', text: 'B' }]);
+    first.update(value => value.map(item => item.id === 'draft' ? { ...item, text: 'A edited' } : item));
+    second.update(value => value.map(item => item.id === 'other' ? { ...item, text: 'B edited' } : item));
+    isBlocked = false;
+    first.update(value => value);
+    expect(createVisitorStore('notes', keyedSchema, [], () => storage).getSnapshot().value).toEqual([
+      { id: 'other', text: 'B edited' }, { id: 'draft', text: 'A edited' },
+    ]);
+  });
 });

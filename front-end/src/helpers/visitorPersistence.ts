@@ -6,10 +6,12 @@ export interface VisitorSnapshot<Value> { value: Value; error: VisitorStorageErr
 
 /** A bounded, versioned browser value. Failed writes remain usable in this document. */
 export function createVisitorStore<Value>(key: string, schema: z.ZodType<Value>, initial: Value,
-  getStorage: () => BrowserStorage = () => window.localStorage) {
+  getStorage: () => BrowserStorage = () => window.localStorage,
+  mergeUnsaved: (base: Value, local: Value, remote: Value) => Value = (_base, local) => local) {
   const envelope = z.object({ version: z.literal(1), value: z.unknown() }).strict();
   let snapshot: VisitorSnapshot<Value> | undefined;
   let hasUnsavedValue = false;
+  let unsavedBase = initial;
   const listeners = new Set<() => void>();
   const read = (): VisitorSnapshot<Value> => {
     try {
@@ -50,8 +52,11 @@ export function createVisitorStore<Value>(key: string, schema: z.ZodType<Value>,
     },
     update(change: (value: Value) => Value): boolean {
       const previous = getSnapshot();
-      const latest = hasUnsavedValue ? previous : read();
-      const parsed = schema.safeParse(change(latest.error === 'unavailable' ? previous.value : latest.value));
+      const latest = read();
+      const current = hasUnsavedValue
+        ? latest.error ? previous.value : mergeUnsaved(unsavedBase, previous.value, latest.value)
+        : latest.error === 'unavailable' ? previous.value : latest.value;
+      const parsed = schema.safeParse(change(current));
       if (!parsed.success) {
         publish({ value: previous.value, error: 'limit' });
         return false;
@@ -62,6 +67,8 @@ export function createVisitorStore<Value>(key: string, schema: z.ZodType<Value>,
         publish({ value: parsed.data, error: null });
         return true;
       } catch {
+        if (!latest.error) unsavedBase = latest.value;
+        else if (!hasUnsavedValue) unsavedBase = current;
         hasUnsavedValue = true;
         publish({ value: parsed.data, error: 'unavailable' });
         return false;

@@ -30,13 +30,14 @@ export function ExhibitDetailPage() {
   const viewedRef = useRef<string | null>(null);
   const validRoomId = exhibit?.roomId;
   const validExhibitId = exhibit?.id;
+  const canRecordView = rooms.isSuccess && !rooms.isFetching && room.isSuccess && !room.isFetching;
   useEffect(() => {
-    if (!validRoomId || !validExhibitId) return;
+    if (!canRecordView || !validRoomId || !validExhibitId) return;
     const key = `${validRoomId}:${validExhibitId}`;
     if (viewedRef.current === key) return;
     viewedRef.current = key;
     recentStore.update(refs => rememberExhibit(refs, { roomId: validRoomId, exhibitId: validExhibitId }));
-  }, [validRoomId, validExhibitId]);
+  }, [canRecordView, validRoomId, validExhibitId]);
   const credits = exhibit ? collectMediaCredits(exhibit) : [];
   const audio = exhibit?.audio?.vi;
   const transcript = audio?.transcript ?? (exhibit?.i18n ? exhibit.i18n.vi.transcript : exhibit?.transcript);
