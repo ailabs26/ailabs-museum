@@ -32,6 +32,11 @@
 .hotspots li + li { margin-top: 24px; }
 .hotspotLabel { font-family: var(--aura-font-display); font-weight: 700; color: var(--aura-ink); margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 
+.reading { grid-template-columns: minmax(0, 1fr); max-width: 72ch; margin-inline: auto; }
+.reading .body, .reading .hotspotLabel { font-size: calc(1rem * var(--reading-scale)); line-height: 1.9; }
+.reading .preview { max-width: 28rem; width: 100%; margin-inline: auto; }
+.reading .audioDock { position: static; }
+
 @media (max-width: 48em) {
   .page { padding-block: 32px 48px; }
   .content { grid-template-columns: minmax(0, 1fr); gap: 28px; }

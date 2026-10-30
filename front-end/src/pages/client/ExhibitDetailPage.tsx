@@ -1,6 +1,7 @@
 import { Button, Container, Title } from '@mantine/core';
 import { IconCube } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { z } from 'zod';
 import { MediaCreditList } from '@/components/museum/MediaCreditList';
@@ -9,15 +10,17 @@ import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
 import { PublicReportModal } from '@/shared/components/feedback/PublicReportModal';
-import { favoritesStore, recentStore, rememberExhibit } from '@/helpers/visitorState';
+import { favoritesStore, readingStore, recentStore, rememberExhibit } from '@/helpers/visitorState';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { FavoriteButton } from './visitor/FavoriteButton';
 import { VisitorStorageStatus } from './visitor/VisitorStorageStatus';
+import { ReadingControls } from './visitor/ReadingControls';
 import classes from './ExhibitDetailPage.module.css';
 
 export function ExhibitDetailPage() {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const favorites = useVisitorStore(favoritesStore);
+  const reading = useVisitorStore(readingStore);
   const { roomSlug, exhibitId } = useParams<{ roomSlug: string; exhibitId: string }>();
   const { rooms, room, selectedRoom } = useMuseumRooms(roomSlug ?? '');
   const isValidId = z.string().uuid().safeParse(exhibitId).success;
@@ -95,7 +98,9 @@ export function ExhibitDetailPage() {
           </div>
           <VisitorStorageStatus error={favorites.error} />
         </header>
-        <div className={classes.content}>
+        <ReadingControls />
+        <div className={`${classes.content} ${reading.value.enabled ? classes.reading : ''}`}
+          style={{ '--reading-scale': reading.value.fontScale } as CSSProperties}>
           <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } : null}
             shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
           <div className={classes.sections}>
