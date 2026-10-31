@@ -31,7 +31,7 @@ export const UPLOAD_JOB_ACTOR_KEY_CONSTRAINT = 'UQ_media_upload_jobs_actor_key';
 @Check('CHK_media_upload_jobs_status', '"status" IN (\'queued\', \'processing\', \'succeeded\', \'failed\')')
 @Check('CHK_media_upload_jobs_progress', '"progress" BETWEEN 0 AND 100')
 export class MediaUploadJob {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn('uuid', { primaryKeyConstraintName: 'PK_media_upload_jobs' })
   id!: string;
 
   // NOT NULL: NULL không bằng nhau trong unique index của PostgreSQL nên sẽ lọt invariant.
@@ -39,7 +39,7 @@ export class MediaUploadJob {
   createdById!: string;
 
   @ManyToOne(() => User, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'created_by' })
+  @JoinColumn({ name: 'created_by', foreignKeyConstraintName: 'FK_media_upload_jobs_created_by' })
   createdBy?: User;
 
   @Column({ name: 'idempotency_key', type: 'varchar', length: 128 })
@@ -59,7 +59,7 @@ export class MediaUploadJob {
   mediaId!: string | null;
 
   @ManyToOne(() => Media, { nullable: true, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'media_id' })
+  @JoinColumn({ name: 'media_id', foreignKeyConstraintName: 'FK_media_upload_jobs_media' })
   media?: Media | null;
 
   @Column({ name: 'error_code', type: 'varchar', length: 40, nullable: true })

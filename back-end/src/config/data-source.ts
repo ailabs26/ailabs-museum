@@ -8,6 +8,7 @@ import { ExhibitRevision } from '../modules/exhibits/entities/exhibit-revision.e
 import { Exhibit } from '../modules/exhibits/entities/exhibit.entity';
 import { Hotspot } from '../modules/exhibits/entities/hotspot.entity';
 import { Media } from '../modules/media/entities/media.entity';
+import { MediaUploadJob } from '../modules/media/entities/media-upload-job.entity';
 import { Notification } from '../modules/notifications/entities/notification.entity';
 import { Permission } from '../modules/roles/entities/permission.entity';
 import { RefreshSession } from '../modules/auth/entities/refresh-session.entity';
@@ -42,6 +43,7 @@ export const dataSource = new DataSource({
     ExhibitRevision,
     Hotspot,
     Media,
+    MediaUploadJob,
     User,
     Role,
     Permission,
