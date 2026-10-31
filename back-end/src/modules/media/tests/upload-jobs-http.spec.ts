@@ -254,6 +254,8 @@ describe('Upload media bất đồng bộ (VT-078) — HTTP', () => {
       ['129 ký tự (ngay trên biên)', 'a'.repeat(129)],
       ['chứa khoảng trắng', 'abc def'],
       ['chứa ký tự "/"', 'a/b'],
+      // Ký tự > U+00FF bị Node HTTP client chặn trước khi gửi; Latin-1 như "ó" vẫn tới được server.
+      ['chứa ký tự Latin-1 ngoài ASCII', 'khóa'],
     ] as const) {
       it(`TC07 — key ${label} → 400 idempotency_key_invalid`, async () => {
         const res = await createJob(buildGlb(), key).expect(400);
