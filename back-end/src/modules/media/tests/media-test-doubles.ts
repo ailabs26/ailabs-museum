@@ -164,7 +164,7 @@ export class FakeUploadJobRepository {
     let count = 0;
     for (const row of this.rows.values()) {
       if (row.status === UploadJobStatus.QUEUED || row.status === UploadJobStatus.PROCESSING) {
-        Object.assign(row, { status: UploadJobStatus.FAILED, errorCode: 'job_interrupted', updatedAt: new Date() });
+        Object.assign(row, { status: UploadJobStatus.FAILED, progress: 100, errorCode: 'job_interrupted', updatedAt: new Date() });
         count++;
       }
     }
