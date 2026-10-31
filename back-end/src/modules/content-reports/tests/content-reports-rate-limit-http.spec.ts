@@ -57,6 +57,7 @@ describe('Public report rate limit HTTP', () => {
       app.useGlobalInterceptors(new ResponseInterceptor());
       app.useGlobalFilters(new AllExceptionsFilter());
       await app.init();
+      await app.listen(0);
       apps.push(app);
       return { app, created };
     } finally {
