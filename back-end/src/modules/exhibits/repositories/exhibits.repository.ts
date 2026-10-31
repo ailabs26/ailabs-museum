@@ -4,11 +4,30 @@ import { Brackets, EntityManager, In, IsNull, Not, Repository, SelectQueryBuilde
 import { BaseRepository } from '../../../common/repository/base.repository';
 import { Paginated } from '../../../common/types/paginated.type';
 import { ListExhibitsQueryDto } from '../dto/list-exhibits-query.dto';
+import { PublicSearchQueryDto } from '../dto/public-search-query.dto';
 import { Exhibit, ExhibitVisibility } from '../entities/exhibit.entity';
+import { RoomStatus } from '../../rooms/entities/room.entity';
 import { REVISION_MEDIA_RELATIONS } from '../constants/revision-media-slots';
 import { ExhibitRevision, RevisionState } from '../entities/exhibit-revision.entity';
 import { Hotspot } from '../entities/hotspot.entity';
 import { ContentReport } from '../../content-reports/entities/content-report.entity';
+
+/** Dùng `\` làm ký tự escape cho ILIKE (khớp với việc escape %/_ ở `q`). */
+const LIKE_ESCAPE = "ESCAPE '\\'";
+
+// Alias phải để NGUYÊN chữ hoa và trong nháy kép: TypeORM không tự dịch `publishedRevision.content`
+// khi theo sau là toán tử JSON `->`, mà Postgres sẽ fold `publishedRevision` (không nháy) thành
+// chữ thường → không khớp alias `"publishedRevision"`. Viết tường minh để resolve đúng cột JSONB.
+const REV_CONTENT = `"publishedRevision"."content"`;
+
+/** Giá trị văn bản của một ngôn ngữ khi `content.<field>` là object song ngữ `{vi,en}`. */
+const jsonText = (field: 'name' | 'description', lang: 'vi' | 'en'): string =>
+  `${REV_CONTENT}->'${field}'->>'${lang}'`;
+
+/** Giá trị văn bản khi `content.<field>` là chuỗi thường (seed/dữ liệu cũ) — bỏ qua nếu là object. */
+const jsonPlain = (field: 'name' | 'description'): string =>
+  `(CASE WHEN jsonb_typeof(${REV_CONTENT}->'${field}') = 'string' ` +
+  `THEN ${REV_CONTENT}->>'${field}' END)`;
 
 @Injectable()
 export class ExhibitsRepository extends BaseRepository<Exhibit> {
@@ -258,6 +277,102 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
       .take(pageSize);
 
     const [items, total] = await qb.getManyAndCount();
+    return { items, total, page, pageSize };
+  }
+
+  /**
+   * Dựng QueryBuilder BƯỚC 1 của tìm kiếm công khai: chọn đúng TRANG `id` theo thứ tự ổn định
+   * (chỉ join đủ để lọc/tìm/sắp, KHÔNG select media). Tách riêng để unit test khẳng định SQL sinh ra
+   * hợp lệ (regression: thiếu cột trong `select` làm hỏng subquery distinctAlias của phân trang).
+   *
+   * Ranh giới công khai được bảo vệ ở tầng SQL:
+   * - Hiện vật: visible, chưa xóa mềm, chưa lưu trữ, có revision published đã APPROVED.
+   * - Phòng (`innerJoin` — bắt buộc tồn tại): đang ACTIVE và chưa xóa — không lộ hiện vật của phòng
+   *   nháp/đã ẩn/đã xóa (đồng bộ với chặn trong `ExhibitsService.roomWithExhibits`).
+   *
+   * `select` phải gồm MỌI cột dùng trong `ORDER BY` (`roomId, displayOrder, id`): TypeORM bọc truy
+   * vấn có join + take trong subquery `distinctAlias`, nếu cột order-by không được select ở truy vấn
+   * trong thì Postgres báo `column "..." does not exist` (mọi request → 500).
+   */
+  buildPublicSearchIdQuery(query: Partial<PublicSearchQueryDto> = {}): SelectQueryBuilder<Exhibit> {
+    const qb: SelectQueryBuilder<Exhibit> = this.repo
+      .createQueryBuilder('exhibit')
+      .innerJoin('exhibit.room', 'room')
+      .leftJoin('exhibit.publishedRevision', 'publishedRevision')
+      .select(['exhibit.id', 'exhibit.displayOrder', 'exhibit.roomId'])
+      .where('exhibit.isDeleted = :isDeleted', { isDeleted: false })
+      .andWhere('exhibit.visibility = :visibility', { visibility: ExhibitVisibility.VISIBLE })
+      .andWhere('exhibit.archivedAt IS NULL')
+      .andWhere('exhibit.publishedRevisionId IS NOT NULL')
+      .andWhere('publishedRevision.state = :state', { state: RevisionState.APPROVED })
+      .andWhere('room.status = :roomStatus', { roomStatus: RoomStatus.ACTIVE })
+      .andWhere('room.isDeleted = :roomDeleted', { roomDeleted: false });
+
+    if (query.roomId) {
+      qb.andWhere('exhibit.roomId = :roomId', { roomId: query.roomId });
+    }
+
+    if (query.q && query.q.trim()) {
+      // Escape ký tự wildcard của LIKE để `q` là chuỗi con theo nghĩa đen (q='%' không trả về tất cả).
+      const escaped = query.q.trim().replace(/[\\%_]/g, (ch) => `\\${ch}`);
+      const search = `%${escaped}%`;
+      qb.andWhere(
+        new Brackets((sub) => {
+          // Chỉ tìm trong các trường HIỂN THỊ công khai (tên phòng + tên/mô tả song ngữ của hiện vật).
+          // KHÔNG cast cả JSONB `content` sang text: tránh khớp nhầm khóa JSON ("name", "position", "en")
+          // và các trường nội bộ (màu, tọa độ...). Hỗ trợ cả hai dạng dữ liệu: object {vi,en} và chuỗi thường.
+          sub
+            .where(`room.name ILIKE :search ${LIKE_ESCAPE}`)
+            .orWhere(`${jsonText('name', 'vi')} ILIKE :search ${LIKE_ESCAPE}`)
+            .orWhere(`${jsonText('name', 'en')} ILIKE :search ${LIKE_ESCAPE}`)
+            .orWhere(`${jsonText('description', 'vi')} ILIKE :search ${LIKE_ESCAPE}`)
+            .orWhere(`${jsonText('description', 'en')} ILIKE :search ${LIKE_ESCAPE}`)
+            .orWhere(`${jsonPlain('name')} ILIKE :search ${LIKE_ESCAPE}`)
+            .orWhere(`${jsonPlain('description')} ILIKE :search ${LIKE_ESCAPE}`);
+        }),
+        { search },
+      );
+    }
+
+    // Thứ tự ỔN ĐỊNH, khớp index `IDX_exhibits_room_order_id (roomId, displayOrder, id)`:
+    // gom theo phòng rồi displayOrder, khóa phụ duy nhất `id` → union các trang không trùng/sót (AC-4).
+    qb.orderBy('exhibit.roomId', 'ASC')
+      .addOrderBy('exhibit.displayOrder', 'ASC')
+      .addOrderBy('exhibit.id', 'ASC');
+
+    return qb;
+  }
+
+  /**
+   * Tìm kiếm hiện vật CÔNG KHAI: chỉ bản đã xuất bản (APPROVED) + đang hiển thị, chưa xóa/lưu trữ,
+   * thuộc phòng ACTIVE. Lọc theo `roomId` và từ khóa `q` (ILIKE trên tên phòng + tên/mô tả hiện vật).
+   * Sắp xếp ỔN ĐỊNH `roomId, displayOrder, id` (tiebreaker duy nhất `id`) — union các trang
+   * không trùng/sót.
+   */
+  async searchPublicExhibits(
+    query: Partial<PublicSearchQueryDto> = {},
+  ): Promise<Paginated<Exhibit>> {
+    const page = Math.max(1, query.page ?? 1);
+    const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
+
+    // Bước 1: chọn đúng TRANG id theo thứ tự ổn định.
+    const [rows, total] = await this.buildPublicSearchIdQuery(query)
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+    const ids = rows.map((row) => row.id);
+    if (ids.length === 0) return { items: [], total, page, pageSize };
+
+    // Bước 2: nạp đầy đủ media/hotspots cho đúng các id, rồi SẮP LẠI theo thứ tự ổn định của bước 1.
+    const loaded = await this.repo.find({
+      where: { id: In(ids) },
+      relations: { room: true, publishedRevision: { ...REVISION_MEDIA_RELATIONS, hotspots: true } },
+    });
+    const byId = new Map(loaded.map((exhibit) => [exhibit.id, exhibit]));
+    const items = ids
+      .map((id) => byId.get(id))
+      .filter((exhibit): exhibit is Exhibit => exhibit !== undefined);
+
     return { items, total, page, pageSize };
   }
 

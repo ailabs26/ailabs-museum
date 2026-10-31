@@ -11,6 +11,7 @@ import { RoomStatus } from '../../rooms/entities/room.entity';
 import { RoomsRepository } from '../../rooms/repositories/rooms.repository';
 import { CreateExhibitDto } from '../dto/create-exhibit.dto';
 import { ListExhibitsQueryDto } from '../dto/list-exhibits-query.dto';
+import { PublicSearchQueryDto } from '../dto/public-search-query.dto';
 import {
   ExhibitAdminDetailResponse,
   ExhibitAdminResponse,
@@ -107,6 +108,29 @@ export class ExhibitsService {
       description: room.description,
       exhibits,
     };
+  }
+
+  /**
+   * Tìm kiếm hiện vật công khai có lọc + phân trang + thứ tự ổn định (VT-077).
+   * Giữ nguyên thứ tự repository trả về (đã sắp ổn định ở tầng SQL) và ánh xạ sang DTO công khai,
+   * loại các bản ghi không đủ điều kiện xuất bản (mapper trả null). Trả `Paginated` để
+   * `ResponseInterceptor` bọc thành envelope `{ success, data, meta }` — không đổi contract cũ.
+   */
+  async publicSearch(
+    query: PublicSearchQueryDto,
+  ): Promise<Paginated<PublicExhibitDto>> {
+    const result = await this.exhibits.searchPublicExhibits(query);
+    const items = result.items.flatMap(
+      (exhibit) =>
+        toPublicExhibit(
+          exhibit,
+          (storageKey) => this.mediaUrls.publicUrl(storageKey),
+          (exhibitId, mediaId, reason) =>
+            this.logger.warn(`Bỏ qua media ${mediaId} của hiện vật ${exhibitId}: ${reason}`),
+          exhibit.room?.slug ?? '',
+        ) ?? [],
+    );
+    return { items, total: result.total, page: result.page, pageSize: result.pageSize };
   }
 
   // =========================================================================
