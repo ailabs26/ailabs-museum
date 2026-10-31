@@ -256,7 +256,8 @@ test('background refresh and local search do not repeat initial loading announce
   ]);
   const updatingStatus = page.getByRole('status').filter({ hasText: 'Đang cập nhật hiện vật…' });
   await expect(updatingStatus).toHaveCount(1);
-  await expect(page.getByRole('status')).toHaveCount(2);
+  await expect(loadingStatus).toHaveCount(1);
+  await expect(page.getByRole('status', { name: 'Trạng thái so sánh' })).toBeEmpty();
   await expect(loadingStatus).toBeEmpty();
   await expect(cards).toHaveCount(5);
   const search = page.getByRole('textbox', { name: 'Tìm kiếm hiện vật' });
