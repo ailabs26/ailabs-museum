@@ -4,7 +4,9 @@ import type { EntityManager } from 'typeorm';
 import { Paginated } from '../../../common/types/paginated.type';
 import { ListMediaQueryDto } from '../dto/list-media-query.dto';
 import { Media } from '../entities/media.entity';
+import { MediaUploadJob, UploadJobStatus } from '../entities/media-upload-job.entity';
 import { MediaFormatSpec } from '../inspection/media-formats';
+import { NewUploadJob, UploadJobPatch } from '../repositories/media-upload-job.repository';
 import { MediaUsage } from '../repositories/media.repository';
 import { MediaInspectionService } from '../services/media-inspection.service';
 import { MediaStorageService } from '../services/media-storage.service';
@@ -113,6 +115,82 @@ export const TEST_MEDIA_URL_OPTIONS: MediaUrlOptions = {
 
 export function testMediaUrlService(): MediaUrlService {
   return new MediaUrlService(TEST_MEDIA_URL_OPTIONS);
+}
+
+/**
+ * Repository job trong bộ nhớ. `insertOrFindExisting` kiểm tra rồi ghi trong cùng một tick nên
+ * mô phỏng đúng unique constraint (actor, key) — kể cả khi nhiều request chạy đồng thời.
+ */
+export class FakeUploadJobRepository {
+  rows = new Map<string, MediaUploadJob>();
+  /** Lịch sử patch theo thứ tự, để kiểm tra chuỗi trạng thái của worker. */
+  patches: Array<{ id: string; data: UploadJobPatch }> = [];
+  insertCalls = 0;
+
+  async insertOrFindExisting(data: NewUploadJob): Promise<{ job: MediaUploadJob; created: boolean }> {
+    this.insertCalls++;
+    const existing = [...this.rows.values()].find(
+      (row) => row.createdById === data.createdById && row.idempotencyKey === data.idempotencyKey,
+    );
+    if (existing) return { job: Object.assign(new MediaUploadJob(), existing), created: false };
+    const now = new Date();
+    const row = Object.assign(new MediaUploadJob(), {
+      ...data,
+      id: randomUUID(),
+      status: UploadJobStatus.QUEUED,
+      progress: 0,
+      mediaId: null,
+      errorCode: null,
+      errorMessage: null,
+      createdAt: now,
+      updatedAt: now,
+    });
+    this.rows.set(row.id, row);
+    return { job: Object.assign(new MediaUploadJob(), row), created: true };
+  }
+
+  async findOwned(id: string, actorId: string): Promise<MediaUploadJob | null> {
+    const row = this.rows.get(id);
+    return row && row.createdById === actorId ? Object.assign(new MediaUploadJob(), row) : null;
+  }
+
+  async patch(id: string, data: UploadJobPatch): Promise<void> {
+    this.patches.push({ id, data });
+    const row = this.rows.get(id);
+    if (row) Object.assign(row, data, { updatedAt: new Date() });
+  }
+
+  async failInterrupted(): Promise<number> {
+    let count = 0;
+    for (const row of this.rows.values()) {
+      if (row.status === UploadJobStatus.QUEUED || row.status === UploadJobStatus.PROCESSING) {
+        Object.assign(row, { status: UploadJobStatus.FAILED, errorCode: 'job_interrupted', updatedAt: new Date() });
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /** Chèn sẵn một job ở trạng thái bất kỳ (dựng tình huống cho test). */
+  seed(overrides: Partial<MediaUploadJob> = {}): MediaUploadJob {
+    const now = new Date();
+    const row = Object.assign(new MediaUploadJob(), {
+      id: randomUUID(),
+      createdById: randomUUID(),
+      idempotencyKey: randomUUID(),
+      requestChecksum: 'a'.repeat(64),
+      status: UploadJobStatus.QUEUED,
+      progress: 0,
+      mediaId: null,
+      errorCode: null,
+      errorMessage: null,
+      createdAt: now,
+      updatedAt: now,
+      ...overrides,
+    });
+    this.rows.set(row.id, row);
+    return row;
+  }
 }
 
 /** Regex URL đã ký cho file `uploads/<dir>/<uuid>.<ext>`. */
