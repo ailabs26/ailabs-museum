@@ -85,7 +85,7 @@
 
 - [x] Add a short README with the focused commands, configuration bounds, branch/baseline and test limitations.
 - [x] Capture the RED results (missing environment field; expected 429 but got 201; auth mutation expected 403 but got 201), green suite totals (311 core; 21 reports), 40/40 creations and latest p95 130.5 ms. Check flake risks: each HTTP scenario uses a fresh app/storage; the timed interval excludes app setup and uses 40 unique IPs, without sleeps or shared database state.
-- [ ] Build an original 10-case risk matrix, traceability table, AI Usage Log, two untrusted AI suggestions and a 250–350-word reflection in the PDF.
-- [ ] Render and inspect every PDF page; keep the PDF out of Git staging.
+- [x] Build a 12-case risk matrix, traceability table, AI Usage Log, two untrusted AI suggestions and a 334-word reflection in the PDF.
+- [x] Render and inspect all 10 PDF pages: 8 pages of main content plus 2 appendix pages. Keep the PDF local and out of Git staging.
 - [x] Run `npm run typecheck`, `npm run lint`, `npm run build`, `npm run test:core`, `npm run test:reports` and native coverage; all passed. Coverage: 86.71% lines, 71.55% branches (Node test coverage, report-slice source files).
-- [ ] Review the complete diff, commit the branch, publish it as a PR targeting `dev`, and stop before merge for human review.
+- [x] Review the complete diff; commit `39b2d46`; publish PR #132 targeting `dev`; stop before merge for human group review.
