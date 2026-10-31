@@ -110,7 +110,9 @@ describe('Upload media bất đồng bộ (VT-078) — HTTP', () => {
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
     app.useGlobalInterceptors(new ResponseInterceptor());
     app.useGlobalFilters(new AllExceptionsFilter());
-    await app.init();
+    // Listen một lần: nếu để supertest tự listen(0) cho từng request thì 20 request đồng thời
+    // (TC04) giẫm lên nhau và bị ECONNRESET.
+    await app.listen(0, '127.0.0.1');
     jobService = app.get(MediaUploadJobService);
   });
 
@@ -133,9 +135,10 @@ describe('Upload media bất đồng bộ (VT-078) — HTTP', () => {
 
   const http = () => request(app.getHttpServer());
 
-  function createJob(buffer: Buffer, key: string | undefined = randomUUID(), options: { filename?: string; user?: string } = {}) {
+  /** `key: null` = không gửi header (không dùng `undefined`: sẽ rơi vào giá trị mặc định). */
+  function createJob(buffer: Buffer, key: string | null = randomUUID(), options: { filename?: string; user?: string } = {}) {
     let req = http().post('/admin/media/upload-jobs');
-    if (key !== undefined) req = req.set('Idempotency-Key', key);
+    if (key !== null) req = req.set('Idempotency-Key', key);
     if (options.user) req = req.set('x-test-user', options.user);
     return req.attach('file', buffer, { filename: options.filename ?? 'tuong-phat.glb', contentType: 'model/gltf-binary' });
   }
@@ -236,7 +239,7 @@ describe('Upload media bất đồng bộ (VT-078) — HTTP', () => {
     });
 
     it('TC06 — thiếu header → 400 idempotency_key_required, không tạo job', async () => {
-      const res = await createJob(buildGlb(), undefined).expect(400);
+      const res = await createJob(buildGlb(), null).expect(400);
       assert.equal(res.body.errors[0].field, 'Idempotency-Key');
       assert.equal(res.body.errors[0].code, 'idempotency_key_required');
       assert.equal(jobRepo.rows.size, 0);

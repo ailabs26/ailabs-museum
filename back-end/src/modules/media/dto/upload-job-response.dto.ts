@@ -1,4 +1,3 @@
-import { NotImplementedException } from '@nestjs/common';
 import { MediaUploadJob, UploadJobStatus } from '../entities/media-upload-job.entity';
 
 export interface UploadJobResponse {
@@ -14,6 +13,15 @@ export interface UploadJobResponse {
 }
 
 /** Ánh xạ entity → response; không lộ `requestChecksum`, `idempotencyKey`, `createdById`. */
-export function toUploadJobResponse(_job: MediaUploadJob): UploadJobResponse {
-  throw new NotImplementedException('BT3: toUploadJobResponse chưa hiện thực');
+export function toUploadJobResponse(job: MediaUploadJob): UploadJobResponse {
+  return {
+    id: job.id,
+    status: job.status,
+    progress: job.progress,
+    mediaId: job.mediaId ?? null,
+    errorCode: job.errorCode ?? null,
+    errorMessage: job.errorMessage ?? null,
+    createdAt: job.createdAt,
+    updatedAt: job.updatedAt,
+  };
 }
