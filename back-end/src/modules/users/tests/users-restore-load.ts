@@ -1,6 +1,7 @@
 /**
  * VT-080 reproducible 100-operation concurrency harness. No HTTP or PostgreSQL:
- * the repository simulates a 10 ms asynchronous write per operation.
+ * a transaction queue models the shared management lock and the repository
+ * simulates a 10 ms asynchronous write per operation.
  */
 import 'reflect-metadata';
 import { performance } from 'node:perf_hooks';
@@ -23,7 +24,20 @@ const users = {
   },
 } as unknown as UsersRepository;
 const roles = { removeDeletedRoleLinks: async () => undefined } as unknown as UserRolesRepository;
-const tx = { run: <T>(work: (scope: EntityManager) => Promise<T>) => work(manager) } as TransactionManager;
+let transactionTail = Promise.resolve();
+const tx = {
+  run: async <T>(work: (scope: EntityManager) => Promise<T>): Promise<T> => {
+    const previous = transactionTail;
+    let release!: () => void;
+    transactionTail = new Promise<void>((resolve) => { release = resolve; });
+    await previous;
+    try {
+      return await work(manager);
+    } finally {
+      release();
+    }
+  },
+} as TransactionManager;
 const service = new UsersService(users, roles, {} as PasswordService, tx, {} as RefreshSessionsRepository);
 
 async function main(): Promise<void> {
@@ -38,7 +52,7 @@ async function main(): Promise<void> {
   durations.sort((a, b) => a - b);
   const p95Ms = durations[Math.ceil(operationCount * 0.95) - 1];
   process.stdout.write(`${JSON.stringify({
-    kind: 'simulated-users-restore', operationCount, fakeWriteDelayMs: 10,
+    kind: 'simulated-serialized-users-restore', operationCount, fakeWriteDelayMs: 10,
     p95Ms: Number(p95Ms.toFixed(2)), totalMs: Number((performance.now() - started).toFixed(2)),
     targetMs: 3000, meetsSimulatedTarget: p95Ms <= 3000,
   })}\n`);
