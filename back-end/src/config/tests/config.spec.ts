@@ -5,11 +5,12 @@ import { appConfig, parseTrustProxy } from '../app.config';
 import { databaseConfig } from '../database.config';
 import { DEV_JWT_ACCESS_SECRET, DEV_MEDIA_URL_SIGNING_SECRET, validateEnvironment } from '../env.validation';
 import { jwtConfig } from '../jwt.config';
+import { reportsConfig } from '../reports.config';
 
 const BASE = { DATABASE_URL: 'postgres://u:p@localhost:5432/db' };
 const ENV_KEYS = ['PORT', 'FRONTEND_ORIGIN', 'DATABASE_URL', 'JWT_ACCESS_SECRET', 'JWT_ACCESS_TTL',
   'JWT_REFRESH_TTL_DAYS', 'REFRESH_COOKIE_NAME', 'BCRYPT_ROUNDS', 'SEED_ADMIN_EMAIL', 'SEED_ADMIN_PASSWORD', 'TRUST_PROXY',
-  'REFRESH_RATE_LIMIT_PER_SESSION', 'REFRESH_RATE_LIMIT_PER_IP', 'REFRESH_RATE_LIMIT_INVALID_PER_IP'];
+  'REFRESH_RATE_LIMIT_PER_SESSION', 'REFRESH_RATE_LIMIT_PER_IP', 'REFRESH_RATE_LIMIT_INVALID_PER_IP', 'PUBLIC_REPORT_RATE_LIMIT'];
 const saved = Object.fromEntries(ENV_KEYS.map((key) => [key, process.env[key]]));
 
 function invalidFields(input: Record<string, unknown>): string {
@@ -32,7 +33,19 @@ describe('validateEnvironment', () => {
     assert.equal(env.REFRESH_RATE_LIMIT_PER_SESSION, 30);
     assert.equal(env.REFRESH_RATE_LIMIT_PER_IP, 300);
     assert.equal(env.REFRESH_RATE_LIMIT_INVALID_PER_IP, 20);
+    assert.equal(env.PUBLIC_REPORT_RATE_LIMIT, 5);
   });
+
+  it('accepts report limits at both inclusive boundaries', () => {
+    assert.equal(validateEnvironment({ ...BASE, PUBLIC_REPORT_RATE_LIMIT: '1' }).PUBLIC_REPORT_RATE_LIMIT, 1);
+    assert.equal(validateEnvironment({ ...BASE, PUBLIC_REPORT_RATE_LIMIT: '100' }).PUBLIC_REPORT_RATE_LIMIT, 100);
+  });
+
+  for (const value of ['0', '101', '1.5']) {
+    it(`rejects PUBLIC_REPORT_RATE_LIMIT=${value}`, () => {
+      assert.match(invalidFields({ ...BASE, PUBLIC_REPORT_RATE_LIMIT: value }), /PUBLIC_REPORT_RATE_LIMIT/);
+    });
+  }
 
   it('ép kiểu chuỗi số từ biến môi trường', () => {
     const env = validateEnvironment({ ...BASE, PORT: '8080', BCRYPT_ROUNDS: '13' });
@@ -172,6 +185,7 @@ describe('registerAs config', () => {
       accessSecret: 's'.repeat(20), accessTtl: '5m', refreshTtlDays: 3, refreshCookieName: 'rt', bcryptRounds: 11,
       refreshRateLimit: { perSession: 12, perIp: 500, invalidPerIp: 7 },
     });
+    assert.deepEqual(reportsConfig(), { publicRateLimit: 5 });
   });
 
   it('rơi về mặc định khi biến môi trường vắng', () => {
@@ -183,5 +197,11 @@ describe('registerAs config', () => {
     assert.equal(jwtConfig().bcryptRounds, 12);
     assert.equal(jwtConfig().refreshCookieName, 'aura_rt');
     assert.deepEqual(jwtConfig().refreshRateLimit, { perSession: 30, perIp: 300, invalidPerIp: 20 });
+    assert.equal(reportsConfig().publicRateLimit, 5);
+  });
+
+  it('đọc giới hạn báo cáo từ biến môi trường dưới dạng số', () => {
+    process.env.PUBLIC_REPORT_RATE_LIMIT = '23';
+    assert.deepEqual(reportsConfig(), { publicRateLimit: 23 });
   });
 });

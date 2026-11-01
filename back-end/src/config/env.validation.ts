@@ -101,6 +101,12 @@ class Environment {
   @Max(10000)
   REFRESH_RATE_LIMIT_INVALID_PER_IP: number = 20;
 
+  /** Số báo cáo nội dung công khai được gửi từ một IP mỗi phút. */
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  PUBLIC_REPORT_RATE_LIMIT: number = 5;
+
   /** Cost factor hash bcrypt. */
   @IsInt()
   @Min(10)
