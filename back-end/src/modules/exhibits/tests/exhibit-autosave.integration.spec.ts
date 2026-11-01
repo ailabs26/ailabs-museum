@@ -142,4 +142,56 @@ describe('VT-079 · autosave chống ghi đè (PostgreSQL thật)', { skip }, ()
     assert.equal(after.state, RevisionState.IN_REVIEW);
     assert.equal(after.name, 'Bản gốc');
   });
+
+  /** Autosave như FE gửi: payload luôn mang `displayOrder` đọc lúc mở drawer. */
+  const autosave = (id: string, displayOrder: number, expectedVersion: number) =>
+    service.updateExhibitDraft(
+      id,
+      plainToInstance(UpdateExhibitDto, { name: { vi: 'Autosave cũ' }, displayOrder, expectedVersion }),
+      user,
+    );
+
+  async function freshRoom() {
+    const room = await db.getRepository(Room).save({ slug: `${tag}-${created.rooms.length}`, name: 'Phòng reorder VT-079' });
+    created.rooms.push(room.id);
+    roomId = room.id;
+  }
+
+  const orderOf = async (id: string) => (await db.getRepository(Exhibit).findOneByOrFail({ id })).displayOrder;
+
+  it('TC17 (R9, review dinhtienn): reorder trong lúc drawer mở → autosave cũ nhận 409, thứ tự mới được giữ', async () => {
+    await freshRoom();
+    const a = await createExhibit();
+    const b = await createExhibit();
+    await service.reorderExhibits(roomId, [a, b]);
+    const opened = await db.getRepository(Exhibit).findOneByOrFail({ id: a }); // drawer mở: order 1
+    await service.reorderExhibits(roomId, [b, a]); // người khác kéo thả: a → 2
+    await assert.rejects(autosave(a, opened.displayOrder, opened.version), ConflictException);
+    assert.equal(await orderOf(a), 2, 'thứ tự mới không được bị autosave cũ ghi đè');
+    assert.equal(await orderOf(b), 1);
+  });
+
+  it('TC17b (R9): reorder không đổi vị trí một hiện vật → version của nó giữ nguyên, không xung đột giả', async () => {
+    await freshRoom();
+    const a = await createExhibit();
+    const b = await createExhibit();
+    const c = await createExhibit();
+    await service.reorderExhibits(roomId, [a, b, c]);
+    const opened = await db.getRepository(Exhibit).findOneByOrFail({ id: b });
+    await service.reorderExhibits(roomId, [c, b, a]); // b vẫn ở vị trí 2
+    await autosave(b, opened.displayOrder, opened.version);
+    assert.equal((await stored(b)).name, 'Autosave cũ');
+  });
+
+  it('TC18 (R9): xóa rồi khôi phục trong lúc drawer mở → autosave cũ nhận 409', async () => {
+    await freshRoom();
+    const a = await createExhibit();
+    const b = await createExhibit();
+    await service.reorderExhibits(roomId, [a, b]);
+    const opened = await db.getRepository(Exhibit).findOneByOrFail({ id: a });
+    await service.removeMany([a]);
+    await service.restoreMany([a]); // khôi phục về cuối phòng: order 3
+    await assert.rejects(autosave(a, opened.displayOrder, opened.version), ConflictException);
+    assert.equal(await orderOf(a), 3);
+  });
 });

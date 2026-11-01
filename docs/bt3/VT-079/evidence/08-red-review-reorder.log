@@ -1,0 +1,48 @@
+▶ VT-079 · autosave chống ghi đè (PostgreSQL thật)
+  ✔ TC06 (AC2/AC4): replay bản A cũ sau khi bản B đã lưu → 409, DB vẫn giữ bản B (109.326726ms)
+  ✔ TC07 (AC3/R8): 2 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (41.196502ms)
+  ✔ TC07 (AC3/R8): 10 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (77.096634ms)
+  ✔ TC08 (R7): bản đã xuất bản + version khớp → fork revision mới; autosave cũ sau đó → 409 (62.138852ms)
+  ✔ TC09 (R5): đã gửi duyệt → autosave (version cũ hay khớp) bị từ chối, revision vẫn in_review (45.813336ms)
+  ✖ TC17 (R9, review dinhtienn): reorder trong lúc drawer mở → autosave cũ nhận 409, thứ tự mới được giữ (45.833425ms)
+  ✔ TC17b (R9): reorder không đổi vị trí một hiện vật → version của nó giữ nguyên, không xung đột giả (46.79699ms)
+  ✖ TC18 (R9): xóa rồi khôi phục trong lúc drawer mở → autosave cũ nhận 409 (45.304919ms)
+✖ VT-079 · autosave chống ghi đè (PostgreSQL thật) (2980.220926ms)
+ℹ tests 8
+ℹ suites 1
+ℹ pass 6
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5396.185561
+
+✖ failing tests:
+
+test at src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:139:24
+✖ TC17 (R9, review dinhtienn): reorder trong lúc drawer mở → autosave cũ nhận 409, thứ tự mới được giữ (45.833425ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (ConflictException).
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (/home/thang/Documents/hus-khmt-k68/Software-Engineer/ailabs-museum/back-end/src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:169:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:161:24
+✖ TC18 (R9): xóa rồi khôi phục trong lúc drawer mở → autosave cũ nhận 409 (45.304919ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (ConflictException).
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (/home/thang/Documents/hus-khmt-k68/Software-Engineer/ailabs-museum/back-end/src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:194:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
