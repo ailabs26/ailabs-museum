@@ -143,6 +143,11 @@ function createSampleExhibit(
   return exhibit;
 }
 
+/** VT-079: PATCH bản nháp bắt buộc expectedVersion; mặc định khớp version 1 của createSampleExhibit. */
+function draftDto(expectedVersion = 1): UpdateExhibitDto {
+  return Object.assign(new UpdateExhibitDto(), { expectedVersion });
+}
+
 // ============================================================================
 // MOCKS
 // ============================================================================
@@ -877,7 +882,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = null;
       await assert.rejects(
-        () => service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 }),
+        () => service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 }),
         NotFoundException,
       );
     });
@@ -886,7 +891,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit({ isDeleted: true });
       await assert.rejects(
-        () => service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 }),
+        () => service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 }),
         NotFoundException,
       );
     });
@@ -895,7 +900,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit({ roomId: ROOM_ID_1 });
       mockRooms.roomById = null;
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       dto.roomId = ROOM_ID_2;
       await assert.rejects(
         () => service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 }),
@@ -907,7 +912,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit({ roomId: ROOM_ID_1 });
       mockRooms.roomById = createSampleRoom({ id: ROOM_ID_2, isDeleted: true });
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       dto.roomId = ROOM_ID_2;
       await assert.rejects(
         () => service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 }),
@@ -920,7 +925,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit({ roomId: ROOM_ID_1 });
       mockRooms.roomById = createSampleRoom({ id: ROOM_ID_2, isDeleted: false });
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.DRAFT });
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       dto.roomId = ROOM_ID_2;
       await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
       assert.equal(mockExhibits.savedExhibits[0].roomId, ROOM_ID_2);
@@ -931,7 +936,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = null;
       await assert.rejects(
-        () => service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 }),
+        () => service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 }),
         NotFoundException,
       );
     });
@@ -940,7 +945,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit({ version: 3 });
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.DRAFT });
-      await service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(3), { id: USER_ID_1 });
       assert.equal(mockExhibits.savedExhibits[0].version, 4);
     });
 
@@ -948,7 +953,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit({ displayOrder: 1 });
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.DRAFT });
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       dto.displayOrder = 7;
       await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
       assert.equal(mockExhibits.savedExhibits[0].displayOrder, 7);
@@ -961,7 +966,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
         state: RevisionState.DRAFT,
         content: { name: 'Tên Cũ', description: 'Mô Tả Cũ' } as unknown as ExhibitRevisionContent,
       });
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       dto.name = 'Tên Mới' as unknown as BilingualNameDto;
       await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
       const content = mockExhibits.savedRevisions[0].content as unknown as Record<string, unknown>;
@@ -976,7 +981,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
         state: RevisionState.DRAFT,
         content: { name: 'Tên Cũ', description: 'Mô Tả Cũ' } as unknown as ExhibitRevisionContent,
       });
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       dto.description = 'Mô Tả Mới' as unknown as BilingualDescriptionDto;
       await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
       const content = mockExhibits.savedRevisions[0].content as unknown as Record<string, unknown>;
@@ -994,7 +999,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
           rotation: { x: 0.5, y: 0.5, z: 0.5 },
         } as unknown as ExhibitRevisionContent,
       });
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       dto.positionX = 9.9;
       await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
       const content = mockExhibits.savedRevisions[0].content as unknown as Record<string, unknown>;
@@ -1008,7 +1013,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.REJECTED });
-      await service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 });
       assert.equal(mockExhibits.savedRevisions[0].state, RevisionState.DRAFT);
     });
 
@@ -1016,7 +1021,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.DRAFT });
-      await service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 });
       assert.equal(mockExhibits.savedRevisions[0].state, RevisionState.DRAFT);
     });
 
@@ -1024,7 +1029,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ id: REV_ID_1, state: RevisionState.DRAFT });
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       const hs = new CreateHotspotDto();
       hs.labelPlain = 'Hotspot Mới';
       hs.positionX = 2;
@@ -1042,7 +1047,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ id: REV_ID_1, state: RevisionState.DRAFT });
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       dto.hotspots = [];
       await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
       assert.deepEqual(mockExhibits.deletedHotspotRevisionIds, [[REV_ID_1]]);
@@ -1060,7 +1065,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       const approvedRev = createSampleRevision({ id: REV_ID_1, revisionNo: 1, state: RevisionState.APPROVED });
       mockExhibits.activeRevisionResult = approvedRev;
       mockExhibits.latestRevisionNoResult = 1;
-      await service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 });
       assert.notEqual(mockExhibits.savedRevisions[0].revisionNo, 1);
     });
 
@@ -1070,7 +1075,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       const approvedRev = createSampleRevision({ revisionNo: 3, state: RevisionState.APPROVED });
       mockExhibits.activeRevisionResult = approvedRev;
       mockExhibits.latestRevisionNoResult = 3;
-      await service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 });
       assert.equal(mockExhibits.savedRevisions[0].revisionNo, 4);
     });
 
@@ -1079,7 +1084,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.APPROVED });
       mockExhibits.latestRevisionNoResult = 1;
-      await service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 });
       assert.equal(mockExhibits.savedRevisions[0].state, RevisionState.DRAFT);
     });
 
@@ -1088,7 +1093,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.APPROVED, createdById: USER_ID_2 });
       mockExhibits.latestRevisionNoResult = 1;
-      await service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 });
       assert.equal(mockExhibits.savedRevisions[0].createdById, USER_ID_1);
     });
 
@@ -1100,7 +1105,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
         content: { name: 'Tên Gốc', description: 'Mô Tả Gốc' } as unknown as ExhibitRevisionContent,
       });
       mockExhibits.latestRevisionNoResult = 1;
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       dto.placeholderShape = 'torus';
       await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
       const content = mockExhibits.savedRevisions[0].content as unknown as Record<string, unknown>;
@@ -1114,7 +1119,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.APPROVED });
       mockExhibits.latestRevisionNoResult = 1;
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       dto.name = 'Tên Hoàn Toàn Mới' as unknown as BilingualNameDto;
       await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
       const content = mockExhibits.savedRevisions[0].content as unknown as Record<string, unknown>;
@@ -1130,7 +1135,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
         hotspots: [h],
       });
       mockExhibits.latestRevisionNoResult = 1;
-      await service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 });
       assert.equal(mockExhibits.savedHotspots.length, 1);
       assert.equal(mockExhibits.savedHotspots[0].label, 'Hotspot Cũ');
     });
@@ -1144,7 +1149,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
         hotspots: [h],
       });
       mockExhibits.latestRevisionNoResult = 1;
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       const hs = new CreateHotspotDto();
       hs.labelPlain = 'Hotspot Độc Quyền';
       dto.hotspots = [hs];
@@ -1157,7 +1162,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit({ publishedRevisionId: REV_ID_1 });
       mockExhibits.activeRevisionResult = createSampleRevision({ id: REV_ID_1, state: RevisionState.APPROVED });
       mockExhibits.latestRevisionNoResult = 1;
-      await service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 });
       assert.equal(mockExhibits.savedExhibits[0].publishedRevisionId, REV_ID_1);
     });
 
@@ -1166,7 +1171,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit({ visibility: ExhibitVisibility.VISIBLE });
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.APPROVED });
       mockExhibits.latestRevisionNoResult = 1;
-      await service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 });
       assert.equal(mockExhibits.savedExhibits[0].visibility, ExhibitVisibility.VISIBLE);
     });
   });
@@ -1180,7 +1185,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.IN_REVIEW });
       await assert.rejects(
-        () => service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 }),
+        () => service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 }),
         ConflictException,
       );
     });
@@ -1190,7 +1195,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.IN_REVIEW });
       await assert.rejects(
-        () => service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 }),
+        () => service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 }),
         (err: Error) => err instanceof ConflictException && err.message.includes('quá trình kiểm duyệt'),
       );
     });
@@ -1200,7 +1205,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.IN_REVIEW });
       await assert.rejects(
-        () => service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 }),
+        () => service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 }),
         ConflictException,
       );
       assert.equal(mockExhibits.savedExhibits.length, 0);
@@ -1214,7 +1219,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
         state: RevisionState.DRAFT,
         modelMediaId: 'mod-1',
       });
-      await service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 });
       assert.equal(mockExhibits.savedRevisions[0].modelMediaId, 'mod-1');
     });
 
@@ -1222,7 +1227,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.DRAFT });
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       dto.modelId = 'new-model-uuid';
       await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
       assert.equal(mockExhibits.savedRevisions[0].modelMediaId, 'new-model-uuid');
@@ -1235,7 +1240,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
         state: RevisionState.DRAFT,
         modelMediaId: 'old-model',
       });
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       dto.modelId = null;
       await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
       assert.equal(mockExhibits.savedRevisions[0].modelMediaId, null);
@@ -1245,7 +1250,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.DRAFT });
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       dto.imageId = 'img-1';
       dto.audioId = 'aud-1';
       await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
@@ -1257,7 +1262,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.DRAFT });
-      const dto = new UpdateExhibitDto();
+      const dto = draftDto();
       dto.transcriptPlain = 'Lời thoại mới';
       dto.altTextPlain = 'Alt text mới';
       await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
@@ -1270,7 +1275,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.DRAFT });
-      await service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 });
       assert.equal(mockTx.calls, 1);
     });
 
@@ -1278,7 +1283,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.DRAFT });
-      const res = await service.updateExhibitDraft(EXHIBIT_ID_1, new UpdateExhibitDto(), { id: USER_ID_1 });
+      const res = await service.updateExhibitDraft(EXHIBIT_ID_1, draftDto(), { id: USER_ID_1 });
       assert.equal(res.id, EXHIBIT_ID_1);
       assert.equal(res.revisionState, RevisionState.DRAFT);
     });
@@ -1799,7 +1804,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ modelMediaId: MEDIA_A, imageMediaId: MEDIA_B, audioMediaId: MEDIA_C });
-      await service.updateExhibitDraft(EXHIBIT_ID_1, dto(UpdateExhibitDto, { imageId: null, audioEnId: MEDIA_A }), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, dto(UpdateExhibitDto, { expectedVersion: 1, imageId: null, audioEnId: MEDIA_A }), { id: USER_ID_1 });
       assert.deepEqual(mediaRefs.calls, [[{ field: 'audioEnId', kind: 'audio', mediaId: MEDIA_A }]]);
       const rev = mockExhibits.savedRevisions.at(-1)!;
       assert.equal(rev.modelMediaId, MEDIA_A);
@@ -1814,7 +1819,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       const active = createSampleRevision({ modelMediaId: MEDIA_A });
       active.modelMedia = Object.assign(new Media(), { id: MEDIA_A });
       mockExhibits.activeRevisionResult = active;
-      await service.updateExhibitDraft(EXHIBIT_ID_1, dto(UpdateExhibitDto, { modelId: MEDIA_B }), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, dto(UpdateExhibitDto, { expectedVersion: 1, modelId: MEDIA_B }), { id: USER_ID_1 });
       const rev = mockExhibits.savedRevisions.at(-1)!;
       assert.equal(rev.modelMediaId, MEDIA_B);
       assert.equal('modelMedia' in rev, false);
@@ -1826,7 +1831,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       Object.assign(published, { audioEnMediaId: MEDIA_C, subtitleViMediaId: MEDIA_A, subtitleEnMediaId: MEDIA_B });
       mockExhibits.findAdminDetailResult = createSampleExhibit({ publishedRevision: published, visibility: ExhibitVisibility.VISIBLE });
       mockExhibits.activeRevisionResult = published;
-      await service.updateExhibitDraft(EXHIBIT_ID_1, dto(UpdateExhibitDto, { modelId: MEDIA_C }), { id: USER_ID_1 });
+      await service.updateExhibitDraft(EXHIBIT_ID_1, dto(UpdateExhibitDto, { expectedVersion: 1, modelId: MEDIA_C }), { id: USER_ID_1 });
       const fork = mockExhibits.savedRevisions.at(-1)!;
       assert.notEqual(fork, published);
       assert.equal(fork.state, RevisionState.DRAFT);
@@ -1843,7 +1848,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.IN_REVIEW });
       await assert.rejects(
-        service.updateExhibitDraft(EXHIBIT_ID_1, dto(UpdateExhibitDto, { modelId: MEDIA_A }), { id: USER_ID_1 }),
+        service.updateExhibitDraft(EXHIBIT_ID_1, dto(UpdateExhibitDto, { expectedVersion: 1, modelId: MEDIA_A }), { id: USER_ID_1 }),
         ConflictException,
       );
       assert.equal(mediaRefs.calls.length, 0);

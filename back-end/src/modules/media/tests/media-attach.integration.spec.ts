@@ -347,7 +347,7 @@ describe('Task 9 — media gắn revision (PostgreSQL thật)', { skip }, () => 
       const { exhibit } = await createExhibit({ modelMediaId: oldModel.id, imageMediaId: image.id });
       const loaded = await exhibitsRepo.findActiveRevision(exhibit.id);
       assert.equal(loaded?.modelMedia?.id, oldModel.id);
-      await exhibitsService.updateExhibitDraft(exhibit.id, { modelId: newModel.id, imageId: null } as never, { id: userId });
+      await exhibitsService.updateExhibitDraft(exhibit.id, { modelId: newModel.id, imageId: null, expectedVersion: 1 } as never, { id: userId });
       const revision = await db.getRepository(ExhibitRevision).findOneByOrFail({ exhibitId: exhibit.id });
       assert.equal(revision.modelMediaId, newModel.id);
       assert.equal(revision.imageMediaId, null);
@@ -357,7 +357,7 @@ describe('Task 9 — media gắn revision (PostgreSQL thật)', { skip }, () => 
     it('update khi đang published → fork revision mới, bản published giữ media cũ (AC-35)', async () => {
       const [oldModel, newModel, audioEn] = [await createMedia(MediaKind.MODEL), await createMedia(MediaKind.MODEL), await createMedia(MediaKind.AUDIO)];
       const { exhibit, revision: published } = await createExhibit({ modelMediaId: oldModel.id, audioEnMediaId: audioEn.id }, { publish: true });
-      await exhibitsService.updateExhibitDraft(exhibit.id, { modelId: newModel.id } as never, { id: userId });
+      await exhibitsService.updateExhibitDraft(exhibit.id, { modelId: newModel.id, expectedVersion: 1 } as never, { id: userId });
       const revisions = await db.getRepository(ExhibitRevision).find({ where: { exhibitId: exhibit.id }, order: { revisionNo: 'ASC' } });
       revisions.forEach((revision) => created.revisions.push(revision.id));
       assert.equal(revisions.length, 2);

@@ -109,7 +109,7 @@ describe('mediaReferencesOf / pickRevisionMedia', () => {
 
 describe('DTO create/update — field media mới', () => {
   for (const Dto of [CreateExhibitDto, UpdateExhibitDto] as Array<new () => object>) {
-    const base = Dto === CreateExhibitDto ? { roomId: A } : {};
+    const base = Dto === CreateExhibitDto ? { roomId: A } : { expectedVersion: 0 };
     it(`${Dto.name}: nhận 4 field mới (UUID hoặc null)`, () => {
       const dto = plainToInstance(Dto, { ...base, audioViId: A, audioEnId: null, subtitleViId: B, subtitleEnId: null });
       assert.deepEqual(validateSync(dto), []);
