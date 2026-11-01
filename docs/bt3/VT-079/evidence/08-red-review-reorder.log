@@ -1,3 +1,4 @@
+# RED trước khi sửa review dinhtienn (PR #135): TC17, TC18 fail đúng lý do (thiếu 409); TC17b pass (canh sửa quá tay)
 ▶ VT-079 · autosave chống ghi đè (PostgreSQL thật)
   ✔ TC06 (AC2/AC4): replay bản A cũ sau khi bản B đã lưu → 409, DB vẫn giữ bản B (109.326726ms)
   ✔ TC07 (AC3/R8): 2 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (41.196502ms)
