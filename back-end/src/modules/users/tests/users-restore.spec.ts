@@ -2,13 +2,14 @@ import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { InternalServerErrorException } from '@nestjs/common';
-import type { EntityManager } from 'typeorm';
+import type { EntityManager, Repository, UpdateResult } from 'typeorm';
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { PasswordService } from '../../../common/security/password.service';
 import { RefreshSessionsRepository } from '../../auth/repositories/refresh-sessions.repository';
 import { UserRolesRepository } from '../repositories/user-roles.repository';
 import { UsersRepository } from '../repositories/users.repository';
 import { UsersService } from '../services/users.service';
+import { User } from '../entities/user.entity';
 
 const MANAGER = {} as EntityManager;
 
@@ -64,6 +65,27 @@ function restoreHarness(ids: string[], affected: number | Error) {
 }
 
 describe('user restore affected-row contract', () => {
+  it('repository returns the affected-row count, or zero when the driver omits it', async () => {
+    const repository = new UsersRepository({ target: User } as Repository<User>);
+    const ids = [idFor(1), idFor(2)];
+    let affected: number | undefined = 2;
+    const manager = {
+      getRepository: (entity: unknown) => {
+        assert.equal(entity, User);
+        return {
+          update: async (_criteria: unknown, patch: Partial<User>): Promise<UpdateResult> => {
+            assert.deepEqual(patch, { isDeleted: false, deletedAt: null });
+            return { affected } as UpdateResult;
+          },
+        };
+      },
+    } as unknown as EntityManager;
+
+    assert.equal(await repository.markRestored(ids, manager), 2);
+    affected = undefined;
+    assert.equal(await repository.markRestored(ids, manager), 0);
+  });
+
   it('rejects a zero-row update instead of reporting a successful restore', async () => {
     const ids = [idFor(1)];
     const { service, events } = restoreHarness(ids, 0);

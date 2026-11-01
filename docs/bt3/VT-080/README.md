@@ -39,7 +39,7 @@ Repository review corrected the plan:
 
 1. Write a focused test that makes `markRestored` report zero affected rows; verify the service rejects and skips deleted-role cleanup. Run it and retain the expected failing output.
 2. Make the repository report the affected count and have the service reject an incomplete count inside the existing transaction. Re-run the focused test.
-3. Add seeded property-based cases for batch composition and related role invariants, plus negative and failure-path cases. Run module tests and the HTTP RBAC test.
+3. Add seeded property-based cases for batch size, affected counts, and cleanup sequencing; reuse existing negative and HTTP RBAC tests. Run module tests and the HTTP RBAC test.
 4. Temporarily mutate restore to return success after persistence failure; run the detecting test, then revert the mutation. Run coverage, two flaky-risk checks, and a 100-operation concurrent harness. Record actual evidence and limitations below.
 
 ## Run tests

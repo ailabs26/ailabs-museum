@@ -1,6 +1,6 @@
 # VT-080 engineering evidence
 
-The table is the risk map. `4852e13` is the patch/test commit; the documentation and harness commit and PR are recorded below when created.
+The table is the risk map. `4852e13` is the patch/test commit; `7b3ff9e` adds the documentation and simulated load harness. Both belong to `feat/vt080-user-restore`, targeted at `dev`.
 
 | ID | AC / risk | Level | Precondition / input | Expected | Priority | Test file |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -16,6 +16,7 @@ The table is the risk map. `4852e13` is the patch/test commit; the documentation
 | T10 | AC4 partial update | unit/property | `affected < ids.length` | reject within transaction, no role cleanup | P0 | `users-restore.spec.ts` |
 | T11 | AC4 persistence throws | unit | update rejects | error propagates, no success | P0 | `users-restore.spec.ts` |
 | T12 | workflow | E2E | admin deletes, opens trash, restores, views active list | restored user appears only after success | P2 | Manual future check; no new browser E2E for this repository-layer slice |
+| T13 | AC4 repository adapter | unit | TypeORM result has `affected=2` or omits it | repository returns 2 or 0 | P1 | `users-restore.spec.ts` |
 
 Property data: deterministic xorshift32 seeds 1–100, unique UUID-shaped IDs, batch sizes including both 1 and 100, and affected counts from 0 to `ids.length`. Each failure includes its seed for replay. The test checks the service's batch outcome and whether role cleanup can run; it does not prove database rollback or unrelated-row isolation.
 
@@ -35,11 +36,11 @@ The failure is the intended behavior gap: `restoreMany` returned success after a
 
 ```text
 node -r reflect-metadata -r ts-node/register --test src/modules/users/tests/users-restore.spec.ts
-tests 3; pass 3; fail 0
+tests 4; pass 4; fail 0 (after direct repository test)
 node -r reflect-metadata -r ts-node/register --test src/common/tests/rbac-http.integration.spec.ts
 tests 66; pass 66; fail 0
 npm.cmd test
-tests 1963; pass 1963; fail 0
+tests 1964; pass 1964; fail 0
 npm.cmd run typecheck, npm.cmd run lint, npm.cmd run build: all exit 0
 ```
 
@@ -55,11 +56,11 @@ rejects a zero-row update: Missing expected rejection (InternalServerErrorExcept
 property test: Missing expected rejection (InternalServerErrorException): seed=1
 ```
 
-The persistence-throws test still passed, showing that checking only thrown errors would miss the mutation. The temporary commit was removed with `git reset --mixed 4852e13`, the one-line mutation was reverted, and the focused tests passed 3/3 again. `git log` on the submission branch contains `4852e13` and no mutation commit.
+The persistence-throws test still passed, showing that checking only thrown errors would miss the mutation. The temporary commit was removed with `git reset --mixed 4852e13`, the one-line mutation was reverted, and the focused tests passed 3/3 again. A later direct repository test also killed a temporary `return ids.length` mutation (3/4 passed, `2 !== 0`), then passed 4/4 after restoring the code. Its first run failed for an incomplete test double (`target` missing); that setup error was corrected before counting mutation evidence. `git log` on the submission branch contains no mutation commit.
 
 ## Coverage, flakiness, and performance
 
-The targeted Node coverage run (`users-restore.spec.ts` + `users-service.spec.ts`) passed 31/31. `users.service.ts`: **98.61% line, 94.62% branch**; `users.repository.ts`: **43.54% line, 55.56% branch**; all included users files: **78.10% line, 86.18% branch**. The low repository coverage reflects that no PostgreSQL integration ran. AC1/AC2 have existing unit tests, AC3 has HTTP guard tests with a service double, and AC4 has the new unit/property tests; real DB rollback and end-to-end p95 remain unproven. Coverage percentages alone do not establish those risks.
+The targeted Node coverage run (`users-restore.spec.ts` + `users-service.spec.ts`) passed 32/32. `users.service.ts`: **98.61% line, 94.62% branch**; `users.repository.ts`: **46.26% line, 66.67% branch**; all included users files: **78.79% line, 86.45% branch**. The low repository coverage reflects that no PostgreSQL integration ran. AC1 has existing unit tests. AC2's real role-link preservation and mixed-ID atomicity have existing PostgreSQL integration tests that were **not run**; new unit tests check the count and cleanup sequence only. AC3 has HTTP guard tests with a service double. AC4 has the new unit/property/repository tests; real DB rollback and end-to-end p95 remain unproven. Coverage percentages alone do not establish those risks.
 
 Flaky checks: (1) The new tests assert no wall-clock interval and use no `Date.now()`, so host clock drift cannot change their outcome. (2) The xorshift seeds and fresh harness per case avoid nondeterministic random input and shared mutable state; the focused tests passed before mutation, after mutation removal, and again inside `npm.cmd test`. The HTTP test does temporarily set `JWT_ACCESS_SECRET` and restores it in `after`; concurrent processes sharing an environment are outside this test run.
 
@@ -76,6 +77,6 @@ Flaky checks: (1) The new tests assert no wall-clock interval and use no `Date.n
 
 Two plausible but untrusted AI outputs: (1) a new restore route and migration looked like a complete feature, yet duplicated existing API/schema and would violate the migration approval rule; (2) the property test with a fake repository looks broad over 100 cases, yet cannot prove real transaction rollback or another user's database isolation. The HTTP guard double likewise cannot prove real database isolation.
 
-Traceability to the branch: AC1 → T01/T02 → `users-service.spec.ts` → baseline `795103d` → passed in full suite; AC2 → T03/T04 → `trash-restore.integration.spec.ts` → baseline → not run without database approval, and T05 → `users-restore.spec.ts` → `4852e13` → passed; AC3 → T06–T08 → `rbac-http.integration.spec.ts` → baseline → 66/66 passed; AC4 → T09–T11 → `users-restore.spec.ts` → `4852e13` → 3/3 passed and mutation killed. T12 is a future manual E2E check, not claimed as passed.
+Traceability to the branch: AC1 → T01/T02 → `users-service.spec.ts` → baseline `795103d` → passed in full suite; AC2 → T03/T04 → `trash-restore.integration.spec.ts` → baseline → not run without database approval, and T05 → `users-restore.spec.ts` → `4852e13` → passed for count/cleanup sequencing; AC3 → T06–T08 → `rbac-http.integration.spec.ts` → baseline → 66/66 passed; AC4 → T09–T11/T13 → `users-restore.spec.ts` → `4852e13` plus follow-up test commit → 4/4 passed and mutations killed. T12 is a future manual E2E check, not claimed as passed.
 
 Personal reflection (250–350 words) is intentionally left to the student preparing the PDF; this file records reproducible engineering observations rather than claiming a first-person experience for them.
