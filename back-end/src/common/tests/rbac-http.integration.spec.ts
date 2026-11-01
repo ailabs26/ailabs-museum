@@ -26,7 +26,7 @@ import { RolesController } from '../../modules/roles/controllers/roles.controlle
 import { RolesService } from '../../modules/roles/services/roles.service';
 import { UsersController } from '../../modules/users/controllers/users.controller';
 import { UsersService } from '../../modules/users/services/users.service';
-import { ALL_PERMISSIONS, DEFAULT_ROLE_PERMISSIONS, PermissionKey } from '../constants/permissions.constant';
+import { ALL_PERMISSIONS, DEFAULT_ROLE_PERMISSIONS, PERMISSIONS, PermissionKey } from '../constants/permissions.constant';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 import { RoleKey } from '../enums/role.enum';
 import { AllExceptionsFilter } from '../filters/all-exceptions.filter';
@@ -41,6 +41,8 @@ import { ResponseInterceptor } from '../interceptors/response.interceptor';
  */
 const SECRET = 'rbac-integration-secret-0123456789';
 const USER_ID = '22222222-2222-4222-8222-222222222222';
+const OTHER_USER_ID = '44444444-4444-4444-8444-444444444444';
+const PRIVATE_USER_EMAIL = 'another-user-private@example.test';
 const ROLE_ID = '33333333-3333-4333-8333-333333333333';
 const ADMIN_PERMISSIONS = new Set<PermissionKey>(DEFAULT_ROLE_PERMISSIONS[RoleKey.ADMIN]);
 
@@ -112,8 +114,18 @@ describe('RBAC HTTP — guard toàn cục trên route quản trị', () => {
     return new Proxy({}, {
       get: (_target, prop) => {
         if (typeof prop !== 'string' || prop === 'then' || /^on[A-Z]|^before[A-Z]/.test(prop)) return undefined;
-        return () => {
+        return (requestedId?: string) => {
           serviceCalls.push(`${name}.${prop}`);
+          if (name === 'users' && (prop === 'getById' || prop === 'list')) {
+            const anotherUser = {
+              id: prop === 'getById' ? requestedId : OTHER_USER_ID,
+              email: PRIVATE_USER_EMAIL, displayName: 'Other user',
+              status: 'active', roles: [], createdAt: new Date(0), updatedAt: new Date(0),
+            };
+            return Promise.resolve(prop === 'list'
+              ? { items: [anotherUser], total: 1, page: 1, pageSize: 20 }
+              : anotherUser);
+          }
           return Promise.resolve(prop === 'remove' ? null : { id: USER_ID });
         };
       },
@@ -269,5 +281,43 @@ describe('RBAC HTTP — guard toàn cục trên route quản trị', () => {
     await request(server).get('/roles').set('Authorization', `Bearer ${moderator}`).expect(403);
     await request(server).get('/permissions').set('Authorization', `Bearer ${moderator}`).expect(200);
     await request(server).get('/permissions').set('Authorization', `Bearer ${editor}`).expect(403);
+  });
+
+  it('thiếu quyền không đọc được email của user khác hoặc khôi phục tài khoản đó', async () => {
+    const token = await tokenFor([]);
+    const server = app.getHttpServer();
+    serviceCalls.length = 0;
+
+    const detail = await request(server)
+      .get(`/users/${OTHER_USER_ID}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(403);
+    const trash = await request(server)
+      .get('/users?deleted=true')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(403);
+    const restore = await request(server)
+      .post('/users/bulk-restore')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ ids: [OTHER_USER_ID] })
+      .expect(403);
+
+    for (const response of [detail, trash, restore]) {
+      assert.equal(response.body.success, false);
+      assert.equal(JSON.stringify(response.body).includes(PRIVATE_USER_EMAIL), false);
+    }
+    assert.deepEqual(serviceCalls, [], 'request bị chặn trước khi đọc hoặc ghi dữ liệu');
+
+    const authorized = await request(server)
+      .get(`/users/${OTHER_USER_ID}`)
+      .set('Authorization', `Bearer ${await tokenFor([PERMISSIONS.USER_READ])}`)
+      .expect(200);
+    assert.equal(authorized.body.data.id, OTHER_USER_ID);
+    assert.equal(authorized.body.data.email, PRIVATE_USER_EMAIL);
+    const authorizedTrash = await request(server)
+      .get('/users?deleted=true')
+      .set('Authorization', `Bearer ${await tokenFor([PERMISSIONS.USER_READ])}`)
+      .expect(200);
+    assert.equal(authorizedTrash.body.data[0].email, PRIVATE_USER_EMAIL);
   });
 });
