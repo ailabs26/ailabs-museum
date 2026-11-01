@@ -32,7 +32,7 @@ function formatDate(iso: string | null): string {
 /** Trang quản lý danh sách API Key của đối tác. */
 export function ApiKeysPage() {
   const { hasPermission } = useAuth();
-  const canManage = hasPermission(PERMISSIONS.APIKEY_MANAGE) || hasPermission(PERMISSIONS.USER_CREATE);
+  const canManage = hasPermission(PERMISSIONS.APIKEY_MANAGE);
   const queryClient = useQueryClient();
   const [drawerOpened, drawer] = useDisclosure(false);
   const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);

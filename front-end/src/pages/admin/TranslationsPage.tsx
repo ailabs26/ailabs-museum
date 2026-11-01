@@ -26,7 +26,7 @@ const CATEGORY_OPTIONS = (Object.entries(CATEGORY_LABELS) as [TranslationCategor
 /** Trang nhập bản dịch đa ngôn ngữ song song cho CMS. */
 export function TranslationsPage() {
   const { hasPermission } = useAuth();
-  const canManage = hasPermission(PERMISSIONS.TRANSLATION_MANAGE) || hasPermission(PERMISSIONS.EXHIBIT_UPDATE);
+  const canManage = hasPermission(PERMISSIONS.TRANSLATION_MANAGE);
   const queryClient = useQueryClient();
 
   const [activeLocale, setActiveLocale] = useState(TARGET_LOCALES[0]?.code ?? 'en');
