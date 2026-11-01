@@ -50,9 +50,34 @@ describe('VT-077 searchPublicExhibits — Postgres thật (read-only)', { skip: 
     assert.equal(forHex.total, 0, 'không được khớp giá trị màu nội bộ');
   });
 
-  it('🟡: q="%" không trả về tất cả (wildcard đã escape)', async () => {
-    const all = await repo.searchPublicExhibits({ q: '%', pageSize: 100 });
-    assert.equal(all.total, 0, "ký tự '%' phải là literal, không phải wildcard");
+  it('🟡: q="%" và q="_" không trả về tất cả (wildcard đã escape, chỉ khớp literal)', async () => {
+    const textOf = (value: unknown): string => {
+      if (typeof value === 'string') return value;
+      if (value && typeof value === 'object') {
+        const rec = value as Record<string, unknown>;
+        return [rec.vi, rec.en].filter((v): v is string => typeof v === 'string').join(' ');
+      }
+      return '';
+    };
+    const searchableText = (item: Exhibit): string => {
+      const content = (item.publishedRevision?.content ?? {}) as Record<string, unknown>;
+      return [item.room?.name ?? '', textOf(content.name), textOf(content.description)].join(' ');
+    };
+
+    const everything = await repo.searchPublicExhibits({ pageSize: 100 });
+    for (const wildcard of ['%', '_'] as const) {
+      const matched = await repo.searchPublicExhibits({ q: wildcard, pageSize: 100 });
+      assert.ok(
+        matched.total < everything.total || everything.total === 0,
+        `ký tự '${wildcard}' không được khớp tất cả như wildcard`,
+      );
+      for (const item of matched.items) {
+        assert.ok(
+          searchableText(item).includes(wildcard),
+          `hiện vật ${item.id} trả về cho q="${wildcard}" phải thật sự chứa ký tự "${wildcard}" trong trường hiển thị`,
+        );
+      }
+    }
   });
 
   it('AC-4 invariant: union 2 trang liên tiếp không trùng id (thứ tự ổn định)', async () => {
