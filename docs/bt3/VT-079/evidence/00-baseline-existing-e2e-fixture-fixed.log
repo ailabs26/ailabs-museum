@@ -1,0 +1,17 @@
+
+Running 13 tests using 1 worker
+
+[1/13] tests/exhibit-edit-persistence.spec.ts:11:1 › loads the complete fresh detail before enabling editing, not the stale list row
+[2/13] tests/exhibit-edit-persistence.spec.ts:38:1 › detail errors block saving until retry succeeds
+[3/13] tests/exhibit-edit-persistence.spec.ts:50:1 › reopening the same ID always fetches again and ignores a previous pending session
+[4/13] tests/exhibit-edit-persistence.spec.ts:73:1 › closing a loading edit and creating a new exhibit ignores the old response
+[5/13] tests/exhibit-edit-persistence.spec.ts:86:1 › latest in-review detail cannot be saved even when the list row was editable
+[6/13] tests/exhibit-edit-persistence.spec.ts:95:1 › switching from a pending A edit to B ignores the late A detail
+[7/13] tests/exhibit-edit-persistence.spec.ts:112:1 › submit-review 422 hydrates fresh detail before marking the media tab
+[8/13] tests/exhibit-edit-persistence.spec.ts:126:1 › seeds the saved row while list refetch waits and a second save preserves the new values
+[9/13] tests/exhibit-edit-persistence.spec.ts:158:1 › saving empty slots retains null semantics when reopening after a failed list refresh
+[10/13] tests/exhibit-edit-persistence.spec.ts:183:1 › an obsolete submit-review error cannot reopen a different edit session
+[11/13] tests/exhibit-edit-persistence.spec.ts:207:1 › background detail refresh does not replace unsaved form input
+[12/13] tests/exhibit-edit-persistence.spec.ts:224:1 › saving updates only existing list entries and cancels a pre-save stale request
+[13/13] tests/exhibit-edit-persistence.spec.ts:263:1 › saves every field from one detail revision and preserves hotspots on a second save
+  13 passed (50.1s)
