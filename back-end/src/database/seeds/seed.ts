@@ -36,20 +36,52 @@ async function seedPermissions(): Promise<Map<string, Permission>> {
   return byCode;
 }
 
-async function seedRoles(permissions: Map<string, Permission>): Promise<Map<RoleKey, Role>> {
-  const roleRepo = dataSource.getRepository(Role);
-  const linkRepo = dataSource.getRepository(RolePermission);
+export interface SeedRolesOptions {
+  roleRepo?: Pick<
+    import('typeorm').Repository<Role>,
+    'findOne' | 'create' | 'save'
+  >;
+  linkRepo?: Pick<
+    import('typeorm').Repository<RolePermission>,
+    'count' | 'delete' | 'create' | 'save'
+  >;
+  /**
+   * Khi `true` (hoặc `SEED_RESET_RBAC=true`), khôi phục quyền mặc định cho cả
+   * các role đã tồn tại (`moderator`, `editor`). Mặc định `false` để bảo toàn
+   * cấu hình RBAC tùy chỉnh của quản trị viên khi chạy lại seed.
+   */
+  resetCustomRbac?: boolean;
+}
+
+export async function seedRoles(
+  permissions: Map<string, Permission>,
+  options?: SeedRolesOptions,
+): Promise<Map<RoleKey, Role>> {
+  const roleRepo = options?.roleRepo ?? dataSource.getRepository(Role);
+  const linkRepo = options?.linkRepo ?? dataSource.getRepository(RolePermission);
+  const resetCustomRbac =
+    options?.resetCustomRbac ?? process.env.SEED_RESET_RBAC === 'true';
   const byKey = new Map<RoleKey, Role>();
 
   for (const key of Object.values(RoleKey)) {
     let role = await roleRepo.findOne({ where: { code: key, isDeleted: false } });
+    const isNewRole = !role;
     if (!role) {
       role = await roleRepo.save(roleRepo.create({ code: key, name: ROLE_NAMES[key] }));
       console.log(`  + role ${key}`);
     }
     byKey.set(key, role);
 
-    // Đồng bộ lại toàn bộ quyền của role theo cấu hình mặc định (idempotent).
+    // Role admin luôn nhận đủ ALL_PERMISSIONS; các role mặc định khác (moderator, editor)
+    // chỉ gán quyền mặc định khi mới khởi tạo hoặc khi bật cờ tường minh SEED_RESET_RBAC=true.
+    if (!isNewRole && key !== RoleKey.ADMIN && !resetCustomRbac) {
+      const existingCount = await linkRepo.count({ where: { roleId: role.id } });
+      console.log(
+        `  = role ${key}: bảo toàn ${existingCount} quyền hiện có (đặt SEED_RESET_RBAC=true để reset mặc định)`,
+      );
+      continue;
+    }
+
     await linkRepo.delete({ roleId: role.id });
     const codes = DEFAULT_ROLE_PERMISSIONS[key];
     const links = codes
@@ -170,7 +202,9 @@ async function run(): Promise<void> {
   console.log('Seed xong.');
 }
 
-run().catch((error) => {
-  console.error('Seed lỗi:', error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  run().catch((error) => {
+    console.error('Seed lỗi:', error);
+    process.exitCode = 1;
+  });
+}

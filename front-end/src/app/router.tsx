@@ -94,7 +94,7 @@ export function AppRouter() {
           <Route
             path="translations"
             element={
-              <RequirePermission anyOf={[PERMISSIONS.TRANSLATION_READ, PERMISSIONS.EXHIBIT_READ]} fallback={<NoAccess />}>
+              <RequirePermission anyOf={[PERMISSIONS.TRANSLATION_READ]} fallback={<NoAccess />}>
                 <TranslationsPage />
               </RequirePermission>
             }
@@ -102,7 +102,7 @@ export function AppRouter() {
           <Route
             path="api-keys"
             element={
-              <RequirePermission anyOf={[PERMISSIONS.APIKEY_READ, PERMISSIONS.USER_READ]} fallback={<NoAccess />}>
+              <RequirePermission anyOf={[PERMISSIONS.APIKEY_READ]} fallback={<NoAccess />}>
                 <ApiKeysPage />
               </RequirePermission>
             }
