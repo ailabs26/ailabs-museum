@@ -90,7 +90,7 @@ describe('Whole exhibit deletion policy', () => {
   });
   it('an update paused at the media gate cannot resurrect an exhibit deleted meanwhile', async () => {
     const state = setup([RevisionState.DRAFT]);
-    await assert.rejects(() => state.service.updateExhibitDraft('fixture', new UpdateExhibitDto(), { id: 'actor' }), NotFoundException);
+    await assert.rejects(() => state.service.updateExhibitDraft('fixture', Object.assign(new UpdateExhibitDto(), { expectedVersion: 1 }), { id: 'actor' }), NotFoundException);
     assert.equal(state.log.includes('save-exhibit'), false);
   });
 
@@ -103,7 +103,7 @@ describe('Whole exhibit deletion policy', () => {
       repo.findActiveRevision = async () => Object.assign(new ExhibitRevision(), state.revisions[0], { state: ++reads === 1 ? RevisionState.DRAFT : RevisionState.IN_REVIEW });
       repo.findForUpdate = async () => state.exhibit;
       await assert.rejects(() => method === 'submit' ? state.service.submitDraftForReview('fixture')
-        : state.service.updateExhibitDraft('fixture', new UpdateExhibitDto(), { id: 'actor' }), ConflictException);
+        : state.service.updateExhibitDraft('fixture', Object.assign(new UpdateExhibitDto(), { expectedVersion: 1 }), { id: 'actor' }), ConflictException);
       assert.equal(state.log.includes('save-revision'), false);
       assert.equal(state.log.includes('save-exhibit'), false);
     });

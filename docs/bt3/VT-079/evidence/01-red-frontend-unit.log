@@ -1,0 +1,114 @@
+
+ RUN  v2.1.8 ailabs-museum/front-end
+
+ ❯ src/helpers/draftAutosave.test.ts (7 tests | 6 failed) 19ms
+   × createDraftAutosaver > Q1: chỉ gửi sau khi ngừng nhập đủ delay, kèm version đang thấy 11ms
+     → expected [] to deeply equal [ [ 'A', 7 ] ]
+   × createDraftAutosaver > TC11 (Q2): tối đa 1 request in-flight; thay đổi trong lúc chờ gộp thành 1 lần lưu với version mới 4ms
+     → expected [] to have a length of 1 but got +0
+   × createDraftAutosaver > TC12 (Q4): 409 → báo conflict, dừng hẳn, không bao giờ gửi lại để ghi đè 1ms
+     → Cannot read properties of undefined (reading 'result')
+   × createDraftAutosaver > TC13 (Q5): lỗi mạng → giữ snapshot và thử lại với CÙNG expectedVersion 1ms
+     → Cannot read properties of undefined (reading 'result')
+   × createDraftAutosaver > TC13b: thay đổi mới trong lúc chờ retry được gửi thay cho snapshot lỗi, vẫn cùng version 0ms
+     → Cannot read properties of undefined (reading 'result')
+   × createDraftAutosaver > TC14 (Q3): snapshot giống bản đã lưu → không gửi request 1ms
+     → Cannot read properties of undefined (reading 'result')
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/helpers/draftAutosave.test.ts > createDraftAutosaver > Q1: chỉ gửi sau khi ngừng nhập đủ delay, kèm version đang thấy
+AssertionError: expected [] to deeply equal [ [ 'A', 7 ] ]
+
+- Expected
++ Received
+
+- Array [
+-   Array [
+-     "A",
+-     7,
+-   ],
+- ]
++ Array []
+
+ ❯ src/helpers/draftAutosave.test.ts:48:66
+     46|     expect(calls).toHaveLength(0);
+     47|     await vi.advanceTimersByTimeAsync(1);
+     48|     expect(calls.map(c => [c.snapshot.name, c.expectedVersion])).toEqu…
+       |                                                                  ^
+     49|   });
+     50|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/helpers/draftAutosave.test.ts > createDraftAutosaver > TC11 (Q2): tối đa 1 request in-flight; thay đổi trong lúc chờ gộp thành 1 lần lưu với version mới
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/helpers/draftAutosave.test.ts:58:19
+     56|     saver.schedule({ name: 'C' });
+     57|     await vi.advanceTimersByTimeAsync(10_000);
+     58|     expect(calls).toHaveLength(1);
+       |                   ^
+     59|
+     60|     calls[0].result.resolve({ version: 2 });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/helpers/draftAutosave.test.ts > createDraftAutosaver > TC12 (Q4): 409 → báo conflict, dừng hẳn, không bao giờ gửi lại để ghi đè
+TypeError: Cannot read properties of undefined (reading 'result')
+ ❯ src/helpers/draftAutosave.test.ts:73:14
+     71|     saver.schedule({ name: 'Bản của tôi' });
+     72|     await vi.advanceTimersByTimeAsync(1500);
+     73|     calls[0].result.reject(new ConflictError('stale'));
+       |              ^
+     74|     await vi.advanceTimersByTimeAsync(0);
+     75|     expect(saver.status).toBe('conflict');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/helpers/draftAutosave.test.ts > createDraftAutosaver > TC13 (Q5): lỗi mạng → giữ snapshot và thử lại với CÙNG expectedVersion
+TypeError: Cannot read properties of undefined (reading 'result')
+ ❯ src/helpers/draftAutosave.test.ts:88:14
+     86|     saver.schedule({ name: 'A' });
+     87|     await vi.advanceTimersByTimeAsync(1500);
+     88|     calls[0].result.reject(new Error('Network Error'));
+       |              ^
+     89|     await vi.advanceTimersByTimeAsync(0);
+     90|     expect(saver.status).toBe('error');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/helpers/draftAutosave.test.ts > createDraftAutosaver > TC13b: thay đổi mới trong lúc chờ retry được gửi thay cho snapshot lỗi, vẫn cùng version
+TypeError: Cannot read properties of undefined (reading 'result')
+ ❯ src/helpers/draftAutosave.test.ts:104:14
+    102|     saver.schedule({ name: 'A' });
+    103|     await vi.advanceTimersByTimeAsync(1500);
+    104|     calls[0].result.reject(new Error('Network Error'));
+       |              ^
+    105|     await vi.advanceTimersByTimeAsync(0);
+    106|     saver.schedule({ name: 'B' });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/helpers/draftAutosave.test.ts > createDraftAutosaver > TC14 (Q3): snapshot giống bản đã lưu → không gửi request
+TypeError: Cannot read properties of undefined (reading 'result')
+ ❯ src/helpers/draftAutosave.test.ts:119:14
+    117|     saver.schedule({ name: 'A' });
+    118|     await vi.advanceTimersByTimeAsync(1500);
+    119|     calls[0].result.resolve({ version: 2 });
+       |              ^
+    120|     await vi.advanceTimersByTimeAsync(0);
+    121|     saver.schedule({ name: 'A' });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 1 passed (7)
+   Start at  12:05:51
+   Duration  336ms (transform 48ms, setup 0ms, collect 42ms, tests 19ms, environment 0ms, prepare 84ms)

@@ -325,6 +325,8 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
 
   /**
    * Cập nhật thứ tự hiển thị display_order của hiện vật — chỉ khi hiện vật thuộc đúng phòng.
+   * VT-079: thứ tự thực sự đổi thì tăng `version`, để autosave đang mang thứ tự cũ nhận 409
+   * thay vì ghi đè. Hiện vật giữ nguyên vị trí không bị tăng version (tránh xung đột giả).
    */
   async updateDisplayOrder(
     id: string,
@@ -332,7 +334,10 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
     displayOrder: number,
     manager?: EntityManager,
   ): Promise<void> {
-    await this.scoped(manager).update({ id, roomId }, { displayOrder });
+    await this.scoped(manager).update(
+      { id, roomId, displayOrder: Not(displayOrder) },
+      { displayOrder, version: () => 'version + 1' },
+    );
   }
 
   /**
@@ -357,9 +362,12 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
     return row?.max ?? 0;
   }
 
-  /** Bỏ xóa mềm hiện vật và đặt lại thứ tự hiển thị. */
+  /** Bỏ xóa mềm hiện vật và đặt lại thứ tự hiển thị; tăng `version` để autosave cũ nhận 409 (VT-079). */
   async markRestored(id: string, displayOrder: number, manager: EntityManager): Promise<void> {
-    await this.scoped(manager).update({ id }, { isDeleted: false, deletedAt: null, displayOrder });
+    await this.scoped(manager).update(
+      { id },
+      { isDeleted: false, deletedAt: null, displayOrder, version: () => 'version + 1' },
+    );
   }
 
   /**

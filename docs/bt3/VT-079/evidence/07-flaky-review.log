@@ -1,0 +1,17 @@
+# Flaky review VT-079
+## (1) TIME — FE unit dùng vi.useFakeTimers, E2E dùng page.clock (không sleep thật).
+### vitest shuffle thứ tự test, 5 seed khác nhau
+seed=1:       Tests  9 passed (9)
+seed=2:       Tests  9 passed (9)
+seed=3:       Tests  9 passed (9)
+seed=4:       Tests  9 passed (9)
+seed=5:       Tests  9 passed (9)
+### Playwright cms-exhibit-autosave --repeat-each=5
+  15 passed (54.2s)
+## (2) ORDER / SHARED STATE — mỗi suite tag ngẫu nhiên + tự dọn; chạy riêng lẻ, chạy 2 lần liên tiếp, đảo thứ tự file
+integration lần 1: ℹ pass 5 ℹ fail 0 ℹ skipped 0
+integration lần 2: ℹ pass 5 ℹ fail 0 ℹ skipped 0
+đảo thứ tự (integration trước unit): ℹ pass 12 ℹ fail 0
+dữ liệu rác còn lại sau khi chạy (exhibits có room slug vt079-%): 0
+## (3) CONCURRENCY — xem 03-mutation-tc07-repeat-30x.log: patch 30/30 pass.
+## (4) NETWORK — E2E chặn mọi /api/* bằng fixture; integration không gọi mạng ngoài; load test chỉ localhost.

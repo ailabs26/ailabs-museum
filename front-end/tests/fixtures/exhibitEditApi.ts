@@ -32,6 +32,10 @@ export async function installExhibitEditApi(page: Page) {
     detailHook: undefined as undefined | ((route: Route, record: ExhibitDetail, count: number) => Promise<void>),
     listHook: undefined as undefined | ((route: Route, rows: ExhibitRow[]) => Promise<void>),
     submitError: false,
+    /** PATCH bị từ chối 409 vì expectedVersion cũ (VT-079). */
+    conflicts: 0,
+    /** Giữ PATCH lại (mạng chậm) sau khi đã ghi nhận request. */
+    patchHook: undefined as undefined | (() => Promise<void>),
   };
   await page.route('**/api/**', async route => {
     const request = route.request();
@@ -64,7 +68,13 @@ export async function installExhibitEditApi(page: Page) {
     if (request.method() === 'PATCH') {
       const body = request.postDataJSON() as UpdateExhibitInput;
       state.patches.push({ id: record.id, body });
-      const { hotspots, roomId, displayOrder, ...content } = body;
+      if (state.patchHook) await state.patchHook();
+      if (body.expectedVersion !== undefined && body.expectedVersion !== record.version) {
+        state.conflicts++;
+        await fulfillMuseum(route, { success: false, data: null, message: 'Hiện vật đã có bản lưu mới hơn. Vui lòng tải lại.' }, 409); return;
+      }
+      const { hotspots, roomId, displayOrder, expectedVersion: _expectedVersion, ...content } = body;
+      void _expectedVersion;
       record.content = { ...record.content, ...content };
       if (roomId) record.roomId = roomId;
       if (displayOrder !== undefined) record.displayOrder = displayOrder;

@@ -1,0 +1,144 @@
+▶ VT-079 · autosave chống ghi đè (PostgreSQL thật)
+  ✖ TC06 (AC2/AC4): replay bản A cũ sau khi bản B đã lưu → 409, DB vẫn giữ bản B (217.386263ms)
+  ✔ TC07 (AC3/R8): 2 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (69.140717ms)
+  ✔ TC07 (AC3/R8): 10 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (216.74826ms)
+  ✖ TC08 (R7): bản đã xuất bản + version khớp → fork revision mới; autosave cũ sau đó → 409 (100.455131ms)
+  ✔ TC09 (R5): đã gửi duyệt → autosave (version cũ hay khớp) bị từ chối, revision vẫn in_review (60.496914ms)
+✖ VT-079 · autosave chống ghi đè (PostgreSQL thật) (3739.674634ms)
+▶ VT-079 · UpdateExhibitDto.expectedVersion (R4)
+  ✖ TC01: thiếu expectedVersion là không hợp lệ — autosave phải nói rõ nó dựa trên version nào (9.341429ms)
+  ✖ TC02: expectedVersion âm hoặc không phải số nguyên bị từ chối; 0 (cận dưới) hợp lệ (1.329808ms)
+✖ VT-079 · UpdateExhibitDto.expectedVersion (R4) (11.662191ms)
+▶ VT-079 · ExhibitsService.updateExhibitDraft với expectedVersion
+  ✖ TC03 (R2): version client cũ hơn DB → 409 và không ghi gì (2.042303ms)
+  ✖ TC04 (R3): version client lớn hơn DB (không có thật) → 409 và không ghi gì (0.805151ms)
+  ✔ TC05 (R1): version khớp → lưu nội dung mới và version tăng đúng 1 (1.271047ms)
+✖ VT-079 · ExhibitsService.updateExhibitDraft với expectedVersion (4.435122ms)
+▶ VT-079 · PATCH /admin/exhibits/:id (HTTP + ValidationPipe như main.ts)
+  ✖ TC10 (R4): PATCH thiếu expectedVersion → 400 và service không được gọi (100.635152ms)
+  ✔ TC10b: PATCH có expectedVersion hợp lệ đi tới service với giá trị số nguyên (9.537272ms)
+✖ VT-079 · PATCH /admin/exhibits/:id (HTTP + ValidationPipe như main.ts) (112.611932ms)
+ℹ tests 12
+ℹ suites 4
+ℹ pass 5
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7093.747293
+
+✖ failing tests:
+
+test at src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:94:24
+✖ TC06 (AC2/AC4): replay bản A cũ sau khi bản B đã lưu → 409, DB vẫn giữ bản B (217.386263ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (ConflictException).
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (ailabs-museum/back-end/src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:109:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1619:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:114:24
+✖ TC08 (R7): bản đã xuất bản + version khớp → fork revision mới; autosave cũ sau đó → 409 (100.455131ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (ConflictException).
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (ailabs-museum/back-end/src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:131:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src/modules/exhibits/tests/exhibit-autosave.spec.ts:36:24
+✖ TC01: thiếu expectedVersion là không hợp lệ — autosave phải nói rõ nó dựa trên version nào (9.341429ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+    ok((await invalidFields({ name: { vi: 'Bản A' } })).includes('expectedVersion'))
+
+      at TestContext.<anonymous> (ailabs-museum/back-end/src/modules/exhibits/tests/exhibit-autosave.spec.ts:42:12)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1619:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at src/modules/exhibits/tests/exhibit-autosave.spec.ts:39:24
+✖ TC02: expectedVersion âm hoặc không phải số nguyên bị từ chối; 0 (cận dưới) hợp lệ (1.329808ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+    ok((await invalidFields({ expectedVersion: -1 })).includes('expectedVersion'))
+
+      at TestContext.<anonymous> (ailabs-museum/back-end/src/modules/exhibits/tests/exhibit-autosave.spec.ts:46:12)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at src/modules/exhibits/tests/exhibit-autosave.spec.ts:82:24
+✖ TC03 (R2): version client cũ hơn DB → 409 và không ghi gì (2.042303ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (ConflictException).
+      at async TestContext.<anonymous> (ailabs-museum/back-end/src/modules/exhibits/tests/exhibit-autosave.spec.ts:95:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1619:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src/modules/exhibits/tests/exhibit-autosave.spec.ts:87:24
+✖ TC04 (R3): version client lớn hơn DB (không có thật) → 409 và không ghi gì (0.805151ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (ConflictException).
+      at async TestContext.<anonymous> (ailabs-museum/back-end/src/modules/exhibits/tests/exhibit-autosave.spec.ts:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src/modules/exhibits/tests/exhibit-autosave.spec.ts:119:24
+✖ TC10 (R4): PATCH thiếu expectedVersion → 400 và service không được gọi (100.635152ms)
+  Error: expected 400 "Bad Request", got 200 "OK"
+      at TestContext.<anonymous> (ailabs-museum/back-end/src/modules/exhibits/tests/exhibit-autosave.spec.ts:149:8)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1619:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7)
+  ----
+      at Test._assertStatus (ailabs-museum/back-end/node_modules/supertest/lib/test.js:252:14)
+      at ailabs-museum/back-end/node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (ailabs-museum/back-end/node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (ailabs-museum/back-end/node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (ailabs-museum/back-end/node_modules/supertest/lib/test.js:120:14)
+      at Object.onceWrapper (node:events:630:28)
+      at Server.emit (node:events:509:28)
+      at Server.emit (node:domain:489:12)
+      at emitCloseNT (node:net:2487:8)
+      at processTicksAndRejections (node:internal/process/task_queues:89:21)
