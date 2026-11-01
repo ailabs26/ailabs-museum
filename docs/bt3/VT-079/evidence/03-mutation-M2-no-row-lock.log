@@ -1,0 +1,67 @@
+# M2 — commit 8925283: giữ check expectedVersion nhưng bỏ khóa dòng pessimistic_write ở findForUpdate
+▶ VT-079 · autosave chống ghi đè (PostgreSQL thật)
+  ✔ TC06 (AC2/AC4): replay bản A cũ sau khi bản B đã lưu → 409, DB vẫn giữ bản B (183.774439ms)
+  ✖ TC07 (AC3/R8): 2 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (69.486673ms)
+  ✖ TC07 (AC3/R8): 10 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (164.175563ms)
+  ✔ TC08 (R7): bản đã xuất bản + version khớp → fork revision mới; autosave cũ sau đó → 409 (94.450976ms)
+  ✔ TC09 (R5): đã gửi duyệt → autosave (version cũ hay khớp) bị từ chối, revision vẫn in_review (73.791208ms)
+✖ VT-079 · autosave chống ghi đè (PostgreSQL thật) (3668.199846ms)
+▶ VT-079 · UpdateExhibitDto.expectedVersion (R4)
+  ✔ TC01: thiếu expectedVersion là không hợp lệ — autosave phải nói rõ nó dựa trên version nào (3.796025ms)
+  ✔ TC02: expectedVersion âm hoặc không phải số nguyên bị từ chối; 0 (cận dưới) hợp lệ (1.730719ms)
+✔ VT-079 · UpdateExhibitDto.expectedVersion (R4) (6.480342ms)
+▶ VT-079 · ExhibitsService.updateExhibitDraft với expectedVersion
+  ✔ TC03 (R2): version client cũ hơn DB → 409 và không ghi gì (1.719437ms)
+  ✔ TC04 (R3): version client lớn hơn DB (không có thật) → 409 và không ghi gì (0.599032ms)
+  ✔ TC05 (R1): version khớp → lưu nội dung mới và version tăng đúng 1 (0.820534ms)
+✔ VT-079 · ExhibitsService.updateExhibitDraft với expectedVersion (3.476717ms)
+▶ VT-079 · PATCH /admin/exhibits/:id (HTTP + ValidationPipe như main.ts)
+  ✔ TC10 (R4): PATCH thiếu expectedVersion → 400 và service không được gọi (172.146997ms)
+  ✔ TC10b: PATCH có expectedVersion hợp lệ đi tới service với giá trị số nguyên (10.46682ms)
+✔ VT-079 · PATCH /admin/exhibits/:id (HTTP + ValidationPipe như main.ts) (185.074357ms)
+ℹ tests 12
+ℹ suites 4
+ℹ pass 10
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7253.769165
+
+✖ failing tests:
+
+test at src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:102:28
+✖ TC07 (AC3/R8): 2 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (69.486673ms)
+  AssertionError [ERR_ASSERTION]: số request thành công: 2
+
+  2 !== 1
+
+      at TestContext.<anonymous> (/tmp/claude-1000/-home-thang-Documents-hus-k68-khmt-SE-2026-class/a46046e6-aba5-4db0-919e-9e9ba3d85412/scratchpad/wt-mutation/back-end/src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:119:14)
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:102:28
+✖ TC07 (AC3/R8): 10 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (164.175563ms)
+  AssertionError [ERR_ASSERTION]: số request thành công: 5
+
+  5 !== 1
+
+      at TestContext.<anonymous> (/tmp/claude-1000/-home-thang-Documents-hus-k68-khmt-SE-2026-class/a46046e6-aba5-4db0-919e-9e9ba3d85412/scratchpad/wt-mutation/back-end/src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:119:14)
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 5,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

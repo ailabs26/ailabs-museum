@@ -1,0 +1,107 @@
+# M1 — commit 9ddad28 trên nhánh tạm mutation/vt079-no-guard (không push): bỏ check expectedVersion trong updateExhibitDraft
+▶ VT-079 · autosave chống ghi đè (PostgreSQL thật)
+  ✖ TC06 (AC2/AC4): replay bản A cũ sau khi bản B đã lưu → 409, DB vẫn giữ bản B (225.685419ms)
+  ✔ TC07 (AC3/R8): 2 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (107.590472ms)
+  ✖ TC07 (AC3/R8): 10 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (392.717492ms)
+  ✖ TC08 (R7): bản đã xuất bản + version khớp → fork revision mới; autosave cũ sau đó → 409 (209.36593ms)
+  ✔ TC09 (R5): đã gửi duyệt → autosave (version cũ hay khớp) bị từ chối, revision vẫn in_review (103.959222ms)
+✖ VT-079 · autosave chống ghi đè (PostgreSQL thật) (4139.899145ms)
+▶ VT-079 · UpdateExhibitDto.expectedVersion (R4)
+  ✔ TC01: thiếu expectedVersion là không hợp lệ — autosave phải nói rõ nó dựa trên version nào (3.378451ms)
+  ✔ TC02: expectedVersion âm hoặc không phải số nguyên bị từ chối; 0 (cận dưới) hợp lệ (1.803883ms)
+✔ VT-079 · UpdateExhibitDto.expectedVersion (R4) (6.061653ms)
+▶ VT-079 · ExhibitsService.updateExhibitDraft với expectedVersion
+  ✖ TC03 (R2): version client cũ hơn DB → 409 và không ghi gì (5.258729ms)
+  ✖ TC04 (R3): version client lớn hơn DB (không có thật) → 409 và không ghi gì (0.833892ms)
+  ✔ TC05 (R1): version khớp → lưu nội dung mới và version tăng đúng 1 (0.591443ms)
+✖ VT-079 · ExhibitsService.updateExhibitDraft với expectedVersion (7.017988ms)
+▶ VT-079 · PATCH /admin/exhibits/:id (HTTP + ValidationPipe như main.ts)
+  ✔ TC10 (R4): PATCH thiếu expectedVersion → 400 và service không được gọi (178.871922ms)
+  ✔ TC10b: PATCH có expectedVersion hợp lệ đi tới service với giá trị số nguyên (9.555263ms)
+✔ VT-079 · PATCH /admin/exhibits/:id (HTTP + ValidationPipe như main.ts) (190.60106ms)
+ℹ tests 12
+ℹ suites 4
+ℹ pass 7
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8254.972246
+
+✖ failing tests:
+
+test at src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:94:24
+✖ TC06 (AC2/AC4): replay bản A cũ sau khi bản B đã lưu → 409, DB vẫn giữ bản B (225.685419ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (ConflictException).
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (/tmp/claude-1000/-home-thang-Documents-hus-k68-khmt-SE-2026-class/a46046e6-aba5-4db0-919e-9e9ba3d85412/scratchpad/wt-mutation/back-end/src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:109:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1619:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:102:28
+✖ TC07 (AC3/R8): 10 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (392.717492ms)
+  AssertionError [ERR_ASSERTION]: số request thành công: 2
+
+  2 !== 1
+
+      at TestContext.<anonymous> (/tmp/claude-1000/-home-thang-Documents-hus-k68-khmt-SE-2026-class/a46046e6-aba5-4db0-919e-9e9ba3d85412/scratchpad/wt-mutation/back-end/src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:119:14)
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:114:24
+✖ TC08 (R7): bản đã xuất bản + version khớp → fork revision mới; autosave cũ sau đó → 409 (209.36593ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (ConflictException).
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (/tmp/claude-1000/-home-thang-Documents-hus-k68-khmt-SE-2026-class/a46046e6-aba5-4db0-919e-9e9ba3d85412/scratchpad/wt-mutation/back-end/src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:131:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src/modules/exhibits/tests/exhibit-autosave.spec.ts:82:24
+✖ TC03 (R2): version client cũ hơn DB → 409 và không ghi gì (5.258729ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (ConflictException).
+      at async TestContext.<anonymous> (/tmp/claude-1000/-home-thang-Documents-hus-k68-khmt-SE-2026-class/a46046e6-aba5-4db0-919e-9e9ba3d85412/scratchpad/wt-mutation/back-end/src/modules/exhibits/tests/exhibit-autosave.spec.ts:95:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1619:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src/modules/exhibits/tests/exhibit-autosave.spec.ts:87:24
+✖ TC04 (R3): version client lớn hơn DB (không có thật) → 409 và không ghi gì (0.833892ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (ConflictException).
+      at async TestContext.<anonymous> (/tmp/claude-1000/-home-thang-Documents-hus-k68-khmt-SE-2026-class/a46046e6-aba5-4db0-919e-9e9ba3d85412/scratchpad/wt-mutation/back-end/src/modules/exhibits/tests/exhibit-autosave.spec.ts:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }

@@ -4,7 +4,9 @@
  * - Chỉ gửi sau khi ngừng thay đổi `delayMs`; mỗi lúc tối đa 1 request in-flight.
  * - Thay đổi trong lúc chờ chỉ giữ snapshot mới nhất, gửi tiếp bằng version server vừa trả.
  * - 409 (bản mới hơn đã có trên server) → dừng hẳn, không bao giờ tự gửi lại để ghi đè.
- * - Lỗi khác → giữ snapshot, thử lại sau `retryDelayMs` với CÙNG version (chưa ghi được gì).
+ * - Lỗi tạm thời (mạng/5xx) → giữ snapshot, thử lại sau `retryDelayMs` với CÙNG version.
+ *   Lỗi không retry được (404/403/422…) → báo lỗi, chờ thay đổi tiếp theo, không lặp vô hạn.
+ * - `pause()` khi người dùng bấm Lưu tay để hai request cùng version không đua nhau.
  */
 export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'conflict' | 'error';
 
@@ -16,6 +18,8 @@ export interface DraftAutosaverOptions<T> {
   retryDelayMs?: number;
   save: (snapshot: T, expectedVersion: number) => Promise<{ version: number }>;
   isConflict: (error: unknown) => boolean;
+  /** Mặc định mọi lỗi (trừ conflict) đều được thử lại. */
+  isRetryable?: (error: unknown) => boolean;
   onStatus?: (status: AutosaveStatus) => void;
   onSaved?: (result: { version: number }) => void;
 }
@@ -29,12 +33,13 @@ export function createDraftAutosaver<T>(options: DraftAutosaverOptions<T>) {
   let status: AutosaveStatus = 'idle';
   let timer: ReturnType<typeof setTimeout> | undefined;
   let disposed = false;
+  let paused = false;
 
   const setStatus = (next: AutosaveStatus) => {
     status = next;
     options.onStatus?.(next);
   };
-  const stopped = () => disposed || status === 'conflict';
+  const stopped = () => disposed || paused || status === 'conflict';
 
   function arm(ms: number) {
     clearTimeout(timer);
@@ -64,10 +69,12 @@ export function createDraftAutosaver<T>(options: DraftAutosaverOptions<T>) {
         setStatus('conflict');
         return;
       }
-      // Chưa ghi được: snapshot mới hơn (nếu có) thay thế, version giữ nguyên.
-      pending ??= snapshot;
+      // Chưa ghi được nên version giữ nguyên; snapshot mới hơn (nếu có) thay thế.
       setStatus('error');
-      arm(retryDelayMs);
+      if (options.isRetryable?.(error) ?? true) {
+        pending ??= snapshot;
+        arm(retryDelayMs);
+      }
       return;
     } finally {
       inFlight = false;
@@ -80,6 +87,15 @@ export function createDraftAutosaver<T>(options: DraftAutosaverOptions<T>) {
       if (stopped()) return;
       pending = snapshot;
       if (!inFlight) arm(delayMs);
+    },
+    /** Tạm dừng: hủy lần lưu đang chờ, bỏ qua thay đổi cho tới khi `resume()`. */
+    pause() {
+      paused = true;
+      clearTimeout(timer);
+      pending = undefined;
+    },
+    resume() {
+      paused = false;
     },
     dispose() {
       disposed = true;

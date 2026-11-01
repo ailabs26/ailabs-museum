@@ -16,6 +16,8 @@ function deferred<T>() {
 
 class ConflictError extends Error {}
 
+class ValidationError extends Error {}
+
 function setup(initialVersion = 1, initialSnapshot: Snapshot = { name: 'Gốc' }) {
   const calls: { snapshot: Snapshot; expectedVersion: number; result: ReturnType<typeof deferred<{ version: number }>> }[] = [];
   const statuses: AutosaveStatus[] = [];
@@ -30,6 +32,7 @@ function setup(initialVersion = 1, initialSnapshot: Snapshot = { name: 'Gốc' }
       return result.promise;
     },
     isConflict: (error) => error instanceof ConflictError,
+    isRetryable: (error) => !(error instanceof ValidationError),
     onStatus: (status) => statuses.push(status),
   });
   return { saver, calls, statuses };
@@ -121,6 +124,35 @@ describe('createDraftAutosaver', () => {
     saver.schedule({ name: 'A' });
     await vi.advanceTimersByTimeAsync(10_000);
     expect(calls).toHaveLength(1);
+  });
+
+  it('TC13c (AI review #3): lỗi không retry được (404/403/422) → báo lỗi, KHÔNG tự gửi lại; thay đổi mới vẫn được lưu', async () => {
+    const { saver, calls } = setup(5);
+    saver.schedule({ name: 'A' });
+    await vi.advanceTimersByTimeAsync(1500);
+    calls[0].result.reject(new ValidationError('Media không còn hợp lệ'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(saver.status).toBe('error');
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(calls).toHaveLength(1);
+
+    saver.schedule({ name: 'A đã sửa media' });
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(calls.map(c => [c.snapshot.name, c.expectedVersion])).toEqual([['A', 5], ['A đã sửa media', 5]]);
+  });
+
+  it('TC11b (AI review #1): pause() hủy lần lưu đang chờ để nút Lưu tay không đua với autosave; resume() bật lại', async () => {
+    const { saver, calls } = setup(3);
+    saver.schedule({ name: 'Gõ rồi bấm Lưu ngay' });
+    saver.pause();
+    saver.schedule({ name: 'Gõ tiếp khi đang lưu tay' });
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(calls).toHaveLength(0);
+
+    saver.resume();
+    saver.schedule({ name: 'Sau khi lưu tay lỗi' });
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(calls.map(c => [c.snapshot.name, c.expectedVersion])).toEqual([['Sau khi lưu tay lỗi', 3]]);
   });
 
   it('dispose: không gửi gì sau khi đóng form (kể cả timer đang chờ)', async () => {

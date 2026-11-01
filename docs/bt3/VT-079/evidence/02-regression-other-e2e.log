@@ -1,0 +1,12 @@
+# Regression E2E ngoài phạm vi trực tiếp: cms-e2e-exhibits, exhibit-hide-policy, exhibit-deletion-policy, exhibit-preview, admin-drawer-focus
+## Baseline (worktree 4ae85f4, chưa có thay đổi FE)
+  22 failed
+  11 passed (9.2m)
+## Nhánh (d67fdff)
+  23 failed / 10 passed
+## Khác biệt tập test fail (baseline → nhánh)
+22a23
+> exhibit-preview-previews-r-1b0c0-l-when-WebGL-is-unavailable
+## Chạy lại riêng test khác biệt trên nhánh, --repeat-each=3
+  3 passed (20.7s)
+## Nguyên nhân 22 test fail chung (phân loại error-context.md của baseline): 18 crash 'Cannot read properties of undefined (reading inReview)' (fixture riêng thiếu /admin/stats/overview), 3 test cms-e2e-* cần backend thật đã đăng nhập ('Chưa khôi phục được phiên đăng nhập'), 1 test exhibit-preview 'CSS previews reflow…' sai assertion toEqual (có sẵn).

@@ -34,6 +34,8 @@ export async function installExhibitEditApi(page: Page) {
     submitError: false,
     /** PATCH bị từ chối 409 vì expectedVersion cũ (VT-079). */
     conflicts: 0,
+    /** Giữ PATCH lại (mạng chậm) sau khi đã ghi nhận request. */
+    patchHook: undefined as undefined | (() => Promise<void>),
   };
   await page.route('**/api/**', async route => {
     const request = route.request();
@@ -66,6 +68,7 @@ export async function installExhibitEditApi(page: Page) {
     if (request.method() === 'PATCH') {
       const body = request.postDataJSON() as UpdateExhibitInput;
       state.patches.push({ id: record.id, body });
+      if (state.patchHook) await state.patchHook();
       if (body.expectedVersion !== undefined && body.expectedVersion !== record.version) {
         state.conflicts++;
         await fulfillMuseum(route, { success: false, data: null, message: 'Hiện vật đã có bản lưu mới hơn. Vui lòng tải lại.' }, 409); return;

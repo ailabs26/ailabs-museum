@@ -1,0 +1,37 @@
+
+Running 3 tests using 1 worker
+
+[1/3] tests/cms-exhibit-autosave.spec.ts:17:1 › autosave gửi expectedVersion, giữ drawer mở và dùng version mới cho lần sau
+[2/3] tests/cms-exhibit-autosave.spec.ts:36:1 › bản lưu từ tab khác mới hơn: autosave dừng, giữ nội dung đang gõ, không ghi đè
+[3/3] tests/cms-exhibit-autosave.spec.ts:59:1 › bấm Lưu ngay sau khi gõ, mạng chậm: autosave không đua với lưu tay (AI review #1)
+  1) tests/cms-exhibit-autosave.spec.ts:59:1 › bấm Lưu ngay sau khi gõ, mạng chậm: autosave không đua với lưu tay (AI review #1)
+
+    Error: expect(received).toHaveLength(expected)
+
+    Expected length: 1
+    Received length: 2
+    Received array:  [{"body": {"altText": null, "audioEnId": null, "audioViId": null, "description": {"vi": "Mô tả 1"}, "displayOrder": 1, "expectedVersion": 1, "hotspots": [], "imageId": null, "modelId": null, "name": {"vi": "Gõ rồi bấm Lưu ngay"}, "placeholderColor": "#8b7355", "placeholderShape": "box", "position": {"x": 0, "y": 0, "z": 0}, "roomId": "60000000-0000-4000-8000-000000000001", "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 1, "y": 1, "z": 1}, "subtitleEnId": null, "subtitleViId": null, "transcript": null}, "id": "10000000-0000-4000-8000-000000000001"}, {"body": {"altText": null, "audioEnId": null, "audioViId": null, "description": {"vi": "Mô tả 1"}, "displayOrder": 1, "expectedVersion": 1, "hotspots": [], "imageId": null, "modelId": null, "name": {"vi": "Gõ rồi bấm Lưu ngay"}, "placeholderColor": "#8b7355", "placeholderShape": "box", "position": {"x": 0, "y": 0, "z": 0}, "roomId": "60000000-0000-4000-8000-000000000001", "rotation": {"x": 0, "y": 0, "z": 0}, "scale": {"x": 1, "y": 1, "z": 1}, "subtitleEnId": null, "subtitleViId": null, "transcript": null}, "id": "10000000-0000-4000-8000-000000000001"}]
+
+      73 |
+      74 |   await expect.poll(() => state.records[0].version).toBe(2);
+    > 75 |   expect(state.patches).toHaveLength(1);
+         |                         ^
+      76 |   expect(state.conflicts).toBe(0);
+      77 |   expect(state.records[0].content.name).toEqual({ vi: 'Gõ rồi bấm Lưu ngay' });
+      78 | });
+        at ailabs-museum/front-end/tests/cms-exhibit-autosave.spec.ts:75:25
+
+    Error Context: test-results/cms-exhibit-autosave-bấm-L-5ddcd-ua-với-lưu-tay-AI-review-1-/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/cms-exhibit-autosave-bấm-L-5ddcd-ua-với-lưu-tay-AI-review-1-/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/cms-exhibit-autosave-bấm-L-5ddcd-ua-với-lưu-tay-AI-review-1-/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    tests/cms-exhibit-autosave.spec.ts:59:1 › bấm Lưu ngay sau khi gõ, mạng chậm: autosave không đua với lưu tay (AI review #1)
+  2 passed (16.7s)

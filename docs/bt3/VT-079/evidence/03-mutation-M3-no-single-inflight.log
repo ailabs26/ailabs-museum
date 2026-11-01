@@ -1,0 +1,33 @@
+# M3 — commit f8aa8d5: bỏ guard 1 request in-flight trong createDraftAutosaver
+
+ RUN  v2.1.8 /tmp/claude-1000/-home-thang-Documents-hus-k68-khmt-SE-2026-class/a46046e6-aba5-4db0-919e-9e9ba3d85412/scratchpad/wt-mutation/front-end
+
+ ❯ src/helpers/draftAutosave.test.ts (7 tests | 1 failed) 41ms
+   × createDraftAutosaver > TC11 (Q2): tối đa 1 request in-flight; thay đổi trong lúc chờ gộp thành 1 lần lưu với version mới 13ms
+     → expected [ …(2) ] to have a length of 1 but got 2
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/helpers/draftAutosave.test.ts > createDraftAutosaver > TC11 (Q2): tối đa 1 request in-flight; thay đổi trong lúc chờ gộp thành 1 lần lưu với version mới
+AssertionError: expected [ …(2) ] to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/helpers/draftAutosave.test.ts:58:19
+     56|     saver.schedule({ name: 'C' });
+     57|     await vi.advanceTimersByTimeAsync(10_000);
+     58|     expect(calls).toHaveLength(1);
+       |                   ^
+     59|
+     60|     calls[0].result.resolve({ version: 2 });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  12:43:12
+   Duration  521ms (transform 69ms, setup 0ms, collect 63ms, tests 41ms, environment 0ms, prepare 73ms)

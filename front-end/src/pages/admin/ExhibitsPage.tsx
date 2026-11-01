@@ -424,8 +424,9 @@ export function ExhibitsPage() {
       }
       const payload = buildExhibitPayload(values);
       if (id) {
-        const expectedVersion = autosaveRef.current?.version ?? editing?.version ?? 0;
-        return exhibitsService.update(id, { ...payload, expectedVersion } as UpdateExhibitInput);
+        const expectedVersion = autosaveRef.current?.version ?? editing?.version;
+        if (expectedVersion === undefined) throw new Error('Chưa biết version hiện vật đang sửa.');
+        return exhibitsService.update(id, { ...payload, expectedVersion });
       }
       return exhibitsService.create(payload);
     },
@@ -449,6 +450,7 @@ export function ExhibitsPage() {
       }
     },
     onError: (err, { session }) => {
+      if (editSessionRef.current === session) autosaveRef.current?.resume();
       if (err instanceof ApiException) {
         if (err.status === 409) {
           notify.error(err.message);
@@ -491,6 +493,8 @@ export function ExhibitsPage() {
         return saved;
       },
       isConflict: error => error instanceof ApiException && error.status === 409,
+      // Chỉ thử lại lỗi tạm thời; 403/404/422… lặp lại cũng không thành công.
+      isRetryable: error => !(error instanceof ApiException) || error.status === 0 || error.status === 429 || error.status >= 500,
       onStatus: status => {
         if (editSessionRef.current !== session) return;
         setAutosave(prev => ({ status, savedAt: status === 'saved' ? new Date() : prev.savedAt }));
@@ -1227,7 +1231,10 @@ export function ExhibitsPage() {
           noValidate
           onSubmit={form.onSubmit(
             (values) => {
-              if (!saveMutation.isPending) saveMutation.mutate({ values, id: editing?.id ?? null, session: editSessionRef.current });
+              if (saveMutation.isPending) return;
+              // Lưu tay đã gửi đủ giá trị form: hủy autosave đang chờ để hai request cùng version không đua.
+              autosaveRef.current?.pause();
+              saveMutation.mutate({ values, id: editing?.id ?? null, session: editSessionRef.current });
             },
             // Lỗi validate nằm ở tab khác thì chuyển tới đó — không để nút "Lưu" im lặng.
             (errors) => {

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { installExhibitEditApi } from './fixtures/exhibitEditApi';
+import { deferred, installExhibitEditApi } from './fixtures/exhibitEditApi';
 
 /**
  * VT-079 TC15 — autosave trong drawer sửa hiện vật (AC1, AC5). API giả có trạng thái và
@@ -54,4 +54,25 @@ test('bản lưu từ tab khác mới hơn: autosave dừng, giữ nội dung đ
   expect(state.conflicts).toBe(1);
   expect(state.records[0].content.name).toEqual({ vi: 'Bản từ tab khác' });
   expect(state.records[0].version).toBe(2);
+});
+
+test('bấm Lưu ngay sau khi gõ, mạng chậm: autosave không đua với lưu tay (AI review #1)', async ({ page }) => {
+  const state = await installExhibitEditApi(page);
+  await page.clock.install();
+  await page.goto('/admin/exhibits');
+  await openEdit(page);
+  const network = deferred();
+  state.patchHook = () => network.promise;
+
+  await nameField(page).fill('Gõ rồi bấm Lưu ngay');
+  await dialog(page).getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
+  await expect.poll(() => state.patches.length).toBe(1);
+  await page.clock.runFor(5000); // debounce autosave đã quá hạn trong lúc lưu tay còn chờ mạng
+  network.release();
+  await page.clock.runFor(2000);
+
+  await expect.poll(() => state.records[0].version).toBe(2);
+  expect(state.patches).toHaveLength(1);
+  expect(state.conflicts).toBe(0);
+  expect(state.records[0].content.name).toEqual({ vi: 'Gõ rồi bấm Lưu ngay' });
 });
