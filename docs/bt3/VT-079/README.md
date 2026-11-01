@@ -39,6 +39,7 @@ C1 exhibit tồn tại, chưa xóa · C2 `expectedVersion` hợp lệ (int ≥ 0
 | R6 | N | Y | – | – | 404 (hành vi có sẵn) |
 | R7 | Y | Y | = | approved | 200, fork revision mới, version+1 |
 | R8 | Y | 2 request đồng thời | cả hai = | draft | đúng 1×200 + 1×409 |
+| R9 | Y | Y | < vì thao tác khác PATCH (reorder đổi vị trí, restore) đã tăng version | bất kỳ | 409, giữ thứ tự mới; hiện vật không đổi vị trí khi reorder thì version giữ nguyên (không 409 giả) |
 
 **Decision table FE queue (`createDraftAutosaver`).**
 
@@ -71,6 +72,9 @@ C1 exhibit tồn tại, chưa xóa · C2 `expectedVersion` hợp lệ (int ≥ 0
 | TC13 | AC5/Q5 | unit FE | save lỗi mạng | `onError`, retry với cùng version | P2 | idem |
 | TC14 | NFR3/Q3 | unit FE | snapshot giống bản đã lưu | không gọi save | P3 | idem |
 | TC15 | AC1/AC5 | E2E Playwright (API mock) | gõ tên → chờ; tab khác tăng version → gõ tiếp | "Đã lưu", PATCH có `expectedVersion`; banner xung đột, form giữ nội dung, không PATCH ghi đè | P1 | `front-end/tests/cms-exhibit-autosave.spec.ts` |
+| TC17 | AC2/R9 | integration PG | mở drawer (order 1), người khác reorder (→ 2), autosave mang order cũ + version cũ | 409; DB giữ order mới | P1 | `.../exhibit-autosave.integration.spec.ts` |
+| TC17b | R9 | integration PG | reorder `[a,b,c]` → `[c,b,a]`, autosave `b` (không đổi vị trí) | 200, không xung đột giả | P2 | idem |
+| TC18 | AC2/R9 | integration PG | mở drawer, xóa rồi khôi phục hiện vật, autosave cũ | 409; giữ order sau khôi phục | P2 | idem |
 | TC16 | NFR1/AC3 | load | 200 PATCH/200 exhibit; 200 PATCH/1 exhibit | p95 ≤ 5 s; đúng 1×200 + 199×409 | P2 | `back-end/scripts/bt3-autosave-load.ts` |
 
 Negative: TC01, TC02, TC04, TC10. Failure path gắn với risk riêng: TC06 (stale replay), TC12 (409 ở FE), TC13 (lỗi mạng).
@@ -121,6 +125,7 @@ Script từ chối chạy nếu `API_URL` không phải localhost.
 | Mutation | M1 bỏ guard version → bị bắt (TC03/04/06/08; TC07 chỉ bắt 3/30). M2 bỏ khóa dòng → TC07 bắt 30/30. M3 bỏ guard 1 in-flight → TC11 bắt. M4 gửi lại sau 409 → TC12 bắt. Không mutant nào sống sót | `03-mutation-*` |
 | Coverage BE | `exhibits.service.ts` 96.3% line / 81.7% branch (cả suite exhibits); riêng spec VT-079 là 43.4% / 37.9%. `update-exhibit.dto.ts` 89.7% line | `04-coverage-backend.log` |
 | AI review sau test | 2 nhận xét đúng được tái hiện (RED), sửa và chuyển GREEN (`e5e546d`) | `05-review-fix-*` |
+| Review người (dinhtienn, PR #135) | Reorder/restore đổi `displayOrder` không tăng version → autosave cũ ghi đè thứ tự mới. RED: TC17, TC18 fail đúng lý do; TC17b pass (canh sửa quá tay). Fix `7f0b0ce` → integration 15/15; toàn bộ BE **1957/1957** (`skipped 0`, cùng máy commit `0f451a9` là 1954; con số 2052 ở dòng GREEN đo trên máy cũ). Mutation M5 (reorder luôn tăng version) bị TC17b bắt | `08-*` |
 | Tải 200 đồng thời | A: p95 2967 / 2787 / 2778 ms (≤ 5000, **đạt**), 600/600 trả 200, 0 lỗi 5xx. B: 1×200 + 199×409, version +1, nội dung là của request thắng | `06-load-200-concurrent.log` |
 | Flaky | shuffle 5 seed 9/9; E2E ×5 15/15; integration chạy 2 lần và đảo thứ tự đều pass; 0 dữ liệu rác; TC07 ×30 30/30 | `07-flaky-review.log` |
 
@@ -129,7 +134,7 @@ Script từ chối chạy nếu `API_URL` không phải localhost.
 | AC / risk | Bằng chứng mạnh nhất | Còn hở |
 |---|---|---|
 | AC1 autosave chạy, drawer mở | E2E TC15-1 | Đo thời gian thật chỉ dùng clock giả |
-| AC2 bản cũ → 409, không đổi | TC03/04/06/08 trên PG thật; giết M1 | – |
+| AC2 bản cũ → 409, không đổi | TC03/04/06/08, TC17/18 trên PG thật; giết M1, M5 | Hide/unhide cũng tăng version → xung đột giả khi đang sửa |
 | AC3 song song đúng 1 thắng | TC07 giết M2 30/30; tải B | TC07 yếu với M1 (10%) |
 | AC4 replay idempotent về state | TC06 | Retry sau khi server đã commit nhưng response bị mất → người dùng thấy 409 (chưa xử lý) |
 | AC5 FE queue | TC11–14, TC11b, TC13c; giết M3/M4; E2E race | Đóng drawer khi còn thay đổi chưa gửi thì mất ≤ 1.5 s nhập liệu |
@@ -149,5 +154,6 @@ Script từ chối chạy nếu `API_URL` không phải localhost.
 | AC5 | TC11–TC14 | `front-end/src/helpers/draftAutosave.test.ts` | `d1676a4` → `d67fdff` | RED → GREEN, giết M3/M4 |
 | AC5 (AI review #1, #3) | TC11b, TC13c, E2E race | idem + `front-end/tests/cms-exhibit-autosave.spec.ts` | `e5e546d` | RED → GREEN |
 | AC1/AC5 | TC15 | `front-end/tests/cms-exhibit-autosave.spec.ts` | `d1676a4` → `d67fdff` | RED → GREEN |
+| AC2, R9 (review dinhtienn) | TC17, TC17b, TC18 | `.../exhibit-autosave.integration.spec.ts` | test `de52d11` → fix `7f0b0ce` | RED → GREEN, giết M5 |
 | NFR1, AC3 | TC16 | `back-end/scripts/bt3-autosave-load.mjs` | (commit docs cuối) | Đạt |
-| Regression | 13 E2E edit-persistence + 2052 BE | – | `4ae85f4`, `4f67fef` | GREEN |
+| Regression | 13 E2E edit-persistence + toàn bộ BE (2052 máy cũ; 1957 sau fix review) | – | `4ae85f4`, `4f67fef` | GREEN |

@@ -67,3 +67,13 @@ Công cụ dùng xuyên suốt: **Claude Code** (CLI agent, model Claude Opus 5.
 
 1. **TC07 (test concurrency do AI viết):** tên và assert đều đúng với AC3, nhưng test **pass ngay trên baseline**, và khi bỏ guard version (M1) chỉ fail **3/30** lần (`03-mutation-tc07-repeat-30x.log`). Nó chỉ mạnh với M2 (bỏ khóa dòng, 30/30). Nếu tin TC07 làm bằng chứng chính cho AC2 thì sẽ sai; bằng chứng tất định thật sự là TC03/04/06/08.
 2. **Wiring autosave đầu tiên (`d67fdff`):** typecheck, lint, unit 201/201 và E2E 15/15 đều xanh, nhưng vẫn có race lưu tay ↔ autosave. Chỉ lộ ra khi AI review nêu kịch bản và một E2E mới có fixture "mạng chậm" chứng minh được. "Test xanh" ở đây không bằng "đúng".
+
+## #5 · Review người (dinhtienn, PR #135) — lỗi AI review đã bỏ sót
+
+| Nhận xét | Đánh giá | Evidence |
+|---|---|---|
+| [P2] `PUT /admin/exhibits/rooms/:roomId/reorder` đổi `displayOrder` qua `updateDisplayOrder()` mà không tăng `version`; autosave (payload luôn mang `displayOrder` lúc mở drawer) vẫn qua guard và ghi đè thứ tự mới | **Đúng**. Kiểm thêm thấy `markRestored` (khôi phục từ thùng rác) cùng lỗi | RED `de52d11`: TC17, TC18 fail vì thiếu 409 (`08-red-review-reorder.log`). Fix `7f0b0ce`, GREEN 15/15, BE 1957/1957 |
+
+Dùng Claude Code để kiểm chứng nhận xét trên code, viết test RED và patch. **Quyết định của tôi:** chỉ tăng version cho hiện vật thật sự đổi vị trí (không tăng hàng loạt), vì tăng cho cả phòng sẽ làm mọi người đang sửa hiện vật khác trong phòng nhận 409 giả. TC17b khóa quyết định này; mutation M5 (luôn tăng) bị TC17b bắt (`08-mutation-M5-unconditional-bump.log`).
+
+**Bài học:** AI review (#3) chỉ xem diff của patch nên không thấy các đường ghi khác vào cùng bảng (`reorder`, `restore`) nằm ngoài diff. Invariant "mọi lần ghi dựa trên version mới nhất" phải được kiểm trên **mọi** đường ghi vào `exhibits`, không chỉ đường được sửa.
