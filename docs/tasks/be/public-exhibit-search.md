@@ -10,6 +10,7 @@ Nhánh: `feat/VT-077-public-exhibit-search` (từ `dev`). PR [#130](https://gith
 - Chỉ trả hiện vật **APPROVED + đang hiển thị (`visible`), thuộc phòng `ACTIVE` và chưa xóa**; tham số query sai định dạng (`roomId` không phải UUID, `page < 1`, `pageSize > 100`) → **400 Bad Request**.
 - Thứ tự cố định `roomId ASC, displayOrder ASC, id ASC` (khớp index `IDX_exhibits_room_order_id`, tiebreaker duy nhất `id` đảm bảo hợp nhất các trang không trùng/sót); tham số `sort` bị bỏ qua.
 - Tài liệu kiến trúc & hợp đồng chi tiết: [docs/architecture/be/public-exhibit-search.md](../../architecture/be/public-exhibit-search.md).
+- Hồ sơ bài tập cá nhân 3 (kế hoạch, bảng truy vết Traceability, phản hồi review & toàn bộ log minh chứng RED/GREEN/Mutation/Perf/Coverage/Flaky): [docs/bt3-23001918/](../../bt3-23001918/README.md).
 
 ### File thay đổi chính
 

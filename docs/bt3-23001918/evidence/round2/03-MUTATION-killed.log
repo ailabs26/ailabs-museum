@@ -1,0 +1,62 @@
+TAP version 13
+# Subtest: VT-077 ExhibitsService.publicSearch
+    # Subtest: TC-06/AC-3: trả meta (page/pageSize/total) đúng như repository
+    ok 1 - TC-06/AC-3: trả meta (page/pageSize/total) đúng như repository
+      ---
+      duration_ms: 1.4129
+      ...
+    # Subtest: TC-01/AC-1: ánh xạ sang DTO công khai, không lộ field nội bộ
+    ok 2 - TC-01/AC-1: ánh xạ sang DTO công khai, không lộ field nội bộ
+      ---
+      duration_ms: 0.4196
+      ...
+    # Subtest: TC-07/TC-08/AC-4: giữ NGUYÊN thứ tự repository trả (ổn định, không re-sort phá vỡ)
+    ok 3 - TC-07/TC-08/AC-4: giữ NGUYÊN thứ tự repository trả (ổn định, không re-sort phá vỡ)
+      ---
+      duration_ms: 0.8237
+      ...
+    # Subtest: AC-2: truyền q/roomId/page/pageSize xuống repository (không tự bịa filter)
+    ok 4 - AC-2: truyền q/roomId/page/pageSize xuống repository (không tự bịa filter)
+      ---
+      duration_ms: 0.172
+      ...
+    # Subtest: AC-5: loại hiện vật chưa xuất bản (mapper trả null) khỏi kết quả
+    ok 5 - AC-5: loại hiện vật chưa xuất bản (mapper trả null) khỏi kết quả
+      ---
+      duration_ms: 0.1946
+      ...
+    # Subtest: TC-12/failure-path: repository ném lỗi → service KHÔNG nuốt lỗi, phải propagate
+    not ok 6 - TC-12/failure-path: repository ném lỗi → service KHÔNG nuốt lỗi, phải propagate
+      ---
+      duration_ms: 6.9557
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-service.spec.ts:132:24'
+      failureType: 'testCodeFailure'
+      error: 'Missing expected rejection.'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      operator: 'rejects'
+      stack: |-
+        async TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search-service.spec.ts:172:5)
+        async Test.run (node:internal/test_runner/test:632:9)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+      ...
+    1..6
+not ok 1 - VT-077 ExhibitsService.publicSearch
+  ---
+  duration_ms: 12.7733
+  type: 'suite'
+  location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-service.spec.ts:76:26'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 6
+# suites 1
+# pass 5
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4663.7857
