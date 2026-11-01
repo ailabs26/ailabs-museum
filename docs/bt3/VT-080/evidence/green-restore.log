@@ -1,0 +1,14 @@
+▶ user restore affected-row contract
+  ✔ repository returns the affected-row count, or zero when the driver omits it (1.878ms)
+  ✔ rejects a zero-row update instead of reporting a successful restore (1.8405ms)
+  ✔ property: for seeded batches of 1–100 IDs, success requires every row updated (8.4065ms)
+  ✔ propagates a persistence rejection and does not clean role links (0.5071ms)
+✔ user restore affected-row contract (13.9829ms)
+ℹ tests 4
+ℹ suites 1
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3325.1173

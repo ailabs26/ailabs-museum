@@ -4,7 +4,7 @@ Student: Đinh Bá Thi (23001942) · SE2026-T20 · 3D-WEB-03
 
 Baseline: `795103d9f5b28af248e11023d55e18538fc6f221` (`origin/dev`, fetched 2026-11-01)
 
-Branch: `feat/vt080-user-restore` · PR base: `dev`
+Branch: `feat/vt080-user-restore` · [PR #137](https://github.com/ailabs26/ailabs-museum/pull/137) into `dev`
 
 ## Specification
 
@@ -50,6 +50,8 @@ From `back-end/`:
 node -r reflect-metadata -r ts-node/register --test src/modules/users/tests/users-restore.spec.ts
 node -r reflect-metadata -r ts-node/register --test src/common/tests/rbac-http.integration.spec.ts
 node -r reflect-metadata -r ts-node/register src/modules/users/tests/users-restore-load.ts
+node ../docs/bt3/VT-080/evidence/flaky-check.cjs
+npm test
 npm run typecheck
 npm run lint
 npm run build
@@ -59,4 +61,4 @@ The existing PostgreSQL `trash-restore.integration.spec.ts` requires a local tes
 
 ## Evidence and limits
 
-Results, traceability, mutation, coverage, flakiness and load observations are recorded in [evidence.md](evidence.md). This PR is left unmerged for team review because it touches user data and authorization-related behavior.
+Results, traceability, mutation, coverage, flakiness and load observations are recorded in [evidence.md](evidence.md), with runnable patches and execution logs in [evidence/](evidence/). Logs are UTF-8 with trailing whitespace normalized. The [follow-up plan](follow-up-plan.md) was committed before the added HTTP test and load-harness change. A [337-word reflection draft](reflection-draft.md) and [PDF assembly checklist](pdf-checklist.md) are available for the student's review. This PR is left unmerged for team review because it touches user data and authorization-related behavior.
