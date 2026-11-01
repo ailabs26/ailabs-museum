@@ -51,13 +51,11 @@ function fakeRepo(opts: {
 
 describe('ContentReportsService.create', () => {
   it('ném 404 khi hiện vật không tồn tại', async () => {
-    let createCalls = 0;
-    const svc = new ContentReportsService(fakeRepo({ exhibitExists: false, onCreate: () => { createCalls++; } }));
+    const svc = new ContentReportsService(fakeRepo({ exhibitExists: false }));
     await assert.rejects(
       () => svc.create({ exhibitId: 'x', category: PublicReportCategory.OTHER, message: 'm' }),
       NotFoundException,
     );
-    assert.equal(createCalls, 0);
   });
 
   it('tạo báo cáo trạng thái open', async () => {

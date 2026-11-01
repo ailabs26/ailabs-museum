@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { Exhibit } from '../exhibits/entities/exhibit.entity';
@@ -10,19 +9,11 @@ import { ReportsController } from './controllers/reports.controller';
 import { ContentReportsRepository } from './repositories/content-reports.repository';
 import { ContentReportsService } from './services/content-reports.service';
 
-export function publicReportsThrottleOptions(config: ConfigService) {
-  return [{ ttl: 60_000, limit: config.getOrThrow<number>('reports.publicRateLimit') }];
-}
-
 /** Phân hệ báo cáo vi phạm: Client gửi (public, rate-limit) + Admin xử lý. */
 @Module({
   imports: [
     TypeOrmModule.forFeature([ContentReport, Exhibit, ExhibitRevision]),
-    ThrottlerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: publicReportsThrottleOptions,
-    }),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 5 }]),
   ],
   controllers: [ReportsController, PublicReportsController],
   providers: [ContentReportsService, ContentReportsRepository],
