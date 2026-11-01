@@ -21,3 +21,4 @@
 
 - **Hợp đồng API & Bất biến SQL:** [`docs/architecture/be/public-exhibit-search.md`](../architecture/be/public-exhibit-search.md) và [`docs/architecture/06-api-contract.md`](../architecture/06-api-contract.md)
 - **Nhật ký Task Backend & Hướng dẫn chạy kiểm thử:** [`docs/tasks/be/public-exhibit-search.md`](../tasks/be/public-exhibit-search.md)
+
