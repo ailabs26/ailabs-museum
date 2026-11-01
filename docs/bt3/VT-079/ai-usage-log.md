@@ -38,3 +38,32 @@ Công cụ dùng xuyên suốt: **Claude Code** (CLI agent, model Claude Opus 5.
 | Fixture cần trả 409 | Chấp nhận | `exhibitEditApi.ts:72` `record.version++` không kiểm tra version. |
 | Rủi ro audit log | Chấp nhận, thêm NFR3 | `admin-exhibits.controller.ts`: `@Audit('exhibit.update','exhibit')` trên `@Patch(':id')`. |
 | Rủi ro retry sau commit → 409 | Chấp nhận, ghi residual risk | Không làm trong slice này; xem reflection. |
+
+## #2 · Sinh test và patch (Claude Code, có review diff)
+
+| Output AI | Dùng / sửa / bác bỏ | Evidence |
+|---|---|---|
+| Spec BE TC01–TC10 và integration TC06–TC09 | Dùng sau khi sửa 2 test: **TC05** so `name` với `{vi}` trong khi mapper trả thêm `en: undefined`; **TC09** gọi `submitDraftForReview` nên bị publish gate chặn (422) | `00-red-first-run-wrong-reason.log`: fail vì setup, không phải hành vi. Đã sửa oracle/fixture, không sửa sản phẩm |
+| Commit contract `ddbcf91` | Lỗi: thêm field làm `tsc` hỏng `revision-media.spec.ts` (union class không còn gộp được) | Phát hiện khi chạy `tsc --noEmit`; sửa ở `f3e0548`, không amend |
+| E2E chung bị crash trên dev | AI chẩn đoán là thiếu route `/admin/stats/overview`; vá fixture dùng chung | 13/13 fail → 13/13 pass (`00-baseline-*`) |
+| Guard BE (15 dòng) và DTO | Dùng; review diff từng dòng | `86acaa3`; full suite 2052/2052 |
+| `createDraftAutosaver` và wiring `ExhibitsPage` | Dùng, sau đó **phải sửa** theo review (#3 bên dưới) | `d67fdff` → `e5e546d` |
+
+## #3 · AI review patch SAU khi test đã pass (ràng buộc VT-079)
+
+**Prompt (rút gọn):** "Bạn là reviewer… xem `git diff 4c2a6d0..HEAD -- back-end/src front-end/src front-end/tests`… tác giả báo BE 2052/2052, FE unit 201/201, E2E 15/15. Liệt kê ≤ 8 nhận xét theo mức nghiêm trọng, mỗi nhận xét: file:dòng, vấn đề, kịch bản, đã kiểm chứng thế nào hoặc 'chưa kiểm chứng'."
+
+| # | Nhận xét của AI | Đánh giá | Evidence |
+|---|---|---|---|
+| 1 | Bấm Lưu trong cửa sổ debounce khi mạng chậm → autosave và lưu tay cùng gửi version V → 409 giả | **Đúng** | E2E mới RED: nhận **2 PATCH cùng `expectedVersion: 1`** (`05-review-fix-red-e2e.log`). Sửa bằng `pause()`/`resume()`, GREEN 16/16 |
+| 3 | Lỗi vĩnh viễn (403/404/422) bị retry mãi mỗi 5 s | **Đúng** | TC13c RED: 2 request thay vì 1 (`05-review-fix-red-unit.log`). Chỉ retry lỗi mạng/429/5xx |
+| 6 | Kiểu TS ở FE để optional, lệch với BE; là breaking change cho client khác | Đúng một phần | Kiểu đã thành bắt buộc. Grep: chỉ FE gọi PATCH exhibits; `scripts/e2e-cms-workflow.mjs` chỉ PATCH `/admin/rooms`. Rủi ro client ngoài repo chưa đánh giá được |
+| 7 | "2052/2052 có thể đã gồm test bị skip" | **Không đủ evidence** (và sai) | Reviewer không mở log. `02-green-backend-full-suite.log` ghi `skipped 0`; `02-green-backend.log` có TC06–TC09 chạy kèm thời gian; `04-coverage-backend.log` cũng `skipped 0` |
+| 4 | Đóng rồi mở lại drawer ngay khi autosave đang bay → GET đọc trước commit → 409 giả | Chưa đủ evidence (AI tự ghi "chưa kiểm chứng") | Không tái hiện; ghi vào residual risk, không sửa dựa trên suy đoán |
+| 2 | "Hủy bỏ" không còn hủy; mất ≤ 1.5 s nhập liệu cuối khi đóng | Đúng về hành vi, là quyết định sản phẩm | Ghi vào giới hạn; cần PO xác nhận |
+| 5, 8 | Thoát conflict phải tải lại (không có merge); mỗi lần autosave delete+insert hotspots | Hợp lý, ngoài slice | Residual risk / việc tiếp theo |
+
+## #4 · Hai điểm AI-generated trông hợp lý nhưng không đáng tin ngay
+
+1. **TC07 (test concurrency do AI viết):** tên và assert đều đúng với AC3, nhưng test **pass ngay trên baseline**, và khi bỏ guard version (M1) chỉ fail **3/30** lần (`03-mutation-tc07-repeat-30x.log`). Nó chỉ mạnh với M2 (bỏ khóa dòng, 30/30). Nếu tin TC07 làm bằng chứng chính cho AC2 thì sẽ sai; bằng chứng tất định thật sự là TC03/04/06/08.
+2. **Wiring autosave đầu tiên (`d67fdff`):** typecheck, lint, unit 201/201 và E2E 15/15 đều xanh, nhưng vẫn có race lưu tay ↔ autosave. Chỉ lộ ra khi AI review nêu kịch bản và một E2E mới có fixture "mạng chậm" chứng minh được. "Test xanh" ở đây không bằng "đúng".

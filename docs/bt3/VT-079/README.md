@@ -94,7 +94,60 @@ npm test                       # toàn bộ suite back-end
 
 cd ../front-end
 npx vitest run src/helpers/draftAutosave.test.ts
-npx playwright test tests/cms-exhibit-autosave.spec.ts --reporter=line
+# Máy không có browser của Playwright: dùng Chrome hệ thống
+PLAYWRIGHT_CHANNEL=chrome npx playwright test tests/cms-exhibit-autosave.spec.ts --reporter=line
 ```
 
-Integration test tự `skip` nếu `AUTOSAVE_TEST_DATABASE_URL` không trỏ tới localhost.
+Integration test tự `skip` nếu `AUTOSAVE_TEST_DATABASE_URL` không trỏ tới localhost (log GREEN ghi `skipped 0`).
+
+**Tải (TC16).** Build và chạy server cục bộ trỏ vào PG Docker, ghi đè mọi biến của `.env`: `DATABASE_URL`, `DATABASE_SSL=false`, `SUPABASE_*=` rỗng, `MEDIA_STORAGE_DRIVER=local`, `PORT=3101`, secret test, `SEED_ADMIN_EMAIL/PASSWORD`. Thứ tự: `npm run build && npm run migration:run && npm run seed && node dist/main.js`. Sau đó chạy:
+
+```bash
+API_URL=http://127.0.0.1:3101/api LOAD_EMAIL=... LOAD_PASSWORD=... node scripts/bt3-autosave-load.mjs
+```
+
+Script từ chối chạy nếu `API_URL` không phải localhost.
+
+**Lặp TC07 (flaky / mutation):** `docs/bt3/VT-079/scripts/repeat-tc07.sh back-end 30 "Patch"`.
+
+## 5. Kết quả (evidence trong `evidence/`)
+
+| Bước | Kết quả | Log |
+|---|---|---|
+| Baseline `dev@4c2a6d0` | BE 2040/2040. 13/13 E2E edit-persistence **crash trên dev** vì fixture thiếu `/admin/stats/overview`; sau khi vá fixture (`4ae85f4`) đạt 13/13 | `00-baseline-*` |
+| RED (trước patch) | BE 7 fail đúng lý do (bản cũ được chấp nhận / DTO cho thiếu version / PATCH trả 200). FE unit 6 fail, E2E 2 fail (không có autosave). Lần chạy đầu fail **sai lý do** (oracle TC05, fixture TC09), đã sửa test, không sửa sản phẩm | `00-red-first-run-wrong-reason.log`, `01-red-*` |
+| GREEN | VT-079 BE 12/12; toàn bộ BE 2052/2052 (`skipped 0`); FE unit 201/201; E2E 15/15 | `02-green-*` |
+| Regression E2E khác | Tập test fail trùng với baseline (22 test có sẵn: 18 crash stats, 3 cần backend thật, 1 assertion cũ). Khác biệt duy nhất `exhibit-preview › WebGL unavailable` chạy lại 3/3 pass, kết luận là flaky | `02-regression-other-e2e.log` |
+| Mutation | M1 bỏ guard version → bị bắt (TC03/04/06/08; TC07 chỉ bắt 3/30). M2 bỏ khóa dòng → TC07 bắt 30/30. M3 bỏ guard 1 in-flight → TC11 bắt. M4 gửi lại sau 409 → TC12 bắt. Không mutant nào sống sót | `03-mutation-*` |
+| Coverage BE | `exhibits.service.ts` 96.3% line / 81.7% branch (cả suite exhibits); riêng spec VT-079 là 43.4% / 37.9%. `update-exhibit.dto.ts` 89.7% line | `04-coverage-backend.log` |
+| AI review sau test | 2 nhận xét đúng được tái hiện (RED), sửa và chuyển GREEN (`e5e546d`) | `05-review-fix-*` |
+| Tải 200 đồng thời | A: p95 2967 / 2787 / 2778 ms (≤ 5000, **đạt**), 600/600 trả 200, 0 lỗi 5xx. B: 1×200 + 199×409, version +1, nội dung là của request thắng | `06-load-200-concurrent.log` |
+| Flaky | shuffle 5 seed 9/9; E2E ×5 15/15; integration chạy 2 lần và đảo thứ tự đều pass; 0 dữ liệu rác; TC07 ×30 30/30 | `07-flaky-review.log` |
+
+**Risk coverage theo AC** (không dùng một tỷ lệ % duy nhất):
+
+| AC / risk | Bằng chứng mạnh nhất | Còn hở |
+|---|---|---|
+| AC1 autosave chạy, drawer mở | E2E TC15-1 | Đo thời gian thật chỉ dùng clock giả |
+| AC2 bản cũ → 409, không đổi | TC03/04/06/08 trên PG thật; giết M1 | – |
+| AC3 song song đúng 1 thắng | TC07 giết M2 30/30; tải B | TC07 yếu với M1 (10%) |
+| AC4 replay idempotent về state | TC06 | Retry sau khi server đã commit nhưng response bị mất → người dùng thấy 409 (chưa xử lý) |
+| AC5 FE queue | TC11–14, TC11b, TC13c; giết M3/M4; E2E race | Đóng drawer khi còn thay đổi chưa gửi thì mất ≤ 1.5 s nhập liệu |
+| NFR1 p95 ≤ 5 s | tải A/B | Một máy, không có mạng thật, pool 10, NODE_ENV=development |
+
+## 6. Traceability
+
+| AC / Risk | Test case | File test | Commit | Kết quả |
+|---|---|---|---|---|
+| AC2, R4 | TC01, TC02, TC10 | `back-end/src/modules/exhibits/tests/exhibit-autosave.spec.ts` | test `d1676a4` → fix `86acaa3` | RED → GREEN |
+| AC2, R2/R3 | TC03, TC04 | idem | `d1676a4` → `86acaa3` | RED → GREEN, giết M1 |
+| AC1, R1 | TC05 | idem | `d1676a4` | GREEN (characterization) |
+| AC2/AC4 | TC06 | `.../exhibit-autosave.integration.spec.ts` | `d1676a4` → `86acaa3` | RED → GREEN, giết M1 |
+| AC3, R8 | TC07 | idem | `d1676a4` | GREEN cả trước patch; giết M2 30/30 |
+| R7 | TC08 | idem | `d1676a4` → `86acaa3` | RED → GREEN, giết M1 |
+| R5 | TC09 | idem | `d1676a4` | GREEN (hành vi BR-26 có sẵn) |
+| AC5 | TC11–TC14 | `front-end/src/helpers/draftAutosave.test.ts` | `d1676a4` → `d67fdff` | RED → GREEN, giết M3/M4 |
+| AC5 (AI review #1, #3) | TC11b, TC13c, E2E race | idem + `front-end/tests/cms-exhibit-autosave.spec.ts` | `e5e546d` | RED → GREEN |
+| AC1/AC5 | TC15 | `front-end/tests/cms-exhibit-autosave.spec.ts` | `d1676a4` → `d67fdff` | RED → GREEN |
+| NFR1, AC3 | TC16 | `back-end/scripts/bt3-autosave-load.mjs` | (commit docs cuối) | Đạt |
+| Regression | 13 E2E edit-persistence + 2052 BE | – | `4ae85f4`, `4f67fef` | GREEN |
