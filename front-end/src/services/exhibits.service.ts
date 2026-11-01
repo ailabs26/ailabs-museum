@@ -150,6 +150,8 @@ export interface HotspotInput {
 }
 
 export interface UpdateExhibitInput {
+  /** Version client đang thấy; server từ chối (409) nếu đã có bản mới hơn. */
+  expectedVersion?: number;
   roomId?: string;
   name?: BilingualText;
   description?: BilingualText;

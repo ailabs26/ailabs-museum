@@ -18,6 +18,10 @@ import { CreateHotspotDto } from './hotspot.dto';
 import { Scale3Dto, Vector3Dto } from './vector3.dto';
 
 export class UpdateExhibitDto {
+  /** Version hiện vật mà client đang thấy (VT-079). Chưa ràng buộc: chỉ khai báo contract. */
+  @IsOptional()
+  expectedVersion?: number;
+
   @IsOptional()
   @IsUUID(undefined, { message: 'roomId phải là định dạng UUID hợp lệ' })
   roomId?: string;
