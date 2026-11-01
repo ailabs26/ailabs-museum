@@ -318,6 +318,11 @@ export class ExhibitsService {
 
       const currentExhibit = await this.exhibits.findForUpdate(id, manager);
       if (!currentExhibit) throw new NotFoundException('Không tìm thấy hiện vật');
+      // VT-079: compare-and-swap theo version client gửi lên, kiểm tra khi đang giữ khóa dòng.
+      // Bản lưu cũ (autosave đến muộn, retry, tab khác) không được ghi đè bản mới hơn.
+      if (currentExhibit.version !== dto.expectedVersion) {
+        throw new ConflictException('Hiện vật đã có bản lưu mới hơn. Vui lòng tải lại trước khi lưu tiếp.');
+      }
       const currentRevision = await this.exhibits.findActiveRevision(id, manager);
       if (!currentRevision || currentExhibit.version !== exhibit.version || currentRevision.id !== activeRev.id || currentRevision.state !== activeRev.state) {
         throw new ConflictException('Trạng thái hiện vật vừa thay đổi. Vui lòng tải lại và thử lại.');

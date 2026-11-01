@@ -1,0 +1,28 @@
+▶ VT-079 · autosave chống ghi đè (PostgreSQL thật)
+  ✔ TC06 (AC2/AC4): replay bản A cũ sau khi bản B đã lưu → 409, DB vẫn giữ bản B (164.011148ms)
+  ✔ TC07 (AC3/R8): 2 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (61.815469ms)
+  ✔ TC07 (AC3/R8): 10 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (170.888021ms)
+  ✔ TC08 (R7): bản đã xuất bản + version khớp → fork revision mới; autosave cũ sau đó → 409 (81.755879ms)
+  ✔ TC09 (R5): đã gửi duyệt → autosave (version cũ hay khớp) bị từ chối, revision vẫn in_review (60.138544ms)
+✔ VT-079 · autosave chống ghi đè (PostgreSQL thật) (3562.050713ms)
+▶ VT-079 · UpdateExhibitDto.expectedVersion (R4)
+  ✔ TC01: thiếu expectedVersion là không hợp lệ — autosave phải nói rõ nó dựa trên version nào (3.541257ms)
+  ✔ TC02: expectedVersion âm hoặc không phải số nguyên bị từ chối; 0 (cận dưới) hợp lệ (1.523854ms)
+✔ VT-079 · UpdateExhibitDto.expectedVersion (R4) (6.09605ms)
+▶ VT-079 · ExhibitsService.updateExhibitDraft với expectedVersion
+  ✔ TC03 (R2): version client cũ hơn DB → 409 và không ghi gì (1.650475ms)
+  ✔ TC04 (R3): version client lớn hơn DB (không có thật) → 409 và không ghi gì (0.748863ms)
+  ✔ TC05 (R1): version khớp → lưu nội dung mới và version tăng đúng 1 (0.999959ms)
+✔ VT-079 · ExhibitsService.updateExhibitDraft với expectedVersion (3.757979ms)
+▶ VT-079 · PATCH /admin/exhibits/:id (HTTP + ValidationPipe như main.ts)
+  ✔ TC10 (R4): PATCH thiếu expectedVersion → 400 và service không được gọi (97.810538ms)
+  ✔ TC10b: PATCH có expectedVersion hợp lệ đi tới service với giá trị số nguyên (11.599996ms)
+✔ VT-079 · PATCH /admin/exhibits/:id (HTTP + ValidationPipe như main.ts) (111.58748ms)
+ℹ tests 12
+ℹ suites 4
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7411.088098

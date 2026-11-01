@@ -1,6 +1,7 @@
 import { plainToInstance, Transform, Type } from 'class-transformer';
 import {
   IsArray,
+  IsDefined,
   IsIn,
   IsInt,
   IsNumber,
@@ -18,9 +19,15 @@ import { CreateHotspotDto } from './hotspot.dto';
 import { Scale3Dto, Vector3Dto } from './vector3.dto';
 
 export class UpdateExhibitDto {
-  /** Version hiện vật mà client đang thấy (VT-079). Chưa ràng buộc: chỉ khai báo contract. */
-  @IsOptional()
-  expectedVersion?: number;
+  /**
+   * Version hiện vật mà client đang thấy (VT-079). Bắt buộc: server chỉ ghi khi khớp version hiện
+   * tại (compare-and-swap), nên bản lưu cũ — retry muộn, tab khác — không thể ghi đè bản mới hơn.
+   */
+  @IsDefined({ message: 'Thiếu expectedVersion (version hiện vật đang chỉnh sửa)' })
+  @Type(() => Number)
+  @IsInt({ message: 'expectedVersion phải là số nguyên' })
+  @Min(0, { message: 'expectedVersion không được âm' })
+  expectedVersion!: number;
 
   @IsOptional()
   @IsUUID(undefined, { message: 'roomId phải là định dạng UUID hợp lệ' })
