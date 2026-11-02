@@ -69,6 +69,10 @@ refresh; nếu chung bộ đếm IP với login, nhân viên ngồi chung IP vă
 `auth.login_blocked` / `auth.refresh_blocked` một lần mỗi cửa sổ cho mỗi khóa.
 Refresh bằng token **đã xoay vòng** (reuse-detection) thu hồi cả family và ghi `auth.refresh_reuse_detected`; token chỉ
 bị thu hồi (đăng xuất, đăng xuất từ xa) hoặc hết hạn thì trả 401 như nhau nhưng không ghi, để tránh báo động giả.
+Ân hạn 10 giây (issue #141): token vừa xoay vòng bị gửi lại trong 10 giây sau `used_at` trả 401 nhưng **không** thu hồi
+family, không ghi audit và không xóa cookie (cookie trình duyệt lúc đó là token mới của tab khác). Không cấp token nào nên
+kẻ gian replay trong khoảng này cũng không vào được; quá 10 giây thì reuse-detection như cũ. Front-end gửi refresh trong
+Web Lock `aura-auth-refresh` để các tab xếp hàng, nên bình thường không chạm tới ân hạn.
 Front-end (issue #128) chỉ kết thúc phiên khi refresh trả **401**; 429 / 5xx / mất mạng giữ phiên (refresh cookie còn) —
 đang dùng thì request báo lỗi và lần sau refresh lại; khi tải lại trang thì hiện "Chưa khôi phục được phiên" kèm số giây
 chờ (`Retry-After`, đã mở qua CORS `exposedHeaders`) và nút Thử lại / Đăng nhập lại.
