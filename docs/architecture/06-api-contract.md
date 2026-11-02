@@ -229,6 +229,29 @@ Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. 
 > Với `resourceType='revision'`, interceptor lưu thêm FK `revisionId` để join `audit_logs → exhibit_revisions`.
 > Response có mảng `ids` (xóa hàng loạt) hoặc `roleIds` → interceptor ghi **1 bản ghi cho mỗi ID**.
 
+### Thông báo trong CMS (chuông)
+
+Chỉ cần đăng nhập (không cần quyền riêng); mọi thao tác chỉ trên thông báo **của chính mình**, thông báo của
+người khác trả 404. Không ghi audit.
+
+```
+GET    /notifications?page&pageSize      # của tôi, mới nhất trước → Paginated<{ id, type, title, body, link, read, createdAt }>
+GET    /notifications/unread-count       # { count } — badge chuông
+POST   /notifications/read-all           # { updated }
+PATCH  /notifications/:id/read           # null; đọc rồi thì giữ thời điểm đọc đầu
+DELETE /notifications/:id                # null; xóa hẳn
+```
+
+| `type` | Phát khi | Người nhận | `body` | `link` |
+|---|---|---|---|---|
+| `revision.submitted` | gửi bản nháp đi duyệt | user active có `revision:publish`, trừ người gửi | — | `/admin/moderation` |
+| `revision.approved` | bản được duyệt | tác giả (`created_by`), trừ khi tự duyệt | — | `/admin/exhibits` |
+| `revision.rejected` | bản bị từ chối | tác giả, trừ khi tự từ chối | lý do từ chối | `/admin/exhibits` |
+| `report.created` | khách gửi báo cáo | user active có `report:resolve` | nội dung báo cáo | `/admin/reports` |
+
+Thông báo được tạo **sau** khi thao tác chính thành công. Lỗi tạo thông báo chỉ ghi log, không làm hỏng thao tác chính.
+Tiêu đề lấy tên hiện vật tiếng Việt (thiếu thì tiếng Anh), cắt còn 200 ký tự.
+
 ### Health check (`@Public()`, không audit)
 ```
 GET    /health          # liveness: process còn chạy → 200 { status: "ok" } (không chạm DB)
