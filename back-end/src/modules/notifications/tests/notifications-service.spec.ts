@@ -89,6 +89,20 @@ describe('NotificationsService — phát thông báo', () => {
     ]);
   });
 
+  it('tên song ngữ thật ({ vi, en }, chuỗi JSON, chỉ en, rỗng) → lấy tiếng Việt, thiếu thì tiếng Anh, không "[object Object]"', async () => {
+    const { service, inserted } = harness({ [PERMISSIONS.REVISION_PUBLISH]: ['m'], [PERMISSIONS.REPORT_RESOLVE]: ['h'] });
+    await service.revisionSubmitted({ exhibitName: { vi: 'Trống đồng', en: 'Bronze drum' }, actorId: 'x' });
+    await service.revisionReviewed({ approved: true, exhibitName: '{"vi":null,"en":"Compass"}', authorId: 'a', reviewerId: 'r' });
+    await service.reportCreated({ exhibitName: { vi: '', en: '' }, message: 'm' });
+    await service.revisionSubmitted({ exhibitName: undefined, actorId: 'x' });
+    assert.deepEqual(inserted.map((n) => n.title), [
+      'Bản nội dung mới chờ duyệt: Trống đồng',
+      'Bản nội dung đã được duyệt: Compass',
+      'Báo cáo vi phạm mới',
+      'Bản nội dung mới chờ duyệt: Hiện vật chưa đặt tên',
+    ]);
+  });
+
   it('tên hiện vật rất dài → tiêu đề cắt còn 200 ký tự (giới hạn cột)', async () => {
     const { service, inserted } = harness({ [PERMISSIONS.REVISION_PUBLISH]: ['m'] });
     await service.revisionSubmitted({ exhibitName: 'A'.repeat(500), actorId: 'x' });
