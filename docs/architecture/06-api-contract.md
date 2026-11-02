@@ -189,7 +189,11 @@ POST   /reports/:id/resolve  | /dismiss
 #### Reports (Task 23)
 
 - `GET /reports?page&pageSize&status` (`report:read`) → danh sách; `GET /reports/:id` (`report:read`) → chi tiết kèm phiên bản bị báo cáo.
-- `POST /reports/:id/assign` (`report:resolve`): open → in_progress, gán người tiếp nhận.
+- `POST /reports/:id/assign` (`report:resolve`), body tùy chọn `{ assigneeId? }`: bỏ trống = tự tiếp nhận; có = giao
+  cho người đó (user active có `report:resolve`, không thì **400** `invalid_assignee`). open/in_progress → in_progress
+  (cho phép giao lại khi đang xử lý); giao trùng người đang giữ → **409**. Người được giao (khác người giao) nhận thông báo
+  `report.assigned`.
+- `GET /reports/assignees` (`report:resolve`): người có thể được giao → `[{ id, email, displayName }]`.
 - `POST /reports/:id/resolve` body `{ resolution }` (`report:resolve`): → resolved.
 - `POST /reports/:id/dismiss` body `{ resolution }` (`report:resolve`): → dismissed.
 - `POST /public/reports` **@Public** body `{ exhibitId, reportedRevisionId?, category, message }`, rate-limit 5 lần/phút.
@@ -248,6 +252,7 @@ DELETE /notifications/:id                # null; xóa hẳn
 | `revision.approved` | bản được duyệt | tác giả (`created_by`), trừ khi tự duyệt | — | `/admin/exhibits` |
 | `revision.rejected` | bản bị từ chối | tác giả, trừ khi tự từ chối | lý do từ chối | `/admin/exhibits` |
 | `report.created` | khách gửi báo cáo | user active có `report:resolve` | nội dung báo cáo | `/admin/reports` |
+| `report.assigned` | báo cáo được người khác giao | người được giao (tự nhận thì không) | nội dung báo cáo | `/admin/reports` |
 
 Thông báo được tạo **sau** khi thao tác chính thành công. Lỗi tạo thông báo chỉ ghi log, không làm hỏng thao tác chính.
 Tiêu đề lấy tên hiện vật tiếng Việt (thiếu thì tiếng Anh), cắt còn 200 ký tự.
