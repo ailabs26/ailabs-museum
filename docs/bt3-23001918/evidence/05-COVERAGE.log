@@ -1,0 +1,3621 @@
+TAP version 13
+# Subtest: Task 7.4 & 7.5 — AdminExhibitsController Comprehensive Test Suite (130 Test Cases)
+    # Subtest: Suite 1: Architecture & Route Metadata Inspection (15 Test Cases)
+        # Subtest: TC-C001: Controller class is decorated with route prefix "admin/exhibits"
+        ok 1 - TC-C001: Controller class is decorated with route prefix "admin/exhibits"
+          ---
+          duration_ms: 3.1054
+          ...
+        # Subtest: TC-C002: Controller class has ApiTags("Admin · Exhibits")
+        ok 2 - TC-C002: Controller class has ApiTags("Admin · Exhibits")
+          ---
+          duration_ms: 3.2595
+          ...
+        # Subtest: TC-C003: Controller class has ApiBearerAuth enabled
+        ok 3 - TC-C003: Controller class has ApiBearerAuth enabled
+          ---
+          duration_ms: 0.5528
+          ...
+        # Subtest: TC-C004: Controller is NOT marked @Public() (protected by JwtAuthGuard)
+        ok 4 - TC-C004: Controller is NOT marked @Public() (protected by JwtAuthGuard)
+          ---
+          duration_ms: 0.4499
+          ...
+        # Subtest: TC-C005: list handler is decorated with @Get("")
+        ok 5 - TC-C005: list handler is decorated with @Get("")
+          ---
+          duration_ms: 0.3372
+          ...
+        # Subtest: TC-C006: getById handler is decorated with @Get(":id")
+        ok 6 - TC-C006: getById handler is decorated with @Get(":id")
+          ---
+          duration_ms: 0.3025
+          ...
+        # Subtest: TC-C007: getRevisionsHistory handler is decorated with @Get(":id/revisions")
+        ok 7 - TC-C007: getRevisionsHistory handler is decorated with @Get(":id/revisions")
+          ---
+          duration_ms: 0.2827
+          ...
+        # Subtest: TC-C008: getRevisionDetail handler is decorated with @Get(":id/revisions/:revId")
+        ok 8 - TC-C008: getRevisionDetail handler is decorated with @Get(":id/revisions/:revId")
+          ---
+          duration_ms: 0.2849
+          ...
+        # Subtest: TC-C009: create handler is decorated with @Post("") and @HttpCode(201)
+        ok 9 - TC-C009: create handler is decorated with @Post("") and @HttpCode(201)
+          ---
+          duration_ms: 0.3001
+          ...
+        # Subtest: TC-C010: update handler is decorated with @Patch(":id")
+        ok 10 - TC-C010: update handler is decorated with @Patch(":id")
+          ---
+          duration_ms: 0.3095
+          ...
+        # Subtest: TC-C011: submitReview handler is decorated with @Post(":id/submit-review")
+        ok 11 - TC-C011: submitReview handler is decorated with @Post(":id/submit-review")
+          ---
+          duration_ms: 0.2831
+          ...
+        # Subtest: TC-C012: deleteDraft handler is decorated with @Delete(":id")
+        ok 12 - TC-C012: deleteDraft handler is decorated with @Delete(":id")
+          ---
+          duration_ms: 0.2775
+          ...
+        # Subtest: TC-C013: deleteDraftRevision handler is decorated with @Delete(":id/revisions/:revId")
+        ok 13 - TC-C013: deleteDraftRevision handler is decorated with @Delete(":id/revisions/:revId")
+          ---
+          duration_ms: 0.2903
+          ...
+        # Subtest: TC-C014: reorder handler is decorated with @Put("rooms/:roomId/reorder")
+        ok 14 - TC-C014: reorder handler is decorated with @Put("rooms/:roomId/reorder")
+          ---
+          duration_ms: 0.281
+          ...
+        # Subtest: TC-C015: ApiOperation summaries are present on all endpoints
+        ok 15 - TC-C015: ApiOperation summaries are present on all endpoints
+          ---
+          duration_ms: 0.5454
+          ...
+        1..15
+    ok 1 - Suite 1: Architecture & Route Metadata Inspection (15 Test Cases)
+      ---
+      duration_ms: 20.3914
+      type: 'suite'
+      ...
+    # Subtest: Suite 2: RBAC Permissions Metadata Inspection (10 Test Cases)
+        # Subtest: TC-C016: list requires PERMISSIONS.EXHIBIT_READ
+        ok 1 - TC-C016: list requires PERMISSIONS.EXHIBIT_READ
+          ---
+          duration_ms: 1.6256
+          ...
+        # Subtest: TC-C017: getById requires PERMISSIONS.EXHIBIT_READ
+        ok 2 - TC-C017: getById requires PERMISSIONS.EXHIBIT_READ
+          ---
+          duration_ms: 0.743
+          ...
+        # Subtest: TC-C018: getRevisionsHistory requires PERMISSIONS.EXHIBIT_READ
+        ok 3 - TC-C018: getRevisionsHistory requires PERMISSIONS.EXHIBIT_READ
+          ---
+          duration_ms: 2.9209
+          ...
+        # Subtest: TC-C019: getRevisionDetail requires PERMISSIONS.EXHIBIT_READ
+        ok 4 - TC-C019: getRevisionDetail requires PERMISSIONS.EXHIBIT_READ
+          ---
+          duration_ms: 0.8913
+          ...
+        # Subtest: TC-C020: create requires PERMISSIONS.EXHIBIT_CREATE
+        ok 5 - TC-C020: create requires PERMISSIONS.EXHIBIT_CREATE
+          ---
+          duration_ms: 0.7248
+          ...
+        # Subtest: TC-C021: update requires PERMISSIONS.EXHIBIT_UPDATE
+        ok 6 - TC-C021: update requires PERMISSIONS.EXHIBIT_UPDATE
+          ---
+          duration_ms: 0.8662
+          ...
+        # Subtest: TC-C022: submitReview requires PERMISSIONS.REVISION_SUBMIT
+        ok 7 - TC-C022: submitReview requires PERMISSIONS.REVISION_SUBMIT
+          ---
+          duration_ms: 0.7102
+          ...
+        # Subtest: TC-C023: deleteDraft requires PERMISSIONS.EXHIBIT_UPDATE
+        ok 8 - TC-C023: deleteDraft requires PERMISSIONS.EXHIBIT_UPDATE
+          ---
+          duration_ms: 0.674
+          ...
+        # Subtest: TC-C024: deleteDraftRevision requires PERMISSIONS.EXHIBIT_UPDATE
+        ok 9 - TC-C024: deleteDraftRevision requires PERMISSIONS.EXHIBIT_UPDATE
+          ---
+          duration_ms: 0.7297
+          ...
+        # Subtest: TC-C025: reorder requires PERMISSIONS.EXHIBIT_UPDATE
+        ok 10 - TC-C025: reorder requires PERMISSIONS.EXHIBIT_UPDATE
+          ---
+          duration_ms: 1.0269
+          ...
+        1..10
+    ok 2 - Suite 2: RBAC Permissions Metadata Inspection (10 Test Cases)
+      ---
+      duration_ms: 14.8673
+      type: 'suite'
+      ...
+    # Subtest: Suite 3: Audit Logging Metadata Inspection (10 Test Cases)
+        # Subtest: TC-C026: create is decorated with @Audit("exhibit.create", "exhibit")
+        ok 1 - TC-C026: create is decorated with @Audit("exhibit.create", "exhibit")
+          ---
+          duration_ms: 1.4616
+          ...
+        # Subtest: TC-C027: update is decorated with @Audit("exhibit.update", "exhibit")
+        ok 2 - TC-C027: update is decorated with @Audit("exhibit.update", "exhibit")
+          ---
+          duration_ms: 1.6126
+          ...
+        # Subtest: TC-C028: submitReview is decorated with @Audit("revision.submit", "revision")
+        ok 3 - TC-C028: submitReview is decorated with @Audit("revision.submit", "revision")
+          ---
+          duration_ms: 0.9257
+          ...
+        # Subtest: TC-C029: deleteDraft is decorated with @Audit("exhibit.delete", "exhibit")
+        ok 4 - TC-C029: deleteDraft is decorated with @Audit("exhibit.delete", "exhibit")
+          ---
+          duration_ms: 0.7229
+          ...
+        # Subtest: TC-C030: deleteDraftRevision is decorated with @Audit("revision.delete", "revision")
+        ok 5 - TC-C030: deleteDraftRevision is decorated with @Audit("revision.delete", "revision")
+          ---
+          duration_ms: 0.6988
+          ...
+        # Subtest: TC-C031: reorder is decorated with @Audit("exhibit.reorder", "exhibit")
+        ok 6 - TC-C031: reorder is decorated with @Audit("exhibit.reorder", "exhibit")
+          ---
+          duration_ms: 0.6545
+          ...
+        # Subtest: TC-C032: list is not decorated with @Audit (read-only)
+        ok 7 - TC-C032: list is not decorated with @Audit (read-only)
+          ---
+          duration_ms: 0.5884
+          ...
+        # Subtest: TC-C033: getById is not decorated with @Audit (read-only)
+        ok 8 - TC-C033: getById is not decorated with @Audit (read-only)
+          ---
+          duration_ms: 0.6094
+          ...
+        # Subtest: TC-C034: getRevisionsHistory is not decorated with @Audit (read-only)
+        ok 9 - TC-C034: getRevisionsHistory is not decorated with @Audit (read-only)
+          ---
+          duration_ms: 0.5652
+          ...
+        # Subtest: TC-C035: getRevisionDetail is not decorated with @Audit (read-only)
+        ok 10 - TC-C035: getRevisionDetail is not decorated with @Audit (read-only)
+          ---
+          duration_ms: 0.5885
+          ...
+        1..10
+    ok 3 - Suite 3: Audit Logging Metadata Inspection (10 Test Cases)
+      ---
+      duration_ms: 11.8703
+      type: 'suite'
+      ...
+    # Subtest: Suite 4: ReorderExhibitsDto Validation Rules (15 Test Cases)
+        # Subtest: TC-C036: Single valid UUID passes validation
+        ok 1 - TC-C036: Single valid UUID passes validation
+          ---
+          duration_ms: 20.5895
+          ...
+        # Subtest: TC-C037: Multiple valid UUIDs pass validation
+        ok 2 - TC-C037: Multiple valid UUIDs pass validation
+          ---
+          duration_ms: 1.8588
+          ...
+        # Subtest: TC-C038: 20 valid UUIDs pass validation
+        ok 3 - TC-C038: 20 valid UUIDs pass validation
+          ---
+          duration_ms: 1.7338
+          ...
+        # Subtest: TC-C039: Missing exhibitIds field fails validation
+        ok 4 - TC-C039: Missing exhibitIds field fails validation
+          ---
+          duration_ms: 2.8845
+          ...
+        # Subtest: TC-C040: Null exhibitIds fails validation
+        ok 5 - TC-C040: Null exhibitIds fails validation
+          ---
+          duration_ms: 0.5092
+          ...
+        # Subtest: TC-C041: Non-array string for exhibitIds fails IsArray
+        ok 6 - TC-C041: Non-array string for exhibitIds fails IsArray
+          ---
+          duration_ms: 0.4634
+          ...
+        # Subtest: TC-C042: Non-array number for exhibitIds fails IsArray
+        ok 7 - TC-C042: Non-array number for exhibitIds fails IsArray
+          ---
+          duration_ms: 0.5627
+          ...
+        # Subtest: TC-C043: Non-array object for exhibitIds fails IsArray
+        ok 8 - TC-C043: Non-array object for exhibitIds fails IsArray
+          ---
+          duration_ms: 0.5591
+          ...
+        # Subtest: TC-C044: Empty array [] fails ArrayNotEmpty
+        ok 9 - TC-C044: Empty array [] fails ArrayNotEmpty
+          ---
+          duration_ms: 0.5115
+          ...
+        # Subtest: TC-C045: Array containing invalid UUID string fails IsUUID
+        ok 10 - TC-C045: Array containing invalid UUID string fails IsUUID
+          ---
+          duration_ms: 0.5408
+          ...
+        # Subtest: TC-C046: Array containing partial UUID fails IsUUID
+        ok 11 - TC-C046: Array containing partial UUID fails IsUUID
+          ---
+          duration_ms: 0.5226
+          ...
+        # Subtest: TC-C047: Array containing non-string number item fails IsUUID
+        ok 12 - TC-C047: Array containing non-string number item fails IsUUID
+          ---
+          duration_ms: 0.492
+          ...
+        # Subtest: TC-C048: Array containing null item fails IsUUID
+        ok 13 - TC-C048: Array containing null item fails IsUUID
+          ---
+          duration_ms: 0.4541
+          ...
+        # Subtest: TC-C049: Array containing mixture of valid and invalid UUID fails validation
+        ok 14 - TC-C049: Array containing mixture of valid and invalid UUID fails validation
+          ---
+          duration_ms: 0.4383
+          ...
+        # Subtest: TC-C050: Validation error message informs in Vietnamese
+        ok 15 - TC-C050: Validation error message informs in Vietnamese
+          ---
+          duration_ms: 0.5039
+          ...
+        1..15
+    ok 4 - Suite 4: ReorderExhibitsDto Validation Rules (15 Test Cases)
+      ---
+      duration_ms: 35.8437
+      type: 'suite'
+      ...
+    # Subtest: Suite 5: list Endpoint Execution & Query Forwarding (10 Test Cases)
+        # Subtest: TC-C051: list forwards query directly to ExhibitsService.searchAdminExhibits
+        ok 1 - TC-C051: list forwards query directly to ExhibitsService.searchAdminExhibits
+          ---
+          duration_ms: 2.4503
+          ...
+        # Subtest: TC-C052: list forwards query with roomId filter
+        ok 2 - TC-C052: list forwards query with roomId filter
+          ---
+          duration_ms: 1.6993
+          ...
+        # Subtest: TC-C053: list forwards query with status filter ("draft")
+        ok 3 - TC-C053: list forwards query with status filter ("draft")
+          ---
+          duration_ms: 1.2231
+          ...
+        # Subtest: TC-C054: list forwards query with search keyword
+        ok 4 - TC-C054: list forwards query with search keyword
+          ---
+          duration_ms: 0.9246
+          ...
+        # Subtest: TC-C055: list forwards query with pagination parameters (page: 3, pageSize: 50)
+        ok 5 - TC-C055: list forwards query with pagination parameters (page: 3, pageSize: 50)
+          ---
+          duration_ms: 1.4489
+          ...
+        # Subtest: TC-C056: list forwards query with sorting parameters (sort: "createdAt:desc")
+        ok 6 - TC-C056: list forwards query with sorting parameters (sort: "createdAt:desc")
+          ---
+          duration_ms: 1.0267
+          ...
+        # Subtest: TC-C057: list returns paginated items and total count from service
+        ok 7 - TC-C057: list returns paginated items and total count from service
+          ---
+          duration_ms: 1.1193
+          ...
+        # Subtest: TC-C058: list returns empty items list when service returns empty page
+        ok 8 - TC-C058: list returns empty items list when service returns empty page
+          ---
+          duration_ms: 1.2867
+          ...
+        # Subtest: TC-C059: list propagates service error when search fails
+        ok 9 - TC-C059: list propagates service error when search fails
+          ---
+          duration_ms: 5.8581
+          ...
+        # Subtest: TC-C060: list propagates database disconnection error
+        ok 10 - TC-C060: list propagates database disconnection error
+          ---
+          duration_ms: 1.7485
+          ...
+        1..10
+    ok 5 - Suite 5: list Endpoint Execution & Query Forwarding (10 Test Cases)
+      ---
+      duration_ms: 22.6652
+      type: 'suite'
+      ...
+    # Subtest: Suite 6: getById Endpoint Execution & Admin Detail Delegation (10 Test Cases)
+        # Subtest: TC-C061: getById passes exhibit UUID to ExhibitsService.getAdminDetail
+        ok 1 - TC-C061: getById passes exhibit UUID to ExhibitsService.getAdminDetail
+          ---
+          duration_ms: 2.0246
+          ...
+        # Subtest: TC-C062: getById returns complete ExhibitAdminDetailResponse
+        ok 2 - TC-C062: getById returns complete ExhibitAdminDetailResponse
+          ---
+          duration_ms: 1.0499
+          ...
+        # Subtest: TC-C063: getById response includes room metadata
+        ok 3 - TC-C063: getById response includes room metadata
+          ---
+          duration_ms: 1.0407
+          ...
+        # Subtest: TC-C064: getById response includes hotspots array
+        ok 4 - TC-C064: getById response includes hotspots array
+          ---
+          duration_ms: 1.0327
+          ...
+        # Subtest: TC-C065: getById response includes revisions list
+        ok 5 - TC-C065: getById response includes revisions list
+          ---
+          duration_ms: 1.1762
+          ...
+        # Subtest: TC-C066: getById propagates NotFoundException when exhibit does not exist
+        ok 6 - TC-C066: getById propagates NotFoundException when exhibit does not exist
+          ---
+          duration_ms: 1.9687
+          ...
+        # Subtest: TC-C067: getById propagates NotFoundException when exhibit is soft-deleted
+        ok 7 - TC-C067: getById propagates NotFoundException when exhibit is soft-deleted
+          ---
+          duration_ms: 1.3663
+          ...
+        # Subtest: TC-C068: getById propagates generic internal error
+        ok 8 - TC-C068: getById propagates generic internal error
+          ---
+          duration_ms: 1.4374
+          ...
+        # Subtest: TC-C069: getById calls service exactly once
+        ok 9 - TC-C069: getById calls service exactly once
+          ---
+          duration_ms: 0.8467
+          ...
+        # Subtest: TC-C070: getById handles exhibit with null room cleanly
+        ok 10 - TC-C070: getById handles exhibit with null room cleanly
+          ---
+          duration_ms: 1.0142
+          ...
+        1..10
+    ok 6 - Suite 6: getById Endpoint Execution & Admin Detail Delegation (10 Test Cases)
+      ---
+      duration_ms: 16.3506
+      type: 'suite'
+      ...
+    # Subtest: Suite 7: getRevisionsHistory & getRevisionDetail Delegation (10 Test Cases)
+        # Subtest: TC-C071: getRevisionsHistory passes exhibit ID to ExhibitsService.getRevisionsHistory
+        ok 1 - TC-C071: getRevisionsHistory passes exhibit ID to ExhibitsService.getRevisionsHistory
+          ---
+          duration_ms: 1.5696
+          ...
+        # Subtest: TC-C072: getRevisionsHistory returns revision entities list
+        ok 2 - TC-C072: getRevisionsHistory returns revision entities list
+          ---
+          duration_ms: 1.5546
+          ...
+        # Subtest: TC-C073: getRevisionsHistory propagates NotFoundException if exhibit not found
+        ok 3 - TC-C073: getRevisionsHistory propagates NotFoundException if exhibit not found
+          ---
+          duration_ms: 1.7386
+          ...
+        # Subtest: TC-C074: getRevisionsHistory handles exhibit with multiple revisions in descending order
+        ok 4 - TC-C074: getRevisionsHistory handles exhibit with multiple revisions in descending order
+          ---
+          duration_ms: 1.0786
+          ...
+        # Subtest: TC-C075: getRevisionsHistory handles exhibit with only 1 revision
+        ok 5 - TC-C075: getRevisionsHistory handles exhibit with only 1 revision
+          ---
+          duration_ms: 0.8118
+          ...
+        # Subtest: TC-C076: getRevisionDetail passes both id and revId to ExhibitsService.getRevisionDetail
+        ok 6 - TC-C076: getRevisionDetail passes both id and revId to ExhibitsService.getRevisionDetail
+          ---
+          duration_ms: 1.1463
+          ...
+        # Subtest: TC-C077: getRevisionDetail returns target revision detail
+        ok 7 - TC-C077: getRevisionDetail returns target revision detail
+          ---
+          duration_ms: 0.8939
+          ...
+        # Subtest: TC-C078: getRevisionDetail propagates NotFoundException when revision is not found
+        ok 8 - TC-C078: getRevisionDetail propagates NotFoundException when revision is not found
+          ---
+          duration_ms: 1.545
+          ...
+        # Subtest: TC-C079: getRevisionDetail propagates NotFoundException when revision belongs to another exhibit
+        ok 9 - TC-C079: getRevisionDetail propagates NotFoundException when revision belongs to another exhibit
+          ---
+          duration_ms: 2.438
+          ...
+        # Subtest: TC-C080: getRevisionDetail propagates unexpected service exceptions
+        ok 10 - TC-C080: getRevisionDetail propagates unexpected service exceptions
+          ---
+          duration_ms: 1.525
+          ...
+        1..10
+    ok 7 - Suite 7: getRevisionsHistory & getRevisionDetail Delegation (10 Test Cases)
+      ---
+      duration_ms: 17.8898
+      type: 'suite'
+      ...
+    # Subtest: Suite 8: create Endpoint Execution & Draft Initialization (10 Test Cases)
+        # Subtest: TC-C081: create forwards CreateExhibitDto and AuthUser to ExhibitsService.createExhibitDraft
+        ok 1 - TC-C081: create forwards CreateExhibitDto and AuthUser to ExhibitsService.createExhibitDraft
+          ---
+          duration_ms: 2.4817
+          ...
+        # Subtest: TC-C082: create returns newly created exhibit draft with DRAFT state
+        ok 2 - TC-C082: create returns newly created exhibit draft with DRAFT state
+          ---
+          duration_ms: 1.188
+          ...
+        # Subtest: TC-C083: create passes user identity including admin/editor roles
+        ok 3 - TC-C083: create passes user identity including admin/editor roles
+          ---
+          duration_ms: 1.0827
+          ...
+        # Subtest: TC-C084: create forwards bilingual name and description correctly
+        ok 4 - TC-C084: create forwards bilingual name and description correctly
+          ---
+          duration_ms: 0.9587
+          ...
+        # Subtest: TC-C085: create forwards 3D transform coordinates (position, rotation, scale)
+        ok 5 - TC-C085: create forwards 3D transform coordinates (position, rotation, scale)
+          ---
+          duration_ms: 1.0919
+          ...
+        # Subtest: TC-C086: create forwards placeholderShape and placeholderColor
+        ok 6 - TC-C086: create forwards placeholderShape and placeholderColor
+          ---
+          duration_ms: 0.8171
+          ...
+        # Subtest: TC-C087: create forwards media IDs (modelId, imageId, audioId)
+        ok 7 - TC-C087: create forwards media IDs (modelId, imageId, audioId)
+          ---
+          duration_ms: 0.842
+          ...
+        # Subtest: TC-C088: create forwards hotspots definition
+        ok 8 - TC-C088: create forwards hotspots definition
+          ---
+          duration_ms: 2.4628
+          ...
+        # Subtest: TC-C089: create propagates NotFoundException when target room does not exist
+        ok 9 - TC-C089: create propagates NotFoundException when target room does not exist
+          ---
+          duration_ms: 1.9424
+          ...
+        # Subtest: TC-C090: create propagates BadRequestException on invalid domain payload
+        ok 10 - TC-C090: create propagates BadRequestException on invalid domain payload
+          ---
+          duration_ms: 1.887
+          ...
+        1..10
+    ok 8 - Suite 8: create Endpoint Execution & Draft Initialization (10 Test Cases)
+      ---
+      duration_ms: 18.7498
+      type: 'suite'
+      ...
+    # Subtest: Suite 9: update Endpoint Execution & BR-21 / BR-26 Edge Cases (10 Test Cases)
+        # Subtest: TC-C091: update forwards exhibit ID, UpdateExhibitDto, and AuthUser to service
+        ok 1 - TC-C091: update forwards exhibit ID, UpdateExhibitDto, and AuthUser to service
+          ---
+          duration_ms: 2.2193
+          ...
+        # Subtest: TC-C092: update returns updated exhibit draft when editing existing DRAFT
+        ok 2 - TC-C092: update returns updated exhibit draft when editing existing DRAFT
+          ---
+          duration_ms: 0.9201
+          ...
+        # Subtest: TC-C093: update BR-21: returns newly forked draft revision when editing PUBLISHED exhibit
+        ok 3 - TC-C093: update BR-21: returns newly forked draft revision when editing PUBLISHED exhibit
+          ---
+          duration_ms: 1.1867
+          ...
+        # Subtest: TC-C094: update resets REJECTED revision state back to DRAFT
+        ok 4 - TC-C094: update resets REJECTED revision state back to DRAFT
+          ---
+          duration_ms: 0.855
+          ...
+        # Subtest: TC-C095: update BR-26: propagates ConflictException (409) when active revision is IN_REVIEW
+        ok 5 - TC-C095: update BR-26: propagates ConflictException (409) when active revision is IN_REVIEW
+          ---
+          duration_ms: 1.7405
+          ...
+        # Subtest: TC-C096: update propagates NotFoundException when exhibit does not exist
+        ok 6 - TC-C096: update propagates NotFoundException when exhibit does not exist
+          ---
+          duration_ms: 1.4654
+          ...
+        # Subtest: TC-C097: update forwards partial DTO containing only name
+        ok 7 - TC-C097: update forwards partial DTO containing only name
+          ---
+          duration_ms: 1.022
+          ...
+        # Subtest: TC-C098: update forwards partial DTO containing only transform
+        ok 8 - TC-C098: update forwards partial DTO containing only transform
+          ---
+          duration_ms: 0.8631
+          ...
+        # Subtest: TC-C099: update forwards partial DTO containing only hotspots
+        ok 9 - TC-C099: update forwards partial DTO containing only hotspots
+          ---
+          duration_ms: 0.546
+          ...
+        # Subtest: TC-C100: update propagates unexpected database error
+        ok 10 - TC-C100: update propagates unexpected database error
+          ---
+          duration_ms: 0.7365
+          ...
+        1..10
+    ok 9 - Suite 9: update Endpoint Execution & BR-21 / BR-26 Edge Cases (10 Test Cases)
+      ---
+      duration_ms: 14.6477
+      type: 'suite'
+      ...
+    # Subtest: Suite 10: submitReview Endpoint Execution & Moderation Transitions (10 Test Cases)
+        # Subtest: TC-C101: submitReview passes exhibit UUID to ExhibitsService.submitDraftForReview
+        ok 1 - TC-C101: submitReview passes exhibit UUID to ExhibitsService.submitDraftForReview
+          ---
+          duration_ms: 0.7472
+          ...
+        # Subtest: TC-C102: submitReview returns exhibit response with revisionState: IN_REVIEW
+        ok 2 - TC-C102: submitReview returns exhibit response with revisionState: IN_REVIEW
+          ---
+          duration_ms: 0.4449
+          ...
+        # Subtest: TC-C103: submitReview propagates NotFoundException when exhibit does not exist
+        ok 3 - TC-C103: submitReview propagates NotFoundException when exhibit does not exist
+          ---
+          duration_ms: 0.6362
+          ...
+        # Subtest: TC-C104: submitReview propagates NotFoundException when active revision not found
+        ok 4 - TC-C104: submitReview propagates NotFoundException when active revision not found
+          ---
+          duration_ms: 0.5653
+          ...
+        # Subtest: TC-C105: submitReview propagates ConflictException (409) when already IN_REVIEW
+        ok 5 - TC-C105: submitReview propagates ConflictException (409) when already IN_REVIEW
+          ---
+          duration_ms: 0.5388
+          ...
+        # Subtest: TC-C106: submitReview propagates ConflictException (409) when revision is already APPROVED
+        ok 6 - TC-C106: submitReview propagates ConflictException (409) when revision is already APPROVED
+          ---
+          duration_ms: 0.469
+          ...
+        # Subtest: TC-C107: submitReview propagates BadRequestException when draft is incomplete
+        ok 7 - TC-C107: submitReview propagates BadRequestException when draft is incomplete
+          ---
+          duration_ms: 0.5165
+          ...
+        # Subtest: TC-C108: submitReview allows submitting from REJECTED state
+        ok 8 - TC-C108: submitReview allows submitting from REJECTED state
+          ---
+          duration_ms: 0.3824
+          ...
+        # Subtest: TC-C109: submitReview calls service exactly once
+        ok 9 - TC-C109: submitReview calls service exactly once
+          ---
+          duration_ms: 0.3242
+          ...
+        # Subtest: TC-C110: submitReview propagates internal database lock failure
+        ok 10 - TC-C110: submitReview propagates internal database lock failure
+          ---
+          duration_ms: 0.4777
+          ...
+        1..10
+    ok 10 - Suite 10: submitReview Endpoint Execution & Moderation Transitions (10 Test Cases)
+      ---
+      duration_ms: 6.4706
+      type: 'suite'
+      ...
+    # Subtest: Suite 11: deleteDraft & deleteDraftRevision Execution & BR-20 Protection (10 Test Cases)
+        # Subtest: TC-C111: deleteDraft passes exhibit UUID to ExhibitsService.deleteExhibitDraft
+        ok 1 - TC-C111: deleteDraft passes exhibit UUID to ExhibitsService.deleteExhibitDraft
+          ---
+          duration_ms: 0.6765
+          ...
+        # Subtest: TC-C112: deleteDraft returns success object for pure draft exhibit
+        ok 2 - TC-C112: deleteDraft returns success object for pure draft exhibit
+          ---
+          duration_ms: 0.3551
+          ...
+        # Subtest: TC-C113: deleteDraft BR-20 Guard: propagates ConflictException (409) when exhibit is published
+        ok 3 - TC-C113: deleteDraft BR-20 Guard: propagates ConflictException (409) when exhibit is published
+          ---
+          duration_ms: 0.6459
+          ...
+        # Subtest: TC-C114: deleteDraft BR-20 Guard: propagates ConflictException (409) when exhibit is visible
+        ok 4 - TC-C114: deleteDraft BR-20 Guard: propagates ConflictException (409) when exhibit is visible
+          ---
+          duration_ms: 0.5478
+          ...
+        # Subtest: TC-C115: deleteDraft propagates NotFoundException when exhibit does not exist
+        ok 5 - TC-C115: deleteDraft propagates NotFoundException when exhibit does not exist
+          ---
+          duration_ms: 0.8747
+          ...
+        # Subtest: TC-C116: deleteDraftRevision passes exhibit ID and revision ID to service
+        ok 6 - TC-C116: deleteDraftRevision passes exhibit ID and revision ID to service
+          ---
+          duration_ms: 0.5629
+          ...
+        # Subtest: TC-C117: deleteDraftRevision returns success response when deleting DRAFT revision
+        ok 7 - TC-C117: deleteDraftRevision returns success response when deleting DRAFT revision
+          ---
+          duration_ms: 0.4332
+          ...
+        # Subtest: TC-C118: deleteDraftRevision returns success response when deleting REJECTED revision
+        ok 8 - TC-C118: deleteDraftRevision returns success response when deleting REJECTED revision
+          ---
+          duration_ms: 0.3724
+          ...
+        # Subtest: TC-C119: deleteDraftRevision propagates ConflictException (409) when revision is published or approved
+        ok 9 - TC-C119: deleteDraftRevision propagates ConflictException (409) when revision is published or approved
+          ---
+          duration_ms: 0.9156
+          ...
+        # Subtest: TC-C120: deleteDraftRevision propagates ConflictException (409) when revision is in moderation (IN_REVIEW)
+        ok 10 - TC-C120: deleteDraftRevision propagates ConflictException (409) when revision is in moderation (IN_REVIEW)
+          ---
+          duration_ms: 0.7601
+          ...
+        1..10
+    ok 11 - Suite 11: deleteDraft & deleteDraftRevision Execution & BR-20 Protection (10 Test Cases)
+      ---
+      duration_ms: 7.7231
+      type: 'suite'
+      ...
+    # Subtest: Suite 12: reorder Endpoint Execution & Multi-Exhibit Ordering (10 Test Cases)
+        # Subtest: TC-C121: reorder passes roomId and exhibitIds to ExhibitsService.reorderExhibits
+        ok 1 - TC-C121: reorder passes roomId and exhibitIds to ExhibitsService.reorderExhibits
+          ---
+          duration_ms: 0.8181
+          ...
+        # Subtest: TC-C122: reorder returns success response { success: true, message: ... }
+        ok 2 - TC-C122: reorder returns success response { success: true, message: ... }
+          ---
+          duration_ms: 0.4591
+          ...
+        # Subtest: TC-C123: reorder handles single exhibit ID
+        ok 3 - TC-C123: reorder handles single exhibit ID
+          ---
+          duration_ms: 0.607
+          ...
+        # Subtest: TC-C124: reorder handles multiple exhibits in new sequence order
+        ok 4 - TC-C124: reorder handles multiple exhibits in new sequence order
+          ---
+          duration_ms: 0.8459
+          ...
+        # Subtest: TC-C125: reorder propagates NotFoundException when target room does not exist
+        ok 5 - TC-C125: reorder propagates NotFoundException when target room does not exist
+          ---
+          duration_ms: 1.6249
+          ...
+        # Subtest: TC-C126: reorder propagates NotFoundException when target room is soft-deleted
+        ok 6 - TC-C126: reorder propagates NotFoundException when target room is soft-deleted
+          ---
+          duration_ms: 1.4283
+          ...
+        # Subtest: TC-C127: reorder passes large array of exhibit IDs
+        ok 7 - TC-C127: reorder passes large array of exhibit IDs
+          ---
+          duration_ms: 0.9358
+          ...
+        # Subtest: TC-C128: reorder propagates database transaction deadlock error
+        ok 8 - TC-C128: reorder propagates database transaction deadlock error
+          ---
+          duration_ms: 1.6668
+          ...
+        # Subtest: TC-C129: reorder verifies roomId argument is preserved without mutation
+        ok 9 - TC-C129: reorder verifies roomId argument is preserved without mutation
+          ---
+          duration_ms: 0.9468
+          ...
+        # Subtest: TC-C130: reorder verifies exhibitIds array preserves its exact given order
+        ok 10 - TC-C130: reorder verifies exhibitIds array preserves its exact given order
+          ---
+          duration_ms: 0.8168
+          ...
+        1..10
+    ok 12 - Suite 12: reorder Endpoint Execution & Multi-Exhibit Ordering (10 Test Cases)
+      ---
+      duration_ms: 12.8702
+      type: 'suite'
+      ...
+    1..12
+ok 1 - Task 7.4 & 7.5 — AdminExhibitsController Comprehensive Test Suite (130 Test Cases)
+  ---
+  duration_ms: 209.5069
+  type: 'suite'
+  ...
+# Subtest: Whole exhibit deletion policy
+    # Subtest: deletes only unprotected revisions (none) in one transaction
+    ok 1 - deletes only unprotected revisions (none) in one transaction
+      ---
+      duration_ms: 6.978
+      ...
+    # Subtest: deletes only unprotected revisions (draft) in one transaction
+    ok 2 - deletes only unprotected revisions (draft) in one transaction
+      ---
+      duration_ms: 1.5584
+      ...
+    # Subtest: deletes only unprotected revisions (rejected) in one transaction
+    ok 3 - deletes only unprotected revisions (rejected) in one transaction
+      ---
+      duration_ms: 0.6766
+      ...
+    # Subtest: deletes only unprotected revisions (draft,rejected) in one transaction
+    ok 4 - deletes only unprotected revisions (draft,rejected) in one transaction
+      ---
+      duration_ms: 0.6328
+      ...
+    # Subtest: blocks approved even if an older revision and latest is draft
+    ok 5 - blocks approved even if an older revision and latest is draft
+      ---
+      duration_ms: 4.4752
+      ...
+    # Subtest: blocks in_review even if an older revision and latest is draft
+    ok 6 - blocks in_review even if an older revision and latest is draft
+      ---
+      duration_ms: 0.5286
+      ...
+    # Subtest: blocks published without misleading hide-then-delete advice
+    ok 7 - blocks published without misleading hide-then-delete advice
+      ---
+      duration_ms: 0.9033
+      ...
+    # Subtest: blocks visible without misleading hide-then-delete advice
+    ok 8 - blocks visible without misleading hide-then-delete advice
+      ---
+      duration_ms: 1.0214
+      ...
+    # Subtest: blocks existing reports of any status before cascade
+    ok 9 - blocks existing reports of any status before cascade
+      ---
+      duration_ms: 1.8468
+      ...
+    # Subtest: rechecks existence inside the transaction
+    ok 10 - rechecks existence inside the transaction
+      ---
+      duration_ms: 1.8596
+      ...
+    # Subtest: rolls back and maps only recognized report constraints (report-fk)
+    ok 11 - rolls back and maps only recognized report constraints (report-fk)
+      ---
+      duration_ms: 2.7337
+      ...
+    # Subtest: rolls back and maps only recognized report constraints (Error: unrelated failure)
+    ok 12 - rolls back and maps only recognized report constraints (Error: unrelated failure)
+      ---
+      duration_ms: 0.905
+      ...
+    # Subtest: a submit paused at the media gate cannot resurrect an exhibit deleted meanwhile
+    ok 13 - a submit paused at the media gate cannot resurrect an exhibit deleted meanwhile
+      ---
+      duration_ms: 2.3425
+      ...
+    # Subtest: an update paused at the media gate cannot resurrect an exhibit deleted meanwhile
+    ok 14 - an update paused at the media gate cannot resurrect an exhibit deleted meanwhile
+      ---
+      duration_ms: 5.7781
+      ...
+    # Subtest: submit refuses a changed revision after obtaining the exhibit lock
+    ok 15 - submit refuses a changed revision after obtaining the exhibit lock
+      ---
+      duration_ms: 3.3374
+      ...
+    # Subtest: update refuses a changed revision after obtaining the exhibit lock
+    ok 16 - update refuses a changed revision after obtaining the exhibit lock
+      ---
+      duration_ms: 0.9741
+      ...
+    # Subtest: a stale publish snapshot cannot recreate an exhibit deleted before its conditional update
+    ok 17 - a stale publish snapshot cannot recreate an exhibit deleted before its conditional update
+      ---
+      duration_ms: 4.1367
+      ...
+    # Subtest: bulk: one protected exhibit blocks the whole batch (409 lists it), nothing is soft-deleted
+    ok 18 - bulk: one protected exhibit blocks the whole batch (409 lists it), nothing is soft-deleted
+      ---
+      duration_ms: 2.4859
+      ...
+    # Subtest: bulk: all deletable → soft-deletes in one transaction and returns ids for audit
+    ok 19 - bulk: all deletable → soft-deletes in one transaction and returns ids for audit
+      ---
+      duration_ms: 1.4653
+      ...
+    1..19
+ok 2 - Whole exhibit deletion policy
+  ---
+  duration_ms: 58.5991
+  type: 'suite'
+  ...
+# Subtest: Deletion repository guards and report constraint identities
+    # Subtest: locks scalar rows and checks both exhibit and cross-referenced revision reports
+    ok 1 - locks scalar rows and checks both exhibit and cross-referenced revision reports
+      ---
+      duration_ms: 2.1109
+      ...
+    # Subtest: recognizes only PostgreSQL report FKs targeting exhibits or revisions
+    ok 2 - recognizes only PostgreSQL report FKs targeting exhibits or revisions
+      ---
+      duration_ms: 1.4495
+      ...
+    1..2
+ok 3 - Deletion repository guards and report constraint identities
+  ---
+  duration_ms: 6925.6761
+  type: 'suite'
+  ...
+# Subtest: Whole exhibit deletion HTTP errors
+    # Subtest: returns the standard 404 envelope with the policy reason
+    ok 1 - returns the standard 404 envelope with the policy reason
+      ---
+      duration_ms: 372.1227
+      ...
+    # Subtest: returns the standard 409 envelope with the policy reason
+    ok 2 - returns the standard 409 envelope with the policy reason
+      ---
+      duration_ms: 18.21
+      ...
+    1..2
+ok 4 - Whole exhibit deletion HTTP errors
+  ---
+  duration_ms: 390.9019
+  type: 'suite'
+  ...
+# Subtest: toPublicExhibit
+    # Subtest: không có revision published / revision không APPROVED / id lệch → null
+    ok 1 - không có revision published / revision không APPROVED / id lệch → null
+      ---
+      duration_ms: 5.9342
+      ...
+    # Subtest: nội dung song ngữ: field cũ là bản vi + i18n đủ
+    ok 2 - nội dung song ngữ: field cũ là bản vi + i18n đủ
+      ---
+      duration_ms: 5.2175
+      ...
+    # Subtest: nội dung chuỗi thường (seed) vẫn hoạt động; thiếu vi thì dùng en
+    ok 3 - nội dung chuỗi thường (seed) vẫn hoạt động; thiếu vi thì dùng en
+      ---
+      duration_ms: 0.9663
+      ...
+    # Subtest: transform: position/rotation/scale; giá trị hỏng → mặc định an toàn, vị trí hỏng → bỏ trống
+    ok 4 - transform: position/rotation/scale; giá trị hỏng → mặc định an toàn, vị trí hỏng → bỏ trống
+      ---
+      duration_ms: 0.8691
+      ...
+    # Subtest: placeholder không hợp lệ → mặc định box/\#8b7355
+    ok 5 - placeholder không hợp lệ → mặc định box/\#8b7355
+      ---
+      duration_ms: 0.4472
+      ...
+    # Subtest: hotspot: chuỗi JSON song ngữ, sắp theo displayOrder rồi id, loại tọa độ không hữu hạn
+    ok 6 - hotspot: chuỗi JSON song ngữ, sắp theo displayOrder rồi id, loại tọa độ không hữu hạn
+      ---
+      duration_ms: 106.568
+      ...
+    # Subtest: media đủ 6 slot: model theo contract tour 3D; ảnh/audio URL tuyệt đối, rights, alt text
+    ok 7 - media đủ 6 slot: model theo contract tour 3D; ảnh/audio URL tuyệt đối, rights, alt text
+      ---
+      duration_ms: 2.1674
+      ...
+    # Subtest: chỉ audio en → audio.vi = null (không tự thay ngôn ngữ — AC-08)
+    ok 8 - chỉ audio en → audio.vi = null (không tự thay ngôn ngữ — AC-08)
+      ---
+      duration_ms: 0.4584
+      ...
+    # Subtest: không có audio → audio = null
+    ok 9 - không có audio → audio = null
+      ---
+      duration_ms: 0.3308
+      ...
+    # Subtest: media đã xóa / không ready / sai kind / không có URL → null + báo skip, exhibit vẫn trả
+    ok 10 - media đã xóa / không ready / sai kind / không có URL → null + báo skip, exhibit vẫn trả
+      ---
+      duration_ms: 0.6809
+      ...
+    # Subtest: audio hỏng thì cả track bị bỏ (không trả phụ đề mồ côi)
+    ok 11 - audio hỏng thì cả track bị bỏ (không trả phụ đề mồ côi)
+      ---
+      duration_ms: 0.4398
+      ...
+    1..11
+ok 5 - toPublicExhibit
+  ---
+  duration_ms: 133.7555
+  type: 'suite'
+  ...
+# Subtest: toAdminRevision
+    # Subtest: không lộ passwordHash hay storageKey/checksum
+    ok 1 - không lộ passwordHash hay storageKey/checksum
+      ---
+      duration_ms: 13.6097
+      ...
+    # Subtest: media của revision: URL ký; media xóa/không ready → url null nhưng vẫn hiển thị
+    ok 2 - media của revision: URL ký; media xóa/không ready → url null nhưng vẫn hiển thị
+      ---
+      duration_ms: 0.5458
+      ...
+    # Subtest: mediaIds đủ 6 cột; hotspot sắp theo displayOrder với tọa độ số
+    ok 3 - mediaIds đủ 6 cột; hotspot sắp theo displayOrder với tọa độ số
+      ---
+      duration_ms: 0.6725
+      ...
+    1..3
+ok 6 - toAdminRevision
+  ---
+  duration_ms: 15.5052
+  type: 'suite'
+  ...
+# Subtest: Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 Test Cases)
+    # Subtest: Suite 1: CreateExhibitDto — RoomId & DisplayOrder Validation (15 Test Cases)
+        # Subtest: TC-001: Cho phép roomId là UUID v4 hợp lệ
+        ok 1 - TC-001: Cho phép roomId là UUID v4 hợp lệ
+          ---
+          duration_ms: 50.2848
+          ...
+        # Subtest: TC-002: Bắt lỗi khi roomId bị bỏ trống (undefined)
+        ok 2 - TC-002: Bắt lỗi khi roomId bị bỏ trống (undefined)
+          ---
+          duration_ms: 2.7865
+          ...
+        # Subtest: TC-003: Bắt lỗi khi roomId là chuỗi rỗng ("")
+        ok 3 - TC-003: Bắt lỗi khi roomId là chuỗi rỗng ("")
+          ---
+          duration_ms: 2.1246
+          ...
+        # Subtest: TC-004: Bắt lỗi khi roomId chỉ có khoảng trắng ("   ")
+        ok 4 - TC-004: Bắt lỗi khi roomId chỉ có khoảng trắng ("   ")
+          ---
+          duration_ms: 21.4101
+          ...
+        # Subtest: TC-005: Bắt lỗi khi roomId không đúng định dạng UUID ("abc-123")
+        ok 5 - TC-005: Bắt lỗi khi roomId không đúng định dạng UUID ("abc-123")
+          ---
+          duration_ms: 7.1179
+          ...
+        # Subtest: TC-006: Bắt lỗi khi roomId là UUID thiếu ký tự
+        ok 6 - TC-006: Bắt lỗi khi roomId là UUID thiếu ký tự
+          ---
+          duration_ms: 2.2151
+          ...
+        # Subtest: TC-007: Bắt lỗi khi roomId là kiểu số (12345)
+        ok 7 - TC-007: Bắt lỗi khi roomId là kiểu số (12345)
+          ---
+          duration_ms: 1.7076
+          ...
+        # Subtest: TC-008: Bắt lỗi khi roomId là boolean (true)
+        ok 8 - TC-008: Bắt lỗi khi roomId là boolean (true)
+          ---
+          duration_ms: 1.9405
+          ...
+        # Subtest: TC-009: Bắt lỗi khi roomId là object ({})
+        ok 9 - TC-009: Bắt lỗi khi roomId là object ({})
+          ---
+          duration_ms: 1.8932
+          ...
+        # Subtest: TC-010: Bắt lỗi khi roomId là mảng ([])
+        ok 10 - TC-010: Bắt lỗi khi roomId là mảng ([])
+          ---
+          duration_ms: 1.8611
+          ...
+        # Subtest: TC-011: Khởi tạo mặc định displayOrder = 0 khi không truyền
+        ok 11 - TC-011: Khởi tạo mặc định displayOrder = 0 khi không truyền
+          ---
+          duration_ms: 2.1666
+          ...
+        # Subtest: TC-012: Cho phép displayOrder là số nguyên dương hợp lệ (5)
+        ok 12 - TC-012: Cho phép displayOrder là số nguyên dương hợp lệ (5)
+          ---
+          duration_ms: 1.8872
+          ...
+        # Subtest: TC-013: Cho phép displayOrder ở giá trị biên nhỏ nhất (0)
+        ok 13 - TC-013: Cho phép displayOrder ở giá trị biên nhỏ nhất (0)
+          ---
+          duration_ms: 1.6421
+          ...
+        # Subtest: TC-014: Bắt lỗi khi displayOrder là số âm (-1)
+        ok 14 - TC-014: Bắt lỗi khi displayOrder là số âm (-1)
+          ---
+          duration_ms: 2.4658
+          ...
+        # Subtest: TC-015: Bắt lỗi khi displayOrder là số thực không phải số nguyên (1.5)
+        ok 15 - TC-015: Bắt lỗi khi displayOrder là số thực không phải số nguyên (1.5)
+          ---
+          duration_ms: 2.1702
+          ...
+        1..15
+    ok 1 - Suite 1: CreateExhibitDto — RoomId & DisplayOrder Validation (15 Test Cases)
+      ---
+      duration_ms: 113.6758
+      type: 'suite'
+      ...
+    # Subtest: Suite 2: BilingualNameDto & BilingualDescriptionDto Validation (25 Test Cases)
+        # Subtest: TC-016: Cho phép truyền name dạng object song ngữ đầy đủ ({ vi, en })
+        ok 1 - TC-016: Cho phép truyền name dạng object song ngữ đầy đủ ({ vi, en })
+          ---
+          duration_ms: 7.877
+          ...
+        # Subtest: TC-017: Tự động wrap string sang { vi: string } khi truyền name dạng chuỗi đơn
+        ok 2 - TC-017: Tự động wrap string sang { vi: string } khi truyền name dạng chuỗi đơn
+          ---
+          duration_ms: 2.672
+          ...
+        # Subtest: TC-018: Tự động trim khoảng trắng ở đầu và cuối tên tiếng Việt ("   Bình gốm   ")
+        ok 3 - TC-018: Tự động trim khoảng trắng ở đầu và cuối tên tiếng Việt ("   Bình gốm   ")
+          ---
+          duration_ms: 1.9801
+          ...
+        # Subtest: TC-019: Tự động trim khoảng trắng ở đầu và cuối tên tiếng Anh ("   Ancient Pottery   ")
+        ok 4 - TC-019: Tự động trim khoảng trắng ở đầu và cuối tên tiếng Anh ("   Ancient Pottery   ")
+          ---
+          duration_ms: 2.1765
+          ...
+        # Subtest: TC-020: Cho phép tên tiếng Việt đạt độ dài tối đa 200 ký tự
+        ok 5 - TC-020: Cho phép tên tiếng Việt đạt độ dài tối đa 200 ký tự
+          ---
+          duration_ms: 1.1125
+          ...
+        # Subtest: TC-021: Bắt lỗi khi tên tiếng Việt vượt quá 200 ký tự (201 ký tự)
+        ok 6 - TC-021: Bắt lỗi khi tên tiếng Việt vượt quá 200 ký tự (201 ký tự)
+          ---
+          duration_ms: 1.2887
+          ...
+        # Subtest: TC-022: Cho phép tên tiếng Anh đạt độ dài tối đa 200 ký tự
+        ok 7 - TC-022: Cho phép tên tiếng Anh đạt độ dài tối đa 200 ký tự
+          ---
+          duration_ms: 1.0883
+          ...
+        # Subtest: TC-023: Bắt lỗi khi tên tiếng Anh vượt quá 200 ký tự (201 ký tự)
+        ok 8 - TC-023: Bắt lỗi khi tên tiếng Anh vượt quá 200 ký tự (201 ký tự)
+          ---
+          duration_ms: 0.9942
+          ...
+        # Subtest: TC-024: Cho phép không truyền name khi Save Draft (undefined)
+        ok 9 - TC-024: Cho phép không truyền name khi Save Draft (undefined)
+          ---
+          duration_ms: 1.5253
+          ...
+        # Subtest: TC-025: Cho phép name chỉ có tiếng Việt ({ vi: "Bia đá" })
+        ok 10 - TC-025: Cho phép name chỉ có tiếng Việt ({ vi: "Bia đá" })
+          ---
+          duration_ms: 1.066
+          ...
+        # Subtest: TC-026: Cho phép name chỉ có tiếng Anh ({ en: "Stone Stele" })
+        ok 11 - TC-026: Cho phép name chỉ có tiếng Anh ({ en: "Stone Stele" })
+          ---
+          duration_ms: 1.0689
+          ...
+        # Subtest: TC-027: Bắt lỗi khi name.vi không phải kiểu chuỗi (số 123)
+        ok 12 - TC-027: Bắt lỗi khi name.vi không phải kiểu chuỗi (số 123)
+          ---
+          duration_ms: 1.5528
+          ...
+        # Subtest: TC-028: Bắt lỗi khi name.en không phải kiểu chuỗi (boolean true)
+        ok 13 - TC-028: Bắt lỗi khi name.en không phải kiểu chuỗi (boolean true)
+          ---
+          duration_ms: 1.3373
+          ...
+        # Subtest: TC-029: Cho phép truyền description dạng object song ngữ đầy đủ
+        ok 14 - TC-029: Cho phép truyền description dạng object song ngữ đầy đủ
+          ---
+          duration_ms: 2.9454
+          ...
+        # Subtest: TC-030: Tự động wrap string sang { vi: string } khi truyền description dạng chuỗi đơn
+        ok 15 - TC-030: Tự động wrap string sang { vi: string } khi truyền description dạng chuỗi đơn
+          ---
+          duration_ms: 2.0224
+          ...
+        # Subtest: TC-031: Tự động trim khoảng trắng của mô tả tiếng Việt
+        ok 16 - TC-031: Tự động trim khoảng trắng của mô tả tiếng Việt
+          ---
+          duration_ms: 1.1995
+          ...
+        # Subtest: TC-032: Tự động trim khoảng trắng của mô tả tiếng Anh
+        ok 17 - TC-032: Tự động trim khoảng trắng của mô tả tiếng Anh
+          ---
+          duration_ms: 1.1591
+          ...
+        # Subtest: TC-033: Cho phép mô tả tiếng Việt đạt độ dài tối đa 10.000 ký tự
+        ok 18 - TC-033: Cho phép mô tả tiếng Việt đạt độ dài tối đa 10.000 ký tự
+          ---
+          duration_ms: 1.084
+          ...
+        # Subtest: TC-034: Bắt lỗi khi mô tả tiếng Việt vượt quá 10.000 ký tự (10.001 ký tự)
+        ok 19 - TC-034: Bắt lỗi khi mô tả tiếng Việt vượt quá 10.000 ký tự (10.001 ký tự)
+          ---
+          duration_ms: 1.2265
+          ...
+        # Subtest: TC-035: Cho phép mô tả tiếng Anh đạt độ dài tối đa 10.000 ký tự
+        ok 20 - TC-035: Cho phép mô tả tiếng Anh đạt độ dài tối đa 10.000 ký tự
+          ---
+          duration_ms: 1.3834
+          ...
+        # Subtest: TC-036: Bắt lỗi khi mô tả tiếng Anh vượt quá 10.000 ký tự (10.001 ký tự)
+        ok 21 - TC-036: Bắt lỗi khi mô tả tiếng Anh vượt quá 10.000 ký tự (10.001 ký tự)
+          ---
+          duration_ms: 1.3976
+          ...
+        # Subtest: TC-037: Cho phép không truyền description khi Save Draft (undefined)
+        ok 22 - TC-037: Cho phép không truyền description khi Save Draft (undefined)
+          ---
+          duration_ms: 1.7147
+          ...
+        # Subtest: TC-038: Cho phép mô tả có chứa nhiều dòng và ký tự đặc biệt unicode
+        ok 23 - TC-038: Cho phép mô tả có chứa nhiều dòng và ký tự đặc biệt unicode
+          ---
+          duration_ms: 1.2858
+          ...
+        # Subtest: TC-039: Bắt lỗi khi description.vi không phải kiểu chuỗi (mảng [])
+        ok 24 - TC-039: Bắt lỗi khi description.vi không phải kiểu chuỗi (mảng [])
+          ---
+          duration_ms: 1.0577
+          ...
+        # Subtest: TC-040: Bắt lỗi khi description.en không phải kiểu chuỗi (object {})
+        ok 25 - TC-040: Bắt lỗi khi description.en không phải kiểu chuỗi (object {})
+          ---
+          duration_ms: 1.131
+          ...
+        1..25
+    ok 2 - Suite 2: BilingualNameDto & BilingualDescriptionDto Validation (25 Test Cases)
+      ---
+      duration_ms: 52.3907
+      type: 'suite'
+      ...
+    # Subtest: Suite 3: 3D Transforms Validation (20 Test Cases)
+        # Subtest: TC-041: Cho phép position truyền dạng object Vector3Dto ({ x: 1.5, y: 0.8, z: -2.3 })
+        ok 1 - TC-041: Cho phép position truyền dạng object Vector3Dto ({ x: 1.5, y: 0.8, z: -2.3 })
+          ---
+          duration_ms: 3.4566
+          ...
+        # Subtest: TC-042: Cho phép position truyền dạng phẳng positionX, positionY, positionZ
+        ok 2 - TC-042: Cho phép position truyền dạng phẳng positionX, positionY, positionZ
+          ---
+          duration_ms: 2.1926
+          ...
+        # Subtest: TC-043: Khởi tạo giá trị mặc định chuẩn cho position (0, 0, 0)
+        ok 3 - TC-043: Khởi tạo giá trị mặc định chuẩn cho position (0, 0, 0)
+          ---
+          duration_ms: 1.1988
+          ...
+        # Subtest: TC-044: Helper getResolvedPosition() trích xuất đúng tọa độ từ object
+        ok 4 - TC-044: Helper getResolvedPosition() trích xuất đúng tọa độ từ object
+          ---
+          duration_ms: 5.115
+          ...
+        # Subtest: TC-045: Helper getResolvedPosition() trích xuất đúng tọa độ từ flat fields
+        ok 5 - TC-045: Helper getResolvedPosition() trích xuất đúng tọa độ từ flat fields
+          ---
+          duration_ms: 1.4862
+          ...
+        # Subtest: TC-046: Bắt lỗi khi position.x là chuỗi không chuyển đổi được ("abc")
+        ok 6 - TC-046: Bắt lỗi khi position.x là chuỗi không chuyển đổi được ("abc")
+          ---
+          duration_ms: 7.6298
+          ...
+        # Subtest: TC-047: Bắt lỗi khi position.y là NaN
+        ok 7 - TC-047: Bắt lỗi khi position.y là NaN
+          ---
+          duration_ms: 0.6486
+          ...
+        # Subtest: TC-048: Cho phép rotation truyền dạng object Vector3Dto ({ x: 0, y: 1.57, z: 0 })
+        ok 8 - TC-048: Cho phép rotation truyền dạng object Vector3Dto ({ x: 0, y: 1.57, z: 0 })
+          ---
+          duration_ms: 0.6315
+          ...
+        # Subtest: TC-049: Cho phép rotation truyền dạng phẳng rotationX, rotationY, rotationZ
+        ok 9 - TC-049: Cho phép rotation truyền dạng phẳng rotationX, rotationY, rotationZ
+          ---
+          duration_ms: 1.2778
+          ...
+        # Subtest: TC-050: Khởi tạo giá trị mặc định chuẩn cho rotation (0, 0, 0)
+        ok 10 - TC-050: Khởi tạo giá trị mặc định chuẩn cho rotation (0, 0, 0)
+          ---
+          duration_ms: 1.0682
+          ...
+        # Subtest: TC-051: Helper getResolvedRotation() trích xuất đúng góc xoay
+        ok 11 - TC-051: Helper getResolvedRotation() trích xuất đúng góc xoay
+          ---
+          duration_ms: 1.6758
+          ...
+        # Subtest: TC-052: Bắt lỗi khi rotation.z là chuỗi không hợp lệ
+        ok 12 - TC-052: Bắt lỗi khi rotation.z là chuỗi không hợp lệ
+          ---
+          duration_ms: 0.6868
+          ...
+        # Subtest: TC-053: Cho phép scale truyền dạng object Scale3Dto ({ x: 1, y: 1.2, z: 1 })
+        ok 13 - TC-053: Cho phép scale truyền dạng object Scale3Dto ({ x: 1, y: 1.2, z: 1 })
+          ---
+          duration_ms: 2.109
+          ...
+        # Subtest: TC-054: Cho phép scale truyền dạng phẳng scaleX, scaleY, scaleZ
+        ok 14 - TC-054: Cho phép scale truyền dạng phẳng scaleX, scaleY, scaleZ
+          ---
+          duration_ms: 1.5833
+          ...
+        # Subtest: TC-055: Khởi tạo giá trị mặc định chuẩn cho scale (1, 1, 1)
+        ok 15 - TC-055: Khởi tạo giá trị mặc định chuẩn cho scale (1, 1, 1)
+          ---
+          duration_ms: 0.7367
+          ...
+        # Subtest: TC-056: Helper getResolvedScale() trích xuất đúng tỉ lệ mặc định
+        ok 16 - TC-056: Helper getResolvedScale() trích xuất đúng tỉ lệ mặc định
+          ---
+          duration_ms: 1.0789
+          ...
+        # Subtest: TC-057: Bắt lỗi khi scale.x = 0 (scale từng trục phải > 0 theo SRS 5.2)
+        ok 17 - TC-057: Bắt lỗi khi scale.x = 0 (scale từng trục phải > 0 theo SRS 5.2)
+          ---
+          duration_ms: 0.7357
+          ...
+        # Subtest: TC-058: Bắt lỗi khi scale.y là số âm (y = -0.5)
+        ok 18 - TC-058: Bắt lỗi khi scale.y là số âm (y = -0.5)
+          ---
+          duration_ms: 0.6616
+          ...
+        # Subtest: TC-059: Bắt lỗi khi scale.z là số âm (z = -1)
+        ok 19 - TC-059: Bắt lỗi khi scale.z là số âm (z = -1)
+          ---
+          duration_ms: 0.6274
+          ...
+        # Subtest: TC-060: Bắt lỗi khi flat scaleX <= 0
+        ok 20 - TC-060: Bắt lỗi khi flat scaleX <= 0
+          ---
+          duration_ms: 19.2017
+          ...
+        1..20
+    ok 3 - Suite 3: 3D Transforms Validation (20 Test Cases)
+      ---
+      duration_ms: 71.3748
+      type: 'suite'
+      ...
+    # Subtest: Suite 4: Media, Placeholders & Hotspots Validation (15 Test Cases)
+        # Subtest: TC-061: Cho phép placeholderShape hợp lệ ("box", "sphere", "cylinder", "cone", "torus")
+        ok 1 - TC-061: Cho phép placeholderShape hợp lệ ("box", "sphere", "cylinder", "cone", "torus")
+          ---
+          duration_ms: 3.951
+          ...
+        # Subtest: TC-062: Bắt lỗi khi placeholderShape không nằm trong danh mục ("pyramid")
+        ok 2 - TC-062: Bắt lỗi khi placeholderShape không nằm trong danh mục ("pyramid")
+          ---
+          duration_ms: 0.9551
+          ...
+        # Subtest: TC-063: Cho phép placeholderColor đúng định dạng mã hex ("\#8b7355", "\#FFFFFF")
+        ok 3 - TC-063: Cho phép placeholderColor đúng định dạng mã hex ("\#8b7355", "\#FFFFFF")
+          ---
+          duration_ms: 1.0745
+          ...
+        # Subtest: TC-064: Bắt lỗi khi placeholderColor sai định dạng hex ("\#12345", "red")
+        ok 4 - TC-064: Bắt lỗi khi placeholderColor sai định dạng hex ("\#12345", "red")
+          ---
+          duration_ms: 1.9887
+          ...
+        # Subtest: TC-065: Cho phép modelId, imageId, audioId là UUID v4 hợp lệ
+        ok 5 - TC-065: Cho phép modelId, imageId, audioId là UUID v4 hợp lệ
+          ---
+          duration_ms: 0.9098
+          ...
+        # Subtest: TC-066: Bắt lỗi khi modelId sai định dạng UUID
+        ok 6 - TC-066: Bắt lỗi khi modelId sai định dạng UUID
+          ---
+          duration_ms: 0.7506
+          ...
+        # Subtest: TC-067: Bắt lỗi khi imageId sai định dạng UUID
+        ok 7 - TC-067: Bắt lỗi khi imageId sai định dạng UUID
+          ---
+          duration_ms: 0.8214
+          ...
+        # Subtest: TC-068: Bắt lỗi khi audioId sai định dạng UUID
+        ok 8 - TC-068: Bắt lỗi khi audioId sai định dạng UUID
+          ---
+          duration_ms: 0.8127
+          ...
+        # Subtest: TC-069: Cho phép modelId, imageId, audioId là null (gỡ media)
+        ok 9 - TC-069: Cho phép modelId, imageId, audioId là null (gỡ media)
+          ---
+          duration_ms: 0.771
+          ...
+        # Subtest: TC-070: Cho phép transcript hợp lệ (chuỗi hoặc object)
+        ok 10 - TC-070: Cho phép transcript hợp lệ (chuỗi hoặc object)
+          ---
+          duration_ms: 1.0627
+          ...
+        # Subtest: TC-071: Bắt lỗi khi transcriptPlain vượt quá 20.000 ký tự (20.001 ký tự)
+        ok 11 - TC-071: Bắt lỗi khi transcriptPlain vượt quá 20.000 ký tự (20.001 ký tự)
+          ---
+          duration_ms: 0.8895
+          ...
+        # Subtest: TC-072: Cho phép altText hợp lệ (chuỗi hoặc object)
+        ok 12 - TC-072: Cho phép altText hợp lệ (chuỗi hoặc object)
+          ---
+          duration_ms: 1.0832
+          ...
+        # Subtest: TC-073: Bắt lỗi khi altTextPlain vượt quá 240 ký tự (241 ký tự)
+        ok 13 - TC-073: Bắt lỗi khi altTextPlain vượt quá 240 ký tự (241 ký tự)
+          ---
+          duration_ms: 0.9988
+          ...
+        # Subtest: TC-074: Cho phép mảng hotspots chứa các phần tử CreateHotspotDto hợp lệ
+        ok 14 - TC-074: Cho phép mảng hotspots chứa các phần tử CreateHotspotDto hợp lệ
+          ---
+          duration_ms: 2.9417
+          ...
+        # Subtest: TC-075: Bắt lỗi khi hotspots không phải là mảng ("not-an-array")
+        ok 15 - TC-075: Bắt lỗi khi hotspots không phải là mảng ("not-an-array")
+          ---
+          duration_ms: 1.019
+          ...
+        1..15
+    ok 4 - Suite 4: Media, Placeholders & Hotspots Validation (15 Test Cases)
+      ---
+      duration_ms: 23.017
+      type: 'suite'
+      ...
+    # Subtest: Suite 5: UpdateExhibitDto Partial Updates Validation (15 Test Cases)
+        # Subtest: TC-076: Cho phép UpdateExhibitDto là object rỗng {} (toàn bộ trường tùy chọn)
+        ok 1 - TC-076: Cho phép UpdateExhibitDto là object rỗng {} (toàn bộ trường tùy chọn)
+          ---
+          duration_ms: 1.2276
+          ...
+        # Subtest: TC-077: Cho phép cập nhật riêng lẻ trường name
+        ok 2 - TC-077: Cho phép cập nhật riêng lẻ trường name
+          ---
+          duration_ms: 1.3935
+          ...
+        # Subtest: TC-078: Cho phép cập nhật riêng lẻ trường description
+        ok 3 - TC-078: Cho phép cập nhật riêng lẻ trường description
+          ---
+          duration_ms: 1.157
+          ...
+        # Subtest: TC-079: Cho phép cập nhật riêng lẻ roomId sang phòng khác
+        ok 4 - TC-079: Cho phép cập nhật riêng lẻ roomId sang phòng khác
+          ---
+          duration_ms: 0.7949
+          ...
+        # Subtest: TC-080: Cho phép cập nhật riêng lẻ position
+        ok 5 - TC-080: Cho phép cập nhật riêng lẻ position
+          ---
+          duration_ms: 0.9439
+          ...
+        # Subtest: TC-081: Cho phép cập nhật riêng lẻ rotation
+        ok 6 - TC-081: Cho phép cập nhật riêng lẻ rotation
+          ---
+          duration_ms: 38.1851
+          ...
+        # Subtest: TC-082: Cho phép cập nhật riêng lẻ scale
+        ok 7 - TC-082: Cho phép cập nhật riêng lẻ scale
+          ---
+          duration_ms: 7.7933
+          ...
+        # Subtest: TC-083: Cho phép cập nhật riêng lẻ placeholderShape
+        ok 8 - TC-083: Cho phép cập nhật riêng lẻ placeholderShape
+          ---
+          duration_ms: 1.4963
+          ...
+        # Subtest: TC-084: Cho phép cập nhật riêng lẻ placeholderColor
+        ok 9 - TC-084: Cho phép cập nhật riêng lẻ placeholderColor
+          ---
+          duration_ms: 1.1936
+          ...
+        # Subtest: TC-085: Cho phép cập nhật media IDs thành null để gỡ bỏ
+        ok 10 - TC-085: Cho phép cập nhật media IDs thành null để gỡ bỏ
+          ---
+          duration_ms: 0.884
+          ...
+        # Subtest: TC-086: Bắt lỗi khi cập nhật scale thành số âm trong UpdateExhibitDto
+        ok 11 - TC-086: Bắt lỗi khi cập nhật scale thành số âm trong UpdateExhibitDto
+          ---
+          duration_ms: 0.9663
+          ...
+        # Subtest: TC-087: Bắt lỗi khi cập nhật roomId thành UUID sai trong UpdateExhibitDto
+        ok 12 - TC-087: Bắt lỗi khi cập nhật roomId thành UUID sai trong UpdateExhibitDto
+          ---
+          duration_ms: 0.8887
+          ...
+        # Subtest: TC-088: Bắt lỗi khi cập nhật placeholderShape giá trị sai trong UpdateExhibitDto
+        ok 13 - TC-088: Bắt lỗi khi cập nhật placeholderShape giá trị sai trong UpdateExhibitDto
+          ---
+          duration_ms: 21.9661
+          ...
+        # Subtest: TC-089: Bắt lỗi khi cập nhật displayOrder thành số âm trong UpdateExhibitDto
+        ok 14 - TC-089: Bắt lỗi khi cập nhật displayOrder thành số âm trong UpdateExhibitDto
+          ---
+          duration_ms: 0.9517
+          ...
+        # Subtest: TC-090: Bắt lỗi khi cập nhật placeholderColor không phải hex trong UpdateExhibitDto
+        ok 15 - TC-090: Bắt lỗi khi cập nhật placeholderColor không phải hex trong UpdateExhibitDto
+          ---
+          duration_ms: 0.9788
+          ...
+        1..15
+    ok 5 - Suite 5: UpdateExhibitDto Partial Updates Validation (15 Test Cases)
+      ---
+      duration_ms: 84.6073
+      type: 'suite'
+      ...
+    # Subtest: Suite 6: ListExhibitsQueryDto & Filters Validation (10 Test Cases)
+        # Subtest: TC-091: Khởi tạo giá trị mặc định phân trang (page = 1, pageSize = 20, skip = 0)
+        ok 1 - TC-091: Khởi tạo giá trị mặc định phân trang (page = 1, pageSize = 20, skip = 0)
+          ---
+          duration_ms: 1.7405
+          ...
+        # Subtest: TC-092: Cho phép lọc theo status = "draft"
+        ok 2 - TC-092: Cho phép lọc theo status = "draft"
+          ---
+          duration_ms: 0.7728
+          ...
+        # Subtest: TC-093: Cho phép lọc theo status = "published"
+        ok 3 - TC-093: Cho phép lọc theo status = "published"
+          ---
+          duration_ms: 0.7012
+          ...
+        # Subtest: TC-094: Cho phép lọc theo status = "all"
+        ok 4 - TC-094: Cho phép lọc theo status = "all"
+          ---
+          duration_ms: 0.6184
+          ...
+        # Subtest: TC-095: Bắt lỗi khi lọc status giá trị không hợp lệ ("archived")
+        ok 5 - TC-095: Bắt lỗi khi lọc status giá trị không hợp lệ ("archived")
+          ---
+          duration_ms: 0.6627
+          ...
+        # Subtest: TC-096: Cho phép lọc theo roomId là UUID hợp lệ
+        ok 6 - TC-096: Cho phép lọc theo roomId là UUID hợp lệ
+          ---
+          duration_ms: 0.7142
+          ...
+        # Subtest: TC-097: Bắt lỗi khi roomId trong query không phải UUID
+        ok 7 - TC-097: Bắt lỗi khi roomId trong query không phải UUID
+          ---
+          duration_ms: 0.7371
+          ...
+        # Subtest: TC-098: Cho phép lọc theo visibility = "visible" hoặc "hidden"
+        ok 8 - TC-098: Cho phép lọc theo visibility = "visible" hoặc "hidden"
+          ---
+          duration_ms: 1.3708
+          ...
+        # Subtest: TC-099: Bắt lỗi khi visibility giá trị lạ ("public")
+        ok 9 - TC-099: Bắt lỗi khi visibility giá trị lạ ("public")
+          ---
+          duration_ms: 0.6905
+          ...
+        # Subtest: TC-100: Cho phép tìm kiếm q và sắp xếp sort ("name:asc")
+        ok 10 - TC-100: Cho phép tìm kiếm q và sắp xếp sort ("name:asc")
+          ---
+          duration_ms: 1.074
+          ...
+        1..10
+    ok 6 - Suite 6: ListExhibitsQueryDto & Filters Validation (10 Test Cases)
+      ---
+      duration_ms: 11.0101
+      type: 'suite'
+      ...
+    # Subtest: Suite 7: Publication Validation Rules (SRS Mục 5.2 - 20 Test Cases)
+        # Subtest: TC-101: Cho phép Publish thành công khi đầy đủ tất cả thông tin hợp lệ
+        ok 1 - TC-101: Cho phép Publish thành công khi đầy đủ tất cả thông tin hợp lệ
+          ---
+          duration_ms: 4.857
+          ...
+        # Subtest: TC-102: Bắt lỗi khi thiếu name.vi khi publish
+        ok 2 - TC-102: Bắt lỗi khi thiếu name.vi khi publish
+          ---
+          duration_ms: 0.6518
+          ...
+        # Subtest: TC-103: Bắt lỗi khi name.vi là chuỗi rỗng sau khi trim ("   ") khi publish
+        ok 3 - TC-103: Bắt lỗi khi name.vi là chuỗi rỗng sau khi trim ("   ") khi publish
+          ---
+          duration_ms: 3.1636
+          ...
+        # Subtest: TC-104: Bắt lỗi khi thiếu name.en khi publish (bắt buộc song ngữ)
+        ok 4 - TC-104: Bắt lỗi khi thiếu name.en khi publish (bắt buộc song ngữ)
+          ---
+          duration_ms: 0.5332
+          ...
+        # Subtest: TC-105: Bắt lỗi khi name.en là chuỗi rỗng sau khi trim ("   ") khi publish
+        ok 5 - TC-105: Bắt lỗi khi name.en là chuỗi rỗng sau khi trim ("   ") khi publish
+          ---
+          duration_ms: 0.4466
+          ...
+        # Subtest: TC-106: Bắt lỗi khi name.vi vượt quá 200 ký tự khi publish
+        ok 6 - TC-106: Bắt lỗi khi name.vi vượt quá 200 ký tự khi publish
+          ---
+          duration_ms: 0.3808
+          ...
+        # Subtest: TC-107: Bắt lỗi khi name.en vượt quá 200 ký tự khi publish
+        ok 7 - TC-107: Bắt lỗi khi name.en vượt quá 200 ký tự khi publish
+          ---
+          duration_ms: 0.3728
+          ...
+        # Subtest: TC-108: Bắt lỗi khi thiếu description.vi khi publish
+        ok 8 - TC-108: Bắt lỗi khi thiếu description.vi khi publish
+          ---
+          duration_ms: 0.3044
+          ...
+        # Subtest: TC-109: Bắt lỗi khi description.vi rỗng sau trim khi publish
+        ok 9 - TC-109: Bắt lỗi khi description.vi rỗng sau trim khi publish
+          ---
+          duration_ms: 0.3409
+          ...
+        # Subtest: TC-110: Bắt lỗi khi thiếu description.en khi publish
+        ok 10 - TC-110: Bắt lỗi khi thiếu description.en khi publish
+          ---
+          duration_ms: 23.3311
+          ...
+        # Subtest: TC-111: Bắt lỗi khi description.en rỗng sau trim khi publish
+        ok 11 - TC-111: Bắt lỗi khi description.en rỗng sau trim khi publish
+          ---
+          duration_ms: 0.5479
+          ...
+        # Subtest: TC-112: Bắt lỗi khi description.vi vượt quá 10.000 ký tự khi publish
+        ok 12 - TC-112: Bắt lỗi khi description.vi vượt quá 10.000 ký tự khi publish
+          ---
+          duration_ms: 0.454
+          ...
+        # Subtest: TC-113: Bắt lỗi khi description.en vượt quá 10.000 ký tự khi publish
+        ok 13 - TC-113: Bắt lỗi khi description.en vượt quá 10.000 ký tự khi publish
+          ---
+          duration_ms: 0.4186
+          ...
+        # Subtest: TC-114: Bắt lỗi khi scale.x <= 0 khi publish
+        ok 14 - TC-114: Bắt lỗi khi scale.x <= 0 khi publish
+          ---
+          duration_ms: 0.3572
+          ...
+        # Subtest: TC-115: Bắt lỗi khi scale.y <= 0 khi publish
+        ok 15 - TC-115: Bắt lỗi khi scale.y <= 0 khi publish
+          ---
+          duration_ms: 0.4071
+          ...
+        # Subtest: TC-116: Bắt lỗi khi scale.z <= 0 khi publish
+        ok 16 - TC-116: Bắt lỗi khi scale.z <= 0 khi publish
+          ---
+          duration_ms: 0.3559
+          ...
+        # Subtest: TC-117: Bắt lỗi khi có audioId nhưng thiếu transcript khi publish
+        ok 17 - TC-117: Bắt lỗi khi có audioId nhưng thiếu transcript khi publish
+          ---
+          duration_ms: 0.3919
+          ...
+        # Subtest: TC-118: Bắt lỗi khi có audioId nhưng transcript chỉ gồm khoảng trắng khi publish
+        ok 18 - TC-118: Bắt lỗi khi có audioId nhưng transcript chỉ gồm khoảng trắng khi publish
+          ---
+          duration_ms: 0.305
+          ...
+        # Subtest: TC-119: Bắt lỗi khi có imageId nhưng thiếu altText.vi hoặc altText.en khi publish
+        ok 19 - TC-119: Bắt lỗi khi có imageId nhưng thiếu altText.vi hoặc altText.en khi publish
+          ---
+          duration_ms: 0.3937
+          ...
+        # Subtest: TC-120: Bắt lỗi khi hotspot trong danh sách thiếu tiêu đề hoặc nội dung song ngữ khi publish
+        ok 20 - TC-120: Bắt lỗi khi hotspot trong danh sách thiếu tiêu đề hoặc nội dung song ngữ khi publish
+          ---
+          duration_ms: 0.7192
+          ...
+        1..20
+    ok 7 - Suite 7: Publication Validation Rules (SRS Mục 5.2 - 20 Test Cases)
+      ---
+      duration_ms: 42.2912
+      type: 'suite'
+      ...
+    # Subtest: Suite 8: ExhibitResponseDto & An Toàn Dữ Liệu (10 Test Cases)
+        # Subtest: TC-121: Map đúng trạng thái "published" khi có publishedRevisionId và visibility = "visible"
+        ok 1 - TC-121: Map đúng trạng thái "published" khi có publishedRevisionId và visibility = "visible"
+          ---
+          duration_ms: 6.3128
+          ...
+        # Subtest: TC-122: Map đúng trạng thái "draft" khi chưa có publishedRevisionId
+        ok 2 - TC-122: Map đúng trạng thái "draft" khi chưa có publishedRevisionId
+          ---
+          duration_ms: 0.9758
+          ...
+        # Subtest: TC-123: Map đúng trạng thái "draft" khi có revisionId nhưng visibility = "hidden"
+        ok 3 - TC-123: Map đúng trạng thái "draft" khi có revisionId nhưng visibility = "hidden"
+          ---
+          duration_ms: 0.7795
+          ...
+        # Subtest: TC-124: Trích xuất đúng số lượng hotspotsCount từ relation
+        ok 4 - TC-124: Trích xuất đúng số lượng hotspotsCount từ relation
+          ---
+          duration_ms: 0.9469
+          ...
+        # Subtest: TC-125: Gán hotspotsCount = 0 khi không có hotspots
+        ok 5 - TC-125: Gán hotspotsCount = 0 khi không có hotspots
+          ---
+          duration_ms: 0.6266
+          ...
+        # Subtest: TC-126: Bảo toàn đúng định dạng UUID của id và roomId
+        ok 6 - TC-126: Bảo toàn đúng định dạng UUID của id và roomId
+          ---
+          duration_ms: 0.5461
+          ...
+        # Subtest: TC-127: Bảo toàn đúng các đối tượng Date cho createdAt và updatedAt
+        ok 7 - TC-127: Bảo toàn đúng các đối tượng Date cho createdAt và updatedAt
+          ---
+          duration_ms: 0.5854
+          ...
+        # Subtest: TC-128: Map đúng revisionNo và revisionState của activeRevision
+        ok 8 - TC-128: Map đúng revisionNo và revisionState của activeRevision
+          ---
+          duration_ms: 0.6512
+          ...
+        # Subtest: TC-129: Hàm toExhibitResponse() trả về kết quả khớp với ExhibitResponseDto.fromEntity()
+        ok 9 - TC-129: Hàm toExhibitResponse() trả về kết quả khớp với ExhibitResponseDto.fromEntity()
+          ---
+          duration_ms: 0.7401
+          ...
+        # Subtest: TC-130: An toàn dữ liệu — không rò rỉ các trường nội bộ isDeleted và deletedAt ra ngoài response
+        ok 10 - TC-130: An toàn dữ liệu — không rò rỉ các trường nội bộ isDeleted và deletedAt ra ngoài response
+          ---
+          duration_ms: 0.4945
+          ...
+        # Subtest: TC-131: Trả altText song ngữ của revision để CMS điền lại form; thiếu thì null
+        ok 11 - TC-131: Trả altText song ngữ của revision để CMS điền lại form; thiếu thì null
+          ---
+          duration_ms: 1.875
+          ...
+        1..11
+    ok 8 - Suite 8: ExhibitResponseDto & An Toàn Dữ Liệu (10 Test Cases)
+      ---
+      duration_ms: 17.9916
+      type: 'suite'
+      ...
+    1..8
+ok 7 - Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 Test Cases)
+  ---
+  duration_ms: 421.3097
+  type: 'suite'
+  ...
+# Subtest: Task 7.2 — ExhibitsRepository Comprehensive Test Suite (105 Test Cases)
+    # Subtest: Suite 1: findByRoom — Public Exhibit Queries (10 Test Cases)
+        # Subtest: TC-E001: Tìm hiện vật với đúng roomId, visibility = "visible", isDeleted = false
+        ok 1 - TC-E001: Tìm hiện vật với đúng roomId, visibility = "visible", isDeleted = false
+          ---
+          duration_ms: 4.5011
+          ...
+        # Subtest: TC-E002: Kiểm tra nạp quan hệ publishedRevision (model, image, audio, hotspots)
+        ok 2 - TC-E002: Kiểm tra nạp quan hệ publishedRevision (model, image, audio, hotspots)
+          ---
+          duration_ms: 3.7063
+          ...
+        # Subtest: TC-E003: Sắp xếp theo displayOrder: "ASC", id: "ASC"
+        ok 3 - TC-E003: Sắp xếp theo displayOrder: "ASC", id: "ASC"
+          ---
+          duration_ms: 0.6576
+          ...
+        # Subtest: TC-E004: Trả về mảng rỗng [] khi phòng không có hiện vật
+        ok 4 - TC-E004: Trả về mảng rỗng [] khi phòng không có hiện vật
+          ---
+          duration_ms: 0.5067
+          ...
+        # Subtest: TC-E005: Bỏ qua hiện vật đã bị xóa mềm (isDeleted = true)
+        ok 5 - TC-E005: Bỏ qua hiện vật đã bị xóa mềm (isDeleted = true)
+          ---
+          duration_ms: 0.4483
+          ...
+        # Subtest: TC-E006: Bỏ qua hiện vật đang ẩn (visibility = "hidden")
+        ok 6 - TC-E006: Bỏ qua hiện vật đang ẩn (visibility = "hidden")
+          ---
+          duration_ms: 0.6493
+          ...
+        # Subtest: TC-E007: Trả về danh sách khi phòng có 1 hiện vật
+        ok 7 - TC-E007: Trả về danh sách khi phòng có 1 hiện vật
+          ---
+          duration_ms: 1.2006
+          ...
+        # Subtest: TC-E008: Trả về danh sách khi phòng có nhiều hiện vật (5 hiện vật)
+        ok 8 - TC-E008: Trả về danh sách khi phòng có nhiều hiện vật (5 hiện vật)
+          ---
+          duration_ms: 0.7593
+          ...
+        # Subtest: TC-E009: Giữ đúng roomId đã truyền trong điều kiện truy vấn
+        ok 9 - TC-E009: Giữ đúng roomId đã truyền trong điều kiện truy vấn
+          ---
+          duration_ms: 0.4363
+          ...
+        # Subtest: TC-E010: Xử lý an toàn khi truyền roomId dạng UUID chuẩn
+        ok 10 - TC-E010: Xử lý an toàn khi truyền roomId dạng UUID chuẩn
+          ---
+          duration_ms: 0.6252
+          ...
+        1..10
+    ok 1 - Suite 1: findByRoom — Public Exhibit Queries (10 Test Cases)
+      ---
+      duration_ms: 22.899
+      type: 'suite'
+      ...
+    # Subtest: Suite 2: findAdminDetailById — Detail Queries & Relations (15 Test Cases)
+        # Subtest: TC-E011: Tìm hiện vật với đúng id và isDeleted = false
+        ok 1 - TC-E011: Tìm hiện vật với đúng id và isDeleted = false
+          ---
+          duration_ms: 1.0857
+          ...
+        # Subtest: TC-E012: Kiểm tra nạp quan hệ room
+        ok 2 - TC-E012: Kiểm tra nạp quan hệ room
+          ---
+          duration_ms: 0.6404
+          ...
+        # Subtest: TC-E013: Kiểm tra nạp quan hệ publishedRevision
+        ok 3 - TC-E013: Kiểm tra nạp quan hệ publishedRevision
+          ---
+          duration_ms: 0.5126
+          ...
+        # Subtest: TC-E014: Kiểm tra nạp quan hệ publishedRevision.modelMedia
+        ok 4 - TC-E014: Kiểm tra nạp quan hệ publishedRevision.modelMedia
+          ---
+          duration_ms: 0.5166
+          ...
+        # Subtest: TC-E015: Kiểm tra nạp quan hệ publishedRevision.imageMedia
+        ok 5 - TC-E015: Kiểm tra nạp quan hệ publishedRevision.imageMedia
+          ---
+          duration_ms: 0.4588
+          ...
+        # Subtest: TC-E016: Kiểm tra nạp quan hệ publishedRevision.audioMedia
+        ok 6 - TC-E016: Kiểm tra nạp quan hệ publishedRevision.audioMedia
+          ---
+          duration_ms: 0.4668
+          ...
+        # Subtest: TC-E017: Kiểm tra nạp quan hệ publishedRevision.hotspots
+        ok 7 - TC-E017: Kiểm tra nạp quan hệ publishedRevision.hotspots
+          ---
+          duration_ms: 7.2132
+          ...
+        # Subtest: TC-E018: Kiểm tra nạp quan hệ revisions
+        ok 8 - TC-E018: Kiểm tra nạp quan hệ revisions
+          ---
+          duration_ms: 0.9126
+          ...
+        # Subtest: TC-E019: Kiểm tra nạp quan hệ revisions.createdBy
+        ok 9 - TC-E019: Kiểm tra nạp quan hệ revisions.createdBy
+          ---
+          duration_ms: 0.8553
+          ...
+        # Subtest: TC-E020: Kiểm tra nạp quan hệ revisions.reviewedBy
+        ok 10 - TC-E020: Kiểm tra nạp quan hệ revisions.reviewedBy
+          ---
+          duration_ms: 0.808
+          ...
+        # Subtest: TC-E021: Trả về null khi không tìm thấy hiện vật
+        ok 11 - TC-E021: Trả về null khi không tìm thấy hiện vật
+          ---
+          duration_ms: 0.8804
+          ...
+        # Subtest: TC-E022: Trả về null khi hiện vật đã bị xóa mềm (isDeleted = true)
+        ok 12 - TC-E022: Trả về null khi hiện vật đã bị xóa mềm (isDeleted = true)
+          ---
+          duration_ms: 0.7385
+          ...
+        # Subtest: TC-E023: Trả về đối tượng Exhibit đầy đủ khi tìm thấy
+        ok 13 - TC-E023: Trả về đối tượng Exhibit đầy đủ khi tìm thấy
+          ---
+          duration_ms: 0.957
+          ...
+        # Subtest: TC-E024: Cho phép tìm hiện vật ở trạng thái hidden (Admin xem được Draft/Hidden)
+        ok 14 - TC-E024: Cho phép tìm hiện vật ở trạng thái hidden (Admin xem được Draft/Hidden)
+          ---
+          duration_ms: 0.9014
+          ...
+        # Subtest: TC-E025: Cho phép tìm hiện vật chưa có publishedRevisionId (null)
+        ok 15 - TC-E025: Cho phép tìm hiện vật chưa có publishedRevisionId (null)
+          ---
+          duration_ms: 1.3383
+          ...
+        1..15
+    ok 2 - Suite 2: findAdminDetailById — Detail Queries & Relations (15 Test Cases)
+      ---
+      duration_ms: 23.0186
+      type: 'suite'
+      ...
+    # Subtest: Suite 3: findRevisionsByExhibitId & findRevisionById (15 Test Cases)
+        # Subtest: TC-E026: Lọc theo đúng exhibitId khi tìm revisions
+        ok 1 - TC-E026: Lọc theo đúng exhibitId khi tìm revisions
+          ---
+          duration_ms: 2.1597
+          ...
+        # Subtest: TC-E027: Sắp xếp theo revisionNo: "DESC" (phiên bản mới nhất lên đầu)
+        ok 2 - TC-E027: Sắp xếp theo revisionNo: "DESC" (phiên bản mới nhất lên đầu)
+          ---
+          duration_ms: 0.9767
+          ...
+        # Subtest: TC-E028: Nạp đầy đủ relations của revision (model, image, audio, hotspots)
+        ok 3 - TC-E028: Nạp đầy đủ relations của revision (model, image, audio, hotspots)
+          ---
+          duration_ms: 0.8886
+          ...
+        # Subtest: TC-E029: Nạp quan hệ người tạo createdBy và người duyệt reviewedBy
+        ok 4 - TC-E029: Nạp quan hệ người tạo createdBy và người duyệt reviewedBy
+          ---
+          duration_ms: 0.7772
+          ...
+        # Subtest: TC-E030: Trả về mảng rỗng [] khi hiện vật chưa có revision nào
+        ok 5 - TC-E030: Trả về mảng rỗng [] khi hiện vật chưa có revision nào
+          ---
+          duration_ms: 0.8604
+          ...
+        # Subtest: TC-E031: Trả về mảng có 1 revision khi có 1 phiên bản
+        ok 6 - TC-E031: Trả về mảng có 1 revision khi có 1 phiên bản
+          ---
+          duration_ms: 1.4307
+          ...
+        # Subtest: TC-E032: Trả về danh sách nhiều revision theo thứ tự giảm dần
+        ok 7 - TC-E032: Trả về danh sách nhiều revision theo thứ tự giảm dần
+          ---
+          duration_ms: 0.9254
+          ...
+        # Subtest: TC-E033: findRevisionById tìm đúng id của revision
+        ok 8 - TC-E033: findRevisionById tìm đúng id của revision
+          ---
+          duration_ms: 1.0572
+          ...
+        # Subtest: TC-E034: findRevisionById nạp quan hệ exhibit
+        ok 9 - TC-E034: findRevisionById nạp quan hệ exhibit
+          ---
+          duration_ms: 0.6675
+          ...
+        # Subtest: TC-E035: findRevisionById nạp các quan hệ media và hotspots
+        ok 10 - TC-E035: findRevisionById nạp các quan hệ media và hotspots
+          ---
+          duration_ms: 0.703
+          ...
+        # Subtest: TC-E036: findRevisionById trả về null khi ID không tồn tại
+        ok 11 - TC-E036: findRevisionById trả về null khi ID không tồn tại
+          ---
+          duration_ms: 0.6443
+          ...
+        # Subtest: TC-E037: findRevisionById sử dụng manager khi truyền transaction manager
+        ok 12 - TC-E037: findRevisionById sử dụng manager khi truyền transaction manager
+          ---
+          duration_ms: 0.9085
+          ...
+        # Subtest: TC-E038: findRevisionById sử dụng repo mặc định khi không truyền manager
+        ok 13 - TC-E038: findRevisionById sử dụng repo mặc định khi không truyền manager
+          ---
+          duration_ms: 0.6273
+          ...
+        # Subtest: TC-E039: Bảo toàn dữ liệu JSONB content trong revision
+        ok 14 - TC-E039: Bảo toàn dữ liệu JSONB content trong revision
+          ---
+          duration_ms: 11.4418
+          ...
+        # Subtest: TC-E040: Giữ nguyên trạng thái state của revision (APPROVED)
+        ok 15 - TC-E040: Giữ nguyên trạng thái state của revision (APPROVED)
+          ---
+          duration_ms: 1.138
+          ...
+        1..15
+    ok 3 - Suite 3: findRevisionsByExhibitId & findRevisionById (15 Test Cases)
+      ---
+      duration_ms: 33.7187
+      type: 'suite'
+      ...
+    # Subtest: Suite 4: findLatestRevisionNo & findActiveRevision (10 Test Cases)
+        # Subtest: TC-E041: findLatestRevisionNo gọi QueryBuilder với MAX(rev.revisionNo)
+        ok 1 - TC-E041: findLatestRevisionNo gọi QueryBuilder với MAX(rev.revisionNo)
+          ---
+          duration_ms: 2.9101
+          ...
+        # Subtest: TC-E042: Lọc đúng exhibitId trong truy vấn MAX
+        ok 2 - TC-E042: Lọc đúng exhibitId trong truy vấn MAX
+          ---
+          duration_ms: 0.8619
+          ...
+        # Subtest: TC-E043: Trả về số lớn nhất (ví dụ: 5) khi đã có revision
+        ok 3 - TC-E043: Trả về số lớn nhất (ví dụ: 5) khi đã có revision
+          ---
+          duration_ms: 0.7097
+          ...
+        # Subtest: TC-E044: Trả về 0 khi hiện vật chưa có revision nào (raw.maxNo = null)
+        ok 4 - TC-E044: Trả về 0 khi hiện vật chưa có revision nào (raw.maxNo = null)
+          ---
+          duration_ms: 0.6969
+          ...
+        # Subtest: TC-E045: Trả về 0 khi query trả về null/undefined
+        ok 5 - TC-E045: Trả về 0 khi query trả về null/undefined
+          ---
+          duration_ms: 0.6948
+          ...
+        # Subtest: TC-E046: Chuyển đổi đúng kiểu dữ liệu từ chuỗi sang số ("3" -> 3)
+        ok 6 - TC-E046: Chuyển đổi đúng kiểu dữ liệu từ chuỗi sang số ("3" -> 3)
+          ---
+          duration_ms: 0.8026
+          ...
+        # Subtest: TC-E047: findActiveRevision tìm theo đúng exhibitId
+        ok 7 - TC-E047: findActiveRevision tìm theo đúng exhibitId
+          ---
+          duration_ms: 0.9368
+          ...
+        # Subtest: TC-E048: findActiveRevision sắp xếp revisionNo: "DESC"
+        ok 8 - TC-E048: findActiveRevision sắp xếp revisionNo: "DESC"
+          ---
+          duration_ms: 0.8971
+          ...
+        # Subtest: TC-E049: findActiveRevision nạp các relations media và hotspots
+        ok 9 - TC-E049: findActiveRevision nạp các relations media và hotspots
+          ---
+          duration_ms: 0.8101
+          ...
+        # Subtest: TC-E050: findActiveRevision trả về null khi không có revision nào
+        ok 10 - TC-E050: findActiveRevision trả về null khi không có revision nào
+          ---
+          duration_ms: 1.3351
+          ...
+        1..10
+    ok 4 - Suite 4: findLatestRevisionNo & findActiveRevision (10 Test Cases)
+      ---
+      duration_ms: 13.7382
+      type: 'suite'
+      ...
+    # Subtest: Suite 5: searchAdminExhibits — Pagination & Filters (25 Test Cases)
+        # Subtest: TC-E051: Mặc định phân trang page = 1, pageSize = 20, skip = 0, take = 20
+        ok 1 - TC-E051: Mặc định phân trang page = 1, pageSize = 20, skip = 0, take = 20
+          ---
+          duration_ms: 3.8415
+          ...
+        # Subtest: TC-E052: Tự động điều chỉnh khi page < 1 (chuyển về 1)
+        ok 2 - TC-E052: Tự động điều chỉnh khi page < 1 (chuyển về 1)
+          ---
+          duration_ms: 1.0317
+          ...
+        # Subtest: TC-E053: Tự động điều chỉnh khi pageSize < 1 (chuyển về 1)
+        ok 3 - TC-E053: Tự động điều chỉnh khi pageSize < 1 (chuyển về 1)
+          ---
+          duration_ms: 0.8117
+          ...
+        # Subtest: TC-E054: Tự động giới hạn pageSize > 100 (chuyển về 100)
+        ok 4 - TC-E054: Tự động giới hạn pageSize > 100 (chuyển về 100)
+          ---
+          duration_ms: 0.6782
+          ...
+        # Subtest: TC-E055: Tính đúng skip khi page = 3, pageSize = 10 (skip = 20)
+        ok 5 - TC-E055: Tính đúng skip khi page = 3, pageSize = 10 (skip = 20)
+          ---
+          duration_ms: 1.1171
+          ...
+        # Subtest: TC-E056: Nạp quan hệ room qua leftJoinAndSelect
+        ok 6 - TC-E056: Nạp quan hệ room qua leftJoinAndSelect
+          ---
+          duration_ms: 0.7151
+          ...
+        # Subtest: TC-E057: Nạp quan hệ publishedRevision qua leftJoinAndSelect
+        ok 7 - TC-E057: Nạp quan hệ publishedRevision qua leftJoinAndSelect
+          ---
+          duration_ms: 1.0029
+          ...
+        # Subtest: TC-E058: Luôn lọc exhibit.isDeleted = false
+        ok 8 - TC-E058: Luôn lọc exhibit.isDeleted = false
+          ---
+          duration_ms: 1.5122
+          ...
+        # Subtest: TC-E059: Lọc chính xác theo roomId khi cung cấp
+        ok 9 - TC-E059: Lọc chính xác theo roomId khi cung cấp
+          ---
+          duration_ms: 1.1469
+          ...
+        # Subtest: TC-E060: Bỏ qua điều kiện roomId khi không truyền
+        ok 10 - TC-E060: Bỏ qua điều kiện roomId khi không truyền
+          ---
+          duration_ms: 0.763
+          ...
+        # Subtest: TC-E061: Lọc chính xác theo visibility = "visible"
+        ok 11 - TC-E061: Lọc chính xác theo visibility = "visible"
+          ---
+          duration_ms: 0.9228
+          ...
+        # Subtest: TC-E062: Lọc chính xác theo visibility = "hidden"
+        ok 12 - TC-E062: Lọc chính xác theo visibility = "hidden"
+          ---
+          duration_ms: 0.9384
+          ...
+        # Subtest: TC-E063: Lọc status = "published": publishedRevisionId IS NOT NULL và visibility = "visible"
+        ok 13 - TC-E063: Lọc status = "published": publishedRevisionId IS NOT NULL và visibility = "visible"
+          ---
+          duration_ms: 1.0031
+          ...
+        # Subtest: TC-E064: Lọc status = "draft": dùng Brackets kiểm tra draft hoặc hidden
+        ok 14 - TC-E064: Lọc status = "draft": dùng Brackets kiểm tra draft hoặc hidden
+          ---
+          duration_ms: 1.013
+          ...
+        # Subtest: TC-E065: Lọc status = "all": không thêm điều kiện lọc status
+        ok 15 - TC-E065: Lọc status = "all": không thêm điều kiện lọc status
+          ---
+          duration_ms: 0.8059
+          ...
+        # Subtest: TC-E066: Tìm kiếm q: áp dụng Brackets tìm kiếm ILIKE
+        ok 16 - TC-E066: Tìm kiếm q: áp dụng Brackets tìm kiếm ILIKE
+          ---
+          duration_ms: 0.9127
+          ...
+        # Subtest: TC-E067: Tìm kiếm q: kiểm tra tham số search có % bao quanh
+        ok 17 - TC-E067: Tìm kiếm q: kiểm tra tham số search có % bao quanh
+          ---
+          duration_ms: 0.8113
+          ...
+        # Subtest: TC-E068: Tìm kiếm q: tìm trong publishedRevision.content (cast text)
+        ok 18 - TC-E068: Tìm kiếm q: tìm trong publishedRevision.content (cast text)
+          ---
+          duration_ms: 0.7857
+          ...
+        # Subtest: TC-E068b: Tìm kiếm q: tìm cả trong revision mới nhất (hiện vật nháp chưa publish)
+        ok 19 - TC-E068b: Tìm kiếm q: tìm cả trong revision mới nhất (hiện vật nháp chưa publish)
+          ---
+          duration_ms: 1.2007
+          ...
+        # Subtest: TC-E069: Trim khoảng trắng trong từ khóa tìm kiếm q
+        ok 20 - TC-E069: Trim khoảng trắng trong từ khóa tìm kiếm q
+          ---
+          duration_ms: 0.8057
+          ...
+        # Subtest: TC-E070: Bỏ qua điều kiện tìm kiếm khi q chỉ gồm khoảng trắng ("   ")
+        ok 21 - TC-E070: Bỏ qua điều kiện tìm kiếm khi q chỉ gồm khoảng trắng ("   ")
+          ---
+          duration_ms: 0.6283
+          ...
+        # Subtest: TC-E071: Sắp xếp theo exhibit.displayOrder ASC
+        ok 22 - TC-E071: Sắp xếp theo exhibit.displayOrder ASC
+          ---
+          duration_ms: 0.7136
+          ...
+        # Subtest: TC-E072: Thêm sắp xếp phụ exhibit.createdAt DESC
+        ok 23 - TC-E072: Thêm sắp xếp phụ exhibit.createdAt DESC
+          ---
+          duration_ms: 0.6814
+          ...
+        # Subtest: TC-E073: Trả về kết quả phân trang chuẩn { items, total, page, pageSize }
+        ok 24 - TC-E073: Trả về kết quả phân trang chuẩn { items, total, page, pageSize }
+          ---
+          duration_ms: 0.8499
+          ...
+        # Subtest: TC-E074: Trả về mảng rỗng khi không có kết quả khớp
+        ok 25 - TC-E074: Trả về mảng rỗng khi không có kết quả khớp
+          ---
+          duration_ms: 0.6683
+          ...
+        # Subtest: TC-E075: Áp dụng đồng thời cả 4 bộ lọc: roomId, visibility, status và q
+        ok 26 - TC-E075: Áp dụng đồng thời cả 4 bộ lọc: roomId, visibility, status và q
+          ---
+          duration_ms: 0.7907
+          ...
+        1..26
+    ok 5 - Suite 5: searchAdminExhibits — Pagination & Filters (25 Test Cases)
+      ---
+      duration_ms: 33.2022
+      type: 'suite'
+      ...
+    # Subtest: Suite 6: saveRevision & saveHotspots (10 Test Cases)
+        # Subtest: TC-E076: saveRevision lưu thành công một bản ghi revision mới
+        ok 1 - TC-E076: saveRevision lưu thành công một bản ghi revision mới
+          ---
+          duration_ms: 1.2881
+          ...
+        # Subtest: TC-E077: saveRevision sử dụng EntityManager khi có transaction manager
+        ok 2 - TC-E077: saveRevision sử dụng EntityManager khi có transaction manager
+          ---
+          duration_ms: 0.8989
+          ...
+        # Subtest: TC-E078: saveRevision sử dụng repo gốc khi không có manager
+        ok 3 - TC-E078: saveRevision sử dụng repo gốc khi không có manager
+          ---
+          duration_ms: 0.5586
+          ...
+        # Subtest: TC-E079: saveRevision trả về entity đã lưu kèm ID
+        ok 4 - TC-E079: saveRevision trả về entity đã lưu kèm ID
+          ---
+          duration_ms: 0.764
+          ...
+        # Subtest: TC-E080: saveHotspots lưu danh sách nhiều hotspots
+        ok 5 - TC-E080: saveHotspots lưu danh sách nhiều hotspots
+          ---
+          duration_ms: 1.2285
+          ...
+        # Subtest: TC-E081: saveHotspots trả về mảng rỗng [] khi mảng đầu vào rỗng
+        ok 6 - TC-E081: saveHotspots trả về mảng rỗng [] khi mảng đầu vào rỗng
+          ---
+          duration_ms: 0.7333
+          ...
+        # Subtest: TC-E082: saveHotspots sử dụng EntityManager khi có transaction manager
+        ok 7 - TC-E082: saveHotspots sử dụng EntityManager khi có transaction manager
+          ---
+          duration_ms: 1.0433
+          ...
+        # Subtest: TC-E083: saveHotspots sử dụng repo gốc khi không có manager
+        ok 8 - TC-E083: saveHotspots sử dụng repo gốc khi không có manager
+          ---
+          duration_ms: 0.6793
+          ...
+        # Subtest: TC-E084: saveHotspots giữ nguyên các thuộc tính của hotspot (label, body, position)
+        ok 9 - TC-E084: saveHotspots giữ nguyên các thuộc tính của hotspot (label, body, position)
+          ---
+          duration_ms: 0.7067
+          ...
+        # Subtest: TC-E085: saveHotspots lưu danh sách 1 hotspot đơn lẻ
+        ok 10 - TC-E085: saveHotspots lưu danh sách 1 hotspot đơn lẻ
+          ---
+          duration_ms: 0.5698
+          ...
+        1..10
+    ok 6 - Suite 6: saveRevision & saveHotspots (10 Test Cases)
+      ---
+      duration_ms: 11.2021
+      type: 'suite'
+      ...
+    # Subtest: Suite 7: Cascade Deletion & Bulk Operations (10 Test Cases)
+        # Subtest: TC-E086: deleteHotspotsByRevisionIds gọi delete với In(revisionIds)
+        ok 1 - TC-E086: deleteHotspotsByRevisionIds gọi delete với In(revisionIds)
+          ---
+          duration_ms: 1.335
+          ...
+        # Subtest: TC-E087: deleteHotspotsByRevisionIds không gọi delete khi mảng rỗng []
+        ok 2 - TC-E087: deleteHotspotsByRevisionIds không gọi delete khi mảng rỗng []
+          ---
+          duration_ms: 0.5471
+          ...
+        # Subtest: TC-E088: deleteHotspotsByRevisionIds sử dụng manager khi truyền transaction
+        ok 3 - TC-E088: deleteHotspotsByRevisionIds sử dụng manager khi truyền transaction
+          ---
+          duration_ms: 0.7602
+          ...
+        # Subtest: TC-E089: deleteRevisionsByExhibitId gọi delete với { exhibitId }
+        ok 4 - TC-E089: deleteRevisionsByExhibitId gọi delete với { exhibitId }
+          ---
+          duration_ms: 11.3308
+          ...
+        # Subtest: TC-E090: deleteRevisionsByExhibitId sử dụng manager khi truyền transaction
+        ok 5 - TC-E090: deleteRevisionsByExhibitId sử dụng manager khi truyền transaction
+          ---
+          duration_ms: 1.0427
+          ...
+        # Subtest: TC-E091: markDeleted đánh dấu is_deleted/deleted_at cho mọi ID qua manager của transaction
+        ok 6 - TC-E091: markDeleted đánh dấu is_deleted/deleted_at cho mọi ID qua manager của transaction
+          ---
+          duration_ms: 1.9315
+          ...
+        # Subtest: TC-E092: markDeleted KHÔNG xóa revisions/hotspots (giữ để khôi phục)
+        ok 7 - TC-E092: markDeleted KHÔNG xóa revisions/hotspots (giữ để khôi phục)
+          ---
+          duration_ms: 1.0698
+          ...
+        1..7
+    ok 7 - Suite 7: Cascade Deletion & Bulk Operations (10 Test Cases)
+      ---
+      duration_ms: 20.3711
+      type: 'suite'
+      ...
+    # Subtest: Suite 8: countByRoom & existsInRoom & BaseRepository Features (10 Test Cases)
+        # Subtest: TC-E096: countByRoom đếm tất cả hiện vật chưa bị xóa trong phòng
+        ok 1 - TC-E096: countByRoom đếm tất cả hiện vật chưa bị xóa trong phòng
+          ---
+          duration_ms: 1.6262
+          ...
+        # Subtest: TC-E097: countByRoom với onlyPublished = true chỉ đếm hiện vật visibility = "visible"
+        ok 2 - TC-E097: countByRoom với onlyPublished = true chỉ đếm hiện vật visibility = "visible"
+          ---
+          duration_ms: 0.8718
+          ...
+        # Subtest: TC-E098: countByRoom với onlyPublished = false đếm cả visible và hidden
+        ok 3 - TC-E098: countByRoom với onlyPublished = false đếm cả visible và hidden
+          ---
+          duration_ms: 0.6192
+          ...
+        # Subtest: TC-E099: countByRoom trả về số lượng hiện vật đếm được
+        ok 4 - TC-E099: countByRoom trả về số lượng hiện vật đếm được
+          ---
+          duration_ms: 0.6226
+          ...
+        # Subtest: TC-E100: existsInRoom kiểm tra với roomId và isDeleted: false
+        ok 5 - TC-E100: existsInRoom kiểm tra với roomId và isDeleted: false
+          ---
+          duration_ms: 0.9469
+          ...
+        # Subtest: TC-E101: existsInRoom trả về false khi phòng không có hiện vật nào
+        ok 6 - TC-E101: existsInRoom trả về false khi phòng không có hiện vật nào
+          ---
+          duration_ms: 0.7354
+          ...
+        # Subtest: TC-E102: Kế thừa findById từ BaseRepository
+        ok 7 - TC-E102: Kế thừa findById từ BaseRepository
+          ---
+          duration_ms: 0.7685
+          ...
+        # Subtest: TC-E103: Kế thừa save từ BaseRepository
+        ok 8 - TC-E103: Kế thừa save từ BaseRepository
+          ---
+          duration_ms: 0.7034
+          ...
+        # Subtest: TC-E104: Kế thừa exists từ BaseRepository
+        ok 9 - TC-E104: Kế thừa exists từ BaseRepository
+          ---
+          duration_ms: 0.5634
+          ...
+        # Subtest: TC-E105: Kế thừa count từ BaseRepository
+        ok 10 - TC-E105: Kế thừa count từ BaseRepository
+          ---
+          duration_ms: 0.6365
+          ...
+        1..10
+    ok 8 - Suite 8: countByRoom & existsInRoom & BaseRepository Features (10 Test Cases)
+      ---
+      duration_ms: 10.7715
+      type: 'suite'
+      ...
+    1..8
+ok 8 - Task 7.2 — ExhibitsRepository Comprehensive Test Suite (105 Test Cases)
+  ---
+  duration_ms: 179.2977
+  type: 'suite'
+  ...
+# Subtest: Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
+    # Subtest: Suite 1: Public Visitor Experience (15 Test Cases)
+        # Subtest: TC-S001: roomsList returns empty list when no active rooms exist
+        ok 1 - TC-S001: roomsList returns empty list when no active rooms exist
+          ---
+          duration_ms: 6.2196
+          ...
+        # Subtest: TC-S002: roomsList returns active public rooms
+        ok 2 - TC-S002: roomsList returns active public rooms
+          ---
+          duration_ms: 2.4776
+          ...
+        # Subtest: TC-S003: roomWithExhibits throws NotFoundException when room does not exist
+        ok 3 - TC-S003: roomWithExhibits throws NotFoundException when room does not exist
+          ---
+          duration_ms: 5.2741
+          ...
+        # Subtest: TC-S004: roomWithExhibits throws NotFoundException when room is deleted
+        ok 4 - TC-S004: roomWithExhibits throws NotFoundException when room is deleted
+          ---
+          duration_ms: 1.3095
+          ...
+        # Subtest: TC-S005: roomWithExhibits throws NotFoundException when room is archived
+        ok 5 - TC-S005: roomWithExhibits throws NotFoundException when room is archived
+          ---
+          duration_ms: 1.21
+          ...
+        # Subtest: TC-S006: roomWithExhibits returns empty exhibits array when room has no exhibits
+        ok 6 - TC-S006: roomWithExhibits returns empty exhibits array when room has no exhibits
+          ---
+          duration_ms: 1.2425
+          ...
+        # Subtest: TC-S007: roomWithExhibits filters out exhibits without publishedRevision
+        ok 7 - TC-S007: roomWithExhibits filters out exhibits without publishedRevision
+          ---
+          duration_ms: 2.983
+          ...
+        # Subtest: TC-S008: roomWithExhibits filters out exhibits whose revision state is DRAFT
+        ok 8 - TC-S008: roomWithExhibits filters out exhibits whose revision state is DRAFT
+          ---
+          duration_ms: 2.5167
+          ...
+        # Subtest: TC-S009: roomWithExhibits filters out exhibits whose revision state is IN_REVIEW
+        ok 9 - TC-S009: roomWithExhibits filters out exhibits whose revision state is IN_REVIEW
+          ---
+          duration_ms: 1.1245
+          ...
+        # Subtest: TC-S010: roomWithExhibits filters out exhibits whose revision state is REJECTED
+        ok 10 - TC-S010: roomWithExhibits filters out exhibits whose revision state is REJECTED
+          ---
+          duration_ms: 0.9825
+          ...
+        # Subtest: TC-S011: roomWithExhibits includes exhibits whose revision state is APPROVED
+        ok 11 - TC-S011: roomWithExhibits includes exhibits whose revision state is APPROVED
+          ---
+          duration_ms: 3.2426
+          ...
+        # Subtest: TC-S012: roomWithExhibits maps coordinates from JSONB content
+        ok 12 - TC-S012: roomWithExhibits maps coordinates from JSONB content
+          ---
+          duration_ms: 2.0875
+          ...
+        # Subtest: TC-S013: roomWithExhibits sorts hotspots by displayOrder ascending
+        ok 13 - TC-S013: roomWithExhibits sorts hotspots by displayOrder ascending
+          ---
+          duration_ms: 2.6874
+          ...
+        # Subtest: TC-S014: roomWithExhibits defaults placeholder shape and color if missing
+        ok 14 - TC-S014: roomWithExhibits defaults placeholder shape and color if missing
+          ---
+          duration_ms: 1.1367
+          ...
+        # Subtest: TC-S015: roomWithExhibits preserves transcript and media null placeholders
+        ok 15 - TC-S015: roomWithExhibits preserves transcript and media null placeholders
+          ---
+          duration_ms: 1.2308
+          ...
+        1..15
+    ok 1 - Suite 1: Public Visitor Experience (15 Test Cases)
+      ---
+      duration_ms: 47.9416
+      type: 'suite'
+      ...
+    # Subtest: Suite 2: Admin CMS Search & Queries (15 Test Cases)
+        # Subtest: TC-S016: searchAdminExhibits delegates query to repository and returns paginated response
+        ok 1 - TC-S016: searchAdminExhibits delegates query to repository and returns paginated response
+          ---
+          duration_ms: 4.099
+          ...
+        # Subtest: TC-S017: searchAdminExhibits transforms entities using toExhibitResponse
+        ok 2 - TC-S017: searchAdminExhibits transforms entities using toExhibitResponse
+          ---
+          duration_ms: 1.9873
+          ...
+        # Subtest: TC-S017b: searchAdminExhibits hiển thị nội dung revision mới nhất cho hiện vật nháp
+        ok 3 - TC-S017b: searchAdminExhibits hiển thị nội dung revision mới nhất cho hiện vật nháp
+          ---
+          duration_ms: 2.0658
+          ...
+        # Subtest: TC-S018: searchAdminExhibits handles empty search results cleanly
+        ok 4 - TC-S018: searchAdminExhibits handles empty search results cleanly
+          ---
+          duration_ms: 0.9882
+          ...
+        # Subtest: TC-S019: getAdminDetail throws NotFoundException when exhibit does not exist
+        ok 5 - TC-S019: getAdminDetail throws NotFoundException when exhibit does not exist
+          ---
+          duration_ms: 1.6521
+          ...
+        # Subtest: TC-S020: getAdminDetail throws NotFoundException when exhibit has isDeleted = true
+        ok 6 - TC-S020: getAdminDetail throws NotFoundException when exhibit has isDeleted = true
+          ---
+          duration_ms: 1.256
+          ...
+        # Subtest: TC-S021: getAdminDetail returns exhibit details with room information
+        ok 7 - TC-S021: getAdminDetail returns exhibit details with room information
+          ---
+          duration_ms: 2.2655
+          ...
+        # Subtest: TC-S022: getAdminDetail handles null room gracefully
+        ok 8 - TC-S022: getAdminDetail handles null room gracefully
+          ---
+          duration_ms: 1.0565
+          ...
+        # Subtest: TC-S023: getAdminDetail picks latest revision by revisionNo when revisions exist
+        ok 9 - TC-S023: getAdminDetail picks latest revision by revisionNo when revisions exist
+          ---
+          duration_ms: 2.354
+          ...
+        # Subtest: TC-S024: getAdminDetail falls back to publishedRevision when revisions array is empty
+        ok 10 - TC-S024: getAdminDetail falls back to publishedRevision when revisions array is empty
+          ---
+          duration_ms: 1.1964
+          ...
+        # Subtest: TC-S025: getAdminDetail maps hotspots with numeric coordinates
+        ok 11 - TC-S025: getAdminDetail maps hotspots with numeric coordinates
+          ---
+          duration_ms: 1.4904
+          ...
+        # Subtest: TC-S026: getAdminDetail handles empty hotspots array
+        ok 12 - TC-S026: getAdminDetail handles empty hotspots array
+          ---
+          duration_ms: 1.1543
+          ...
+        # Subtest: TC-S027: getAdminDetail maps full revisions history list with createdBy displayName
+        ok 13 - TC-S027: getAdminDetail maps full revisions history list with createdBy displayName
+          ---
+          duration_ms: 1.0087
+          ...
+        # Subtest: TC-S028: getAdminDetail maps reviewedBy user displayName and reason
+        ok 14 - TC-S028: getAdminDetail maps reviewedBy user displayName and reason
+          ---
+          duration_ms: 1.2276
+          ...
+        # Subtest: TC-S029: getAdminDetail handles null createdBy and reviewedBy
+        ok 15 - TC-S029: getAdminDetail handles null createdBy and reviewedBy
+          ---
+          duration_ms: 1.2011
+          ...
+        # Subtest: TC-S030: getAdminDetail correctly computes status published vs draft
+        ok 16 - TC-S030: getAdminDetail correctly computes status published vs draft
+          ---
+          duration_ms: 0.9966
+          ...
+        1..16
+    ok 2 - Suite 2: Admin CMS Search & Queries (15 Test Cases)
+      ---
+      duration_ms: 31.3652
+      type: 'suite'
+      ...
+    # Subtest: Suite 3: Admin CMS — createExhibitDraft (15 Test Cases)
+        # Subtest: TC-S031: createExhibitDraft throws NotFoundException when room does not exist
+        ok 1 - TC-S031: createExhibitDraft throws NotFoundException when room does not exist
+          ---
+          duration_ms: 3.0516
+          ...
+        # Subtest: TC-S032: createExhibitDraft throws NotFoundException when room is soft-deleted
+        ok 2 - TC-S032: createExhibitDraft throws NotFoundException when room is soft-deleted
+          ---
+          duration_ms: 1.1179
+          ...
+        # Subtest: TC-S033: createExhibitDraft creates exhibit with visibility HIDDEN
+        ok 3 - TC-S033: createExhibitDraft creates exhibit with visibility HIDDEN
+          ---
+          duration_ms: 6.3929
+          ...
+        # Subtest: TC-S034: createExhibitDraft initializes exhibit with version: 1 and publishedRevisionId: null
+        ok 4 - TC-S034: createExhibitDraft initializes exhibit with version: 1 and publishedRevisionId: null
+          ---
+          duration_ms: 0.9183
+          ...
+        # Subtest: TC-S035: createExhibitDraft creates initial revision with revisionNo: 1
+        ok 5 - TC-S035: createExhibitDraft creates initial revision with revisionNo: 1
+          ---
+          duration_ms: 0.7196
+          ...
+        # Subtest: TC-S036: createExhibitDraft sets initial revision state to DRAFT
+        ok 6 - TC-S036: createExhibitDraft sets initial revision state to DRAFT
+          ---
+          duration_ms: 0.7198
+          ...
+        # Subtest: TC-S037: createExhibitDraft sets createdById to user ID
+        ok 7 - TC-S037: createExhibitDraft sets createdById to user ID
+          ---
+          duration_ms: 0.6532
+          ...
+        # Subtest: TC-S038: createExhibitDraft calculates next displayOrder when not specified
+        ok 8 - TC-S038: createExhibitDraft calculates next displayOrder when not specified
+          ---
+          duration_ms: 0.79
+          ...
+        # Subtest: TC-S039: createExhibitDraft uses explicit displayOrder when provided
+        ok 9 - TC-S039: createExhibitDraft uses explicit displayOrder when provided
+          ---
+          duration_ms: 0.6795
+          ...
+        # Subtest: TC-S040: createExhibitDraft maps bilingual name object into JSONB content
+        ok 10 - TC-S040: createExhibitDraft maps bilingual name object into JSONB content
+          ---
+          duration_ms: 2.7296
+          ...
+        # Subtest: TC-S041: createExhibitDraft maps bilingual description object into JSONB content
+        ok 11 - TC-S041: createExhibitDraft maps bilingual description object into JSONB content
+          ---
+          duration_ms: 1.5597
+          ...
+        # Subtest: TC-S042: createExhibitDraft maps 3D transform into JSONB content
+        ok 12 - TC-S042: createExhibitDraft maps 3D transform into JSONB content
+          ---
+          duration_ms: 2.6363
+          ...
+        # Subtest: TC-S043: createExhibitDraft sets placeholderShape and placeholderColor from DTO
+        ok 13 - TC-S043: createExhibitDraft sets placeholderShape and placeholderColor from DTO
+          ---
+          duration_ms: 1.4381
+          ...
+        # Subtest: TC-S044: createExhibitDraft creates and links hotspots when provided in DTO
+        ok 14 - TC-S044: createExhibitDraft creates and links hotspots when provided in DTO
+          ---
+          duration_ms: 2.9654
+          ...
+        # Subtest: TC-S045: createExhibitDraft runs all creation operations inside database transaction
+        ok 15 - TC-S045: createExhibitDraft runs all creation operations inside database transaction
+          ---
+          duration_ms: 1.1027
+          ...
+        1..15
+    ok 3 - Suite 3: Admin CMS — createExhibitDraft (15 Test Cases)
+      ---
+      duration_ms: 32.0299
+      type: 'suite'
+      ...
+    # Subtest: Suite 4: Admin CMS — updateExhibitDraft on Draft / Rejected (15 Test Cases)
+        # Subtest: TC-S046: updateExhibitDraft throws NotFoundException when exhibit does not exist
+        ok 1 - TC-S046: updateExhibitDraft throws NotFoundException when exhibit does not exist
+          ---
+          duration_ms: 3.1176
+          ...
+        # Subtest: TC-S047: updateExhibitDraft throws NotFoundException when exhibit is soft-deleted
+        ok 2 - TC-S047: updateExhibitDraft throws NotFoundException when exhibit is soft-deleted
+          ---
+          duration_ms: 2.0481
+          ...
+        # Subtest: TC-S048: updateExhibitDraft throws NotFoundException when new roomId does not exist
+        ok 3 - TC-S048: updateExhibitDraft throws NotFoundException when new roomId does not exist
+          ---
+          duration_ms: 1.4585
+          ...
+        # Subtest: TC-S049: updateExhibitDraft throws NotFoundException when new roomId is soft-deleted
+        ok 4 - TC-S049: updateExhibitDraft throws NotFoundException when new roomId is soft-deleted
+          ---
+          duration_ms: 1.3729
+          ...
+        # Subtest: TC-S050: updateExhibitDraft allows updating roomId when new room is valid
+        ok 5 - TC-S050: updateExhibitDraft allows updating roomId when new room is valid
+          ---
+          duration_ms: 3.2633
+          ...
+        # Subtest: TC-S051: updateExhibitDraft throws NotFoundException when no active revision exists
+        ok 6 - TC-S051: updateExhibitDraft throws NotFoundException when no active revision exists
+          ---
+          duration_ms: 1.018
+          ...
+        # Subtest: TC-S052: updateExhibitDraft increments exhibit version upon update
+        ok 7 - TC-S052: updateExhibitDraft increments exhibit version upon update
+          ---
+          duration_ms: 1.1865
+          ...
+        # Subtest: TC-S053: updateExhibitDraft updates exhibit displayOrder when provided
+        ok 8 - TC-S053: updateExhibitDraft updates exhibit displayOrder when provided
+          ---
+          duration_ms: 1.2177
+          ...
+        # Subtest: TC-S054: updateExhibitDraft merges updated name while keeping existing description
+        ok 9 - TC-S054: updateExhibitDraft merges updated name while keeping existing description
+          ---
+          duration_ms: 1.2116
+          ...
+        # Subtest: TC-S055: updateExhibitDraft merges updated description while keeping existing name
+        ok 10 - TC-S055: updateExhibitDraft merges updated description while keeping existing name
+          ---
+          duration_ms: 1.4911
+          ...
+        # Subtest: TC-S056: updateExhibitDraft merges updated position while keeping existing rotation
+        ok 11 - TC-S056: updateExhibitDraft merges updated position while keeping existing rotation
+          ---
+          duration_ms: 1.6777
+          ...
+        # Subtest: TC-S057: updateExhibitDraft resets REJECTED state back to DRAFT (BR-26)
+        ok 12 - TC-S057: updateExhibitDraft resets REJECTED state back to DRAFT (BR-26)
+          ---
+          duration_ms: 1.159
+          ...
+        # Subtest: TC-S058: updateExhibitDraft preserves DRAFT state when editing draft
+        ok 13 - TC-S058: updateExhibitDraft preserves DRAFT state when editing draft
+          ---
+          duration_ms: 1.2894
+          ...
+        # Subtest: TC-S059: updateExhibitDraft deletes previous hotspots and saves new hotspots when provided
+        ok 14 - TC-S059: updateExhibitDraft deletes previous hotspots and saves new hotspots when provided
+          ---
+          duration_ms: 2.4483
+          ...
+        # Subtest: TC-S060: updateExhibitDraft clears hotspots when empty hotspots array is provided
+        ok 15 - TC-S060: updateExhibitDraft clears hotspots when empty hotspots array is provided
+          ---
+          duration_ms: 1.3754
+          ...
+        1..15
+    ok 4 - Suite 4: Admin CMS — updateExhibitDraft on Draft / Rejected (15 Test Cases)
+      ---
+      duration_ms: 30.8119
+      type: 'suite'
+      ...
+    # Subtest: Suite 5: Admin CMS — updateExhibitDraft with BR-21 (10 Test Cases)
+        # Subtest: TC-S061: updateExhibitDraft does NOT modify an APPROVED revision in place
+        ok 1 - TC-S061: updateExhibitDraft does NOT modify an APPROVED revision in place
+          ---
+          duration_ms: 2.6285
+          ...
+        # Subtest: TC-S062: updateExhibitDraft forks a new revision with revisionNo = latest + 1 when active is APPROVED
+        ok 2 - TC-S062: updateExhibitDraft forks a new revision with revisionNo = latest + 1 when active is APPROVED
+          ---
+          duration_ms: 1.4556
+          ...
+        # Subtest: TC-S063: updateExhibitDraft sets state of forked revision to DRAFT
+        ok 3 - TC-S063: updateExhibitDraft sets state of forked revision to DRAFT
+          ---
+          duration_ms: 1.3646
+          ...
+        # Subtest: TC-S064: updateExhibitDraft assigns createdById of forked revision to current user
+        ok 4 - TC-S064: updateExhibitDraft assigns createdById of forked revision to current user
+          ---
+          duration_ms: 1.4178
+          ...
+        # Subtest: TC-S065: updateExhibitDraft inherits previous content for unmodified fields in forked revision
+        ok 5 - TC-S065: updateExhibitDraft inherits previous content for unmodified fields in forked revision
+          ---
+          duration_ms: 1.2739
+          ...
+        # Subtest: TC-S066: updateExhibitDraft applies updated DTO fields into forked revision
+        ok 6 - TC-S066: updateExhibitDraft applies updated DTO fields into forked revision
+          ---
+          duration_ms: 1.0923
+          ...
+        # Subtest: TC-S067: updateExhibitDraft clones previous hotspots into forked revision when DTO does not specify hotspots
+        ok 7 - TC-S067: updateExhibitDraft clones previous hotspots into forked revision when DTO does not specify hotspots
+          ---
+          duration_ms: 1.9443
+          ...
+        # Subtest: TC-S068: updateExhibitDraft replaces hotspots in forked revision when DTO specifies new hotspots
+        ok 8 - TC-S068: updateExhibitDraft replaces hotspots in forked revision when DTO specifies new hotspots
+          ---
+          duration_ms: 1.4415
+          ...
+        # Subtest: TC-S069: updateExhibitDraft does NOT change publishedRevisionId when forking new draft
+        ok 9 - TC-S069: updateExhibitDraft does NOT change publishedRevisionId when forking new draft
+          ---
+          duration_ms: 1.3063
+          ...
+        # Subtest: TC-S070: updateExhibitDraft preserves public visibility of exhibit while creating new draft
+        ok 10 - TC-S070: updateExhibitDraft preserves public visibility of exhibit while creating new draft
+          ---
+          duration_ms: 1.2631
+          ...
+        1..10
+    ok 5 - Suite 5: Admin CMS — updateExhibitDraft with BR-21 (10 Test Cases)
+      ---
+      duration_ms: 18.5773
+      type: 'suite'
+      ...
+    # Subtest: Suite 6: Admin CMS — updateExhibitDraft with BR-26 & Guards (10 Test Cases)
+        # Subtest: TC-S071: updateExhibitDraft throws ConflictException when active revision is IN_REVIEW
+        ok 1 - TC-S071: updateExhibitDraft throws ConflictException when active revision is IN_REVIEW
+          ---
+          duration_ms: 2.2354
+          ...
+        # Subtest: TC-S072: updateExhibitDraft error message explicitly informs content is in moderation
+        ok 2 - TC-S072: updateExhibitDraft error message explicitly informs content is in moderation
+          ---
+          duration_ms: 2.2028
+          ...
+        # Subtest: TC-S073: updateExhibitDraft does NOT perform DB updates when in_review conflict occurs
+        ok 3 - TC-S073: updateExhibitDraft does NOT perform DB updates when in_review conflict occurs
+          ---
+          duration_ms: 1.3434
+          ...
+        # Subtest: TC-S074: updateExhibitDraft handles updates without changing media IDs
+        ok 4 - TC-S074: updateExhibitDraft handles updates without changing media IDs
+          ---
+          duration_ms: 1.2029
+          ...
+        # Subtest: TC-S075: updateExhibitDraft updates modelMediaId when modelId is passed in DTO
+        ok 5 - TC-S075: updateExhibitDraft updates modelMediaId when modelId is passed in DTO
+          ---
+          duration_ms: 1.3797
+          ...
+        # Subtest: TC-S076: updateExhibitDraft clears modelMediaId when modelId: null is passed
+        ok 6 - TC-S076: updateExhibitDraft clears modelMediaId when modelId: null is passed
+          ---
+          duration_ms: 1.4505
+          ...
+        # Subtest: TC-S077: updateExhibitDraft updates imageMediaId and audioMediaId when passed
+        ok 7 - TC-S077: updateExhibitDraft updates imageMediaId and audioMediaId when passed
+          ---
+          duration_ms: 1.394
+          ...
+        # Subtest: TC-S078: updateExhibitDraft updates transcript and altText when passed
+        ok 8 - TC-S078: updateExhibitDraft updates transcript and altText when passed
+          ---
+          duration_ms: 1.3553
+          ...
+        # Subtest: TC-S079: updateExhibitDraft executes all mutations atomically within tx.run
+        ok 9 - TC-S079: updateExhibitDraft executes all mutations atomically within tx.run
+          ---
+          duration_ms: 1.1887
+          ...
+        # Subtest: TC-S080: updateExhibitDraft returns mapped ExhibitAdminResponse reflecting changes
+        ok 10 - TC-S080: updateExhibitDraft returns mapped ExhibitAdminResponse reflecting changes
+          ---
+          duration_ms: 1.7509
+          ...
+        1..10
+    ok 6 - Suite 6: Admin CMS — updateExhibitDraft with BR-26 & Guards (10 Test Cases)
+      ---
+      duration_ms: 19.5515
+      type: 'suite'
+      ...
+    # Subtest: Suite 7: Admin CMS — submitDraftForReview (10 Test Cases)
+        # Subtest: TC-S081: submitDraftForReview throws NotFoundException when exhibit does not exist
+        ok 1 - TC-S081: submitDraftForReview throws NotFoundException when exhibit does not exist
+          ---
+          duration_ms: 2.293
+          ...
+        # Subtest: TC-S082: submitDraftForReview throws NotFoundException when exhibit is deleted
+        ok 2 - TC-S082: submitDraftForReview throws NotFoundException when exhibit is deleted
+          ---
+          duration_ms: 1.0361
+          ...
+        # Subtest: TC-S083: submitDraftForReview throws NotFoundException when no active revision exists
+        ok 3 - TC-S083: submitDraftForReview throws NotFoundException when no active revision exists
+          ---
+          duration_ms: 1.4896
+          ...
+        # Subtest: TC-S084: submitDraftForReview throws ConflictException when active revision is already IN_REVIEW
+        ok 4 - TC-S084: submitDraftForReview throws ConflictException when active revision is already IN_REVIEW
+          ---
+          duration_ms: 1.4095
+          ...
+        # Subtest: TC-S085: submitDraftForReview throws ConflictException when active revision is APPROVED
+        ok 5 - TC-S085: submitDraftForReview throws ConflictException when active revision is APPROVED
+          ---
+          duration_ms: 1.1829
+          ...
+        # Subtest: TC-S086: submitDraftForReview transitions state from DRAFT to IN_REVIEW
+        ok 6 - TC-S086: submitDraftForReview transitions state from DRAFT to IN_REVIEW
+          ---
+          duration_ms: 1.8839
+          ...
+        # Subtest: TC-S087: submitDraftForReview transitions state from REJECTED to IN_REVIEW
+        ok 7 - TC-S087: submitDraftForReview transitions state from REJECTED to IN_REVIEW
+          ---
+          duration_ms: 1.133
+          ...
+        # Subtest: TC-S088: submitDraftForReview increments exhibit version
+        ok 8 - TC-S088: submitDraftForReview increments exhibit version
+          ---
+          duration_ms: 0.9606
+          ...
+        # Subtest: TC-S089: submitDraftForReview saves revision and exhibit inside a transaction
+        ok 9 - TC-S089: submitDraftForReview saves revision and exhibit inside a transaction
+          ---
+          duration_ms: 0.921
+          ...
+        # Subtest: TC-S090: submitDraftForReview returns updated exhibit response with revisionState: in_review
+        ok 10 - TC-S090: submitDraftForReview returns updated exhibit response with revisionState: in_review
+          ---
+          duration_ms: 1.0332
+          ...
+        1..10
+    ok 7 - Suite 7: Admin CMS — submitDraftForReview (10 Test Cases)
+      ---
+      duration_ms: 17.0156
+      type: 'suite'
+      ...
+    # Subtest: Suite 8: Admin CMS — deleteExhibitDraft & BR-20 (10 Test Cases)
+        # Subtest: TC-S091: deleteExhibitDraft throws NotFoundException when exhibit does not exist
+        ok 1 - TC-S091: deleteExhibitDraft throws NotFoundException when exhibit does not exist
+          ---
+          duration_ms: 4.2464
+          ...
+        # Subtest: TC-S092: deleteExhibitDraft throws NotFoundException when exhibit is soft-deleted
+        ok 2 - TC-S092: deleteExhibitDraft throws NotFoundException when exhibit is soft-deleted
+          ---
+          duration_ms: 1.2872
+          ...
+        # Subtest: TC-S093: deleteExhibitDraft throws ConflictException when exhibit has publishedRevisionId !== null (BR-20)
+        ok 3 - TC-S093: deleteExhibitDraft throws ConflictException when exhibit has publishedRevisionId !== null (BR-20)
+          ---
+          duration_ms: 1.5525
+          ...
+        # Subtest: TC-S094: deleteExhibitDraft throws ConflictException when exhibit has visibility: VISIBLE (BR-20)
+        ok 4 - TC-S094: deleteExhibitDraft throws ConflictException when exhibit has visibility: VISIBLE (BR-20)
+          ---
+          duration_ms: 1.5029
+          ...
+        # Subtest: TC-S095: deleteExhibitDraft explains that hiding does not unlock deletion
+        ok 5 - TC-S095: deleteExhibitDraft explains that hiding does not unlock deletion
+          ---
+          duration_ms: 1.2835
+          ...
+        # Subtest: TC-S096: deleteExhibitDraft soft-deletes (markDeleted) in transaction when exhibit is purely draft
+        ok 6 - TC-S096: deleteExhibitDraft soft-deletes (markDeleted) in transaction when exhibit is purely draft
+          ---
+          duration_ms: 2.795
+          ...
+        # Subtest: TC-S097: deleteExhibitDraft succeeds when exhibit has no published revision and visibility: HIDDEN
+        ok 7 - TC-S097: deleteExhibitDraft succeeds when exhibit has no published revision and visibility: HIDDEN
+          ---
+          duration_ms: 1.209
+          ...
+        # Subtest: TC-S098: deleteExhibitDraft returns success object with message
+        ok 8 - TC-S098: deleteExhibitDraft returns success object with message
+          ---
+          duration_ms: 1.4035
+          ...
+        # Subtest: TC-S099: deleteExhibitDraft executes soft deletion inside tx.run
+        ok 9 - TC-S099: deleteExhibitDraft executes soft deletion inside tx.run
+          ---
+          duration_ms: 0.9055
+          ...
+        # Subtest: TC-S100: deleteExhibitDraft does not soft-delete if BR-20 conflict is thrown
+        ok 10 - TC-S100: deleteExhibitDraft does not soft-delete if BR-20 conflict is thrown
+          ---
+          duration_ms: 0.9886
+          ...
+        1..10
+    ok 8 - Suite 8: Admin CMS — deleteExhibitDraft & BR-20 (10 Test Cases)
+      ---
+      duration_ms: 20.664
+      type: 'suite'
+      ...
+    # Subtest: Suite 9: Admin CMS — deleteDraftRevision (10 Test Cases)
+        # Subtest: TC-S101: deleteDraftRevision throws NotFoundException when exhibit does not exist
+        ok 1 - TC-S101: deleteDraftRevision throws NotFoundException when exhibit does not exist
+          ---
+          duration_ms: 1.499
+          ...
+        # Subtest: TC-S102: deleteDraftRevision throws NotFoundException when revision does not exist
+        ok 2 - TC-S102: deleteDraftRevision throws NotFoundException when revision does not exist
+          ---
+          duration_ms: 0.9241
+          ...
+        # Subtest: TC-S103: deleteDraftRevision throws NotFoundException when revision belongs to different exhibit
+        ok 3 - TC-S103: deleteDraftRevision throws NotFoundException when revision belongs to different exhibit
+          ---
+          duration_ms: 0.9262
+          ...
+        # Subtest: TC-S104: deleteDraftRevision throws ConflictException when revision is currently published
+        ok 4 - TC-S104: deleteDraftRevision throws ConflictException when revision is currently published
+          ---
+          duration_ms: 1.3193
+          ...
+        # Subtest: TC-S105: deleteDraftRevision throws ConflictException when revision state is APPROVED
+        ok 5 - TC-S105: deleteDraftRevision throws ConflictException when revision state is APPROVED
+          ---
+          duration_ms: 0.8339
+          ...
+        # Subtest: TC-S106: deleteDraftRevision throws ConflictException when revision state is IN_REVIEW
+        ok 6 - TC-S106: deleteDraftRevision throws ConflictException when revision state is IN_REVIEW
+          ---
+          duration_ms: 0.6709
+          ...
+        # Subtest: TC-S107: deleteDraftRevision deletes hotspots belonging to the target revision
+        ok 7 - TC-S107: deleteDraftRevision deletes hotspots belonging to the target revision
+          ---
+          duration_ms: 0.7766
+          ...
+        # Subtest: TC-S108: deleteDraftRevision deletes the revision record by ID in transaction
+        ok 8 - TC-S108: deleteDraftRevision deletes the revision record by ID in transaction
+          ---
+          duration_ms: 0.5604
+          ...
+        # Subtest: TC-S109: deleteDraftRevision allows deleting a REJECTED revision
+        ok 9 - TC-S109: deleteDraftRevision allows deleting a REJECTED revision
+          ---
+          duration_ms: 0.5413
+          ...
+        # Subtest: TC-S110: deleteDraftRevision allows deleting a DRAFT revision and returns success
+        ok 10 - TC-S110: deleteDraftRevision allows deleting a DRAFT revision and returns success
+          ---
+          duration_ms: 0.5056
+          ...
+        1..10
+    ok 9 - Suite 9: Admin CMS — deleteDraftRevision (10 Test Cases)
+      ---
+      duration_ms: 10.7757
+      type: 'suite'
+      ...
+    # Subtest: Suite 10: Admin CMS — reorderExhibits, History & Detail (15 Test Cases)
+        # Subtest: TC-S111: reorderExhibits throws NotFoundException when target room does not exist
+        ok 1 - TC-S111: reorderExhibits throws NotFoundException when target room does not exist
+          ---
+          duration_ms: 1.8229
+          ...
+        # Subtest: TC-S112: reorderExhibits throws NotFoundException when target room is soft-deleted
+        ok 2 - TC-S112: reorderExhibits throws NotFoundException when target room is soft-deleted
+          ---
+          duration_ms: 0.5928
+          ...
+        # Subtest: TC-S113: reorderExhibits updates displayOrder (1-indexed) for each exhibit ID in transaction
+        ok 3 - TC-S113: reorderExhibits updates displayOrder (1-indexed) for each exhibit ID in transaction
+          ---
+          duration_ms: 1.0069
+          ...
+        # Subtest: TC-S114: reorderExhibits returns success response message
+        ok 4 - TC-S114: reorderExhibits returns success response message
+          ---
+          duration_ms: 0.4971
+          ...
+        # Subtest: TC-S115: getRevisionsHistory throws NotFoundException when exhibit does not exist
+        ok 5 - TC-S115: getRevisionsHistory throws NotFoundException when exhibit does not exist
+          ---
+          duration_ms: 0.7833
+          ...
+        # Subtest: TC-S116: getRevisionsHistory returns revisions list from repository
+        ok 6 - TC-S116: getRevisionsHistory returns revisions list from repository
+          ---
+          duration_ms: 1.634
+          ...
+        # Subtest: TC-S117: getRevisionDetail throws NotFoundException when revision does not exist
+        ok 7 - TC-S117: getRevisionDetail throws NotFoundException when revision does not exist
+          ---
+          duration_ms: 0.6386
+          ...
+        # Subtest: TC-S118: getRevisionDetail throws NotFoundException when revision belongs to different exhibit
+        ok 8 - TC-S118: getRevisionDetail throws NotFoundException when revision belongs to different exhibit
+          ---
+          duration_ms: 0.4572
+          ...
+        # Subtest: TC-S119: getRevisionDetail returns revision entity when valid
+        ok 9 - TC-S119: getRevisionDetail returns revision entity when valid
+          ---
+          duration_ms: 0.381
+          ...
+        # Subtest: TC-S120: reorderExhibits accepts an empty list only for a room without exhibits
+        ok 10 - TC-S120: reorderExhibits accepts an empty list only for a room without exhibits
+          ---
+          duration_ms: 0.4112
+          ...
+        # Subtest: TC-S121: reorderExhibits rejects an exhibit that belongs to another room
+        ok 11 - TC-S121: reorderExhibits rejects an exhibit that belongs to another room
+          ---
+          duration_ms: 1.0495
+          ...
+        # Subtest: TC-S122: reorderExhibits rejects a list that also contains another room exhibit
+        ok 12 - TC-S122: reorderExhibits rejects a list that also contains another room exhibit
+          ---
+          duration_ms: 0.4462
+          ...
+        # Subtest: TC-S123: reorderExhibits rejects a list missing an exhibit of the room
+        ok 13 - TC-S123: reorderExhibits rejects a list missing an exhibit of the room
+          ---
+          duration_ms: 0.525
+          ...
+        # Subtest: TC-S124: reorderExhibits rejects duplicate exhibit IDs
+        ok 14 - TC-S124: reorderExhibits rejects duplicate exhibit IDs
+          ---
+          duration_ms: 0.4221
+          ...
+        # Subtest: TC-S125: reorderExhibits rejects unknown IDs instead of silently ignoring them
+        ok 15 - TC-S125: reorderExhibits rejects unknown IDs instead of silently ignoring them
+          ---
+          duration_ms: 0.4829
+          ...
+        1..15
+    ok 10 - Suite 10: Admin CMS — reorderExhibits, History & Detail (15 Test Cases)
+      ---
+      duration_ms: 13.4668
+      type: 'suite'
+      ...
+    # Subtest: Suite 11: Task 9 — media attach, publish gate, admin media
+        # Subtest: TC-M01: create kiểm tra đúng các tham chiếu media được gửi (field + kind) trong transaction
+        ok 1 - TC-M01: create kiểm tra đúng các tham chiếu media được gửi (field + kind) trong transaction
+          ---
+          duration_ms: 1.3747
+          ...
+        # Subtest: TC-M02: create với media không hợp lệ → 422, không lưu exhibit/revision
+        ok 2 - TC-M02: create với media không hợp lệ → 422, không lưu exhibit/revision
+          ---
+          duration_ms: 0.971
+          ...
+        # Subtest: TC-M03: alias audioId mâu thuẫn audioViId → 400 trước khi mở transaction
+        ok 3 - TC-M03: alias audioId mâu thuẫn audioViId → 400 trước khi mở transaction
+          ---
+          duration_ms: 1.2452
+          ...
+        # Subtest: TC-M04: update Draft chỉ kiểm tra media trong request; field vắng mặt giữ nguyên, null tháo
+        ok 4 - TC-M04: update Draft chỉ kiểm tra media trong request; field vắng mặt giữ nguyên, null tháo
+          ---
+          duration_ms: 1.1025
+          ...
+        # Subtest: TC-M05: update thay media → bỏ relation cũ đã nạp để TypeORM ghi theo id mới
+        ok 5 - TC-M05: update thay media → bỏ relation cũ đã nạp để TypeORM ghi theo id mới
+          ---
+          duration_ms: 1.0348
+          ...
+        # Subtest: TC-M06: update khi đang APPROVED → fork copy đủ 6 slot rồi áp thay đổi; revision cũ không đổi
+        ok 6 - TC-M06: update khi đang APPROVED → fork copy đủ 6 slot rồi áp thay đổi; revision cũ không đổi
+          ---
+          duration_ms: 3.911
+          ...
+        # Subtest: TC-M07: update IN_REVIEW → 409 trước khi kiểm tra media
+        ok 7 - TC-M07: update IN_REVIEW → 409 trước khi kiểm tra media
+          ---
+          duration_ms: 0.6452
+          ...
+        # Subtest: TC-M08: submit gọi cổng với revision đang xét trong transaction
+        ok 8 - TC-M08: submit gọi cổng với revision đang xét trong transaction
+          ---
+          duration_ms: 0.6715
+          ...
+        # Subtest: TC-M09: cổng từ chối → 422, revision giữ DRAFT, không lưu, version không tăng
+        ok 9 - TC-M09: cổng từ chối → 422, revision giữ DRAFT, không lưu, version không tăng
+          ---
+          duration_ms: 0.6805
+          ...
+        # Subtest: TC-M10: admin detail trả media của revision đang xem với URL ký
+        ok 10 - TC-M10: admin detail trả media của revision đang xem với URL ký
+          ---
+          duration_ms: 5.8948
+          ...
+        # Subtest: TC-M11: lịch sử & chi tiết revision là DTO — không lộ passwordHash
+        ok 11 - TC-M11: lịch sử & chi tiết revision là DTO — không lộ passwordHash
+          ---
+          duration_ms: 1.4519
+          ...
+        1..11
+    ok 11 - Suite 11: Task 9 — media attach, publish gate, admin media
+      ---
+      duration_ms: 21.4689
+      type: 'suite'
+      ...
+    1..11
+ok 9 - Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
+  ---
+  duration_ms: 270.5108
+  type: 'suite'
+  ...
+# Subtest: only publishes ready undeleted GLB media with safe stable keys
+ok 10 - only publishes ready undeleted GLB media with safe stable keys
+  ---
+  duration_ms: 3.3417
+  ...
+# Subtest: rechecks published room metadata before giving a private model to storage
+ok 11 - rechecks published room metadata before giving a private model to storage
+  ---
+  duration_ms: 2.9841
+  ...
+# Subtest: signs private objects server-side and streams bytes without exposing credentials
+ok 12 - signs private objects server-side and streams bytes without exposing credentials
+  ---
+  duration_ms: 801.1484
+  ...
+# Subtest: creates a fresh signed request on retry after an expired Storage authorization
+ok 13 - creates a fresh signed request on retry after an expired Storage authorization
+  ---
+  duration_ms: 125.6246
+  ...
+# Subtest: fails closed when Storage is unconfigured or a key is unsafe
+ok 14 - fails closed when Storage is unconfigured or a key is unsafe
+  ---
+  duration_ms: 2.8007
+  ...
+# Subtest: passes binary models through the response interceptor while preserving JSON envelopes
+ok 15 - passes binary models through the response interceptor while preserving JSON envelopes
+  ---
+  duration_ms: 31.6352
+  ...
+# Subtest: rejects archived rooms and unapproved revisions using the actual publication service
+ok 16 - rejects archived rooms and unapproved revisions using the actual publication service
+  ---
+  duration_ms: 6.0844
+  ...
+# Subtest: redacts permission/not-found errors and rejects unexpected signed download paths
+ok 17 - redacts permission/not-found errors and rejects unexpected signed download paths
+  ---
+  duration_ms: 106.5153
+  ...
+# Subtest: VT-077 ExhibitsRepository.searchPublicExhibits
+    # Subtest: AC-4 (invariant): sắp xếp displayOrder ASC + addOrderBy id ASC (tiebreaker duy nhất)
+    ok 1 - AC-4 (invariant): sắp xếp displayOrder ASC + addOrderBy id ASC (tiebreaker duy nhất)
+      ---
+      duration_ms: 8.4517
+      ...
+    # Subtest: AC-5/AC-1: chỉ lấy bản published + visible, chưa xóa/lưu trữ
+    ok 2 - AC-5/AC-1: chỉ lấy bản published + visible, chưa xóa/lưu trữ
+      ---
+      duration_ms: 1.8537
+      ...
+    # Subtest: AC-3: phân trang skip=(page-1)*pageSize, take=pageSize; chặn pageSize>100
+    ok 3 - AC-3: phân trang skip=(page-1)*pageSize, take=pageSize; chặn pageSize>100
+      ---
+      duration_ms: 0.4709
+      ...
+    # Subtest: AC-2: lọc roomId + tìm q bằng ILIKE (param search = %kw%)
+    ok 4 - AC-2: lọc roomId + tìm q bằng ILIKE (param search = %kw%)
+      ---
+      duration_ms: 0.5465
+      ...
+    # Subtest: AC-4: sắp lại kết quả find theo đúng thứ tự id của QueryBuilder (ổn định qua 2 bước)
+    ok 5 - AC-4: sắp lại kết quả find theo đúng thứ tự id của QueryBuilder (ổn định qua 2 bước)
+      ---
+      duration_ms: 0.8097
+      ...
+    1..5
+ok 18 - VT-077 ExhibitsRepository.searchPublicExhibits
+  ---
+  duration_ms: 30.0064
+  type: 'suite'
+  ...
+# Subtest: VT-077 ExhibitsService.publicSearch
+    # Subtest: TC-06/AC-3: trả meta (page/pageSize/total) đúng như repository
+    ok 1 - TC-06/AC-3: trả meta (page/pageSize/total) đúng như repository
+      ---
+      duration_ms: 5.1963
+      ...
+    # Subtest: TC-01/AC-1: ánh xạ sang DTO công khai, không lộ field nội bộ
+    ok 2 - TC-01/AC-1: ánh xạ sang DTO công khai, không lộ field nội bộ
+      ---
+      duration_ms: 50.0657
+      ...
+    # Subtest: TC-07/TC-08/AC-4: giữ NGUYÊN thứ tự repository trả (ổn định, không re-sort phá vỡ)
+    ok 3 - TC-07/TC-08/AC-4: giữ NGUYÊN thứ tự repository trả (ổn định, không re-sort phá vỡ)
+      ---
+      duration_ms: 3.2563
+      ...
+    # Subtest: AC-2: truyền q/roomId/page/pageSize xuống repository (không tự bịa filter)
+    ok 4 - AC-2: truyền q/roomId/page/pageSize xuống repository (không tự bịa filter)
+      ---
+      duration_ms: 0.7474
+      ...
+    # Subtest: AC-5: loại hiện vật chưa xuất bản (mapper trả null) khỏi kết quả
+    ok 5 - AC-5: loại hiện vật chưa xuất bản (mapper trả null) khỏi kết quả
+      ---
+      duration_ms: 0.7304
+      ...
+    # Subtest: TC-12/failure-path: repository ném lỗi → service KHÔNG nuốt lỗi, phải propagate
+    ok 6 - TC-12/failure-path: repository ném lỗi → service KHÔNG nuốt lỗi, phải propagate
+      ---
+      duration_ms: 2.4161
+      ...
+    1..6
+ok 19 - VT-077 ExhibitsService.publicSearch
+  ---
+  duration_ms: 71.1236
+  type: 'suite'
+  ...
+# Subtest: VT-077 GET /rooms/search — contract
+    # Subtest: TC-09: response khớp envelope ApiResponse + meta
+    ok 1 - TC-09: response khớp envelope ApiResponse + meta
+      ---
+      duration_ms: 143.5836
+      ...
+    # Subtest: TC-10: item chỉ chứa field public, không rò rỉ entity nội bộ
+    ok 2 - TC-10: item chỉ chứa field public, không rò rỉ entity nội bộ
+      ---
+      duration_ms: 27.5185
+      ...
+    # Subtest: TC-05 (negative): pageSize=101 → 400, service không bị gọi
+    ok 3 - TC-05 (negative): pageSize=101 → 400, service không bị gọi
+      ---
+      duration_ms: 18.1334
+      ...
+    # Subtest: TC (negative): page=0 → 400
+    ok 4 - TC (negative): page=0 → 400
+      ---
+      duration_ms: 20.2862
+      ...
+    # Subtest: TC-04 (negative): roomId sai định dạng UUID → 400 (không 500)
+    ok 5 - TC-04 (negative): roomId sai định dạng UUID → 400 (không 500)
+      ---
+      duration_ms: 20.75
+      ...
+    # Subtest: AC-5: route /rooms/search KHÔNG nuốt route cũ /rooms/:slug
+    ok 6 - AC-5: route /rooms/search KHÔNG nuốt route cũ /rooms/:slug
+      ---
+      duration_ms: 19.796
+      ...
+    1..6
+ok 20 - VT-077 GET /rooms/search — contract
+  ---
+  duration_ms: 1119.8269
+  type: 'suite'
+  ...
+# Subtest: REVISION_MEDIA_SLOTS
+    # Subtest: đủ 6 slot, key/cột/field không trùng
+    ok 1 - đủ 6 slot, key/cột/field không trùng
+      ---
+      duration_ms: 1.4794
+      ...
+    # Subtest: relations nạp đủ 6 quan hệ media
+    ok 2 - relations nạp đủ 6 quan hệ media
+      ---
+      duration_ms: 4.6564
+      ...
+    # Subtest: audio/phụ đề có locale; model/image không
+    ok 3 - audio/phụ đề có locale; model/image không
+      ---
+      duration_ms: 1.0656
+      ...
+    1..3
+ok 21 - REVISION_MEDIA_SLOTS
+  ---
+  duration_ms: 17.5205
+  type: 'suite'
+  ...
+# Subtest: resolveRevisionMediaPatch
+    # Subtest: field vắng mặt → không có trong patch (giữ nguyên)
+    ok 1 - field vắng mặt → không có trong patch (giữ nguyên)
+      ---
+      duration_ms: 1.4863
+      ...
+    # Subtest: null → tháo; UUID → gắn
+    ok 2 - null → tháo; UUID → gắn
+      ---
+      duration_ms: 1.0111
+      ...
+    # Subtest: audioId (cũ) là alias của audioViId
+    ok 3 - audioId (cũ) là alias của audioViId
+      ---
+      duration_ms: 0.8394
+      ...
+    # Subtest: audioId và audioViId cùng giá trị → chấp nhận
+    ok 4 - audioId và audioViId cùng giá trị → chấp nhận
+      ---
+      duration_ms: 0.7402
+      ...
+    # Subtest: audioViId được ưu tiên khi audioId vắng mặt
+    ok 5 - audioViId được ưu tiên khi audioId vắng mặt
+      ---
+      duration_ms: 0.7071
+      ...
+    # Subtest: audioId mâu thuẫn audioViId (khác UUID) → 400 audio_alias_conflict
+    ok 6 - audioId mâu thuẫn audioViId (khác UUID) → 400 audio_alias_conflict
+      ---
+      duration_ms: 5.4929
+      ...
+    # Subtest: audioId mâu thuẫn audioViId (một bên null) → 400 audio_alias_conflict
+    ok 7 - audioId mâu thuẫn audioViId (một bên null) → 400 audio_alias_conflict
+      ---
+      duration_ms: 0.3434
+      ...
+    1..7
+ok 22 - resolveRevisionMediaPatch
+  ---
+  duration_ms: 13.1242
+  type: 'suite'
+  ...
+# Subtest: mediaReferencesOf / pickRevisionMedia
+    # Subtest: chỉ tham chiếu cột có id, kèm field DTO và kind
+    ok 1 - chỉ tham chiếu cột có id, kèm field DTO và kind
+      ---
+      duration_ms: 2.0572
+      ...
+    # Subtest: pickRevisionMedia luôn trả đủ 6 cột, thiếu → null
+    ok 2 - pickRevisionMedia luôn trả đủ 6 cột, thiếu → null
+      ---
+      duration_ms: 1.0469
+      ...
+    1..2
+ok 23 - mediaReferencesOf / pickRevisionMedia
+  ---
+  duration_ms: 4.0333
+  type: 'suite'
+  ...
+# Subtest: DTO create/update — field media mới
+    # Subtest: CreateExhibitDto: nhận 4 field mới (UUID hoặc null)
+    ok 1 - CreateExhibitDto: nhận 4 field mới (UUID hoặc null)
+      ---
+      duration_ms: 19.1732
+      ...
+    # Subtest: CreateExhibitDto: audioViId không phải UUID → lỗi validate
+    ok 2 - CreateExhibitDto: audioViId không phải UUID → lỗi validate
+      ---
+      duration_ms: 1.9874
+      ...
+    # Subtest: CreateExhibitDto: audioEnId không phải UUID → lỗi validate
+    ok 3 - CreateExhibitDto: audioEnId không phải UUID → lỗi validate
+      ---
+      duration_ms: 29.0988
+      ...
+    # Subtest: CreateExhibitDto: subtitleViId không phải UUID → lỗi validate
+    ok 4 - CreateExhibitDto: subtitleViId không phải UUID → lỗi validate
+      ---
+      duration_ms: 0.7099
+      ...
+    # Subtest: CreateExhibitDto: subtitleEnId không phải UUID → lỗi validate
+    ok 5 - CreateExhibitDto: subtitleEnId không phải UUID → lỗi validate
+      ---
+      duration_ms: 0.683
+      ...
+    # Subtest: UpdateExhibitDto: nhận 4 field mới (UUID hoặc null)
+    ok 6 - UpdateExhibitDto: nhận 4 field mới (UUID hoặc null)
+      ---
+      duration_ms: 0.8337
+      ...
+    # Subtest: UpdateExhibitDto: audioViId không phải UUID → lỗi validate
+    ok 7 - UpdateExhibitDto: audioViId không phải UUID → lỗi validate
+      ---
+      duration_ms: 1.0535
+      ...
+    # Subtest: UpdateExhibitDto: audioEnId không phải UUID → lỗi validate
+    ok 8 - UpdateExhibitDto: audioEnId không phải UUID → lỗi validate
+      ---
+      duration_ms: 1.349
+      ...
+    # Subtest: UpdateExhibitDto: subtitleViId không phải UUID → lỗi validate
+    ok 9 - UpdateExhibitDto: subtitleViId không phải UUID → lỗi validate
+      ---
+      duration_ms: 1.1155
+      ...
+    # Subtest: UpdateExhibitDto: subtitleEnId không phải UUID → lỗi validate
+    ok 10 - UpdateExhibitDto: subtitleEnId không phải UUID → lỗi validate
+      ---
+      duration_ms: 2.7078
+      ...
+    1..10
+ok 24 - DTO create/update — field media mới
+  ---
+  duration_ms: 61.3744
+  type: 'suite'
+  ...
+# Subtest: resolveBilingual
+    # Subtest: chuỗi thường → vi
+    ok 1 - chuỗi thường → vi
+      ---
+      duration_ms: 2.2766
+      ...
+    # Subtest: object đủ
+    ok 2 - object đủ
+      ---
+      duration_ms: 0.6388
+      ...
+    # Subtest: object thiếu en
+    ok 3 - object thiếu en
+      ---
+      duration_ms: 0.4113
+      ...
+    # Subtest: object chuỗi rỗng/khoảng trắng → null
+    ok 4 - object chuỗi rỗng/khoảng trắng → null
+      ---
+      duration_ms: 0.4208
+      ...
+    # Subtest: chuỗi JSON (cột varchar)
+    ok 5 - chuỗi JSON (cột varchar)
+      ---
+      duration_ms: 0.3971
+      ...
+    # Subtest: chuỗi bắt đầu bằng { nhưng không phải JSON
+    ok 6 - chuỗi bắt đầu bằng { nhưng không phải JSON
+      ---
+      duration_ms: 2.0401
+      ...
+    # Subtest: JSON không có vi/en → văn bản thường
+    ok 7 - JSON không có vi/en → văn bản thường
+      ---
+      duration_ms: 0.3035
+      ...
+    # Subtest: giá trị không phải chuỗi trong object
+    ok 8 - giá trị không phải chuỗi trong object
+      ---
+      duration_ms: 0.1934
+      ...
+    # Subtest: null
+    ok 9 - null
+      ---
+      duration_ms: 0.2198
+      ...
+    # Subtest: undefined
+    ok 10 - undefined
+      ---
+      duration_ms: 0.1771
+      ...
+    # Subtest: mảng
+    ok 11 - mảng
+      ---
+      duration_ms: 0.2644
+      ...
+    # Subtest: số
+    ok 12 - số
+      ---
+      duration_ms: 0.1684
+      ...
+    # Subtest: primaryText: vi trước, thiếu thì en, không có → null
+    ok 13 - primaryText: vi trước, thiếu thì en, không có → null
+      ---
+      duration_ms: 0.3927
+      ...
+    1..13
+ok 25 - resolveBilingual
+  ---
+  duration_ms: 10.6687
+  type: 'suite'
+  ...
+# Subtest: checkContentForPublish
+    # Subtest: nội dung đủ (hotspot lưu dạng chuỗi JSON) → không lỗi
+    ok 1 - nội dung đủ (hotspot lưu dạng chuỗi JSON) → không lỗi
+      ---
+      duration_ms: 3.0486
+      ...
+    # Subtest: thiếu name.en / description.vi → lỗi có field
+    ok 2 - thiếu name.en / description.vi → lỗi có field
+      ---
+      duration_ms: 0.7754
+      ...
+    # Subtest: name chuỗi thường (dữ liệu cũ) → thiếu bản tiếng Anh
+    ok 3 - name chuỗi thường (dữ liệu cũ) → thiếu bản tiếng Anh
+      ---
+      duration_ms: 0.7393
+      ...
+    # Subtest: hotspot thiếu bản tiếng Anh
+    ok 4 - hotspot thiếu bản tiếng Anh
+      ---
+      duration_ms: 0.7199
+      ...
+    # Subtest: scale ≤ 0 → lỗi scale
+    ok 5 - scale ≤ 0 → lỗi scale
+      ---
+      duration_ms: 0.5299
+      ...
+    1..5
+ok 26 - checkContentForPublish
+  ---
+  duration_ms: 10.6577
+  type: 'suite'
+  ...
+# Subtest: checkMediaForPublish
+    # Subtest: đủ media, rights, alt, transcript, phụ đề → không lỗi
+    ok 1 - đủ media, rights, alt, transcript, phụ đề → không lỗi
+      ---
+      duration_ms: 2.1886
+      ...
+    # Subtest: không gắn media nào → không lỗi (media tùy chọn §5.2)
+    ok 2 - không gắn media nào → không lỗi (media tùy chọn §5.2)
+      ---
+      duration_ms: 0.453
+      ...
+    # Subtest: media thiếu source (rỗng/khoảng trắng) → media_rights_missing
+    ok 3 - media thiếu source (rỗng/khoảng trắng) → media_rights_missing
+      ---
+      duration_ms: 0.5752
+      ...
+    # Subtest: media thiếu author (rỗng/khoảng trắng) → media_rights_missing
+    ok 4 - media thiếu author (rỗng/khoảng trắng) → media_rights_missing
+      ---
+      duration_ms: 0.2108
+      ...
+    # Subtest: media thiếu license (rỗng/khoảng trắng) → media_rights_missing
+    ok 5 - media thiếu license (rỗng/khoảng trắng) → media_rights_missing
+      ---
+      duration_ms: 0.2013
+      ...
+    # Subtest: báo rights thiếu cho từng slot
+    ok 6 - báo rights thiếu cho từng slot
+      ---
+      duration_ms: 0.427
+      ...
+    # Subtest: có ảnh, thiếu altText.en → image_alt_text_missing
+    ok 7 - có ảnh, thiếu altText.en → image_alt_text_missing
+      ---
+      duration_ms: 0.2331
+      ...
+    # Subtest: altText chuỗi thường (chỉ vi) → thiếu en
+    ok 8 - altText chuỗi thường (chỉ vi) → thiếu en
+      ---
+      duration_ms: 0.2305
+      ...
+    # Subtest: không có ảnh → không yêu cầu alt text
+    ok 9 - không có ảnh → không yêu cầu alt text
+      ---
+      duration_ms: 0.1864
+      ...
+    # Subtest: có audio vi, thiếu transcript vi → audio_transcript_missing
+    ok 10 - có audio vi, thiếu transcript vi → audio_transcript_missing
+      ---
+      duration_ms: 0.2106
+      ...
+    # Subtest: transcript chuỗi thường được hiểu là vi → audio en thiếu transcript
+    ok 11 - transcript chuỗi thường được hiểu là vi → audio en thiếu transcript
+      ---
+      duration_ms: 0.2335
+      ...
+    # Subtest: có audio en, thiếu phụ đề en → audio_subtitle_missing
+    ok 12 - có audio en, thiếu phụ đề en → audio_subtitle_missing
+      ---
+      duration_ms: 0.1978
+      ...
+    # Subtest: phụ đề vi không có audio vi → subtitle_without_audio
+    ok 13 - phụ đề vi không có audio vi → subtitle_without_audio
+      ---
+      duration_ms: 0.1863
+      ...
+    # Subtest: chỉ có audio vi (+ phụ đề + transcript vi) → hợp lệ, không bắt audio en
+    ok 14 - chỉ có audio vi (+ phụ đề + transcript vi) → hợp lệ, không bắt audio en
+      ---
+      duration_ms: 0.1964
+      ...
+    # Subtest: transcript 20001 ký tự → transcript_too_long; đúng 20000 → hợp lệ
+    ok 15 - transcript 20001 ký tự → transcript_too_long; đúng 20000 → hợp lệ
+      ---
+      duration_ms: 18.2185
+      ...
+    1..15
+ok 27 - checkMediaForPublish
+  ---
+  duration_ms: 25.6623
+  type: 'suite'
+  ...
+# Subtest: RevisionPublishGate
+    # Subtest: revision hợp lệ → không ném lỗi, kiểm đủ 6 tham chiếu trong transaction
+    ok 1 - revision hợp lệ → không ném lỗi, kiểm đủ 6 tham chiếu trong transaction
+      ---
+      duration_ms: 2.1608
+      ...
+    # Subtest: gom lỗi nội dung + tham chiếu + luật media vào một 422
+    ok 2 - gom lỗi nội dung + tham chiếu + luật media vào một 422
+      ---
+      duration_ms: 3.421
+      ...
+    # Subtest: slot lỗi tham chiếu không bị báo thêm lỗi rights
+    ok 3 - slot lỗi tham chiếu không bị báo thêm lỗi rights
+      ---
+      duration_ms: 1.1092
+      ...
+    1..3
+ok 28 - RevisionPublishGate
+  ---
+  duration_ms: 7.456
+  type: 'suite'
+  ...
+1..28
+# tests 621
+# suites 59
+# pass 621
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 60654.2386
+# start of coverage report
+# file | line % | branch % | funcs % | uncovered lines
+# src\common\constants\permissions.constant.ts | 100.00 | 100.00 | 100.00 | 
+# src\common\database\transaction.manager.ts | 78.26 | 60.00 | 100.00 | 11, 12, 14, 15, 16
+# src\common\decorators\current-user.decorator.ts | 92.86 | 100.00 | 0.00 | 10
+# src\common\decorators\permissions.decorator.ts | 100.00 | 100.00 | 100.00 | 
+# src\common\decorators\public.decorator.ts | 100.00 | 100.00 | 100.00 | 
+# src\common\dto\api-response.ts | 81.82 | 100.00 | 50.00 | 10, 11, 12, 13, 14, 15
+# src\common\dto\bulk-ids.dto.ts | 92.31 | 50.00 | 100.00 | 9
+# src\common\dto\deleted-filter.dto.ts | 85.71 | 63.64 | 100.00 | 5, 6, 9, 10, 11
+# src\common\dto\pagination-query.dto.ts | 62.50 | 63.64 | 100.00 | 5, 17, 18, 19, 20, 21, 22, 23, 24, 25, 28, 29
+# src\common\enums\role.enum.ts | 100.00 | 100.00 | 100.00 | 
+# src\common\exceptions\deletion-blocked.ts | 100.00 | 100.00 | 100.00 | 
+# src\common\exceptions\validation.exception.ts | 100.00 | 100.00 | 100.00 | 
+# src\common\filters\all-exceptions.filter.ts | 86.67 | 52.94 | 100.00 | 10, 11, 15, 16, 17, 18, 19, 49, 59, 60
+# src\common\interceptors\response.interceptor.ts | 93.94 | 71.43 | 100.00 | 10, 11
+# src\common\repository\base.repository.ts | 72.62 | 83.33 | 50.00 | 21, 22, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 51, 52, 53, 54, 56, 58, 59, 60
+# src\common\types\paginated.type.ts | 100.00 | 100.00 | 100.00 | 
+# src\modules\audit\decorators\audit.decorator.ts | 100.00 | 100.00 | 100.00 | 
+# src\modules\audit\entities\audit-log.entity.ts | 88.52 | 75.00 | 100.00 | 17, 18, 19, 20, 21, 22, 25
+# src\modules\auth\entities\refresh-session.entity.ts | 90.63 | 76.92 | 100.00 | 12, 16, 17, 18, 19, 20
+# src\modules\content-reports\entities\content-report.entity.ts | 90.28 | 80.00 | 100.00 | 16, 17, 18, 19, 20, 21, 22
+# src\modules\exhibits\constants\revision-media-slots.ts | 89.19 | 100.00 | 50.00 | 28, 29, 30, 31
+# src\modules\exhibits\controllers\admin-exhibits.controller.ts | 98.85 | 91.30 | 84.21 | 18, 88
+# src\modules\exhibits\controllers\exhibits.controller.ts | 76.67 | 85.71 | 70.00 | 7, 8, 9, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60
+# src\modules\exhibits\dto\bilingual-text.dto.ts | 87.88 | 77.27 | 72.73 | 6, 7, 11, 12, 13, 14, 15, 48
+# src\modules\exhibits\dto\create-exhibit.dto.ts | 95.76 | 86.96 | 100.00 | 11, 12, 13, 14, 19, 20, 21, 166, 167, 168, 190, 191
+# src\modules\exhibits\dto\exhibit-response.dto.ts | 100.00 | 100.00 | 100.00 | 
+# src\modules\exhibits\dto\hotspot.dto.ts | 92.54 | 69.23 | 100.00 | 19, 20, 21, 22, 23
+# src\modules\exhibits\dto\list-exhibits-query.dto.ts | 78.13 | 55.56 | 100.00 | 9, 10, 11, 12, 13, 16, 17
+# src\modules\exhibits\dto\public-search-query.dto.ts | 88.24 | 50.00 | 100.00 | 8, 9
+# src\modules\exhibits\dto\publish-validation.dto.ts | 94.71 | 52.70 | 80.00 | 8, 9, 11, 89, 90, 94, 98, 183, 184, 195, 196
+# src\modules\exhibits\dto\reorder-exhibits.dto.ts | 93.33 | 50.00 | 100.00 | 11
+# src\modules\exhibits\dto\update-exhibit.dto.ts | 86.38 | 60.00 | 80.00 | 11, 12, 13, 14, 18, 19, 20, 21, 23, 24, 90, 91, 92, 93, 94, 100, 101, 102, 103, 104, 105, 120, 121, 122, 123, 128, 129, 130, 163
+# src\modules\exhibits\dto\vector3.dto.ts | 85.42 | 73.33 | 100.00 | 13, 14, 15, 16, 17, 18, 19
+# src\modules\exhibits\entities\exhibit-revision.entity.ts | 95.30 | 86.96 | 100.00 | 18, 19, 20, 21, 22, 23, 26
+# src\modules\exhibits\entities\exhibit.entity.ts | 91.03 | 83.33 | 100.00 | 16, 17, 18, 19, 20, 21, 22
+# src\modules\exhibits\entities\hotspot.entity.ts | 80.00 | 75.00 | 100.00 | 10, 11, 18, 19, 20, 21, 22, 24, 25
+# src\modules\exhibits\mappers\admin-revision.mapper.ts | 100.00 | 95.83 | 100.00 | 
+# src\modules\exhibits\mappers\public-exhibit.mapper.ts | 100.00 | 86.08 | 100.00 | 
+# src\modules\exhibits\repositories\exhibits.repository.ts | 90.13 | 92.00 | 80.95 | 7, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 258, 259, 260, 261, 280, 332, 333, 334, 335, 336, 337, 338, 407, 408, 413, 414, 415, 416, 419, 420, 421, 422, 423, 435, 436, 437, 438, 439, 440, 445, 446
+# src\modules\exhibits\services\exhibits.service.ts | 92.16 | 89.47 | 88.89 | 11, 100, 101, 102, 103, 104, 105, 106, 130, 477, 601, 602, 603, 604, 605, 606, 607, 608, 609, 610, 611, 612, 613, 614, 615, 616, 617, 618, 619, 620, 621, 622, 623, 624, 625, 626, 627, 628, 629, 630, 631, 632, 633, 634, 635, 636, 637, 638, 639, 640, 641, 779, 789, 790, 793, 794, 795, 796, 800, 801, 802, 803, 804
+# src\modules\exhibits\services\public-models.service.ts | 78.57 | 75.00 | 100.00 | 4, 5, 9
+# src\modules\exhibits\services\revision-publish.gate.ts | 99.43 | 84.00 | 100.00 | 7
+# src\modules\exhibits\tests\admin-exhibits-controller.spec.ts | 100.00 | 99.65 | 100.00 | 
+# src\modules\exhibits\tests\exhibit-deletion-policy.spec.ts | 95.07 | 91.92 | 90.41 | 4, 5, 6, 7, 14, 15, 16, 19, 20, 21
+# src\modules\exhibits\tests\exhibit-mappers.spec.ts | 99.16 | 97.30 | 68.29 | 81, 82
+# src\modules\exhibits\tests\exhibits-dto.spec.ts | 100.00 | 99.40 | 99.40 | 
+# src\modules\exhibits\tests\exhibits-repository.spec.ts | 100.00 | 98.94 | 98.14 | 
+# src\modules\exhibits\tests\exhibits-service.spec.ts | 99.42 | 98.83 | 99.18 | 156, 157, 158, 159, 160, 161, 245, 246, 249, 250, 279
+# src\modules\exhibits\tests\public-models.spec.ts | 99.37 | 97.50 | 93.75 | 143
+# src\modules\exhibits\tests\public-search-repository.spec.ts | 100.00 | 90.00 | 95.83 | 
+# src\modules\exhibits\tests\public-search-service.spec.ts | 100.00 | 95.00 | 100.00 | 
+# src\modules\exhibits\tests\public-search.contract.spec.ts | 100.00 | 83.33 | 100.00 | 
+# src\modules\exhibits\tests\revision-media.spec.ts | 100.00 | 97.22 | 100.00 | 
+# src\modules\exhibits\tests\revision-publish-gate.spec.ts | 100.00 | 97.62 | 100.00 | 
+# src\modules\exhibits\utils\bilingual.ts | 100.00 | 100.00 | 100.00 | 
+# src\modules\exhibits\utils\revision-media-patch.ts | 100.00 | 100.00 | 100.00 | 
+# src\modules\media\dto\public-model.dto.ts | 100.00 | 100.00 | 100.00 | 
+# src\modules\media\entities\media.entity.ts | 90.63 | 76.92 | 100.00 | 11, 12, 21, 22, 23, 24, 26, 27, 28
+# src\modules\media\inspection\crc32.ts | 76.19 | 100.00 | 0.00 | 17, 18, 19, 20, 21
+# src\modules\media\inspection\media-format.error.ts | 100.00 | 100.00 | 100.00 | 
+# src\modules\media\inspection\media-formats.ts | 100.00 | 100.00 | 100.00 | 
+# src\modules\media\inspection\media-signature.ts | 35.38 | 100.00 | 16.67 | 11, 12, 13, 14, 15, 16, 18, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62
+# src\modules\media\inspection\media-structure.ts | 100.00 | 100.00 | 100.00 | 
+# src\modules\media\inspection\validators\glb.validator.ts | 21.12 | 100.00 | 0.00 | 11, 12, 13, 16, 17, 18, 19, 20, 21, 26, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161
+# src\modules\media\inspection\validators\jpeg.validator.ts | 22.11 | 100.00 | 0.00 | 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95
+# src\modules\media\inspection\validators\mp3.validator.ts | 38.04 | 100.00 | 0.00 | 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 63, 64, 65, 66, 67, 68, 69, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92
+# src\modules\media\inspection\validators\png.validator.ts | 24.38 | 100.00 | 0.00 | 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160
+# src\modules\media\inspection\validators\vtt.validator.ts | 20.83 | 100.00 | 0.00 | 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27, 28, 29, 30, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96
+# src\modules\media\inspection\validators\webp.validator.ts | 25.00 | 100.00 | 0.00 | 9, 10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 48, 49, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92
+# src\modules\media\repositories\media.repository.ts | 41.14 | 55.56 | 26.67 | 7, 39, 40, 41, 42, 43, 44, 48, 51, 52, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 98, 99, 100, 101, 102, 103, 104, 105, 106, 108, 112, 113, 114, 115, 116, 117, 118, 119, 127, 128, 129, 130, 131, 132, 133, 134, 135, 139, 140, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 174, 175
+# src\modules\media\services\media-inspection.service.ts | 73.53 | 33.33 | 66.67 | 6, 7, 8, 9, 30, 31, 32, 33, 34
+# src\modules\media\services\media-reference.validator.ts | 73.03 | 62.50 | 80.00 | 7, 8, 9, 12, 13, 14, 64, 65, 66, 67, 68, 69, 70, 71, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89
+# src\modules\media\services\media-storage.service.ts | 75.76 | 50.00 | 83.33 | 9, 10, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66
+# src\modules\media\services\media-url.service.ts | 86.11 | 62.50 | 90.00 | 4, 10, 11, 12, 13, 14, 15, 70, 71, 72
+# src\modules\media\services\model-storage.service.ts | 94.44 | 85.37 | 100.00 | 3, 9, 10
+# src\modules\media\storage\local-storage.driver.ts | 27.87 | 50.00 | 0.00 | 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57
+# src\modules\media\storage\media-storage-driver.ts | 100.00 | 100.00 | 100.00 | 
+# src\modules\media\tests\media-test-doubles.ts | 42.15 | 37.50 | 28.57 | 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 72, 73, 74, 81, 82, 83, 84, 85, 86, 87, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 121
+# src\modules\moderation\repositories\moderation.repository.ts | 35.44 | 50.00 | 80.00 | 5, 6, 10, 11, 12, 13, 14, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79
+# src\modules\moderation\services\moderation.service.ts | 46.25 | 46.67 | 31.58 | 11, 12, 13, 14, 56, 57, 58, 61, 62, 63, 64, 65, 68, 69, 70, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 144, 145, 146, 147, 148, 149, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 186, 187, 188, 192, 193, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 220, 221, 222, 223, 224, 225, 226, 227, 229, 230, 231, 232, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 247, 248, 249, 250, 251, 252, 253
+# src\modules\partner-api-keys\entities\partner-api-key.entity.ts | 95.24 | 70.00 | 75.00 | 9, 10, 11
+# src\modules\roles\entities\permission.entity.ts | 76.47 | 83.33 | 100.00 | 6, 13, 14, 15
+# src\modules\roles\entities\role-permission.entity.ts | 70.83 | 78.57 | 100.00 | 6, 12, 13, 14, 15, 16, 17
+# src\modules\roles\entities\role.entity.ts | 86.67 | 78.57 | 100.00 | 4, 8, 9, 12
+# src\modules\rooms\entities\room.entity.ts | 90.00 | 76.92 | 100.00 | 11, 20, 21, 22, 23
+# src\modules\rooms\repositories\rooms.repository.ts | 47.37 | 55.56 | 30.00 | 7, 8, 9, 38, 39, 48, 49, 50, 51, 52, 53, 54, 55, 59, 60, 61, 62, 63, 64, 65, 67, 68, 69, 72, 73, 76, 77, 78, 79, 80, 81, 82, 83, 84, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 124, 125, 126, 131, 132, 140, 141, 144, 145, 146, 149, 150, 151, 152
+# src\modules\translations\entities\translation.entity.ts | 94.44 | 70.00 | 100.00 | 9, 10
+# src\modules\users\entities\user-role.entity.ts | 72.41 | 78.57 | 100.00 | 10, 11, 17, 18, 19, 20, 21, 22
+# src\modules\users\entities\user.entity.ts | 92.59 | 80.00 | 100.00 | 20, 21, 23, 24
+# all files | 89.60 | 89.03 | 90.49 |
+# end of coverage report

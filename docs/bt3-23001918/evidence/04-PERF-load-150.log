@@ -1,0 +1,15 @@
+================ VT-077 LOAD TEST: GET /rooms/search ================
+Concurrency       : 150 tác vụ đồng thời/vòng
+Rounds            : 20  (tổng 3000 request)
+Simulated DB delay: 25 ms (± jitter)  [KHÔNG phải Postgres thật]
+Errors (non-200)  : 0
+Wall time         : 2355 ms   | throughput ~ 1273.9 req/s
+---------------------------------------------------------------------
+Latency p50       : 85 ms
+Latency p95       : 152 ms    (mục tiêu ≤ 4000 ms)
+Latency p99       : 309 ms
+Latency max       : 330 ms
+---------------------------------------------------------------------
+KẾT QUẢ: p95 = 152 ms  →  ĐẠT mục tiêu 4.0 s
+Giới hạn: service/DB mô phỏng bằng độ trễ; p95 production cần đo lại với Postgres thật.
+=====================================================================

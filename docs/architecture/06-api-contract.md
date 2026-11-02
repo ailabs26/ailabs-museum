@@ -231,13 +231,15 @@ GET    /health/ready    # readiness: SELECT 1 (timeout 2s) → 200 { status: "ok
 
 ### Public (client — chỉ đọc nội dung published)
 ```
-GET    /public/rooms/:slug                # phòng + danh sách hiện vật published
-GET    /public/exhibits/:id               # chi tiết 1 hiện vật published
-GET    /public/rooms/:slug/tour           # thứ tự displayOrder cho guided tour
+GET    /rooms                             # danh sách phòng công khai (active)
+GET    /rooms/search                      # tìm kiếm hiện vật công khai (?q=&roomId=&page=&pageSize=)
+GET    /rooms/:slug                       # phòng + danh sách hiện vật published
+GET    /rooms/:slug/exhibits/:id/model    # tệp GLB công khai của hiện vật
 POST   /public/reports                    # gửi báo cáo nội dung sai (rate limit)
 ```
 
 > Public cache TTL ≤ 60s; không bao giờ trả revision `draft/pending`.
+> `GET /api/rooms/search`: chỉ trả hiện vật `APPROVED` + `visible` thuộc phòng `ACTIVE`; sắp xếp cố định `roomId, displayOrder, id` (`sort` bị bỏ qua); chi tiết xem [be/public-exhibit-search.md](be/public-exhibit-search.md).
 
 **Đã triển khai (Task 9):** `GET /api/rooms` và `GET /api/rooms/:slug` (`ExhibitsController`) là nguồn public chuẩn cho hiện vật; `Cache-Control: no-cache` (BR-22, AC-51) thay cho TTL. File media: `GET /media/uploads/<dir>/<uuid>.<ext>` (ngoài prefix `/api`) — chỉ phục vụ file được revision public hiện hành tham chiếu hoặc URL ký (Preview CMS); còn lại 404. Chi tiết: `docs/tasks/be/cms-media-attach.md`.
 

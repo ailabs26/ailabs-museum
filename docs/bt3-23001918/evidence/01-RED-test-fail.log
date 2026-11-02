@@ -1,0 +1,362 @@
+TAP version 13
+# Subtest: VT-077 ExhibitsRepository.searchPublicExhibits
+    # Subtest: AC-4 (invariant): sắp xếp displayOrder ASC + addOrderBy id ASC (tiebreaker duy nhất)
+    not ok 1 - AC-4 (invariant): sắp xếp displayOrder ASC + addOrderBy id ASC (tiebreaker duy nhất)
+      ---
+      duration_ms: 18.3289
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-repository.spec.ts:46:24'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly deep-equal:
+        + actual - expected
+        
+        + undefined
+        - [
+        -   'exhibit.displayOrder',
+        -   'ASC'
+        - ]
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+        0: 'exhibit.displayOrder'
+        1: 'ASC'
+      operator: 'deepStrictEqual'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search-repository.spec.ts:66:12)
+        async Test.run (node:internal/test_runner/test:632:9)
+        async Promise.all (index 0)
+        async Suite.run (node:internal/test_runner/test:948:7)
+        async startSubtest (node:internal/test_runner/harness:214:3)
+      ...
+    # Subtest: AC-5/AC-1: chỉ lấy bản published + visible, chưa xóa/lưu trữ
+    not ok 2 - AC-5/AC-1: chỉ lấy bản published + visible, chưa xóa/lưu trữ
+      ---
+      duration_ms: 1.1939
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-repository.spec.ts:52:24'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input did not match the regular expression /isDeleted/. Input:
+        
+        ''
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: ''
+      operator: 'match'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search-repository.spec.ts:74:12)
+        async Test.run (node:internal/test_runner/test:632:9)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+      ...
+    # Subtest: AC-3: phân trang skip=(page-1)*pageSize, take=pageSize; chặn pageSize>100
+    not ok 3 - AC-3: phân trang skip=(page-1)*pageSize, take=pageSize; chặn pageSize>100
+      ---
+      duration_ms: 0.6104
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-repository.spec.ts:65:24'
+      failureType: 'testCodeFailure'
+      error: 'pageSize phải bị kẹp xuống 100'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 100
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search-repository.spec.ts:87:12)
+        async Test.run (node:internal/test_runner/test:632:9)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+      ...
+    # Subtest: AC-2: lọc roomId + tìm q bằng ILIKE (param search = %kw%)
+    not ok 4 - AC-2: lọc roomId + tìm q bằng ILIKE (param search = %kw%)
+      ---
+      duration_ms: 0.9228
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-repository.spec.ts:71:24'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        + actual - expected
+        
+        + undefined
+        - 'room-uuid'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 'room-uuid'
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search-repository.spec.ts:94:12)
+        async Test.run (node:internal/test_runner/test:632:9)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+      ...
+    # Subtest: AC-4: sắp lại kết quả find theo đúng thứ tự id của QueryBuilder (ổn định qua 2 bước)
+    not ok 5 - AC-4: sắp lại kết quả find theo đúng thứ tự id của QueryBuilder (ổn định qua 2 bước)
+      ---
+      duration_ms: 1.9204
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-repository.spec.ts:77:24'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly deep-equal:
+        + actual - expected
+        
+        + []
+        - [
+        -   'aaa',
+        -   'bbb',
+        -   'ccc'
+        - ]
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+        0: 'aaa'
+        1: 'bbb'
+        2: 'ccc'
+      actual:
+      operator: 'deepStrictEqual'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search-repository.spec.ts:102:12)
+        async Test.run (node:internal/test_runner/test:632:9)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+      ...
+    1..5
+not ok 1 - VT-077 ExhibitsRepository.searchPublicExhibits
+  ---
+  duration_ms: 27.1602
+  type: 'suite'
+  location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-repository.spec.ts:45:26'
+  failureType: 'subtestsFailed'
+  error: '5 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\node_modules\\ts-node\\src\\index.ts:859
+#     return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+#            ^
+# TSError: ⨯ Unable to compile TypeScript:
+# src/modules/exhibits/tests/public-search-service.spec.ts(114,18): error TS2352: Conversion of type 'PublicExhibitDto' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+#   Index signature for type 'string' is missing in type 'PublicExhibitDto'.
+#     at createTSError (E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\node_modules\\ts-node\\src\\index.ts:859:12)
+#     at reportTSError (E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\node_modules\\ts-node\\src\\index.ts:863:19)
+#     at getOutput (E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\node_modules\\ts-node\\src\\index.ts:1077:36)
+#     at Object.compile (E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\node_modules\\ts-node\\src\\index.ts:1433:41)
+#     at Module.m._compile (E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\node_modules\\ts-node\\src\\index.ts:1617:30)
+#     at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+#     at Object.require.extensions.<computed> [as .ts] (E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\node_modules\\ts-node\\src\\index.ts:1621:12)
+#     at Module.load (node:internal/modules/cjs/loader:1203:32)
+#     at Function.Module._load (node:internal/modules/cjs/loader:1019:12)
+#     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12) {
+#   diagnosticCodes: [ 2352 ]
+# }
+# Subtest: E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-service.spec.ts
+not ok 2 - E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-service.spec.ts
+  ---
+  duration_ms: 13540.9909
+  location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-service.spec.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# [31m[Nest] 12492  - [39m10/29/2026, 11:04:33 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mthis.service.roomWithExhibits is not a function[39m
+# TypeError: this.service.roomWithExhibits is not a function
+#     at ExhibitsController.getRoom (E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\controllers\\exhibits.controller.ts:31:25)
+#     at E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:38:29
+#     at processTicksAndRejections (node:internal/process/task_queues:95:5)
+# [31m[Nest] 12492  - [39m10/29/2026, 11:04:33 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mGET /rooms/search?q=tr%E1%BB%91ng&page=1&pageSize=20 -> 500: this.service.roomWithExhibits is not a function[39m
+# Subtest: VT-077 GET /rooms/search — contract
+    # Subtest: TC-09: response khớp envelope ApiResponse + meta
+    not ok 1 - TC-09: response khớp envelope ApiResponse + meta
+      ---
+      duration_ms: 39.2447
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search.contract.spec.ts:73:24'
+      failureType: 'testCodeFailure'
+      error: 'expected 200 "OK", got 500 "Internal Server Error"'
+      code: 'ERR_TEST_FAILURE'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search.contract.spec.ts:79:100)
+        Test.runInAsyncScope (node:async_hooks:203:9)
+        Test.run (node:internal/test_runner/test:631:25)
+        async Promise.all (index 0)
+        async Suite.run (node:internal/test_runner/test:948:7)
+        async startSubtest (node:internal/test_runner/harness:214:3)
+        Test._assertStatus (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:252:14)
+        E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:308:13
+        Test._assertFunction (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:285:13)
+        Test.assert (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:164:23)
+        Server.localAssert (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:120:14)
+        Object.onceWrapper (node:events:631:28)
+        Server.emit (node:events:517:28)
+        Server.emit (node:domain:489:12)
+        emitCloseNT (node:net:2221:8)
+        processTicksAndRejections (node:internal/process/task_queues:81:21)
+      ...
+# [31m[Nest] 12492  - [39m10/29/2026, 11:04:33 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mthis.service.roomWithExhibits is not a function[39m
+# TypeError: this.service.roomWithExhibits is not a function
+#     at ExhibitsController.getRoom (E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\controllers\\exhibits.controller.ts:31:25)
+#     at E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:38:29
+#     at processTicksAndRejections (node:internal/process/task_queues:95:5)
+# [31m[Nest] 12492  - [39m10/29/2026, 11:04:33 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mGET /rooms/search?q=tr%E1%BB%91ng -> 500: this.service.roomWithExhibits is not a function[39m
+    # Subtest: TC-10: item chỉ chứa field public, không rò rỉ entity nội bộ
+    not ok 2 - TC-10: item chỉ chứa field public, không rò rỉ entity nội bộ
+      ---
+      duration_ms: 7.8229
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search.contract.spec.ts:81:24'
+      failureType: 'testCodeFailure'
+      error: 'expected 200 "OK", got 500 "Internal Server Error"'
+      code: 'ERR_TEST_FAILURE'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search.contract.spec.ts:87:81)
+        Test.runInAsyncScope (node:async_hooks:203:9)
+        Test.run (node:internal/test_runner/test:631:25)
+        processTicksAndRejections (node:internal/process/task_queues:95:5)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+        Test._assertStatus (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:252:14)
+        E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:308:13
+        Test._assertFunction (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:285:13)
+        Test.assert (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:164:23)
+        Server.localAssert (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:120:14)
+        Object.onceWrapper (node:events:631:28)
+        Server.emit (node:events:517:28)
+        Server.emit (node:domain:489:12)
+        emitCloseNT (node:net:2221:8)
+        processTicksAndRejections (node:internal/process/task_queues:81:21)
+      ...
+# [31m[Nest] 12492  - [39m10/29/2026, 11:04:33 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mthis.service.roomWithExhibits is not a function[39m
+# TypeError: this.service.roomWithExhibits is not a function
+#     at ExhibitsController.getRoom (E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\controllers\\exhibits.controller.ts:31:25)
+#     at E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:38:29
+#     at processTicksAndRejections (node:internal/process/task_queues:95:5)
+# [31m[Nest] 12492  - [39m10/29/2026, 11:04:33 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mGET /rooms/search?pageSize=101 -> 500: this.service.roomWithExhibits is not a function[39m
+    # Subtest: TC-05 (negative): pageSize=101 → 400, service không bị gọi
+    not ok 3 - TC-05 (negative): pageSize=101 → 400, service không bị gọi
+      ---
+      duration_ms: 6.4458
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search.contract.spec.ts:91:24'
+      failureType: 'testCodeFailure'
+      error: 'expected 400 "Bad Request", got 500 "Internal Server Error"'
+      code: 'ERR_TEST_FAILURE'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search.contract.spec.ts:99:86)
+        Test.runInAsyncScope (node:async_hooks:203:9)
+        Test.run (node:internal/test_runner/test:631:25)
+        processTicksAndRejections (node:internal/process/task_queues:95:5)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+        Test._assertStatus (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:252:14)
+        E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:308:13
+        Test._assertFunction (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:285:13)
+        Test.assert (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:164:23)
+        Server.localAssert (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:120:14)
+        Object.onceWrapper (node:events:631:28)
+        Server.emit (node:events:517:28)
+        Server.emit (node:domain:489:12)
+        emitCloseNT (node:net:2221:8)
+        processTicksAndRejections (node:internal/process/task_queues:81:21)
+      ...
+# [31m[Nest] 12492  - [39m10/29/2026, 11:04:33 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mthis.service.roomWithExhibits is not a function[39m
+# TypeError: this.service.roomWithExhibits is not a function
+#     at ExhibitsController.getRoom (E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\controllers\\exhibits.controller.ts:31:25)
+#     at E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:38:29
+#     at processTicksAndRejections (node:internal/process/task_queues:95:5)
+# [31m[Nest] 12492  - [39m10/29/2026, 11:04:33 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mGET /rooms/search?page=0 -> 500: this.service.roomWithExhibits is not a function[39m
+    # Subtest: TC (negative): page=0 → 400
+    not ok 4 - TC (negative): page=0 → 400
+      ---
+      duration_ms: 5.9016
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search.contract.spec.ts:97:24'
+      failureType: 'testCodeFailure'
+      error: 'expected 400 "Bad Request", got 500 "Internal Server Error"'
+      code: 'ERR_TEST_FAILURE'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search.contract.spec.ts:105:68)
+        Test.runInAsyncScope (node:async_hooks:203:9)
+        Test.run (node:internal/test_runner/test:631:25)
+        processTicksAndRejections (node:internal/process/task_queues:95:5)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+        Test._assertStatus (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:252:14)
+        E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:308:13
+        Test._assertFunction (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:285:13)
+        Test.assert (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:164:23)
+        Server.localAssert (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:120:14)
+        Object.onceWrapper (node:events:631:28)
+        Server.emit (node:events:517:28)
+        Server.emit (node:domain:489:12)
+        emitCloseNT (node:net:2221:8)
+        processTicksAndRejections (node:internal/process/task_queues:81:21)
+      ...
+# [31m[Nest] 12492  - [39m10/29/2026, 11:04:33 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mthis.service.roomWithExhibits is not a function[39m
+# TypeError: this.service.roomWithExhibits is not a function
+#     at ExhibitsController.getRoom (E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\controllers\\exhibits.controller.ts:31:25)
+#     at E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:38:29
+#     at processTicksAndRejections (node:internal/process/task_queues:95:5)
+# [31m[Nest] 12492  - [39m10/29/2026, 11:04:33 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mGET /rooms/search?roomId=not-a-uuid -> 500: this.service.roomWithExhibits is not a function[39m
+    # Subtest: TC-04 (negative): roomId sai định dạng UUID → 400 (không 500)
+    not ok 5 - TC-04 (negative): roomId sai định dạng UUID → 400 (không 500)
+      ---
+      duration_ms: 6.2943
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search.contract.spec.ts:100:24'
+      failureType: 'testCodeFailure'
+      error: 'expected 400 "Bad Request", got 500 "Internal Server Error"'
+      code: 'ERR_TEST_FAILURE'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search.contract.spec.ts:109:91)
+        Test.runInAsyncScope (node:async_hooks:203:9)
+        Test.run (node:internal/test_runner/test:631:25)
+        processTicksAndRejections (node:internal/process/task_queues:95:5)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+        Test._assertStatus (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:252:14)
+        E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:308:13
+        Test._assertFunction (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:285:13)
+        Test.assert (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:164:23)
+        Server.localAssert (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:120:14)
+        Object.onceWrapper (node:events:631:28)
+        Server.emit (node:events:517:28)
+        Server.emit (node:domain:489:12)
+        emitCloseNT (node:net:2221:8)
+        processTicksAndRejections (node:internal/process/task_queues:81:21)
+      ...
+# [31m[Nest] 12492  - [39m10/29/2026, 11:04:33 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mthis.service.roomWithExhibits is not a function[39m
+# TypeError: this.service.roomWithExhibits is not a function
+#     at ExhibitsController.getRoom (E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\controllers\\exhibits.controller.ts:31:25)
+#     at E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:38:29
+#     at processTicksAndRejections (node:internal/process/task_queues:95:5)
+# [31m[Nest] 12492  - [39m10/29/2026, 11:04:33 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mGET /rooms/search -> 500: this.service.roomWithExhibits is not a function[39m
+    # Subtest: AC-5: route /rooms/search KHÔNG nuốt route cũ /rooms/:slug
+    not ok 6 - AC-5: route /rooms/search KHÔNG nuốt route cũ /rooms/:slug
+      ---
+      duration_ms: 11.0141
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search.contract.spec.ts:104:24'
+      failureType: 'testCodeFailure'
+      error: 'expected 200 "OK", got 500 "Internal Server Error"'
+      code: 'ERR_TEST_FAILURE'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search.contract.spec.ts:115:73)
+        Test.runInAsyncScope (node:async_hooks:203:9)
+        Test.run (node:internal/test_runner/test:631:25)
+        processTicksAndRejections (node:internal/process/task_queues:95:5)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+        Test._assertStatus (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:252:14)
+        E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:308:13
+        Test._assertFunction (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:285:13)
+        Test.assert (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:164:23)
+        Server.localAssert (E:\Software Engineering\Project\ailabs-museum\back-end\node_modules\supertest\lib\test.js:120:14)
+        Object.onceWrapper (node:events:631:28)
+        Server.emit (node:events:517:28)
+        Server.emit (node:domain:489:12)
+        emitCloseNT (node:net:2221:8)
+        processTicksAndRejections (node:internal/process/task_queues:81:21)
+      ...
+    1..6
+not ok 3 - VT-077 GET /rooms/search — contract
+  ---
+  duration_ms: 274.372
+  type: 'suite'
+  location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search.contract.spec.ts:47:26'
+  failureType: 'subtestsFailed'
+  error: '6 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..3
+# tests 12
+# suites 2
+# pass 0
+# fail 12
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18550.015
