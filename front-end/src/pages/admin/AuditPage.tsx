@@ -14,12 +14,14 @@ import {
   TextInput,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconLayoutList, IconSearch, IconTable } from '@tabler/icons-react';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { IconDownload, IconLayoutList, IconSearch, IconTable } from '@tabler/icons-react';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import { Column, DataTable } from '@/shared/components/data';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { AuditTimeline } from '@/components/cms/AuditTimeline';
-import { AuditRow, actorLabel, auditService } from '@/services/audit.service';
+import { AuditRow, ExportAuditParams, actorLabel, auditService } from '@/services/audit.service';
+import { saveBlob } from '@/helpers/saveBlob';
+import { notify } from '@/shared/components/feedback/notify';
 
 const RESOURCE_OPTIONS = [
   { value: 'user', label: 'Người dùng' },
@@ -57,19 +59,25 @@ export function AuditPage() {
   const [detail, setDetail] = useState<AuditRow | null>(null);
   const [view, setView] = useState<'table' | 'timeline'>('table');
 
+  // Cùng một bộ lọc cho danh sách và file CSV xuất ra.
+  const filters: ExportAuditParams = {
+    action: action || undefined,
+    actorId: actorId.trim() || undefined,
+    resourceType: resourceType || undefined,
+    from: range[0]?.toISOString(),
+    to: range[1]?.toISOString(),
+  };
+
   const query = useQuery({
-    queryKey: ['audit', page, action, actorId, resourceType, range[0]?.toISOString(), range[1]?.toISOString()],
-    queryFn: () =>
-      auditService.list({
-        page,
-        pageSize: 20,
-        action: action || undefined,
-        actorId: actorId.trim() || undefined,
-        resourceType: resourceType || undefined,
-        from: range[0]?.toISOString(),
-        to: range[1]?.toISOString(),
-      }),
+    queryKey: ['audit', page, filters],
+    queryFn: () => auditService.list({ page, pageSize: 20, ...filters }),
     placeholderData: keepPreviousData,
+  });
+
+  const exportCsv = useMutation({
+    mutationFn: () => auditService.exportCsv(filters),
+    onSuccess: ({ blob, filename }) => saveBlob(blob, filename),
+    onError: (error: Error) => notify.error(error.message),
   });
 
   const columns: Column<AuditRow>[] = [
@@ -120,6 +128,8 @@ export function AuditPage() {
               ]} />
             <Button variant="default" loading={query.isFetching} disabled={query.isFetching}
               onClick={() => void query.refetch()}>Làm mới</Button>
+            <Button variant="default" leftSection={<IconDownload size={16} />} loading={exportCsv.isPending}
+              onClick={() => exportCsv.mutate()}>Xuất CSV</Button>
           </Group>
         }
       />
