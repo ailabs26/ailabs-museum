@@ -46,6 +46,20 @@ client.interceptors.request.use((config: SessionRequestConfig) => {
 
 // Refresh single-flight: nhiều request 401 cùng lúc chỉ gọi /auth/refresh một lần
 let refreshing: Promise<string> | null = null;
+
+/** Tên Web Lock dùng chung mọi tab cùng origin cho /auth/refresh. */
+export const REFRESH_LOCK_NAME = 'aura-auth-refresh';
+
+/**
+ * Refresh cookie dùng chung mọi tab, access token thì riêng từng tab. Hai tab refresh cùng lúc sẽ gửi
+ * cùng một token → request đến sau bị back-end coi là tái dùng và thu hồi cả phiên (issue #141).
+ * Khóa Web Lock xếp hàng các tab: tab sau chỉ gửi khi tab trước đã nhận cookie mới. Trình duyệt
+ * không có Web Locks thì chạy thẳng (back-end còn ân hạn ngắn cho token vừa xoay vòng).
+ */
+function withRefreshLock<T>(work: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator === 'undefined' ? undefined : navigator.locks;
+  return locks ? locks.request(REFRESH_LOCK_NAME, work) : work();
+}
 const refreshEnvelopeSchema = z.object({
   success: z.literal(true),
   data: refreshResultSchema,
@@ -64,12 +78,11 @@ async function refreshAccessToken(): Promise<string> {
   if (!refreshing) {
     const version = tokenStore.getVersion();
 
-    refreshing = axios
-      .post<unknown>(
-        `${env.apiBaseUrl}/auth/refresh`,
-        {},
-        { withCredentials: true, timeout: 20000 },
-      )
+    refreshing = withRefreshLock(() => axios.post<unknown>(
+      `${env.apiBaseUrl}/auth/refresh`,
+      {},
+      { withCredentials: true, timeout: 20000 },
+    ))
       .then((res) => {
         const { data } = parseAuthResponse(refreshEnvelopeSchema, res.data);
 

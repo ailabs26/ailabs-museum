@@ -138,9 +138,17 @@ describe('Audit đăng nhập / đăng xuất (AuthController)', () => {
   });
 
   it('refresh thất bại vì lý do khác (thu hồi, hết hạn, user bị khóa, token lạ) → không ghi audit', async () => {
-    for (const reason of ['revoked', 'expired', 'inactive_user', 'unknown_token']) {
+    for (const reason of ['revoked', 'expired', 'inactive_user', 'unknown_token', 'rotated_recently']) {
       await refresh(`rt-${reason}`).expect(401);
     }
     assert.deepEqual(recorded, []);
+  });
+
+  it('refresh trong ân hạn (tab khác vừa xoay vòng) → 401 nhưng KHÔNG xóa cookie; lý do khác thì xóa', async () => {
+    const graced = await refresh('rt-rotated_recently').expect(401);
+    assert.equal(graced.body.message, 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn');
+    assert.equal(graced.headers['set-cookie'], undefined);
+    const revoked = await refresh('rt-revoked').expect(401);
+    assert.match(String(revoked.headers['set-cookie']), /aura_rt=;/);
   });
 });

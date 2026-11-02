@@ -135,7 +135,9 @@ export class AuthController {
       this.setRefreshCookie(res, result.refreshToken);
       return { accessToken: result.accessToken };
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
+      // Ân hạn: cookie trình duyệt đang giữ là token mới vừa cấp cho tab khác — xóa thì tab đó mất phiên.
+      const rotatedRecently = error instanceof RefreshFailedException && error.reason === 'rotated_recently';
+      if (error instanceof UnauthorizedException && !rotatedRecently) {
         this.clearRefreshCookie(res);
       }
       if (error instanceof RefreshFailedException && error.reason === 'reuse') {
