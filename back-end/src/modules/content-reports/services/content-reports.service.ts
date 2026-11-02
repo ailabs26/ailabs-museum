@@ -19,13 +19,17 @@ import {
 } from '../dto/report-response.dto';
 import { ResolveReportDto } from '../dto/resolve-report.dto';
 import { ContentReportsRepository } from '../repositories/content-reports.repository';
+import { NotificationsService } from '../../notifications/services/notifications.service';
 
 /** Trạng thái còn mở (chưa đóng) — cho phép chuyển tiếp. */
 const OPEN_STATES = [ContentReportStatus.OPEN, ContentReportStatus.IN_PROGRESS];
 
 @Injectable()
 export class ContentReportsService {
-  constructor(private readonly repo: ContentReportsRepository) {}
+  constructor(
+    private readonly repo: ContentReportsRepository,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /** Danh sách báo cáo cho Admin. */
   async list(query: ListReportsQueryDto): Promise<Paginated<ReportResponseDto>> {
@@ -53,7 +57,9 @@ export class ContentReportsService {
       message: dto.message,
       status: ContentReportStatus.OPEN,
     });
-    return this.toResponse(await this.repo.save(report));
+    const saved = await this.repo.save(report);
+    await this.notifications.reportCreated({ exhibitName: await this.repo.exhibitName(dto.exhibitId), message: dto.message });
+    return this.toResponse(saved);
   }
 
   /** Tiếp nhận báo cáo: open → in_progress, gán cho người xử lý. */

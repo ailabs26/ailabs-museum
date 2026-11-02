@@ -10,6 +10,7 @@ import {
 import { ContentReportsRepository } from '../repositories/content-reports.repository';
 import { ContentReportsService } from '../services/content-reports.service';
 import { PublicReportCategory } from '../dto/create-report.dto';
+import { notificationsStub } from '../../notifications/tests/notifications.stub';
 
 const ACTOR: AuthUser = {
   id: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
@@ -46,13 +47,14 @@ function fakeRepo(opts: {
     revisionBelongsToExhibit: () => Promise.resolve(opts.revisionBelongsToExhibit ?? true),
     create: (data: Partial<ContentReport>) => { opts.onCreate?.(data); return sampleReport(data); },
     save: (report: ContentReport) => Promise.resolve(report),
+    exhibitName: () => Promise.resolve('Trống đồng'),
   } as unknown as ContentReportsRepository;
 }
 
 describe('ContentReportsService.create', () => {
   it('ném 404 khi hiện vật không tồn tại', async () => {
     let createCalls = 0;
-    const svc = new ContentReportsService(fakeRepo({ exhibitExists: false, onCreate: () => { createCalls++; } }));
+    const svc = new ContentReportsService(fakeRepo({ exhibitExists: false, onCreate: () => { createCalls++; } }), notificationsStub());
     await assert.rejects(
       () => svc.create({ exhibitId: 'x', category: PublicReportCategory.OTHER, message: 'm' }),
       NotFoundException,
@@ -60,16 +62,18 @@ describe('ContentReportsService.create', () => {
     assert.equal(createCalls, 0);
   });
 
-  it('tạo báo cáo trạng thái open', async () => {
+  it('tạo báo cáo trạng thái open → báo người xử lý kèm tên hiện vật và nội dung', async () => {
     let created: Partial<ContentReport> | undefined;
-    const svc = new ContentReportsService(fakeRepo({ exhibitExists: true, onCreate: (data) => { created = data; } }));
+    const notifier = notificationsStub();
+    const svc = new ContentReportsService(fakeRepo({ exhibitExists: true, onCreate: (data) => { created = data; } }), notifier);
     const res = await svc.create({ exhibitId: 'e', reportedRevisionId: 'r', category: PublicReportCategory.WRONG_INFO, message: 'm' });
     assert.equal(res.status, ContentReportStatus.OPEN);
     assert.equal(created?.reportedRevisionId, 'r');
+    assert.deepEqual(notifier.calls, [{ method: 'reportCreated', input: { exhibitName: 'Trống đồng', message: 'm' } }]);
   });
 
   it('từ chối revision không thuộc hiện vật được báo cáo', async () => {
-    const svc = new ContentReportsService(fakeRepo({ revisionBelongsToExhibit: false }));
+    const svc = new ContentReportsService(fakeRepo({ revisionBelongsToExhibit: false }), notificationsStub());
     await assert.rejects(
       () => svc.create({ exhibitId: 'e', reportedRevisionId: 'r', category: PublicReportCategory.WRONG_INFO, message: 'm' }),
       BadRequestException,
@@ -81,12 +85,13 @@ describe('ContentReportsService.assign', () => {
   it('ném 409 khi báo cáo không ở trạng thái open', async () => {
     const svc = new ContentReportsService(
       fakeRepo({ report: sampleReport({ status: ContentReportStatus.RESOLVED }) }),
+      notificationsStub(),
     );
     await assert.rejects(() => svc.assign('c', ACTOR), ConflictException);
   });
 
   it('chuyển open → in_progress và gán actor', async () => {
-    const svc = new ContentReportsService(fakeRepo({ report: sampleReport() }));
+    const svc = new ContentReportsService(fakeRepo({ report: sampleReport() }), notificationsStub());
     const res = await svc.assign('c', ACTOR);
     assert.equal(res.status, ContentReportStatus.IN_PROGRESS);
     assert.equal(res.assignedTo, null); // relation chưa nạp trong mock, chỉ set assignedToId
@@ -97,6 +102,7 @@ describe('ContentReportsService.resolve/dismiss', () => {
   it('resolve thành công khi còn mở', async () => {
     const svc = new ContentReportsService(
       fakeRepo({ report: sampleReport({ status: ContentReportStatus.IN_PROGRESS }) }),
+      notificationsStub(),
     );
     const res = await svc.resolve('c', { resolution: 'Đã sửa' }, ACTOR);
     assert.equal(res.status, ContentReportStatus.RESOLVED);
@@ -107,6 +113,7 @@ describe('ContentReportsService.resolve/dismiss', () => {
   it('ném 409 khi đóng báo cáo đã đóng', async () => {
     const svc = new ContentReportsService(
       fakeRepo({ report: sampleReport({ status: ContentReportStatus.DISMISSED }) }),
+      notificationsStub(),
     );
     await assert.rejects(
       () => svc.dismiss('c', { resolution: 'x' }, ACTOR),
@@ -117,7 +124,7 @@ describe('ContentReportsService.resolve/dismiss', () => {
 
 describe('ContentReportsService.get', () => {
   it('ném 404 khi không tìm thấy', async () => {
-    const svc = new ContentReportsService(fakeRepo({ report: null }));
+    const svc = new ContentReportsService(fakeRepo({ report: null }), notificationsStub());
     await assert.rejects(() => svc.get('c'), NotFoundException);
   });
 });

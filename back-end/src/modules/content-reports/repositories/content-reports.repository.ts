@@ -46,6 +46,12 @@ export class ContentReportsRepository {
     return (await this.exhibits.count({ where: { id, isDeleted: false } })) > 0;
   }
 
+  /** Tên hiện vật theo revision mới nhất (cho tiêu đề thông báo); null nếu chưa có revision. */
+  async exhibitName(exhibitId: string): Promise<string | null> {
+    const latest = await this.revisions.findOne({ where: { exhibitId }, order: { revisionNo: 'DESC' } });
+    return latest?.content.name ?? null;
+  }
+
   async revisionBelongsToExhibit(revisionId: string, exhibitId: string): Promise<boolean> {
     return (await this.revisions.count({ where: { id: revisionId, exhibitId, state: RevisionState.APPROVED } })) > 0;
   }

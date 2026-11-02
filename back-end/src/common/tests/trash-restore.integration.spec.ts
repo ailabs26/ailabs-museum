@@ -42,6 +42,7 @@ import { UserRolesRepository } from '../../modules/users/repositories/user-roles
 import { UsersRepository } from '../../modules/users/repositories/users.repository';
 import { UsersService } from '../../modules/users/services/users.service';
 import { toAuthUser } from '../../modules/users/user-access.util';
+import { notificationsStub } from '../../modules/notifications/tests/notifications.stub';
 
 /**
  * Thùng rác & khôi phục trên PostgreSQL THẬT cho 5 trang quản trị.
@@ -187,6 +188,7 @@ describe('Thùng rác & khôi phục (PostgreSQL thật)', { skip }, () => {
       references,
       new RevisionPublishGate(references),
       testMediaUrlService(),
+      notificationsStub(),
     );
   });
 

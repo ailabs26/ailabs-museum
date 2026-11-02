@@ -9,6 +9,7 @@ import { ExhibitsService } from '../services/exhibits.service';
 import { ExhibitsRepository } from '../repositories/exhibits.repository';
 import { PublicSearchQueryDto } from '../dto/public-search-query.dto';
 import { testMediaUrlService } from '../../media/tests/media-test-doubles';
+import { notificationsStub } from '../../notifications/tests/notifications.stub';
 
 // ============================================================================
 // VT-077 — Unit test cho ExhibitsService.publicSearch (mock repository, không DB)
@@ -85,6 +86,7 @@ function makeService(repo: ExhibitsRepository): ExhibitsService {
     {} as never,
     {} as never,
     testMediaUrlService(),
+    notificationsStub(),
   );
 }
 

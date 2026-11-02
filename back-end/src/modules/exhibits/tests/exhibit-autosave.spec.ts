@@ -20,6 +20,7 @@ import { Exhibit, ExhibitVisibility } from '../entities/exhibit.entity';
 import { ExhibitsRepository } from '../repositories/exhibits.repository';
 import { ExhibitsService } from '../services/exhibits.service';
 import { RevisionPublishGate } from '../services/revision-publish.gate';
+import { notificationsStub } from '../../notifications/tests/notifications.stub';
 
 /**
  * VT-079 — lưu nháp tự động không được để bản cũ ghi đè bản mới.
@@ -85,6 +86,7 @@ function makeService(dbVersion: number) {
     { assertAttachable: async () => undefined } as unknown as MediaReferenceValidator,
     {} as RevisionPublishGate,
     testMediaUrlService(),
+    notificationsStub(),
   );
   return { service, repo, exhibit };
 }

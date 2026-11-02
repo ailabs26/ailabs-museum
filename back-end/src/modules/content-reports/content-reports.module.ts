@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { Exhibit } from '../exhibits/entities/exhibit.entity';
 import { ExhibitRevision } from '../exhibits/entities/exhibit-revision.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { ContentReport } from './entities/content-report.entity';
 import { PublicReportsController } from './controllers/public-reports.controller';
 import { ReportsController } from './controllers/reports.controller';
@@ -17,6 +18,7 @@ export function publicReportsThrottleOptions(config: ConfigService) {
 /** Phân hệ báo cáo vi phạm: Client gửi (public, rate-limit) + Admin xử lý. */
 @Module({
   imports: [
+    NotificationsModule,
     TypeOrmModule.forFeature([ContentReport, Exhibit, ExhibitRevision]),
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
