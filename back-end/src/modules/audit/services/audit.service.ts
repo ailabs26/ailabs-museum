@@ -1,9 +1,15 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Paginated } from '../../../common/types/paginated.type';
 import { AuditLogResponse, toAuditLogResponse } from '../dto/audit-log-response.dto';
+import { toAuditCsv } from '../audit-csv.util';
+import type { AuditClientInfo } from '../audit-request.util';
+import { ExportAuditQueryDto } from '../dto/export-audit-query.dto';
 import { ListAuditQueryDto } from '../dto/list-audit-query.dto';
-import { AuditRepository } from '../repositories/audit.repository';
+import { AuditFilter, AuditRepository } from '../repositories/audit.repository';
 import type { RecordAccessDeniedInput } from '../dto/record-access-denied.dto';
+
+/** Trần số dòng một lần xuất CSV; vượt thì yêu cầu thu hẹp bộ lọc thay vì cắt bớt âm thầm. */
+export const AUDIT_EXPORT_MAX_ROWS = 10_000;
 
 export interface RecordAuditInput {
   actorId: string | null;
@@ -76,16 +82,28 @@ export class AuditService {
   }
 
   async list(query: ListAuditQueryDto): Promise<Paginated<AuditLogResponse>> {
-    const page = await this.audit.listPaginated({
-      page: query.page,
-      pageSize: query.pageSize,
-      actorId: query.actorId,
-      action: query.action,
-      resourceType: query.resourceType,
-      from: query.from ? new Date(query.from) : undefined,
-      to: query.to ? new Date(query.to) : undefined,
-    });
+    const page = await this.audit.listPaginated({ page: query.page, pageSize: query.pageSize, ...toFilter(query) });
     return { ...page, items: page.items.map(toAuditLogResponse) };
+  }
+
+  /**
+   * CSV các bản ghi khớp bộ lọc (mới nhất trước). Quá `AUDIT_EXPORT_MAX_ROWS` → 400, không cắt bớt:
+   * nhật ký thiếu dòng mà không báo là sai lệch nguy hiểm. Bản thân việc xuất cũng được ghi vết.
+   */
+  async exportCsv(query: ExportAuditQueryDto, actorId: string, client: AuditClientInfo): Promise<string> {
+    const filter = toFilter(query);
+    const logs = await this.audit.listForExport(filter, AUDIT_EXPORT_MAX_ROWS + 1);
+    if (logs.length > AUDIT_EXPORT_MAX_ROWS) {
+      throw new BadRequestException(
+        `Có hơn ${AUDIT_EXPORT_MAX_ROWS.toLocaleString('vi-VN')} bản ghi khớp bộ lọc, vui lòng thu hẹp khoảng thời gian hoặc bộ lọc`,
+      );
+    }
+    await this.recordSafely({
+      actorId, action: 'audit.export', resourceType: 'audit', resourceId: null,
+      reason: JSON.stringify({ filter: query, rows: logs.length }),
+      ...client,
+    });
+    return toAuditCsv(logs.map(toAuditLogResponse));
   }
 
   async getById(id: string): Promise<AuditLogResponse> {
@@ -93,4 +111,14 @@ export class AuditService {
     if (!log) throw new NotFoundException('Không tìm thấy bản ghi nhật ký');
     return toAuditLogResponse(log);
   }
+}
+
+function toFilter(query: ExportAuditQueryDto): AuditFilter {
+  return {
+    actorId: query.actorId,
+    action: query.action,
+    resourceType: query.resourceType,
+    from: query.from ? new Date(query.from) : undefined,
+    to: query.to ? new Date(query.to) : undefined,
+  };
 }
