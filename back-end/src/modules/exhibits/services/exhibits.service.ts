@@ -28,6 +28,7 @@ import {
 } from '../entities/exhibit-revision.entity';
 import { Hotspot } from '../entities/hotspot.entity';
 import { MediaReferenceValidator } from '../../media/services/media-reference.validator';
+import { NotificationsService } from '../../notifications/services/notifications.service';
 import { MediaUrlService } from '../../media/services/media-url.service';
 import {
   AdminRevisionMedia,
@@ -65,6 +66,7 @@ export class ExhibitsService {
     private readonly mediaReferences: MediaReferenceValidator,
     private readonly publishGate: RevisionPublishGate,
     private readonly mediaUrls: MediaUrlService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // =========================================================================
@@ -457,9 +459,10 @@ export class ExhibitsService {
   // =========================================================================
 
   /**
-   * Gửi bản nháp hiện vật đi kiểm duyệt (DRAFT/REJECTED -> IN_REVIEW).
+   * Gửi bản nháp hiện vật đi kiểm duyệt (DRAFT/REJECTED -> IN_REVIEW), rồi báo cho người duyệt
+   * (trừ chính người gửi).
    */
-  async submitDraftForReview(id: string): Promise<ExhibitAdminResponse> {
+  async submitDraftForReview(id: string, actorId: string): Promise<ExhibitAdminResponse> {
     const exhibit = await this.exhibits.findAdminDetailById(id);
     if (!exhibit || exhibit.isDeleted) {
       throw new NotFoundException('Không tìm thấy hiện vật');
@@ -480,7 +483,7 @@ export class ExhibitsService {
       throw new ConflictException('Không có bản nháp nào để gửi kiểm duyệt');
     }
 
-    return this.tx.run(async (manager) => {
+    const submitted = await this.tx.run(async (manager) => {
       // §5.2: Submit Review phải đủ nội dung bắt buộc + media hợp lệ, trước khi đổi trạng thái.
       await this.publishGate.assertPublishable(activeRev, manager);
 
@@ -499,6 +502,9 @@ export class ExhibitsService {
 
       return toExhibitResponse(currentExhibit, currentRevision);
     });
+
+    await this.notifications.revisionSubmitted({ exhibitName: activeRev.content.name, actorId });
+    return submitted;
   }
 
   // =========================================================================

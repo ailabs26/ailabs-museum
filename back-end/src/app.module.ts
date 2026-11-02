@@ -12,6 +12,7 @@ import { ExhibitsModule } from './modules/exhibits/exhibits.module';
 import { HealthModule } from './modules/health/health.module';
 import { MediaModule } from './modules/media/media.module';
 import { ModerationModule } from './modules/moderation/moderation.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PartnerApiKeysModule } from './modules/partner-api-keys/partner-api-keys.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
@@ -49,6 +50,8 @@ import { UsersModule } from './modules/users/users.module';
     TranslationsModule,
     // API key cấp cho đối tác tích hợp.
     PartnerApiKeysModule,
+    // Thông báo trong CMS (chuông) theo từng người dùng.
+    NotificationsModule,
     // Liveness + readiness (kiểm tra DB).
     HealthModule,
   ],

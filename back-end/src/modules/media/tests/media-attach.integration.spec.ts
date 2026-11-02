@@ -28,6 +28,7 @@ import { MediaStorageService } from '../services/media-storage.service';
 import { LocalStorageDriver } from '../storage/local-storage.driver';
 import { MediaService } from '../services/media.service';
 import { testMediaUrlService } from './media-test-doubles';
+import { notificationsStub } from '../../notifications/tests/notifications.stub';
 
 /**
  * Integration Task 9 trên PostgreSQL THẬT (chỉ localhost, xem media-repository.integration).
@@ -147,6 +148,7 @@ describe('Task 9 — media gắn revision (PostgreSQL thật)', { skip }, () => 
       references,
       new RevisionPublishGate(references),
       testMediaUrlService(),
+      notificationsStub(),
     );
     mediaService = new MediaService(
       mediaRepo,
@@ -310,7 +312,7 @@ describe('Task 9 — media gắn revision (PostgreSQL thật)', { skip }, () => 
       const media = await createMedia(MediaKind.MODEL);
       const { exhibit } = await createExhibit({ modelMediaId: media.id });
       await mediaService.remove(media.id);
-      await assert.rejects(exhibitsService.submitDraftForReview(exhibit.id), (error: unknown) => {
+      await assert.rejects(exhibitsService.submitDraftForReview(exhibit.id, 'actor-test'), (error: unknown) => {
         assert.ok(error instanceof UnprocessableEntityException);
         const body = error.getResponse() as { errors: Array<{ code: string; field: string }> };
         assert.deepEqual(body.errors.map((item) => [item.field, item.code]), [['modelId', 'media_not_found']]);
@@ -400,7 +402,7 @@ describe('Task 9 — media gắn revision (PostgreSQL thật)', { skip }, () => 
         const media = await createMedia(MediaKind.MODEL);
         const { exhibit } = await createExhibit({ modelMediaId: media.id });
         const [submit, remove] = await Promise.allSettled([
-          exhibitsService.submitDraftForReview(exhibit.id),
+          exhibitsService.submitDraftForReview(exhibit.id, 'actor-test'),
           mediaService.remove(media.id),
         ]);
         const revision = await db.getRepository(ExhibitRevision).findOneByOrFail({ exhibitId: exhibit.id });

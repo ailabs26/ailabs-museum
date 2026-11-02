@@ -21,6 +21,7 @@ import { Hotspot } from '../entities/hotspot.entity';
 import { ExhibitsRepository } from '../repositories/exhibits.repository';
 import { ExhibitsService } from '../services/exhibits.service';
 import { RevisionPublishGate } from '../services/revision-publish.gate';
+import { notificationsStub } from '../../notifications/tests/notifications.stub';
 
 /**
  * VT-079 trên PostgreSQL THẬT: bản lưu cũ không được ghi đè bản mới (AC2–AC4, R2/R5/R7/R8).
@@ -80,6 +81,7 @@ describe('VT-079 · autosave chống ghi đè (PostgreSQL thật)', { skip }, ()
       references,
       new RevisionPublishGate(references),
       testMediaUrlService(),
+      notificationsStub(),
     );
     const u = await db.getRepository(User).save({ email: `${tag}@example.test`, passwordHash: 'not-a-real-hash', displayName: 'VT-079' });
     created.users.push(u.id);

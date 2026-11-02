@@ -110,8 +110,8 @@ export class AdminExhibitsController {
   @ApiOperation({
     summary: 'Gửi bản nháp hiện vật đi kiểm duyệt (chuyển sang IN_REVIEW)',
   })
-  submitReview(@Param('id', ParseUUIDPipe) id: string) {
-    return this.exhibitsService.submitDraftForReview(id);
+  submitReview(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
+    return this.exhibitsService.submitDraftForReview(id, user.id);
   }
 
   @Post('bulk-delete')

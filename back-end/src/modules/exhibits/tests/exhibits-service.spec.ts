@@ -27,6 +27,7 @@ import { RevisionPublishGate } from '../services/revision-publish.gate';
 import { MediaReference, MediaReferenceValidator } from '../../media/services/media-reference.validator';
 import { testMediaUrlService } from '../../media/tests/media-test-doubles';
 import { Media, MediaKind, MediaProcessingState } from '../../media/entities/media.entity';
+import { notificationsStub } from '../../notifications/tests/notifications.stub';
 
 // ============================================================================
 // TEST FIXTURES & SAMPLE HELPERS
@@ -344,6 +345,7 @@ class MockExhibitsRepository {
 
 describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)', () => {
   let service: ExhibitsService;
+  let notifier: ReturnType<typeof notificationsStub>;
   let mockExhibits: MockExhibitsRepository;
   let mockRooms: MockRoomsRepository;
   let mockTx: MockTransactionManager;
@@ -354,6 +356,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
     mockExhibits = new MockExhibitsRepository();
     mockRooms = new MockRoomsRepository();
     mockTx = new MockTransactionManager();
+    notifier = notificationsStub();
     mediaRefs = new FakeMediaReferenceValidator();
     gate = new FakePublishGate();
     service = new ExhibitsService(
@@ -363,6 +366,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mediaRefs as unknown as MediaReferenceValidator,
       gate as unknown as RevisionPublishGate,
       testMediaUrlService(),
+      notifier,
     );
   }
 
@@ -1297,7 +1301,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = null;
       await assert.rejects(
-        () => service.submitDraftForReview('non-existent-id'),
+        () => service.submitDraftForReview('non-existent-id', 'actor-test'),
         NotFoundException,
       );
     });
@@ -1306,7 +1310,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit({ isDeleted: true });
       await assert.rejects(
-        () => service.submitDraftForReview(EXHIBIT_ID_1),
+        () => service.submitDraftForReview(EXHIBIT_ID_1, 'actor-test'),
         NotFoundException,
       );
     });
@@ -1316,7 +1320,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = null;
       await assert.rejects(
-        () => service.submitDraftForReview(EXHIBIT_ID_1),
+        () => service.submitDraftForReview(EXHIBIT_ID_1, 'actor-test'),
         NotFoundException,
       );
     });
@@ -1326,7 +1330,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.IN_REVIEW });
       await assert.rejects(
-        () => service.submitDraftForReview(EXHIBIT_ID_1),
+        () => service.submitDraftForReview(EXHIBIT_ID_1, 'actor-test'),
         (err: Error) => err instanceof ConflictException && err.message.includes('trước đó'),
       );
     });
@@ -1336,7 +1340,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.APPROVED });
       await assert.rejects(
-        () => service.submitDraftForReview(EXHIBIT_ID_1),
+        () => service.submitDraftForReview(EXHIBIT_ID_1, 'actor-test'),
         (err: Error) => err instanceof ConflictException && err.message.includes('Không có bản nháp nào'),
       );
     });
@@ -1345,15 +1349,18 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.DRAFT });
-      await service.submitDraftForReview(EXHIBIT_ID_1);
+      await service.submitDraftForReview(EXHIBIT_ID_1, 'actor-test');
       assert.equal(mockExhibits.savedRevisions[0].state, RevisionState.IN_REVIEW);
+      assert.equal(notifier.calls.length, 1);
+      assert.equal(notifier.calls[0].method, 'revisionSubmitted');
+      assert.equal((notifier.calls[0].input as { actorId: string }).actorId, 'actor-test');
     });
 
     it('TC-S087: submitDraftForReview transitions state from REJECTED to IN_REVIEW', async () => {
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.REJECTED });
-      await service.submitDraftForReview(EXHIBIT_ID_1);
+      await service.submitDraftForReview(EXHIBIT_ID_1, 'actor-test');
       assert.equal(mockExhibits.savedRevisions[0].state, RevisionState.IN_REVIEW);
     });
 
@@ -1361,7 +1368,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit({ version: 2 });
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.DRAFT });
-      await service.submitDraftForReview(EXHIBIT_ID_1);
+      await service.submitDraftForReview(EXHIBIT_ID_1, 'actor-test');
       assert.equal(mockExhibits.savedExhibits[0].version, 3);
     });
 
@@ -1369,7 +1376,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.DRAFT });
-      await service.submitDraftForReview(EXHIBIT_ID_1);
+      await service.submitDraftForReview(EXHIBIT_ID_1, 'actor-test');
       assert.equal(mockTx.calls, 1);
     });
 
@@ -1377,7 +1384,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       setup();
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.DRAFT });
-      const res = await service.submitDraftForReview(EXHIBIT_ID_1);
+      const res = await service.submitDraftForReview(EXHIBIT_ID_1, 'actor-test');
       assert.equal(res.revisionState, RevisionState.IN_REVIEW);
     });
   });
@@ -1859,7 +1866,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       mockExhibits.findAdminDetailResult = createSampleExhibit();
       const draft = createSampleRevision({ state: RevisionState.DRAFT });
       mockExhibits.activeRevisionResult = draft;
-      await service.submitDraftForReview(EXHIBIT_ID_1);
+      await service.submitDraftForReview(EXHIBIT_ID_1, 'actor-test');
       assert.deepEqual(gate.calls, [draft]);
       assert.equal(draft.state, RevisionState.IN_REVIEW);
     });
@@ -1871,7 +1878,7 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       const draft = createSampleRevision({ state: RevisionState.DRAFT });
       mockExhibits.activeRevisionResult = draft;
       gate.error = unprocessable();
-      await assert.rejects(service.submitDraftForReview(EXHIBIT_ID_1), UnprocessableEntityException);
+      await assert.rejects(service.submitDraftForReview(EXHIBIT_ID_1, 'actor-test'), UnprocessableEntityException);
       assert.equal(draft.state, RevisionState.DRAFT);
       assert.equal(mockExhibits.savedRevisions.length, 0);
       assert.equal(mockExhibits.savedExhibits.length, 0);

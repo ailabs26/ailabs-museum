@@ -18,6 +18,7 @@ import request from 'supertest';
 import { AdminExhibitsController } from '../controllers/admin-exhibits.controller';
 import { AllExceptionsFilter } from '../../../common/filters/all-exceptions.filter';
 import { ResponseInterceptor } from '../../../common/interceptors/response.interceptor';
+import { notificationsStub } from '../../notifications/tests/notifications.stub';
 
 function setup(states: RevisionState[] = []) {
   const exhibit: Exhibit = Object.assign(new Exhibit(), { id: 'fixture', publishedRevisionId: null, visibility: ExhibitVisibility.HIDDEN, version: 1, isDeleted: false });
@@ -39,7 +40,7 @@ function setup(states: RevisionState[] = []) {
   const tx = { run: async (work: (m: EntityManager) => unknown) => { log.push('begin'); try { return await work(manager); } catch (e) { log.push('rollback'); throw e; } } } as TransactionManager;
   const gate = { assertPublishable: async () => { present = false; } };
   const media = { assertAttachable: async () => { present = false; } };
-  const service = new ExhibitsService(repo as unknown as ExhibitsRepository, {} as never, tx, media as never, gate as never, {} as never);
+  const service = new ExhibitsService(repo as unknown as ExhibitsRepository, {} as never, tx, media as never, gate as never, {} as never, notificationsStub());
   return { service, exhibit, revisions, log, setPresent: (value: boolean) => { present = value; }, setReports: () => { reports = true; }, fail: (error: unknown) => { failDelete = error; } };
 }
 
@@ -84,7 +85,7 @@ describe('Whole exhibit deletion policy', () => {
   }
   it('a submit paused at the media gate cannot resurrect an exhibit deleted meanwhile', async () => {
     const state = setup([RevisionState.DRAFT]);
-    await assert.rejects(() => state.service.submitDraftForReview('fixture'), NotFoundException);
+    await assert.rejects(() => state.service.submitDraftForReview('fixture', 'actor-test'), NotFoundException);
     assert.equal(state.log.includes('save-revision'), false);
     assert.equal(state.log.includes('save-exhibit'), false);
   });
@@ -102,7 +103,7 @@ describe('Whole exhibit deletion policy', () => {
       let reads = 0;
       repo.findActiveRevision = async () => Object.assign(new ExhibitRevision(), state.revisions[0], { state: ++reads === 1 ? RevisionState.DRAFT : RevisionState.IN_REVIEW });
       repo.findForUpdate = async () => state.exhibit;
-      await assert.rejects(() => method === 'submit' ? state.service.submitDraftForReview('fixture')
+      await assert.rejects(() => method === 'submit' ? state.service.submitDraftForReview('fixture', 'actor-test')
         : state.service.updateExhibitDraft('fixture', Object.assign(new UpdateExhibitDto(), { expectedVersion: 1 }), { id: 'actor' }), ConflictException);
       assert.equal(state.log.includes('save-revision'), false);
       assert.equal(state.log.includes('save-exhibit'), false);
@@ -118,6 +119,7 @@ describe('Whole exhibit deletion policy', () => {
       { findDetail: async () => snapshot } as unknown as ModerationRepository,
       { run: async (work: (m: EntityManager) => unknown) => work(manager) } as TransactionManager,
       { assertPublishable: async () => { await state.service.deleteExhibitDraft('fixture'); } } as never,
+      notificationsStub(),
     );
     await assert.rejects(() => moderation.publish(snapshot.id, { version: 1 }, { id: 'actor' } as never), ConflictException);
     assert.deepEqual(updates, [Exhibit]);
