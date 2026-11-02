@@ -2,7 +2,7 @@ import axios, { AxiosError, type AxiosAdapter, type InternalAxiosRequestConfig }
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { tokenStore } from '@/core/auth/token-store';
 import { ApiException, endsSession } from './api-error';
-import { http } from './http-client';
+import { http, REFRESH_LOCK_NAME } from './http-client';
 
 type Reply = { status: number; data?: unknown; headers?: Record<string, string> } | 'network-error';
 
@@ -127,5 +127,67 @@ describe('http-client — tải file (responseType blob) bị lỗi', () => {
     await expect(http.raw.get('/x', { responseType: 'blob' })).rejects.toMatchObject({ status: 502, message: 'HTTP 502' });
     replyBlob(500, new Blob(['{hỏng'], { type: 'application/json' }));
     await expect(http.raw.get('/x', { responseType: 'blob' })).rejects.toMatchObject({ status: 500, message: 'HTTP 500' });
+  });
+});
+
+describe('http-client — refresh qua Web Lock giữa các tab (issue #141)', () => {
+  const originalAdapter = axios.defaults.adapter;
+  const originalLocks = Object.getOwnPropertyDescriptor(navigator, 'locks');
+
+  /** LockManager giả: tuần tự hóa theo tên và ghi lại thứ tự giữ/nhả khóa. */
+  function installLocks(events: string[]) {
+    const tails = new Map<string, Promise<unknown>>();
+    const locks = {
+      request: (name: string, work: () => Promise<unknown>) => {
+        const run = (tails.get(name) ?? Promise.resolve()).then(async () => {
+          events.push(`lock:${name}`);
+          try { return await work(); } finally { events.push(`unlock:${name}`); }
+        });
+        tails.set(name, run.catch(() => undefined));
+        return run;
+      },
+    };
+    Object.defineProperty(navigator, 'locks', { value: locks, configurable: true });
+  }
+
+  beforeEach(() => {
+    tokenStore.set('old-token');
+  });
+
+  afterEach(() => {
+    axios.defaults.adapter = originalAdapter;
+    http.raw.defaults.adapter = originalAdapter;
+    tokenStore.clear();
+    if (originalLocks) Object.defineProperty(navigator, 'locks', originalLocks);
+    else delete (navigator as { locks?: unknown }).locks;
+  });
+
+  it('gửi /auth/refresh bên trong khóa `aura-auth-refresh`, nhả khóa sau khi có phản hồi', async () => {
+    const events: string[] = [];
+    installLocks(events);
+    const calls = installAdapter([refreshOk]);
+    const adapter = axios.defaults.adapter as AxiosAdapter;
+    axios.defaults.adapter = async (config) => {
+      if (config.url?.endsWith('/auth/refresh')) events.push('POST /auth/refresh');
+      return adapter(config);
+    };
+
+    await expect(http.get('/users')).resolves.toEqual([{ id: 'u1' }]);
+    expect(events).toEqual([`lock:${REFRESH_LOCK_NAME}`, 'POST /auth/refresh', `unlock:${REFRESH_LOCK_NAME}`]);
+    expect(calls.filter((url) => url === '/auth/refresh')).toHaveLength(1);
+  });
+
+  it('refresh lỗi vẫn nhả khóa để tab khác refresh được', async () => {
+    const events: string[] = [];
+    installLocks(events);
+    installAdapter([{ status: 401, data: { success: false, data: null, message: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn' } }]);
+    await expect(http.get('/users')).rejects.toMatchObject({ status: 401 });
+    expect(events).toEqual([`lock:${REFRESH_LOCK_NAME}`, `unlock:${REFRESH_LOCK_NAME}`]);
+  });
+
+  it('trình duyệt không có Web Locks → vẫn refresh bình thường', async () => {
+    Object.defineProperty(navigator, 'locks', { value: undefined, configurable: true });
+    installAdapter([refreshOk]);
+    await expect(http.get('/users')).resolves.toEqual([{ id: 'u1' }]);
   });
 });

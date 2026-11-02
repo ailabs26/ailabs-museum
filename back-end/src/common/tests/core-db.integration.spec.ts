@@ -10,7 +10,8 @@ import { dataSource as appDataSource } from '../../config/data-source';
 import { RefreshSession } from '../../modules/auth/entities/refresh-session.entity';
 import { RefreshSessionsRepository } from '../../modules/auth/repositories/refresh-sessions.repository';
 import { AuthService } from '../../modules/auth/services/auth.service';
-import { TokenService } from '../../modules/auth/services/token.service';
+import { RefreshFailedException } from '../../modules/auth/exceptions/refresh-failed.exception';
+import { REFRESH_REUSE_GRACE_MS, TokenService } from '../../modules/auth/services/token.service';
 import { PasswordService } from '../security/password.service';
 import { Permission } from '../../modules/roles/entities/permission.entity';
 import { RolePermission } from '../../modules/roles/entities/role-permission.entity';
@@ -428,14 +429,29 @@ describe('Core DB (PostgreSQL thật)', { skip }, () => {
       assert.equal(raw[0].n, 0, 'raw token không được lưu trong DB');
     });
 
-    it('2 request refresh đồng thời cùng 1 token: đúng 1 thành công, reuse → thu hồi cả family', async () => {
+    it('2 request refresh đồng thời cùng 1 token (2 tab): đúng 1 thành công, request kia 401 ân hạn, family còn sống (#141)', async () => {
       const issued = await service.issueRefresh(userId);
       const results = await Promise.allSettled([service.rotate(issued.raw), service.rotate(issued.raw)]);
-      const fulfilled = results.filter((result) => result.status === 'fulfilled');
+      const fulfilled = results.filter((result) => result.status === 'fulfilled') as PromiseFulfilledResult<{ raw: string }>[];
       const rejected = results.filter((result) => result.status === 'rejected') as PromiseRejectedResult[];
       assert.equal(fulfilled.length, 1);
       assert.equal(rejected.length, 1);
-      assert.ok(rejected[0].reason instanceof UnauthorizedException);
+      assert.ok(rejected[0].reason instanceof RefreshFailedException);
+      assert.equal(rejected[0].reason.reason, 'rotated_recently');
+      const family = await db.getRepository(RefreshSession).find({ where: { familyId: issued.session.familyId } });
+      assert.equal(family.length, 2);
+      assert.ok(family.every((session) => !session.revokedAt), 'ân hạn không được thu hồi family');
+      await service.rotate(fulfilled[0].value.raw);
+    });
+
+    it('gửi lại token đã xoay vòng sau ân hạn (reuse) → thu hồi cả family', async () => {
+      const issued = await service.issueRefresh(userId);
+      await service.rotate(issued.raw);
+      await db.getRepository(RefreshSession).update(issued.session.id, {
+        usedAt: new Date(Date.now() - REFRESH_REUSE_GRACE_MS - 1000),
+      });
+      await assert.rejects(service.rotate(issued.raw), (error: unknown) =>
+        error instanceof RefreshFailedException && error.reason === 'reuse');
       const family = await db.getRepository(RefreshSession).find({ where: { familyId: issued.session.familyId } });
       assert.equal(family.length, 2);
       assert.ok(family.every((session) => session.revokedAt), 'mọi session trong family phải bị thu hồi');

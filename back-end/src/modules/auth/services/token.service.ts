@@ -31,6 +31,9 @@ export interface RotatedRefresh {
   accessToken: string;
 }
 
+/** Ân hạn cho token vừa xoay vòng bị gửi lại: không thu hồi family, không ghi audit reuse. */
+export const REFRESH_REUSE_GRACE_MS = 10_000;
+
 @Injectable()
 export class TokenService {
   constructor(
@@ -102,6 +105,13 @@ export class TokenService {
 
       const fail = (reason: RefreshFailureReason) =>
         new RefreshFailedException(reason, current.userId, current.familyId);
+      // Vừa xoay vòng (tab khác/mất phản hồi mạng gửi lại token cũ): 401 nhưng giữ phiên, không coi là đánh cắp.
+      // Không cấp token nào nên kẻ gian replay trong khoảng này cũng không vào được (issue #141).
+      if (current.usedAt && !current.revokedAt
+        && Date.now() - current.usedAt.getTime() < REFRESH_REUSE_GRACE_MS) {
+        return fail('rotated_recently');
+      }
+
       if (current.usedAt || current.revokedAt) {
         await this.sessions.revokeFamily(current.familyId, manager);
         // Token đã xoay vòng bị gửi lại mới là dấu hiệu bị đánh cắp; token chỉ bị thu hồi là bình thường.

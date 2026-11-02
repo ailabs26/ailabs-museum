@@ -13,7 +13,7 @@ import { UsersRepository } from '../../users/repositories/users.repository';
 import { RefreshSession } from '../entities/refresh-session.entity';
 import { RefreshSessionsRepository } from '../repositories/refresh-sessions.repository';
 import { RefreshFailedException, type RefreshFailureReason } from '../exceptions/refresh-failed.exception';
-import { TokenService } from '../services/token.service';
+import { REFRESH_REUSE_GRACE_MS, TokenService } from '../services/token.service';
 
 /** Kiểm lỗi refresh: vẫn là 401 chung, mang đúng lý do cho audit. */
 const failedWith = (reason: RefreshFailureReason) => (error: unknown) => {
@@ -180,9 +180,10 @@ describe('TokenService', () => {
     assert.deepEqual(store.locks, []);
   });
 
-  it('rotate: dùng lại token cũ (reuse) → 401 và thu hồi CẢ family, kể cả token mới', async () => {
+  it('rotate: dùng lại token cũ sau ân hạn (reuse) → 401 và thu hồi CẢ family, kể cả token mới', async () => {
     const issued = await service.issueRefresh('user-1');
     const rotated = await service.rotate(issued.raw);
+    store.rows.get(issued.session.id)!.usedAt = new Date(Date.now() - REFRESH_REUSE_GRACE_MS - 1);
 
     await assert.rejects(service.rotate(issued.raw), failedWith('reuse'));
     for (const row of store.rows.values()) {
@@ -190,6 +191,24 @@ describe('TokenService', () => {
     }
     // Token mới hợp lệ trước đó cũng không dùng được nữa.
     await assert.rejects(service.rotate(rotated.raw), failedWith('revoked'));
+  });
+
+  it('rotate: gửi lại token vừa xoay vòng trong ân hạn (tab khác) → 401 nhưng giữ family, token mới vẫn dùng được', async () => {
+    const issued = await service.issueRefresh('user-1');
+    const rotated = await service.rotate(issued.raw);
+
+    await assert.rejects(service.rotate(issued.raw), failedWith('rotated_recently'));
+    assert.equal(store.rows.get(rotated.session.id)!.revokedAt, null);
+    const next = await service.rotate(rotated.raw);
+    assert.equal(next.session.familyId, issued.session.familyId);
+  });
+
+  it('rotate: ân hạn không áp dụng khi family đã bị thu hồi', async () => {
+    const issued = await service.issueRefresh('user-1');
+    const rotated = await service.rotate(issued.raw);
+    await service.revokeByRaw(rotated.raw);
+
+    await assert.rejects(service.rotate(issued.raw), failedWith('reuse'));
   });
 
   it('rotate: token đã bị thu hồi → 401', async () => {
