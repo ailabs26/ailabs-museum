@@ -7,6 +7,7 @@ export enum NotificationType {
   REVISION_APPROVED = 'revision.approved',
   REVISION_REJECTED = 'revision.rejected',
   REPORT_CREATED = 'report.created',
+  REPORT_ASSIGNED = 'report.assigned',
 }
 
 /** Thông báo trong CMS cho một người dùng; người nhận tự đánh dấu đã đọc hoặc xóa. */

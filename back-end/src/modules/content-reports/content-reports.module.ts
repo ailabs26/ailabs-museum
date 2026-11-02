@@ -5,6 +5,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { Exhibit } from '../exhibits/entities/exhibit.entity';
 import { ExhibitRevision } from '../exhibits/entities/exhibit-revision.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { UsersModule } from '../users/users.module';
 import { ContentReport } from './entities/content-report.entity';
 import { PublicReportsController } from './controllers/public-reports.controller';
 import { ReportsController } from './controllers/reports.controller';
@@ -19,6 +20,7 @@ export function publicReportsThrottleOptions(config: ConfigService) {
 @Module({
   imports: [
     NotificationsModule,
+    UsersModule,
     TypeOrmModule.forFeature([ContentReport, Exhibit, ExhibitRevision]),
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],

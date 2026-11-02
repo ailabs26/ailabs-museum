@@ -7,6 +7,7 @@ import { dataSource as appDataSource } from '../../../config/data-source';
 import { Permission } from '../../roles/entities/permission.entity';
 import { Role } from '../../roles/entities/role.entity';
 import { UserStatus, User } from '../../users/entities/user.entity';
+import { UsersRepository } from '../../users/repositories/users.repository';
 import { Notification, NotificationType } from '../entities/notification.entity';
 import { NotificationsRepository } from '../repositories/notifications.repository';
 
@@ -59,7 +60,7 @@ describe('NotificationsRepository (PostgreSQL thật)', { skip }, () => {
     await db.destroy();
   });
 
-  it('người nhận theo quyền: chỉ user active, chưa xóa, qua vai trò chưa xóa; không trùng khi có 2 vai trò', async () => {
+  it('UsersRepository.findActiveWithPermission (người nhận thông báo / người được giao): chỉ user active, chưa xóa, qua vai trò chưa xóa; không trùng khi có 2 vai trò', async () => {
     const permission = await db.getRepository(Permission).save({ code: permissionCode });
     created.permissions.push(permission.id);
     const [role, role2, deletedRole, otherRole] = await Promise.all(['r1', 'r2', 'r-del', 'r-other'].map(async (s) => {
@@ -83,7 +84,8 @@ describe('NotificationsRepository (PostgreSQL thật)', { skip }, () => {
     const noPermission = await createUser('no-perm');
     await grant(noPermission, otherRole);
 
-    assert.deepEqual(await repo.findRecipientIdsByPermission(permissionCode), [ok.id]);
+    const holders = await new UsersRepository(db.getRepository(User)).findActiveWithPermission(permissionCode);
+    assert.deepEqual(holders, [{ id: ok.id, email: ok.email, displayName: ok.displayName }]);
   });
 
   it('đọc / đọc hết / xóa chỉ tác động thông báo của chính mình; đếm chưa đọc; mới nhất trước', async () => {
