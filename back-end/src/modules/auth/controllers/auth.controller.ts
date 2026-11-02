@@ -33,6 +33,7 @@ import { Audit } from '../../audit/decorators/audit.decorator';
 import { auditClientInfo } from '../../audit/audit-request.util';
 import { AuditService } from '../../audit/services/audit.service';
 import { LoginFailedException } from '../exceptions/login-failed.exception';
+import { RefreshFailedException } from '../exceptions/refresh-failed.exception';
 import { AuthService } from '../services/auth.service';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { LoginDto } from '../dto/login.dto';
@@ -136,6 +137,11 @@ export class AuthController {
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         this.clearRefreshCookie(res);
+      }
+      if (error instanceof RefreshFailedException && error.reason === 'reuse') {
+        // Token đã xoay vòng bị gửi lại: cả family đã bị thu hồi, ghi vết để Admin điều tra.
+        await this.recordAuthEvent(req, 'auth.refresh_reuse_detected', null, error.userId,
+          { familyId: error.familyId });
       }
       throw error;
     }

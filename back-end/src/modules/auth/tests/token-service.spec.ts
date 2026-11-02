@@ -12,7 +12,16 @@ import { User, UserStatus } from '../../users/entities/user.entity';
 import { UsersRepository } from '../../users/repositories/users.repository';
 import { RefreshSession } from '../entities/refresh-session.entity';
 import { RefreshSessionsRepository } from '../repositories/refresh-sessions.repository';
+import { RefreshFailedException, type RefreshFailureReason } from '../exceptions/refresh-failed.exception';
 import { TokenService } from '../services/token.service';
+
+/** Kiểm lỗi refresh: vẫn là 401 chung, mang đúng lý do cho audit. */
+const failedWith = (reason: RefreshFailureReason) => (error: unknown) => {
+  assert.ok(error instanceof RefreshFailedException);
+  assert.ok(error instanceof UnauthorizedException);
+  assert.equal(error.reason, reason);
+  return true;
+};
 
 const SECRET = 'token-service-secret-0123456789';
 const CONFIG: Record<string, unknown> = {
@@ -167,7 +176,7 @@ describe('TokenService', () => {
   });
 
   it('rotate: token không tồn tại → 401, không khóa family nào', async () => {
-    await assert.rejects(service.rotate('unknown'), UnauthorizedException);
+    await assert.rejects(service.rotate('unknown'), failedWith('unknown_token'));
     assert.deepEqual(store.locks, []);
   });
 
@@ -175,18 +184,18 @@ describe('TokenService', () => {
     const issued = await service.issueRefresh('user-1');
     const rotated = await service.rotate(issued.raw);
 
-    await assert.rejects(service.rotate(issued.raw), UnauthorizedException);
+    await assert.rejects(service.rotate(issued.raw), failedWith('reuse'));
     for (const row of store.rows.values()) {
       assert.ok(row.revokedAt, `session ${row.id} phải bị thu hồi sau khi phát hiện reuse`);
     }
     // Token mới hợp lệ trước đó cũng không dùng được nữa.
-    await assert.rejects(service.rotate(rotated.raw), UnauthorizedException);
+    await assert.rejects(service.rotate(rotated.raw), failedWith('revoked'));
   });
 
   it('rotate: token đã bị thu hồi → 401', async () => {
     const issued = await service.issueRefresh('user-1');
     await service.revokeByRaw(issued.raw);
-    await assert.rejects(service.rotate(issued.raw), UnauthorizedException);
+    await assert.rejects(service.rotate(issued.raw), failedWith('revoked'));
   });
 
   it('rotate: token hết hạn → 401 và chỉ thu hồi session đó (revoke được commit)', async () => {
@@ -194,7 +203,7 @@ describe('TokenService', () => {
     const expired = await service.issueRefresh('user-1', 'fam-x');
     store.rows.get(expired.session.id)!.expiresAt = new Date(Date.now() - 1);
 
-    await assert.rejects(service.rotate(expired.raw), UnauthorizedException);
+    await assert.rejects(service.rotate(expired.raw), failedWith('expired'));
     assert.ok(store.rows.get(expired.session.id)!.revokedAt);
     assert.equal(store.rows.get(live.session.id)!.revokedAt, null);
   });
@@ -203,7 +212,7 @@ describe('TokenService', () => {
     for (const next of [makeUser({ status: UserStatus.DISABLED }), null]) {
       user = next;
       const issued = await service.issueRefresh('user-1');
-      await assert.rejects(service.rotate(issued.raw), UnauthorizedException);
+      await assert.rejects(service.rotate(issued.raw), failedWith('inactive_user'));
       assert.ok(store.rows.get(issued.session.id)!.revokedAt);
     }
   });
