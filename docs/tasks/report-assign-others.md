@@ -36,5 +36,4 @@ Front-end (`ReportsPage`):
   giao cho editor → 400; giao cho moderator → in_progress, moderator nhận thông báo; giao trùng → 409; moderator giao
   lại cho admin → admin nhận thông báo; audit ghi 2 lần `report.assign`.
 
-Ghi chú: `tests/cms-e2e-reports.spec.ts` đã hỏng từ trước (fixture thiếu `/auth/refresh`, tên nút theo UI cũ như "Tiếp nhận
-xử lý"); spec đó không đổi ở task này.
+Ghi chú: `tests/cms-e2e-reports.spec.ts` (hỏng từ trước) đã được viết lại ở nhánh `fix/reports-e2e-spec`.
