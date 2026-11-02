@@ -59,8 +59,13 @@ export const reportsService = {
   get(id: string): Promise<ContentReport> {
     return http.get<ContentReport>(`/reports/${id}`);
   },
-  assign(id: string): Promise<ContentReport> {
-    return http.post<ContentReport>(`/reports/${id}/assign`);
+  /** Bỏ trống `assigneeId` = tự tiếp nhận; có = giao cho người đó (phải có quyền xử lý báo cáo). */
+  assign(id: string, assigneeId?: string): Promise<ContentReport> {
+    return http.post<ContentReport>(`/reports/${id}/assign`, assigneeId ? { assigneeId } : {});
+  },
+  /** Người có thể được giao báo cáo. */
+  assignees(): Promise<UserBrief[]> {
+    return http.get<UserBrief[]>('/reports/assignees');
   },
   resolve(id: string, resolution: string): Promise<ContentReport> {
     return http.post<ContentReport>(`/reports/${id}/resolve`, { resolution });
