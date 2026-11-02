@@ -12,6 +12,7 @@ import { ActiveSessionGuard } from './guards/active-session.guard';
 import { RefreshCookieOriginGuard } from './guards/refresh-cookie-origin.guard';
 import { AuthRateLimiter } from './services/auth-rate-limiter.service';
 import { AuthService } from './services/auth.service';
+import { SessionsCleanupService } from './services/sessions-cleanup.service';
 import { SessionsService } from './services/sessions.service';
 import { TokenService } from './services/token.service';
 
@@ -26,6 +27,7 @@ import { TokenService } from './services/token.service';
   providers: [
     AuthService,
     SessionsService,
+    SessionsCleanupService, // cron dọn refresh_sessions đã chết
     TokenService,
     AuthRateLimiter,
     RefreshCookieOriginGuard,

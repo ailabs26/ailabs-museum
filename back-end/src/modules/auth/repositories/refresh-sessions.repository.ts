@@ -97,6 +97,33 @@ export class RefreshSessionsRepository {
     });
   }
 
+  /**
+   * Xóa tối đa `limit` family đã chết hẳn: mọi row đều hết hạn hoặc bị thu hồi trước `cutoff`.
+   * Family còn token "đã dùng" chưa hết hạn được giữ để reuse-detection vẫn bắt được replay.
+   * FK `replaced_by_id` là RESTRICT nên gỡ liên kết trước rồi mới xóa. Trả số row đã xóa.
+   * COALESCE bắt buộc: `revoked_at` NULL làm biểu thức thành NULL mà `bool_and` bỏ qua NULL.
+   */
+  async deleteDeadFamilies(cutoff: Date, limit: number, manager: EntityManager): Promise<number> {
+    const families: { family_id: string }[] = await manager.query(
+      `SELECT family_id FROM refresh_sessions
+       GROUP BY family_id
+       HAVING bool_and(COALESCE(expires_at < $1 OR revoked_at < $1, false))
+       LIMIT $2`,
+      [cutoff, limit],
+    );
+    if (families.length === 0) {
+      return 0;
+    }
+
+    const ids = families.map((family) => family.family_id);
+    await manager.query('UPDATE refresh_sessions SET replaced_by_id = NULL WHERE family_id = ANY($1)', [ids]);
+    const [, affected]: [unknown, number] = await manager.query(
+      'DELETE FROM refresh_sessions WHERE family_id = ANY($1)',
+      [ids],
+    );
+    return affected;
+  }
+
   private getRepository(manager?: EntityManager): Repository<RefreshSession> {
     return manager ? manager.getRepository(RefreshSession) : this.repository;
   }
