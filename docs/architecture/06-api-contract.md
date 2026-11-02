@@ -50,6 +50,7 @@ POST   /roles/bulk-delete     POST /roles/bulk-restore           # xóa mềm / 
 GET    /roles/:id/permissions PUT  /roles/:id/permissions        # set ma trận quyền
 GET    /permissions                                              # danh mục permission
 GET    /audit                 GET  /audit/:id                    # nhật ký (lọc theo actor/action/thời gian)
+GET    /audit/export                                             # xuất CSV cùng bộ lọc (tối đa 10.000 dòng)
 GET    /admin/stats/overview                                     # số liệu tổng quan Dashboard
 GET    /admin/stats/charts                                       # dữ liệu biểu đồ Dashboard
 ```
@@ -197,6 +198,10 @@ POST   /reports/:id/resolve  | /dismiss
 #### Audit (Task 24)
 
 `GET /audit?page&pageSize&actorId&action&resourceType&from&to` + `GET /audit/:id` (`audit:read`). Append-only, không có endpoint sửa/xóa.
+`GET /audit/export?actorId&action&resourceType&from&to` (`audit:read`) trả file `text/csv; charset=utf-8` (BOM UTF-8, CRLF,
+`Content-Disposition: attachment; filename="audit-logs-YYYYMMDD-HHmm.csv"`, `Cache-Control: no-store`; không bọc ApiResponse),
+mới nhất trước. Hơn 10.000 dòng khớp → 400 yêu cầu thu hẹp bộ lọc (không cắt bớt âm thầm). Ô bắt đầu `= + - @`/tab/CR được
+thêm `'` để chặn CSV injection. Mỗi lần xuất ghi `audit.export`.
 Mỗi bản ghi có `ip`, `userAgent`; `resourceId` là **null** khi sự kiện không gắn tài nguyên. `actor` chỉ gồm `{ id, email, displayName }`
 (không bao giờ trả `passwordHash`/trạng thái tài khoản).
 Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. Ánh xạ hành động CMS:
@@ -218,6 +223,7 @@ Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. 
 | auth.refresh_blocked | user | — | `/auth/refresh` bị chặn 429; `reason` `{"limit":"ip\|session\|invalid"}`; `resourceId` = chủ phiên khi `session`, null khi khác; 1 lần mỗi phút cho mỗi IP/phiên |
 | auth.logout | user | — | đăng xuất có phiên; actor = chủ phiên |
 | access.denied | access | — | 403 thiếu quyền; `resourceId` null |
+| audit.export | audit | — | xuất CSV nhật ký; actor = người xuất; `resourceId` null; `reason` `{"filter":{…},"rows":N}` |
 
 > Với `resourceType='revision'`, interceptor lưu thêm FK `revisionId` để join `audit_logs → exhibit_revisions`.
 > Response có mảng `ids` (xóa hàng loạt) hoặc `roleIds` → interceptor ghi **1 bản ghi cho mỗi ID**.

@@ -18,7 +18,7 @@
 | Preview theo task/SRS | `/admin/exhibits/:exhibitId/preview` | `ExhibitPreviewPage` | Renderer public nhận Draft đã lưu qua API xác thực; badge Preview | 10, 22 |
 | `moderation.html` | `/admin/moderation` | `ModerationPage` | Chờ duyệt, revision diff, publish/reject/hide theo workflow task | 22 |
 | `reports.html` | `/admin/reports` | `ReportsPage` | Phiên bản bị báo cáo, tiếp nhận/đóng và ghi chú | 23 |
-| `audit.html` | `/admin/audit` | `AuditPage` | Nhật ký server chỉ đọc, filter/phân trang; export nếu được yêu cầu | 24 |
+| `audit.html` | `/admin/audit` | `AuditPage` | Nhật ký server chỉ đọc, filter/phân trang; nút Xuất CSV theo bộ lọc hiện tại | 24 |
 | `accounts.html` | `/admin/accounts` | `AccountsPage` | Tài khoản, role, trạng thái từ API | 3 |
 | `permissions.html` | `/admin/permissions` | `PermissionsPage` | Danh mục mã quyền từ BE | 4, 5 |
 | `permission-matrix.html` | `/admin/permission-matrix` | `PermissionMatrixPage` | Ma trận role/action/scope; BE xác nhận quyền sửa | 4, 5 |
