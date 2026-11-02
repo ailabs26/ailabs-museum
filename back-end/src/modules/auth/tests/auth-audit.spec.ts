@@ -13,6 +13,7 @@ import type { RecordAuditInput } from '../../audit/services/audit.service';
 import { AuditService } from '../../audit/services/audit.service';
 import { AuthController } from '../controllers/auth.controller';
 import { LoginFailedException } from '../exceptions/login-failed.exception';
+import { RefreshFailedException, type RefreshFailureReason } from '../exceptions/refresh-failed.exception';
 import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard';
 import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
 import { AuthService } from '../services/auth.service';
@@ -20,6 +21,7 @@ import { SessionsService } from '../services/sessions.service';
 import { TokenService } from '../services/token.service';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
+const FAMILY_ID = '33333333-3333-4333-8333-333333333333';
 const UA = 'Mozilla/5.0 (X11; Linux x86_64) Firefox/131.0';
 
 describe('Audit đăng nhập / đăng xuất (AuthController)', () => {
@@ -36,6 +38,10 @@ describe('Audit đăng nhập / đăng xuất (AuthController)', () => {
         return { accessToken: 'acc', refreshToken: 'rt', user: { id: USER_ID, email: dto.email, displayName: 'A', roles: [], permissions: [] } };
       },
       logout: async (raw?: string) => (raw === 'rt-live' ? USER_ID : null),
+      // Cookie `rt-<reason>` → refresh thất bại với lý do tương ứng.
+      refresh: async (raw?: string) => {
+        throw new RefreshFailedException((raw ?? 'rt-unknown_token').slice(3) as RefreshFailureReason, USER_ID, FAMILY_ID);
+      },
     };
     const moduleRef = await Test.createTestingModule({
       imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true, load: [appConfig, jwtConfig] })],
@@ -46,7 +52,7 @@ describe('Audit đăng nhập / đăng xuất (AuthController)', () => {
         { provide: AuditService, useValue: { recordSafely: async (input: RecordAuditInput) => void recorded.push(input) } },
         { provide: SessionsService, useValue: {} },
         { provide: AuthService, useValue: auth },
-        { provide: TokenService, useValue: { refreshCookieMaxAgeMs: () => 1000 } },
+        { provide: TokenService, useValue: { refreshCookieMaxAgeMs: () => 1000, findSessionOwner: async () => null } },
       ],
     }).compile();
     app = moduleRef.createNestApplication();
@@ -117,5 +123,24 @@ describe('Audit đăng nhập / đăng xuất (AuthController)', () => {
     await request(app.getHttpServer()).post('/auth/logout').expect(200);
     await request(app.getHttpServer()).post('/auth/logout').set('Cookie', 'aura_rt=rt-unknown').expect(200);
     assert.deepEqual(recorded.map((e) => [e.action, e.actorId, e.resourceId]), [['auth.logout', USER_ID, USER_ID]]);
+  });
+
+  const refresh = (cookie: string) =>
+    request(app.getHttpServer()).post('/auth/refresh').set('Cookie', `aura_rt=${cookie}`).set('User-Agent', UA);
+
+  it('refresh bằng token đã xoay vòng → auth.refresh_reuse_detected gắn chủ phiên + family; client nhận 401 chung, cookie bị xóa', async () => {
+    const res = await refresh('rt-reuse').expect(401);
+    assert.equal(res.body.message, 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn');
+    assert.match(String(res.headers['set-cookie']), /aura_rt=;/);
+    assert.deepEqual(recorded.map((e) => [e.action, e.actorId, e.resourceId, e.reason, e.userAgent]), [
+      ['auth.refresh_reuse_detected', null, USER_ID, `{"familyId":"${FAMILY_ID}"}`, UA],
+    ]);
+  });
+
+  it('refresh thất bại vì lý do khác (thu hồi, hết hạn, user bị khóa, token lạ) → không ghi audit', async () => {
+    for (const reason of ['revoked', 'expired', 'inactive_user', 'unknown_token']) {
+      await refresh(`rt-${reason}`).expect(401);
+    }
+    assert.deepEqual(recorded, []);
   });
 });

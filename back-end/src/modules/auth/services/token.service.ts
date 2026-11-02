@@ -1,11 +1,12 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { EntityManager } from 'typeorm';
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { AuthUser } from '../../../common/types/auth-user.type';
 import { JwtAccessPayload } from '../../../common/types/jwt.payload';
+import { RefreshFailedException, type RefreshFailureReason } from '../exceptions/refresh-failed.exception';
 import { RefreshSession } from '../entities/refresh-session.entity';
 import { RefreshSessionsRepository } from '../repositories/refresh-sessions.repository';
 import { UsersRepository } from '../../users/repositories/users.repository';
@@ -86,33 +87,36 @@ export class TokenService {
    */
   async rotate(raw: string, client: SessionClient = {}): Promise<RotatedRefresh> {
     const tokenHash = this.hash(raw);
-    const result = await this.tx.run(async (manager): Promise<RotatedRefresh | null> => {
+    const result = await this.tx.run(async (manager): Promise<RotatedRefresh | RefreshFailedException> => {
       const found = await this.sessions.findByTokenHash(tokenHash, manager);
       if (!found) {
-        return null;
+        return new RefreshFailedException('unknown_token');
       }
 
       await this.sessions.lockFamily(found.familyId, manager);
       await this.sessions.lockUser(found.userId, manager);
       const current = await this.sessions.findByTokenHash(tokenHash, manager, true);
       if (!current) {
-        return null;
+        return new RefreshFailedException('unknown_token');
       }
 
+      const fail = (reason: RefreshFailureReason) =>
+        new RefreshFailedException(reason, current.userId, current.familyId);
       if (current.usedAt || current.revokedAt) {
         await this.sessions.revokeFamily(current.familyId, manager);
-        return null;
+        // Token đã xoay vòng bị gửi lại mới là dấu hiệu bị đánh cắp; token chỉ bị thu hồi là bình thường.
+        return fail(current.usedAt ? 'reuse' : 'revoked');
       }
 
       if (current.expiresAt.getTime() <= Date.now()) {
         await this.sessions.revoke(current.id, manager);
-        return null;
+        return fail('expired');
       }
 
       const user = await this.users.findByIdWithAccess(current.userId, manager);
       if (!user || user.status !== UserStatus.ACTIVE) {
         await this.sessions.revokeFamily(current.familyId, manager);
-        return null;
+        return fail('inactive_user');
       }
 
       const accessToken = await this.signAccess(toAuthUser(user), current.familyId);
@@ -128,8 +132,8 @@ export class TokenService {
     });
 
     // Ném lỗi sau commit để việc revoke do expiry/reuse không bị rollback.
-    if (!result) {
-      throw new UnauthorizedException('Phiên đăng nhập không hợp lệ hoặc đã hết hạn');
+    if (result instanceof RefreshFailedException) {
+      throw result;
     }
     return result;
   }
