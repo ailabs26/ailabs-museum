@@ -30,8 +30,8 @@ Front-end (`NotificationCenter`):
   đánh dấu đã đọc và mở trang liên kết.
 - Mục chưa đọc có nền nhấn và chấm xanh. Thời gian hiển thị dạng tương đối ("5 phút trước"; quá 7 ngày thì hiện ngày).
 
-Chưa làm: thông báo "Báo cáo được giao cho tôi". API giao báo cáo hiện chỉ cho người xử lý **tự nhận** (`assignedToId = actor`),
-nên thông báo này không bao giờ được gửi. Cần có chức năng giao báo cáo cho người khác trước.
+Thông báo "Báo cáo được giao cho tôi" (`report.assigned`) được làm sau, cùng chức năng giao báo cáo cho người khác
+(xem `docs/tasks/report-assign-others.md`).
 
 ## Kiểm chứng ngày 02/11/2026
 

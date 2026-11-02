@@ -6,6 +6,13 @@ import { Paginated } from '../../../common/types/paginated.type';
 import { BaseRepository } from '../../../common/repository/base.repository';
 import { User, UserStatus } from '../entities/user.entity';
 
+/** Thông tin tối thiểu của user để hiển thị/chọn — không có passwordHash. */
+export interface UserBrief {
+  id: string;
+  email: string;
+  displayName: string;
+}
+
 export interface ListUsersOptions {
   page: number;
   pageSize: number;
@@ -142,5 +149,23 @@ export class UsersRepository extends BaseRepository<User> {
       .getManyAndCount();
 
     return { items, total, page, pageSize };
+  }
+
+  /**
+   * User đang hoạt động (active, chưa xóa) có quyền `permission` qua một vai trò chưa bị xóa; không trùng khi có
+   * nhiều vai trò. Dùng cho người nhận thông báo và danh sách người có thể được giao báo cáo.
+   */
+  async findActiveWithPermission(permission: string): Promise<UserBrief[]> {
+    const rows: { id: string; email: string; display_name: string }[] = await this.repo.query(
+      `SELECT DISTINCT u.id, u.email, u.display_name FROM users u
+       JOIN user_roles ur ON ur.user_id = u.id
+       JOIN roles r ON r.id = ur.role_id AND r.is_deleted = false
+       JOIN role_permissions rp ON rp.role_id = r.id
+       JOIN permissions p ON p.id = rp.permission_id
+       WHERE p.code = $1 AND u.status = 'active' AND u.is_deleted = false
+       ORDER BY u.display_name, u.email`,
+      [permission],
+    );
+    return rows.map((row) => ({ id: row.id, email: row.email, displayName: row.display_name }));
   }
 }

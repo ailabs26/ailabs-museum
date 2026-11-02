@@ -1,5 +1,5 @@
 import { ActionIcon, Anchor, Button, Indicator, Loader, Popover, ScrollArea, Text, Tooltip, UnstyledButton } from '@mantine/core';
-import { IconBell, IconCheck, IconChecklist, IconCircleCheck, IconCircleX, IconFlag, IconTrash } from '@tabler/icons-react';
+import { IconBell, IconCheck, IconChecklist, IconCircleCheck, IconCircleX, IconFlag, IconTrash, IconUserCheck } from '@tabler/icons-react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,7 @@ const TYPE_ICON: Record<NotificationType, { icon: ReactNode; className: string }
   'revision.approved': { icon: <IconCircleCheck size={16} />, className: classes.iconApproved },
   'revision.rejected': { icon: <IconCircleX size={16} />, className: classes.iconReport },
   'report.created': { icon: <IconFlag size={16} />, className: classes.iconReport },
+  'report.assigned': { icon: <IconUserCheck size={16} />, className: classes.iconReview },
 };
 
 /** Chuông thông báo: số chưa đọc, danh sách (Xem thêm theo trang), đánh dấu đã đọc, xóa. */

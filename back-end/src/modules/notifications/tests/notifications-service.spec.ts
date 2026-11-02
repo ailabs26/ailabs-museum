@@ -5,13 +5,13 @@ import { NotFoundException } from '@nestjs/common';
 import { PERMISSIONS } from '../../../common/constants/permissions.constant';
 import { Notification, NotificationType } from '../entities/notification.entity';
 import type { NotificationsRepository } from '../repositories/notifications.repository';
+import type { UsersRepository } from '../../users/repositories/users.repository';
 import { NotificationsService } from '../services/notifications.service';
 
 /** Repo giả: người có quyền theo bảng `holders`, ghi lại thông báo đã chèn. */
 function harness(holders: Record<string, string[]> = {}, options: { failInsert?: boolean; owned?: boolean } = {}) {
   const inserted: Partial<Notification>[] = [];
   const repo = {
-    findRecipientIdsByPermission: async (permission: string) => holders[permission] ?? [],
     insertMany: async (rows: Partial<Notification>[]) => {
       if (options.failInsert) throw new Error('db down');
       inserted.push(...rows);
@@ -28,7 +28,11 @@ function harness(holders: Record<string, string[]> = {}, options: { failInsert?:
       total: 2, page, pageSize,
     }),
   } as unknown as NotificationsRepository;
-  return { service: new NotificationsService(repo), inserted };
+  const users = {
+    findActiveWithPermission: async (permission: string) =>
+      (holders[permission] ?? []).map((id) => ({ id, email: `${id}@x.test`, displayName: id })),
+  } as unknown as UsersRepository;
+  return { service: new NotificationsService(repo, users), inserted };
 }
 
 describe('NotificationsService — người nhận', () => {
@@ -100,6 +104,18 @@ describe('NotificationsService — phát thông báo', () => {
       'Bản nội dung đã được duyệt: Compass',
       'Báo cáo vi phạm mới',
       'Bản nội dung mới chờ duyệt: Hiện vật chưa đặt tên',
+    ]);
+  });
+
+  it('báo cáo được giao → người được giao nhận, tiêu đề có tên người giao + hiện vật; tự nhận thì không báo', async () => {
+    const { service, inserted } = harness();
+    await service.reportAssigned({ assigneeId: 'mod', actorId: 'admin', actorName: 'Quản trị viên',
+      exhibitName: { vi: 'La bàn', en: 'Compass' }, message: 'Niên đại sai' });
+    await service.reportAssigned({ assigneeId: 'admin', actorId: 'admin', actorName: 'Quản trị viên', exhibitName: 'x', message: 'm' });
+    await service.reportAssigned({ assigneeId: 'mod', actorId: 'admin', actorName: 'Quản trị viên', exhibitName: null, message: 'm' });
+    assert.deepEqual(inserted.map((n) => [n.userId, n.type, n.title, n.body, n.link]), [
+      ['mod', NotificationType.REPORT_ASSIGNED, 'Quản trị viên giao cho bạn báo cáo về La bàn', 'Niên đại sai', '/admin/reports'],
+      ['mod', NotificationType.REPORT_ASSIGNED, 'Quản trị viên giao cho bạn báo cáo', 'm', '/admin/reports'],
     ]);
   });
 

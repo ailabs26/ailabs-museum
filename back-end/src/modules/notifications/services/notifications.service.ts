@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PERMISSIONS } from '../../../common/constants/permissions.constant';
 import { Paginated } from '../../../common/types/paginated.type';
 import { primaryText, resolveBilingual } from '../../exhibits/utils/bilingual';
+import { UsersRepository } from '../../users/repositories/users.repository';
 import { Notification, NotificationType } from '../entities/notification.entity';
 import { NotificationsRepository } from '../repositories/notifications.repository';
 
@@ -35,7 +36,15 @@ const NOT_FOUND = 'Không tìm thấy thông báo';
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private readonly repo: NotificationsRepository) {}
+  constructor(
+    private readonly repo: NotificationsRepository,
+    private readonly users: UsersRepository,
+  ) {}
+
+  /** Id người dùng active có quyền `permission`. */
+  private async holders(permission: string): Promise<string[]> {
+    return (await this.users.findActiveWithPermission(permission)).map((user) => user.id);
+  }
 
   // ---------------------------------------------------------------- Người nhận
 
@@ -66,7 +75,7 @@ export class NotificationsService {
   /** Bản nội dung được gửi duyệt → người có quyền duyệt (trừ chính người gửi). */
   revisionSubmitted(input: { exhibitName: unknown; actorId: string }): Promise<void> {
     return this.safely(NotificationType.REVISION_SUBMITTED, async () => {
-      const recipients = await this.repo.findRecipientIdsByPermission(PERMISSIONS.REVISION_PUBLISH);
+      const recipients = await this.holders(PERMISSIONS.REVISION_PUBLISH);
       return recipients.filter((id) => id !== input.actorId).map((userId) => ({
         userId,
         type: NotificationType.REVISION_SUBMITTED,
@@ -98,7 +107,7 @@ export class NotificationsService {
   /** Khách gửi báo cáo vi phạm → người có quyền xử lý báo cáo. */
   reportCreated(input: { exhibitName: unknown; message: string }): Promise<void> {
     return this.safely(NotificationType.REPORT_CREATED, async () => {
-      const recipients = await this.repo.findRecipientIdsByPermission(PERMISSIONS.REPORT_RESOLVE);
+      const recipients = await this.holders(PERMISSIONS.REPORT_RESOLVE);
       const name = exhibitLabel(input.exhibitName);
       return recipients.map((userId) => ({
         userId,
@@ -107,6 +116,23 @@ export class NotificationsService {
         body: input.message,
         link: '/admin/reports',
       }));
+    });
+  }
+
+  /** Báo cáo được người khác giao cho mình → người được giao (tự nhận thì không báo). */
+  reportAssigned(input: {
+    assigneeId: string; actorId: string; actorName: string; exhibitName: unknown; message: string;
+  }): Promise<void> {
+    return this.safely(NotificationType.REPORT_ASSIGNED, async () => {
+      if (input.assigneeId === input.actorId) return [];
+      const name = exhibitLabel(input.exhibitName);
+      return [{
+        userId: input.assigneeId,
+        type: NotificationType.REPORT_ASSIGNED,
+        title: clip(`${input.actorName} giao cho bạn báo cáo${name ? ` về ${name}` : ''}`),
+        body: input.message,
+        link: '/admin/reports',
+      }];
     });
   }
 

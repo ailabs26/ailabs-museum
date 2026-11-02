@@ -20,6 +20,8 @@ import {
 import { ResolveReportDto } from '../dto/resolve-report.dto';
 import { ContentReportsRepository } from '../repositories/content-reports.repository';
 import { NotificationsService } from '../../notifications/services/notifications.service';
+import { UserBrief, UsersRepository } from '../../users/repositories/users.repository';
+import { PERMISSIONS } from '../../../common/constants/permissions.constant';
 
 /** Trạng thái còn mở (chưa đóng) — cho phép chuyển tiếp. */
 const OPEN_STATES = [ContentReportStatus.OPEN, ContentReportStatus.IN_PROGRESS];
@@ -29,6 +31,7 @@ export class ContentReportsService {
   constructor(
     private readonly repo: ContentReportsRepository,
     private readonly notifications: NotificationsService,
+    private readonly users: UsersRepository,
   ) {}
 
   /** Danh sách báo cáo cho Admin. */
@@ -62,15 +65,47 @@ export class ContentReportsService {
     return this.toResponse(saved);
   }
 
-  /** Tiếp nhận báo cáo: open → in_progress, gán cho người xử lý. */
-  async assign(id: string, actor: AuthUser): Promise<ReportResponseDto> {
+  /** Người có thể được giao báo cáo: user active có quyền xử lý báo cáo. */
+  assignees(): Promise<UserBrief[]> {
+    return this.users.findActiveWithPermission(PERMISSIONS.REPORT_RESOLVE);
+  }
+
+  /**
+   * Tiếp nhận hoặc giao báo cáo (open/in_progress → in_progress). Bỏ trống `assigneeId` = tự tiếp nhận; giao cho
+   * người khác thì người đó phải có quyền xử lý báo cáo và sẽ nhận thông báo. Cho phép giao lại khi đang xử lý.
+   */
+  async assign(id: string, actor: AuthUser, assigneeId?: string): Promise<ReportResponseDto> {
     const report = await this.getOrThrow(id);
-    if (report.status !== ContentReportStatus.OPEN) {
-      throw new ConflictException('Chỉ có thể tiếp nhận báo cáo đang mở');
+    if (!OPEN_STATES.includes(report.status)) {
+      throw new ConflictException('Chỉ có thể giao báo cáo đang mở hoặc đang xử lý');
     }
+    const targetId = assigneeId ?? actor.id;
+    if (report.status === ContentReportStatus.IN_PROGRESS && report.assignedToId === targetId) {
+      throw new ConflictException('Báo cáo đã được giao cho người này');
+    }
+
+    let assignee: UserBrief = { id: actor.id, email: actor.email, displayName: actor.displayName };
+    if (targetId !== actor.id) {
+      const found = (await this.assignees()).find((user) => user.id === targetId);
+      if (!found) {
+        throw new BadRequestException({
+          message: 'Người được giao không tồn tại hoặc không có quyền xử lý báo cáo',
+          errors: [{ code: 'invalid_assignee', field: 'assigneeId', message: 'Không có quyền xử lý báo cáo' }],
+        });
+      }
+      assignee = found;
+    }
+
     report.status = ContentReportStatus.IN_PROGRESS;
-    report.assignedToId = actor.id;
-    return this.toResponse(await this.repo.save(report));
+    report.assignedToId = assignee.id;
+    // Gán luôn quan hệ để phản hồi hiện đúng người mới (findDetail đã nạp người cũ hoặc null).
+    report.assignedTo = assignee as User;
+    const saved = await this.repo.save(report);
+    await this.notifications.reportAssigned({
+      assigneeId: assignee.id, actorId: actor.id, actorName: actor.displayName,
+      exhibitName: await this.repo.exhibitName(report.exhibitId), message: report.message,
+    });
+    return this.toResponse(saved);
   }
 
   /** Xử lý xong: → resolved + kết luận. */

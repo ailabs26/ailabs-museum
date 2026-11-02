@@ -48,18 +48,4 @@ export class NotificationsRepository extends BaseRepository<Notification> {
   async insertMany(rows: Partial<Notification>[]): Promise<void> {
     if (rows.length > 0) await this.repo.insert(rows);
   }
-
-  /** User đang hoạt động có quyền `permission` qua một vai trò chưa bị xóa. */
-  async findRecipientIdsByPermission(permission: string): Promise<string[]> {
-    const rows: { id: string }[] = await this.repo.query(
-      `SELECT DISTINCT u.id FROM users u
-       JOIN user_roles ur ON ur.user_id = u.id
-       JOIN roles r ON r.id = ur.role_id AND r.is_deleted = false
-       JOIN role_permissions rp ON rp.role_id = r.id
-       JOIN permissions p ON p.id = rp.permission_id
-       WHERE p.code = $1 AND u.status = 'active' AND u.is_deleted = false`,
-      [permission],
-    );
-    return rows.map((row) => row.id);
-  }
 }

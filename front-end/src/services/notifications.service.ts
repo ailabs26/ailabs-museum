@@ -1,7 +1,7 @@
 import { http } from '@/core/api/http-client';
 import type { Page } from '@/core/api/api-response';
 
-export type NotificationType = 'revision.submitted' | 'revision.approved' | 'revision.rejected' | 'report.created';
+export type NotificationType = 'revision.submitted' | 'revision.approved' | 'revision.rejected' | 'report.created' | 'report.assigned';
 
 export interface NotificationItem {
   id: string;
