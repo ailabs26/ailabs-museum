@@ -24,9 +24,10 @@ Giới hạn còn lại: nếu phản hồi refresh bị mất (server đã xoay
 
 ## Kiểm chứng ngày 02/11/2026
 
-- Back-end: lint, typecheck đạt; `npm test` 2009/2009. Thêm test: trong ân hạn → `rotated_recently`, family còn sống, token
+- Back-end: lint, typecheck đạt; `npm test` 2108/2108 với PostgreSQL 16 tạm (gồm test tích hợp DB, 0 skip); coverage lõi 95,39%. Thêm test: trong ân hạn → `rotated_recently`, family còn sống, token
   mới vẫn xoay vòng được; family đã thu hồi → vẫn `reuse`; replay sau ân hạn → `reuse` + thu hồi; HTTP: `rotated_recently`
-  không ghi audit, không `Set-Cookie`, các lý do khác vẫn xóa cookie.
+  không ghi audit, không `Set-Cookie`, các lý do khác vẫn xóa cookie. `core-db.integration.spec.ts` (DB thật): 2 refresh
+  đồng thời cùng token → 1 thành công + 1 `rotated_recently`, family còn sống; replay sau ân hạn → thu hồi cả family.
 - Front-end: lint, typecheck đạt; vitest 213/213. Thêm test: refresh gửi bên trong khóa và nhả khóa sau phản hồi; lỗi vẫn nhả
   khóa; không có Web Locks vẫn refresh được.
 - E2E Playwright `tests/auth-multi-tab-refresh-live.spec.ts` (back-end + PostgreSQL 16 tạm, `REFRESH_RATE_LIMIT_PER_SESSION=1000`
