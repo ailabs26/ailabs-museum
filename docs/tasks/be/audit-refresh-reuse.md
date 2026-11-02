@@ -25,3 +25,7 @@ Người phụ trách: Nguyễn Văn Thắng. Nhánh `feat/audit-refresh-reuse`.
   token mới (chưa dùng) gửi lên ra `revoked` chứ không phải `reuse`.
 - `auth-audit.spec.ts` (HTTP): `reuse` → đúng 1 bản ghi `auth.refresh_reuse_detected` với chủ phiên + family + UA, thông
   điệp 401 chung, cookie bị xóa; `revoked` / `expired` / `inactive_user` / `unknown_token` → không ghi.
+- Smoke trên app thật (build + seed, PostgreSQL tạm): đăng nhập → refresh lần 1 thành công (200) → gửi lại token gốc với
+  UA `Attacker/1.0` → 401 kèm thông điệp chung → token mới của family đó cũng 401. Có đúng 1 bản ghi
+  `auth.refresh_reuse_detected` (actor null, có `resourceId`, đúng `familyId`, UA `Attacker/1.0`); lần 401 thứ hai
+  (`revoked`) không ghi.
