@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { CommonModule } from './common/common.module';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { appConfig, databaseConfig, jwtConfig, mediaConfig, reportsConfig, validateEnvironment } from './config';
@@ -25,6 +26,8 @@ import { UsersModule } from './modules/users/users.module';
       load: [appConfig, databaseConfig, jwtConfig, mediaConfig, reportsConfig],
       validate: validateEnvironment,
     }),
+    // Bộ lập lịch cron (dọn refresh_sessions...).
+    ScheduleModule.forRoot(),
     DatabaseModule,
     CommonModule,
     // Phân hệ quản trị hệ thống (auth + RBAC + nhật ký).
