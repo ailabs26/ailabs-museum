@@ -1,3 +1,5 @@
+import { saveBlob } from './saveBlob';
+
 /**
  * Ghép watermark nghệ thuật Aura Museum lên ảnh chụp cảnh 3D rồi tải về.
  * Trả về false nếu không dựng được ảnh (ví dụ canvas rỗng).
@@ -41,14 +43,7 @@ export function downloadScenePhoto(dataUrl: string | null, roomName?: string): P
 
       canvas.toBlob((blob) => {
         if (!blob) { resolve(false); return; }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `aura-museum-${Date.now()}.png`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
+        saveBlob(blob, `aura-museum-${Date.now()}.png`);
         resolve(true);
       }, 'image/png');
     };

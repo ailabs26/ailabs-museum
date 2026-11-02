@@ -100,3 +100,32 @@ describe('endsSession', () => {
     }
   });
 });
+
+describe('http-client — tải file (responseType blob) bị lỗi', () => {
+  const originalAdapter = http.raw.defaults.adapter;
+
+  afterEach(() => {
+    http.raw.defaults.adapter = originalAdapter;
+  });
+
+  /** Mọi request trả lỗi `status` với body Blob. */
+  function replyBlob(status: number, body: Blob) {
+    http.raw.defaults.adapter = async (config) => {
+      throw new AxiosError(`HTTP ${status}`, 'ERR_BAD_RESPONSE', config, null,
+        { status, statusText: '', data: body, headers: {}, config });
+    };
+  }
+
+  it('body lỗi là Blob JSON → đọc lại để giữ thông điệp của back-end', async () => {
+    replyBlob(400, new Blob([JSON.stringify({ success: false, data: null, message: 'Có hơn 10.000 bản ghi' })], { type: 'application/json' }));
+    await expect(http.raw.get('/audit/export', { responseType: 'blob' }))
+      .rejects.toMatchObject({ status: 400, message: 'Có hơn 10.000 bản ghi' });
+  });
+
+  it('Blob không phải JSON hoặc JSON hỏng → giữ lỗi gốc, không ném lỗi parse', async () => {
+    replyBlob(502, new Blob(['<html>Bad Gateway</html>'], { type: 'text/html' }));
+    await expect(http.raw.get('/x', { responseType: 'blob' })).rejects.toMatchObject({ status: 502, message: 'HTTP 502' });
+    replyBlob(500, new Blob(['{hỏng'], { type: 'application/json' }));
+    await expect(http.raw.get('/x', { responseType: 'blob' })).rejects.toMatchObject({ status: 500, message: 'HTTP 500' });
+  });
+});

@@ -131,6 +131,15 @@ client.interceptors.response.use(
         tokenStore.clear();
       }
     }
+    // Request `responseType: 'blob'` (tải file) nhận lỗi JSON dưới dạng Blob → đọc lại để giữ message của back-end.
+    const body: unknown = error.response?.data;
+    if (body instanceof Blob && body.type.includes('json')) {
+      try {
+        error.response.data = JSON.parse(await body.text());
+      } catch {
+        // Không đọc được: giữ lỗi gốc của axios.
+      }
+    }
     return Promise.reject(toApiException(error));
   },
 );
