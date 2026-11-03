@@ -1,6 +1,6 @@
 # Hướng Dẫn Toàn Diện CodeGraph & Quy Định Bắt Buộc Dành Cho AI Agent
 
-Tài liệu này là **quy chuẩn bắt buộc** và cẩm nang vận hành chi tiết về **CodeGraph** (`https://github.com/colbymchenry/codegraph`) áp dụng cho toàn bộ các AI Agent (Claude Code, Cursor, Codex, Gemini, Antigravity, GitHub Copilot) và các kỹ sư phần mềm làm việc trong hệ sinh thái dự án của DTSoft.
+Tài liệu này là **quy chuẩn bắt buộc** và cẩm nang vận hành chi tiết về **CodeGraph** (`https://github.com/colbymchenry/codegraph`) áp dụng cho toàn bộ các AI Agent (Claude Code, Cursor, Codex, Gemini, Antigravity, GitHub Copilot) và các kỹ sư phần mềm làm việc trong hệ sinh thái dự án của AILabs.
 
 ---
 
@@ -14,7 +14,7 @@ Tài liệu này là **quy chuẩn bắt buộc** và cẩm nang vận hành chi
 6. [Kịch bản thực chiến trong dự án .NET CQRS Clean Architecture & Angular](#6-kịch-bản-thực-chiến-trong-dự-án-net-cqrs-clean-architecture--angular)
 7. [Cấu hình nâng cao (`codegraph.json`) & Biến môi trường](#7-cấu-hình-nâng-cao-codegraphjson--biến-môi-trường)
 8. [Xử lý sự cố & Troubleshooting](#8-xử-lý-sự-cố--troubleshooting)
-9. [Cơ chế tích hợp tự động trong bộ Kit dtsoft.agent](#9-cơ-chế-tích-hợp-tự-động-trong-bộ-kit-dtsoftagent)
+9. [Cơ chế tích hợp tự động trong bộ Kit agent-kit](#9-cơ-chế-tích-hợp-tự-động-trong-bộ-kit-agent-kit)
 
 ---
 
@@ -297,7 +297,7 @@ codegraph_explore({
 ```typescript
 // Đọc mã nguồn file thay cho công cụ Read truyền thống:
 codegraph_node({
-  file: "api/Dtsoft.Edu.Application/Features/Students/StudentService.cs",
+  file: "api/AiLabs.Museum.Application/Features/Students/StudentService.cs",
   offset: 1,
   limit: 100
 });
@@ -456,11 +456,11 @@ fi
 
 ## 6. Kịch bản thực chiến trong dự án .NET CQRS Clean Architecture & Angular
 
-Bộ kit `dtsoft.agent` chuyên dụng cho các dự án **.NET CQRS Clean Architecture** kết hợp **Angular**. Dưới đây là các kịch bản thực tế mà AI Agent bắt buộc phải áp dụng CodeGraph để thao tác chính xác:
+Bộ kit `agent-kit` chuyên dụng cho các dự án **.NET CQRS Clean Architecture** kết hợp **Angular**. Dưới đây là các kịch bản thực tế mà AI Agent bắt buộc phải áp dụng CodeGraph để thao tác chính xác:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                      KIẾN TRÚC .NET CQRS TẠI DTSOFT                     │
+│                      KIẾN TRÚC .NET CQRS TẠI AILABS                     │
 │                                                                         │
 │  [Angular UI] ──HTTP──> [API Controller]                                │
 │                              │                                          │
@@ -644,9 +644,9 @@ Auto-sync chạy nền của CodeGraph hoạt động bền bỉ, tuy nhiên tro
 
 ---
 
-## 9. Cơ chế tích hợp tự động trong bộ Kit dtsoft.agent
+## 9. Cơ chế tích hợp tự động trong bộ Kit agent-kit
 
-Bộ kit `dtsoft.agent/agent` đã được thiết kế sẵn để tích hợp CodeGraph một cách hoàn toàn tự động vào mọi dự án khi cài đặt:
+Bộ kit `agent-kit/agent` đã được thiết kế sẵn để tích hợp CodeGraph một cách hoàn toàn tự động vào mọi dự án khi cài đặt:
 
 1. **Kiểm tra & Cài đặt tự động:** Script `install-kit.ps1` tự động kiểm tra xem máy đã có CLI `codegraph` chưa. Nếu chưa, script sẽ tải trực tiếp bản binary chính thức từ `https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.ps1`.
 2. **Khởi tạo đồ thị:** `install-kit.ps1` tự động gọi `codegraph init $Target -i` để xây dựng đồ thị ngay khi cài đặt kit.

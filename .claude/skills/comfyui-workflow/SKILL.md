@@ -2,7 +2,7 @@
 name: comfyui-workflow
 description: Design, construct, automate, and debug ComfyUI node graph workflows for Stable Diffusion, Flux, and SDXL. Build API prompt payloads, manage custom nodes, checkpoint models, LoRA pipelines, and execute workflows via ComfyUI REST/WebSocket API.
 metadata:
-  origin: DTSOFT
+  origin: AILabs
 ---
 
 # ComfyUI Workflow Architecture & Automation

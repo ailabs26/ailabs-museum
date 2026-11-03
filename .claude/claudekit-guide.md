@@ -1,6 +1,6 @@
-# Hướng Dẫn Agent Kit — ClaudeKit + bộ kỹ năng DTSOFT
+# Hướng Dẫn Agent Kit — ClaudeKit + bộ kỹ năng AILabs
 
-Chào mừng đến với **Agent Kit**. Đây là cẩm nang cho bộ cấu hình Claude Code dùng chung của DTSOFT: nền **ClaudeKit Engineer v2.18.0** cộng các lớp bổ sung (Superpowers, ECC, Templates, Matt Pocock, VoltAgent, CodeGraph…) và bộ command riêng cho .NET + Angular.
+Chào mừng đến với **Agent Kit**. Đây là cẩm nang cho bộ cấu hình Claude Code dùng chung của AILabs: nền **ClaudeKit Engineer v2.18.0** cộng các lớp bổ sung (Superpowers, ECC, Templates, Matt Pocock, VoltAgent, CodeGraph…) và bộ command riêng cho .NET + Angular.
 
 > File này được `install-kit.ps1` phân phối kèm kit và nằm tại `.claude/claudekit-guide.md` trong dự án đích. Bản dành cho Agent CLI / Codex: [`.agents/agents-guide.md`](../.agents/agents-guide.md).
 
@@ -351,7 +351,7 @@ Kit có **<!--n:agents-->362<!--/n--> sub-agent**. Claude tự giao việc cho a
 
 | Nhóm chuyên môn | Agent tiêu biểu | Ghi chú |
 | --- | --- | --- |
-| **.NET & Angular** | `angular-architect`, `csharp-developer`, `dotnet-core-expert`, `dotnet-framework-4.8-expert`, `CSharpExpert`, `csharp-reviewer`, `WinFormsExpert` | Tối ưu cho stack .NET Clean Architecture + CQRS + Angular của DTSOFT |
+| **.NET & Angular** | `angular-architect`, `csharp-developer`, `dotnet-core-expert`, `dotnet-framework-4.8-expert`, `CSharpExpert`, `csharp-reviewer`, `WinFormsExpert` | Tối ưu cho stack .NET Clean Architecture + CQRS + Angular của AILabs |
 | **Ngôn ngữ & nền tảng** | `typescript-pro`, `nextjs-developer`, `vue-expert`, `python-pro`, `golang-pro`, `rust-engineer`, `java-architect`, `spring-boot-engineer`, `powershell-7-expert` | Idiom hiện đại theo từng ngôn ngữ |
 | **Reviewer theo ngôn ngữ** | `python-reviewer`, `go-reviewer`, `rust-reviewer`, `java-reviewer`, `kotlin-reviewer`, `react-reviewer`, `vue-reviewer`… | Mỗi ngôn ngữ một reviewer |
 | **Cơ sở dữ liệu** | Thiết kế `database-architect` · vận hành `database-administrator` · tối ưu `database-optimizer` · review `database-reviewer`; theo công nghệ `postgres-pro`, `sql-pro`, `nosql-specialist`, `supabase-schema-architect`, `neon-database-architect` | Bốn vai chính, các agent theo công nghệ giữ nguyên |
