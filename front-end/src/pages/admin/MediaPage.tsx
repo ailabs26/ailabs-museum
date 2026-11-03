@@ -434,6 +434,11 @@ export function MediaPage() {
         </Grid>
         <Group mt="sm">
           <TrashToggle trash={trash} onChange={(value) => { setTrash(value); setPage(1); }} />
+          {trash && (
+            <Text size="xs" c="dimmed">
+              Media đã xóa quá 30 ngày và không còn hiện vật nào dùng sẽ bị xóa vĩnh viễn (kể cả file).
+            </Text>
+          )}
         </Group>
       </Card>
 
