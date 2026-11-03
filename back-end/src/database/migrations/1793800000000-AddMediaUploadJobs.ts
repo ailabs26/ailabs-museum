@@ -6,8 +6,8 @@ import { MigrationInterface, QueryRunner } from "typeorm";
  * nhận lỗi 23505 và đọc lại job đã có. `created_by` NOT NULL vì NULL không bằng nhau trong
  * unique index của PostgreSQL.
  */
-export class AddMediaUploadJobs1793600000000 implements MigrationInterface {
-    name = 'AddMediaUploadJobs1793600000000'
+export class AddMediaUploadJobs1793800000000 implements MigrationInterface {
+    name = 'AddMediaUploadJobs1793800000000'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE "media_upload_jobs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "created_by" uuid NOT NULL, "idempotency_key" character varying(128) NOT NULL, "request_checksum" character(64) NOT NULL, "status" character varying(12) NOT NULL DEFAULT 'queued', "progress" smallint NOT NULL DEFAULT 0, "media_id" uuid, "error_code" character varying(40), "error_message" text, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_media_upload_jobs_actor_key" UNIQUE ("created_by", "idempotency_key"), CONSTRAINT "CHK_media_upload_jobs_status" CHECK ("status" IN ('queued', 'processing', 'succeeded', 'failed')), CONSTRAINT "CHK_media_upload_jobs_progress" CHECK ("progress" BETWEEN 0 AND 100), CONSTRAINT "PK_media_upload_jobs" PRIMARY KEY ("id"))`);

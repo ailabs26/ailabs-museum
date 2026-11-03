@@ -8,7 +8,7 @@ Nhánh `feat/bt3-async-upload-jobs`, tách từ `origin/dev` tại baseline
 
 - `POST /api/admin/media/upload-jobs` (multipart `file` + header `Idempotency-Key`) → 202 `{ id, status, progress, ... }`; retry cùng key + cùng nội dung → 200 job cũ; khác nội dung → 409.
 - `GET /api/admin/media/upload-jobs/:id` → trạng thái `queued → processing → succeeded | failed`, `progress`, `mediaId`, `errorCode`.
-- Bảng `media_upload_jobs` với unique `(created_by, idempotency_key)` — migration `1793600000000-AddMediaUploadJobs.ts`.
+- Bảng `media_upload_jobs` với unique `(created_by, idempotency_key)` — migration `1793800000000-AddMediaUploadJobs.ts`.
 
 Code: `back-end/src/modules/media/{controllers/admin-upload-jobs.controller.ts, services/media-upload-job.service.ts, repositories/media-upload-job.repository.ts, entities/media-upload-job.entity.ts, dto/upload-job-response.dto.ts}`.
 
