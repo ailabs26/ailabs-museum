@@ -76,7 +76,7 @@ Thử nghiệm trên 7 kho mã nguồn thực tế lớn (VS Code, Excalidraw, D
 ## 2. Quy định BẮT BUỘC dành cho AI Agent (Mandatory Agent Protocols)
 
 > [!IMPORTANT]
-> **ĐIỀU KHOẢN BẮT BUỘC:** Khi hoạt động trong bất kỳ thư mục dự án nào có tồn tại thư mục `.codegraph/` (hoặc lệnh `codegraph` đã được cấu hình qua MCP), tất cả AI Agent **BẮT BUỘC PHẢI TUÂN THỦ** các nguyên tắc dưới đây. Bất kỳ hành vi bỏ qua CodeGraph để dùng grep dò dẫm đều bị coi là vi phạm tiêu chuẩn kỹ thuật của DTSoft.
+> **ĐIỀU KHOẢN BẮT BUỘC:** Khi hoạt động trong bất kỳ thư mục dự án nào có tồn tại thư mục `.codegraph/` (hoặc lệnh `codegraph` đã được cấu hình qua MCP), tất cả AI Agent **BẮT BUỘC PHẢI TUÂN THỦ** các nguyên tắc dưới đây. Bất kỳ hành vi bỏ qua CodeGraph để dùng grep dò dẫm đều bị coi là vi phạm tiêu chuẩn kỹ thuật của .
 
 ### 2.1. Quy tắc số 1: Zero-Token Wasted Search (Cấm quét dạo)
 

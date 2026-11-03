@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "qdrant": {
+      "description": "Qdrant Vector Database MCP Server. Perform semantic vector search, manage collections, store embeddings, and retrieve relevant documents for RAG workflows.",
+      "command": "uvx",
+      "args": [
+        "mcp-server-qdrant"
+      ],
+      "env": {
+        "QDRANT_URL": "http://localhost:6333",
+        "QDRANT_API_KEY": "<your-qdrant-api-key>"
+      }
+    }
+  }
+}
