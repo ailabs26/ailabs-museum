@@ -27,6 +27,8 @@ const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 /** Metadata đi kèm file; cùng key mà khác các trường này cũng là request khác. */
 const FINGERPRINT_FIELDS = ['kind', 'altText', 'source', 'author', 'license'] as const;
 const INTERNAL_ERROR_MESSAGE = 'Lỗi không xác định khi xử lý file; hãy upload lại với Idempotency-Key mới';
+/** Số lần thử ghi job succeeded sau khi media đã lưu (lỗi DB tạm thời). */
+const COMPLETION_ATTEMPTS = 3;
 
 function headerError(code: string, message: string): ApiError[] {
   return [{ field: IDEMPOTENCY_KEY_HEADER, code, message }];
@@ -59,6 +61,8 @@ function describeFailure(error: unknown): { code: string; message: string } {
 export class MediaUploadJobService implements OnApplicationBootstrap {
   private readonly logger = new Logger(MediaUploadJobService.name);
   private readonly running = new Set<Promise<void>>();
+  /** Thời gian chờ giữa các lần thử ghi job succeeded; public để test đặt 0. */
+  completionRetryDelayMs = 200;
 
   constructor(
     private readonly jobs: MediaUploadJobRepository,
@@ -131,18 +135,48 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
   }
 
   private async process(jobId: string, file: UploadedMediaFile, dto: UploadMediaDto, actorId: string): Promise<void> {
+    let mediaId: string;
     try {
       await this.jobs.patch(jobId, { status: UploadJobStatus.PROCESSING, progress: 50 });
-      const media = await this.media.upload(file, dto, actorId);
-      await this.jobs.patch(jobId, { status: UploadJobStatus.SUCCEEDED, progress: 100, mediaId: media.id });
+      mediaId = (await this.media.upload(file, dto, actorId)).id;
     } catch (error) {
-      const failure = describeFailure(error);
-      if (failure.code === 'internal_error') {
-        this.logger.error(`Job upload ${jobId} lỗi: ${(error as Error)?.message ?? String(error)}`);
+      await this.markFailed(jobId, error);
+      return;
+    }
+    // Media đã lưu: từ đây lỗi chỉ là lỗi ghi trạng thái job, KHÔNG được ghi failed (job sẽ thiếu mediaId
+    // trong khi media "ready" tồn tại, và retry cùng key không chạy lại worker).
+    await this.markSucceeded(jobId, mediaId);
+  }
+
+  private async markFailed(jobId: string, error: unknown): Promise<void> {
+    const failure = describeFailure(error);
+    if (failure.code === 'internal_error') {
+      this.logger.error(`Job upload ${jobId} lỗi: ${(error as Error)?.message ?? String(error)}`);
+    }
+    await this.jobs
+      .patch(jobId, { status: UploadJobStatus.FAILED, progress: 100, errorCode: failure.code, errorMessage: failure.message })
+      .catch((patchError: Error) => this.logger.error(`Không cập nhật được job ${jobId}: ${patchError.message}`));
+  }
+
+  /**
+   * Thử ghi succeeded tối đa COMPLETION_ATTEMPTS lần. Nếu vẫn lỗi: giữ job ở processing (không xóa
+   * media, không ghi failed) và log mediaId để đối soát thủ công.
+   */
+  private async markSucceeded(jobId: string, mediaId: string): Promise<void> {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await this.jobs.patch(jobId, { status: UploadJobStatus.SUCCEEDED, progress: 100, mediaId });
+        return;
+      } catch (error) {
+        const reason = (error as Error)?.message ?? String(error);
+        if (attempt >= COMPLETION_ATTEMPTS) {
+          this.logger.error(
+            `Job upload ${jobId}: media ${mediaId} đã lưu nhưng không ghi được trạng thái succeeded sau ${attempt} lần (${reason}); job giữ processing, cần đối soát`,
+          );
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, this.completionRetryDelayMs));
       }
-      await this.jobs
-        .patch(jobId, { status: UploadJobStatus.FAILED, progress: 100, errorCode: failure.code, errorMessage: failure.message })
-        .catch((patchError: Error) => this.logger.error(`Không cập nhật được job ${jobId}: ${patchError.message}`));
     }
   }
 }

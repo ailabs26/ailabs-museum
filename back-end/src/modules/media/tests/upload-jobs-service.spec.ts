@@ -99,6 +99,54 @@ describe('MediaUploadJobService (unit, VT-078)', () => {
     await service.whenIdle();
   });
 
+  it('TC19 — media đã lưu, patch succeeded lỗi DB tạm thời 2 lần rồi thành công → job succeeded có mediaId, không ghi failed', async () => {
+    service.completionRetryDelayMs = 0;
+    let succeededFailures = 0;
+    jobRepo.patchError = (data) =>
+      data.status === UploadJobStatus.SUCCEEDED && succeededFailures++ < 2 ? new Error('connection terminated unexpectedly') : undefined;
+
+    const { job } = await service.enqueue(glb(), {}, ACTOR, randomUUID());
+    await service.whenIdle();
+
+    const media = mediaRepo.only();
+    const row = jobRepo.rows.get(job.id)!;
+    assert.equal(succeededFailures, 3, 'thử 3 lần: 2 lỗi + 1 thành công');
+    assert.equal(row.status, UploadJobStatus.SUCCEEDED);
+    assert.equal(row.mediaId, media.id);
+    assert.equal(row.errorCode, null);
+    assert.ok(!jobRepo.patches.some((p) => p.data.status === UploadJobStatus.FAILED), 'không được có patch failed');
+  });
+
+  it('TC19b — media đã lưu, patch succeeded lỗi liên tục → media vẫn còn, job giữ processing, không ghi failed; retry cùng key không chạy lại worker', async () => {
+    service.completionRetryDelayMs = 0;
+    let succeededAttempts = 0;
+    jobRepo.patchError = (data) => {
+      if (data.status !== UploadJobStatus.SUCCEEDED) return undefined;
+      succeededAttempts++;
+      return new Error('connection terminated unexpectedly');
+    };
+    const key = randomUUID();
+
+    const { job } = await service.enqueue(glb(), {}, ACTOR, key);
+    await service.whenIdle();
+
+    const media = mediaRepo.only();
+    assert.equal(media.isDeleted, false);
+    assert.deepEqual(storage.removed, [], 'không được xóa file media đã lưu');
+    assert.equal(succeededAttempts, 3);
+    const row = jobRepo.rows.get(job.id)!;
+    assert.equal(row.status, UploadJobStatus.PROCESSING);
+    assert.equal(row.errorCode, null);
+    assert.ok(!jobRepo.patches.some((p) => p.data.status === UploadJobStatus.FAILED), 'không được có patch failed');
+
+    const patchesBefore = jobRepo.patches.length;
+    const retry = await service.enqueue(glb(), {}, ACTOR, key);
+    await service.whenIdle();
+    assert.equal(retry.created, false);
+    assert.equal(jobRepo.patches.length, patchesBefore);
+    assert.equal(mediaRepo.rows.size, 1, 'retry không tạo media thứ hai');
+  });
+
   it('TC13 — khởi động lại: job queued/processing → failed job_interrupted; job đã xong giữ nguyên', async () => {
     const queued = jobRepo.seed({ status: UploadJobStatus.QUEUED });
     const processing = jobRepo.seed({ status: UploadJobStatus.PROCESSING, progress: 50 });

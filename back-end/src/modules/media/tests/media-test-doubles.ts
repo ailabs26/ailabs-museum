@@ -126,6 +126,8 @@ export class FakeUploadJobRepository {
   /** Lịch sử patch theo thứ tự, để kiểm tra chuỗi trạng thái của worker. */
   patches: Array<{ id: string; data: UploadJobPatch }> = [];
   insertCalls = 0;
+  /** Hook giả lập lỗi DB khi patch; trả Error để patch đó ném lỗi (không được ghi vào `patches`). */
+  patchError?: (data: UploadJobPatch) => Error | undefined;
 
   async insertOrFindExisting(data: NewUploadJob): Promise<{ job: MediaUploadJob; created: boolean }> {
     this.insertCalls++;
@@ -155,6 +157,8 @@ export class FakeUploadJobRepository {
   }
 
   async patch(id: string, data: UploadJobPatch): Promise<void> {
+    const error = this.patchError?.(data);
+    if (error) throw error;
     this.patches.push({ id, data });
     const row = this.rows.get(id);
     if (row) Object.assign(row, data, { updatedAt: new Date() });
