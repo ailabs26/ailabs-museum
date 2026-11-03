@@ -171,6 +171,16 @@ flowchart LR
 ## 5.5 Bảo mật chung
 
 - Mật khẩu: hash **argon2id** (hoặc bcrypt), không log plaintext.
+- Chính sách độ mạnh (`common/security/password-policy.ts`, theo hướng NIST SP 800-63B), áp dụng khi **đặt** mật khẩu
+  (Admin tạo hoặc đặt lại, người dùng tự đổi). Mật khẩu cũ yếu vẫn đăng nhập được. Seed không qua chính sách.
+  - Tối thiểu **10 ký tự**, tối đa **72 byte UTF-8**: bcrypt bỏ qua phần sau 72 byte, nên dài hơn thì từ chối thay vì cắt âm thầm.
+  - Có cả chữ và số. **Không** ép ký tự đặc biệt, **không** bắt đổi định kỳ.
+  - Không phổ biến: phần chữ còn lại sau khi bỏ số/ký tự (vd "Password2024!" → "password") không được nằm trong danh sách
+    từ gốc phổ biến, không phải chuỗi bàn phím/dãy quen thuộc, và không chỉ là một ký tự lặp lại.
+  - Không chứa phần trước `@` của email hay một từ trong tên hiển thị (bỏ dấu, chỉ xét từ ≥ 3 ký tự).
+  - Vi phạm → 400 với `errors[].code` thuộc `password_too_short`, `password_too_long`, `password_needs_letter_and_digit`,
+    `password_common`, `password_personal`. FE (`helpers/passwordPolicy.ts` + `PasswordStrength`) báo ngay khi gõ, trừ
+    danh sách mật khẩu phổ biến (phần này chỉ kiểm ở BE).
 - Rate limit: login/refresh/đổi mật khẩu qua `AuthRateLimiter` (mục 5.1.2); báo cáo public qua `@nestjs/throttler` (5 lần/phút).
 - CORS giới hạn `FRONTEND_ORIGIN`; Helmet headers.
 - Validate mọi input bằng `class-validator`; chống SQLi nhờ TypeORM parameterized.
