@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream';
 import { ReadableStream as WebReadableStream } from 'node:stream/web';
-import { ByteRange, MediaStorageDriver } from './media-storage-driver';
+import { ByteRange, MediaStorageDriver, StoragePrefix, StoredObject } from './media-storage-driver';
 
 export interface SupabaseStorageOptions {
   /** Project URL, vd `https://<ref>.supabase.co` (không có dấu / cuối). */
@@ -18,6 +18,16 @@ export interface SupabaseStorageOptions {
   uploadTimeoutMs?: number;
   /** Cho phép test thay `fetch`. */
   fetchFn?: typeof fetch;
+}
+
+const LIST_PAGE_SIZE = 1000;
+
+/** Một mục trả về từ API list: file có `id`, thư mục con có `id: null`. */
+interface ListedEntry {
+  name: string;
+  id: string | null;
+  updated_at?: string | null;
+  created_at?: string | null;
 }
 
 /** Thân lỗi của Storage API: `statusCode` là chuỗi, có thể khác HTTP status (vd 400 + "404"). */
@@ -81,6 +91,37 @@ export class SupabaseStorageDriver implements MediaStorageDriver {
     }
     if (!res.body) return Readable.from([]);
     return Readable.fromWeb(res.body as unknown as WebReadableStream<Uint8Array>);
+  }
+
+  /**
+   * Liệt kê đệ quy qua `POST /storage/v1/object/list/{bucket}`: API trả từng cấp thư mục, mục `id === null` là thư mục
+   * con; phân trang bằng limit/offset.
+   */
+  async *list(prefix: StoragePrefix): AsyncIterable<StoredObject> {
+    yield* this.listFolder(prefix.replace(/\/$/, ''));
+  }
+
+  private async *listFolder(folder: string): AsyncIterable<StoredObject> {
+    const url = `${this.options.url}/storage/v1/object/list/${encodeURIComponent(this.options.bucket)}`;
+    for (let offset = 0; ; offset += LIST_PAGE_SIZE) {
+      const res = await this.request('POST', url, { 'content-type': 'application/json' }, Buffer.from(JSON.stringify({
+        prefix: folder, limit: LIST_PAGE_SIZE, offset, sortBy: { column: 'name', order: 'asc' },
+      })));
+      if (!res.ok) {
+        const body = await readError(res);
+        throw new Error(`Supabase Storage không liệt kê được ${folder}: ${res.status} ${body.message ?? ''}`.trim());
+      }
+      const entries = (await res.json()) as ListedEntry[];
+      for (const entry of entries) {
+        const key = `${folder}/${entry.name}`;
+        if (entry.id === null) {
+          yield* this.listFolder(key);
+        } else {
+          yield { key, lastModified: new Date(entry.updated_at ?? entry.created_at ?? 0) };
+        }
+      }
+      if (entries.length < LIST_PAGE_SIZE) return;
+    }
   }
 
   private objectUrl(key: string, scope?: 'authenticated'): string {

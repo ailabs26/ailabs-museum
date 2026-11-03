@@ -123,6 +123,16 @@ body `{ ids }` (1–100), **tất cả hoặc không**, quyền như xóa, audit
 | Media | `GET /admin/media?deleted=true` | `POST /admin/media/bulk-restore` | ID không nằm trong thùng rác | file được giữ khi xóa nên dùng lại ngay |
 | Hiện vật | `GET /admin/exhibits?deleted=true` | `POST /admin/exhibits/bulk-restore` | phòng chứa hiện vật đã bị xóa (khôi phục phòng trước) | về cuối thứ tự hiển thị của phòng; vẫn là bản nháp |
 
+**Media trong Thùng rác có hạn** (job `MediaCleanupService`, 03:30 hằng đêm):
+- Media xóa mềm quá `MEDIA_TRASH_RETENTION_DAYS` (mặc định 30) ngày và không còn revision nào tham chiếu (6 slot media)
+  bị **xóa vĩnh viễn**: bản ghi và file, ghi audit `media.purge`. Sau mốc này không khôi phục được nữa.
+- File trong storage không có bản ghi media (upload dở) và cũ hơn 24 giờ cũng bị xóa. Job chỉ xét key do media sinh ra
+  (`uploads/<images|models|audio|subtitles>/<uuid>.<ext>`, `quarantine/<uuid>.bin`); model phòng, seed và file khác không
+  bị đụng.
+- `MEDIA_ORPHAN_CLEANUP` = `off` | `dry-run` (**mặc định**, chỉ log số lượng) | `on`. **Chỉ bật `on` khi storage và DB
+  đi cùng nhau.** Ví dụ chạy driver `local` mà trỏ DB khác (DB dùng chung, DB tạm) thì mọi file cục bộ không có trong DB
+  đó đều bị coi là mồ côi.
+
 - 409 khi khôi phục: `"Không khôi phục được n mục đã chọn. Không mục nào được khôi phục."`, `errors[].code = "restore_blocked"`.
 - Tạo phòng với slug của phòng đã xóa → 409 gợi ý khôi phục phòng đó (slug unique toàn bảng); email của tài khoản đã xóa → 409 như cũ.
 - Chưa có xóa vĩnh viễn và tự dọn thùng rác theo thời gian.
@@ -219,6 +229,7 @@ Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. 
 | report.assign/resolve/dismiss | report | — | ReportsController |
 | user.delete, role.delete, media.delete, exhibit.delete | user / role / media / exhibit | — | xóa lẻ và `bulk-delete` |
 | user.restore, role.restore, room.restore, media.restore, exhibit.restore | user / role / room / media / exhibit | — | `bulk-restore` (một bản ghi/ID) |
+| media.purge | media | — | job dọn Thùng rác xóa vĩnh viễn media quá hạn; actor null; `reason` `{"storageKey","retentionDays"}` |
 | auth.password_change, auth.session_revoke_others, auth.logout_all | user | — | AuthController |
 | auth.session_revoke | session | — | AuthController (`resourceId` = family) |
 | auth.login | user | — | đăng nhập thành công; actor = tài khoản |
