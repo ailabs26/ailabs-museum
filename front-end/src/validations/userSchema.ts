@@ -6,6 +6,8 @@ export const userSchema = z.object({
   displayName: z.string(),
   status: z.enum(['active', 'disabled']),
   roles: z.array(z.string()),
+  /** Đã bật xác thực 2 lớp (Admin có thể tắt hộ). */
+  twoFactorEnabled: z.boolean().optional(),
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
   /** Chỉ có khi xem mục Đã xóa (`deleted=true`). */
