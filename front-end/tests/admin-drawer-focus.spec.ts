@@ -76,7 +76,7 @@ test('user create success returns to its persistent trigger', async ({ page }) =
   const dialog = page.getByRole('dialog', { name: 'Tạo tài khoản', exact: true });
   await dialog.getByRole('textbox', { name: 'Email', exact: true }).fill('new@example.test');
   await dialog.getByRole('textbox', { name: 'Tên hiển thị', exact: true }).fill('Tài khoản mới');
-  await dialog.locator('input[type="password"]').fill('fixture-only-password');
+  await dialog.locator('input[type="password"]').fill('fixture-only-password-7');
   await dialog.getByRole('button', { name: 'Lưu', exact: true }).press('Enter');
   await expect(dialog).toHaveCount(0);
   await expect(trigger).toBeFocused();

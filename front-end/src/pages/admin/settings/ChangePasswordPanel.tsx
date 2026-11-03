@@ -6,7 +6,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ApiException } from '@/core/api/api-error';
 import { authService } from '@/services/auth.service';
 import { notify } from '@/shared/components/feedback';
-import { FormPassword } from '@/shared/components/form';
+import { useAuth } from '@/core/auth/use-auth';
+import { passwordError } from '@/helpers/passwordPolicy';
+import { FormPassword, PasswordStrength } from '@/shared/components/form';
 
 interface ChangePasswordValues {
   currentPassword: string;
@@ -18,13 +20,15 @@ interface ChangePasswordValues {
 export function ChangePasswordPanel() {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const passwordContext = { email: user?.email, displayName: user?.displayName };
   const form = useForm<ChangePasswordValues>({
     initialValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
     validate: {
       currentPassword: (value) => (value ? null : 'Nhập mật khẩu hiện tại'),
       newPassword: (value, values) => {
-        if (value.length < 8 || value.length > 128) return 'Mật khẩu cần từ 8 đến 128 ký tự';
-        return value === values.currentPassword ? 'Mật khẩu mới phải khác mật khẩu hiện tại' : null;
+        if (value === values.currentPassword) return 'Mật khẩu mới phải khác mật khẩu hiện tại';
+        return passwordError(value, passwordContext);
       },
       confirmPassword: (value, values) => (value === values.newPassword ? null : 'Mật khẩu nhập lại không khớp'),
     },
@@ -59,8 +63,9 @@ export function ChangePasswordPanel() {
             {error && <Alert color="red" role="alert">{error}</Alert>}
             <FormPassword label="Mật khẩu hiện tại" autoComplete="current-password" required
               {...form.getInputProps('currentPassword')} />
-            <FormPassword label="Mật khẩu mới" description="Từ 8 đến 128 ký tự" autoComplete="new-password" required
-              {...form.getInputProps('newPassword')} />
+            <FormPassword label="Mật khẩu mới" description="Tối thiểu 10 ký tự, có chữ và số; không cần ký tự đặc biệt"
+              autoComplete="new-password" required {...form.getInputProps('newPassword')} />
+            <PasswordStrength value={form.values.newPassword} context={passwordContext} />
             <FormPassword label="Nhập lại mật khẩu mới" autoComplete="new-password" required
               {...form.getInputProps('confirmPassword')} />
             <Button type="submit" leftSection={<IconLock size={16} />} loading={mutation.isPending}>

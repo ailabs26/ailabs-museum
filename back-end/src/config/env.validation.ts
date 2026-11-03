@@ -144,6 +144,19 @@ class Environment {
   @IsIn(['local', 'supabase'])
   MEDIA_STORAGE_DRIVER: string = 'local';
 
+  /**
+   * Job dọn media mồ côi (03:30 hằng đêm): `off` | `dry-run` (chỉ log số lượng) | `on` (xóa thật). Mặc định dry-run vì
+   * xóa file không lấy lại được — bật `on` sau khi xem log dry-run.
+   */
+  @IsIn(['off', 'dry-run', 'on'])
+  MEDIA_ORPHAN_CLEANUP: string = 'dry-run';
+
+  /** Số ngày media đã xóa mềm còn nằm trong Thùng rác trước khi bị xóa vĩnh viễn. */
+  @IsInt()
+  @Min(1)
+  @Max(3650)
+  MEDIA_TRASH_RETENTION_DAYS: number = 30;
+
   /** Project URL của Supabase, vd https://<ref>.supabase.co — bắt buộc khi driver = supabase. */
   @ValidateIf((env: Environment) => env.MEDIA_STORAGE_DRIVER === 'supabase')
   @IsUrl({ require_tld: false, require_protocol: true, protocols: ['http', 'https'] })

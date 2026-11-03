@@ -13,12 +13,15 @@ import { MediaReferenceValidator } from './services/media-reference.validator';
 import { MEDIA_URL_OPTIONS, MediaUrlOptions, MediaUrlService } from './services/media-url.service';
 import { LocalStorageDriver } from './storage/local-storage.driver';
 import { MEDIA_STORAGE_DRIVER, MediaStorageDriver } from './storage/media-storage-driver';
+import { AuditModule } from '../audit/audit.module';
+import { MediaCleanupService } from './services/media-cleanup.service';
 import { SupabaseStorageDriver } from './storage/supabase-storage.driver';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Media])],
+  imports: [TypeOrmModule.forFeature([Media]), AuditModule],
   controllers: [AdminMediaController, MediaDeliveryController],
   providers: [
+    MediaCleanupService, // cron dọn media mồ côi 03:30
     MediaRepository,
     MediaService,
     MediaInspectionService,

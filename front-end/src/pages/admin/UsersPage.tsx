@@ -18,7 +18,8 @@ import {
 import { formatDeletedAt } from '@/helpers/bulkDelete';
 import { useBulkDelete, useBulkRestore } from '@/shared/hooks/useBulkDelete';
 import { useRowSelection } from '@/shared/hooks/useRowSelection';
-import { FormPassword, FormTextField } from '@/shared/components/form';
+import { FormPassword, FormTextField, PasswordStrength } from '@/shared/components/form';
+import { passwordError } from '@/helpers/passwordPolicy';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { rolesService } from '@/services/roles.service';
 import {
@@ -101,8 +102,8 @@ export function UsersPage() {
       email: (value) => /^\S+@\S+\.\S+$/.test(value.trim()) ? null : 'Email không hợp lệ',
       displayName: (value) => value.trim().length > 0 && value.trim().length <= 160
         ? null : 'Tên hiển thị cần từ 1 đến 160 ký tự',
-      password: (value) => editing && value.length === 0
-        ? null : value.length >= 8 && value.length <= 128 ? null : 'Mật khẩu cần từ 8 đến 128 ký tự',
+      password: (value, values) => editing && value.length === 0
+        ? null : passwordError(value, { email: values.email, displayName: values.displayName }),
     },
   });
 
@@ -332,6 +333,10 @@ export function UsersPage() {
                 <FormPassword label={editing ? 'Mật khẩu mới (để trống nếu giữ nguyên)' : 'Mật khẩu'}
                   disabled={saveMutation.isPending}
                   withAsterisk={!editing} {...form.getInputProps('password')} />
+              )}
+              {(!editing || canUpdate) && (
+                <PasswordStrength value={form.values.password}
+                  context={{ email: form.values.email, displayName: form.values.displayName }} />
               )}
               {editing && (
                 <Select label="Trạng thái" data={STATUS_OPTIONS} allowDeselect={false}

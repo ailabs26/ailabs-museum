@@ -14,6 +14,7 @@ import { RefreshSessionsRepository } from '../repositories/refresh-sessions.repo
 import { AuthRateLimiter } from './auth-rate-limiter.service';
 import { passwordFingerprint, SessionClient, TokenService } from './token.service';
 import { TwoFactorService } from './two-factor.service';
+import { assertPasswordPolicy } from '../../../common/security/password-policy';
 
 export interface LoginResult {
   accessToken: string;
@@ -146,6 +147,7 @@ export class AuthService {
       });
     }
 
+    assertPasswordPolicy(dto.newPassword, { email: user.email, displayName: user.displayName }, 'newPassword');
     const newHash = await this.passwords.hash(dto.newPassword);
     await this.tx.run(async (manager) => {
       // Khóa độc quyền theo user (cùng key với refresh/login) rồi đọc lại: nếu Admin vừa đặt lại

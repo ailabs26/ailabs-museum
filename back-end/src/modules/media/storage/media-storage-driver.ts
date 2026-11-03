@@ -22,4 +22,16 @@ export interface MediaStorageDriver {
   delete(key: string): Promise<void>;
   /** Mở luồng đọc toàn bộ hoặc một đoạn byte; `null` nếu object không tồn tại. */
   read(key: string, range?: ByteRange): Promise<Readable | null>;
+  /**
+   * Liệt kê đệ quy mọi object có key bắt đầu bằng `prefix` (`uploads/` hoặc `quarantine/`) — cho job dọn file mồ côi.
+   * Thứ tự không đảm bảo.
+   */
+  list(prefix: StoragePrefix): AsyncIterable<StoredObject>;
+}
+
+export type StoragePrefix = 'uploads/' | 'quarantine/';
+
+export interface StoredObject {
+  key: string;
+  lastModified: Date;
 }
