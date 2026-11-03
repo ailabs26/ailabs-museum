@@ -26,8 +26,10 @@
     # Sửa thật
     pwsh -File catch-rule-exception-ex.ps1
 #>
+[CmdletBinding()]
 param(
     [switch]$DryRun,
+    [ValidateNotNullOrEmpty()]
     [string]$ApiPath = (Join-Path $PSScriptRoot "..\..\api")
 )
 
@@ -36,7 +38,10 @@ param(
 [Console]::InputEncoding  = [System.Text.Encoding]::UTF8
 
 $ErrorActionPreference = "Stop"
-$totalFiles = 0
+if ([string]::IsNullOrWhiteSpace($ApiPath)) {
+    throw 'Tham số -ApiPath không được để trống.'
+}
+$modifiedFiles = @{}
 
 # ─────────────────────────────────────────────
 # Quy tắc: prefix tên file → message đúng trong catch block
@@ -168,18 +173,19 @@ Write-Host ""
 Write-Host "--- Pass 1: ApiResponse messages ---" -ForegroundColor White
 foreach ($rule in $messageRules) {
     foreach ($file in (Get-ChildItem -Recurse -Path $resolvedApi -Filter $rule.Filter)) {
-        if (Invoke-FixMessages $file.FullName $rule.Correct) { $totalFiles++ }
+        if (Invoke-FixMessages $file.FullName $rule.Correct) { $modifiedFiles[$file.FullName] = $true }
     }
 }
 
 Write-Host ""
 Write-Host "--- Pass 2: LogErrorAsync handler names ---" -ForegroundColor White
 foreach ($file in (Get-ChildItem -Recurse -Path $resolvedApi -Filter "*.cs" | Where-Object { (Get-Content $_.FullName -Raw) -match 'LogErrorAsync\(' })) {
-    if (Invoke-FixLogErrorAsync $file.FullName) { $totalFiles++ }
+    if (Invoke-FixLogErrorAsync $file.FullName) { $modifiedFiles[$file.FullName] = $true }
 }
 
 Write-Host ""
 Write-Host "=== Kết quả ===" -ForegroundColor White
+$totalFiles = $modifiedFiles.Count
 if ($DryRun) {
     Write-Host "Vi phạm phát hiện: $totalFiles file" -ForegroundColor Yellow
     Write-Host "Bỏ -DryRun để sửa thật." -ForegroundColor Yellow

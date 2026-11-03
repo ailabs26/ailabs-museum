@@ -12,3 +12,16 @@
 # Ảnh chụp và tệp thử của các script nghiệm thu UI
 plans/**/scripts/shots/
 plans/**/scripts/t10files/
+
+# Agent Kit (Claude Code, Codex, Antigravity)
+.claude/
+.agents/
+.codex/
+.codex-kit/
+.opencode/
+codex/
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+.ck.json
+.mcp.json
