@@ -1,15 +1,17 @@
 import { Tabs } from '@mantine/core';
-import { IconDevices, IconLock, IconPalette, IconUser } from '@tabler/icons-react';
+import { IconDevices, IconLock, IconPalette, IconShieldLock, IconUser } from '@tabler/icons-react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { AppearancePanel } from './settings/AppearancePanel';
 import { ChangePasswordPanel } from './settings/ChangePasswordPanel';
 import { ProfilePanel } from './settings/ProfilePanel';
 import { SessionsPanel } from './settings/SessionsPanel';
+import { TwoFactorPanel } from './settings/TwoFactorPanel';
 
 const TABS = [
   { value: 'profile', label: 'Hồ sơ', icon: IconUser, panel: ProfilePanel },
   { value: 'password', label: 'Mật khẩu', icon: IconLock, panel: ChangePasswordPanel },
+  { value: 'two-factor', label: 'Xác thực 2 lớp', icon: IconShieldLock, panel: TwoFactorPanel },
   { value: 'sessions', label: 'Phiên đăng nhập', icon: IconDevices, panel: SessionsPanel },
   { value: 'appearance', label: 'Giao diện', icon: IconPalette, panel: AppearancePanel },
 ] as const;

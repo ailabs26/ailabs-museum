@@ -16,15 +16,18 @@ import { parseTrustProxy } from './app.config';
 /** Khóa mặc định chỉ để chạy dev/test; production phải tự đặt khóa riêng. */
 export const DEV_JWT_ACCESS_SECRET = 'dev-access-secret-change-me-please';
 export const DEV_MEDIA_URL_SIGNING_SECRET = 'dev-media-url-signing-secret-change-me-please';
+export const DEV_TOTP_ENCRYPTION_KEY = 'dev-totp-encryption-key-change-me-please-32+';
 
 /** Khóa mẫu công khai (mã nguồn + .env.example) — không bao giờ được dùng ở production. */
 const PLACEHOLDER_SECRETS = new Set([
   DEV_JWT_ACCESS_SECRET,
   DEV_MEDIA_URL_SIGNING_SECRET,
+  DEV_TOTP_ENCRYPTION_KEY,
   'đổi-khóa-bí-mật-tối-thiểu-16-ký-tự',
   'đổi-khóa-ký-url-media-tối-thiểu-32-ký-tự',
+  'đổi-khóa-mã-hóa-2fa-tối-thiểu-32-ký-tự',
 ]);
-const PRODUCTION_SECRETS = ['JWT_ACCESS_SECRET', 'MEDIA_URL_SIGNING_SECRET'] as const;
+const PRODUCTION_SECRETS = ['JWT_ACCESS_SECRET', 'MEDIA_URL_SIGNING_SECRET', 'TOTP_ENCRYPTION_KEY'] as const;
 const PRODUCTION_SECRET_MIN_LENGTH = 32;
 
 class Environment {
@@ -86,6 +89,13 @@ class Environment {
    * Giới hạn POST /auth/refresh mỗi phút (issue #126), tách khỏi login: theo phiên (family refresh token),
    * trần rộng theo IP (văn phòng chung IP vẫn dùng được), và theo IP cho request không có/cookie sai.
    */
+  /**
+   * Khóa mã hóa (AES-256-GCM, dẫn xuất SHA-256) secret TOTP của 2FA lưu trong DB. Đổi khóa = mọi người phải thiết lập
+   * lại 2FA. Production bắt buộc đặt riêng, ≥ 32 ký tự.
+   */
+  @IsString()
+  TOTP_ENCRYPTION_KEY: string = DEV_TOTP_ENCRYPTION_KEY;
+
   @IsInt()
   @Min(1)
   @Max(10000)

@@ -78,6 +78,31 @@ Front-end (issue #128) chỉ kết thúc phiên khi refresh trả **401**; 429 /
 chờ (`Retry-After`, đã mở qua CORS `exposedHeaders`) và nút Thử lại / Đăng nhập lại.
 Một instance là đủ; scale ngang cần store dùng chung (Redis). Sau reverse proxy phải đặt `TRUST_PROXY` (mục 5.5).
 
+### 5.1.2b Xác thực 2 lớp (2FA, TOTP) — tùy chọn
+
+Chuẩn **TOTP (RFC 6238)**: SHA1, 6 số, chu kỳ 30 giây. Dùng được với Google Authenticator, Microsoft Authenticator,
+Authy, 1Password… Mỗi người tự bật trong **Cài đặt → Xác thực 2 lớp**; không ép buộc ai.
+
+- **Bật:** `POST /auth/2fa/setup` tạo secret mới (lưu dạng *chờ*), trả QR + khóa nhập tay. `POST /auth/2fa/enable { code }`
+  xác nhận bằng mã đầu tiên → bật, trả **10 mã khôi phục** dùng một lần (chỉ hiện lúc này), đăng xuất thiết bị khác.
+- **Đăng nhập 2 bước:**
+  - `POST /auth/login` đúng mật khẩu mà tài khoản đã bật 2FA thì **chưa cấp phiên**, chỉ trả `{ mfaRequired, mfaToken }`.
+    `mfaToken` là JWT 5 phút, `purpose: 'mfa'`, mang dấu vân tay `passwordHash` nên đổi mật khẩu giữa chừng thì token mất
+    hiệu lực.
+  - `POST /auth/login/2fa { mfaToken, code | recoveryCode }` mới cấp phiên.
+- **Chống dò / dùng lại:**
+  - Sai mã 5 lần / 15 phút / tài khoản → 429.
+  - Mỗi bước 30 giây chỉ dùng được một lần: UPDATE có điều kiện `totp_last_step < step`, đúng cả khi hai request song song.
+  - Cho lệch ±1 bước (±30 giây) vì đồng hồ điện thoại.
+  - Mã khôi phục chỉ lưu SHA-256, dùng xong đánh dấu `used_at`.
+- **Lưu trữ:** secret mã hóa **AES-256-GCM** bằng `TOTP_ENCRYPTION_KEY` (bắt buộc ở production, ≥ 32 ký tự, không dùng khóa
+  mẫu). Các cột `totp_secret_enc`, `totp_pending_enc`, `totp_last_step` để `select: false`. **Đổi khóa thì mọi người phải
+  bật lại 2FA.**
+- **Tắt** (`POST /auth/2fa/disable`: mật khẩu + mã) và **tạo lại mã khôi phục** (`POST /auth/2fa/recovery-codes`). Bật/tắt
+  đều đăng xuất thiết bị khác.
+- **Mất điện thoại:** đăng nhập bằng một mã khôi phục, hoặc Admin (`user:update`) tắt hộ qua `POST /users/:id/2fa/reset`
+  (audit `user.2fa_reset`, thu hồi mọi phiên của người đó).
+
 ### 5.1.3 API key cho đối tác (cổng `/partner/v1`)
 
 Đối tác không đăng nhập; họ gọi `/api/partner/v1/*` kèm header `X-API-Key`. Route đối tác là `@Public()` (bỏ qua

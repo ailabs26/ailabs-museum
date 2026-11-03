@@ -29,7 +29,7 @@ export const DEFAULT_AUTH_RATE_LIMITS: AuthRateLimits = {
 };
 
 /** Loại giới hạn bị chạm — dùng làm khóa ghi audit "bị chặn" 1 lần mỗi cửa sổ. */
-export type AuthBlockKind = 'ip' | 'email' | 'refresh_ip' | 'refresh_session' | 'refresh_invalid';
+export type AuthBlockKind = 'ip' | 'email' | 'refresh_ip' | 'refresh_session' | 'refresh_invalid' | 'mfa';
 
 /**
  * Chống brute-force cho /auth/login và giới hạn /auth/refresh (NFR-57, issue #126).
@@ -42,6 +42,8 @@ export type AuthBlockKind = 'ip' | 'email' | 'refresh_ip' | 'refresh_session' | 
 export class AuthRateLimiter {
   private readonly ipHits = new Map<string, number[]>();
   private readonly emailFailures = new Map<string, number[]>();
+  /** Nhập sai mã 2FA theo tài khoản (cùng ngưỡng với sai mật khẩu theo email). */
+  private readonly mfaFailures = new Map<string, number[]>();
   private readonly refreshIpHits = new Map<string, number[]>();
   private readonly refreshSessionHits = new Map<string, number[]>();
   private readonly refreshInvalidHits = new Map<string, number[]>();
@@ -103,7 +105,7 @@ export class AuthRateLimiter {
    */
   shouldAuditBlock(kind: AuthBlockKind, value: string): boolean {
     const key = `${kind}:${kind === 'email' ? this.key(value) : value}`;
-    const windowMs = kind === 'email' ? this.limits.emailWindowMs
+    const windowMs = kind === 'email' || kind === 'mfa' ? this.limits.emailWindowMs
       : kind === 'ip' ? this.limits.ipWindowMs
         : this.limits.refreshWindowMs;
     const last = this.blockAudits.get(key);
@@ -111,6 +113,22 @@ export class AuthRateLimiter {
     if (this.blockAudits.size > 10_000) this.blockAudits.clear();
     this.blockAudits.set(key, this.now());
     return true;
+  }
+
+  /** Ném 429 nếu tài khoản đã nhập sai mã 2FA quá nhiều lần (kiểm trước khi so mã). */
+  assertMfaAllowed(userId: string): void {
+    const failures = this.prune(this.mfaFailures, userId, this.limits.emailWindowMs);
+    if (failures.length >= this.limits.emailFailures) {
+      throw this.tooMany(failures[0] + this.limits.emailWindowMs);
+    }
+  }
+
+  recordMfaFailure(userId: string): void {
+    this.prune(this.mfaFailures, userId, this.limits.emailWindowMs).push(this.now());
+  }
+
+  resetMfa(userId: string): void {
+    this.mfaFailures.delete(userId);
   }
 
   resetEmail(email: string): void {

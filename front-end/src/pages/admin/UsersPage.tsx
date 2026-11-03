@@ -5,12 +5,13 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
-import { IconEdit, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react';
+import { IconEdit, IconPlus, IconSearch, IconShieldOff, IconTrash } from '@tabler/icons-react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiException } from '@/core/api/api-error';
 import { useAuth } from '@/core/auth/use-auth';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { confirmAction, notify } from '@/shared/components/feedback';
+import { twoFactorService } from '@/services/twoFactor.service';
 import {
   BulkActionBar, BulkDeleteFailures, DataTable, RestoreRowButton, TrashToggle, type Column,
 } from '@/shared/components/data';
@@ -134,6 +135,15 @@ export function UsersPage() {
       void invalidate();
     },
   });
+  const resetTwoFactor = useMutation({
+    mutationFn: (id: string) => twoFactorService.resetForUser(id),
+    onSuccess: async () => {
+      notify.success('Đã tắt xác thực 2 lớp và đăng xuất mọi thiết bị của tài khoản');
+      await invalidate();
+    },
+    onError: (error) => notify.error(errorMessage(error, 'Tắt xác thực 2 lớp thất bại')),
+  });
+
   const removeMutation = useMutation({
     mutationFn: (id: string) => usersService.remove(id),
     onSuccess: async () => {
@@ -226,6 +236,19 @@ export function UsersPage() {
           <ActionIcon variant="subtle" aria-label={canUpdate ? 'Sửa' : 'Gán vai trò'}
             disabled={isBusy} onClick={() => openForm(user)}>
             <IconEdit size={18} />
+          </ActionIcon>
+        )}
+        {canUpdate && user.twoFactorEnabled && (
+          <ActionIcon variant="subtle" color="orange" aria-label={`Tắt xác thực 2 lớp của ${user.displayName}`}
+            title="Tắt xác thực 2 lớp (khi người dùng mất điện thoại)" disabled={isBusy}
+            onClick={() => confirmAction({
+              title: 'Tắt xác thực 2 lớp',
+              message: `Tắt xác thực 2 lớp của "${user.displayName}"? Chỉ làm khi người dùng mất điện thoại và mã khôi phục. Mọi thiết bị của tài khoản sẽ bị đăng xuất; người dùng có thể bật lại trong Cài đặt.`,
+              confirmLabel: 'Tắt 2FA',
+              danger: true,
+              onConfirm: () => resetTwoFactor.mutate(user.id),
+            })}>
+            <IconShieldOff size={18} />
           </ActionIcon>
         )}
         {canDelete && (

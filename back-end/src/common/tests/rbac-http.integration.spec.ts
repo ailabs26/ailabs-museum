@@ -25,6 +25,8 @@ import { PermissionsController } from '../../modules/roles/controllers/permissio
 import { RolesController } from '../../modules/roles/controllers/roles.controller';
 import { RolesService } from '../../modules/roles/services/roles.service';
 import { UsersController } from '../../modules/users/controllers/users.controller';
+import { UserTwoFactorController } from '../../modules/auth/controllers/user-two-factor.controller';
+import { TwoFactorService } from '../../modules/auth/services/two-factor.service';
 import { UsersService } from '../../modules/users/services/users.service';
 import { ALL_PERMISSIONS, DEFAULT_ROLE_PERMISSIONS, PermissionKey } from '../constants/permissions.constant';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
@@ -80,7 +82,7 @@ function collectRoutes(controller: new (...args: never[]) => object): RouteSpec[
     });
 }
 
-const ADMIN_ROUTES = [UsersController, RolesController, PermissionsController].flatMap(collectRoutes);
+const ADMIN_ROUTES = [UsersController, RolesController, PermissionsController, UserTwoFactorController].flatMap(collectRoutes);
 
 /** Body hợp lệ tối thiểu theo DTO để request đi qua ValidationPipe tới service. */
 function validBody(route: RouteSpec): object | undefined {
@@ -148,7 +150,7 @@ describe('RBAC HTTP — guard toàn cục trên route quản trị', () => {
         ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true, load: [appConfig, jwtConfig] }),
         JwtModule.register({}),
       ],
-      controllers: [UsersController, RolesController, PermissionsController, AuthController, HealthController],
+      controllers: [UsersController, RolesController, PermissionsController, UserTwoFactorController, AuthController, HealthController],
       providers: [
         { provide: APP_GUARD, useClass: JwtAuthGuard },
         { provide: APP_GUARD, useClass: ActiveSessionGuard },
@@ -158,6 +160,7 @@ describe('RBAC HTTP — guard toàn cục trên route quản trị', () => {
           useValue: { isFamilyLive: async (familyId: string) => familyId === LIVE_SESSION },
         },
         { provide: SessionsService, useValue: {} },
+        { provide: TwoFactorService, useValue: recordingService('twoFactor') },
         { provide: HealthService, useValue: { pingDatabase: async () => 1 } },
         { provide: UsersService, useValue: recordingService('users') },
         { provide: RolesService, useValue: recordingService('roles') },

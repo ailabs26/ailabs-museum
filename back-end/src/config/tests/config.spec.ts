@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { afterEach, describe, it } from 'node:test';
 import { appConfig, parseTrustProxy } from '../app.config';
 import { databaseConfig } from '../database.config';
-import { DEV_JWT_ACCESS_SECRET, DEV_MEDIA_URL_SIGNING_SECRET, validateEnvironment } from '../env.validation';
+import { DEV_JWT_ACCESS_SECRET, DEV_MEDIA_URL_SIGNING_SECRET, DEV_TOTP_ENCRYPTION_KEY, validateEnvironment } from '../env.validation';
 import { jwtConfig } from '../jwt.config';
 import { reportsConfig } from '../reports.config';
 
 const BASE = { DATABASE_URL: 'postgres://u:p@localhost:5432/db' };
 const ENV_KEYS = ['PORT', 'FRONTEND_ORIGIN', 'DATABASE_URL', 'JWT_ACCESS_SECRET', 'JWT_ACCESS_TTL',
   'JWT_REFRESH_TTL_DAYS', 'REFRESH_COOKIE_NAME', 'BCRYPT_ROUNDS', 'SEED_ADMIN_EMAIL', 'SEED_ADMIN_PASSWORD', 'TRUST_PROXY',
-  'REFRESH_RATE_LIMIT_PER_SESSION', 'REFRESH_RATE_LIMIT_PER_IP', 'REFRESH_RATE_LIMIT_INVALID_PER_IP', 'PUBLIC_REPORT_RATE_LIMIT'];
+  'REFRESH_RATE_LIMIT_PER_SESSION', 'REFRESH_RATE_LIMIT_PER_IP', 'REFRESH_RATE_LIMIT_INVALID_PER_IP', 'PUBLIC_REPORT_RATE_LIMIT', 'TOTP_ENCRYPTION_KEY'];
 const saved = Object.fromEntries(ENV_KEYS.map((key) => [key, process.env[key]]));
 
 function invalidFields(input: Record<string, unknown>): string {
@@ -96,36 +96,46 @@ describe('validateEnvironment', () => {
 describe('validateEnvironment — production', () => {
   const STRONG_JWT = 'j'.repeat(32);
   const STRONG_MEDIA = 'm'.repeat(40);
+  const STRONG_TOTP = 't'.repeat(32);
   const PROD = { ...BASE, NODE_ENV: 'production' };
 
   it('đủ khóa riêng, đủ dài → chạy được', () => {
-    const env = validateEnvironment({ ...PROD, JWT_ACCESS_SECRET: STRONG_JWT, MEDIA_URL_SIGNING_SECRET: STRONG_MEDIA });
+    const env = validateEnvironment({
+      ...PROD, JWT_ACCESS_SECRET: STRONG_JWT, MEDIA_URL_SIGNING_SECRET: STRONG_MEDIA, TOTP_ENCRYPTION_KEY: STRONG_TOTP,
+    });
     assert.equal(env.NODE_ENV, 'production');
   });
 
-  it('không đặt khóa (rơi về khóa dev mặc định) → từ chối cả hai', () => {
+  it('không đặt khóa (rơi về khóa dev mặc định) → từ chối cả ba', () => {
     const message = invalidFields({ ...PROD });
     assert.match(message, /JWT_ACCESS_SECRET/);
     assert.match(message, /MEDIA_URL_SIGNING_SECRET/);
+    assert.match(message, /TOTP_ENCRYPTION_KEY/);
   });
 
   for (const [name, input] of [
-    ['khóa dev mặc định', { JWT_ACCESS_SECRET: DEV_JWT_ACCESS_SECRET, MEDIA_URL_SIGNING_SECRET: DEV_MEDIA_URL_SIGNING_SECRET }],
+    ['khóa dev mặc định', {
+      JWT_ACCESS_SECRET: DEV_JWT_ACCESS_SECRET, MEDIA_URL_SIGNING_SECRET: DEV_MEDIA_URL_SIGNING_SECRET,
+      TOTP_ENCRYPTION_KEY: DEV_TOTP_ENCRYPTION_KEY,
+    }],
     ['khóa mẫu của .env.example', {
       JWT_ACCESS_SECRET: 'đổi-khóa-bí-mật-tối-thiểu-16-ký-tự',
       MEDIA_URL_SIGNING_SECRET: 'đổi-khóa-ký-url-media-tối-thiểu-32-ký-tự',
+      TOTP_ENCRYPTION_KEY: 'đổi-khóa-mã-hóa-2fa-tối-thiểu-32-ký-tự',
     }],
-    ['khóa ngắn hơn 32 ký tự', { JWT_ACCESS_SECRET: 'x'.repeat(31), MEDIA_URL_SIGNING_SECRET: 'y'.repeat(31) }],
+    ['khóa ngắn hơn 32 ký tự', {
+      JWT_ACCESS_SECRET: 'x'.repeat(31), MEDIA_URL_SIGNING_SECRET: 'y'.repeat(31), TOTP_ENCRYPTION_KEY: 'z'.repeat(31),
+    }],
   ] as const) {
     it(`từ chối ${name}, thông báo chỉ nêu tên biến`, () => {
       const fields = invalidFields({ ...PROD, ...input }).replace('Invalid environment: ', '').split(', ');
-      assert.deepEqual(fields.sort(), ['JWT_ACCESS_SECRET', 'MEDIA_URL_SIGNING_SECRET']);
+      assert.deepEqual(fields.sort(), ['JWT_ACCESS_SECRET', 'MEDIA_URL_SIGNING_SECRET', 'TOTP_ENCRYPTION_KEY']);
     });
   }
 
   it('chỉ báo đúng khóa yếu, không lặp tên biến đã lỗi', () => {
     assert.equal(
-      invalidFields({ ...PROD, JWT_ACCESS_SECRET: 'short', MEDIA_URL_SIGNING_SECRET: STRONG_MEDIA }),
+      invalidFields({ ...PROD, JWT_ACCESS_SECRET: 'short', MEDIA_URL_SIGNING_SECRET: STRONG_MEDIA, TOTP_ENCRYPTION_KEY: STRONG_TOTP }),
       'Invalid environment: JWT_ACCESS_SECRET',
     );
   });
@@ -172,7 +182,7 @@ describe('registerAs config', () => {
   it('đọc giá trị từ process.env', () => {
     Object.assign(process.env, {
       PORT: '4000', FRONTEND_ORIGIN: 'https://museum.example', DATABASE_URL: 'postgres://x',
-      JWT_ACCESS_SECRET: 's'.repeat(20), JWT_ACCESS_TTL: '5m', JWT_REFRESH_TTL_DAYS: '3',
+      JWT_ACCESS_SECRET: 's'.repeat(20), JWT_ACCESS_TTL: '5m', JWT_REFRESH_TTL_DAYS: '3', TOTP_ENCRYPTION_KEY: 'k'.repeat(32),
       REFRESH_COOKIE_NAME: 'rt', BCRYPT_ROUNDS: '11', SEED_ADMIN_EMAIL: 'a@b.c', TRUST_PROXY: '1',
       REFRESH_RATE_LIMIT_PER_SESSION: '12', REFRESH_RATE_LIMIT_PER_IP: '500', REFRESH_RATE_LIMIT_INVALID_PER_IP: '7',
     });
@@ -183,6 +193,7 @@ describe('registerAs config', () => {
     assert.deepEqual(databaseConfig(), { url: 'postgres://x' });
     assert.deepEqual(jwtConfig(), {
       accessSecret: 's'.repeat(20), accessTtl: '5m', refreshTtlDays: 3, refreshCookieName: 'rt', bcryptRounds: 11,
+      totpEncryptionKey: 'k'.repeat(32),
       refreshRateLimit: { perSession: 12, perIp: 500, invalidPerIp: 7 },
     });
     assert.deepEqual(reportsConfig(), { publicRateLimit: 5 });

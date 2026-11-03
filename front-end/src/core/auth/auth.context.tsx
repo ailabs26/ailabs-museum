@@ -4,7 +4,7 @@ import { endsSession, toApiException } from '@/core/api/api-error';
 import { authService } from '@/services/auth.service';
 import { tokenStore } from './token-store';
 import { clearSessionCache } from './clearSessionCache';
-import type { AuthUser, LoginPayload } from './types';
+import type { AuthUser, LoginPayload, LoginResult, TwoFactorCode } from './types';
 
 export interface AuthContextValue {
   user: AuthUser | null;
@@ -17,7 +17,10 @@ export interface AuthContextValue {
   restoreError: string | null;
   /** Thử khôi phục phiên lại sau lỗi tạm thời. */
   retryRestore: () => void;
-  login: (payload: LoginPayload) => Promise<void>;
+  /** Đăng nhập; tài khoản bật 2FA thì trả `mfaToken` để gọi tiếp `completeTwoFactor`, ngược lại null. */
+  login: (payload: LoginPayload) => Promise<{ mfaToken: string } | null>;
+  /** Bước 2 đăng nhập: mã 6 số hoặc mã khôi phục. */
+  completeTwoFactor: (mfaToken: string, code: TwoFactorCode) => Promise<void>;
   logout: () => Promise<void>;
   /** Đăng xuất mọi thiết bị (kể cả thiết bị này) rồi kết thúc phiên cục bộ. */
   logoutAll: () => Promise<void>;
@@ -90,12 +93,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     restoreSession(authService.me(), () => true);
   }, [restoreSession]);
 
-  const login = useCallback(async (payload: LoginPayload) => {
-    const result = await authService.login(payload);
+  const startSession = useCallback((result: LoginResult) => {
     tokenStore.set(result.accessToken);
     setRestoreError(null);
     setUser(result.user);
   }, []);
+
+  const login = useCallback(async (payload: LoginPayload) => {
+    const result = await authService.login(payload);
+    if ('mfaRequired' in result) return { mfaToken: result.mfaToken };
+    startSession(result);
+    return null;
+  }, [startSession]);
+
+  const completeTwoFactor = useCallback(async (mfaToken: string, code: TwoFactorCode) => {
+    startSession(await authService.loginTwoFactor(mfaToken, code));
+  }, [startSession]);
 
   const logout = useCallback(async () => {
     if (isLoggingOutRef.current) {
@@ -138,13 +151,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       restoreError,
       retryRestore,
       login,
+      completeTwoFactor,
       logout,
       logoutAll,
       updateProfile,
       hasPermission: (permission) => granted.has(permission),
       hasAnyPermission: (permissions) => permissions.some((p) => granted.has(p)),
     };
-  }, [user, isLoading, isLoggingOut, restoreError, retryRestore, login, logout, logoutAll, updateProfile]);
+  }, [user, isLoading, isLoggingOut, restoreError, retryRestore, login, completeTwoFactor, logout, logoutAll, updateProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

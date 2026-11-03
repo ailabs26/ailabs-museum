@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ApiException } from '@/core/api/api-error';
-import type { AuthUser, LoginResult } from './types';
+import type { AuthUser, LoginOutcome, LoginResult } from './types';
 
 export const authUserSchema: z.ZodType<AuthUser> = z.object({
   id: z.string().uuid(),
@@ -8,12 +8,19 @@ export const authUserSchema: z.ZodType<AuthUser> = z.object({
   displayName: z.string(),
   roles: z.array(z.string()),
   permissions: z.array(z.string()),
+  twoFactorEnabled: z.boolean().optional(),
 });
 
 export const loginResultSchema: z.ZodType<LoginResult> = z.object({
   accessToken: z.string().min(1),
   user: authUserSchema,
 });
+
+/** POST /auth/login: có phiên ngay, hoặc cần bước 2 (2FA). */
+export const loginOutcomeSchema: z.ZodType<LoginOutcome> = z.union([
+  z.object({ mfaRequired: z.literal(true), mfaToken: z.string().min(1) }),
+  loginResultSchema,
+]);
 
 export const refreshResultSchema = z.object({
   accessToken: z.string().min(1),

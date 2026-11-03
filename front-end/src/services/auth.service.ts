@@ -1,8 +1,9 @@
 import { http } from '@/core/api/http-client';
-import type { AuthUser, LoginPayload, LoginResult } from '@/core/auth/types';
+import type { AuthUser, LoginOutcome, LoginPayload, LoginResult, TwoFactorCode } from '@/core/auth/types';
 import {
   authUserSchema,
   bulkRevokeResultSchema,
+  loginOutcomeSchema,
   loginResultSchema,
   logoutResultSchema,
   parseAuthResponse,
@@ -12,8 +13,12 @@ import {
 
 /** Gọi và kiểm tra phản hồi từ API xác thực. */
 export const authService = {
-  async login(payload: LoginPayload): Promise<LoginResult> {
-    return parseAuthResponse(loginResultSchema, await http.post<unknown>('/auth/login', payload));
+  async login(payload: LoginPayload): Promise<LoginOutcome> {
+    return parseAuthResponse(loginOutcomeSchema, await http.post<unknown>('/auth/login', payload));
+  },
+  /** Bước 2 đăng nhập khi tài khoản bật 2FA. */
+  async loginTwoFactor(mfaToken: string, code: TwoFactorCode): Promise<LoginResult> {
+    return parseAuthResponse(loginResultSchema, await http.post<unknown>('/auth/login/2fa', { mfaToken, ...code }));
   },
   async logout(): Promise<void> {
     // Đợi cookie xoay vòng về trước khi yêu cầu backend thu hồi phiên đó.

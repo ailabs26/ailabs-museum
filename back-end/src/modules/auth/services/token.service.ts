@@ -44,6 +44,29 @@ export class TokenService {
     private readonly tx: TransactionManager,
   ) {}
 
+  /**
+   * Token tạm cho bước 2 đăng nhập (đã đúng mật khẩu, chờ mã 2FA): 5 phút, `purpose: 'mfa'` nên không dùng thay access
+   * token được; mang dấu vân tay passwordHash để đổi mật khẩu giữa chừng thì token mất hiệu lực.
+   */
+  signMfaChallenge(userId: string, passwordHash: string): Promise<string> {
+    return this.jwt.signAsync({ sub: userId, purpose: 'mfa', pwd: passwordFingerprint(passwordHash) }, {
+      secret: this.config.getOrThrow<string>('jwt.accessSecret'),
+      expiresIn: '5m',
+    });
+  }
+
+  /** null nếu token sai chữ ký, hết hạn hoặc không phải token 2FA. */
+  async verifyMfaChallenge(token: string): Promise<{ userId: string; pwd: string } | null> {
+    try {
+      const payload = await this.jwt.verifyAsync<{ sub?: string; purpose?: string; pwd?: string }>(token, {
+        secret: this.config.getOrThrow<string>('jwt.accessSecret'),
+      });
+      return payload.purpose === 'mfa' && payload.sub && payload.pwd ? { userId: payload.sub, pwd: payload.pwd } : null;
+    } catch {
+      return null;
+    }
+  }
+
   /** Ký access token mang roles + permissions và `sid` = familyId của phiên. */
   signAccess(user: AuthUser, sessionId: string): Promise<string> {
     const payload: JwtAccessPayload = {
@@ -181,4 +204,9 @@ export class TokenService {
   private refreshExpiry(): Date {
     return new Date(Date.now() + this.refreshCookieMaxAgeMs());
   }
+}
+
+/** 16 ký tự đầu SHA-256 của passwordHash — đủ để phát hiện mật khẩu đã đổi, không lộ hash. */
+export function passwordFingerprint(passwordHash: string): string {
+  return createHash('sha256').update(passwordHash).digest('hex').slice(0, 16);
 }

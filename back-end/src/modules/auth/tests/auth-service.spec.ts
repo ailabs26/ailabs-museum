@@ -12,6 +12,9 @@ import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard'
 import { RefreshSessionsRepository } from '../repositories/refresh-sessions.repository';
 import { AuthService } from '../services/auth.service';
 import { TokenService } from '../services/token.service';
+import type { TwoFactorService } from '../services/two-factor.service';
+import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
+import type { LoginResult } from '../services/auth.service';
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
@@ -68,13 +71,13 @@ function makeService(options: { user?: User | null; passwordOk?: boolean; freshU
     rotate: async (raw: string) => ({ accessToken: `access-for-${raw}`, raw: `next-${raw}` }),
     revokeByRaw: async (raw: string) => void revoked.push(raw),
   } as unknown as TokenService;
-  return { service: new AuthService(users, passwords, tokens, tx, sessions), compared, revoked, log };
+  return { service: new AuthService(users, passwords, tokens, tx, sessions, {} as TwoFactorService, new AuthRateLimiter()), compared, revoked, log };
 }
 
 describe('AuthService', () => {
   it('login thành công trả access token, refresh token và AuthUser (không có passwordHash)', async () => {
     const { service } = makeService();
-    const result = await service.login({ email: 'admin@aura.local', password: 'Passw0rd!' });
+    const result = <LoginResult>await service.login({ email: 'admin@aura.local', password: 'Passw0rd!' });
     assert.equal(result.accessToken, 'access-token');
     assert.equal(result.refreshToken, 'refresh-raw');
     assert.deepEqual(result.user, {
