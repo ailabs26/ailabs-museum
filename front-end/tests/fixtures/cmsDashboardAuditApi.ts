@@ -1,15 +1,41 @@
 import type { Page } from '@playwright/test';
 
 export async function installCmsDashboardAuditApi(page: Page) {
-  // Auth
+  // Chốt chặn: mọi request API (pathname bắt đầu /api/) chưa mock trả rỗng, không bao giờ chạm back-end thật
+  // (đăng ký đầu tiên = ưu tiên thấp nhất). Không dùng glob '**/api/**' vì nó khớp cả module Vite như /src/core/api/*.
+  await page.route((url) => url.pathname.startsWith('/api/'), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [], meta: { page: 1, pageSize: 20, total: 0 }, message: null }),
+    });
+  });
+
+  // Auth: khôi phục phiên như thật — /auth/me không có token → 401 → /auth/refresh → gọi lại /auth/me có token.
+  await page.route('**/api/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: { accessToken: 'dashboard-fixture-token' }, message: null }),
+    });
+  });
   await page.route('**/api/auth/me', async (route) => {
+    if (!route.request().headers().authorization) {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: false, data: null, message: 'Unauthenticated' }),
+      });
+      return;
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
         success: true,
         data: {
-          id: 'admin-id',
+          // authUserSchema yêu cầu id là UUID.
+          id: '00000000-0000-4000-8000-0000000000ad',
           email: 'admin@aura.local',
           displayName: 'Administrator',
           roles: ['admin'],

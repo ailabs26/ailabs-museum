@@ -1,19 +1,64 @@
+/*
+ * Placeholder "chưa có ảnh" — thay tông giấy cũ (#efe9de) bằng ngôn ngữ Aura DS 2.0:
+ * nền glass gradient theo sơ đồ màu, lưới chấm mờ gợi không gian số, khối hình nổi
+ * có quầng sáng. Không còn phụ thuộc token --public-* cũ.
+ */
 .preview {
-  min-height: 144px;
-  padding: 20px 12px;
+  position: relative;
+  min-height: 160px;
+  padding: 24px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 16px;
-  background: var(--public-surface, #efe9de);
-  color: var(--public-muted, #60695f);
+  overflow: hidden;
+  color: var(--aura-ink-soft);
+  background:
+    radial-gradient(130% 100% at 50% 0%, color-mix(in srgb, var(--aura-accent) 12%, transparent), transparent 60%),
+    var(--aura-surface-2);
 }
-.shape { flex-shrink: 0; width: 42px; height: 42px; box-sizing: border-box; background-color: var(--exhibit-color); border: 1px solid #0002; }
+/* Lưới chấm mờ tạo chiều sâu "phòng số". */
+.preview::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--aura-accent) 22%, transparent) 1px, transparent 1.4px);
+  background-size: 18px 18px;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.shape {
+  position: relative;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  box-sizing: border-box;
+  background-color: var(--exhibit-color);
+  border: 1px solid color-mix(in srgb, var(--aura-ink) 12%, transparent);
+  box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--exhibit-color) 80%, transparent);
+  animation: aura-float 6s ease-in-out infinite;
+}
 .shape[data-shape='sphere'], .shape[data-shape='torus'] { border-radius: 50%; }
-.shape[data-shape='torus'] { background: transparent; border: 10px solid var(--exhibit-color); }
+.shape[data-shape='torus'] { background: transparent; border: 11px solid var(--exhibit-color); }
 .shape[data-shape='cone'] { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 .shape[data-shape='cylinder'] { border-radius: 50% / 15%; }
 .shape[data-shape='icosahedron'] { clip-path: polygon(50% 0, 100% 38%, 80% 100%, 20% 100%, 0 38%); }
-.caption { text-align: center; display: flex; flex-direction: column; gap: 4px; font-size: 12px; line-height: 1.5; }
-.missingImage { font-size: 11px; }
+
+.caption {
+  position: relative;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+.missingImage { font-size: 11px; font-weight: 500; color: var(--aura-muted); letter-spacing: 0.04em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .shape { animation: none; }
+}

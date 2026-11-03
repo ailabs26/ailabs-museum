@@ -38,7 +38,7 @@ export const initialTestExhibits: TestExhibit[] = [
 ];
 
 export async function installCmsExhibitsApi(page: Page, customExhibits: TestExhibit[] = initialTestExhibits) {
-  let exhibits: TestExhibit[] = [...customExhibits];
+  const exhibits: TestExhibit[] = [...customExhibits];
   const writes: Array<{ method: string; path: string; data?: unknown }> = [];
 
   // Auth permissions

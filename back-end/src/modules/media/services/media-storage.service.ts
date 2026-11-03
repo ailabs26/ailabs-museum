@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
 import { Inject, Injectable } from '@nestjs/common';
 import { MediaFormatSpec } from '../inspection/media-formats';
-import { ByteRange, MEDIA_STORAGE_DRIVER, MediaStorageDriver } from '../storage/media-storage-driver';
+import { ByteRange, MEDIA_STORAGE_DRIVER, MediaStorageDriver, StoredObject } from '../storage/media-storage-driver';
 
 /** Tiền tố URL phân phối file media (ngoài prefix /api). */
 export const PUBLIC_MEDIA_URL_PREFIX = '/media';
@@ -19,6 +19,11 @@ const KIND_DIRECTORIES: Record<string, string> = {
   subtitle: 'subtitles',
 };
 
+const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+const MANAGED_KEY = new RegExp(
+  `^(?:uploads/(?:${Object.values(KIND_DIRECTORIES).join('|')})/${UUID}\\.[a-z0-9]{1,8}|quarantine/${UUID}\\.bin)$`,
+);
+
 /**
  * Lưu file media qua driver (đĩa cục bộ hoặc Supabase Storage). Storage key do server sinh
  * (UUID), mỗi file một key duy nhất và không bao giờ bị ghi đè — media đang dùng không thể
@@ -33,6 +38,23 @@ export class MediaStorageService {
     const id = randomUUID();
     if (isQuarantined) return `${QUARANTINE_PREFIX}${id}.bin`;
     return `uploads/${KIND_DIRECTORIES[spec.kind]}/${id}.${spec.extension}`;
+  }
+
+  /**
+   * Key do chính `createKey` sinh ra (uuid + đúng thư mục/đuôi). Job dọn file mồ côi CHỈ được xóa các key này — model
+   * phòng, seed hay file khác chung bucket/thư mục không bao giờ bị đụng.
+   */
+  isManagedKey(key: string): boolean {
+    return MANAGED_KEY.test(key);
+  }
+
+  /** Mọi object do media quản lý đang có trong storage (`uploads/` và `quarantine/`). */
+  async *listManaged(): AsyncIterable<StoredObject> {
+    for (const prefix of ['uploads/', 'quarantine/'] as const) {
+      for await (const object of this.driver.list(prefix)) {
+        if (this.isManagedKey(object.key)) yield object;
+      }
+    }
   }
 
   isQuarantineKey(key: string): boolean {

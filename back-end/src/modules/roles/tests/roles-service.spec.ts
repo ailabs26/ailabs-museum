@@ -4,10 +4,8 @@ import { describe, it } from 'node:test';
 import { ConflictException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
 import { TransactionManager } from '../../../common/database/transaction.manager';
-import { UserRole } from '../../users/entities/user-role.entity';
 import { toRoleResponse } from '../dto/role-response.dto';
 import { Permission } from '../entities/permission.entity';
-import { RolePermission } from '../entities/role-permission.entity';
 import { Role } from '../entities/role.entity';
 import { PermissionsRepository } from '../repositories/permissions.repository';
 import { RolesRepository } from '../repositories/roles.repository';
@@ -19,12 +17,12 @@ interface Harness {
   service: RolesService;
   log: string[];
   roles: Map<string, Role & { permissions: string[] }>;
-  setUsage(count: number): void;
+  setUsage(roleId: string, count: number): void;
 }
 
 function harness(): Harness {
   const log: string[] = [];
-  let usage = 0;
+  const usage = new Map<string, number>();
   let inTx = false;
   const roles = new Map<string, Role & { permissions: string[] }>([
     ['r-admin', { id: 'r-admin', code: 'admin', name: 'Admin', permissions: ['room:read'] } as never],
@@ -36,19 +34,8 @@ function harness(): Harness {
     rolePermissions: role.permissions.map((code) => ({ permission: { code } })),
   }) as unknown as Role;
 
-  const manager = {
-    getRepository: (entity: unknown) => ({
-      count: async () => {
-        assert.equal(entity, UserRole);
-        return usage;
-      },
-      delete: async (where: Record<string, string>) => {
-        const name = entity === RolePermission ? 'role_permissions' : entity === Role ? 'roles' : 'unknown';
-        log.push(`delete:${name}:${Object.values(where).join(',')}`);
-        if (entity === Role) roles.delete(where.id);
-      },
-    }),
-  } as unknown as EntityManager;
+  const manager = { tag: 'tx' } as unknown as EntityManager;
+  const inTransaction = (received: EntityManager) => assert.ok(inTx && received === manager, 'phải chạy trong transaction');
 
   const rolesRepo = {
     listWithPermissions: async () => [...roles.values()].map((role) => withPermissions(role)!),
@@ -63,6 +50,20 @@ function harness(): Harness {
     },
     update: async (id: string, patch: Partial<Role>) => void Object.assign(roles.get(id)!, patch),
     findManyByIds: async (ids: string[]) => ids.map((id) => roles.get(id)).filter(Boolean) as Role[],
+    lockActiveByIds: async (ids: string[], received: EntityManager) => {
+      inTransaction(received);
+      log.push(`lock:${ids.join(',')}`);
+      return ids.map((id) => roles.get(id)).filter((role) => role && !role.isDeleted) as Role[];
+    },
+    countAssignments: async (ids: string[], received: EntityManager) => {
+      inTransaction(received);
+      return new Map(ids.filter((id) => usage.has(id)).map((id) => [id, usage.get(id)!]));
+    },
+    markDeleted: async (ids: string[], received: EntityManager) => {
+      inTransaction(received);
+      log.push(`markDeleted:${ids.join(',')}`);
+      for (const id of ids) Object.assign(roles.get(id)!, { isDeleted: true, deletedAt: new Date() });
+    },
   } as unknown as RolesRepository;
 
   const permissionsRepo = {
@@ -100,7 +101,7 @@ function harness(): Harness {
     service: new RolesService(rolesRepo, permissionsRepo, tx),
     log,
     roles,
-    setUsage: (count) => void (usage = count),
+    setUsage: (roleId, count) => void usage.set(roleId, count),
   };
 }
 
@@ -126,24 +127,52 @@ describe('RolesService', () => {
     await assert.rejects(service.update('ghost', { name: 'x' }), NotFoundException);
   });
 
-  it('remove: chặn role hệ thống mặc định', async () => {
-    const { service, log } = harness();
-    for (const id of ['r-admin', 'r-editor']) await assert.rejects(service.remove(id), ConflictException);
-    assert.deepEqual(log, []);
-  });
-
-  it('remove: chặn role đang được gán (kiểm trong transaction)', async () => {
-    const { service, setUsage, roles } = harness();
-    setUsage(1);
-    await assert.rejects(service.remove('r-custom'), /đang được gán/);
-    assert.ok(roles.has('r-custom'));
-  });
-
-  it('remove: xóa liên kết quyền rồi xóa role trong cùng transaction', async () => {
+  it('remove: chỉ chặn vai trò Admin; editor (vai trò mặc định) không ai dùng thì xóa mềm được', async () => {
     const { service, log, roles } = harness();
+    await assert.rejects(service.remove('r-admin'), /Không thể xóa vai trò Admin/);
+    assert.equal(roles.get('r-admin')!.isDeleted, undefined);
+    await service.remove('r-editor');
+    assert.equal(roles.get('r-editor')!.isDeleted, true);
+    assert.ok(log.includes('markDeleted:r-editor'));
+  });
+
+  it('remove: chặn role đang được gán (kiểm trong transaction, sau khi khóa dòng)', async () => {
+    const { service, setUsage, roles, log } = harness();
+    setUsage('r-custom', 2);
+    await assert.rejects(service.remove('r-custom'), (error: unknown) =>
+      error instanceof ConflictException && /đang được gán cho 2 người dùng/.test(error.message));
+    assert.equal(roles.get('r-custom')!.isDeleted, undefined);
+    assert.deepEqual(log, ['lock:r-custom', 'rollback']);
+  });
+
+  it('remove: xóa mềm (giữ dòng + quyền để truy vết), 404 khi không có hoặc đã xóa', async () => {
+    const { service, roles } = harness();
     await service.remove('r-custom');
-    assert.deepEqual(log, ['delete:role_permissions:r-custom', 'delete:roles:r-custom']);
-    assert.equal(roles.has('r-custom'), false);
+    assert.equal(roles.get('r-custom')!.isDeleted, true);
+    assert.ok(roles.get('r-custom')!.deletedAt instanceof Date);
+    assert.equal(roles.get('r-custom')!.permissions.length, 0);
+    await assert.rejects(service.remove('r-custom'), NotFoundException);
+    await assert.rejects(service.remove('ghost'), NotFoundException);
+  });
+
+  it('removeMany: tất cả hoặc không — 1 vai trò bị chặn thì không vai trò nào bị xóa, 409 liệt kê từng ID', async () => {
+    const { service, setUsage, roles, log } = harness();
+    setUsage('r-custom', 1);
+    await assert.rejects(service.removeMany(['r-editor', 'r-custom', 'r-admin', 'ghost']), (error: unknown) => {
+      assert.ok(error instanceof ConflictException);
+      const body = error.getResponse() as { errors: Array<{ field: string; message: string }> };
+      assert.deepEqual(body.errors.map((e) => e.field), ['r-custom', 'r-admin', 'ghost']);
+      return true;
+    });
+    assert.equal(roles.get('r-editor')!.isDeleted, undefined);
+    assert.equal(log.some((entry) => entry.startsWith('markDeleted')), false);
+  });
+
+  it('removeMany: hợp lệ hết → xóa mềm tất cả trong một transaction, trả { ids } cho audit', async () => {
+    const { service, roles, log } = harness();
+    assert.deepEqual(await service.removeMany(['r-editor', 'r-custom']), { ids: ['r-editor', 'r-custom'] });
+    assert.equal(roles.get('r-editor')!.isDeleted && roles.get('r-custom')!.isDeleted, true);
+    assert.deepEqual(log, ['lock:r-editor,r-custom', 'markDeleted:r-editor,r-custom']);
   });
 
   it('setPermissions: khóa ma trận, đặt quyền; chặn role admin và quyền không tồn tại', async () => {

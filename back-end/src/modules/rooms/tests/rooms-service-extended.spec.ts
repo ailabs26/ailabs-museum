@@ -11,6 +11,10 @@ import { UpdateRoomDto } from '../dto/update-room.dto';
 import { Room, RoomStatus } from '../entities/room.entity';
 import { RoomsRepository } from '../repositories/rooms.repository';
 import { RoomsService } from '../services/rooms.service';
+import type { TransactionManager } from '../../../common/database/transaction.manager';
+
+/** Luồng xóa lẻ/đọc không dùng transaction; removeMany có test riêng trong rooms-bulk-delete.spec.ts. */
+const NO_TX = {} as TransactionManager;
 
 // Helper tạo Room mẫu
 function createSampleRoom(overrides?: Partial<Room>): Room {
@@ -133,6 +137,13 @@ class InMemoryMockRoomsRepository {
     return room ?? null;
   }
 
+  /** Slug unique toàn bảng: create() kiểm cả phòng đã xóa mềm. */
+  async findAnyBySlug(slug: string): Promise<Room | null> {
+    this.findBySlugCalls.push(slug);
+    if (this.errorToThrow) throw this.errorToThrow;
+    return Array.from(this.rooms.values()).find((r) => r.slug === slug) ?? null;
+  }
+
   create(data: DeepPartial<Room>): Room {
     this.createCalls.push(data);
     const room = new Room();
@@ -170,7 +181,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
   describe('Suite 1: Lifecycle & Multi-Step Business Flows (10 Test Cases)', () => {
     it('TC-E001: Luồng hoàn chỉnh: Tạo phòng -> Xem chi tiết -> Cập nhật tên -> Xóa mềm thành công', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       // 1. Tạo phòng
       const created = await service.create({ slug: 'phong-khao-co', name: 'Phòng Khảo Cổ' });
@@ -191,7 +202,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E002: Luồng nghiệp vụ BR-20: Tạo phòng -> Có hiện vật -> Cố xóa (bị chặn 409) -> Gỡ hiện vật -> Xóa mềm thành công', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const created = await service.create({ slug: 'phong-co-vat', name: 'Phòng Cổ Vật' });
       const roomEntity = repo.rooms.get(created.id)!;
@@ -210,7 +221,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E003: Luồng vòng đời trạng thái: Mặc định ACTIVE -> Chuyển ARCHIVED -> Kích hoạt lại ACTIVE', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const created = await service.create({ slug: 'phong-trien-lam', name: 'Phòng Triển Lãm' });
       assert.strictEqual(created.status, RoomStatus.ACTIVE);
@@ -224,7 +235,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E004: Luồng cập nhật lặp: Tích lũy các thay đổi qua nhiều lần gọi update riêng biệt', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const room = await service.create({ slug: 'phong-tich-luy', name: 'Tên 1' });
       await service.update(room.id, { name: 'Tên 2' });
@@ -238,7 +249,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E005: Luồng tra cứu công khai: Phòng ACTIVE xuất hiện trong getPublicList, khi ARCHIVED thì biến mất', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const room = await service.create({ slug: 'phong-cong-khai', name: 'Phòng Công Khai' });
       let publicList = await service.getPublicList();
@@ -251,7 +262,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E006: Luồng slug công khai: getPublicBySlug thành công khi ACTIVE, ném 404 khi chuyển sang ARCHIVED', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const room = await service.create({ slug: 'slug-cong-khai-1', name: 'Phòng 1' });
       const pub = await service.getPublicBySlug('slug-cong-khai-1');
@@ -263,7 +274,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E007: Luồng chặn tạo trùng slug với phòng đang tồn tại', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await service.create({ slug: 'slug-duy-nhat', name: 'Phòng Duy Nhất 1' });
       await assert.rejects(
@@ -274,7 +285,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E008: Luồng kiểm tra sau xóa mềm: Phòng không còn xuất hiện trong getPublicBySlug', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const room = await service.create({ slug: 'phong-sap-xoa', name: 'Phòng Sắp Xóa' });
       await service.remove(room.id);
@@ -283,7 +294,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E009: Luồng tạo không mô tả (null) -> Cập nhật mô tả -> Cập nhật thành chuỗi rỗng', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const room = await service.create({ slug: 'phong-mo-ta', name: 'Phòng Mô Tả' });
       assert.strictEqual(room.description, null);
@@ -297,7 +308,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E010: Luồng tạo 3 phòng liên tiếp -> list trả về đúng 3 phòng theo thứ tự phân trang', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await service.create({ slug: 'phong-a', name: 'Phòng A' });
       await service.create({ slug: 'phong-b', name: 'Phòng B' });
@@ -315,7 +326,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
   describe('Suite 2: Boundary & Extreme String Values (10 Test Cases)', () => {
     it('TC-E011: Tạo phòng với slug đạt biên tối đa 120 ký tự hợp lệ', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
       const maxSlug = 'a'.repeat(120);
 
       const created = await service.create({ slug: maxSlug, name: 'Phòng Biên Max Slug' });
@@ -325,7 +336,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E012: Tạo phòng với slug tối thiểu 1 ký tự ("x")', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const created = await service.create({ slug: 'x', name: 'Phòng Slug 1 Ký Tự' });
       assert.strictEqual(created.slug, 'x');
@@ -333,7 +344,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E013: Tạo phòng với tên đạt giới hạn tối đa 200 ký tự hợp lệ', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
       const maxName = 'T'.repeat(200);
 
       const created = await service.create({ slug: 'phong-max-name', name: maxName });
@@ -343,7 +354,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E014: Tạo phòng với tên chứa đầy đủ ký tự tiếng Việt có dấu phức tạp', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
       const vnName = 'Không Gian Trưng Bày Hiện Vật Lịch Sử Thời Kỳ Bắc Thuộc & Khởi Nghĩa Hai Bà Trưng';
 
       const created = await service.create({ slug: 'khong-gian-hai-ba-trung', name: vnName });
@@ -352,7 +363,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E015: Cập nhật tên phòng bằng chuỗi 200 ký tự hợp lệ', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
       const room = await service.create({ slug: 'phong-update-max', name: 'Tên Ban Đầu' });
 
       const newMaxName = 'U'.repeat(200);
@@ -362,7 +373,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E016: Tạo phòng với mô tả cực dài (> 2000 ký tự)', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
       const longDesc = 'Mô tả bảo tàng chi tiết: '.concat('Di sản văn hóa phi vật thể và vật thể. '.repeat(100));
 
       const created = await service.create({
@@ -375,7 +386,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E017: Tạo phòng với slug kết hợp số và nhiều đoạn gạch ngang ("khu-a-tang-3-phong-07-3d")', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
       const complexSlug = 'khu-a-tang-3-phong-07-3d';
 
       const created = await service.create({ slug: complexSlug, name: 'Phòng Phức Tạp' });
@@ -384,7 +395,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E018: Cập nhật mô tả chứa ký tự xuống dòng (\\n) và ký tự tab (\\t)', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
       const room = await service.create({ slug: 'phong-multiline', name: 'Phòng Đa Dòng' });
 
       const multilineDesc = 'Đoạn 1: Lịch sử hình thành.\n\tĐoạn 2: Quá trình phát triển.\nĐoạn 3: Kết luận.';
@@ -394,7 +405,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E019: Tạo phòng với tên chứa các ký tự đặc biệt thực tế (dấu ngoặc, dấu chấm, dấu gạch ngang)', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
       const name = 'Phòng Trưng Bày Chuyên Đề: Gốm Sứ Chu Đậu (Thế Kỷ XV - XVI) - Khu Vực A.2';
 
       const created = await service.create({ slug: 'gom-su-chu-dau', name });
@@ -403,7 +414,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E020: Tạo phòng với slug gồm các số và dấu gạch nối ("1945-1975")', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const created = await service.create({ slug: '1945-1975', name: 'Thời Kỳ 1945 - 1975' });
       assert.strictEqual(created.slug, '1945-1975');
@@ -418,7 +429,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-vis', exhibits: [createSampleExhibit({ visibility: ExhibitVisibility.VISIBLE })] });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(async () => service.remove('r-vis'), ConflictException);
     });
@@ -427,7 +438,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-hid', exhibits: [createSampleExhibit({ visibility: ExhibitVisibility.HIDDEN })] });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(async () => service.remove('r-hid'), ConflictException);
     });
@@ -437,7 +448,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const exhibits = Array.from({ length: 10 }, (_, i) => createSampleExhibit({ id: `ex-${i}` }));
       const room = createSampleRoom({ id: 'r-10-ex', exhibits });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(async () => service.remove('r-10-ex'), ConflictException);
       assert.strictEqual(repo.saveCalls.length, 0);
@@ -448,7 +459,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const exArchived = createSampleExhibit({ archivedAt: new Date('2026-01-01') });
       const room = createSampleRoom({ id: 'r-arch-ex', exhibits: [exArchived] });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(async () => service.remove('r-arch-ex'), ConflictException);
     });
@@ -457,7 +468,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-empty', exhibits: [] });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await service.remove('r-empty');
       assert.strictEqual(room.isDeleted, true);
@@ -469,7 +480,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const room = createSampleRoom({ id: 'r-undef' });
       delete (room as Partial<Room>).exhibits;
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await service.remove('r-undef');
       assert.strictEqual(room.isDeleted, true);
@@ -479,7 +490,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-msg', exhibits: [createSampleExhibit()] });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => service.remove('r-msg'),
@@ -497,7 +508,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-time', exhibits: [] });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const before = Date.now();
       await service.remove('r-time');
@@ -511,7 +522,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'fixed-uuid-room', exhibits: [] });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await service.remove('fixed-uuid-room');
       assert.strictEqual(room.id, 'fixed-uuid-room');
@@ -521,7 +532,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'slug-check-room', slug: 'phong-giu-slug', exhibits: [] });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await service.remove('slug-check-room');
       assert.strictEqual(room.slug, 'phong-giu-slug');
@@ -534,7 +545,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
   describe('Suite 4: Immutability & Parameter Mutation Safety (10 Test Cases)', () => {
     it('TC-E031: Hàm create không làm đột biến đối tượng CreateRoomDto truyền vào', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
       const dto: CreateRoomDto = { slug: 'phong-dto-safe', name: 'Phòng An Toàn DTO', description: 'Mô tả' };
       const dtoCopy = { ...dto };
 
@@ -546,7 +557,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-dto-safe' });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
       const dto: UpdateRoomDto = { name: 'Tên Đổi', status: RoomStatus.ARCHIVED };
       const dtoCopy = { ...dto };
 
@@ -556,7 +567,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E033: Hàm list không làm đột biến đối tượng ListRoomsQueryDto truyền vào', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
       const query = createSampleQuery({ page: 2, pageSize: 15, q: 'test' });
       const queryCopy = { ...query };
 
@@ -570,7 +581,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'immut-id' });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('immut-id', { name: 'Tên Mới' });
       assert.strictEqual(res.id, 'immut-id');
@@ -582,7 +593,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const createdAt = new Date('2025-01-01T00:00:00Z');
       const room = createSampleRoom({ id: 'r-time-safe', createdAt });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('r-time-safe', { name: 'Tên Mới' });
       assert.strictEqual(res.createdAt.getTime(), createdAt.getTime());
@@ -594,7 +605,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const exhibits = [createSampleExhibit()];
       const room = createSampleRoom({ id: 'r-ex-safe', exhibits });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('r-ex-safe', { name: 'Tên Mới' });
       assert.strictEqual(res.exhibitsCount, 1);
@@ -605,7 +616,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-del-safe', isDeleted: false, deletedAt: null });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await service.update('r-del-safe', { name: 'Tên Mới' });
       assert.strictEqual(room.isDeleted, false);
@@ -616,7 +627,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-clone-check', name: 'Gốc' });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery());
       res.items[0].name = 'Bị sửa ở ngoài';
@@ -627,7 +638,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-pub-check', name: 'Công Khai Gốc' });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const list1 = await service.getPublicList();
       const list2 = await service.getPublicList();
@@ -639,7 +650,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-repeat-get' });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res1 = await service.getById('r-repeat-get');
       const res2 = await service.getById('r-repeat-get');
@@ -655,7 +666,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-part-1', name: 'Cũ', description: 'Mô tả cũ', status: RoomStatus.ACTIVE });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('r-part-1', { name: 'Mới' });
       assert.strictEqual(res.name, 'Mới');
@@ -667,7 +678,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-part-2', name: 'Tên Giữ', description: 'Mô tả cũ', status: RoomStatus.ARCHIVED });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('r-part-2', { description: 'Mô tả mới' });
       assert.strictEqual(res.name, 'Tên Giữ');
@@ -679,7 +690,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-part-3', name: 'Tên Giữ', description: 'Mô tả giữ', status: RoomStatus.ACTIVE });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('r-part-3', { status: RoomStatus.ARCHIVED });
       assert.strictEqual(res.name, 'Tên Giữ');
@@ -691,7 +702,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-part-4', status: RoomStatus.ACTIVE });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('r-part-4', { name: 'Tên Mới 4', description: 'Mô Tả Mới 4' });
       assert.strictEqual(res.name, 'Tên Mới 4');
@@ -703,7 +714,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-part-5', description: 'Mô tả giữ 5' });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('r-part-5', { name: 'Tên Mới 5', status: RoomStatus.ARCHIVED });
       assert.strictEqual(res.name, 'Tên Mới 5');
@@ -715,7 +726,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-part-6', name: 'Tên Giữ 6' });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('r-part-6', { description: 'Mô tả đổi 6', status: RoomStatus.ARCHIVED });
       assert.strictEqual(res.name, 'Tên Giữ 6');
@@ -727,7 +738,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-part-7' });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('r-part-7', {
         name: 'Tất Cả Mới',
@@ -743,7 +754,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-part-8', name: 'Tên Nguyên', description: 'Mô Tả Nguyên', status: RoomStatus.ACTIVE });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('r-part-8', {});
       assert.strictEqual(res.name, 'Tên Nguyên');
@@ -755,7 +766,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-part-9', description: 'Có chữ' });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('r-part-9', { description: '' });
       assert.strictEqual(res.description, '');
@@ -765,7 +776,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-part-10', status: RoomStatus.ARCHIVED });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('r-part-10', { status: RoomStatus.ACTIVE });
       assert.strictEqual(res.status, RoomStatus.ACTIVE);
@@ -780,7 +791,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const rooms = Array.from({ length: 100 }, (_, i) => createSampleRoom({ id: `r-${i}`, slug: `slug-${i}` }));
       repo.seed(rooms);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery({ page: 2, pageSize: 20 }));
       assert.strictEqual(res.total, 100);
@@ -793,7 +804,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const rooms = Array.from({ length: 10 }, (_, i) => createSampleRoom({ id: `r-${i}`, slug: `slug-${i}` }));
       repo.seed(rooms);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery({ page: 100, pageSize: 20 }));
       assert.strictEqual(res.total, 10);
@@ -803,7 +814,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E053: List tại trang 1 với pageSize = 1 (biên tối thiểu)', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'r1', slug: 's1' }), createSampleRoom({ id: 'r2', slug: 's2' })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery({ page: 1, pageSize: 1 }));
       assert.strictEqual(res.items.length, 1);
@@ -814,7 +825,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const rooms = Array.from({ length: 50 }, (_, i) => createSampleRoom({ id: `r-${i}`, slug: `slug-${i}` }));
       repo.seed(rooms);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery({ page: 1, pageSize: 100 }));
       assert.strictEqual(res.items.length, 50);
@@ -823,7 +834,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E055: List với total = 0 trả về mảng rỗng và total = 0', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery());
       assert.strictEqual(res.total, 0);
@@ -837,7 +848,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
         createSampleRoom({ id: 'r2', name: 'Phòng Hội Họa', status: RoomStatus.ACTIVE }),
         createSampleRoom({ id: 'r3', name: 'Phòng Điêu Khắc', status: RoomStatus.ARCHIVED }),
       ]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery({ status: RoomStatus.ARCHIVED, q: 'Hội Họa' }));
       assert.strictEqual(res.total, 1);
@@ -850,7 +861,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
         createSampleRoom({ id: 'r1', status: RoomStatus.ACTIVE }),
         createSampleRoom({ id: 'r2', status: RoomStatus.ARCHIVED }),
       ]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery({ status: RoomStatus.ACTIVE, q: '' }));
       assert.strictEqual(res.total, 1);
@@ -860,7 +871,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E058: List bảo toàn số lượng items đúng bằng độ dài mảng trả về từ repo', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'r1', slug: 's1' }), createSampleRoom({ id: 'r2', slug: 's2' })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery());
       assert.strictEqual(res.items.length, 2);
@@ -870,7 +881,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const rooms = Array.from({ length: 25 }, (_, i) => createSampleRoom({ id: `r-${i}`, slug: `slug-${i}` }));
       repo.seed(rooms);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery({ pageSize: 50 }));
       assert.strictEqual(res.items.length, 25);
@@ -884,7 +895,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E060: List với sort query parameter được chuyển tiếp đầy đủ vào repository', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
       const query = createSampleQuery({ sort: 'name:asc' });
 
       await service.list(query);
@@ -898,7 +909,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
   describe('Suite 7: Error Types, Status Codes & Exception Propagation (10 Test Cases)', () => {
     it('TC-E061: NotFoundException từ getById có HTTP status code là 404', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => service.getById('non-existent'),
@@ -911,7 +922,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E062: NotFoundException từ getPublicBySlug có HTTP status code là 404', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => service.getPublicBySlug('non-existent-slug'),
@@ -924,7 +935,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E063: NotFoundException từ update có HTTP status code là 404', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => service.update('non-existent-id', { name: 'Mới' }),
@@ -937,7 +948,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E064: NotFoundException từ remove có HTTP status code là 404', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => service.remove('non-existent-id'),
@@ -951,7 +962,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E065: ConflictException từ create khi trùng slug có HTTP status code là 409', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ slug: 'slug-trung' })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => service.create({ slug: 'slug-trung', name: 'Phòng Bị Trùng' }),
@@ -965,7 +976,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E066: ConflictException từ remove khi vi phạm BR-20 có HTTP status code là 409', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'r-br20', exhibits: [createSampleExhibit()] })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => service.remove('r-br20'),
@@ -979,7 +990,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E067: Exception tùy chỉnh từ Database trong getById được chuyển tiếp nguyên vẹn', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.errorToThrow = new Error('Database connection timeout');
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => service.getById('any-id'),
@@ -990,10 +1001,10 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       );
     });
 
-    it('TC-E068: Exception tùy chỉnh từ Database trong create (findBySlug) được chuyển tiếp nguyên vẹn', async () => {
+    it('TC-E068: Exception tùy chỉnh từ Database trong create (findAnyBySlug) được chuyển tiếp nguyên vẹn', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.errorToThrow = new Error('Database deadlock occurred');
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => service.create({ slug: 'new-slug', name: 'Phòng' }),
@@ -1008,7 +1019,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-up-err' });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       // Đặt lỗi sau khi findWithExhibits
       repo.findWithExhibits = async () => room;
@@ -1029,7 +1040,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const room = createSampleRoom({ id: 'r-rm-err', exhibits: [] });
       repo.seed([room]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       repo.save = async () => {
         throw new Error('Disk full error');
@@ -1053,7 +1064,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const rooms = Array.from({ length: 5 }, (_, i) => createSampleRoom({ id: `par-id-${i}`, slug: `par-s-${i}` }));
       repo.seed(rooms);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const promises = rooms.map((r) => service.getById(r.id));
       const results = await Promise.all(promises);
@@ -1068,7 +1079,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
         createSampleRoom({ id: `par-id-${i}`, slug: `par-slug-${i}`, status: RoomStatus.ACTIVE }),
       );
       repo.seed(rooms);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const promises = rooms.map((r) => service.getPublicBySlug(r.slug));
       const results = await Promise.all(promises);
@@ -1080,7 +1091,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E073: Chạy song song 5 lời gọi getPublicList độc lập không xung đột state', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'r1', status: RoomStatus.ACTIVE })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const results = await Promise.all([
         service.getPublicList(),
@@ -1100,7 +1111,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
         createSampleRoom({ id: 'r1', status: RoomStatus.ACTIVE, name: 'Phòng 1' }),
         createSampleRoom({ id: 'r2', status: RoomStatus.ARCHIVED, name: 'Phòng 2' }),
       ]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const [resAll, resActive, resArchived] = await Promise.all([
         service.list(createSampleQuery()),
@@ -1120,7 +1131,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
         createSampleRoom({ id: 'u2', name: 'Tên 2' }),
         createSampleRoom({ id: 'u3', name: 'Tên 3' }),
       ]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const [up1, up2, up3] = await Promise.all([
         service.update('u1', { name: 'Đã đổi 1' }),
@@ -1140,7 +1151,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
         createSampleRoom({ id: 'rm2', exhibits: [] }),
         createSampleRoom({ id: 'rm3', exhibits: [] }),
       ]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await Promise.all([service.remove('rm1'), service.remove('rm2'), service.remove('rm3')]);
 
@@ -1152,7 +1163,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E077: Chạy song song vừa create phòng mới vừa list phòng hiện tại', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'init-1' })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const [newRoom, listRes] = await Promise.all([
         service.create({ slug: 'phong-dong-thoi', name: 'Phòng Đồng Thời' }),
@@ -1166,7 +1177,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E078: Chạy song song vừa update tên phòng vừa getById phòng đó', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'r-parallel-rw', name: 'Tên Ban Đầu' })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const [updated, read] = await Promise.all([
         service.update('r-parallel-rw', { name: 'Tên Đã Cập Nhật' }),
@@ -1179,7 +1190,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E079: Chạy song song 3 lời gọi create với các slug khác nhau hoàn toàn thành công', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const [r1, r2, r3] = await Promise.all([
         service.create({ slug: 'batch-1', name: 'Batch 1' }),
@@ -1198,7 +1209,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
         createSampleRoom({ id: 'mix-1', name: 'Mix 1', exhibits: [] }),
         createSampleRoom({ id: 'mix-2', name: 'Mix 2', exhibits: [] }),
       ]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const tasks = [
         service.list(createSampleQuery()),
@@ -1223,7 +1234,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
         createSampleRoom({ id: 'p1', isDeleted: true, status: RoomStatus.ACTIVE }),
         createSampleRoom({ id: 'p2', isDeleted: false, status: RoomStatus.ACTIVE }),
       ]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.strictEqual(res.length, 1);
@@ -1236,7 +1247,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
         createSampleRoom({ id: 'p1', status: RoomStatus.ARCHIVED, isDeleted: false }),
         createSampleRoom({ id: 'p2', status: RoomStatus.ACTIVE, isDeleted: false }),
       ]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.strictEqual(res.length, 1);
@@ -1246,7 +1257,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E083: getPublicBySlug từ chối phòng có isDeleted = true (ném NotFoundException)', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'del-slug', slug: 'da-xoa', isDeleted: true, status: RoomStatus.ACTIVE })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(async () => service.getPublicBySlug('da-xoa'), NotFoundException);
     });
@@ -1254,7 +1265,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E084: getPublicBySlug từ chối phòng có status ARCHIVED (ném NotFoundException)', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'arch-slug', slug: 'da-luu-tru', status: RoomStatus.ARCHIVED })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(async () => service.getPublicBySlug('da-luu-tru'), NotFoundException);
     });
@@ -1265,7 +1276,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
         createSampleRoom({ id: 'a1', status: RoomStatus.ARCHIVED }),
         createSampleRoom({ id: 'a2', status: RoomStatus.ARCHIVED }),
       ]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.deepStrictEqual(res, []);
@@ -1277,7 +1288,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
         createSampleRoom({ id: 'd1', isDeleted: true }),
         createSampleRoom({ id: 'd2', isDeleted: true }),
       ]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.deepStrictEqual(res, []);
@@ -1290,7 +1301,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
         createSampleRoom({ id: 'p2', exhibits: [createSampleExhibit()], status: RoomStatus.ACTIVE }),
         createSampleRoom({ id: 'p3', exhibits: [createSampleExhibit(), createSampleExhibit({ id: 'ex2' })], status: RoomStatus.ACTIVE }),
       ]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.strictEqual(res.find((r) => r.id === 'p1')?.exhibitsCount, 0);
@@ -1301,7 +1312,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E088: getPublicBySlug ném 404 khi truyền chuỗi slug không khớp', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ slug: 'phong-ton-tai', status: RoomStatus.ACTIVE })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(async () => service.getPublicBySlug('phong-khac'), NotFoundException);
     });
@@ -1310,7 +1321,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
       const repo = new InMemoryMockRoomsRepository();
       const desc = 'Không gian 3D tương tác trải nghiệm thực tế ảo VR dành cho khách tham quan trực tuyến';
       repo.seed([createSampleRoom({ slug: 'vr-space', description: desc, status: RoomStatus.ACTIVE })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicBySlug('vr-space');
       assert.strictEqual(res.description, desc);
@@ -1322,7 +1333,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
         createSampleRoom({ id: `active-${i}`, slug: `active-slug-${i}`, status: RoomStatus.ACTIVE }),
       );
       repo.seed(activeRooms);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.strictEqual(res.length, 10);
@@ -1336,7 +1347,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E091: RoomResponse từ getById chứa đầy đủ 8 trường tiêu chuẩn', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'r-contract-1' })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('r-contract-1');
       assert.ok('id' in res);
@@ -1351,7 +1362,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
 
     it('TC-E092: RoomResponse từ create chứa đầy đủ các key theo chuẩn DTO', async () => {
       const repo = new InMemoryMockRoomsRepository();
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.create({ slug: 'r-contract-create', name: 'Contract Create' });
       assert.ok('id' in res);
@@ -1367,7 +1378,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E093: RoomResponse từ update chứa đầy đủ các key theo chuẩn DTO', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'r-contract-update' })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('r-contract-update', { name: 'New Name' });
       assert.ok('id' in res);
@@ -1383,7 +1394,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E094: RoomResponse từ getPublicBySlug chứa đầy đủ các key theo chuẩn DTO', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ slug: 'r-contract-pub', status: RoomStatus.ACTIVE })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicBySlug('r-contract-pub');
       assert.ok('id' in res);
@@ -1399,7 +1410,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E095: Kiểu dữ liệu của exhibitsCount trong RoomResponse luôn là number nguyên không âm (>= 0)', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'r-num-test' })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('r-num-test');
       assert.strictEqual(typeof res.exhibitsCount, 'number');
@@ -1410,7 +1421,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E096: Kiểu dữ liệu của createdAt và updatedAt trong RoomResponse luôn là đối tượng Date hợp lệ', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'r-date-test' })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('r-date-test');
       assert.ok(res.createdAt instanceof Date);
@@ -1422,7 +1433,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E097: Trường id luôn là chuỗi string không rỗng', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'non-empty-uuid' })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('non-empty-uuid');
       assert.strictEqual(typeof res.id, 'string');
@@ -1432,7 +1443,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E098: Trường slug luôn là chuỗi string không rỗng', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'r-slug-check', slug: 'valid-slug' })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('r-slug-check');
       assert.strictEqual(typeof res.slug, 'string');
@@ -1442,7 +1453,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
     it('TC-E099: Trường name luôn là chuỗi string không rỗng', async () => {
       const repo = new InMemoryMockRoomsRepository();
       repo.seed([createSampleRoom({ id: 'r-name-check', name: 'Phòng Có Tên' })]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('r-name-check');
       assert.strictEqual(typeof res.name, 'string');
@@ -1455,7 +1466,7 @@ describe('Task 6.3 — Extended Scenario & Edge Case Test Suite (100 Test Cases)
         createSampleRoom({ id: 'r-desc-null', description: null }),
         createSampleRoom({ id: 'r-desc-str', description: 'Có mô tả' }),
       ]);
-      const service = new RoomsService(repo as unknown as RoomsRepository);
+      const service = new RoomsService(repo as unknown as RoomsRepository, NO_TX);
 
       const resNull = await service.getById('r-desc-null');
       assert.strictEqual(resNull.description, null);

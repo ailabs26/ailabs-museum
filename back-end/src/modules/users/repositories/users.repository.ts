@@ -1,16 +1,25 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, EntityManager, QueryFailedError, Repository } from 'typeorm';
+import { Brackets, EntityManager, In, QueryFailedError, Repository } from 'typeorm';
 import { RoleKey } from '../../../common/enums/role.enum';
 import { Paginated } from '../../../common/types/paginated.type';
 import { BaseRepository } from '../../../common/repository/base.repository';
 import { User, UserStatus } from '../entities/user.entity';
+
+/** Thông tin tối thiểu của user để hiển thị/chọn — không có passwordHash. */
+export interface UserBrief {
+  id: string;
+  email: string;
+  displayName: string;
+}
 
 export interface ListUsersOptions {
   page: number;
   pageSize: number;
   q?: string;
   status?: UserStatus;
+  /** true: chỉ tài khoản đã xóa mềm (thùng rác). */
+  deleted?: boolean;
 }
 
 /** Quan hệ cần nạp để dựng AuthUser (roles + permissions gộp). */
@@ -76,6 +85,18 @@ export class UsersRepository extends BaseRepository<User> {
     }
   }
 
+  /** Khóa dòng các tài khoản đang trong thùng rác (đã xóa mềm) để khôi phục. */
+  lockDeletedByIds(ids: string[], manager: EntityManager): Promise<User[]> {
+    return this.scoped(manager).find({
+      where: { id: In(ids), isDeleted: true },
+      lock: { mode: 'pessimistic_write' },
+    });
+  }
+
+  async markRestored(ids: string[], manager: EntityManager): Promise<void> {
+    await this.scoped(manager).update({ id: In(ids) }, { isDeleted: false, deletedAt: null });
+  }
+
   /** Tuần tự hóa các thay đổi tài khoản/Role để bảo vệ Admin cuối cùng. */
   async lockManagement(manager: EntityManager): Promise<void> {
     await manager.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
@@ -103,7 +124,7 @@ export class UsersRepository extends BaseRepository<User> {
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.userRoles', 'userRole')
       .leftJoinAndSelect('userRole.role', 'role')
-      .where('user.isDeleted = false');
+      .where('user.isDeleted = :deleted', { deleted: options.deleted ?? false });
 
     if (options.status) {
       query.andWhere('user.status = :status', { status: options.status });
@@ -120,11 +141,31 @@ export class UsersRepository extends BaseRepository<User> {
     }
 
     const [items, total] = await query
-      .orderBy('user.createdAt', 'DESC')
+      // Thùng rác: mới xóa trước.
+      .orderBy(options.deleted ? 'user.deletedAt' : 'user.createdAt', 'DESC')
+      .addOrderBy('user.id', 'DESC')
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getManyAndCount();
 
     return { items, total, page, pageSize };
+  }
+
+  /**
+   * User đang hoạt động (active, chưa xóa) có quyền `permission` qua một vai trò chưa bị xóa; không trùng khi có
+   * nhiều vai trò. Dùng cho người nhận thông báo và danh sách người có thể được giao báo cáo.
+   */
+  async findActiveWithPermission(permission: string): Promise<UserBrief[]> {
+    const rows: { id: string; email: string; display_name: string }[] = await this.repo.query(
+      `SELECT DISTINCT u.id, u.email, u.display_name FROM users u
+       JOIN user_roles ur ON ur.user_id = u.id
+       JOIN roles r ON r.id = ur.role_id AND r.is_deleted = false
+       JOIN role_permissions rp ON rp.role_id = r.id
+       JOIN permissions p ON p.id = rp.permission_id
+       WHERE p.code = $1 AND u.status = 'active' AND u.is_deleted = false
+       ORDER BY u.display_name, u.email`,
+      [permission],
+    );
+    return rows.map((row) => ({ id: row.id, email: row.email, displayName: row.display_name }));
   }
 }

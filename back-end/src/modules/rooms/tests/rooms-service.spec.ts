@@ -11,6 +11,10 @@ import { UpdateRoomDto } from '../dto/update-room.dto';
 import { Room, RoomStatus } from '../entities/room.entity';
 import { RoomsRepository } from '../repositories/rooms.repository';
 import { RoomsService } from '../services/rooms.service';
+import type { TransactionManager } from '../../../common/database/transaction.manager';
+
+/** Luồng xóa lẻ/đọc không dùng transaction; removeMany có test riêng trong rooms-bulk-delete.spec.ts. */
+const NO_TX = {} as TransactionManager;
 
 // Helper tạo Room mẫu cho testing
 function createSampleRoom(overrides?: Partial<Room>): Room {
@@ -120,7 +124,8 @@ class MockRoomsRepository {
     return this.findActiveBySlugResult;
   }
 
-  async findBySlug(slug: string): Promise<Room | null> {
+  /** create() kiểm slug trên toàn bảng (kể cả phòng đã xóa). */
+  async findAnyBySlug(slug: string): Promise<Room | null> {
     this.findBySlugCalls.push(slug);
     if (this.findBySlugError) {
       throw this.findBySlugError;
@@ -168,7 +173,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
         page: 1,
         pageSize: 20,
       };
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery());
       assert.strictEqual(res.total, 1);
@@ -181,7 +186,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const sample = createSampleRoom({ id: 'room-uuid-002', slug: 'phong-lich-su', name: 'Phòng Lịch Sử' });
       mockRepo.searchRoomsResult = { items: [sample], total: 1, page: 1, pageSize: 20 };
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery());
       const item = res.items[0];
@@ -196,7 +201,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const ex2 = createSampleExhibit({ id: 'ex-002' });
       const sample = createSampleRoom({ exhibits: [ex1, ex2] });
       mockRepo.searchRoomsResult = { items: [sample], total: 1, page: 1, pageSize: 20 };
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery());
       assert.strictEqual(res.items[0].exhibitsCount, 2);
@@ -206,7 +211,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const sample = createSampleRoom({ exhibits: [] });
       mockRepo.searchRoomsResult = { items: [sample], total: 1, page: 1, pageSize: 20 };
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery());
       assert.strictEqual(res.items[0].exhibitsCount, 0);
@@ -214,7 +219,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
 
     it('TC-S005: Chuyển tiếp đúng tham số query (page, pageSize, status, q) tới roomsRepo.searchRooms', async () => {
       const mockRepo = new MockRoomsRepository();
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
       const queryDto = createSampleQuery({
         page: 2,
         pageSize: 15,
@@ -230,7 +235,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S006: Giữ nguyên metadata phân trang page và pageSize từ repository', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.searchRoomsResult = { items: [], total: 50, page: 3, pageSize: 15 };
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery({ page: 3, pageSize: 15 }));
       assert.strictEqual(res.page, 3);
@@ -240,7 +245,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S007: Giữ nguyên metadata tổng số total từ repository', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.searchRoomsResult = { items: [], total: 99, page: 1, pageSize: 10 };
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery());
       assert.strictEqual(res.total, 99);
@@ -249,7 +254,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S008: Trả về danh sách rỗng (items: [], total: 0) khi không có phòng nào khớp truy vấn', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.searchRoomsResult = { items: [], total: 0, page: 1, pageSize: 20 };
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery({ q: 'khong-ton-tai' }));
       assert.deepStrictEqual(res.items, []);
@@ -258,7 +263,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
 
     it('TC-S009: Xử lý đúng khi query mặc định được khởi tạo', async () => {
       const mockRepo = new MockRoomsRepository();
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery());
       assert.ok(Array.isArray(res.items));
@@ -269,7 +274,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const sample = createSampleRoom({ status: RoomStatus.ACTIVE });
       mockRepo.searchRoomsResult = { items: [sample], total: 1, page: 1, pageSize: 20 };
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery({ status: RoomStatus.ACTIVE }));
       assert.strictEqual(res.items[0].status, RoomStatus.ACTIVE);
@@ -279,7 +284,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const sample = createSampleRoom({ status: RoomStatus.ARCHIVED });
       mockRepo.searchRoomsResult = { items: [sample], total: 1, page: 1, pageSize: 20 };
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery({ status: RoomStatus.ARCHIVED }));
       assert.strictEqual(res.items[0].status, RoomStatus.ARCHIVED);
@@ -289,7 +294,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const sample = createSampleRoom({ name: 'Phòng Khám Phá' });
       mockRepo.searchRoomsResult = { items: [sample], total: 1, page: 1, pageSize: 20 };
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery({ q: 'khám phá' }));
       assert.strictEqual(res.items[0].name, 'Phòng Khám Phá');
@@ -305,7 +310,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
         exhibits: [createSampleExhibit(), createSampleExhibit({ id: 'ex2' })],
       });
       mockRepo.searchRoomsResult = { items: [r1, r2, r3], total: 3, page: 1, pageSize: 20 };
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery());
       assert.strictEqual(res.items.length, 3);
@@ -320,7 +325,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const updatedAt = new Date('2026-05-02T09:00:00Z');
       const sample = createSampleRoom({ createdAt, updatedAt });
       mockRepo.searchRoomsResult = { items: [sample], total: 1, page: 1, pageSize: 20 };
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.list(createSampleQuery());
       assert.deepStrictEqual(res.items[0].createdAt, createdAt);
@@ -330,7 +335,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S015: Ném lại ngoại lệ khi roomsRepo.searchRooms gặp lỗi cơ sở dữ liệu', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.searchRoomsError = new Error('Database connection failed');
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -351,7 +356,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S016: Trả về RoomResponse khi tìm thấy phòng theo ID', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = createSampleRoom({ id: 'uuid-016' });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('uuid-016');
       assert.strictEqual(res.id, 'uuid-016');
@@ -360,7 +365,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S017: Gọi roomsRepo.findWithExhibits với đúng id được truyền vào', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = createSampleRoom({ id: 'target-room-id' });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.getById('target-room-id');
       assert.strictEqual(mockRepo.findWithExhibitsCalls.length, 1);
@@ -370,7 +375,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S018: Ném NotFoundException khi không tìm thấy phòng (repo trả về null)', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -386,7 +391,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S019: Thông điệp ngoại lệ là "Không tìm thấy phòng trưng bày" khi không tìm thấy phòng', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -402,7 +407,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S020: Ngoại lệ NotFoundException ném ra có HTTP status 404', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -420,7 +425,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const ex1 = createSampleExhibit();
       const ex2 = createSampleExhibit({ id: 'ex-2' });
       mockRepo.findWithExhibitsResult = createSampleRoom({ exhibits: [ex1, ex2] });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('room-id');
       assert.strictEqual(res.exhibitsCount, 2);
@@ -429,7 +434,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S022: Chuyển đổi chính xác exhibitsCount = 0 khi phòng không có hiện vật', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = createSampleRoom({ exhibits: [] });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('room-id');
       assert.strictEqual(res.exhibitsCount, 0);
@@ -438,7 +443,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S023: Bảo toàn trường description khi phòng có mô tả', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = createSampleRoom({ description: 'Mô tả chi tiết phòng' });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('room-id');
       assert.strictEqual(res.description, 'Mô tả chi tiết phòng');
@@ -447,7 +452,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S024: Bảo toàn trường description là null khi phòng không có mô tả', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = createSampleRoom({ description: null });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('room-id');
       assert.strictEqual(res.description, null);
@@ -456,7 +461,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S025: Bảo toàn trường slug đúng nguyên bản', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = createSampleRoom({ slug: 'phong-co-vat-thoi-ly' });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('room-id');
       assert.strictEqual(res.slug, 'phong-co-vat-thoi-ly');
@@ -465,7 +470,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S026: Bảo toàn trường status ACTIVE', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = createSampleRoom({ status: RoomStatus.ACTIVE });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('room-id');
       assert.strictEqual(res.status, RoomStatus.ACTIVE);
@@ -474,7 +479,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S027: Bảo toàn trường status ARCHIVED', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = createSampleRoom({ status: RoomStatus.ARCHIVED });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('room-id');
       assert.strictEqual(res.status, RoomStatus.ARCHIVED);
@@ -484,7 +489,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const longSlug = 'p'.repeat(100);
       mockRepo.findWithExhibitsResult = createSampleRoom({ slug: longSlug });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById('room-id');
       assert.strictEqual(res.slug, longSlug);
@@ -493,7 +498,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S029: Chuyển tiếp ngoại lệ khi roomsRepo.findWithExhibits gặp lỗi', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsError = new Error('Query error');
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -510,7 +515,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const uuid = '123e4567-e89b-12d3-a456-426614174000';
       mockRepo.findWithExhibitsResult = createSampleRoom({ id: uuid });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getById(uuid);
       assert.strictEqual(res.id, uuid);
@@ -524,7 +529,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S031: Trả về mảng RoomResponse[] khi có các phòng công khai', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findPublicRoomsResult = [createSampleRoom()];
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.strictEqual(res.length, 1);
@@ -533,7 +538,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
 
     it('TC-S032: Gọi hàm roomsRepo.findPublicRooms đúng 1 lần', async () => {
       const mockRepo = new MockRoomsRepository();
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.getPublicList();
       assert.strictEqual(mockRepo.findPublicRoomsCallsCount, 1);
@@ -542,7 +547,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S033: Trả về mảng rỗng [] khi không có phòng công khai nào', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findPublicRoomsResult = [];
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.deepStrictEqual(res, []);
@@ -553,7 +558,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const r1 = createSampleRoom({ id: 'r-1', name: 'Phòng 1' });
       const r2 = createSampleRoom({ id: 'r-2', name: 'Phòng 2' });
       mockRepo.findPublicRoomsResult = [r1, r2];
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.strictEqual(res.length, 2);
@@ -566,7 +571,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const ex1 = createSampleExhibit();
       const r1 = createSampleRoom({ exhibits: [ex1] });
       mockRepo.findPublicRoomsResult = [r1];
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.strictEqual(res[0].exhibitsCount, 1);
@@ -576,7 +581,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const r1 = createSampleRoom({ exhibits: [] });
       mockRepo.findPublicRoomsResult = [r1];
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.strictEqual(res[0].exhibitsCount, 0);
@@ -587,7 +592,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const r1 = createSampleRoom({ status: RoomStatus.ACTIVE });
       const r2 = createSampleRoom({ id: 'r-2', status: RoomStatus.ACTIVE });
       mockRepo.findPublicRoomsResult = [r1, r2];
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert(res.every((r) => r.status === RoomStatus.ACTIVE));
@@ -598,7 +603,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const r1 = createSampleRoom({ id: 'first-room', createdAt: new Date('2026-01-01') });
       const r2 = createSampleRoom({ id: 'second-room', createdAt: new Date('2026-01-02') });
       mockRepo.findPublicRoomsResult = [r1, r2];
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.strictEqual(res[0].id, 'first-room');
@@ -608,7 +613,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S039: Xử lý đúng khi danh sách chỉ có 1 phòng công khai', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findPublicRoomsResult = [createSampleRoom({ id: 'single-room' })];
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.strictEqual(res.length, 1);
@@ -620,7 +625,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       mockRepo.findPublicRoomsResult = Array.from({ length: 5 }, (_, i) =>
         createSampleRoom({ id: `room-${i}`, slug: `slug-${i}`, name: `Phòng ${i}` }),
       );
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.strictEqual(res.length, 5);
@@ -632,7 +637,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const r1 = createSampleRoom({ id: 'r1', description: 'Có mô tả' });
       const r2 = createSampleRoom({ id: 'r2', description: null });
       mockRepo.findPublicRoomsResult = [r1, r2];
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.strictEqual(res[0].description, 'Có mô tả');
@@ -644,7 +649,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const createdAt = new Date('2026-10-01T12:00:00Z');
       const updatedAt = new Date('2026-10-02T15:30:00Z');
       mockRepo.findPublicRoomsResult = [createSampleRoom({ createdAt, updatedAt })];
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.deepStrictEqual(res[0].createdAt, createdAt);
@@ -654,7 +659,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S043: Không rò rỉ các trường nội bộ không có trong RoomResponse', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findPublicRoomsResult = [createSampleRoom()];
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       const item = res[0] as unknown as Record<string, unknown>;
@@ -666,7 +671,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S044: Ném lại ngoại lệ khi roomsRepo.findPublicRooms ném lỗi', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findPublicRoomsError = new Error('Public rooms query error');
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -683,7 +688,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const sample = createSampleRoom();
       mockRepo.findPublicRoomsResult = [sample];
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicList();
       assert.strictEqual(sample.slug, 'phong-kham-pha');
@@ -698,7 +703,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S046: Trả về RoomResponse khi tìm thấy phòng active theo slug', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findActiveBySlugResult = createSampleRoom({ slug: 'phong-dong-son' });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicBySlug('phong-dong-son');
       assert.strictEqual(res.slug, 'phong-dong-son');
@@ -707,7 +712,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S047: Gọi roomsRepo.findActiveBySlug với đúng slug truyền vào', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findActiveBySlugResult = createSampleRoom({ slug: 'phong-giao-duc' });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.getPublicBySlug('phong-giao-duc');
       assert.strictEqual(mockRepo.findActiveBySlugCalls.length, 1);
@@ -717,7 +722,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S048: Ném NotFoundException khi slug không tồn tại (repo trả về null)', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findActiveBySlugResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -733,7 +738,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S049: Thông điệp ngoại lệ là "Không tìm thấy phòng trưng bày" khi không tìm thấy theo slug', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findActiveBySlugResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -749,7 +754,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S050: Ngoại lệ ném ra có HTTP status 404', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findActiveBySlugResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -768,7 +773,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const ex2 = createSampleExhibit({ id: 'ex-2' });
       const ex3 = createSampleExhibit({ id: 'ex-3' });
       mockRepo.findActiveBySlugResult = createSampleRoom({ exhibits: [ex1, ex2, ex3] });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicBySlug('phong-kham-pha');
       assert.strictEqual(res.exhibitsCount, 3);
@@ -777,7 +782,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S052: Trả về exhibitsCount = 0 khi phòng chưa có hiện vật', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findActiveBySlugResult = createSampleRoom({ exhibits: [] });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicBySlug('phong-kham-pha');
       assert.strictEqual(res.exhibitsCount, 0);
@@ -786,7 +791,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S053: Bảo toàn thông tin phòng với slug đơn giản ("phong-1")', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findActiveBySlugResult = createSampleRoom({ slug: 'phong-1' });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicBySlug('phong-1');
       assert.strictEqual(res.slug, 'phong-1');
@@ -795,7 +800,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S054: Bảo toàn thông tin phòng với slug nhiều đoạn ("khu-trung-bay-van-hoa-dong-son")', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findActiveBySlugResult = createSampleRoom({ slug: 'khu-trung-bay-van-hoa-dong-son' });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicBySlug('khu-trung-bay-van-hoa-dong-son');
       assert.strictEqual(res.slug, 'khu-trung-bay-van-hoa-dong-son');
@@ -804,7 +809,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S055: Bảo toàn trường description dạng chuỗi', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findActiveBySlugResult = createSampleRoom({ description: 'Mô tả chi tiết phòng VR' });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicBySlug('phong-vr');
       assert.strictEqual(res.description, 'Mô tả chi tiết phòng VR');
@@ -813,7 +818,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S056: Bảo toàn trường description là null', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findActiveBySlugResult = createSampleRoom({ description: null });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicBySlug('phong-vr');
       assert.strictEqual(res.description, null);
@@ -822,7 +827,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S057: Bảo toàn đúng status = RoomStatus.ACTIVE', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findActiveBySlugResult = createSampleRoom({ status: RoomStatus.ACTIVE });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicBySlug('phong-vr');
       assert.strictEqual(res.status, RoomStatus.ACTIVE);
@@ -833,7 +838,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const createdAt = new Date('2026-03-01T00:00:00Z');
       const updatedAt = new Date('2026-03-02T00:00:00Z');
       mockRepo.findActiveBySlugResult = createSampleRoom({ createdAt, updatedAt });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicBySlug('phong-vr');
       assert.deepStrictEqual(res.createdAt, createdAt);
@@ -843,7 +848,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S059: Ném lại ngoại lệ khi roomsRepo.findActiveBySlug ném lỗi DB', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findActiveBySlugError = new Error('Database read failure');
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -859,7 +864,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S060: Không lộ các thuộc tính nội bộ ngoài RoomResponse', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findActiveBySlugResult = createSampleRoom();
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.getPublicBySlug('phong-kham-pha');
       const item = res as unknown as Record<string, unknown>;
@@ -876,7 +881,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S061: Tạo phòng mới thành công khi slug chưa tồn tại', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
       const dto: CreateRoomDto = {
         slug: 'phong-moi',
         name: 'Phòng Mới',
@@ -889,10 +894,10 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       assert.strictEqual(res.description, 'Mô tả phòng mới');
     });
 
-    it('TC-S062: Gọi roomsRepo.findBySlug để kiểm tra tính duy nhất của slug trước khi tạo', async () => {
+    it('TC-S062: Gọi roomsRepo.findAnyBySlug để kiểm tra tính duy nhất của slug trước khi tạo', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.create({ slug: 'kiem-tra-slug', name: 'Kiểm Tra Slug' });
       assert.strictEqual(mockRepo.findBySlugCalls.length, 1);
@@ -902,7 +907,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S063: Ném ConflictException khi slug đã được sử dụng', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugResult = createSampleRoom({ slug: 'slug-trung' });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -918,7 +923,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S064: Thông báo lỗi ConflictException chứa slug trùng: Slug "..." đã được sử dụng', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugResult = createSampleRoom({ slug: 'slug-trung' });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -934,7 +939,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S065: Ngoại lệ trùng slug có HTTP status 409', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugResult = createSampleRoom({ slug: 'slug-trung' });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -950,7 +955,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S066: Gọi roomsRepo.create với đúng thuộc tính { slug, name, description }', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
       const dto: CreateRoomDto = {
         slug: 'phong-hoi-hoa',
         name: 'Phòng Hội Họa',
@@ -969,7 +974,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S067: Gán description = null khi DTO không cung cấp description (undefined)', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
       const dto: CreateRoomDto = {
         slug: 'phong-khong-mo-ta',
         name: 'Phòng Không Mô Tả',
@@ -982,7 +987,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S068: Gán description theo chuỗi khi DTO cung cấp mô tả hợp lệ', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.create({
         slug: 'phong-co-mo-ta',
@@ -995,7 +1000,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S069: Gọi roomsRepo.save để lưu entity đã tạo', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.create({ slug: 'phong-luu', name: 'Phòng Lưu' });
       assert.strictEqual(mockRepo.saveCalls.length, 1);
@@ -1006,7 +1011,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       mockRepo.findBySlugResult = null;
       const savedEntity = createSampleRoom({ id: 'saved-id', slug: 'phong-moi', name: 'Phòng Mới' });
       mockRepo.saveResult = savedEntity;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.create({ slug: 'phong-moi', name: 'Phòng Mới' });
       assert.strictEqual(res.id, 'saved-id');
@@ -1017,7 +1022,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S071: Kết quả trả về có exhibitsCount = 0 vì phòng mới chưa có hiện vật', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.create({ slug: 'phong-moi', name: 'Phòng Mới' });
       assert.strictEqual(res.exhibitsCount, 0);
@@ -1026,7 +1031,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S072: Không gọi roomsRepo.create hay roomsRepo.save nếu kiểm tra slug bị trùng', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugResult = createSampleRoom({ slug: 'trung' });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       try {
         await service.create({ slug: 'trung', name: 'Phòng' });
@@ -1037,10 +1042,10 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       assert.strictEqual(mockRepo.saveCalls.length, 0);
     });
 
-    it('TC-S073: Chuyển tiếp ngoại lệ khi roomsRepo.findBySlug ném lỗi', async () => {
+    it('TC-S073: Chuyển tiếp ngoại lệ khi roomsRepo.findAnyBySlug ném lỗi', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugError = new Error('Slug check DB error');
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -1057,7 +1062,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugResult = null;
       mockRepo.saveError = new Error('Save room DB error');
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -1073,7 +1078,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S075: Tạo phòng thành công với các slug đặc biệt (có số, nhiều đoạn gạch ngang)', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findBySlugResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.create({
         slug: 'tang-2-phong-3d-so-1',
@@ -1091,7 +1096,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ id: 'room-076', name: 'Tên Cũ' });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('room-076', { name: 'Tên Mới' });
       assert.strictEqual(res.name, 'Tên Mới');
@@ -1101,7 +1106,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S077: Gọi roomsRepo.findWithExhibits(id) để tìm phòng trước khi cập nhật', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = createSampleRoom({ id: 'room-077' });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.update('room-077', { name: 'Đổi Tên' });
       assert.strictEqual(mockRepo.findWithExhibitsCalls.length, 1);
@@ -1111,7 +1116,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S078: Ném NotFoundException khi phòng cần cập nhật không tồn tại', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -1127,7 +1132,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S079: Thông điệp ngoại lệ là "Không tìm thấy phòng trưng bày" khi phòng không tồn tại', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -1144,7 +1149,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ name: 'Tên Ban Đầu' });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.update('room-id', { name: 'Tên Đã Sửa' });
       assert.strictEqual(existing.name, 'Tên Đã Sửa');
@@ -1154,7 +1159,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ name: 'Tên Ban Đầu' });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.update('room-id', { description: 'Chỉ cập nhật mô tả' });
       assert.strictEqual(existing.name, 'Tên Ban Đầu');
@@ -1164,7 +1169,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ description: 'Mô tả cũ' });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.update('room-id', { description: 'Mô tả mới toanh' });
       assert.strictEqual(existing.description, 'Mô tả mới toanh');
@@ -1174,7 +1179,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ description: 'Mô tả cũ' });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.update('room-id', { description: '' });
       assert.strictEqual(existing.description, '');
@@ -1184,7 +1189,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ description: 'Mô tả cũ không đổi' });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.update('room-id', { name: 'Tên Mới' });
       assert.strictEqual(existing.description, 'Mô tả cũ không đổi');
@@ -1194,7 +1199,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ status: RoomStatus.ACTIVE });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.update('room-id', { status: RoomStatus.ARCHIVED });
       assert.strictEqual(existing.status, RoomStatus.ARCHIVED);
@@ -1204,7 +1209,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ status: RoomStatus.ARCHIVED });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.update('room-id', { status: RoomStatus.ACTIVE });
       assert.strictEqual(existing.status, RoomStatus.ACTIVE);
@@ -1214,7 +1219,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ slug: 'slug-bat-bien' });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       // Cast DTO để kiểm tra tính bất biến nếu có ai đó inject trường slug
       const sneakyDto = { name: 'Tên Mới', slug: 'slug-thay-doi' } as unknown as UpdateRoomDto;
@@ -1226,7 +1231,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ id: 'room-088' });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.update('room-088', { name: 'Tên Cập Nhật' });
       assert.strictEqual(mockRepo.saveCalls.length, 1);
@@ -1241,7 +1246,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
         status: RoomStatus.ACTIVE,
       });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const res = await service.update('room-089', {
         name: 'Tên Mới Nhất',
@@ -1255,7 +1260,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = createSampleRoom();
       mockRepo.saveError = new Error('Save update failed');
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -1277,7 +1282,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ exhibits: [] });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.remove('room-id');
       assert.strictEqual(existing.isDeleted, true);
@@ -1287,7 +1292,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S092: Gọi roomsRepo.findWithExhibits(id) để tải phòng cùng quan hệ exhibits', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = createSampleRoom({ exhibits: [] });
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.remove('target-remove-id');
       assert.strictEqual(mockRepo.findWithExhibitsCalls.length, 1);
@@ -1297,7 +1302,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S093: Ném NotFoundException khi phòng cần xóa không tồn tại', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -1313,7 +1318,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S094: Thông báo lỗi NotFoundException là "Không tìm thấy phòng trưng bày"', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = null;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -1331,7 +1336,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const ex1 = createSampleExhibit();
       const existing = createSampleRoom({ exhibits: [ex1] });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -1351,7 +1356,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const ex3 = createSampleExhibit({ id: 'ex-3' });
       const existing = createSampleRoom({ exhibits: [ex1, ex2, ex3] });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -1369,7 +1374,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const ex1 = createSampleExhibit();
       const existing = createSampleRoom({ exhibits: [ex1] });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -1391,7 +1396,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const existing = createSampleRoom();
       (existing as unknown as Record<string, unknown>).exhibits = null;
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.remove('room-no-exhibits-property');
       assert.strictEqual(existing.isDeleted, true);
@@ -1402,7 +1407,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ exhibits: [], isDeleted: false });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.remove('room-id');
       assert.strictEqual(existing.isDeleted, true);
@@ -1412,7 +1417,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ exhibits: [], deletedAt: null });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       const before = new Date();
       await service.remove('room-id');
@@ -1427,7 +1432,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ exhibits: [] });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.remove('room-id');
       assert.strictEqual(mockRepo.saveCalls.length, 1);
@@ -1438,7 +1443,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ exhibits: [createSampleExhibit()] });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       try {
         await service.remove('room-with-exhibit');
@@ -1452,7 +1457,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       const existing = createSampleRoom({ exhibits: [] });
       mockRepo.findWithExhibitsResult = existing;
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await service.remove('room-id');
       assert.strictEqual(existing.isDeleted, true);
@@ -1462,7 +1467,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
     it('TC-S104: Chuyển tiếp ngoại lệ khi roomsRepo.findWithExhibits ném lỗi', async () => {
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsError = new Error('Find with exhibits failed');
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {
@@ -1479,7 +1484,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
       const mockRepo = new MockRoomsRepository();
       mockRepo.findWithExhibitsResult = createSampleRoom({ exhibits: [] });
       mockRepo.saveError = new Error('Save soft delete failed');
-      const service = new RoomsService(mockRepo as unknown as RoomsRepository);
+      const service = new RoomsService(mockRepo as unknown as RoomsRepository, NO_TX);
 
       await assert.rejects(
         async () => {

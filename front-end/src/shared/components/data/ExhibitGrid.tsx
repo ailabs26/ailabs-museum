@@ -1,14 +1,16 @@
 import { Button, Title } from '@mantine/core';
 import { IconArrowRight } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import type { RoomDetail } from '@/validations/roomSchema';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import classes from './ExhibitGrid.module.css';
 
-export function ExhibitGrid({ exhibits, roomSlug, onReport }: {
+export function ExhibitGrid({ exhibits, roomSlug, onReport, renderActions }: {
   exhibits: readonly RoomDetail['exhibits'][number][];
   roomSlug: string;
   onReport?: (exhibit: RoomDetail['exhibits'][number]) => void;
+  renderActions?: (exhibit: RoomDetail['exhibits'][number]) => ReactNode;
 }) {
   return (
     <ul className={classes.grid} aria-label="Hiện vật trong bộ sưu tập">
@@ -31,6 +33,7 @@ export function ExhibitGrid({ exhibits, roomSlug, onReport }: {
               </Link>
               {onReport && <Button variant="subtle" size="compact-sm" color="gray" onClick={() => onReport(exhibit)}>Báo nội dung</Button>}
             </div>
+            {renderActions && <div className={classes.actions}>{renderActions(exhibit)}</div>}
           </div>
         </li>
       ))}

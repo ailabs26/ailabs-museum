@@ -12,7 +12,8 @@ export function toAuthUser(user: User): AuthUser {
 
   for (const userRole of user.userRoles ?? []) {
     const role = userRole.role;
-    if (!role) continue;
+    // Vai trò đã xóa mềm không cấp quyền nào.
+    if (!role || role.isDeleted) continue;
     roles.push(role.code);
     for (const rolePermission of role.rolePermissions ?? []) {
       const code = rolePermission.permission?.code;

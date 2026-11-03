@@ -33,8 +33,9 @@ export class AuditLog {
   @Column({ name: 'resource_type', type: 'varchar', length: 40 })
   resourceType!: string;
 
-  @Column({ name: 'resource_id', type: 'uuid' })
-  resourceId!: string;
+  /** NULL khi sự kiện không gắn tài nguyên cụ thể (vd đăng nhập bằng email không tồn tại). */
+  @Column({ name: 'resource_id', type: 'uuid', nullable: true })
+  resourceId!: string | null;
 
   @Column({ name: 'revision_id', type: 'uuid', nullable: true })
   revisionId!: string | null;
@@ -48,6 +49,12 @@ export class AuditLog {
 
   @Column({ name: 'request_id', type: 'varchar', length: 100 })
   requestId!: string;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  ip!: string | null;
+
+  @Column({ name: 'user_agent', type: 'varchar', length: 512, nullable: true })
+  userAgent!: string | null;
 
   @CreateDateColumn({ name: 'occurred_at', type: 'timestamptz' })
   occurredAt!: Date;

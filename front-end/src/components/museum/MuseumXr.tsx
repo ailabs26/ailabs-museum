@@ -112,7 +112,15 @@ export function MuseumXr({ available, displays, selectedId, onSelect, onControll
     // Only `select` commits an action; start/end never duplicate it.
     const select = (event: XRInputSourceEvent) => {
       if (session.visibilityState !== 'visible' || !Array.from(session.inputSources).includes(event.inputSource)) return;
-      activateRef.current(targetAtRef.current(event.frame, event.inputSource), true);
+      // Select can arrive before the first animation frame or after tracking
+      // changes. Teleport must use this event's head pose, never last frame's.
+      const space = gl.xr.getReferenceSpace();
+      const viewer = space && event.frame.getViewerPose(space);
+      if (viewer) {
+        origin.updateMatrixWorld(true);
+        runtime.head.setFromMatrixPosition(runtime.matrix.fromArray(viewer.transform.matrix).premultiply(origin.matrixWorld));
+      }
+      activateRef.current(targetAtRef.current(event.frame, event.inputSource), !!viewer);
     };
     const reset = () => { runtime.targets.clear(); runtime.pressed.clear(); runtime.snapLatched.clear(); runtime.dwellKey = ''; };
     session.addEventListener('selectstart', start); session.addEventListener('selectend', end); session.addEventListener('select', select);
@@ -121,7 +129,7 @@ export function MuseumXr({ available, displays, selectedId, onSelect, onControll
       session.removeEventListener('selectstart', start); session.removeEventListener('selectend', end); session.removeEventListener('select', select);
       session.removeEventListener('inputsourceschange', reset); session.removeEventListener('visibilitychange', reset); reset();
     };
-  }, [session, runtime]);
+  }, [session, runtime, gl, origin]);
   useFrame((_, __, frame) => {
     if (!session || !frame || ownerRef.current?.getSnapshot().phase !== 'active' || !available || session.visibilityState !== 'visible') return;
     const space = gl.xr.getReferenceSpace(); if (!space) return;

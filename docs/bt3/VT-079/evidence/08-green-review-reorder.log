@@ -1,0 +1,32 @@
+# Sau khi sửa review: integration PG (TC06–TC09, TC17, TC17b, TC18) + unit exhibit-autosave
+▶ VT-079 · autosave chống ghi đè (PostgreSQL thật)
+  ✔ TC06 (AC2/AC4): replay bản A cũ sau khi bản B đã lưu → 409, DB vẫn giữ bản B (117.910111ms)
+  ✔ TC07 (AC3/R8): 2 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (42.817102ms)
+  ✔ TC07 (AC3/R8): 10 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (77.073979ms)
+  ✔ TC08 (R7): bản đã xuất bản + version khớp → fork revision mới; autosave cũ sau đó → 409 (68.048871ms)
+  ✔ TC09 (R5): đã gửi duyệt → autosave (version cũ hay khớp) bị từ chối, revision vẫn in_review (46.359064ms)
+  ✔ TC17 (R9, review dinhtienn): reorder trong lúc drawer mở → autosave cũ nhận 409, thứ tự mới được giữ (35.763205ms)
+  ✔ TC17b (R9): reorder không đổi vị trí một hiện vật → version của nó giữ nguyên, không xung đột giả (48.727599ms)
+  ✔ TC18 (R9): xóa rồi khôi phục trong lúc drawer mở → autosave cũ nhận 409 (37.793439ms)
+✔ VT-079 · autosave chống ghi đè (PostgreSQL thật) (2758.322441ms)
+▶ VT-079 · UpdateExhibitDto.expectedVersion (R4)
+  ✔ TC01: thiếu expectedVersion là không hợp lệ — autosave phải nói rõ nó dựa trên version nào (3.000992ms)
+  ✔ TC02: expectedVersion âm hoặc không phải số nguyên bị từ chối; 0 (cận dưới) hợp lệ (1.671024ms)
+✔ VT-079 · UpdateExhibitDto.expectedVersion (R4) (5.707548ms)
+▶ VT-079 · ExhibitsService.updateExhibitDraft với expectedVersion
+  ✔ TC03 (R2): version client cũ hơn DB → 409 và không ghi gì (1.762841ms)
+  ✔ TC04 (R3): version client lớn hơn DB (không có thật) → 409 và không ghi gì (0.349542ms)
+  ✔ TC05 (R1): version khớp → lưu nội dung mới và version tăng đúng 1 (0.543615ms)
+✔ VT-079 · ExhibitsService.updateExhibitDraft với expectedVersion (2.926829ms)
+▶ VT-079 · PATCH /admin/exhibits/:id (HTTP + ValidationPipe như main.ts)
+  ✔ TC10 (R4): PATCH thiếu expectedVersion → 400 và service không được gọi (97.471145ms)
+  ✔ TC10b: PATCH có expectedVersion hợp lệ đi tới service với giá trị số nguyên (6.27004ms)
+✔ VT-079 · PATCH /admin/exhibits/:id (HTTP + ValidationPipe như main.ts) (105.297489ms)
+ℹ tests 15
+ℹ suites 4
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5074.829083

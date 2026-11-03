@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { ConflictException, UnprocessableEntityException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { dataSource as appDataSource } from '../../../config/data-source';
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { REVISION_MEDIA_SLOTS } from '../../exhibits/constants/revision-media-slots';
@@ -18,6 +18,7 @@ import { ExhibitsService } from '../../exhibits/services/exhibits.service';
 import { RevisionPublishGate } from '../../exhibits/services/revision-publish.gate';
 import { Room, RoomStatus } from '../../rooms/entities/room.entity';
 import { RoomsRepository } from '../../rooms/repositories/rooms.repository';
+import { RoomsService } from '../../rooms/services/rooms.service';
 import { User } from '../../users/entities/user.entity';
 import { Media, MediaKind, MediaProcessingState } from '../entities/media.entity';
 import { MediaRepository } from '../repositories/media.repository';
@@ -27,6 +28,7 @@ import { MediaStorageService } from '../services/media-storage.service';
 import { LocalStorageDriver } from '../storage/local-storage.driver';
 import { MediaService } from '../services/media.service';
 import { testMediaUrlService } from './media-test-doubles';
+import { notificationsStub } from '../../notifications/tests/notifications.stub';
 
 /**
  * Integration Task 9 trên PostgreSQL THẬT (chỉ localhost, xem media-repository.integration).
@@ -146,6 +148,7 @@ describe('Task 9 — media gắn revision (PostgreSQL thật)', { skip }, () => 
       references,
       new RevisionPublishGate(references),
       testMediaUrlService(),
+      notificationsStub(),
     );
     mediaService = new MediaService(
       mediaRepo,
@@ -178,6 +181,41 @@ describe('Task 9 — media gắn revision (PostgreSQL thật)', { skip }, () => 
     if (created.users.length) await db.query('DELETE FROM users WHERE id = ANY($1)', [created.users]);
     await db.destroy();
     await rm(workDir, { recursive: true, force: true });
+  });
+
+  describe('Xóa mềm hàng loạt Phòng / Media / Hiện vật (SQL thật)', () => {
+    it('hiện vật nháp xóa mềm: giữ revision; phòng chỉ còn hiện vật đã xóa thì xóa được', async () => {
+      const room = await createRoom();
+      const { exhibit, revision } = await createExhibit({}, { room: room.id });
+      const roomsService = new RoomsService(new RoomsRepository(db.getRepository(Room)), new TransactionManager(db));
+
+      await assert.rejects(roomsService.removeMany([room.id]), ConflictException);
+      assert.deepEqual(await exhibitsService.removeMany([exhibit.id]), { ids: [exhibit.id] });
+      const stored = await db.getRepository(Exhibit).findOneByOrFail({ id: exhibit.id });
+      assert.equal(stored.isDeleted, true);
+      assert.ok(await db.getRepository(ExhibitRevision).findOneBy({ id: revision.id }), 'revision được giữ');
+
+      assert.deepEqual(await roomsService.removeMany([room.id]), { ids: [room.id] });
+      assert.equal((await db.getRepository(Room).findOneByOrFail({ id: room.id })).isDeleted, true);
+    });
+
+    it('tất cả hoặc không: hiện vật đã xuất bản lẫn trong danh sách → không hiện vật nào bị xóa', async () => {
+      const draft = await createExhibit({});
+      const published = await createExhibit({}, { publish: true });
+      await assert.rejects(exhibitsService.removeMany([draft.exhibit.id, published.exhibit.id]), ConflictException);
+      const rows = await db.getRepository(Exhibit).findBy({ id: In([draft.exhibit.id, published.exhibit.id]) });
+      assert.ok(rows.every((row) => !row.isDeleted));
+    });
+
+    it('media: xóa mềm hàng loạt trong một transaction; media của hiện vật đã xuất bản chặn cả lô', async () => {
+      const free = await createMedia();
+      const used = await createMedia(MediaKind.MODEL);
+      await createExhibit({ modelMediaId: used.id }, { publish: true });
+      await assert.rejects(mediaService.removeMany([free.id, used.id]), ConflictException);
+      assert.equal((await db.getRepository(Media).findOneByOrFail({ id: free.id })).isDeleted, false);
+      assert.deepEqual(await mediaService.removeMany([free.id]), { ids: [free.id] });
+      assert.equal((await db.getRepository(Media).findOneByOrFail({ id: free.id })).isDeleted, true);
+    });
   });
 
   describe('isPubliclyReferenced (điều kiện phân phối file — FR-68/AC-36)', () => {
@@ -274,7 +312,7 @@ describe('Task 9 — media gắn revision (PostgreSQL thật)', { skip }, () => 
       const media = await createMedia(MediaKind.MODEL);
       const { exhibit } = await createExhibit({ modelMediaId: media.id });
       await mediaService.remove(media.id);
-      await assert.rejects(exhibitsService.submitDraftForReview(exhibit.id), (error: unknown) => {
+      await assert.rejects(exhibitsService.submitDraftForReview(exhibit.id, 'actor-test'), (error: unknown) => {
         assert.ok(error instanceof UnprocessableEntityException);
         const body = error.getResponse() as { errors: Array<{ code: string; field: string }> };
         assert.deepEqual(body.errors.map((item) => [item.field, item.code]), [['modelId', 'media_not_found']]);
@@ -311,7 +349,7 @@ describe('Task 9 — media gắn revision (PostgreSQL thật)', { skip }, () => 
       const { exhibit } = await createExhibit({ modelMediaId: oldModel.id, imageMediaId: image.id });
       const loaded = await exhibitsRepo.findActiveRevision(exhibit.id);
       assert.equal(loaded?.modelMedia?.id, oldModel.id);
-      await exhibitsService.updateExhibitDraft(exhibit.id, { modelId: newModel.id, imageId: null } as never, { id: userId });
+      await exhibitsService.updateExhibitDraft(exhibit.id, { modelId: newModel.id, imageId: null, expectedVersion: 1 } as never, { id: userId });
       const revision = await db.getRepository(ExhibitRevision).findOneByOrFail({ exhibitId: exhibit.id });
       assert.equal(revision.modelMediaId, newModel.id);
       assert.equal(revision.imageMediaId, null);
@@ -321,7 +359,7 @@ describe('Task 9 — media gắn revision (PostgreSQL thật)', { skip }, () => 
     it('update khi đang published → fork revision mới, bản published giữ media cũ (AC-35)', async () => {
       const [oldModel, newModel, audioEn] = [await createMedia(MediaKind.MODEL), await createMedia(MediaKind.MODEL), await createMedia(MediaKind.AUDIO)];
       const { exhibit, revision: published } = await createExhibit({ modelMediaId: oldModel.id, audioEnMediaId: audioEn.id }, { publish: true });
-      await exhibitsService.updateExhibitDraft(exhibit.id, { modelId: newModel.id } as never, { id: userId });
+      await exhibitsService.updateExhibitDraft(exhibit.id, { modelId: newModel.id, expectedVersion: 1 } as never, { id: userId });
       const revisions = await db.getRepository(ExhibitRevision).find({ where: { exhibitId: exhibit.id }, order: { revisionNo: 'ASC' } });
       revisions.forEach((revision) => created.revisions.push(revision.id));
       assert.equal(revisions.length, 2);
@@ -364,7 +402,7 @@ describe('Task 9 — media gắn revision (PostgreSQL thật)', { skip }, () => 
         const media = await createMedia(MediaKind.MODEL);
         const { exhibit } = await createExhibit({ modelMediaId: media.id });
         const [submit, remove] = await Promise.allSettled([
-          exhibitsService.submitDraftForReview(exhibit.id),
+          exhibitsService.submitDraftForReview(exhibit.id, 'actor-test'),
           mediaService.remove(media.id),
         ]);
         const revision = await db.getRepository(ExhibitRevision).findOneByOrFail({ exhibitId: exhibit.id });

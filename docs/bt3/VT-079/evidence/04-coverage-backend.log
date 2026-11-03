@@ -1,0 +1,25 @@
+# Coverage (node --experimental-test-coverage) — chỉ 2 file VT-079 spec
+ℹ tests 12
+ℹ pass 12
+ℹ fail 0
+ℹ skipped 0
+ℹ file                      | line % | branch % | funcs % | uncovered lines
+ℹ   exhibits                |        |          |         |
+ℹ    dto                    |        |          |         |
+ℹ     update-exhibit.dto.ts |  88.39 |    71.43 |   16.67 | 39-40 42-43 52-58 182-188 201-207 223
+ℹ    services               |        |          |         |
+ℹ     exhibits.service.ts   |  43.44 |    37.93 |   19.23 | 77-79 86-110 120-131 137-195 205-275 290-291 294-298 302-303 328-329 335-336 369-374 380-386 407-424 439-478 490-497 501-503 506-532 540-568 571-578 584-619 631-663 669-675 681-689 697-698 702-703 706-731
+ℹ all files                 |  53.42 |    41.54 |   18.00 |
+
+# Coverage — toàn bộ spec exhibits + media-attach integration
+ℹ tests 649
+ℹ pass 649
+ℹ fail 0
+ℹ skipped 0
+ℹ file                      | line % | branch % | funcs % | uncovered lines
+ℹ   exhibits                |        |          |         |
+ℹ    dto                    |        |          |         |
+ℹ     update-exhibit.dto.ts |  89.73 |    73.33 |   41.67 | 39-40 42-43 53-54 56-57 182-188 201-207 223
+ℹ    services               |        |          |         |
+ℹ     exhibits.service.ts   |  96.31 |    81.71 |   91.67 | 540-568
+ℹ all files                 |  94.85 |    81.23 |   75.00 |

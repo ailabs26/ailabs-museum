@@ -11,12 +11,15 @@ import { RoomStatus } from '../../rooms/entities/room.entity';
 import { RoomsRepository } from '../../rooms/repositories/rooms.repository';
 import { CreateExhibitDto } from '../dto/create-exhibit.dto';
 import { ListExhibitsQueryDto } from '../dto/list-exhibits-query.dto';
+import { PublicSearchQueryDto } from '../dto/public-search-query.dto';
 import {
   ExhibitAdminDetailResponse,
   ExhibitAdminResponse,
   toExhibitResponse,
 } from '../dto/exhibit-response.dto';
 import { UpdateExhibitDto } from '../dto/update-exhibit.dto';
+import { withDeletedAt, type Trashed } from '../../../common/dto/deleted-filter.dto';
+import { assertNothingBlocked, type BlockedDeletion } from '../../../common/exceptions/deletion-blocked';
 import { Exhibit, ExhibitVisibility } from '../entities/exhibit.entity';
 import {
   ExhibitRevision,
@@ -25,6 +28,7 @@ import {
 } from '../entities/exhibit-revision.entity';
 import { Hotspot } from '../entities/hotspot.entity';
 import { MediaReferenceValidator } from '../../media/services/media-reference.validator';
+import { NotificationsService } from '../../notifications/services/notifications.service';
 import { MediaUrlService } from '../../media/services/media-url.service';
 import {
   AdminRevisionMedia,
@@ -62,6 +66,7 @@ export class ExhibitsService {
     private readonly mediaReferences: MediaReferenceValidator,
     private readonly publishGate: RevisionPublishGate,
     private readonly mediaUrls: MediaUrlService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // =========================================================================
@@ -107,6 +112,29 @@ export class ExhibitsService {
     };
   }
 
+  /**
+   * Tìm kiếm hiện vật công khai có lọc + phân trang + thứ tự ổn định (VT-077).
+   * Giữ nguyên thứ tự repository trả về (đã sắp ổn định ở tầng SQL) và ánh xạ sang DTO công khai,
+   * loại các bản ghi không đủ điều kiện xuất bản (mapper trả null). Trả `Paginated` để
+   * `ResponseInterceptor` bọc thành envelope `{ success, data, meta }` — không đổi contract cũ.
+   */
+  async publicSearch(
+    query: PublicSearchQueryDto,
+  ): Promise<Paginated<PublicExhibitDto>> {
+    const result = await this.exhibits.searchPublicExhibits(query);
+    const items = result.items.flatMap(
+      (exhibit) =>
+        toPublicExhibit(
+          exhibit,
+          (storageKey) => this.mediaUrls.publicUrl(storageKey),
+          (exhibitId, mediaId, reason) =>
+            this.logger.warn(`Bỏ qua media ${mediaId} của hiện vật ${exhibitId}: ${reason}`),
+          exhibit.room?.slug ?? '',
+        ) ?? [],
+    );
+    return { items, total: result.total, page: result.page, pageSize: result.pageSize };
+  }
+
   // =========================================================================
   // 2. ADMIN CMS QUERY METHODS (Tìm kiếm & Chi tiết hiện vật)
   // =========================================================================
@@ -116,7 +144,7 @@ export class ExhibitsService {
    */
   async searchAdminExhibits(
     query: ListExhibitsQueryDto,
-  ): Promise<Paginated<ExhibitAdminResponse>> {
+  ): Promise<Paginated<ExhibitAdminResponse | Trashed<ExhibitAdminResponse>>> {
     const result = await this.exhibits.searchAdminExhibits(query);
     // Hiển thị theo revision mới nhất (giống getAdminDetail) để hiện vật nháp không mất tên.
     const latest = await this.exhibits.findLatestRevisionsByExhibitIds(
@@ -124,7 +152,7 @@ export class ExhibitsService {
     );
     return {
       ...result,
-      items: result.items.map((item) => toExhibitResponse(item, latest.get(item.id))),
+      items: result.items.map((item) => withDeletedAt(toExhibitResponse(item, latest.get(item.id)), item, query.deleted)),
     };
   }
 
@@ -316,6 +344,11 @@ export class ExhibitsService {
 
       const currentExhibit = await this.exhibits.findForUpdate(id, manager);
       if (!currentExhibit) throw new NotFoundException('Không tìm thấy hiện vật');
+      // VT-079: compare-and-swap theo version client gửi lên, kiểm tra khi đang giữ khóa dòng.
+      // Bản lưu cũ (autosave đến muộn, retry, tab khác) không được ghi đè bản mới hơn.
+      if (currentExhibit.version !== dto.expectedVersion) {
+        throw new ConflictException('Hiện vật đã có bản lưu mới hơn. Vui lòng tải lại trước khi lưu tiếp.');
+      }
       const currentRevision = await this.exhibits.findActiveRevision(id, manager);
       if (!currentRevision || currentExhibit.version !== exhibit.version || currentRevision.id !== activeRev.id || currentRevision.state !== activeRev.state) {
         throw new ConflictException('Trạng thái hiện vật vừa thay đổi. Vui lòng tải lại và thử lại.');
@@ -426,9 +459,10 @@ export class ExhibitsService {
   // =========================================================================
 
   /**
-   * Gửi bản nháp hiện vật đi kiểm duyệt (DRAFT/REJECTED -> IN_REVIEW).
+   * Gửi bản nháp hiện vật đi kiểm duyệt (DRAFT/REJECTED -> IN_REVIEW), rồi báo cho người duyệt
+   * (trừ chính người gửi).
    */
-  async submitDraftForReview(id: string): Promise<ExhibitAdminResponse> {
+  async submitDraftForReview(id: string, actorId: string): Promise<ExhibitAdminResponse> {
     const exhibit = await this.exhibits.findAdminDetailById(id);
     if (!exhibit || exhibit.isDeleted) {
       throw new NotFoundException('Không tìm thấy hiện vật');
@@ -449,7 +483,7 @@ export class ExhibitsService {
       throw new ConflictException('Không có bản nháp nào để gửi kiểm duyệt');
     }
 
-    return this.tx.run(async (manager) => {
+    const submitted = await this.tx.run(async (manager) => {
       // §5.2: Submit Review phải đủ nội dung bắt buộc + media hợp lệ, trước khi đổi trạng thái.
       await this.publishGate.assertPublishable(activeRev, manager);
 
@@ -468,6 +502,9 @@ export class ExhibitsService {
 
       return toExhibitResponse(currentExhibit, currentRevision);
     });
+
+    await this.notifications.revisionSubmitted({ exhibitName: activeRev.content.name, actorId });
+    return submitted;
   }
 
   // =========================================================================
@@ -475,40 +512,99 @@ export class ExhibitsService {
   // =========================================================================
 
   /**
-   * Xóa bản nháp hiện vật (BR-20):
-   * Chặn xóa nếu hiện vật đã xuất bản (ném ConflictException).
-   * Xóa cascade an toàn (hotspots -> revisions -> exhibit) trong transaction khi chỉ có draft.
+   * Xóa mềm hiện vật (BR-20):
+   * Chặn nếu hiện vật đã xuất bản/đang hiển thị/có bản đã duyệt, có bản chờ duyệt hoặc có báo cáo liên quan.
+   * Chỉ đánh dấu `is_deleted` trong transaction có khóa dòng; revisions/hotspots được giữ để khôi phục.
    */
   async deleteExhibitDraft(
     id: string,
   ): Promise<{ success: boolean; message: string }> {
-    try {
-      await this.tx.run(async (manager) => {
-        const exhibit = await this.exhibits.findForUpdate(id, manager);
-        if (!exhibit || exhibit.isDeleted) throw new NotFoundException('Không tìm thấy hiện vật');
-        const revisions = await this.exhibits.findRevisionsForDeletion(id, manager);
-        if (exhibit.publishedRevisionId !== null || exhibit.visibility === ExhibitVisibility.VISIBLE || revisions.some(r => r.state === RevisionState.APPROVED)) {
-          throw new ConflictException('Hiện vật có lịch sử xuất bản hoặc phê duyệt nên không thể xóa vĩnh viễn. Có thể ẩn hiện vật đang công khai khỏi bảo tàng.');
-        }
-        if (revisions.some(r => r.state === RevisionState.IN_REVIEW)) {
-          throw new ConflictException('Hiện vật có phiên bản đang chờ kiểm duyệt, không thể xóa.');
-        }
-        if (await this.exhibits.hasReportReferences(id, revisions.map(r => r.id), manager)) {
-          throw new ConflictException('Hiện vật hoặc phiên bản có báo cáo liên quan nên không thể xóa vĩnh viễn.');
-        }
-        await this.exhibits.deleteCascadeDraft(id, manager);
-      });
-    } catch (error) {
-      if (this.exhibits.isReportReferenceConflict(error)) {
-        throw new ConflictException('Hiện vật hoặc phiên bản có báo cáo liên quan nên không thể xóa vĩnh viễn.');
-      }
-      throw error;
-    }
-
+    await this.softDelete([id], true);
     return {
       success: true,
       message: 'Đã xóa bản nháp hiện vật thành công',
     };
+  }
+
+  /** Xóa mềm nhiều hiện vật: tất cả hoặc không (BR-20 cho từng hiện vật). Trả lại danh sách ID để audit ghi từng hiện vật. */
+  async removeMany(ids: string[]): Promise<{ ids: string[] }> {
+    await this.softDelete(ids, false);
+    return { ids };
+  }
+
+  private async softDelete(ids: string[], single: boolean): Promise<void> {
+    try {
+      await this.tx.run(async (manager) => {
+        const blocked: BlockedDeletion[] = [];
+        // Khóa theo thứ tự ID cố định để hai lệnh xóa hàng loạt chồng nhau không deadlock.
+        for (const id of [...ids].sort()) {
+          const exhibit = await this.exhibits.findForUpdate(id, manager);
+          if (!exhibit || exhibit.isDeleted) {
+            blocked.push({ id, reason: 'Không tìm thấy hiện vật', notFound: true });
+            continue;
+          }
+          const revisions = await this.exhibits.findRevisionsForDeletion(id, manager);
+          const reason = this.deletionBlock(exhibit, revisions)
+            ?? (await this.exhibits.hasReportReferences(id, revisions.map(r => r.id), manager)
+              ? 'Hiện vật hoặc phiên bản có báo cáo liên quan nên không thể xóa.'
+              : null);
+          if (reason) blocked.push({ id, reason });
+        }
+        assertNothingBlocked(blocked, single);
+        await this.exhibits.markDeleted(ids, manager);
+      });
+    } catch (error) {
+      if (this.exhibits.isReportReferenceConflict(error)) {
+        throw new ConflictException('Hiện vật hoặc phiên bản có báo cáo liên quan nên không thể xóa.');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Khôi phục hiện vật trong thùng rác: tất cả hoặc không. Chặn khi phòng chứa hiện vật đã bị xóa
+   * (khôi phục phòng trước). Hiện vật về cuối thứ tự hiển thị của phòng, revisions/hotspots giữ nguyên
+   * (chỉ bản nháp mới xóa được nên hiện vật khôi phục vẫn là nháp). Trả lại ID để audit ghi từng hiện vật.
+   */
+  async restoreMany(ids: string[]): Promise<{ ids: string[] }> {
+    await this.tx.run(async (manager) => {
+      const blocked: BlockedDeletion[] = [];
+      const restorable: Exhibit[] = [];
+      // Khóa theo thứ tự ID cố định để hai lệnh hàng loạt chồng nhau không deadlock.
+      for (const id of [...ids].sort()) {
+        const exhibit = await this.exhibits.lockDeletedById(id, manager);
+        if (!exhibit) {
+          blocked.push({ id, reason: 'Không tìm thấy hiện vật trong mục đã xóa', notFound: true });
+          continue;
+        }
+        // FOR SHARE: lệnh xóa phòng song song phải chờ, rồi thấy hiện vật vừa khôi phục (BR-20).
+        const room = await this.roomsRepo.lockForShare(exhibit.roomId, manager);
+        if (!room || room.isDeleted) {
+          blocked.push({ id, reason: `Phòng "${room?.name ?? exhibit.roomId}" đã bị xóa. Hãy khôi phục phòng trước.` });
+          continue;
+        }
+        restorable.push(exhibit);
+      }
+      assertNothingBlocked(blocked, false, 'restore');
+
+      const nextOrder = new Map<string, number>();
+      for (const exhibit of restorable) {
+        const order = nextOrder.get(exhibit.roomId) ?? (await this.exhibits.maxDisplayOrder(exhibit.roomId, manager)) + 1;
+        await this.exhibits.markRestored(exhibit.id, order, manager);
+        nextOrder.set(exhibit.roomId, order + 1);
+      }
+    });
+    return { ids };
+  }
+
+  private deletionBlock(exhibit: Exhibit, revisions: ExhibitRevision[]): string | null {
+    if (exhibit.publishedRevisionId !== null || exhibit.visibility === ExhibitVisibility.VISIBLE || revisions.some(r => r.state === RevisionState.APPROVED)) {
+      return 'Hiện vật có lịch sử xuất bản hoặc phê duyệt nên không thể xóa. Có thể ẩn hiện vật đang công khai khỏi bảo tàng.';
+    }
+    if (revisions.some(r => r.state === RevisionState.IN_REVIEW)) {
+      return 'Hiện vật có phiên bản đang chờ kiểm duyệt, không thể xóa.';
+    }
+    return null;
   }
 
   /**

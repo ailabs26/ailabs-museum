@@ -9,15 +9,16 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { IsStrongPassword } from '../../../common/security/password-policy';
 
 export class CreateUserDto {
   @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value)
   @IsEmail({}, { message: 'Email không hợp lệ' })
   email!: string;
 
+  /** Chính sách độ mạnh (common/security/password-policy), gồm cả việc không chứa email/tên ở chính DTO này. */
   @IsString()
-  @MinLength(8, { message: 'Mật khẩu tối thiểu 8 ký tự' })
-  @MaxLength(128)
+  @IsStrongPassword()
   password!: string;
 
   @IsString()

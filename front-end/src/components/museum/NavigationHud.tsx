@@ -4,10 +4,10 @@ import classes from './NavigationHud.module.css';
 
 export type NavigationMode = 'explore' | 'focusing' | 'inspect';
 
-export function NavigationHud({ input, mode, isActive, hasTouch }: {
-  input: NavigationInput; mode: NavigationMode; isActive: boolean; hasTouch: boolean;
+export function NavigationHud({ input, mode, isActive, hasTouch, immersive = false }: {
+  input: NavigationInput; mode: NavigationMode; isActive: boolean; hasTouch: boolean; immersive?: boolean;
 }) {
-  const [isHelpVisible, setIsHelpVisible] = useState(true);
+  const [isHelpVisible, setIsHelpVisible] = useState(!immersive);
   const [isPressed, setIsPressed] = useState(false);
   const pointerRef = useRef<number | null>(null);
   const baseRef = useRef<HTMLButtonElement>(null), thumbRef = useRef<HTMLSpanElement>(null);
@@ -40,7 +40,7 @@ export function NavigationHud({ input, mode, isActive, hasTouch }: {
     if (thumbRef.current) thumbRef.current.style.transform = `translate(${dx * scale}px, ${dy * scale}px)`;
     input.wake();
   };
-  return <div className={classes.hud} data-navigation-mode={mode}>
+  return <div className={`${classes.hud} ${immersive ? classes.immersive : ''}`} data-navigation-mode={mode}>
     <div className={classes.help}>
       <button type="button" onClick={() => setIsHelpVisible(value => !value)} aria-expanded={isHelpVisible} aria-controls="navigation-instructions">
         {isHelpVisible ? 'Ẩn hướng dẫn' : 'Hướng dẫn di chuyển'}

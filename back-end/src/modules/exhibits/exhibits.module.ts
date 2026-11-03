@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MediaModule } from '../media/media.module';
 import { RoomsModule } from '../rooms/rooms.module';
@@ -18,10 +19,11 @@ import { ModelStorageService } from '../media/services/model-storage.service';
     TypeOrmModule.forFeature([Exhibit, ExhibitRevision, Hotspot]),
     RoomsModule,
     MediaModule,
+    NotificationsModule,
   ],
   controllers: [ExhibitsController, AdminExhibitsController],
   providers: [ExhibitsService, ExhibitsRepository, RevisionPublishGate, PublicModelsService, ModelStorageService],
-  exports: [ExhibitsService, ExhibitsRepository, RevisionPublishGate],
+  exports: [ExhibitsService, ExhibitsRepository, RevisionPublishGate, PublicModelsService],
 })
 export class ExhibitsModule {}
 

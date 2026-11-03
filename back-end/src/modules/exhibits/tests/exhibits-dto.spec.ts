@@ -587,13 +587,14 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
   // SUITE 5: UpdateExhibitDto Partial Updates Validation (15 Test Cases)
   // ===========================================================================
   describe('Suite 5: UpdateExhibitDto Partial Updates Validation (15 Test Cases)', () => {
-    it('TC-076: Cho phép UpdateExhibitDto là object rỗng {} (toàn bộ trường tùy chọn)', async () => {
-      const errors = await validateDto(UpdateExhibitDto, {});
+    it('TC-076: Cho phép UpdateExhibitDto chỉ có expectedVersion (mọi trường nội dung tùy chọn; VT-079)', async () => {
+      const errors = await validateDto(UpdateExhibitDto, { expectedVersion: 0 });
       assert.equal(errors.length, 0);
     });
 
     it('TC-077: Cho phép cập nhật riêng lẻ trường name', async () => {
       const errors = await validateDto(UpdateExhibitDto, {
+        expectedVersion: 0,
         name: { vi: 'Tên cập nhật mới' },
       });
       assert.ok(!errors.includes('name'));
@@ -601,6 +602,7 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
 
     it('TC-078: Cho phép cập nhật riêng lẻ trường description', async () => {
       const errors = await validateDto(UpdateExhibitDto, {
+        expectedVersion: 0,
         description: { vi: 'Mô tả cập nhật mới' },
       });
       assert.ok(!errors.includes('description'));
@@ -608,6 +610,7 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
 
     it('TC-079: Cho phép cập nhật riêng lẻ roomId sang phòng khác', async () => {
       const errors = await validateDto(UpdateExhibitDto, {
+        expectedVersion: 0,
         roomId: VALID_UUID_2,
       });
       assert.ok(!errors.includes('roomId'));
@@ -615,6 +618,7 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
 
     it('TC-080: Cho phép cập nhật riêng lẻ position', async () => {
       const errors = await validateDto(UpdateExhibitDto, {
+        expectedVersion: 0,
         position: { x: 5, y: 1, z: 2 },
       });
       assert.ok(!errors.includes('position'));
@@ -622,6 +626,7 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
 
     it('TC-081: Cho phép cập nhật riêng lẻ rotation', async () => {
       const errors = await validateDto(UpdateExhibitDto, {
+        expectedVersion: 0,
         rotation: { x: 0, y: 1.5, z: 0 },
       });
       assert.ok(!errors.includes('rotation'));
@@ -629,6 +634,7 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
 
     it('TC-082: Cho phép cập nhật riêng lẻ scale', async () => {
       const errors = await validateDto(UpdateExhibitDto, {
+        expectedVersion: 0,
         scale: { x: 2, y: 2, z: 2 },
       });
       assert.ok(!errors.includes('scale'));
@@ -636,6 +642,7 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
 
     it('TC-083: Cho phép cập nhật riêng lẻ placeholderShape', async () => {
       const errors = await validateDto(UpdateExhibitDto, {
+        expectedVersion: 0,
         placeholderShape: 'cylinder',
       });
       assert.ok(!errors.includes('placeholderShape'));
@@ -643,6 +650,7 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
 
     it('TC-084: Cho phép cập nhật riêng lẻ placeholderColor', async () => {
       const errors = await validateDto(UpdateExhibitDto, {
+        expectedVersion: 0,
         placeholderColor: '#112233',
       });
       assert.ok(!errors.includes('placeholderColor'));
@@ -650,6 +658,7 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
 
     it('TC-085: Cho phép cập nhật media IDs thành null để gỡ bỏ', async () => {
       const errors = await validateDto(UpdateExhibitDto, {
+        expectedVersion: 0,
         modelId: null,
         imageId: null,
         audioId: null,
@@ -661,6 +670,7 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
 
     it('TC-086: Bắt lỗi khi cập nhật scale thành số âm trong UpdateExhibitDto', async () => {
       const errors = await validateDto(UpdateExhibitDto, {
+        expectedVersion: 0,
         scale: { x: -1, y: 1, z: 1 },
       });
       assert.ok(errors.includes('scale'));
@@ -668,6 +678,7 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
 
     it('TC-087: Bắt lỗi khi cập nhật roomId thành UUID sai trong UpdateExhibitDto', async () => {
       const errors = await validateDto(UpdateExhibitDto, {
+        expectedVersion: 0,
         roomId: 'invalid-uuid',
       });
       assert.ok(errors.includes('roomId'));
@@ -675,6 +686,7 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
 
     it('TC-088: Bắt lỗi khi cập nhật placeholderShape giá trị sai trong UpdateExhibitDto', async () => {
       const errors = await validateDto(UpdateExhibitDto, {
+        expectedVersion: 0,
         placeholderShape: 'hexagon',
       });
       assert.ok(errors.includes('placeholderShape'));
@@ -682,6 +694,7 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
 
     it('TC-089: Bắt lỗi khi cập nhật displayOrder thành số âm trong UpdateExhibitDto', async () => {
       const errors = await validateDto(UpdateExhibitDto, {
+        expectedVersion: 0,
         displayOrder: -5,
       });
       assert.ok(errors.includes('displayOrder'));
@@ -689,6 +702,7 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
 
     it('TC-090: Bắt lỗi khi cập nhật placeholderColor không phải hex trong UpdateExhibitDto', async () => {
       const errors = await validateDto(UpdateExhibitDto, {
+        expectedVersion: 0,
         placeholderColor: 'invalid-color',
       });
       assert.ok(errors.includes('placeholderColor'));

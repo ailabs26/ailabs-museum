@@ -9,4 +9,6 @@ export interface AuthUser {
   roles: string[];
   /** danh sách permission dạng 'resource:action' đã gộp từ các role */
   permissions: string[];
+  /** familyId của phiên (thiết bị) hiện tại, lấy từ claim `sid` của access token. */
+  sessionId?: string;
 }

@@ -5,21 +5,34 @@ import { after, before, describe, it } from 'node:test';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { dataSource as appDataSource } from '../../config/data-source';
 import { RefreshSession } from '../../modules/auth/entities/refresh-session.entity';
 import { RefreshSessionsRepository } from '../../modules/auth/repositories/refresh-sessions.repository';
-import { TokenService } from '../../modules/auth/services/token.service';
+import { AuthService } from '../../modules/auth/services/auth.service';
+import { RefreshFailedException } from '../../modules/auth/exceptions/refresh-failed.exception';
+import { REFRESH_REUSE_GRACE_MS, TokenService } from '../../modules/auth/services/token.service';
+import { PasswordService } from '../security/password.service';
 import { Permission } from '../../modules/roles/entities/permission.entity';
 import { RolePermission } from '../../modules/roles/entities/role-permission.entity';
 import { Role } from '../../modules/roles/entities/role.entity';
 import { PermissionsRepository } from '../../modules/roles/repositories/permissions.repository';
 import { RolesRepository } from '../../modules/roles/repositories/roles.repository';
+import { RolesService } from '../../modules/roles/services/roles.service';
+import { AuditLog } from '../../modules/audit/entities/audit-log.entity';
+import { AuditRepository } from '../../modules/audit/repositories/audit.repository';
+import { AuditService } from '../../modules/audit/services/audit.service';
+import { PartnerApiKey } from '../../modules/partner-api-keys/entities/partner-api-key.entity';
+import { PartnerApiKeysRepository } from '../../modules/partner-api-keys/repositories/partner-api-keys.repository';
+import { PartnerApiKeysService } from '../../modules/partner-api-keys/services/partner-api-keys.service';
 import { UserRole } from '../../modules/users/entities/user-role.entity';
 import { User, UserStatus } from '../../modules/users/entities/user.entity';
 import { UserRolesRepository } from '../../modules/users/repositories/user-roles.repository';
 import { UsersRepository } from '../../modules/users/repositories/users.repository';
 import { TransactionManager } from '../database/transaction.manager';
+import type { TwoFactorService } from '../../modules/auth/services/two-factor.service';
+import { AuthRateLimiter } from '../../modules/auth/services/auth-rate-limiter.service';
+import type { LoginResult } from '../../modules/auth/services/auth.service';
 
 /**
  * Integration test lõi (Transaction + repository + khóa advisory) trên PostgreSQL THẬT.
@@ -272,6 +285,121 @@ describe('Core DB (PostgreSQL thật)', { skip }, () => {
     });
   });
 
+  describe('Vai trò xóa mềm (migration SoftDeleteRoles)', () => {
+    let rolesService: RolesService;
+    before(() => {
+      rolesService = new RolesService(roles, permissions, tx);
+    });
+
+    it('migration: có cột is_deleted/deleted_at, CHECK và unique code chỉ cho vai trò chưa xóa', async () => {
+      const [row] = await db.query(`SELECT
+        (SELECT count(*)::int FROM information_schema.columns WHERE table_name = 'roles' AND column_name IN ('is_deleted', 'deleted_at')) AS cols,
+        (SELECT indexdef FROM pg_indexes WHERE indexname = 'UQ_roles_code_active') AS idx,
+        (SELECT count(*)::int FROM pg_constraint WHERE conname = 'CHK_roles_deleted') AS chk`);
+      assert.equal(row.cols, 2);
+      assert.equal(row.chk, 1);
+      assert.match(row.idx, /UNIQUE INDEX .* WHERE \(is_deleted = false\)/);
+    });
+
+    it('xóa mềm: không còn ở danh sách/ma trận/tìm theo code, không gán được; tạo lại cùng mã được; quyền cũ giữ để truy vết', async () => {
+      const code = `${tag}-soft`;
+      const role = await createRole('soft');
+      await db.getRepository(RolePermission).save({ roleId: role.id, permissionId: created.permissions[0] });
+      await rolesService.remove(role.id);
+
+      const stored = await db.getRepository(Role).findOneByOrFail({ id: role.id });
+      assert.equal(stored.isDeleted, true);
+      assert.ok(stored.deletedAt);
+      assert.equal(await db.getRepository(RolePermission).count({ where: { roleId: role.id } }), 1);
+      assert.equal((await roles.listWithPermissions()).some((item) => item.id === role.id), false);
+      assert.equal(await roles.findById(role.id), null);
+      assert.equal(await roles.findByCode(code), null);
+      assert.deepEqual(await tx.run((manager) => roles.findManyByIds([role.id], manager)), []);
+      assert.deepEqual(await userRoles.findMissingRoleIds([role.id]), [role.id]);
+
+      const again = await rolesService.create({ code, name: 'Tạo lại' });
+      created.roles.push(again.id);
+      assert.notEqual(again.id, role.id);
+      await assert.rejects(rolesService.create({ code, name: 'Trùng' }), ConflictException);
+    });
+
+    it('xóa hàng loạt tất cả hoặc không: 1 vai trò đang gán → không vai trò nào bị xóa; hết vướng thì xóa cả', async () => {
+      const free = await createRole('bulk-free');
+      const used = await createRole('bulk-used');
+      const user = await createUser('bulk-role-user');
+      await db.getRepository(UserRole).save({ userId: user.id, roleId: used.id });
+
+      await assert.rejects(rolesService.removeMany([free.id, used.id]), ConflictException);
+      const after = await db.getRepository(Role).findBy({ id: In([free.id, used.id]) });
+      assert.ok(after.every((item) => !item.isDeleted), 'không vai trò nào bị xóa');
+
+      // User đã xóa mềm vẫn giữ dòng user_roles nhưng không còn tính là "đang gán".
+      await db.getRepository(User).update(user.id, { isDeleted: true, deletedAt: new Date() });
+      assert.deepEqual(await rolesService.removeMany([free.id, used.id]), { ids: [free.id, used.id] });
+      const done = await db.getRepository(Role).findBy({ id: In([free.id, used.id]) });
+      assert.ok(done.every((item) => item.isDeleted));
+    });
+  });
+
+  describe('Audit (SQL thật)', () => {
+    it('lưu sự kiện không gắn tài nguyên (resource_id NULL) kèm IP/User-Agent; API không lộ passwordHash của actor', async () => {
+      const service = new AuditService(new AuditRepository(db.getRepository(AuditLog)));
+      const actor = await createUser('audit-actor');
+      const requestId = `${tag}-audit`;
+      try {
+        await service.record({ actorId: null, action: 'auth.login_failed', resourceType: 'user', resourceId: null, requestId, ip: '203.0.113.7', userAgent: 'UA-test' });
+        await service.record({ actorId: actor.id, action: 'auth.login', resourceType: 'user', resourceId: actor.id, requestId, ip: '203.0.113.7', userAgent: 'UA-test' });
+        const rows = await db.getRepository(AuditLog).find({ where: { requestId }, order: { occurredAt: 'ASC' } });
+        assert.deepEqual(rows.map((row) => [row.action, row.resourceId, row.ip, row.userAgent]), [
+          ['auth.login_failed', null, '203.0.113.7', 'UA-test'],
+          ['auth.login', actor.id, '203.0.113.7', 'UA-test'],
+        ]);
+        const page = await service.list({ page: 1, pageSize: 50, action: 'auth.login' } as never);
+        const mine = page.items.find((item) => item.requestId === requestId)!;
+        assert.deepEqual(mine.actor, { id: actor.id, email: actor.email, displayName: actor.displayName });
+        assert.equal(JSON.stringify(page).includes('passwordHash'), false);
+        assert.equal(JSON.stringify(await service.getById(mine.id)).includes('not-a-real-hash'), false);
+      } finally {
+        await db.query('DELETE FROM audit_logs WHERE request_id = $1', [requestId]);
+      }
+    });
+  });
+
+  describe('API key đối tác (SQL thật)', () => {
+    it('authenticate chỉ nhận key active, chưa xóa, chưa hết hạn; xóa mềm giữ bản ghi và ẩn khỏi danh sách', async () => {
+      const service = new PartnerApiKeysService(new PartnerApiKeysRepository(db.getRepository(PartnerApiKey)));
+      const created: string[] = [];
+      try {
+        const make = async (extra: { expiresInDays?: number } = {}) => {
+          const key = await service.create({ partnerName: `${tag}-partner`, scopes: ['rooms:read'], ...extra });
+          created.push(key.id);
+          return key;
+        };
+        const live = await make({ expiresInDays: 30 });
+        const noExpiry = await make();
+        const revoked = await make();
+        const expired = await make({ expiresInDays: 1 });
+        const deleted = await make();
+        await service.revoke(revoked.id);
+        await db.getRepository(PartnerApiKey).update(expired.id, { expiresAt: new Date(Date.now() - 1000) });
+        await service.remove(deleted.id);
+
+        assert.equal((await service.authenticate(live.plaintext))?.id, live.id);
+        assert.equal((await service.authenticate(noExpiry.plaintext))?.id, noExpiry.id);
+        for (const blocked of [revoked, expired, deleted]) assert.equal(await service.authenticate(blocked.plaintext), null);
+        assert.equal(await service.authenticate(`${live.plaintext}x`), null);
+
+        const row = await db.getRepository(PartnerApiKey).findOneByOrFail({ id: deleted.id });
+        assert.equal(row.isDeleted, true);
+        assert.equal(row.status, 'revoked');
+        assert.equal((await service.list()).some((key) => key.id === deleted.id), false);
+        assert.equal(row.rateLimitPerMinute, 60);
+      } finally {
+        await db.getRepository(PartnerApiKey).delete(created);
+      }
+    });
+  });
+
   describe('TokenService + RefreshSessionsRepository', () => {
     let service: TokenService;
     let userId: string;
@@ -304,14 +432,29 @@ describe('Core DB (PostgreSQL thật)', { skip }, () => {
       assert.equal(raw[0].n, 0, 'raw token không được lưu trong DB');
     });
 
-    it('2 request refresh đồng thời cùng 1 token: đúng 1 thành công, reuse → thu hồi cả family', async () => {
+    it('2 request refresh đồng thời cùng 1 token (2 tab): đúng 1 thành công, request kia 401 ân hạn, family còn sống (#141)', async () => {
       const issued = await service.issueRefresh(userId);
       const results = await Promise.allSettled([service.rotate(issued.raw), service.rotate(issued.raw)]);
-      const fulfilled = results.filter((result) => result.status === 'fulfilled');
+      const fulfilled = results.filter((result) => result.status === 'fulfilled') as PromiseFulfilledResult<{ raw: string }>[];
       const rejected = results.filter((result) => result.status === 'rejected') as PromiseRejectedResult[];
       assert.equal(fulfilled.length, 1);
       assert.equal(rejected.length, 1);
-      assert.ok(rejected[0].reason instanceof UnauthorizedException);
+      assert.ok(rejected[0].reason instanceof RefreshFailedException);
+      assert.equal(rejected[0].reason.reason, 'rotated_recently');
+      const family = await db.getRepository(RefreshSession).find({ where: { familyId: issued.session.familyId } });
+      assert.equal(family.length, 2);
+      assert.ok(family.every((session) => !session.revokedAt), 'ân hạn không được thu hồi family');
+      await service.rotate(fulfilled[0].value.raw);
+    });
+
+    it('gửi lại token đã xoay vòng sau ân hạn (reuse) → thu hồi cả family', async () => {
+      const issued = await service.issueRefresh(userId);
+      await service.rotate(issued.raw);
+      await db.getRepository(RefreshSession).update(issued.session.id, {
+        usedAt: new Date(Date.now() - REFRESH_REUSE_GRACE_MS - 1000),
+      });
+      await assert.rejects(service.rotate(issued.raw), (error: unknown) =>
+        error instanceof RefreshFailedException && error.reason === 'reuse');
       const family = await db.getRepository(RefreshSession).find({ where: { familyId: issued.session.familyId } });
       assert.equal(family.length, 2);
       assert.ok(family.every((session) => session.revokedAt), 'mọi session trong family phải bị thu hồi');
@@ -323,6 +466,100 @@ describe('Core DB (PostgreSQL thật)', { skip }, () => {
       await assert.rejects(service.rotate(issued.raw), UnauthorizedException);
       const row = await db.getRepository(RefreshSession).findOneByOrFail({ id: issued.session.id });
       assert.ok(row.revokedAt);
+    });
+
+    it('revokeAllForUser thu hồi mọi thiết bị của user, không đụng user khác', async () => {
+      const sessions = new RefreshSessionsRepository(db.getRepository(RefreshSession));
+      const otherId = (await createUser('token-other')).id;
+      const laptop = await service.issueRefresh(userId);
+      const phone = await service.issueRefresh(userId);
+      const other = await service.issueRefresh(otherId);
+      await tx.run((manager) => sessions.revokeAllForUser(userId, manager));
+      await assert.rejects(service.rotate(laptop.raw), UnauthorizedException);
+      await assert.rejects(service.rotate(phone.raw), UnauthorizedException);
+      await service.rotate(other.raw);
+    });
+
+    it('refresh đang chạy song song với revokeAllForUser: token vừa xoay vòng cũng bị thu hồi', async () => {
+      const sessions = new RefreshSessionsRepository(db.getRepository(RefreshSession));
+      for (let round = 0; round < 5; round++) {
+        const issued = await service.issueRefresh(userId);
+        const [rotation] = await Promise.allSettled([
+          service.rotate(issued.raw),
+          tx.run((manager) => sessions.revokeAllForUser(userId, manager)),
+        ]);
+        if (rotation.status === 'fulfilled') {
+          await assert.rejects(service.rotate(rotation.value.raw), UnauthorizedException);
+        }
+        const alive = await db.query(
+          'SELECT count(*)::int AS n FROM refresh_sessions WHERE user_id = $1 AND revoked_at IS NULL',
+          [userId],
+        );
+        assert.equal(alive[0].n, 0, `vòng ${round}: không session nào của user còn sống`);
+      }
+    });
+
+    it('migration tạo index partial cho ActiveSessionGuard', async () => {
+      const rows = await db.query(
+        `SELECT indexdef FROM pg_indexes WHERE tablename = 'refresh_sessions' AND indexname = 'IDX_refresh_sessions_family_live'`,
+      );
+      assert.equal(rows.length, 1);
+      assert.match(rows[0].indexdef, /WHERE \(revoked_at IS NULL\)/);
+    });
+
+    it('listLiveForUser: 1 dòng/thiết bị (token đầu), giữ signedInAt, UA/IP mới nhất; isFamilyLive qua xoay vòng', async () => {
+      const sessions = new RefreshSessionsRepository(db.getRepository(RefreshSession));
+      const deviceUser = (await createUser('devices')).id;
+      const laptop = await service.issueRefresh(deviceUser, undefined, undefined, { userAgent: 'Laptop', ip: '10.0.0.1' });
+      const phone = await service.issueRefresh(deviceUser, undefined, undefined, { userAgent: 'Phone', ip: '10.0.0.2' });
+      const rotated = await service.rotate(laptop.raw, { userAgent: 'Laptop v2', ip: '10.0.0.3' });
+
+      const live = await sessions.listLiveForUser(deviceUser);
+      assert.deepEqual(live.map((row) => row.familyId).sort(), [laptop.session.familyId, phone.session.familyId].sort());
+      const laptopRow = live.find((row) => row.familyId === laptop.session.familyId)!;
+      assert.equal(laptopRow.id, rotated.session.id, 'chỉ trả token đầu của family');
+      assert.equal(laptopRow.userAgent, 'Laptop v2');
+      assert.equal(laptopRow.ip, '10.0.0.3');
+      assert.equal(laptopRow.signedInAt.getTime(), laptop.session.signedInAt.getTime());
+      assert.equal(await sessions.isFamilyLive(laptop.session.familyId), true, 'xoay vòng không làm family chết');
+    });
+
+    it('revokeAllForUser(except) giữ phiên hiện tại; revokeFamilyOfUser không thu hồi được phiên người khác', async () => {
+      const sessions = new RefreshSessionsRepository(db.getRepository(RefreshSession));
+      const owner = (await createUser('owner')).id;
+      const intruder = (await createUser('intruder')).id;
+      const current = await service.issueRefresh(owner);
+      const other = await service.issueRefresh(owner);
+      const foreign = await service.issueRefresh(intruder);
+
+      assert.equal(await tx.run((manager) => sessions.revokeFamilyOfUser(owner, foreign.session.familyId, manager)), false);
+      assert.equal(await sessions.isFamilyLive(foreign.session.familyId), true);
+
+      await tx.run((manager) => sessions.revokeAllForUser(owner, manager, current.session.familyId));
+      assert.equal(await sessions.isFamilyLive(current.session.familyId), true);
+      assert.equal(await sessions.isFamilyLive(other.session.familyId), false);
+
+      assert.equal(await tx.run((manager) => sessions.revokeFamilyOfUser(owner, current.session.familyId, manager)), true);
+      assert.equal(await sessions.isFamilyLive(current.session.familyId), false);
+      assert.equal(await tx.run((manager) => sessions.revokeFamilyOfUser(owner, current.session.familyId, manager)), false, 'đã thu hồi rồi');
+    });
+
+    it('tự đổi mật khẩu: hash mới được lưu, thiết bị khác bị thu hồi, thiết bị hiện tại giữ; đăng nhập lại bằng mật khẩu mới', async () => {
+      const sessions = new RefreshSessionsRepository(db.getRepository(RefreshSession));
+      const passwords = new PasswordService({ getOrThrow: () => 4 } as unknown as ConfigService);
+      const auth = new AuthService(users, passwords, service, tx, sessions, {} as TwoFactorService, new AuthRateLimiter());
+      const owner = await createUser('change-pw', { passwordHash: await passwords.hash('Old-Passw0rd') });
+      const current = await service.issueRefresh(owner.id);
+      const other = await service.issueRefresh(owner.id);
+      const actor = { id: owner.id, email: owner.email, displayName: owner.displayName, roles: [], permissions: [], sessionId: current.session.familyId };
+
+      await auth.changePassword(actor, { currentPassword: 'Old-Passw0rd', newPassword: 'New-Passw0rd' });
+
+      assert.equal(await sessions.isFamilyLive(current.session.familyId), true);
+      assert.equal(await sessions.isFamilyLive(other.session.familyId), false);
+      const login = <LoginResult>await auth.login({ email: owner.email, password: 'New-Passw0rd' });
+      assert.ok(login.accessToken);
+      await assert.rejects(auth.login({ email: owner.email, password: 'Old-Passw0rd' }), UnauthorizedException);
     });
 
     it('logout (revokeByRaw) thu hồi cả token kế tiếp trong family', async () => {

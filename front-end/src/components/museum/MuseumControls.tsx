@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Euler, PerspectiveCamera, Vector3 } from 'three';
 import { useReducedMotion } from '@mantine/hooks';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { MUSEUM_ROOM_SIZE } from '@/interfaces/museumScene';
-import { getExhibitView, INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET, type ModelFocusBounds } from '@/helpers/museumCamera';
+import { getExhibitView, getMuseumFov, INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET, type ModelFocusBounds } from '@/helpers/museumCamera';
 import { applyLook, findNavigationPath, findSafeNavigationPoint, getDisplayColliders, isNavigationPositionSafe, moveWithCollisions, NAVIGATION, stepMovement, type NavigationInput, type NavigationVector } from '@/helpers/museumNavigation';
 import { attachNavigationInput, type NavigationAction } from '@/helpers/attachNavigationInput';
 import type { NavigationGestures } from '@/helpers/navigationGestures';
 import type { NavigationMode } from './NavigationHud';
+import { cinematicPosition, getCinematicEntrance, type Vec3 } from '@/helpers/cinematicIntro';
 
 export type CameraAction = NavigationAction;
 export interface CameraCommand { action: CameraAction; sequence: number }
@@ -25,7 +26,7 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
   onModeChange: (mode: NavigationMode) => void; onActiveChange: (isActive: boolean) => void;
 }) {
   const { camera, gl, invalidate, size } = useThree();
-  const prefersReducedMotion = useReducedMotion();
+  const prefersReducedMotion = useReducedMotion(false, { getInitialValueInEffect: false });
   const reducedRef = useRef(prefersReducedMotion); reducedRef.current = prefersReducedMotion;
   const colliders = useMemo(() => getDisplayColliders(displays), [displays]);
   const collidersRef = useRef(colliders); collidersRef.current = colliders;
@@ -34,6 +35,8 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
   const aspectRef = useRef(1); aspectRef.current = size.width / size.height;
   const autoFocusRef = useRef({ id: selectedDisplay?.id, allowed: true });
   const transitionRef = useRef<FocusTransition | null>(null);
+  const introAttemptedRef = useRef(false);
+  const introRef = useRef<{ from: Vec3; to: Vec3; startedAt: number } | null>(null);
   const actionRef = useRef<((action: CameraAction) => void) | null>(null);
   const modeRef = useRef<NavigationMode>('explore');
   const runtime = useMemo(() => ({
@@ -43,9 +46,15 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
   }), []);
   const callbacks = useRef({ onModeChange, onActiveChange }); callbacks.current = { onModeChange, onActiveChange };
 
+  useLayoutEffect(() => {
+    if (!enabled || !(camera instanceof PerspectiveCamera)) return;
+    camera.fov = getMuseumFov(size.width / size.height);
+    camera.updateProjectionMatrix(); invalidate();
+  }, [enabled, camera, size.width, size.height, invalidate]);
+
   useEffect(() => {
     if (!enabled) {
-      input.stop(); transitionRef.current = null; autoFocusRef.current = { id: selectedRef.current?.id, allowed: false };
+      input.stop(); transitionRef.current = null; introRef.current = null; autoFocusRef.current = { id: selectedRef.current?.id, allowed: false };
       runtime.velocity.set(0, 0, 0); return;
     }
     const setMode = (mode: NavigationMode) => { modeRef.current = mode; callbacks.current.onModeChange(mode); };
@@ -59,6 +68,7 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
       runtime.velocity.set(0, 0, 0); runtime.isWalking = false; syncLook();
     };
     const explore = () => {
+      if (introRef.current) { introRef.current = null; syncLook(); }
       transitionRef.current = null; autoFocusRef.current.allowed = false;
       if (modeRef.current !== 'explore') { syncLook(); setMode('explore'); }
     };
@@ -66,6 +76,7 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
     input.wake = () => { explore(); callbacks.current.onActiveChange(true); invalidate(); };
     syncLook();
     const action = (action: CameraAction) => {
+      introRef.current = null;
       stop(); transitionRef.current = null; autoFocusRef.current.allowed = action === 'focus';
       if (action === 'focus') {
         const view = selectedRef.current && getExhibitView(selectedRef.current, boundsRef.current, aspectRef.current,
@@ -129,12 +140,21 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
   }, [enabled, camera, gl, invalidate, input, gestures, runtime]);
 
   useEffect(() => {
+    if (introAttemptedRef.current || !enabled) return;
+    introAttemptedRef.current = true;
+    const entrance = !prefersReducedMotion && !selectedDisplay && getCinematicEntrance(displays);
+    if (!entrance) return;
+    introRef.current = { ...entrance, startedAt: performance.now() };
+    camera.position.set(...entrance.from); camera.lookAt(...INITIAL_CAMERA_TARGET); invalidate();
+  }, [enabled, prefersReducedMotion, selectedDisplay, displays, camera, invalidate]);
+
+  useEffect(() => {
     if (!enabled) return;
     // New published placement can occupy a previous camera position. Recover to
     // the nearest free proxy boundary, never remain trapped inside new geometry.
     const safe = findSafeNavigationPoint({ x: camera.position.x, y: camera.position.z }, MUSEUM_ROOM_SIZE, colliders);
     if (safe && (safe.x !== camera.position.x || safe.y !== camera.position.z)) {
-      transitionRef.current = null; camera.position.x = safe.x; camera.position.z = safe.y; invalidate();
+      transitionRef.current = null; introRef.current = null; camera.position.x = safe.x; camera.position.z = safe.y; invalidate();
     }
   }, [enabled, camera, colliders, invalidate]);
 
@@ -153,6 +173,16 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
 
   useFrame((_, rawDelta) => {
     if (!enabled) return;
+    const intro = introRef.current;
+    if (intro && !prefersReducedMotion) {
+      const next = cinematicPosition(intro.from, intro.to, performance.now() - intro.startedAt);
+      camera.position.set(...next.position); camera.lookAt(...INITIAL_CAMERA_TARGET);
+      runtime.euler.setFromQuaternion(camera.quaternion, 'YXZ');
+      runtime.look.yaw = runtime.goal.yaw = runtime.euler.y; runtime.look.pitch = runtime.goal.pitch = runtime.euler.x;
+      if (next.done) introRef.current = null; else invalidate();
+      return;
+    }
+    if (prefersReducedMotion) introRef.current = null;
     const transition = transitionRef.current;
     if (transition) {
       const progress = reducedRef.current ? 1 : Math.min(1, (performance.now() - transition.startedAt) / 550);

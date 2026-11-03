@@ -3,12 +3,18 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { EntityManager } from 'typeorm';
+import { TransactionManager } from '../../../common/database/transaction.manager';
 import { PasswordService } from '../../../common/security/password.service';
 import { User, UserStatus } from '../../users/entities/user.entity';
 import { UsersRepository } from '../../users/repositories/users.repository';
 import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard';
+import { RefreshSessionsRepository } from '../repositories/refresh-sessions.repository';
 import { AuthService } from '../services/auth.service';
 import { TokenService } from '../services/token.service';
+import type { TwoFactorService } from '../services/two-factor.service';
+import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
+import type { LoginResult } from '../services/auth.service';
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
@@ -22,13 +28,30 @@ function makeUser(overrides: Partial<User> = {}): User {
   } as unknown as User;
 }
 
-function makeService(options: { user?: User | null; passwordOk?: boolean } = {}) {
+const MANAGER = { tag: 'tx' } as unknown as EntityManager;
+
+function makeService(options: { user?: User | null; passwordOk?: boolean; freshUser?: User | null } = {}) {
   const compared: Array<string | undefined> = [];
   const revoked: string[] = [];
+  const log: string[] = [];
+  const current = () => (options.user === undefined ? makeUser() : options.user);
   const users = {
-    findByEmailWithAccess: async () => (options.user === undefined ? makeUser() : options.user),
-    findByIdWithAccess: async () => (options.user === undefined ? makeUser() : options.user),
+    findByEmailWithAccess: async () => current(),
+    findByIdWithAccess: async (_id: string, manager?: EntityManager) => {
+      if (manager === MANAGER) {
+        log.push('reload:tx');
+        return options.freshUser === undefined ? current() : options.freshUser;
+      }
+      return current();
+    },
   } as unknown as UsersRepository;
+  const sessions = {
+    lockUser: async (userId: string, manager: EntityManager, exclusive = false) => {
+      assert.equal(manager, MANAGER);
+      log.push(`lockUser:${userId}:${exclusive ? 'x' : 'shared'}`);
+    },
+  } as unknown as RefreshSessionsRepository;
+  const tx = { run: async <T>(work: (manager: EntityManager) => Promise<T>) => work(MANAGER) } as unknown as TransactionManager;
   const passwords = {
     compare: async (_plain: string, hash?: string) => {
       compared.push(hash);
@@ -36,18 +59,25 @@ function makeService(options: { user?: User | null; passwordOk?: boolean } = {})
     },
   } as unknown as PasswordService;
   const tokens = {
-    signAccess: async () => 'access-token',
-    issueRefresh: async () => ({ raw: 'refresh-raw' }),
+    signAccess: async (_user: unknown, sid: string) => {
+      log.push(`sign:${sid}`);
+      return 'access-token';
+    },
+    issueRefresh: async (_userId: string, _family: unknown, manager: EntityManager, client: { userAgent?: string }) => {
+      assert.equal(manager, MANAGER, 'phát hành refresh phải nằm trong transaction');
+      log.push(`issue:${client?.userAgent ?? '-'}`);
+      return { raw: 'refresh-raw', session: { familyId: 'fam-1' } };
+    },
     rotate: async (raw: string) => ({ accessToken: `access-for-${raw}`, raw: `next-${raw}` }),
     revokeByRaw: async (raw: string) => void revoked.push(raw),
   } as unknown as TokenService;
-  return { service: new AuthService(users, passwords, tokens), compared, revoked };
+  return { service: new AuthService(users, passwords, tokens, tx, sessions, {} as TwoFactorService, new AuthRateLimiter()), compared, revoked, log };
 }
 
 describe('AuthService', () => {
   it('login thành công trả access token, refresh token và AuthUser (không có passwordHash)', async () => {
     const { service } = makeService();
-    const result = await service.login({ email: 'admin@aura.local', password: 'Passw0rd!' });
+    const result = <LoginResult>await service.login({ email: 'admin@aura.local', password: 'Passw0rd!' });
     assert.equal(result.accessToken, 'access-token');
     assert.equal(result.refreshToken, 'refresh-raw');
     assert.deepEqual(result.user, {
@@ -59,6 +89,24 @@ describe('AuthService', () => {
     });
     assert.equal('passwordHash' in result.user, false);
   });
+
+  it('login: khóa user (shared) → đọc lại → phát hành trong transaction → ký access với sid = familyId', async () => {
+    const { service, log } = makeService();
+    await service.login({ email: 'admin@aura.local', password: 'Passw0rd!' }, { userAgent: 'UA' });
+    assert.deepEqual(log, ['lockUser:user-1:shared', 'reload:tx', 'issue:UA', 'sign:fam-1']);
+  });
+
+  for (const [name, freshUser] of [
+    ['Admin vừa đổi mật khẩu', makeUser({ passwordHash: 'new-hash' })],
+    ['Admin vừa khóa', makeUser({ status: UserStatus.DISABLED })],
+    ['vừa bị xóa', null],
+  ] as const) {
+    it(`login: ${name} trong lúc so bcrypt → 401, không cấp phiên`, async () => {
+      const { service, log } = makeService({ freshUser });
+      await assert.rejects(service.login({ email: 'a@b.c', password: 'Passw0rd!' }), UnauthorizedException);
+      assert.equal(log.some((entry) => entry.startsWith('issue') || entry.startsWith('sign')), false);
+    });
+  }
 
   it('sai mật khẩu → 401 thông điệp chung', async () => {
     const { service } = makeService({ passwordOk: false });

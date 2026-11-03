@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: VT-077 ExhibitsRepository.searchPublicExhibits
+    # Subtest: AC-4 (invariant): ORDER BY roomId, displayOrder, id ASC — khóa phụ duy nhất id ở CUỐI
+    ok 1 - AC-4 (invariant): ORDER BY roomId, displayOrder, id ASC — khóa phụ duy nhất id ở CUỐI
+      ---
+      duration_ms: 1.7295
+      ...
+    # Subtest: AC-5/AC-1: chỉ lấy bản published + visible, chưa xóa/lưu trữ, phòng ACTIVE
+    ok 2 - AC-5/AC-1: chỉ lấy bản published + visible, chưa xóa/lưu trữ, phòng ACTIVE
+      ---
+      duration_ms: 0.5909
+      ...
+    # Subtest: AC-3: phân trang skip=(page-1)*pageSize, take=pageSize; chặn pageSize>100
+    ok 3 - AC-3: phân trang skip=(page-1)*pageSize, take=pageSize; chặn pageSize>100
+      ---
+      duration_ms: 0.2023
+      ...
+    # Subtest: AC-2: lọc roomId + tìm q bằng ILIKE (param search = %kw%)
+    ok 4 - AC-2: lọc roomId + tìm q bằng ILIKE (param search = %kw%)
+      ---
+      duration_ms: 0.3064
+      ...
+    # Subtest: AC-4: sắp lại kết quả find theo đúng thứ tự id của QueryBuilder (ổn định qua 2 bước)
+    ok 5 - AC-4: sắp lại kết quả find theo đúng thứ tự id của QueryBuilder (ổn định qua 2 bước)
+      ---
+      duration_ms: 0.3999
+      ...
+    1..5
+ok 1 - VT-077 ExhibitsRepository.searchPublicExhibits
+  ---
+  duration_ms: 5.592
+  type: 'suite'
+  ...
+# Subtest: VT-077 ExhibitsService.publicSearch
+    # Subtest: TC-06/AC-3: trả meta (page/pageSize/total) đúng như repository
+    ok 1 - TC-06/AC-3: trả meta (page/pageSize/total) đúng như repository
+      ---
+      duration_ms: 5.5564
+      ...
+    # Subtest: TC-01/AC-1: ánh xạ sang DTO công khai, không lộ field nội bộ
+    ok 2 - TC-01/AC-1: ánh xạ sang DTO công khai, không lộ field nội bộ
+      ---
+      duration_ms: 1.8788
+      ...
+    # Subtest: TC-07/TC-08/AC-4: giữ NGUYÊN thứ tự repository trả (ổn định, không re-sort phá vỡ)
+    ok 3 - TC-07/TC-08/AC-4: giữ NGUYÊN thứ tự repository trả (ổn định, không re-sort phá vỡ)
+      ---
+      duration_ms: 2.876
+      ...
+    # Subtest: AC-2: truyền q/roomId/page/pageSize xuống repository (không tự bịa filter)
+    ok 4 - AC-2: truyền q/roomId/page/pageSize xuống repository (không tự bịa filter)
+      ---
+      duration_ms: 0.6698
+      ...
+    # Subtest: AC-5: loại hiện vật chưa xuất bản (mapper trả null) khỏi kết quả
+    ok 5 - AC-5: loại hiện vật chưa xuất bản (mapper trả null) khỏi kết quả
+      ---
+      duration_ms: 0.7326
+      ...
+    # Subtest: TC-12/failure-path: repository ném lỗi → service KHÔNG nuốt lỗi, phải propagate
+    ok 6 - TC-12/failure-path: repository ném lỗi → service KHÔNG nuốt lỗi, phải propagate
+      ---
+      duration_ms: 2.2216
+      ...
+    1..6
+ok 2 - VT-077 ExhibitsService.publicSearch
+  ---
+  duration_ms: 21.8948
+  type: 'suite'
+  ...
+# Subtest: VT-077 searchPublicExhibits — SQL sinh ra (metadata thật, không DB)
+    # Subtest: 🔴\#1 invariant: MỌI cột trong ORDER BY của subquery phân trang đều được select ở truy vấn trong
+    ok 1 - 🔴\#1 invariant: MỌI cột trong ORDER BY của subquery phân trang đều được select ở truy vấn trong
+      ---
+      duration_ms: 4983.7355
+      ...
+    # Subtest: 🔴\#2 ranh giới phòng: innerJoin rooms + lọc room ACTIVE và chưa xóa
+    ok 2 - 🔴\#2 ranh giới phòng: innerJoin rooms + lọc room ACTIVE và chưa xóa
+      ---
+      duration_ms: 1.2676
+      ...
+    # Subtest: 🟡 ILIKE: chỉ trường hiển thị, KHÔNG cast cả content sang text, có ESCAPE
+    ok 3 - 🟡 ILIKE: chỉ trường hiển thị, KHÔNG cast cả content sang text, có ESCAPE
+      ---
+      duration_ms: 1.0639
+      ...
+    # Subtest: 🟡 escape wildcard: q='50%_off' được escape %/_ trong param
+    ok 4 - 🟡 escape wildcard: q='50%_off' được escape %/_ trong param
+      ---
+      duration_ms: 0.3559
+      ...
+    # Subtest: AC-4 thứ tự ổn định: ORDER BY roomId, displayOrder, id (khớp index room_order_id)
+    ok 5 - AC-4 thứ tự ổn định: ORDER BY roomId, displayOrder, id (khớp index room_order_id)
+      ---
+      duration_ms: 0.7882
+      ...
+    1..5
+ok 3 - VT-077 searchPublicExhibits — SQL sinh ra (metadata thật, không DB)
+  ---
+  duration_ms: 4989.8988
+  type: 'suite'
+  ...
+# Subtest: VT-077 GET /rooms/search — contract
+    # Subtest: TC-09: response khớp envelope ApiResponse + meta
+    ok 1 - TC-09: response khớp envelope ApiResponse + meta
+      ---
+      duration_ms: 50.2132
+      ...
+    # Subtest: TC-10: item chỉ chứa field public, không rò rỉ entity nội bộ
+    ok 2 - TC-10: item chỉ chứa field public, không rò rỉ entity nội bộ
+      ---
+      duration_ms: 11.674
+      ...
+    # Subtest: TC-05 (negative): pageSize=101 → 400, service không bị gọi
+    ok 3 - TC-05 (negative): pageSize=101 → 400, service không bị gọi
+      ---
+      duration_ms: 8.4294
+      ...
+    # Subtest: TC (negative): page=0 → 400
+    ok 4 - TC (negative): page=0 → 400
+      ---
+      duration_ms: 10.2729
+      ...
+    # Subtest: TC-04 (negative): roomId sai định dạng UUID → 400 (không 500)
+    ok 5 - TC-04 (negative): roomId sai định dạng UUID → 400 (không 500)
+      ---
+      duration_ms: 9.0426
+      ...
+    # Subtest: AC-5: route /rooms/search KHÔNG nuốt route cũ /rooms/:slug
+    ok 6 - AC-5: route /rooms/search KHÔNG nuốt route cũ /rooms/:slug
+      ---
+      duration_ms: 6.8712
+      ...
+    1..6
+ok 4 - VT-077 GET /rooms/search — contract
+  ---
+  duration_ms: 274.729
+  type: 'suite'
+  ...
+1..4
+# tests 22
+# suites 4
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11293.4216

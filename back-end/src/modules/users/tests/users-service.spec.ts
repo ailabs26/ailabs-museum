@@ -12,6 +12,7 @@ import { toUserResponse } from '../dto/user-response.dto';
 import { User, UserStatus } from '../entities/user.entity';
 import { UserRolesRepository } from '../repositories/user-roles.repository';
 import { UsersRepository } from '../repositories/users.repository';
+import { RefreshSessionsRepository } from '../../auth/repositories/refresh-sessions.repository';
 import { UsersService } from '../services/users.service';
 import { toAuthUser } from '../user-access.util';
 
@@ -99,6 +100,13 @@ function harness(initial: User[] = [], options: { emailTaken?: boolean } = {}): 
     },
   } as unknown as UserRolesRepository;
 
+  const sessions = {
+    revokeAllForUser: async (userId: string, manager: EntityManager) => {
+      assert.ok(inTx && manager === MANAGER, 'thu hồi phiên phải chạy trong transaction');
+      log.push(`revokeSessions:${userId}`);
+    },
+  } as unknown as RefreshSessionsRepository;
+
   const passwords = { hash: async (plain: string) => `hashed(${plain})` } as unknown as PasswordService;
   const tx = {
     run: async <T>(work: (manager: EntityManager) => Promise<T>) => {
@@ -112,7 +120,7 @@ function harness(initial: User[] = [], options: { emailTaken?: boolean } = {}): 
   } as unknown as TransactionManager;
 
   return {
-    service: new UsersService(usersRepo, userRolesRepo, passwords, tx),
+    service: new UsersService(usersRepo, userRolesRepo, passwords, tx, sessions),
     log,
     users,
     setActiveAdmins: (count) => void (activeAdmins = count),
@@ -199,6 +207,43 @@ describe('UsersService', () => {
     assert.ok(log.includes('replace:tx:r-admin'));
   });
 
+  describe('thu hồi phiên khi đổi thông tin đăng nhập', () => {
+    const revoked = (log: string[]) => log.filter((entry) => entry.startsWith('revokeSessions:'));
+
+    it('đổi mật khẩu → thu hồi mọi phiên của user, sau khi ghi hash mới', async () => {
+      const { service, log } = harness([makeUser('u1', ['r-editor'])]);
+      await service.update('u1', { password: 'NewPassw0rd' }, ACTOR);
+      assert.deepEqual(revoked(log), ['revokeSessions:u1']);
+      assert.ok(log.indexOf('update:tx:passwordHash') < log.indexOf('revokeSessions:u1'));
+    });
+
+    it('khóa user → thu hồi mọi phiên', async () => {
+      const { service, log } = harness([makeUser('u1', ['r-editor'])]);
+      await service.update('u1', { status: UserStatus.DISABLED }, ACTOR);
+      assert.deepEqual(revoked(log), ['revokeSessions:u1']);
+    });
+
+    it('xóa mềm user → thu hồi mọi phiên', async () => {
+      const { service, log, setActiveAdmins } = harness([makeUser('u1', ['r-editor'])]);
+      setActiveAdmins(2);
+      await service.remove('u1');
+      assert.deepEqual(revoked(log), ['revokeSessions:u1']);
+    });
+
+    it('đổi tên, mở khóa, đổi role → KHÔNG đăng xuất user', async () => {
+      const { service, log } = harness([makeUser('u1', ['r-editor'], UserStatus.DISABLED)]);
+      await service.update('u1', { displayName: 'X', status: UserStatus.ACTIVE, roleIds: ['r-editor'] }, ACTOR);
+      assert.deepEqual(revoked(log), []);
+    });
+
+    it('bị chặn vì Admin cuối → không thu hồi gì', async () => {
+      const { service, log } = harness([makeUser('admin', ['r-admin'])]);
+      await assert.rejects(service.update('admin', { status: UserStatus.DISABLED }, ACTOR), ConflictException);
+      await assert.rejects(service.remove('admin'), ConflictException);
+      assert.deepEqual(revoked(log), []);
+    });
+  });
+
   describe('bảo vệ Admin hoạt động cuối cùng', () => {
     const lastAdmin = () => harness([makeUser('admin', ['r-admin'])]);
 
@@ -218,17 +263,47 @@ describe('UsersService', () => {
       assert.equal(log.some((entry) => entry.startsWith('update')), false);
     });
 
-    it('cho phép khi còn Admin hoạt động khác', async () => {
+    it('không xóa mềm được tài khoản Admin kể cả khi còn Admin khác (phải bỏ vai trò Admin trước)', async () => {
       const { service, setActiveAdmins, users } = lastAdmin();
       setActiveAdmins(2);
-      await service.remove('admin');
-      assert.equal(users.get('admin')!.isDeleted, true);
-      assert.ok(users.get('admin')!.deletedAt instanceof Date);
+      await assert.rejects(service.remove('admin'), /Không thể xóa tài khoản Admin/);
+      assert.equal(users.get('admin')!.isDeleted, undefined);
     });
 
     it('Admin đã bị khóa thì không bị chặn', async () => {
       const { service } = harness([makeUser('admin', ['r-admin'], UserStatus.DISABLED)]);
       await service.setRoles('admin', []);
+    });
+  });
+
+  describe('xóa mềm hàng loạt', () => {
+    const updates = (log: string[]) => log.filter((entry) => entry.startsWith('update'));
+
+    it('hợp lệ hết → khóa quản trị 1 lần, xóa mềm + đăng xuất từng tài khoản, trả { ids }', async () => {
+      const { service, log, users } = harness([makeUser('u1', ['r-editor']), makeUser('u2', [])]);
+      assert.deepEqual(await service.removeMany(['u1', 'u2']), { ids: ['u1', 'u2'] });
+      assert.equal(log.filter((entry) => entry === 'lock').length, 1);
+      assert.deepEqual(updates(log), ['update:tx:deletedAt,isDeleted', 'update:tx:deletedAt,isDeleted']);
+      assert.deepEqual(log.filter((entry) => entry.startsWith('revokeSessions')), ['revokeSessions:u1', 'revokeSessions:u2']);
+      assert.equal(users.get('u1')!.isDeleted && users.get('u2')!.isDeleted, true);
+    });
+
+    it('tất cả hoặc không: có Admin hoặc ID không tồn tại → 409 liệt kê từng ID, không ai bị xóa/đăng xuất', async () => {
+      const { service, log, users } = harness([makeUser('u1', ['r-editor']), makeUser('admin', ['r-admin'])]);
+      await assert.rejects(service.removeMany(['u1', 'admin', 'ghost']), (error: unknown) => {
+        assert.ok(error instanceof ConflictException);
+        const body = error.getResponse() as { errors: Array<{ field: string; message: string }> };
+        assert.deepEqual(body.errors.map((e) => e.field), ['admin', 'ghost']);
+        assert.match(body.errors[0].message, /Không thể xóa tài khoản Admin/);
+        return true;
+      });
+      assert.deepEqual(updates(log), []);
+      assert.equal(log.some((entry) => entry.startsWith('revokeSessions')), false);
+      assert.equal(users.get('u1')!.isDeleted, undefined);
+    });
+
+    it('xóa lẻ: không tồn tại → 404', async () => {
+      await assert.rejects(harness().service.remove('ghost'), NotFoundException);
     });
   });
 

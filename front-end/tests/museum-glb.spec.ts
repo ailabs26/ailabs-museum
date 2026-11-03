@@ -1,3 +1,4 @@
+import { museumExhibitButton, openMuseumCatalogue, selectMuseumExhibit } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { installMuseumApi, fulfillMuseum } from './fixtures/museumApi';
 import { envelope, roomA } from './fixtures/museumContent';
@@ -29,7 +30,7 @@ test('permission failures and corrupt GLBs stay isolated and can be retried with
   await page.getByRole('button', { name: 'Thử lại Hiện vật 1', exact: true }).click();
   await expect.poll(() => requests).toBe(2);
   await expect(page.getByRole('button', { name: 'Thử lại Hiện vật 1', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText('Hiện vật 2');
   await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible();
   expect(errors).toEqual([]);
@@ -55,7 +56,9 @@ test('switching rooms while two GLBs are loading cancels the queue and keeps the
   await expect.poll(() => aborted.length).toBe(2);
   expect(requests).toBe(2);
   await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
-  await expect(page.getByRole('button', { name: 'Xem chi tiết Bình gốm', exact: true })).toBeVisible();
+  await expect(museumExhibitButton(page, 'Xem chi tiết Bình gốm')).toBeAttached();
+  await openMuseumCatalogue(page);
+  await expect(museumExhibitButton(page, 'Xem chi tiết Bình gốm')).toBeVisible();
 });
 
 test('background clicks clear selection but dragging the background does not', async ({ page }) => {
@@ -63,7 +66,7 @@ test('background clicks clear selection but dragging the background does not', a
   await page.goto('/tour.html');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true });
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 1');
   await page.getByRole('button', { name: 'Góc nhìn ban đầu' }).click();
   await canvas.scrollIntoViewIfNeeded();
   const box = (await canvas.boundingBox())!;
@@ -95,7 +98,7 @@ for (const action of ['reset', 'drag']) test(`finishing a real GLB download resp
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true });
   await expect(canvas).toBeVisible({ timeout: 15_000 });
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 1');
   if (action === 'reset') await page.getByRole('button', { name: 'Góc nhìn ban đầu' }).click();
   else {
     await canvas.scrollIntoViewIfNeeded(); const box = (await canvas.boundingBox())!;

@@ -14,12 +14,14 @@ import {
   TextInput,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconLayoutList, IconSearch, IconTable } from '@tabler/icons-react';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { IconDownload, IconLayoutList, IconSearch, IconTable } from '@tabler/icons-react';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import { Column, DataTable } from '@/shared/components/data';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { AuditTimeline } from '@/components/cms/AuditTimeline';
-import { AuditRow, auditService } from '@/services/audit.service';
+import { AuditRow, ExportAuditParams, actorLabel, auditService } from '@/services/audit.service';
+import { saveBlob } from '@/helpers/saveBlob';
+import { notify } from '@/shared/components/feedback/notify';
 
 const RESOURCE_OPTIONS = [
   { value: 'user', label: 'Người dùng' },
@@ -39,9 +41,10 @@ function formatTime(iso: string): string {
 /** Màu badge theo nhóm hành động (động từ sau dấu chấm). */
 function actionColor(action: string): string {
   const verb = action.split('.').pop() ?? '';
-  if (['create', 'publish', 'resolve', 'unhide'].includes(verb)) return 'teal';
+  if (['create', 'publish', 'resolve', 'unhide', 'restore'].includes(verb)) return 'teal';
   if (['update', 'assign'].includes(verb)) return 'blue';
-  if (['delete', 'reject'].includes(verb)) return 'red';
+  if (['delete', 'reject', 'denied', 'login_failed', 'login_blocked'].includes(verb)) return 'red';
+  if (['login', 'logout'].includes(verb)) return 'indigo';
   if (['hide', 'dismiss'].includes(verb)) return 'orange';
   return 'aura';
 }
@@ -56,19 +59,25 @@ export function AuditPage() {
   const [detail, setDetail] = useState<AuditRow | null>(null);
   const [view, setView] = useState<'table' | 'timeline'>('table');
 
+  // Cùng một bộ lọc cho danh sách và file CSV xuất ra.
+  const filters: ExportAuditParams = {
+    action: action || undefined,
+    actorId: actorId.trim() || undefined,
+    resourceType: resourceType || undefined,
+    from: range[0]?.toISOString(),
+    to: range[1]?.toISOString(),
+  };
+
   const query = useQuery({
-    queryKey: ['audit', page, action, actorId, resourceType, range[0]?.toISOString(), range[1]?.toISOString()],
-    queryFn: () =>
-      auditService.list({
-        page,
-        pageSize: 20,
-        action: action || undefined,
-        actorId: actorId.trim() || undefined,
-        resourceType: resourceType || undefined,
-        from: range[0]?.toISOString(),
-        to: range[1]?.toISOString(),
-      }),
+    queryKey: ['audit', page, filters],
+    queryFn: () => auditService.list({ page, pageSize: 20, ...filters }),
     placeholderData: keepPreviousData,
+  });
+
+  const exportCsv = useMutation({
+    mutationFn: () => auditService.exportCsv(filters),
+    onSuccess: ({ blob, filename }) => saveBlob(blob, filename),
+    onError: (error: Error) => notify.error(error.message),
   });
 
   const columns: Column<AuditRow>[] = [
@@ -76,7 +85,7 @@ export function AuditPage() {
     {
       key: 'actor',
       header: 'Người thực hiện',
-      render: (r) => r.actor?.email ?? <Text c="dimmed">hệ thống</Text>,
+      render: (r) => r.actor?.email ?? <Text c="dimmed">{actorLabel(r)}</Text>,
     },
     {
       key: 'action',
@@ -119,6 +128,8 @@ export function AuditPage() {
               ]} />
             <Button variant="default" loading={query.isFetching} disabled={query.isFetching}
               onClick={() => void query.refetch()}>Làm mới</Button>
+            <Button variant="default" leftSection={<IconDownload size={16} />} loading={exportCsv.isPending}
+              onClick={() => exportCsv.mutate()}>Xuất CSV</Button>
           </Group>
         }
       />
@@ -211,12 +222,14 @@ export function AuditPage() {
         {detail && (
           <Stack gap="sm">
             <Field label="Thời gian" value={formatTime(detail.occurredAt)} />
-            <Field label="Người thực hiện" value={detail.actor?.email ?? 'hệ thống'} />
+            <Field label="Người thực hiện" value={actorLabel(detail)} />
             <Field label="Hành động" value={detail.action} />
             <Field label="Đối tượng" value={detail.resourceType} />
-            <Field label="Resource ID" value={detail.resourceId} />
+            <Field label="Resource ID" value={detail.resourceId ?? '— (không gắn tài nguyên)'} />
             {detail.revisionId && <Field label="Revision ID" value={detail.revisionId} />}
             <Field label="Request ID" value={detail.requestId} />
+            {detail.ip && <Field label="IP" value={detail.ip} />}
+            {detail.userAgent && <Field label="Trình duyệt (User-Agent)" value={detail.userAgent} />}
             {detail.reason && <Field label="Lý do" value={detail.reason} />}
           </Stack>
         )}

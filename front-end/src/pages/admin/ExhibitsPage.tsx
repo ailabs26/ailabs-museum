@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
   Center,
   Code,
   Divider,
@@ -56,6 +57,7 @@ import { resolveBilingualText, toHotspotFormValues, toHotspotPayload, validateHo
 import type { HotspotFormValue } from '@/helpers/exhibitHotspots';
 import type { ExhibitFormTab } from '@/helpers/exhibitFormErrors';
 import { hasMediaRights } from '@/helpers/mediaLibrary';
+import { createDraftAutosaver, type AutosaveStatus, type DraftAutosaver } from '@/helpers/draftAutosave';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { useAuth } from '@/core/auth/use-auth';
 import type {
@@ -73,7 +75,12 @@ import { HotspotEditor } from '@/components/cms/HotspotEditor';
 import { TourOrderModal } from '@/components/cms/TourOrderModal';
 import { roomsService } from '@/services/rooms.service';
 import { moderationService } from '@/services/moderation.service';
-import { Column, DataTable } from '@/shared/components/data';
+import {
+  BulkActionBar, BulkDeleteFailures, Column, DataTable, RestoreRowButton, TrashToggle,
+} from '@/shared/components/data';
+import { formatDeletedAt } from '@/helpers/bulkDelete';
+import { useBulkDelete, useBulkRestore } from '@/shared/hooks/useBulkDelete';
+import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { confirmAction, notify } from '@/shared/components/feedback';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { MediaPreview } from '@/shared/components/media/MediaPreview';
@@ -114,7 +121,7 @@ type EditLoadState = 'ready' | 'loading' | 'error';
 
 function deletionBlock(exhibit: ExhibitRow, revisions: ExhibitDetail['revisions'] = []): string | null {
   if (exhibit.publishedRevisionId || exhibit.visibility === 'visible' || exhibit.revisionState === 'approved' || revisions.some(r => r.state === 'approved')) {
-    return 'Hiện vật có lịch sử xuất bản hoặc phê duyệt nên không thể xóa vĩnh viễn. Có thể ẩn hiện vật đang công khai khỏi bảo tàng.';
+    return 'Hiện vật có lịch sử xuất bản hoặc phê duyệt nên không thể xóa. Có thể ẩn hiện vật đang công khai khỏi bảo tàng.';
   }
   return exhibit.revisionState === 'in_review' || revisions.some(r => r.state === 'in_review')
     ? 'Hiện vật có phiên bản đang chờ kiểm duyệt, không thể xóa.' : null;
@@ -136,6 +143,49 @@ const PREVIEW_SLOTS: { slot: RevisionMediaSlot; label: string }[] = [
 function toBilingual(vi: string, en: string): BilingualText | null {
   const value = { vi: vi.trim() || undefined, en: en.trim() || undefined };
   return value.vi || value.en ? value : null;
+}
+
+/** Payload lưu bản nháp từ giá trị form — dùng chung cho nút Lưu và autosave (VT-079). */
+function buildExhibitPayload(values: ExhibitFormValues): CreateExhibitInput {
+  return {
+    roomId: values.roomId,
+    name: {
+      vi: values.nameVi.trim(),
+      en: values.nameEn.trim() || undefined,
+    },
+    description: {
+      vi: values.descriptionVi.trim(),
+      en: values.descriptionEn.trim() || undefined,
+    },
+    displayOrder: values.displayOrder,
+    position: {
+      x: values.positionX,
+      y: values.positionY,
+      z: values.positionZ,
+    },
+    rotation: {
+      x: values.rotationX,
+      y: values.rotationY,
+      z: values.rotationZ,
+    },
+    scale: {
+      x: values.scaleX,
+      y: values.scaleY,
+      z: values.scaleZ,
+    },
+    placeholderShape: values.placeholderShape,
+    placeholderColor: values.placeholderColor,
+    // Slot: id = gắn/thay, null = tháo (file không bị xóa).
+    modelId: values.modelId,
+    imageId: values.imageId,
+    audioViId: values.audioViId,
+    audioEnId: values.audioEnId,
+    subtitleViId: values.subtitleViId,
+    subtitleEnId: values.subtitleEnId,
+    altText: toBilingual(values.altTextVi, values.altTextEn),
+    transcript: toBilingual(values.transcriptVi, values.transcriptEn),
+    hotspots: toHotspotPayload(values.hotspots),
+  };
 }
 
 const STATUS_FILTER_OPTIONS = [
@@ -231,17 +281,22 @@ export function ExhibitsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roomFilter, setRoomFilter] = useState<string>('all');
   const [view, setView] = useState<'table' | 'card'>('table');
+  // Mục Đã xóa (thùng rác): xem và khôi phục hiện vật đã xóa mềm.
+  const [trash, setTrash] = useState(false);
 
   const [editing, setEditing] = useState<ExhibitRow | null>(null);
   const [opened, drawer] = useDisclosure(false);
   const [formTab, setFormTab] = useState<ExhibitFormTab>('basic');
   const [editLoadState, setEditLoadState] = useState<EditLoadState>('ready');
   const editSessionRef = useRef(0);
+  // VT-079: lưu nháp tự động của phiên sửa hiện tại (null khi tạo mới / không sửa được).
+  const autosaveRef = useRef<DraftAutosaver<CreateExhibitInput> | null>(null);
+  const [autosave, setAutosave] = useState<{ status: AutosaveStatus; savedAt: Date | null }>({ status: 'idle', savedAt: null });
   const actionRequestRef = useRef(0);
   const actionBusyRef = useRef(false);
   const [isActionBusy, setIsActionBusy] = useState(false);
 
-  useEffect(() => () => { editSessionRef.current++; actionRequestRef.current++; }, []);
+  useEffect(() => () => { editSessionRef.current++; actionRequestRef.current++; autosaveRef.current?.dispose(); }, []);
 
   const [tourOrderOpened, tourOrder] = useDisclosure(false);
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -277,6 +332,8 @@ export function ExhibitsPage() {
   const roomMap = new Map<string, string>(
     roomsQuery.data?.items.map((r) => [r.id, r.name]) ?? [],
   );
+  // Danh sách phòng chỉ gồm phòng chưa xóa: hiện vật trong thùng rác có thể thuộc phòng đã xóa.
+  const roomLabel = (roomId: string) => roomMap.get(roomId) ?? (trash ? 'Phòng đã xóa' : roomId.slice(0, 8));
 
   const queryStatus =
     statusFilter !== 'all' ? (statusFilter as ExhibitStatus) : undefined;
@@ -284,7 +341,7 @@ export function ExhibitsPage() {
 
   // Danh sách hiện vật
   const exhibitsQuery = useQuery({
-    queryKey: ['admin-exhibits', page, search, queryStatus, queryRoomId],
+    queryKey: ['admin-exhibits', page, search, queryStatus, queryRoomId, trash],
     queryFn: () =>
       exhibitsService.list({
         page,
@@ -292,6 +349,7 @@ export function ExhibitsPage() {
         q: search.trim() || undefined,
         status: queryStatus,
         roomId: queryRoomId,
+        deleted: trash || undefined,
       }),
     placeholderData: keepPreviousData,
   });
@@ -364,48 +422,11 @@ export function ExhibitsPage() {
       if (editLoadState !== 'ready' || (editing ? !canUpdate || editing.revisionState === 'in_review' : !canCreate)) {
         throw new Error('Hiện vật chưa sẵn sàng để lưu.');
       }
-      const payload: CreateExhibitInput = {
-        roomId: values.roomId,
-        name: {
-          vi: values.nameVi.trim(),
-          en: values.nameEn.trim() || undefined,
-        },
-        description: {
-          vi: values.descriptionVi.trim(),
-          en: values.descriptionEn.trim() || undefined,
-        },
-        displayOrder: values.displayOrder,
-        position: {
-          x: values.positionX,
-          y: values.positionY,
-          z: values.positionZ,
-        },
-        rotation: {
-          x: values.rotationX,
-          y: values.rotationY,
-          z: values.rotationZ,
-        },
-        scale: {
-          x: values.scaleX,
-          y: values.scaleY,
-          z: values.scaleZ,
-        },
-        placeholderShape: values.placeholderShape,
-        placeholderColor: values.placeholderColor,
-        // Slot: id = gắn/thay, null = tháo (file không bị xóa).
-        modelId: values.modelId,
-        imageId: values.imageId,
-        audioViId: values.audioViId,
-        audioEnId: values.audioEnId,
-        subtitleViId: values.subtitleViId,
-        subtitleEnId: values.subtitleEnId,
-        altText: toBilingual(values.altTextVi, values.altTextEn),
-        transcript: toBilingual(values.transcriptVi, values.transcriptEn),
-        hotspots: toHotspotPayload(values.hotspots),
-      };
-
+      const payload = buildExhibitPayload(values);
       if (id) {
-        return exhibitsService.update(id, payload as UpdateExhibitInput);
+        const expectedVersion = autosaveRef.current?.version ?? editing?.version;
+        if (expectedVersion === undefined) throw new Error('Chưa biết version hiện vật đang sửa.');
+        return exhibitsService.update(id, { ...payload, expectedVersion });
       }
       return exhibitsService.create(payload);
     },
@@ -414,10 +435,7 @@ export function ExhibitsPage() {
         queryClient.cancelQueries({ queryKey: ['admin-exhibits'] }),
         queryClient.cancelQueries({ queryKey: ['admin-exhibit-detail', saved.id], exact: true }),
       ]);
-      queryClient.setQueriesData<Page<ExhibitRow>>({ queryKey: ['admin-exhibits'] }, (cached) => {
-        if (!cached || !cached.items.some(item => item.id === saved.id)) return cached;
-        return { ...cached, items: cached.items.map(item => item.id === saved.id ? saved : item) };
-      });
+      seedSavedRow(saved);
       await queryClient.invalidateQueries({ queryKey: ['admin-exhibit-detail', saved.id], exact: true, refetchType: 'none' });
       void queryClient.invalidateQueries({ queryKey: ['admin-exhibits'] });
       notify.success(
@@ -427,10 +445,12 @@ export function ExhibitsPage() {
       );
       if (editSessionRef.current === session) {
         editSessionRef.current++;
+        stopAutosave();
         drawer.close();
       }
     },
     onError: (err, { session }) => {
+      if (editSessionRef.current === session) autosaveRef.current?.resume();
       if (err instanceof ApiException) {
         if (err.status === 409) {
           notify.error(err.message);
@@ -441,6 +461,54 @@ export function ExhibitsPage() {
       notify.error(err instanceof Error ? err.message : 'Lưu hiện vật thất bại');
     },
   });
+
+  /** Thay row vừa lưu vào mọi trang danh sách đã cache có chứa nó (không chèn row mới). */
+  function seedSavedRow(saved: ExhibitRow) {
+    queryClient.setQueriesData<Page<ExhibitRow>>({ queryKey: ['admin-exhibits'] }, (cached) => {
+      if (!cached || !cached.items.some(item => item.id === saved.id)) return cached;
+      return { ...cached, items: cached.items.map(item => item.id === saved.id ? saved : item) };
+    });
+  }
+
+  function stopAutosave() {
+    autosaveRef.current?.dispose();
+    autosaveRef.current = null;
+    setAutosave({ status: 'idle', savedAt: null });
+  }
+
+  /** Bật autosave cho detail vừa hydrate: version và snapshot gốc lấy từ chính detail đó. */
+  function startAutosave(detail: ExhibitDetail, values: ExhibitFormValues, session: number) {
+    stopAutosave();
+    if (detail.revisionState === 'in_review' || !canUpdate) return;
+    autosaveRef.current = createDraftAutosaver<CreateExhibitInput>({
+      initialVersion: detail.version,
+      initialSnapshot: buildExhibitPayload(values),
+      save: async (payload, expectedVersion) => {
+        const saved = await exhibitsService.update(detail.id, { ...payload, expectedVersion } as UpdateExhibitInput);
+        if (editSessionRef.current === session) {
+          setEditing(prev => (prev?.id === saved.id ? { ...prev, ...saved } : prev));
+          seedSavedRow(saved);
+          void queryClient.invalidateQueries({ queryKey: ['admin-exhibit-detail', saved.id], exact: true, refetchType: 'none' });
+        }
+        return saved;
+      },
+      isConflict: error => error instanceof ApiException && error.status === 409,
+      // Chỉ thử lại lỗi tạm thời; 403/404/422… lặp lại cũng không thành công.
+      isRetryable: error => !(error instanceof ApiException) || error.status === 0 || error.status === 429 || error.status >= 500,
+      onStatus: status => {
+        if (editSessionRef.current !== session) return;
+        setAutosave(prev => ({ status, savedAt: status === 'saved' ? new Date() : prev.savedAt }));
+      },
+    });
+  }
+
+  // Mỗi thay đổi hợp lệ của form đang sửa → xếp lịch lưu nháp (debounce nằm trong autosaver).
+  useEffect(() => {
+    if (!opened || editLoadState !== 'ready' || !autosaveRef.current) return;
+    if (form.isValid()) autosaveRef.current.schedule(buildExhibitPayload(form.values));
+    // form object ổn định; chỉ chạy lại khi giá trị form / phiên thay đổi.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.values, opened, editLoadState]);
 
   /** Gắn lỗi theo field của API vào form, chuyển tới tab có lỗi; lỗi không gắn được thì báo chung. */
   function showFieldErrors(err: ApiException) {
@@ -503,6 +571,28 @@ export function ExhibitsPage() {
     ['admin-exhibits'], ['admin-exhibit-detail'], ['rooms'], ['rooms-all-select'],
     ['moderation'], ['museum-tour'], ['public-room'],
   ].map(queryKey => queryClient.invalidateQueries({ queryKey })));
+
+  const selection = useRowSelection(`${page}|${search}|${statusFilter}|${roomFilter}|${trash}`);
+  const nameOf = (id: string) => {
+    const row = exhibitsQuery.data?.items.find((item) => item.id === id);
+    return row ? getDisplayText(row.content.name, 'vi') || 'Chưa đặt tên' : undefined;
+  };
+  const bulk = useBulkDelete({
+    removeMany: exhibitsService.removeMany, noun: 'hiện vật', nameOf,
+    onSuccess: selection.clear, onSettled: refreshLifecycleQueries,
+  });
+  const restore = useBulkRestore({
+    restoreMany: exhibitsService.restoreMany, noun: 'hiện vật', nameOf,
+    onSuccess: selection.clear, onSettled: refreshLifecycleQueries,
+  });
+  const bulkAction = trash ? restore : bulk;
+  /** Thùng rác: mọi dòng chọn được để khôi phục (back-end chặn nếu phòng đã xóa). */
+  const selectBlock = (r: ExhibitRow) => (trash ? null : deletionBlock(r));
+  const toggleSelected = (id: string) => selection.setSelectedIds(
+    selection.selectedIds.includes(id)
+      ? selection.selectedIds.filter((item) => item !== id)
+      : [...selection.selectedIds, id],
+  );
 
   const hideMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -577,6 +667,7 @@ export function ExhibitsPage() {
     actionRequestRef.current++;
     if (!deleteMutation.isPending && !hideMutation.isPending && !unhideMutation.isPending) { actionBusyRef.current = false; setIsActionBusy(false); }
     editSessionRef.current++;
+    stopAutosave();
     setEditing(null);
     setEditLoadState('ready');
     setFormTab('basic');
@@ -590,6 +681,7 @@ export function ExhibitsPage() {
   const closeForm = () => {
     if (saveMutation.isPending) return;
     editSessionRef.current++;
+    stopAutosave();
     drawer.close();
   };
 
@@ -598,6 +690,7 @@ export function ExhibitsPage() {
     actionRequestRef.current++;
     if (!deleteMutation.isPending && !hideMutation.isPending && !unhideMutation.isPending) { actionBusyRef.current = false; setIsActionBusy(false); }
     const session = ++editSessionRef.current;
+    stopAutosave();
     setEditing(exhibit);
     setEditLoadState('loading');
     form.clearErrors();
@@ -615,9 +708,10 @@ export function ExhibitsPage() {
         queryKey, queryFn: () => exhibitsService.get(id), staleTime: 0, retry: false,
       });
       if (editSessionRef.current !== session) return false;
-      hydrateEditForm(detail);
+      const values = hydrateEditForm(detail);
       setEditing(detail);
       setEditLoadState('ready');
+      startAutosave(detail, values, session);
       return true;
     } catch {
       if (editSessionRef.current === session) setEditLoadState('error');
@@ -625,13 +719,13 @@ export function ExhibitsPage() {
     }
   };
 
-  function hydrateEditForm(detail: ExhibitDetail) {
+  function hydrateEditForm(detail: ExhibitDetail): ExhibitFormValues {
     const content = detail.content;
     const pos = content.position || { x: 0, y: 0, z: 0 };
     const rot = content.rotation || { x: 0, y: 0, z: 0 };
     const scale = content.scale || { x: 1, y: 1, z: 1 };
 
-    form.setValues({
+    const values: ExhibitFormValues = {
       roomId: detail.roomId,
       nameVi: getLocalizedText(content.name, 'vi'),
       nameEn: getLocalizedText(content.name, 'en'),
@@ -660,8 +754,10 @@ export function ExhibitsPage() {
       transcriptVi: getLocalizedText(content.transcript, 'vi'),
       transcriptEn: getLocalizedText(content.transcript, 'en'),
       hotspots: toHotspotFormValues(detail.hotspots),
-    });
+    };
+    form.setValues(values);
     form.clearErrors();
+    return values;
   }
 
   const openDetail = (exhibit: ExhibitRow) => {
@@ -689,9 +785,9 @@ export function ExhibitsPage() {
       const reason = deletionBlock(detail, detail.revisions);
       if (reason) { notify.error(reason); void refreshLifecycleQueries(); return; }
       confirmAction({
-        message: `Xóa vĩnh viễn hiện vật "${getDisplayText(detail.content.name, 'vi')}" và toàn bộ revisions/hotspots? Media vẫn được giữ trong thư viện.`,
+        message: `Xóa hiện vật "${getDisplayText(detail.content.name, 'vi')}"? Hiện vật được xóa mềm (ẩn khỏi hệ thống), lịch sử phiên bản và media vẫn được giữ.`,
         danger: true,
-        confirmLabel: 'Xóa vĩnh viễn bản nháp',
+        confirmLabel: 'Xóa bản nháp',
         onConfirm: () => {
           if (request !== actionRequestRef.current || actionBusyRef.current) return;
           actionBusyRef.current = true; setIsActionBusy(true);
@@ -742,7 +838,7 @@ export function ExhibitsPage() {
       header: 'Phòng trưng bày',
       render: (r) => (
         <Badge variant="light" color="blue" size="sm">
-          {roomMap.get(r.roomId) ?? r.roomId.slice(0, 8)}
+          {roomLabel(r.roomId)}
         </Badge>
       ),
     },
@@ -806,11 +902,24 @@ export function ExhibitsPage() {
         </Text>
       ),
     },
+    ...(trash ? [{
+      key: 'deletedAt',
+      header: 'Ngày xóa',
+      render: (r: ExhibitRow) => <Text size="xs" c="dimmed">{formatDeletedAt(r.deletedAt)}</Text>,
+    }] : []),
     {
       key: 'actions',
       header: '',
       align: 'right',
       render: (r) => {
+        if (trash) {
+          return (
+            <Group gap={6} justify="flex-end" wrap="nowrap">
+              <RestoreRowButton label={`Khôi phục hiện vật ${getDisplayText(r.content.name) || 'chưa đặt tên'}`}
+                disabled={restore.isPending} onClick={() => restore.confirmRestore([r.id])} />
+            </Group>
+          );
+        }
         const isPublished = r.status === 'published';
         const isInReview = r.revisionState === 'in_review';
         const deleteReason = deletionBlock(r);
@@ -858,7 +967,7 @@ export function ExhibitsPage() {
 
             {canDelete && (
               <Tooltip
-                label={deleteReason ?? 'Xóa vĩnh viễn bản nháp hiện vật'}
+                label={deleteReason ?? 'Xóa bản nháp hiện vật'}
               >
                 <ActionIcon
                   variant="subtle"
@@ -906,7 +1015,7 @@ export function ExhibitsPage() {
                 Thứ tự tour
               </Button>
             )}
-            {canCreate && (
+            {canCreate && !trash && (
               <Button leftSection={<IconPlus size={16} />} onClick={openCreate}>
                 Thêm hiện vật
               </Button>
@@ -958,7 +1067,8 @@ export function ExhibitsPage() {
         </Grid>
       </Card>
 
-      <Group justify="flex-end" mb="sm">
+      <Group justify={canDelete ? 'space-between' : 'flex-end'} mb="sm">
+        {canDelete && <TrashToggle trash={trash} onChange={(value) => { setTrash(value); setPage(1); }} />}
         <SegmentedControl size="xs" value={view} onChange={(v) => setView(v as 'table' | 'card')}
           data={[
             { value: 'table', label: <Center style={{ gap: 6 }}><IconTable size={14} /> Bảng</Center> },
@@ -966,30 +1076,51 @@ export function ExhibitsPage() {
           ]} />
       </Group>
 
+      {canDelete && (
+        <>
+          <BulkActionBar count={selection.selectedIds.length} onClear={selection.clear}
+            action={trash ? 'restore' : 'delete'} loading={bulkAction.isPending}
+            onDelete={() => (trash ? restore.confirmRestore : bulk.confirmDelete)(selection.selectedIds)} />
+          <BulkDeleteFailures failures={bulkAction.failures} onClose={bulkAction.dismissFailures}
+            action={trash ? 'restore' : 'delete'} />
+        </>
+      )}
+
       {view === 'table' ? (
         <Card withBorder p={0} radius="sm">
           <DataTable
             columns={columns}
             data={exhibitsQuery.data?.items ?? []}
             rowKey={(r) => r.id}
+            selection={canDelete ? {
+              selectedIds: selection.selectedIds,
+              onChange: selection.setSelectedIds,
+              disabledReason: selectBlock,
+              rowLabel: (r) => getDisplayText(r.content.name) || 'Chưa đặt tên',
+            } : undefined}
             total={exhibitsQuery.data?.total ?? 0}
             page={page}
             pageSize={15}
             onPageChange={setPage}
             loading={exhibitsQuery.isLoading}
-            emptyText="Không tìm thấy hiện vật nào phù hợp với bộ lọc."
+            emptyText={trash ? 'Không có hiện vật đã xóa phù hợp với bộ lọc.' : 'Không tìm thấy hiện vật nào phù hợp với bộ lọc.'}
           />
         </Card>
       ) : (
         <>
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
             {(exhibitsQuery.data?.items ?? []).map((r) => {
-              const deleteReason = deletionBlock(r);
+              const deleteReason = selectBlock(r);
               const isInReview = r.revisionState === 'in_review';
               return (
                 <Card key={r.id} withBorder radius="md" p="md">
                   <Group justify="space-between" wrap="nowrap" mb={6}>
                     <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+                      {canDelete && (
+                        <Checkbox aria-label={`Chọn ${getDisplayText(r.content.name) || 'hiện vật'}`}
+                          checked={selection.selectedIds.includes(r.id)} disabled={!!deleteReason}
+                          title={deleteReason ?? undefined} onChange={() => toggleSelected(r.id)} />
+                      )}
                       <Box style={{ width: 16, height: 16, flexShrink: 0,
                         borderRadius: r.content.placeholderShape === 'sphere' ? '50%' : 3,
                         backgroundColor: r.content.placeholderColor || '#8b7355' }} />
@@ -1000,13 +1131,20 @@ export function ExhibitsPage() {
                     </Badge>
                   </Group>
                   <Group gap={6} mb="xs">
-                    <Badge variant="light" color="blue" size="xs">{roomMap.get(r.roomId) ?? r.roomId.slice(0, 8)}</Badge>
+                    <Badge variant="light" color="blue" size="xs">{roomLabel(r.roomId)}</Badge>
                     <Badge color={r.status === 'published' ? 'teal' : 'gray'} variant={r.status === 'published' ? 'filled' : 'light'} size="xs">
                       {r.status === 'published' ? 'Đã xuất bản' : r.visibility === 'hidden' && r.publishedRevisionId ? 'Đã XB · Ẩn' : 'Bản nháp'}
                     </Badge>
                     <Badge variant="subtle" color="indigo" size="xs">{r.hotspotsCount} hotspot</Badge>
                     <Badge size="xs" variant="outline" color="dark">#{r.displayOrder}</Badge>
                   </Group>
+                  {trash ? (
+                  <Group gap={4} justify="space-between">
+                    <Text size="xs" c="dimmed">Xóa lúc {formatDeletedAt(r.deletedAt)}</Text>
+                    <RestoreRowButton label={`Khôi phục hiện vật ${getDisplayText(r.content.name) || 'chưa đặt tên'}`}
+                      disabled={restore.isPending} onClick={() => restore.confirmRestore([r.id])} />
+                  </Group>
+                  ) : (
                   <Group gap={4} justify="flex-end">
                     <Tooltip label="Xem chi tiết"><ActionIcon variant="subtle" color="blue" onClick={() => openDetail(r)}><IconEye size={18} /></ActionIcon></Tooltip>
                     {canUpdate && (
@@ -1029,12 +1167,15 @@ export function ExhibitsPage() {
                       </Tooltip>
                     )}
                   </Group>
+                  )}
                 </Card>
               );
             })}
           </SimpleGrid>
           {!exhibitsQuery.isLoading && (exhibitsQuery.data?.items.length ?? 0) === 0 && (
-            <Text c="dimmed" ta="center" py="xl">Không tìm thấy hiện vật nào phù hợp với bộ lọc.</Text>
+            <Text c="dimmed" ta="center" py="xl">
+              {trash ? 'Không có hiện vật đã xóa phù hợp với bộ lọc.' : 'Không tìm thấy hiện vật nào phù hợp với bộ lọc.'}
+            </Text>
           )}
           {exhibitsQuery.data && exhibitsQuery.data.total > 15 && (
             <Group justify="center" mt="md">
@@ -1069,12 +1210,31 @@ export function ExhibitsPage() {
           : editing?.revisionState === 'in_review' || (editing ? !canUpdate : !canCreate)
             ? <Alert role="alert">{editing?.revisionState === 'in_review' ? 'Hiện vật đang chờ duyệt, không thể chỉnh sửa.' : 'Bạn không có quyền chỉnh sửa hiện vật này.'}</Alert>
             : <>
+        {editing && autosave.status === 'conflict' && (
+          <Alert color="orange" role="alert" title="Có bản mới hơn trên máy chủ" mb="md">
+            <Text size="sm">
+              Tự động lưu đã dừng để không ghi đè dữ liệu mới hơn. Nội dung bạn đang nhập vẫn còn trong form —
+              hãy sao chép phần cần giữ rồi tải bản mới nhất.
+            </Text>
+            <Button mt="sm" size="xs" variant="light" onClick={() => void openEdit(editing)}>Tải bản mới nhất</Button>
+          </Alert>
+        )}
+        {editing && (autosave.status === 'saving' || autosave.status === 'saved' || autosave.status === 'error') && (
+          <Text size="xs" c={autosave.status === 'error' ? 'red' : 'dimmed'} aria-live="polite" mb="xs">
+            {autosave.status === 'saving' ? 'Đang tự động lưu…'
+              : autosave.status === 'error' ? 'Tự động lưu thất bại — sẽ thử lại.'
+                : `Đã lưu nháp lúc ${autosave.savedAt?.toLocaleTimeString('vi-VN') ?? ''}`}
+          </Text>
+        )}
         {/* noValidate: `required` gốc của trình duyệt chặn submit âm thầm khi ô lỗi nằm ở tab đang ẩn. */}
         <form
           noValidate
           onSubmit={form.onSubmit(
             (values) => {
-              if (!saveMutation.isPending) saveMutation.mutate({ values, id: editing?.id ?? null, session: editSessionRef.current });
+              if (saveMutation.isPending) return;
+              // Lưu tay đã gửi đủ giá trị form: hủy autosave đang chờ để hai request cùng version không đua.
+              autosaveRef.current?.pause();
+              saveMutation.mutate({ values, id: editing?.id ?? null, session: editSessionRef.current });
             },
             // Lỗi validate nằm ở tab khác thì chuyển tới đó — không để nút "Lưu" im lặng.
             (errors) => {
@@ -1372,7 +1532,7 @@ export function ExhibitsPage() {
               <Button variant="default" disabled={saveMutation.isPending} onClick={closeForm}>
                 Hủy bỏ
               </Button>
-              <Button type="submit" loading={saveMutation.isPending}>
+              <Button type="submit" loading={saveMutation.isPending} disabled={autosave.status === 'saving'}>
                 {editing ? 'Lưu thay đổi' : 'Tạo bản nháp'}
               </Button>
             </Flex>

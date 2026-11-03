@@ -1,7 +1,30 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CINEMATIC_DURATION_MS, cinematicPosition, lerpVec3, smoothstep, type Vec3,
+  CINEMATIC_DURATION_MS, CINEMATIC_START_POSITION, getCinematicEntrance, cinematicPosition, lerpVec3, smoothstep, type Vec3,
 } from './cinematicIntro';
+import { INITIAL_CAMERA_POSITION } from './museumCamera';
+import { MUSEUM_ROOM_SIZE, type MuseumDisplay } from '@/interfaces/museumScene';
+import { getDisplayColliders, isNavigationPositionSafe } from './museumNavigation';
+
+describe('safe gallery entrance', () => {
+  it('starts and ends inside the real room on a short safe path', () => {
+    const route = getCinematicEntrance([])!;
+    expect(route.from).toEqual(CINEMATIC_START_POSITION);
+    expect(route.to).toEqual(INITIAL_CAMERA_POSITION);
+    expect(CINEMATIC_DURATION_MS).toBeLessThanOrEqual(900);
+    for (let elapsed = 0; elapsed <= CINEMATIC_DURATION_MS; elapsed += 10) {
+      const { position } = cinematicPosition(route.from, route.to, elapsed);
+      expect(position[1]).toBeGreaterThan(.4);
+      expect(position[1]).toBeLessThan(MUSEUM_ROOM_SIZE.height - .4);
+      expect(isNavigationPositionSafe(position[0], position[2], MUSEUM_ROOM_SIZE, [])).toBe(true);
+    }
+  });
+  it('skips animation instead of moving through a CMS plinth', () => {
+    const blocker: MuseumDisplay = { id: 'blocker', title: 'CMS object', description: '', color: '#888888', shape: 'torus', position: [0, 0, 6.2] };
+    expect(getCinematicEntrance([blocker])).toBeNull();
+    expect(getDisplayColliders([blocker])).toHaveLength(1);
+  });
+});
 
 describe('smoothstep', () => {
   it('chặn biên và đối xứng ở giữa', () => {

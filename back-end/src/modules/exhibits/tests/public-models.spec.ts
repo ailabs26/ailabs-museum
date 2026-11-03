@@ -20,6 +20,7 @@ import { ExhibitsService } from '../services/exhibits.service';
 import { RevisionPublishGate } from '../services/revision-publish.gate';
 import { MediaReferenceValidator } from '../../media/services/media-reference.validator';
 import { MediaUrlService } from '../../media/services/media-url.service';
+import { notificationsStub } from '../../notifications/tests/notifications.stub';
 
 const media = Object.assign(new Media(), {
   id: 'a1111111-1111-4111-8111-111111111111', kind: MediaKind.MODEL,
@@ -125,7 +126,7 @@ it('rejects archived rooms and unapproved revisions using the actual publication
   const publication = new ExhibitsService(
     { findByRoom: async () => [{ id: 'exhibit', roomId: 'room', displayOrder: 0, publishedRevisionId: 'revision', publishedRevision: revision }] } as unknown as ExhibitsRepository,
     { findBySlug: async () => room } as unknown as RoomsRepository, {} as TransactionManager,
-    {} as MediaReferenceValidator, {} as RevisionPublishGate, { publicUrl: () => null } as unknown as MediaUrlService);
+    {} as MediaReferenceValidator, {} as RevisionPublishGate, { publicUrl: () => null } as unknown as MediaUrlService, notificationsStub());
   const content = await publication.roomWithExhibits('room');
   assert.ok(content.exhibits[0].model);
   assert.equal(content.exhibits[0].positionX, undefined, 'absent placement must reach the room layout fallback');

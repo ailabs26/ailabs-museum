@@ -7,4 +7,6 @@ export interface RecordAccessDeniedInput {
   requiredPermissions: readonly PermissionKey[];
   missingPermissions: readonly PermissionKey[];
   requestId: string;
+  ip?: string | null;
+  userAgent?: string | null;
 }

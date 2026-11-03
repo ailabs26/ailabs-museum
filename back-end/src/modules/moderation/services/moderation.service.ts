@@ -26,6 +26,7 @@ import {
 import { ModerationRepository } from '../repositories/moderation.repository';
 import { REVISION_MEDIA_SLOTS } from '../../exhibits/constants/revision-media-slots';
 import { RevisionPublishGate } from '../../exhibits/services/revision-publish.gate';
+import { NotificationsService } from '../../notifications/services/notifications.service';
 
 /** Các field nội dung được so sánh khi diff cũ/mới. */
 const DIFF_FIELDS: { field: string; label: string }[] = [
@@ -47,6 +48,7 @@ export class ModerationService {
     private readonly repo: ModerationRepository,
     private readonly tx: TransactionManager,
     private readonly publishGate: RevisionPublishGate,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /** Hàng chờ kiểm duyệt (revision in_review). */
@@ -137,6 +139,9 @@ export class ModerationService {
       );
     });
 
+    await this.notifications.revisionReviewed({
+      approved: true, exhibitName: revision.content.name, authorId: revision.createdById, reviewerId: actor.id,
+    });
     return this.getRevision(id);
   }
 
@@ -169,6 +174,10 @@ export class ModerationService {
     );
     if (!res.affected) throw new ConflictException(VERSION_CONFLICT);
 
+    await this.notifications.revisionReviewed({
+      approved: false, exhibitName: revision.content.name, authorId: revision.createdById, reviewerId: actor.id,
+      reason: dto.reason,
+    });
     return this.getRevision(id);
   }
 

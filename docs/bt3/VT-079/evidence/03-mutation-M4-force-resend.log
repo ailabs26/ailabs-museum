@@ -1,0 +1,30 @@
+# M4 — commit ae22f72: gặp 409 thì tăng version và gửi lại (ghi đè)
+
+ RUN  v2.1.8 /tmp/claude-1000/-home-thang-Documents-hus-k68-khmt-SE-2026-class/a46046e6-aba5-4db0-919e-9e9ba3d85412/scratchpad/wt-mutation/front-end
+
+ ❯ src/helpers/draftAutosave.test.ts (7 tests | 1 failed) 28ms
+   × createDraftAutosaver > TC12 (Q4): 409 → báo conflict, dừng hẳn, không bao giờ gửi lại để ghi đè 8ms
+     → expected 'saving' to be 'conflict' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/helpers/draftAutosave.test.ts > createDraftAutosaver > TC12 (Q4): 409 → báo conflict, dừng hẳn, không bao giờ gửi lại để ghi đè
+AssertionError: expected 'saving' to be 'conflict' // Object.is equality
+
+Expected: "conflict"
+Received: "saving"
+
+ ❯ src/helpers/draftAutosave.test.ts:75:26
+     73|     calls[0].result.reject(new ConflictError('stale'));
+     74|     await vi.advanceTimersByTimeAsync(0);
+     75|     expect(saver.status).toBe('conflict');
+       |                          ^
+     76|     expect(statuses).toContain('conflict');
+     77|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  12:43:38
+   Duration  454ms (transform 57ms, setup 0ms, collect 47ms, tests 28ms, environment 0ms, prepare 76ms)

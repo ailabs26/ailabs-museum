@@ -13,11 +13,23 @@ export interface AuditRow {
   actor: AuditActor | null;
   action: string;
   resourceType: string;
-  resourceId: string;
+  /** null khi sự kiện không gắn tài nguyên (vd đăng nhập bằng email không tồn tại). */
+  resourceId: string | null;
   revisionId: string | null;
   reason: string | null;
   requestId: string;
+  ip: string | null;
+  userAgent: string | null;
   occurredAt: string;
+}
+
+/**
+ * Nhãn người thực hiện: sự kiện xác thực/truy cập không có actor là người CHƯA đăng nhập
+ * (vd đăng nhập sai), không phải do hệ thống tự làm.
+ */
+export function actorLabel(row: Pick<AuditRow, 'actor' | 'action'>): string {
+  if (row.actor) return row.actor.email;
+  return row.action.startsWith('auth.') || row.action === 'access.denied' ? 'Chưa đăng nhập' : 'hệ thống';
 }
 
 export interface ListAuditParams {
@@ -30,9 +42,22 @@ export interface ListAuditParams {
   to?: string;
 }
 
+export type ExportAuditParams = Omit<ListAuditParams, 'page' | 'pageSize'>;
+
+/** Tên file từ `Content-Disposition: attachment; filename="..."`; thiếu thì dùng tên mặc định. */
+export function filenameFromDisposition(header: unknown, fallback: string): string {
+  const match = typeof header === 'string' ? /filename="([^"]+)"/.exec(header) : null;
+  return match?.[1] ?? fallback;
+}
+
 export const auditService = {
   list(params: ListAuditParams): Promise<Page<AuditRow>> {
     return http.getPage<AuditRow>('/audit', { params });
+  },
+  /** Tải CSV theo bộ lọc (tối đa 10.000 dòng; quá thì back-end trả 400 kèm thông điệp). */
+  async exportCsv(params: ExportAuditParams): Promise<{ blob: Blob; filename: string }> {
+    const res = await http.raw.get<Blob>('/audit/export', { params, responseType: 'blob' });
+    return { blob: res.data, filename: filenameFromDisposition(res.headers['content-disposition'], 'audit-logs.csv') };
   },
   get(id: string): Promise<AuditRow> {
     return http.get<AuditRow>(`/audit/${id}`);

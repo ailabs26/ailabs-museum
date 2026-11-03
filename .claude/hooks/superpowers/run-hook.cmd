@@ -1,46 +1,52 @@
 : << 'CMDBLOCK'
 @echo off
-REM Cross-platform polyglot wrapper for hook scripts.
-REM On Windows: cmd.exe runs the batch portion, which finds and calls bash.
-REM On Unix: the shell interprets this as a script (: is a no-op in bash).
-REM
-REM Hook scripts use extensionless filenames (e.g. "session-start" not
-REM "session-start.sh") so Claude Code's Windows auto-detection -- which
-REM prepends "bash" to any command containing .sh -- doesn't interfere.
-REM
+setlocal DisableDelayedExpansion
+REM Cross-platform polyglot wrapper for extensionless hook scripts.
 REM Usage: run-hook.cmd <script-name> [args...]
 
-if "%~1"=="" (
-    echo run-hook.cmd: missing script name >&2
-    exit /b 1
-)
+if "%~1"=="" goto missing_name
+set "HOOK_LAUNCHER=%~dp0run-hook.ps1"
+if not exist "%HOOK_LAUNCHER%" goto missing_launcher
 
-set "HOOK_DIR=%~dp0"
+where pwsh.exe >nul 2>nul
+if not errorlevel 1 goto run_pwsh
+where powershell.exe >nul 2>nul
+if not errorlevel 1 goto run_powershell
 
-REM Try Git for Windows bash in standard locations
-if exist "C:\Program Files\Git\bin\bash.exe" (
-    "C:\Program Files\Git\bin\bash.exe" "%HOOK_DIR%%~1" %2 %3 %4 %5 %6 %7 %8 %9
-    exit /b %ERRORLEVEL%
-)
-if exist "C:\Program Files (x86)\Git\bin\bash.exe" (
-    "C:\Program Files (x86)\Git\bin\bash.exe" "%HOOK_DIR%%~1" %2 %3 %4 %5 %6 %7 %8 %9
-    exit /b %ERRORLEVEL%
-)
+echo run-hook.cmd: PowerShell host not found >&2
+exit /b 1
 
-REM Try bash on PATH (e.g. user-installed Git Bash, MSYS2, Cygwin)
-where bash >nul 2>nul
-if %ERRORLEVEL% equ 0 (
-    bash "%HOOK_DIR%%~1" %2 %3 %4 %5 %6 %7 %8 %9
-    exit /b %ERRORLEVEL%
-)
+:run_pwsh
+pwsh.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%HOOK_LAUNCHER%" %*
+exit /b %errorlevel%
 
-REM No bash found - exit silently rather than error
-REM (plugin still works, just without SessionStart context injection)
-exit /b 0
+:run_powershell
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%HOOK_LAUNCHER%" %*
+exit /b %errorlevel%
+
+:missing_name
+echo run-hook.cmd: missing script name >&2
+exit /b 1
+
+:missing_launcher
+echo run-hook.cmd: missing argv launcher >&2
+exit /b 1
 CMDBLOCK
 
-# Unix: run the named script directly
+# Unix: accept only an existing, extensionless basename in this directory.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SCRIPT_NAME="$1"
+SCRIPT_NAME="${1-}"
+case "$SCRIPT_NAME" in
+  ""|"."|".."|*/*|*\\*|*:*|*[!A-Za-z0-9_-]*)
+    echo "run-hook.cmd: invalid script name" >&2
+    exit 1
+    ;;
+esac
+SCRIPT_PATH="${SCRIPT_DIR}/${SCRIPT_NAME}"
+if [ ! -f "$SCRIPT_PATH" ] || [ -L "$SCRIPT_PATH" ]; then
+  echo "run-hook.cmd: hook not found or unsafe" >&2
+  exit 1
+fi
 shift
-exec bash "${SCRIPT_DIR}/${SCRIPT_NAME}" "$@"
+exec bash "$SCRIPT_PATH" "$@"
+

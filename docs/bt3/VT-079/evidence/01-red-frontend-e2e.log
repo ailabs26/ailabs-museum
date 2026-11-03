@@ -1,0 +1,76 @@
+
+Running 2 tests using 1 worker
+
+[1/2] tests/cms-exhibit-autosave.spec.ts:17:1 › autosave gửi expectedVersion, giữ drawer mở và dùng version mới cho lần sau
+  1) tests/cms-exhibit-autosave.spec.ts:17:1 › autosave gửi expectedVersion, giữ drawer mở và dùng version mới cho lần sau
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog').getByText(/Đã lưu nháp lúc/)
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog').getByText(/Đã lưu nháp lúc/) with timeout 5000ms
+      - waiting for getByRole('dialog').getByText(/Đã lưu nháp lúc/)
+
+
+      23 |   await nameField(page).fill('Bản tự lưu 1');
+      24 |   await page.clock.runFor(1600);
+    > 25 |   await expect(dialog(page).getByText(/Đã lưu nháp lúc/)).toBeVisible();
+         |                                                           ^
+      26 |   await nameField(page).fill('Bản tự lưu 2');
+      27 |   await page.clock.runFor(1600);
+      28 |   await expect.poll(() => state.patches.length).toBe(2);
+        at ailabs-museum/front-end/tests/cms-exhibit-autosave.spec.ts:25:59
+
+    Error Context: test-results/cms-exhibit-autosave-autos-8549c-ùng-version-mới-cho-lần-sau/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/cms-exhibit-autosave-autos-8549c-ùng-version-mới-cho-lần-sau/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/cms-exhibit-autosave-autos-8549c-ùng-version-mới-cho-lần-sau/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[2/2] tests/cms-exhibit-autosave.spec.ts:36:1 › bản lưu từ tab khác mới hơn: autosave dừng, giữ nội dung đang gõ, không ghi đè
+  2) tests/cms-exhibit-autosave.spec.ts:36:1 › bản lưu từ tab khác mới hơn: autosave dừng, giữ nội dung đang gõ, không ghi đè
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('dialog').getByRole('alert')
+    Expected substring: "bản mới hơn"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('dialog').getByRole('alert') with timeout 5000ms
+      - waiting for getByRole('dialog').getByRole('alert')
+
+
+      46 |   await nameField(page).fill('Bản đang gõ');
+      47 |   await page.clock.runFor(1600);
+    > 48 |   await expect(dialog(page).getByRole('alert')).toContainText('bản mới hơn');
+         |                                                 ^
+      49 |   await expect(nameField(page)).toHaveValue('Bản đang gõ');
+      50 |
+      51 |   await nameField(page).fill('Bản đang gõ tiếp');
+        at ailabs-museum/front-end/tests/cms-exhibit-autosave.spec.ts:48:49
+
+    Error Context: test-results/cms-exhibit-autosave-bản-l-d1030-i-dung-đang-gõ-không-ghi-đè/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/cms-exhibit-autosave-bản-l-d1030-i-dung-đang-gõ-không-ghi-đè/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/cms-exhibit-autosave-bản-l-d1030-i-dung-đang-gõ-không-ghi-đè/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2 failed
+    tests/cms-exhibit-autosave.spec.ts:17:1 › autosave gửi expectedVersion, giữ drawer mở và dùng version mới cho lần sau
+    tests/cms-exhibit-autosave.spec.ts:36:1 › bản lưu từ tab khác mới hơn: autosave dừng, giữ nội dung đang gõ, không ghi đè

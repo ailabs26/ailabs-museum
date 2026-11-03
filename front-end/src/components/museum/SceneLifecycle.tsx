@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { watchWebglRecovery, type WebglStatus } from '@/helpers/webglRecovery';
+import { guardWebglRender } from '@/helpers/webglRenderGuard';
 
 export function SceneLifecycle({ onStatus }: { onStatus: (status: WebglStatus) => void }) {
   const { gl, invalidate, setFrameloop } = useThree();
@@ -8,6 +9,7 @@ export function SceneLifecycle({ onStatus }: { onStatus: (status: WebglStatus) =
   const recoveryRef = useRef<ReturnType<typeof watchWebglRecovery>>();
   const frameCheck = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
+    const unguard = guardWebglRender(gl);
     const recovery = watchWebglRecovery(gl.domElement, status => {
       statusRef.current = status;
       setFrameloop(status === 'recovering' || status === 'failed' ? 'never' : 'demand');
@@ -15,7 +17,7 @@ export function SceneLifecycle({ onStatus }: { onStatus: (status: WebglStatus) =
       if (status === 'verifying') invalidate();
     });
     recoveryRef.current = recovery;
-    return () => { recovery.dispose(); clearTimeout(frameCheck.current); };
+    return () => { recovery.dispose(); unguard(); clearTimeout(frameCheck.current); };
   }, [gl, invalidate, setFrameloop, onStatus]);
   useFrame(() => {
     if (statusRef.current !== 'verifying' || frameCheck.current !== undefined) return;

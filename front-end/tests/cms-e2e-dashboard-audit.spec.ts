@@ -6,18 +6,18 @@ test.describe('E2E: Thống kê Dashboard & Nhật ký hệ thống (Stats & Aud
     await installCmsDashboardAuditApi(page);
     await page.goto('/admin');
 
-    await expect(page.getByRole('heading', { name: 'Tổng quan hệ thống' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
-    // Kiểm tra các thẻ thống kê (StatCards)
-    await expect(page.getByText('Phòng trưng bày')).toBeVisible();
-    await expect(page.getByText('12 phòng')).toBeVisible();
-    await expect(page.getByText('45 hiện vật')).toBeVisible();
-    await expect(page.getByText('4 chờ duyệt')).toBeVisible();
-    await expect(page.getByText('3 cần xử lý')).toBeVisible();
+    // Thẻ số liệu (StatCard) lấy từ /admin/stats/overview của fixture
+    await expect(page.getByRole('main').getByText('Phòng trưng bày', { exact: true })).toBeVisible();
+    await expect(page.getByText('10 hoạt động · 2 lưu trữ')).toBeVisible();
+    await expect(page.getByText('40 hiển thị · 5 đang ẩn')).toBeVisible();
+    await expect(page.getByText('8 bản nháp đang biên tập')).toBeVisible();
+    await expect(page.getByText('2 đang xử lý')).toBeVisible();
 
-    // Kiểm tra trạng thái hệ thống
-    await expect(page.getByText('API: Sẵn sàng')).toBeVisible();
-    await expect(page.getByText('Database: Sẵn sàng')).toBeVisible();
+    // Trạng thái hệ thống
+    await expect(page.getByText('API: up')).toBeVisible();
+    await expect(page.getByText('Database: up')).toBeVisible();
   });
 
   test('Hiển thị bảng nhật ký hệ thống (Audit Trail) và mở xem chi tiết', async ({ page }) => {

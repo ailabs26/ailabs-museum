@@ -1,12 +1,13 @@
 import { expect, test } from '@playwright/test';
 import { installMuseumApi, fulfillMuseum } from './fixtures/museumApi';
 import { envelope, roomA, roomB, roomSummaries } from './fixtures/museumContent';
+import { museumExhibitButton, openMuseumCatalogue } from './fixtures/museumUi';
 
 test('loads only selected public room, renders API exhibits and switches without reload', async ({ page }) => {
   const requests = await installMuseumApi(page);
   await page.goto('/tour.html');
   await expect(page.getByLabel('Chọn phòng trưng bày')).toBeVisible();
-  await expect(page.getByRole('list', { name: 'Các hiện vật' }).getByRole('listitem')).toHaveCount(5);
+  await expect(page.locator('#museum-catalogue li')).toHaveCount(5);
   await expect(page.getByText('Nội dung bảo tàng đã xuất bản', { exact: true })).toBeVisible();
   expect(requests.filter((path) => path !== '/api/rooms')).toEqual(['/api/rooms/sculpture']);
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
@@ -14,13 +15,17 @@ test('loads only selected public room, renders API exhibits and switches without
   const initialView = await page.locator('canvas').screenshot();
   await page.evaluate(() => Reflect.set(window, '__pageMarker', 'unchanged'));
   await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
-  await expect(page.getByRole('heading', { name: 'Gốm Việt', exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Tham quan bảo tàng' }).getByRole('heading', { name: 'Gốm Việt', exact: true })).toBeVisible();
+  await expect(museumExhibitButton(page, 'Xem chi tiết Bình gốm')).toBeAttached();
+  await openMuseumCatalogue(page);
   await expect(page.getByRole('heading', { name: 'Bình gốm' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Hiện vật 1', exact: true })).toHaveCount(0);
   await expect(page.locator('canvas')).toHaveCount(1);
   await expect.poll(async () => (await page.locator('canvas').screenshot()).equals(initialView)).toBe(false);
   expect(await page.evaluate(() => Reflect.get(window, '__pageMarker'))).toBe('unchanged');
   await page.getByLabel('Chọn phòng trưng bày').selectOption('sculpture');
+  await expect(museumExhibitButton(page, 'Xem chi tiết Hiện vật 1')).toBeAttached();
+  await openMuseumCatalogue(page);
   await expect(page.getByRole('heading', { name: 'Hiện vật 1', exact: true })).toBeVisible();
   expect(requests.filter((path) => path === '/api/rooms/sculpture')).toHaveLength(1);
   expect(requests.filter((path) => path === '/api/rooms/empty')).toHaveLength(0);
@@ -42,6 +47,8 @@ test('empty selected room keeps the room shell available and labels missing medi
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.locator('canvas')).toBeVisible();
   await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
+  await expect(museumExhibitButton(page, 'Xem chi tiết Bình gốm')).toBeAttached();
+  await openMuseumCatalogue(page);
   await expect(page.getByText('Chưa có ảnh hoặc mô hình 3D; đang hiển thị hình khối thay thế.', { exact: true })).toBeVisible();
 });
 

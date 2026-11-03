@@ -15,11 +15,18 @@ import { PermissionDeniedFilter } from '../../modules/audit/filters/permission-d
 import { AuthController } from '../../modules/auth/controllers/auth.controller';
 import { AuthService } from '../../modules/auth/services/auth.service';
 import { TokenService } from '../../modules/auth/services/token.service';
+import { AuthRateLimiter } from '../../modules/auth/services/auth-rate-limiter.service';
+import { ActiveSessionGuard } from '../../modules/auth/guards/active-session.guard';
+import { RefreshSessionsRepository } from '../../modules/auth/repositories/refresh-sessions.repository';
+import { SessionsService } from '../../modules/auth/services/sessions.service';
 import { HealthController } from '../../modules/health/health.controller';
+import { HealthService } from '../../modules/health/health.service';
 import { PermissionsController } from '../../modules/roles/controllers/permissions.controller';
 import { RolesController } from '../../modules/roles/controllers/roles.controller';
 import { RolesService } from '../../modules/roles/services/roles.service';
 import { UsersController } from '../../modules/users/controllers/users.controller';
+import { UserTwoFactorController } from '../../modules/auth/controllers/user-two-factor.controller';
+import { TwoFactorService } from '../../modules/auth/services/two-factor.service';
 import { UsersService } from '../../modules/users/services/users.service';
 import { ALL_PERMISSIONS, DEFAULT_ROLE_PERMISSIONS, PermissionKey } from '../constants/permissions.constant';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
@@ -75,11 +82,12 @@ function collectRoutes(controller: new (...args: never[]) => object): RouteSpec[
     });
 }
 
-const ADMIN_ROUTES = [UsersController, RolesController, PermissionsController].flatMap(collectRoutes);
+const ADMIN_ROUTES = [UsersController, RolesController, PermissionsController, UserTwoFactorController].flatMap(collectRoutes);
 
 /** Body hợp lệ tối thiểu theo DTO để request đi qua ValidationPipe tới service. */
 function validBody(route: RouteSpec): object | undefined {
   const key = `${route.verb} ${route.path}`;
+  if (route.path.endsWith('/bulk-delete') || route.path.endsWith('/bulk-restore')) return { ids: [USER_ID] };
   if (key === 'post /users') return { email: 'new@aura.local', password: 'Str0ng-Passw0rd!', displayName: 'Mới' };
   if (key === 'post /roles') return { code: 'curator', name: 'Curator' };
   if (key === 'put /roles/permission-matrix') return { updates: [{ roleId: ROLE_ID, permissions: [] }] };
@@ -89,6 +97,8 @@ function validBody(route: RouteSpec): object | undefined {
   if (route.verb === 'patch') return { displayName: 'Đổi tên' };
   return undefined;
 }
+
+const LIVE_SESSION = '33333333-3333-4333-8333-333333333333';
 
 describe('RBAC HTTP — guard toàn cục trên route quản trị', () => {
   let app: INestApplication;
@@ -112,9 +122,13 @@ describe('RBAC HTTP — guard toàn cục trên route quản trị', () => {
     }) as T;
   }
 
-  function tokenFor(permissions: readonly string[], options: { secret?: string; expiresIn?: number | string } = {}): Promise<string> {
+  function tokenFor(
+    permissions: readonly string[],
+    options: { secret?: string; expiresIn?: number | string; sid?: string | null } = {},
+  ): Promise<string> {
+    const sid = options.sid === undefined ? LIVE_SESSION : options.sid;
     return jwt.signAsync(
-      { sub: USER_ID, email: 'actor@aura.local', displayName: 'Actor', roles: [], permissions },
+      { sub: USER_ID, email: 'actor@aura.local', displayName: 'Actor', roles: [], permissions, ...(sid ? { sid } : {}) },
       { secret: options.secret ?? SECRET, expiresIn: options.expiresIn ?? '5m' },
     );
   }
@@ -136,17 +150,29 @@ describe('RBAC HTTP — guard toàn cục trên route quản trị', () => {
         ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true, load: [appConfig, jwtConfig] }),
         JwtModule.register({}),
       ],
-      controllers: [UsersController, RolesController, PermissionsController, AuthController, HealthController],
+      controllers: [UsersController, RolesController, PermissionsController, UserTwoFactorController, AuthController, HealthController],
       providers: [
         { provide: APP_GUARD, useClass: JwtAuthGuard },
+        { provide: APP_GUARD, useClass: ActiveSessionGuard },
         { provide: APP_GUARD, useClass: PermissionsGuard },
+        {
+          provide: RefreshSessionsRepository,
+          useValue: { isFamilyLive: async (familyId: string) => familyId === LIVE_SESSION },
+        },
+        { provide: SessionsService, useValue: {} },
+        { provide: TwoFactorService, useValue: recordingService('twoFactor') },
+        { provide: HealthService, useValue: { pingDatabase: async () => 1 } },
         { provide: UsersService, useValue: recordingService('users') },
         { provide: RolesService, useValue: recordingService('roles') },
         { provide: AuthService, useValue: { me: (id: string) => Promise.resolve({ id }) } },
         { provide: TokenService, useValue: { refreshCookieMaxAgeMs: () => 1000 } },
+        AuthRateLimiter,
         {
           provide: AuditService,
-          useValue: { recordAccessDenied: async (input: RecordAccessDeniedInput) => void denied.push(input) },
+          useValue: {
+            recordAccessDenied: async (input: RecordAccessDeniedInput) => void denied.push(input),
+            recordSafely: async () => undefined,
+          },
         },
         PermissionDeniedFilter,
       ],
@@ -172,6 +198,17 @@ describe('RBAC HTTP — guard toàn cục trên route quản trị', () => {
     for (const route of ADMIN_ROUTES) {
       assert.ok(route.required.length > 0, `${route.verb.toUpperCase()} ${route.path} thiếu @Permissions`);
       for (const permission of route.required) assert.ok(ALL_PERMISSIONS.includes(permission));
+    }
+  });
+
+  it('token hợp lệ nhưng phiên đã bị đăng xuất hoặc thiếu sid → 401 trước khi kiểm quyền, service không bị gọi', async () => {
+    const route = ADMIN_ROUTES.find((item) => item.verb === 'get' && item.path === '/users')!;
+    for (const sid of ['revoked-session', null]) {
+      serviceCalls.length = 0;
+      denied.length = 0;
+      await send(route, await tokenFor(ALL_PERMISSIONS, { sid })).expect(401);
+      assert.deepEqual(serviceCalls, []);
+      assert.deepEqual(denied, []);
     }
   });
 

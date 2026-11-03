@@ -11,6 +11,7 @@ import { Public } from '../decorators/public.decorator';
 import { PermissionDeniedException } from '../exceptions/permission-denied.exception';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { PermissionsGuard } from '../guards/permissions.guard';
+import { ActiveSessionGuard } from '../../modules/auth/guards/active-session.guard';
 import { AuthUser } from '../types/auth-user.type';
 
 const SECRET = 'unit-test-access-secret-0123456789';
@@ -124,9 +125,9 @@ describe('JwtAuthGuard', () => {
     );
   });
 
-  it('gắn AuthUser vào request.user khi token hợp lệ', async () => {
+  it('gắn AuthUser vào request.user khi token hợp lệ, sessionId lấy từ claim sid', async () => {
     const request: { headers: object; user?: AuthUser } = {
-      headers: { authorization: `Bearer ${await sign(USER_PAYLOAD)}` },
+      headers: { authorization: `Bearer ${await sign({ ...USER_PAYLOAD, sid: 'fam-1' })}` },
     };
     assert.equal(await guard.canActivate(context('protectedRoute', request)), true);
     assert.deepEqual(request.user, {
@@ -135,6 +136,7 @@ describe('JwtAuthGuard', () => {
       displayName: USER_PAYLOAD.displayName,
       roles: USER_PAYLOAD.roles,
       permissions: USER_PAYLOAD.permissions,
+      sessionId: 'fam-1',
     });
   });
 
@@ -212,12 +214,12 @@ describe('PermissionsGuard', () => {
 });
 
 describe('Đăng ký module', () => {
-  it('AuthModule đăng ký JwtAuthGuard TRƯỚC PermissionsGuard làm APP_GUARD', async () => {
+  it('AuthModule đăng ký APP_GUARD theo thứ tự JwtAuthGuard → ActiveSessionGuard → PermissionsGuard', async () => {
     const { APP_GUARD } = await import('@nestjs/core');
     const { AuthModule } = await import('../../modules/auth/auth.module');
     const providers = Reflect.getMetadata('providers', AuthModule) as Array<{ provide?: unknown; useClass?: unknown }>;
     const guards = providers.filter((provider) => provider.provide === APP_GUARD).map((provider) => provider.useClass);
-    assert.deepEqual(guards, [JwtAuthGuard, PermissionsGuard]);
+    assert.deepEqual(guards, [JwtAuthGuard, ActiveSessionGuard, PermissionsGuard]);
   });
 
   it('CommonModule là @Global và export TransactionManager + PasswordService', async () => {

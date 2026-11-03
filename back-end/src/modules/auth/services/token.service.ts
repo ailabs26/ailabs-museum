@@ -1,16 +1,23 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { EntityManager } from 'typeorm';
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { AuthUser } from '../../../common/types/auth-user.type';
 import { JwtAccessPayload } from '../../../common/types/jwt.payload';
+import { RefreshFailedException, type RefreshFailureReason } from '../exceptions/refresh-failed.exception';
 import { RefreshSession } from '../entities/refresh-session.entity';
 import { RefreshSessionsRepository } from '../repositories/refresh-sessions.repository';
 import { UsersRepository } from '../../users/repositories/users.repository';
 import { UserStatus } from '../../users/entities/user.entity';
 import { toAuthUser } from '../../users/user-access.util';
+
+/** Thông tin thiết bị lưu kèm refresh session (màn "Phiên đăng nhập"). */
+export interface SessionClient {
+  userAgent?: string | null;
+  ip?: string | null;
+}
 
 export interface IssuedRefresh {
   raw: string;
@@ -24,6 +31,9 @@ export interface RotatedRefresh {
   accessToken: string;
 }
 
+/** Ân hạn cho token vừa xoay vòng bị gửi lại: không thu hồi family, không ghi audit reuse. */
+export const REFRESH_REUSE_GRACE_MS = 10_000;
+
 @Injectable()
 export class TokenService {
   constructor(
@@ -34,14 +44,38 @@ export class TokenService {
     private readonly tx: TransactionManager,
   ) {}
 
-  /** Ký access token mang roles + permissions. */
-  signAccess(user: AuthUser): Promise<string> {
+  /**
+   * Token tạm cho bước 2 đăng nhập (đã đúng mật khẩu, chờ mã 2FA): 5 phút, `purpose: 'mfa'` nên không dùng thay access
+   * token được; mang dấu vân tay passwordHash để đổi mật khẩu giữa chừng thì token mất hiệu lực.
+   */
+  signMfaChallenge(userId: string, passwordHash: string): Promise<string> {
+    return this.jwt.signAsync({ sub: userId, purpose: 'mfa', pwd: passwordFingerprint(passwordHash) }, {
+      secret: this.config.getOrThrow<string>('jwt.accessSecret'),
+      expiresIn: '5m',
+    });
+  }
+
+  /** null nếu token sai chữ ký, hết hạn hoặc không phải token 2FA. */
+  async verifyMfaChallenge(token: string): Promise<{ userId: string; pwd: string } | null> {
+    try {
+      const payload = await this.jwt.verifyAsync<{ sub?: string; purpose?: string; pwd?: string }>(token, {
+        secret: this.config.getOrThrow<string>('jwt.accessSecret'),
+      });
+      return payload.purpose === 'mfa' && payload.sub && payload.pwd ? { userId: payload.sub, pwd: payload.pwd } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Ký access token mang roles + permissions và `sid` = familyId của phiên. */
+  signAccess(user: AuthUser, sessionId: string): Promise<string> {
     const payload: JwtAccessPayload = {
       sub: user.id,
       email: user.email,
       displayName: user.displayName,
       roles: user.roles,
       permissions: user.permissions,
+      sid: sessionId,
     };
     return this.jwt.signAsync(payload, {
       secret: this.config.getOrThrow<string>('jwt.accessSecret'),
@@ -54,6 +88,8 @@ export class TokenService {
     userId: string,
     familyId?: string,
     manager?: EntityManager,
+    client: SessionClient = {},
+    signedInAt = new Date(),
   ): Promise<IssuedRefresh> {
     const raw = randomBytes(32).toString('hex');
     const session = await this.sessions.create(
@@ -62,6 +98,9 @@ export class TokenService {
         familyId: familyId ?? randomUUID(),
         tokenHash: this.hash(raw),
         expiresAt: this.refreshExpiry(),
+        signedInAt,
+        userAgent: client.userAgent?.slice(0, 512) ?? null,
+        ip: client.ip?.slice(0, 64) ?? null,
       },
       manager,
     );
@@ -72,58 +111,85 @@ export class TokenService {
    * Xoay vòng refresh token. Token cũ đã dùng/bị thu hồi → thu hồi cả family
    * và từ chối (reuse-detection). Token hợp lệ → phát hành token mới cùng family.
    */
-  async rotate(raw: string): Promise<RotatedRefresh> {
+  async rotate(raw: string, client: SessionClient = {}): Promise<RotatedRefresh> {
     const tokenHash = this.hash(raw);
-    const result = await this.tx.run(async (manager): Promise<RotatedRefresh | null> => {
+    const result = await this.tx.run(async (manager): Promise<RotatedRefresh | RefreshFailedException> => {
       const found = await this.sessions.findByTokenHash(tokenHash, manager);
       if (!found) {
-        return null;
+        return new RefreshFailedException('unknown_token');
       }
 
       await this.sessions.lockFamily(found.familyId, manager);
+      await this.sessions.lockUser(found.userId, manager);
       const current = await this.sessions.findByTokenHash(tokenHash, manager, true);
       if (!current) {
-        return null;
+        return new RefreshFailedException('unknown_token');
+      }
+
+      const fail = (reason: RefreshFailureReason) =>
+        new RefreshFailedException(reason, current.userId, current.familyId);
+      // Vừa xoay vòng (tab khác/mất phản hồi mạng gửi lại token cũ): 401 nhưng giữ phiên, không coi là đánh cắp.
+      // Không cấp token nào nên kẻ gian replay trong khoảng này cũng không vào được (issue #141).
+      if (current.usedAt && !current.revokedAt
+        && Date.now() - current.usedAt.getTime() < REFRESH_REUSE_GRACE_MS) {
+        return fail('rotated_recently');
       }
 
       if (current.usedAt || current.revokedAt) {
         await this.sessions.revokeFamily(current.familyId, manager);
-        return null;
+        // Token đã xoay vòng bị gửi lại mới là dấu hiệu bị đánh cắp; token chỉ bị thu hồi là bình thường.
+        return fail(current.usedAt ? 'reuse' : 'revoked');
       }
 
       if (current.expiresAt.getTime() <= Date.now()) {
         await this.sessions.revoke(current.id, manager);
-        return null;
+        return fail('expired');
       }
 
       const user = await this.users.findByIdWithAccess(current.userId, manager);
       if (!user || user.status !== UserStatus.ACTIVE) {
         await this.sessions.revokeFamily(current.familyId, manager);
-        return null;
+        return fail('inactive_user');
       }
 
-      const accessToken = await this.signAccess(toAuthUser(user));
-      const next = await this.issueRefresh(current.userId, current.familyId, manager);
+      const accessToken = await this.signAccess(toAuthUser(user), current.familyId);
+      const next = await this.issueRefresh(
+        current.userId,
+        current.familyId,
+        manager,
+        { userAgent: client.userAgent ?? current.userAgent, ip: client.ip ?? current.ip },
+        current.signedInAt,
+      );
       await this.sessions.markUsed(current.id, next.session.id, manager);
       return { userId: current.userId, raw: next.raw, session: next.session, accessToken };
     });
 
     // Ném lỗi sau commit để việc revoke do expiry/reuse không bị rollback.
-    if (!result) {
-      throw new UnauthorizedException('Phiên đăng nhập không hợp lệ hoặc đã hết hạn');
+    if (result instanceof RefreshFailedException) {
+      throw result;
     }
     return result;
   }
 
+  /**
+   * Phiên (family) và chủ của refresh token, để giới hạn refresh theo phiên trước khi xoay vòng.
+   * Không kiểm hạn/thu hồi (rotate làm việc đó); null nếu token không tồn tại.
+   */
+  async findSessionOwner(raw: string): Promise<{ familyId: string; userId: string } | null> {
+    const session = await this.sessions.findByTokenHash(this.hash(raw));
+    return session ? { familyId: session.familyId, userId: session.userId } : null;
+  }
+
   /** Thu hồi session theo raw token (dùng khi logout). */
-  async revokeByRaw(raw: string): Promise<void> {
-    await this.tx.run(async (manager) => {
+  /** Trả userId của phiên vừa thu hồi; null nếu token không tồn tại. */
+  async revokeByRaw(raw: string): Promise<string | null> {
+    return this.tx.run(async (manager) => {
       const session = await this.sessions.findByTokenHash(this.hash(raw), manager);
-      if (session) {
-        await this.sessions.lockFamily(session.familyId, manager);
-        // Cookie cũ vẫn phải thu hồi được token kế tiếp nếu logout đụng refresh.
-        await this.sessions.revokeFamily(session.familyId, manager);
-      }
+      if (!session) return null;
+      await this.sessions.lockFamily(session.familyId, manager);
+      // Cookie cũ vẫn phải thu hồi được token kế tiếp nếu logout đụng refresh.
+      await this.sessions.revokeFamily(session.familyId, manager);
+      return session.userId;
     });
   }
 
@@ -138,4 +204,9 @@ export class TokenService {
   private refreshExpiry(): Date {
     return new Date(Date.now() + this.refreshCookieMaxAgeMs());
   }
+}
+
+/** 16 ký tự đầu SHA-256 của passwordHash — đủ để phát hiện mật khẩu đã đổi, không lộ hash. */
+export function passwordFingerprint(passwordHash: string): string {
+  return createHash('sha256').update(passwordHash).digest('hex').slice(0, 16);
 }

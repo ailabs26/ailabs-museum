@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import type { ApexOptions } from 'apexcharts';
+import { ErrorBoundary } from '@/shared/components/feedback/ErrorBoundary';
 
 const ReactApexChart = lazy(() => import('react-apexcharts'));
 
@@ -14,8 +15,10 @@ export function Sparkline({ data, color, height = 36 }: { data: number[]; color:
     tooltip: { enabled: false },
   };
   return (
+    <ErrorBoundary fallback={<div role="img" aria-label="Không tải được xu hướng" style={{ height }}>—</div>}>
     <Suspense fallback={<div style={{ height }} />}>
       <ReactApexChart type="area" height={height} series={[{ data }]} options={options} />
     </Suspense>
+    </ErrorBoundary>
   );
 }

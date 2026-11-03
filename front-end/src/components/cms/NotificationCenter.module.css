@@ -1,8 +1,17 @@
-.head { padding: 12px 14px; border-bottom: 1px solid var(--mantine-color-default-border); }
-.list { padding: 6px; }
-.item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px; border-radius: 8px; }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--mantine-color-default-border); }
+.list { list-style: none; margin: 0; padding: 6px; }
+.item { display: flex; align-items: flex-start; gap: 12px; padding: 10px; border-radius: 8px; }
 .item:hover { background: var(--mantine-color-default-hover); }
-.body { display: flex; flex-direction: column; }
-.iconReview, .iconReport { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0; }
+.item[data-unread] { background: var(--mantine-primary-color-light); }
+.body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.title { text-align: left; }
+.text { white-space: pre-line; overflow-wrap: anywhere; }
+.actions { display: flex; gap: 2px; flex-shrink: 0; }
+.dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--mantine-primary-color-filled); vertical-align: middle; }
+.state { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 24px; }
+.more { padding: 4px 6px 8px; }
+.iconReview, .iconReport, .iconApproved { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0; }
 .iconReview { color: var(--mantine-color-yellow-7); background: var(--mantine-color-yellow-light); }
 .iconReport { color: var(--mantine-color-red-7); background: var(--mantine-color-red-light); }
+.iconApproved { color: var(--mantine-color-teal-7); background: var(--mantine-color-teal-light); }
+.toggle { align-self: flex-start; }

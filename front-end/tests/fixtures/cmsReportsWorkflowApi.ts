@@ -1,156 +1,118 @@
 import type { Page } from '@playwright/test';
+import { fulfillMuseum } from './museumApi';
+import { envelope } from './museumContent';
 
+/** Đúng hợp đồng `ReportResponseDto` của back-end (xem docs/architecture/06-api-contract.md). */
 export interface TestContentReport {
   id: string;
   exhibitId: string;
-  revisionId: string;
-  exhibitName: string;
-  reason: string;
-  contactEmail: string | null;
+  category: string;
+  message: string;
   status: 'open' | 'in_progress' | 'resolved' | 'dismissed';
-  assignedTo: { id: string; displayName: string } | null;
-  resolutionNotes: string | null;
-  resolvedAt: string | null;
+  assignedTo: { id: string; email: string; displayName: string } | null;
+  resolution: string | null;
+  reportedRevision: { id: string; revisionNo: number; state: string; content: Record<string, unknown> } | null;
   createdAt: string;
+  resolvedAt: string | null;
 }
 
-export const initialTestReports: TestContentReport[] = [
+export const ADMIN = { id: '00000000-0000-4000-8000-0000000000ad', email: 'admin@aura.local', displayName: 'Administrator' };
+
+const initialReports = (): TestContentReport[] => [
   {
-    id: 'report-001',
-    exhibitId: 'exhibit-001',
-    revisionId: 'rev-001',
-    exhibitName: 'Trống Đồng Đông Sơn',
-    reason: 'Mô tả hiện vật có thông tin niên đại lịch sử chưa chính xác.',
-    contactEmail: 'visitor@example.com',
+    id: '50000000-0000-4000-8000-000000000001',
+    exhibitId: '10000000-0000-4000-8000-000000000001',
+    category: 'wrong_info',
+    message: 'Mô tả hiện vật có thông tin niên đại lịch sử chưa chính xác.',
     status: 'open',
     assignedTo: null,
-    resolutionNotes: null,
-    resolvedAt: null,
+    resolution: null,
+    reportedRevision: {
+      id: '30000000-0000-4000-8000-000000000001', revisionNo: 3, state: 'approved',
+      content: { name: { vi: 'Trống Đồng Đông Sơn', en: 'Dong Son Drum' }, description: { vi: 'Trống đồng thời Hùng Vương', en: null } },
+    },
     createdAt: new Date().toISOString(),
+    resolvedAt: null,
+  },
+  {
+    id: '50000000-0000-4000-8000-000000000002',
+    exhibitId: '10000000-0000-4000-8000-000000000002',
+    category: 'typo',
+    message: 'Sai chính tả ở tên hiện vật.',
+    status: 'resolved',
+    assignedTo: ADMIN,
+    resolution: 'Đã sửa chính tả.',
+    reportedRevision: null,
+    createdAt: new Date(Date.now() - 86_400_000).toISOString(),
+    resolvedAt: new Date().toISOString(),
   },
 ];
 
+/**
+ * API giả có trạng thái cho trang Báo cáo vi phạm: phiên admin (401 → refresh → me như thật), danh sách lọc theo
+ * trạng thái, chi tiết, tiếp nhận / xử lý xong / đóng. Mọi request /api/ khác trả rỗng — không chạm back-end thật.
+ */
 export async function installCmsReportsWorkflowApi(page: Page) {
-  let reports: TestContentReport[] = [...initialTestReports];
+  const reports = initialReports();
   const writes: Array<{ method: string; path: string; data?: unknown }> = [];
 
-  await page.route('**/api/auth/me', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        success: true,
-        data: {
-          id: 'admin-id',
-          email: 'admin@aura.local',
-          displayName: 'Administrator',
-          roles: ['admin'],
-          permissions: ['report:read', 'report:resolve'],
-        },
-        message: null,
-      }),
-    });
-  });
-
-  // GET /api/reports
-  await page.route('**/api/reports*', async (route) => {
-    const url = new URL(route.request().url());
-    const method = route.request().method();
-
-    if (method === 'GET' && !url.pathname.includes('/assign') && !url.pathname.includes('/resolve') && !url.pathname.includes('/dismiss')) {
-      const status = url.searchParams.get('status') || 'all';
-      let filtered = reports;
-      if (status !== 'all') {
-        filtered = filtered.filter((r) => r.status === status);
-      }
-
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          data: filtered,
-          meta: { page: 1, pageSize: 20, total: filtered.length },
-          message: null,
-        }),
-      });
+  await page.route((url) => url.pathname.startsWith('/api/'), async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname.replace('/api', '');
+    const method = request.method();
+    if (method === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: {
+        'Access-Control-Allow-Origin': request.headers().origin ?? 'http://127.0.0.1:4173',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Headers': 'authorization,content-type',
+        'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
+      } });
       return;
     }
-
-    await route.continue();
-  });
-
-  // GET /api/reports/:id
-  await page.route(/.*\/api\/reports\/report-[^/]+$/, async (route) => {
-    const id = route.request().url().split('/').pop()!;
-    const item = reports.find((r) => r.id === id) || reports[0];
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ success: true, data: item, message: null }),
-    });
-  });
-
-  // POST /api/reports/:id/assign
-  await page.route(/.*\/api\/reports\/[^/]+\/assign$/, async (route) => {
-    const id = route.request().url().split('/')[4];
-    writes.push({ method: 'POST', path: `/reports/${id}/assign` });
-    const item = reports.find((r) => r.id === id);
-    if (item) {
-      item.status = 'in_progress';
-      item.assignedTo = { id: 'admin-id', displayName: 'Administrator' };
+    if (path === '/auth/refresh') return fulfillMuseum(route, envelope({ accessToken: 'reports-fixture-token' }));
+    if (path === '/auth/me') {
+      return request.headers().authorization
+        ? fulfillMuseum(route, envelope({ ...ADMIN, roles: ['admin'], permissions: ['report:read', 'report:resolve'] }))
+        : fulfillMuseum(route, { success: false, data: null, message: 'Unauthenticated' }, 401);
     }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ success: true, data: item, message: 'Đã tiếp nhận báo cáo' }),
-    });
-  });
-
-  // POST /api/reports/:id/resolve
-  await page.route(/.*\/api\/reports\/[^/]+\/resolve$/, async (route) => {
-    const id = route.request().url().split('/')[4];
-    const body = route.request().postDataJSON();
-    writes.push({ method: 'POST', path: `/reports/${id}/resolve`, data: body });
-    const item = reports.find((r) => r.id === id);
-    if (item) {
-      item.status = 'resolved';
-      item.resolutionNotes = body.resolutionNotes;
-      item.resolvedAt = new Date().toISOString();
+    if (path === '/admin/stats/overview') {
+      return fulfillMuseum(route, envelope({
+        rooms: { total: 0, active: 0, archived: 0 }, exhibits: { total: 0, visible: 0, hidden: 0 },
+        revisions: { inReview: 0, draft: 0 },
+        reports: { open: reports.filter((r) => r.status === 'open').length, inProgress: 0 },
+        system: { api: 'up', db: 'up', uptimeSec: 1, serverTime: new Date().toISOString() },
+      }));
     }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ success: true, data: item, message: 'Đã xử lý báo cáo thành công' }),
-    });
-  });
+    if (path === '/reports' && method === 'GET') {
+      const status = url.searchParams.get('status');
+      const items = status ? reports.filter((r) => r.status === status) : reports;
+      return fulfillMuseum(route, { ...envelope(items), meta: { page: 1, pageSize: 20, total: items.length } });
+    }
+    if (path === '/reports/assignees') return fulfillMuseum(route, envelope([ADMIN]));
 
-  // POST /api/public/reports (Client submit)
-  await page.route('**/api/public/reports*', async (route) => {
-    const body = route.request().postDataJSON();
-    writes.push({ method: 'POST', path: '/public/reports', data: body });
-    const newReport: TestContentReport = {
-      id: `report-${Date.now()}`,
-      exhibitId: body.exhibitId,
-      revisionId: body.revisionId || 'rev-latest',
-      exhibitName: 'Hiện vật được báo cáo',
-      reason: body.reason,
-      contactEmail: body.contactEmail || null,
-      status: 'open',
-      assignedTo: null,
-      resolutionNotes: null,
-      resolvedAt: null,
-      createdAt: new Date().toISOString(),
-    };
-    reports.unshift(newReport);
+    const action = /^\/reports\/([^/]+)\/(assign|resolve|dismiss)$/.exec(path);
+    if (action && method === 'POST') {
+      const [, id, kind] = action;
+      const body = request.postDataJSON() as { resolution?: string; assigneeId?: string } | null;
+      writes.push({ method, path, data: body });
+      const item = reports.find((r) => r.id === id)!;
+      if (kind === 'assign') {
+        item.status = 'in_progress';
+        item.assignedTo = ADMIN;
+      } else {
+        item.status = kind === 'resolve' ? 'resolved' : 'dismissed';
+        item.resolution = body?.resolution ?? null;
+        item.resolvedAt = new Date().toISOString();
+        item.assignedTo ??= ADMIN;
+      }
+      return fulfillMuseum(route, envelope(item));
+    }
+    const detail = /^\/reports\/([^/]+)$/.exec(path);
+    if (detail && method === 'GET') return fulfillMuseum(route, envelope(reports.find((r) => r.id === detail[1])));
 
-    await route.fulfill({
-      status: 201,
-      contentType: 'application/json',
-      body: JSON.stringify({ success: true, data: newReport, message: 'Cảm ơn bạn đã gửi báo cáo' }),
-    });
+    return fulfillMuseum(route, { ...envelope([]), meta: { page: 1, pageSize: 20, total: 0 } });
   });
 
   return { getReports: () => reports, writes };
 }
-

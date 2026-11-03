@@ -114,10 +114,12 @@ export function ReportsPage() {
       },
     });
 
+  const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const assignMutation = useMutation({
-    mutationFn: () => reportsService.assign(detail!.id),
-    onSuccess: () => {
-      notify.success('Đã tiếp nhận báo cáo');
+    mutationFn: (to?: string) => reportsService.assign(detail!.id, to),
+    onSuccess: (report, to) => {
+      notify.success(to ? `Đã giao báo cáo cho ${report.assignedTo?.displayName ?? 'người được chọn'}` : 'Đã tiếp nhận báo cáo');
+      setAssigneeId(null);
       refreshAll();
     },
     onError: handleError,
@@ -145,6 +147,15 @@ export function ReportsPage() {
   };
 
   const isOpen = detail?.status === 'open' || detail?.status === 'in_progress';
+  const assigneesQuery = useQuery({
+    queryKey: ['reports', 'assignees'],
+    queryFn: () => reportsService.assignees(),
+    enabled: canResolve && isOpen,
+  });
+  // Không cho chọn người đang giữ báo cáo.
+  const assigneeOptions = (assigneesQuery.data ?? [])
+    .filter((person) => person.id !== detail?.assignedTo?.id)
+    .map((person) => ({ value: person.id, label: `${person.displayName} (${person.email})` }));
 
   const columns: Column<ContentReport>[] = [
     {
@@ -241,7 +252,7 @@ export function ReportsPage() {
         onExitTransitionEnd={() => {
           if (document.activeElement === document.body) titleRef.current?.focus();
         }}
-        onClose={() => setDetailId(null)}
+        onClose={() => { setDetailId(null); setAssigneeId(null); }}
         position="right"
         size="lg"
         title={<Text fw={700} size="lg">Chi tiết báo cáo</Text>}
@@ -283,13 +294,34 @@ export function ReportsPage() {
             {canResolve && isOpen && (
               <>
                 <Divider my="xs" />
+                <Group align="flex-end" gap="xs">
+                  <Select
+                    flex={1}
+                    label={detail.status === 'open' ? 'Giao cho người khác' : 'Giao lại cho'}
+                    placeholder={assigneesQuery.isPending ? 'Đang tải…' : 'Chọn người xử lý'}
+                    data={assigneeOptions}
+                    value={assigneeId}
+                    onChange={setAssigneeId}
+                    searchable
+                    nothingFoundMessage="Không có người phù hợp"
+                    comboboxProps={{ zIndex: 300 }}
+                  />
+                  <Button
+                    variant="default"
+                    disabled={!assigneeId}
+                    loading={assignMutation.isPending && assignMutation.variables !== undefined}
+                    onClick={() => assigneeId && assignMutation.mutate(assigneeId)}
+                  >
+                    Giao
+                  </Button>
+                </Group>
                 <Group justify="flex-end">
                   {detail.status === 'open' && (
                     <Button
                       variant="default"
                       leftSection={<IconUserCheck size={16} />}
-                      loading={assignMutation.isPending}
-                      onClick={() => assignMutation.mutate()}
+                      loading={assignMutation.isPending && assignMutation.variables === undefined}
+                      onClick={() => assignMutation.mutate(undefined)}
                     >
                       Tiếp nhận
                     </Button>

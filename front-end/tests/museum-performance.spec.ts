@@ -1,7 +1,8 @@
+import { selectMuseumExhibit } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import { installMuseumApi } from './fixtures/museumApi';
-import { installRendererProbe, readRendererProbe } from './fixtures/museumProbe';
+import { installRendererProbe, readRendererProbe, waitForGallerySurfaces, waitForRendererIdle } from './fixtures/museumProbe';
 
 test('production scene resource and lifecycle profile', async ({ page }, testInfo) => {
   test.setTimeout(90_000);
@@ -25,7 +26,9 @@ test('production scene resource and lifecycle profile', async ({ page }, testInf
   const canvas = page.getByLabel('Phòng trưng bày 3D');
   await expect(canvas).toBeVisible({ timeout: 15_000 });
   const initializationMs = Date.now() - started;
-  await page.waitForTimeout(800); // Observe settled demand rendering, not a readiness substitute.
+  const qualityTier = await page.locator('[data-quality-tier]').getAttribute('data-quality-tier');
+  await waitForGallerySurfaces(page);
+  await waitForRendererIdle(page);
   const initial = (await readRendererProbe(page)).at(-1)!;
   expect(initial.calls).toBeGreaterThan(0);
   await page.waitForTimeout(400);
@@ -47,7 +50,7 @@ test('production scene resource and lifecycle profile', async ({ page }, testInf
   const released = [];
   for (let cycle = 0; cycle < 4; cycle++) {
     mounted.push((await readRendererProbe(page)).at(-1)!);
-    await page.getByRole('button', { name: 'Dừng 3D' }).click();
+    await page.getByRole('button', { name: 'Thoát tham quan' }).click();
     await expect(page.locator('canvas')).toHaveCount(0);
     await expect.poll(async () => (await readRendererProbe(page)).filter((renderer) => renderer.live).length).toBe(0);
     released.push(await heap());
@@ -62,6 +65,7 @@ test('production scene resource and lifecycle profile', async ({ page }, testInf
   const profilePath = testInfo.outputPath('profile.json');
   await writeFile(profilePath, JSON.stringify({
     browser: await page.context().browser()?.version(), viewport: page.viewportSize(),
+    qualityTier,
     renderer: 'Edge/SwiftShader; emulation, not physical GPU', initializationMs, observedDragFps,
     beforeHeap, liveHeap, releasedHeapBytes: released, initial, mounted, requests,
   }, null, 2));
@@ -76,7 +80,7 @@ test('selecting an exhibit updates its plaque without replacing GPU textures', a
   await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible({ timeout: 15_000 });
   const before = (await readRendererProbe(page)).at(-1)!;
   expect(Object.keys(before.labels)).toHaveLength(5);
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 1');
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toBeVisible();
   await expect.poll(async () => (await readRendererProbe(page)).at(-1)!.frames).toBeGreaterThan(before.frames);
   expect((await readRendererProbe(page)).at(-1)!.labels).toEqual(before.labels);

@@ -95,7 +95,7 @@ function runStatuslineSync({ payload, cwd = TEST_ROOT, env = {}, inputRaw = null
   if (!Object.prototype.hasOwnProperty.call(env, 'HOME') && fs.existsSync(path.join(cwd, '.claude', '.ck.json'))) {
     runtimeEnv.HOME = cwd;
   }
-  const result = spawnSync('node', [STATUSLINE_PATH], {
+  const result = spawnSync(process.execPath, [STATUSLINE_PATH], {
     cwd,
     encoding: 'utf8',
     input,
@@ -126,7 +126,7 @@ function runStatuslineWithDelayedChunks({ chunks, delaysMs, cwd = TEST_ROOT, env
     if (!Object.prototype.hasOwnProperty.call(env, 'HOME') && fs.existsSync(path.join(cwd, '.claude', '.ck.json'))) {
       runtimeEnv.HOME = cwd;
     }
-    const child = spawn('node', [STATUSLINE_PATH], {
+    const child = spawn(process.execPath, [STATUSLINE_PATH], {
       cwd,
       env: runtimeEnv,
       stdio: ['pipe', 'pipe', 'pipe']
@@ -672,7 +672,7 @@ async function main() {
         '{"model":{"display_name":"Claude"}',
         ',"workspace":{"current_dir":"/tmp/slow-input-timeout"},"context_window":{"context_window_size":200000}}'
       ],
-      delaysMs: [400, 0],
+      delaysMs: [2000, 0],
       env: { CK_STATUSLINE_STDIN_TIMEOUT_MS: '100' }
     });
     assertTrue(result.status === 0, 'Timeout fallback path should still exit successfully');

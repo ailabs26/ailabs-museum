@@ -1,0 +1,79 @@
+# Kiểm tra tự động mỗi PR: typecheck, lint, test, build cho back-end và front-end.
+# Không deploy, không dùng secret. Back-end test chạy trên PostgreSQL tạm của runner (localhost),
+# không bao giờ chạm DB dùng chung.
+name: CI
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev]
+
+permissions:
+  contents: read
+
+# PR đẩy commit mới thì hủy lượt chạy cũ của chính PR đó.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  back-end:
+    name: Back-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: back-end
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aura_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d aura_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Test DB chỉ chạy khi URL trỏ localhost; DATABASE_URL đặt cùng để không bao giờ đọc nhầm DB khác.
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/aura_test
+      CORE_TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/aura_test
+      MEDIA_TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/aura_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: back-end/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test
+      # Ngưỡng coverage lõi (common, config, auth, users, roles) >= 80%.
+      - run: npm run test:coverage
+
+  front-end:
+    name: Front-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: front-end
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: front-end/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:unit
+      - run: npm run build

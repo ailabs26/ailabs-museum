@@ -1,10 +1,21 @@
+import { MUSEUM_ROOM_SIZE, type MuseumDisplay } from '@/interfaces/museumScene';
+import { INITIAL_CAMERA_POSITION } from './museumCamera';
+import { findNavigationPath, getDisplayColliders } from './museumNavigation';
+
 export type Vec3 = [number, number, number];
 
 /** Thời lượng hiệu ứng camera mở màn (ms). */
-export const CINEMATIC_DURATION_MS = 2000;
+export const CINEMATIC_DURATION_MS = 700;
 
 /** Vị trí camera xuất phát: trên cao & lùi xa để lia xuống vị trí ban đầu. */
-export const CINEMATIC_START_POSITION: Vec3 = [0, 5.2, 9.6];
+export const CINEMATIC_START_POSITION: Vec3 = [0, 2.8, 6.6];
+
+/** Skip entrance when published placement obstructs either endpoint or the segment. */
+export function getCinematicEntrance(displays: readonly MuseumDisplay[]): { from: Vec3; to: Vec3 } | null {
+  const from = CINEMATIC_START_POSITION, to = INITIAL_CAMERA_POSITION;
+  const path = findNavigationPath({ x: from[0], y: from[2] }, { x: to[0], y: to[2] }, MUSEUM_ROOM_SIZE, getDisplayColliders(displays));
+  return path?.length === 2 ? { from, to } : null;
+}
 
 /** Làm mượt chuyển động (ease-in-out) trong khoảng [0, 1]. */
 export function smoothstep(t: number): number {

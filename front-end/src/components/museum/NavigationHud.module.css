@@ -9,3 +9,11 @@
 .cross { opacity: 0.6; font-size: 22px; line-height: 36px; pointer-events: none; }
 .joystick:focus-visible, .help button:focus-visible { outline: 3px solid var(--aura-emerald-bright, #25645c); outline-offset: 3px; }
 @media (max-height: 500px) { .help p { max-width: 300px; } }
+.immersive .help { top: auto; left: 24px; bottom: 20px; max-width: 210px; background: #f7f3eaf2; border-color: #bdab8d70; border-radius: 8px; color: #30392f; padding: 0 8px; box-shadow: none; }
+.immersive .help > span { display: none; }
+.immersive .help p { padding: 0 4px 12px; }
+.immersive .joystick { bottom: 110px; width: 108px; height: 108px; background: #f7f3eaa8; border-color: #a4977d; }
+.immersive .thumb { top: 30px; left: 30px; }
+@media (max-width: 1100px) { .immersive .help { bottom: 94px; left: auto; right: 12px; max-width: 190px; } }
+@media (max-width: 600px) { .immersive .help { bottom: 176px; font-size: 11px; max-width: 164px; } }
+@media (max-height: 500px) { .immersive .help { bottom: 20px; left: 12px; right: auto; max-width: 180px; } .immersive .help p { max-height: 100px; overflow: auto; } }

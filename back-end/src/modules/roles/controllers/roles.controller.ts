@@ -3,16 +3,21 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Audit } from '../../audit/decorators/audit.decorator';
 import { PERMISSIONS } from '../../../common/constants/permissions.constant';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
+import { BulkIdsDto } from '../../../common/dto/bulk-ids.dto';
+import { DeletedQueryDto } from '../../../common/dto/deleted-filter.dto';
 import { CreateRoleDto } from '../dto/create-role.dto';
 import { SetPermissionsDto } from '../dto/set-permissions.dto';
 import { SetPermissionMatrixDto } from '../dto/set-permission-matrix.dto';
@@ -27,9 +32,9 @@ export class RolesController {
 
   @Get()
   @Permissions(PERMISSIONS.ROLE_READ)
-  @ApiOperation({ summary: 'Danh sách vai trò kèm quyền' })
-  list() {
-    return this.roles.list();
+  @ApiOperation({ summary: 'Danh sách vai trò kèm quyền (deleted=true → thùng rác)' })
+  list(@Query() query: DeletedQueryDto) {
+    return this.roles.list(query.deleted);
   }
 
   @Post()
@@ -71,10 +76,28 @@ export class RolesController {
     return this.roles.update(id, dto);
   }
 
+  @Post('bulk-delete')
+  @HttpCode(HttpStatus.OK)
+  @Permissions(PERMISSIONS.ROLE_DELETE)
+  @Audit('role.delete', 'role')
+  @ApiOperation({ summary: 'Xóa mềm nhiều vai trò (tất cả hoặc không; chặn Admin / đang gán, 409 kèm lý do từng ID)' })
+  removeMany(@Body() dto: BulkIdsDto) {
+    return this.roles.removeMany(dto.ids);
+  }
+
+  @Post('bulk-restore')
+  @HttpCode(HttpStatus.OK)
+  @Permissions(PERMISSIONS.ROLE_DELETE)
+  @Audit('role.restore', 'role')
+  @ApiOperation({ summary: 'Khôi phục vai trò đã xóa mềm (tất cả hoặc không; chặn trùng mã, 409 kèm lý do từng ID)' })
+  restoreMany(@Body() dto: BulkIdsDto) {
+    return this.roles.restoreMany(dto.ids);
+  }
+
   @Delete(':id')
   @Permissions(PERMISSIONS.ROLE_DELETE)
   @Audit('role.delete', 'role')
-  @ApiOperation({ summary: 'Xóa vai trò (chặn vai trò hệ thống / đang dùng)' })
+  @ApiOperation({ summary: 'Xóa mềm vai trò (chặn Admin / đang gán cho người dùng)' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.roles.remove(id);
   }

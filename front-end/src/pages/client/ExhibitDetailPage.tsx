@@ -1,6 +1,7 @@
 import { Button, Container, Title } from '@mantine/core';
 import { IconCube } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { z } from 'zod';
 import { MediaCreditList } from '@/components/museum/MediaCreditList';
@@ -9,15 +10,34 @@ import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
 import { PublicReportModal } from '@/shared/components/feedback/PublicReportModal';
+import { favoritesStore, readingStore, recentStore, rememberExhibit } from '@/helpers/visitorState';
+import { useVisitorStore } from '@/hooks/useVisitorStore';
+import { FavoriteButton } from './visitor/FavoriteButton';
+import { VisitorStorageStatus } from './visitor/VisitorStorageStatus';
+import { ReadingControls } from './visitor/ReadingControls';
+import { VisitorNotes } from './visitor/VisitorNotes';
 import classes from './ExhibitDetailPage.module.css';
 
 export function ExhibitDetailPage() {
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const favorites = useVisitorStore(favoritesStore);
+  const reading = useVisitorStore(readingStore);
   const { roomSlug, exhibitId } = useParams<{ roomSlug: string; exhibitId: string }>();
   const { rooms, room, selectedRoom } = useMuseumRooms(roomSlug ?? '');
   const isValidId = z.string().uuid().safeParse(exhibitId).success;
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const exhibit = detail && isValidId ? detail.exhibits.find((item) => item.id === exhibitId) : undefined;
+  const viewedRef = useRef<string | null>(null);
+  const validRoomId = exhibit?.roomId;
+  const validExhibitId = exhibit?.id;
+  const canRecordView = rooms.isSuccess && !rooms.isFetching && room.isSuccess && !room.isFetching;
+  useEffect(() => {
+    if (!canRecordView || !validRoomId || !validExhibitId) return;
+    const key = `${validRoomId}:${validExhibitId}`;
+    if (viewedRef.current === key) return;
+    viewedRef.current = key;
+    recentStore.update(refs => rememberExhibit(refs, { roomId: validRoomId, exhibitId: validExhibitId }));
+  }, [canRecordView, validRoomId, validExhibitId]);
   const credits = exhibit ? collectMediaCredits(exhibit) : [];
   const audio = exhibit?.audio?.vi;
   const transcript = audio?.transcript ?? (exhibit?.i18n ? exhibit.i18n.vi.transcript : exhibit?.transcript);
@@ -76,9 +96,13 @@ export function ExhibitDetailPage() {
               <IconCube size={18} aria-hidden="true" /> Xem trong không gian 3D
             </Link>
             <Button variant="default" onClick={() => setIsReportOpen(true)}>Báo nội dung</Button>
+            <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name} />
           </div>
+          <VisitorStorageStatus error={favorites.error} />
         </header>
-        <div className={classes.content}>
+        <ReadingControls />
+        <div className={`${classes.content} ${reading.value.enabled ? classes.reading : ''}`}
+          style={{ '--reading-scale': reading.value.fontScale } as CSSProperties}>
           <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } : null}
             shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
           <div className={classes.sections}>
@@ -109,6 +133,7 @@ export function ExhibitDetailPage() {
             </section>}
           </div>
         </div>
+        <VisitorNotes key={`${detail.id}:${exhibit.id}`} target={{ roomId: detail.id, exhibitId: exhibit.id }} />
       </article> : null}
       {exhibit && isReportOpen && <PublicReportModal key={`${exhibit.id}:${exhibit.revisionId}`} exhibitId={exhibit.id}
         reportedRevisionId={exhibit.revisionId} opened onClose={() => setIsReportOpen(false)} />}

@@ -24,6 +24,8 @@ import { ExhibitRevision, RevisionState } from '../entities/exhibit-revision.ent
 import { ExhibitVisibility } from '../entities/exhibit.entity';
 import { ExhibitsService } from '../services/exhibits.service';
 
+const SUBMITTER = { id: 'submitter-1' } as AuthUser;
+
 // =============================================================================
 // Helper Factories & Mock Data
 // =============================================================================
@@ -224,8 +226,10 @@ class MockExhibitsService {
     return this.updateExhibitDraftResult;
   }
 
-  async submitDraftForReview(id: string): Promise<ExhibitAdminResponse> {
+  submitDraftForReviewActors: string[] = [];
+  async submitDraftForReview(id: string, actorId: string): Promise<ExhibitAdminResponse> {
     this.submitDraftForReviewCalls.push(id);
+    this.submitDraftForReviewActors.push(actorId);
     if (this.submitDraftForReviewError) throw this.submitDraftForReviewError;
     return this.submitDraftForReviewResult;
   }
@@ -1253,9 +1257,10 @@ describe('Task 7.4 & 7.5 — AdminExhibitsController Comprehensive Test Suite (1
       const controller = new AdminExhibitsController(mockService as unknown as ExhibitsService);
       const id = 'e4b50c18-971c-4b68-b39f-f5cf171a8123';
 
-      await controller.submitReview(id);
+      await controller.submitReview(id, SUBMITTER);
       assert.strictEqual(mockService.submitDraftForReviewCalls.length, 1);
       assert.strictEqual(mockService.submitDraftForReviewCalls[0], id);
+      assert.strictEqual(mockService.submitDraftForReviewActors[0], SUBMITTER.id, 'người gửi để loại khỏi thông báo');
     });
 
     it('TC-C102: submitReview returns exhibit response with revisionState: IN_REVIEW', async () => {
@@ -1265,7 +1270,7 @@ describe('Task 7.4 & 7.5 — AdminExhibitsController Comprehensive Test Suite (1
       });
       const controller = new AdminExhibitsController(mockService as unknown as ExhibitsService);
 
-      const res = await controller.submitReview('ex-1');
+      const res = await controller.submitReview('ex-1', SUBMITTER);
       assert.strictEqual(res.revisionState, RevisionState.IN_REVIEW);
     });
 
@@ -1274,7 +1279,7 @@ describe('Task 7.4 & 7.5 — AdminExhibitsController Comprehensive Test Suite (1
       mockService.submitDraftForReviewError = new NotFoundException('Không tìm thấy hiện vật');
       const controller = new AdminExhibitsController(mockService as unknown as ExhibitsService);
 
-      await assert.rejects(async () => controller.submitReview('missing-ex'), (err: Error) => {
+      await assert.rejects(async () => controller.submitReview('missing-ex', SUBMITTER), (err: Error) => {
         assert.ok(err instanceof NotFoundException);
         assert.strictEqual(err.message, 'Không tìm thấy hiện vật');
         return true;
@@ -1286,7 +1291,7 @@ describe('Task 7.4 & 7.5 — AdminExhibitsController Comprehensive Test Suite (1
       mockService.submitDraftForReviewError = new NotFoundException('Không tìm thấy bản revision khả dụng');
       const controller = new AdminExhibitsController(mockService as unknown as ExhibitsService);
 
-      await assert.rejects(async () => controller.submitReview('no-revision-ex'), (err: Error) => {
+      await assert.rejects(async () => controller.submitReview('no-revision-ex', SUBMITTER), (err: Error) => {
         assert.ok(err instanceof NotFoundException);
         return true;
       });
@@ -1299,7 +1304,7 @@ describe('Task 7.4 & 7.5 — AdminExhibitsController Comprehensive Test Suite (1
       );
       const controller = new AdminExhibitsController(mockService as unknown as ExhibitsService);
 
-      await assert.rejects(async () => controller.submitReview('ex-already-in-review'), (err: Error) => {
+      await assert.rejects(async () => controller.submitReview('ex-already-in-review', SUBMITTER), (err: Error) => {
         assert.ok(err instanceof ConflictException);
         assert.ok(err.message.includes('in_review'));
         return true;
@@ -1313,7 +1318,7 @@ describe('Task 7.4 & 7.5 — AdminExhibitsController Comprehensive Test Suite (1
       );
       const controller = new AdminExhibitsController(mockService as unknown as ExhibitsService);
 
-      await assert.rejects(async () => controller.submitReview('ex-approved'), (err: Error) => {
+      await assert.rejects(async () => controller.submitReview('ex-approved', SUBMITTER), (err: Error) => {
         assert.ok(err instanceof ConflictException);
         return true;
       });
@@ -1324,7 +1329,7 @@ describe('Task 7.4 & 7.5 — AdminExhibitsController Comprehensive Test Suite (1
       mockService.submitDraftForReviewError = new BadRequestException('Bản nháp thiếu tên hiện vật tiếng Việt');
       const controller = new AdminExhibitsController(mockService as unknown as ExhibitsService);
 
-      await assert.rejects(async () => controller.submitReview('incomplete-draft'), (err: Error) => {
+      await assert.rejects(async () => controller.submitReview('incomplete-draft', SUBMITTER), (err: Error) => {
         assert.ok(err instanceof BadRequestException);
         return true;
       });
@@ -1337,7 +1342,7 @@ describe('Task 7.4 & 7.5 — AdminExhibitsController Comprehensive Test Suite (1
       });
       const controller = new AdminExhibitsController(mockService as unknown as ExhibitsService);
 
-      const res = await controller.submitReview('rejected-ex');
+      const res = await controller.submitReview('rejected-ex', SUBMITTER);
       assert.strictEqual(res.revisionState, RevisionState.IN_REVIEW);
     });
 
@@ -1345,7 +1350,7 @@ describe('Task 7.4 & 7.5 — AdminExhibitsController Comprehensive Test Suite (1
       const mockService = new MockExhibitsService();
       const controller = new AdminExhibitsController(mockService as unknown as ExhibitsService);
 
-      await controller.submitReview('target-submit-id');
+      await controller.submitReview('target-submit-id', SUBMITTER);
       assert.strictEqual(mockService.submitDraftForReviewCalls.length, 1);
     });
 
@@ -1354,7 +1359,7 @@ describe('Task 7.4 & 7.5 — AdminExhibitsController Comprehensive Test Suite (1
       mockService.submitDraftForReviewError = new Error('Lock timeout');
       const controller = new AdminExhibitsController(mockService as unknown as ExhibitsService);
 
-      await assert.rejects(async () => controller.submitReview('target-id'), (err: Error) => {
+      await assert.rejects(async () => controller.submitReview('target-id', SUBMITTER), (err: Error) => {
         assert.strictEqual(err.message, 'Lock timeout');
         return true;
       });

@@ -13,12 +13,12 @@ import { TransactionManager } from '../../../common/database/transaction.manager
 import { UpdateExhibitDto } from '../dto/update-exhibit.dto';
 import { ModerationService } from '../../moderation/services/moderation.service';
 import { ModerationRepository } from '../../moderation/repositories/moderation.repository';
-import { Hotspot } from '../entities/hotspot.entity';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AdminExhibitsController } from '../controllers/admin-exhibits.controller';
 import { AllExceptionsFilter } from '../../../common/filters/all-exceptions.filter';
 import { ResponseInterceptor } from '../../../common/interceptors/response.interceptor';
+import { notificationsStub } from '../../notifications/tests/notifications.stub';
 
 function setup(states: RevisionState[] = []) {
   const exhibit: Exhibit = Object.assign(new Exhibit(), { id: 'fixture', publishedRevisionId: null, visibility: ExhibitVisibility.HIDDEN, version: 1, isDeleted: false });
@@ -32,7 +32,7 @@ function setup(states: RevisionState[] = []) {
     findRevisionsForDeletion: async (_id: string, m: EntityManager) => { assert.equal(m, manager); log.push('lock-revisions'); return revisions; },
     hasReportReferences: async (_id: string, ids: string[], m: EntityManager) => { assert.equal(m, manager); assert.deepEqual(ids, revisions.map(r => r.id)); log.push('reports'); return reports; },
     isReportReferenceConflict: (error: unknown) => error === 'report-fk',
-    deleteCascadeDraft: async (_id: string, m: EntityManager) => { assert.equal(m, manager); log.push('delete'); if (failDelete) throw failDelete; present = false; },
+    markDeleted: async (_ids: string[], m: EntityManager) => { assert.equal(m, manager); log.push('delete'); if (failDelete) throw failDelete; present = false; },
     findActiveRevision: async () => revisions.at(-1) ?? null,
     save: async () => { log.push('save-exhibit'); return exhibit; },
     saveRevision: async (r: ExhibitRevision) => { log.push('save-revision'); return r; },
@@ -40,7 +40,7 @@ function setup(states: RevisionState[] = []) {
   const tx = { run: async (work: (m: EntityManager) => unknown) => { log.push('begin'); try { return await work(manager); } catch (e) { log.push('rollback'); throw e; } } } as TransactionManager;
   const gate = { assertPublishable: async () => { present = false; } };
   const media = { assertAttachable: async () => { present = false; } };
-  const service = new ExhibitsService(repo as unknown as ExhibitsRepository, {} as never, tx, media as never, gate as never, {} as never);
+  const service = new ExhibitsService(repo as unknown as ExhibitsRepository, {} as never, tx, media as never, gate as never, {} as never, notificationsStub());
   return { service, exhibit, revisions, log, setPresent: (value: boolean) => { present = value; }, setReports: () => { reports = true; }, fail: (error: unknown) => { failDelete = error; } };
 }
 
@@ -85,13 +85,13 @@ describe('Whole exhibit deletion policy', () => {
   }
   it('a submit paused at the media gate cannot resurrect an exhibit deleted meanwhile', async () => {
     const state = setup([RevisionState.DRAFT]);
-    await assert.rejects(() => state.service.submitDraftForReview('fixture'), NotFoundException);
+    await assert.rejects(() => state.service.submitDraftForReview('fixture', 'actor-test'), NotFoundException);
     assert.equal(state.log.includes('save-revision'), false);
     assert.equal(state.log.includes('save-exhibit'), false);
   });
   it('an update paused at the media gate cannot resurrect an exhibit deleted meanwhile', async () => {
     const state = setup([RevisionState.DRAFT]);
-    await assert.rejects(() => state.service.updateExhibitDraft('fixture', new UpdateExhibitDto(), { id: 'actor' }), NotFoundException);
+    await assert.rejects(() => state.service.updateExhibitDraft('fixture', Object.assign(new UpdateExhibitDto(), { expectedVersion: 1 }), { id: 'actor' }), NotFoundException);
     assert.equal(state.log.includes('save-exhibit'), false);
   });
 
@@ -103,8 +103,8 @@ describe('Whole exhibit deletion policy', () => {
       let reads = 0;
       repo.findActiveRevision = async () => Object.assign(new ExhibitRevision(), state.revisions[0], { state: ++reads === 1 ? RevisionState.DRAFT : RevisionState.IN_REVIEW });
       repo.findForUpdate = async () => state.exhibit;
-      await assert.rejects(() => method === 'submit' ? state.service.submitDraftForReview('fixture')
-        : state.service.updateExhibitDraft('fixture', new UpdateExhibitDto(), { id: 'actor' }), ConflictException);
+      await assert.rejects(() => method === 'submit' ? state.service.submitDraftForReview('fixture', 'actor-test')
+        : state.service.updateExhibitDraft('fixture', Object.assign(new UpdateExhibitDto(), { expectedVersion: 1 }), { id: 'actor' }), ConflictException);
       assert.equal(state.log.includes('save-revision'), false);
       assert.equal(state.log.includes('save-exhibit'), false);
     });
@@ -119,32 +119,29 @@ describe('Whole exhibit deletion policy', () => {
       { findDetail: async () => snapshot } as unknown as ModerationRepository,
       { run: async (work: (m: EntityManager) => unknown) => work(manager) } as TransactionManager,
       { assertPublishable: async () => { await state.service.deleteExhibitDraft('fixture'); } } as never,
+      notificationsStub(),
     );
     await assert.rejects(() => moderation.publish(snapshot.id, { version: 1 }, { id: 'actor' } as never), ConflictException);
     assert.deepEqual(updates, [Exhibit]);
     await assert.rejects(() => state.service.deleteExhibitDraft('fixture'), NotFoundException);
   });
 
-  it('cascade failure restores hotspots, revisions and exhibit through the transaction runner', async () => {
-    const state = { exhibit: true, revisions: ['revision'], hotspots: ['hotspot'], media: ['shared-media'] };
-    const original = structuredClone(state);
-    const log: string[] = [];
-    const manager = { getRepository: (target: unknown) => ({
-      find: async () => state.revisions.map(id => ({ id })),
-      delete: async () => {
-        if (target === Hotspot) { log.push('hotspots'); state.hotspots = []; }
-        else if (target === ExhibitRevision) { log.push('revisions'); state.revisions = []; }
-        else { log.push('exhibit'); throw new Error('simulated exhibit delete failure'); }
-      },
-    }) } as unknown as EntityManager;
-    const dataSource = { transaction: async (work: (m: EntityManager) => unknown) => {
-      try { return await work(manager); }
-      catch (error) { Object.assign(state, structuredClone(original)); log.push('rollback'); throw error; }
-    } } as unknown as DataSource;
-    const repo = new ExhibitsRepository({ target: Exhibit } as never, { target: ExhibitRevision } as never, { target: Hotspot } as never);
-    await assert.rejects(() => new TransactionManager(dataSource).run(m => repo.deleteCascadeDraft('fixture', m)), /simulated exhibit delete failure/);
-    assert.deepEqual(log, ['hotspots', 'revisions', 'exhibit', 'rollback']);
-    assert.deepEqual(state, original);
+  it('bulk: one protected exhibit blocks the whole batch (409 lists it), nothing is soft-deleted', async () => {
+    const { service, log, exhibit } = setup([RevisionState.DRAFT]);
+    exhibit.publishedRevisionId = 'published';
+    await assert.rejects(() => service.removeMany(['fixture']), (e: unknown) => {
+      assert.ok(e instanceof ConflictException);
+      const body = e.getResponse() as { errors: Array<{ field: string }> };
+      assert.deepEqual(body.errors.map(item => item.field), ['fixture']);
+      return true;
+    });
+    assert.equal(log.includes('delete'), false);
+  });
+
+  it('bulk: all deletable → soft-deletes in one transaction and returns ids for audit', async () => {
+    const { service, log } = setup([RevisionState.DRAFT]);
+    assert.deepEqual(await service.removeMany(['fixture']), { ids: ['fixture'] });
+    assert.deepEqual(log, ['begin', 'lock-exhibit', 'lock-revisions', 'reports', 'delete']);
   });
 });
 

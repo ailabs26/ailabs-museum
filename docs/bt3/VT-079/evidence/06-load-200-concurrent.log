@@ -1,0 +1,9 @@
+# node scripts/bt3-autosave-load.mjs — server: node dist/main.js (build từ 86acaa3+, NODE_ENV=development, cổng 3101), PostgreSQL 16 Docker 127.0.0.1:5433, cùng một máy; 6 CPU, 6 GB RAM; Node v24.15.0
+# 200 hiện vật nháp đã tạo; API http://127.0.0.1:3101/api; mục tiêu p95 ≤ 5000 ms
+{"label":"A vòng 1: 200 autosave đồng thời / 200 hiện vật","n":200,"byStatus":{"200":200},"p50":2776.2,"p95":2967.1,"p99":2970.4,"max":2970.5}
+{"label":"A vòng 2: 200 autosave đồng thời / 200 hiện vật","n":200,"byStatus":{"200":200},"p50":2724.2,"p95":2787.3,"p99":2789.5,"max":2789.6}
+{"label":"A vòng 3: 200 autosave đồng thời / 200 hiện vật","n":200,"byStatus":{"200":200},"p50":2728.8,"p95":2777.6,"p99":2779.2,"max":2779.9}
+{"label":"B: 200 autosave đồng thời / 1 hiện vật, cùng expectedVersion=4","n":200,"byStatus":{"200":1,"409":199},"p50":1850.3,"p95":1923,"p99":1927.8,"max":1927.9}
+{"invariantB":{"winners":1,"versionBefore":4,"versionAfter":5,"storedName":"Tab 0","winnerName":"Tab 0"}}
+# KẾT LUẬN: p95 lớn nhất 2967.1 ms (mục tiêu ≤ 5000) → ĐẠT; 5xx: không; A toàn 200: đúng; invariant CAS dưới tải: giữ
+exit=0

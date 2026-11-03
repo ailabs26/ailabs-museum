@@ -4,6 +4,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Logger,
   Param,
   ParseUUIDPipe,
@@ -21,6 +23,7 @@ import { Audit } from '../../audit/decorators/audit.decorator';
 import { PERMISSIONS } from '../../../common/constants/permissions.constant';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { Permissions } from '../../../common/decorators/permissions.decorator';
+import { BulkIdsDto } from '../../../common/dto/bulk-ids.dto';
 import { ListMediaQueryDto } from '../dto/list-media-query.dto';
 import { MEDIA_TEXT_LIMITS, UpdateMediaDto } from '../dto/update-media.dto';
 import { UploadMediaDto } from '../dto/upload-media.dto';
@@ -68,7 +71,7 @@ export class AdminMediaController {
 
   @Get()
   @Permissions(PERMISSIONS.MEDIA_UPLOAD)
-  @ApiOperation({ summary: 'Thư viện media (phân trang, lọc kind/state, tìm theo tên & metadata)' })
+  @ApiOperation({ summary: 'Thư viện media (phân trang, lọc kind/state, tìm theo tên & metadata; deleted=true → thùng rác)' })
   list(@Query() query: ListMediaQueryDto) {
     return this.mediaService.list(query);
   }
@@ -127,10 +130,28 @@ export class AdminMediaController {
     return this.mediaService.update(id, dto);
   }
 
+  @Post('bulk-delete')
+  @HttpCode(HttpStatus.OK)
+  @Permissions(PERMISSIONS.MEDIA_UPLOAD)
+  @Audit('media.delete', 'media')
+  @ApiOperation({ summary: 'Xóa mềm nhiều media (tất cả hoặc không; BR-21, 409 kèm lý do từng ID; giữ file)' })
+  removeMany(@Body() dto: BulkIdsDto) {
+    return this.mediaService.removeMany(dto.ids);
+  }
+
+  @Post('bulk-restore')
+  @HttpCode(HttpStatus.OK)
+  @Permissions(PERMISSIONS.MEDIA_UPLOAD)
+  @Audit('media.restore', 'media')
+  @ApiOperation({ summary: 'Khôi phục media đã xóa mềm (tất cả hoặc không; 409 kèm lý do từng ID)' })
+  restoreMany(@Body() dto: BulkIdsDto) {
+    return this.mediaService.restoreMany(dto.ids);
+  }
+
   @Delete(':id')
   @Permissions(PERMISSIONS.MEDIA_UPLOAD)
   @Audit('media.delete', 'media')
-  @ApiOperation({ summary: 'Xóa mềm media (409 nếu exhibit đã xuất bản đang dùng — BR-21)' })
+  @ApiOperation({ summary: 'Xóa mềm media, giữ file (409 nếu exhibit đã xuất bản đang dùng — BR-21)' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.mediaService.remove(id);
   }

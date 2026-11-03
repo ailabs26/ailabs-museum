@@ -1,3 +1,4 @@
+import { museumExhibitButton } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
 import { envelope, roomA } from './fixtures/museumContent';
@@ -12,15 +13,22 @@ test.beforeEach(async ({ page }) => {
   })));
 });
 
-test('Vietnamese tour headings use a consistent serif font and keep detail keyboard behavior', async ({ page }) => {
+test('Vietnamese exhibit headings retain serif typography within the branded tour and keep keyboard behavior', async ({ page }) => {
   await page.goto('/tour');
-  const trigger = page.getByRole('button', { name: `Xem chi tiết ${vietnameseTitle}`, exact: true });
+  const trigger = museumExhibitButton(page, `Xem chi tiết ${vietnameseTitle}`);
   await trigger.click();
-  const selectors = ['#museum-catalogue li:nth-child(2) h3', 'aside h2', 'main h1', '[class*="introTitle"]'];
+  const selectors = ['#museum-catalogue li:nth-child(2) h3', 'aside h2'];
   for (const selector of selectors) {
     const heading = page.locator(selector);
     await expect(heading).toHaveCSS('font-family', '"Times New Roman", serif');
     expect(await heading.evaluate((element) => element.textContent === element.textContent?.normalize('NFC'))).toBe(true);
+  }
+  // Page/entrance branding uses the shared Aura display family; exhibit titles
+  // retain the Vietnamese serif contract, including the actual platform font.
+  for (const selector of ['main h1', '[class*="introTitle"]']) {
+    const heading = page.locator(selector);
+    await expect(heading).toHaveCSS('font-family', /"Plus Jakarta Sans", Inter,/);
+    expect(await heading.evaluate(element => element.textContent === element.textContent?.normalize('NFC'))).toBe(true);
   }
   // Installed font families vary by OS; the reported bug was reproduced on Windows Edge.
   if (process.platform === 'win32') {

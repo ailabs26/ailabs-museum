@@ -1,0 +1,46 @@
+
+ RUN  v2.1.8 ailabs-museum/front-end
+
+ ❯ src/helpers/draftAutosave.test.ts (9 tests | 2 failed) 41ms
+   × createDraftAutosaver > TC13c (AI review #3): lỗi không retry được (404/403/422) → báo lỗi, KHÔNG tự gửi lại; thay đổi mới vẫn được lưu 12ms
+     → expected [ …(2) ] to have a length of 1 but got 2
+   × createDraftAutosaver > TC11b (AI review #1): pause() hủy lần lưu đang chờ để nút Lưu tay không đua với autosave; resume() bật lại 1ms
+     → saver.pause is not a function
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/helpers/draftAutosave.test.ts > createDraftAutosaver > TC13c (AI review #3): lỗi không retry được (404/403/422) → báo lỗi, KHÔNG tự gửi lại; thay đổi mới vẫn được lưu
+AssertionError: expected [ …(2) ] to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/helpers/draftAutosave.test.ts:137:19
+    135|     expect(saver.status).toBe('error');
+    136|     await vi.advanceTimersByTimeAsync(60_000);
+    137|     expect(calls).toHaveLength(1);
+       |                   ^
+    138|
+    139|     saver.schedule({ name: 'A đã sửa media' });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/helpers/draftAutosave.test.ts > createDraftAutosaver > TC11b (AI review #1): pause() hủy lần lưu đang chờ để nút Lưu tay không đua với autosave; resume() bật lại
+TypeError: saver.pause is not a function
+ ❯ src/helpers/draftAutosave.test.ts:147:11
+    145|     const { saver, calls } = setup(3);
+    146|     saver.schedule({ name: 'Gõ rồi bấm Lưu ngay' });
+    147|     saver.pause();
+       |           ^
+    148|     saver.schedule({ name: 'Gõ tiếp khi đang lưu tay' });
+    149|     await vi.advanceTimersByTimeAsync(60_000);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 7 passed (9)
+   Start at  12:47:55
+   Duration  517ms (transform 62ms, setup 0ms, collect 53ms, tests 41ms, environment 0ms, prepare 110ms)

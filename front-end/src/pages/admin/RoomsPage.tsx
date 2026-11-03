@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
   Center,
   Code,
   Divider,
@@ -28,7 +29,12 @@ import { ApiException } from '@/core/api/api-error';
 import { useAuth } from '@/core/auth/use-auth';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { confirmAction, notify } from '@/shared/components/feedback';
-import { Column, DataTable, EmptyState } from '@/shared/components/data';
+import {
+  BulkActionBar, BulkDeleteFailures, Column, DataTable, EmptyState, RestoreRowButton, TrashToggle,
+} from '@/shared/components/data';
+import { formatDeletedAt } from '@/helpers/bulkDelete';
+import { useBulkDelete, useBulkRestore } from '@/shared/hooks/useBulkDelete';
+import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import {
   CreateRoomInput,
@@ -76,6 +82,8 @@ export function RoomsPage() {
   const [editing, setEditing] = useState<RoomRow | null>(null);
   const [opened, drawer] = useDisclosure(false);
   const [autoSlug, setAutoSlug] = useState(true);
+  // Mục Đã xóa (thùng rác): xem và khôi phục phòng đã xóa mềm.
+  const [trash, setTrash] = useState(false);
 
   const canCreate = hasPermission(PERMISSIONS.ROOM_CREATE);
   const canUpdate = hasPermission(PERMISSIONS.ROOM_UPDATE);
@@ -84,13 +92,14 @@ export function RoomsPage() {
   const queryStatus = statusFilter !== 'all' ? (statusFilter as RoomStatus) : undefined;
 
   const roomsQuery = useQuery({
-    queryKey: ['rooms', page, search, queryStatus],
+    queryKey: ['rooms', page, search, queryStatus, trash],
     queryFn: () =>
       roomsService.list({
         page,
         pageSize: 20,
         q: search.trim() || undefined,
         status: queryStatus,
+        deleted: trash || undefined,
       }),
     placeholderData: keepPreviousData,
   });
@@ -118,6 +127,23 @@ export function RoomsPage() {
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['rooms'] });
+  const selection = useRowSelection(`${page}|${search}|${statusFilter}|${trash}`);
+  const nameOf = (id: string) => roomsQuery.data?.items.find((room) => room.id === id)?.name;
+  const bulk = useBulkDelete({
+    removeMany: roomsService.removeMany, noun: 'phòng', nameOf, onSuccess: selection.clear, onSettled: invalidate,
+  });
+  const restore = useBulkRestore({
+    restoreMany: roomsService.restoreMany, noun: 'phòng', nameOf, onSuccess: selection.clear, onSettled: invalidate,
+  });
+  const bulkAction = trash ? restore : bulk;
+  /** BR-20: phòng còn hiện vật (đã bỏ qua hiện vật xóa mềm) thì không chọn để xóa được. Thùng rác: chọn được hết. */
+  const deleteBlock = (room: RoomRow) =>
+    !trash && room.exhibitsCount > 0 ? `Phòng chứa ${room.exhibitsCount} hiện vật (BR-20)` : null;
+  const toggleSelected = (id: string) => selection.setSelectedIds(
+    selection.selectedIds.includes(id)
+      ? selection.selectedIds.filter((item) => item !== id)
+      : [...selection.selectedIds, id],
+  );
 
   const saveMutation = useMutation({
     mutationFn: (values: RoomFormValues) => {
@@ -282,11 +308,21 @@ export function RoomsPage() {
         </Text>
       ),
     },
+    ...(trash ? [{
+      key: 'deletedAt',
+      header: 'Ngày xóa',
+      render: (r: RoomRow) => <Text size="xs" c="dimmed">{formatDeletedAt(r.deletedAt)}</Text>,
+    }] : []),
     {
       key: 'actions',
       header: '',
       align: 'right',
-      render: (r) => (
+      render: (r) => trash ? (
+        <Group gap={6} justify="flex-end" wrap="nowrap">
+          <RestoreRowButton label={`Khôi phục phòng ${r.name}`} disabled={restore.isPending}
+            onClick={() => restore.confirmRestore([r.id])} />
+        </Group>
+      ) : (
         <Group gap={6} justify="flex-end" wrap="nowrap">
           {canUpdate && (
             <Tooltip label="Chỉnh sửa thông tin phòng">
@@ -334,7 +370,7 @@ export function RoomsPage() {
         title="Quản lý Phòng trưng bày"
         description="Quản lý thông tin các phòng, kiểm soát trạng thái hiển thị 3D và hiện vật liên kết"
         actions={
-          canCreate ? (
+          canCreate && !trash ? (
             <Button
               leftSection={<IconPlus size={16} />}
               onClick={openCreate}
@@ -367,7 +403,18 @@ export function RoomsPage() {
           w={{ base: '100%', sm: 220 }}
           clearable={false}
         />
+        {canDelete && <TrashToggle trash={trash} onChange={(value) => { setPage(1); setTrash(value); }} />}
       </Flex>
+
+      {canDelete && (
+        <>
+          <BulkActionBar count={selection.selectedIds.length} onClear={selection.clear}
+            action={trash ? 'restore' : 'delete'} loading={bulkAction.isPending}
+            onDelete={() => (trash ? restore.confirmRestore : bulk.confirmDelete)(selection.selectedIds)} />
+          <BulkDeleteFailures failures={bulkAction.failures} onClose={bulkAction.dismissFailures}
+            action={trash ? 'restore' : 'delete'} />
+        </>
+      )}
 
       {/* Giao diện Desktop (Table) */}
       <Box visibleFrom="sm">
@@ -375,12 +422,18 @@ export function RoomsPage() {
           columns={columns}
           data={data?.items ?? []}
           rowKey={(r) => r.id}
+          selection={canDelete ? {
+            selectedIds: selection.selectedIds,
+            onChange: selection.setSelectedIds,
+            disabledReason: deleteBlock,
+            rowLabel: (r) => r.name,
+          } : undefined}
           loading={roomsQuery.isLoading}
           page={data?.page}
           pageSize={data?.pageSize}
           total={data?.total}
           onPageChange={setPage}
-          emptyText="Chưa có phòng trưng bày nào"
+          emptyText={trash ? 'Không có phòng đã xóa' : 'Chưa có phòng trưng bày nào'}
           minWidth={720}
         />
       </Box>
@@ -392,11 +445,17 @@ export function RoomsPage() {
             <Loader size="sm" />
           </Center>
         ) : (data?.items ?? []).length === 0 ? (
-          <EmptyState text="Chưa có phòng trưng bày nào" />
+          <EmptyState text={trash ? 'Không có phòng đã xóa' : 'Chưa có phòng trưng bày nào'} />
         ) : (
           (data?.items ?? []).map((room) => (
             <Card key={room.id} withBorder radius="md" p="sm" shadow="xs">
               <Group justify="space-between" align="flex-start" wrap="nowrap" mb="xs">
+                {canDelete && (
+                  <Checkbox mt={2} aria-label={`Chọn ${room.name}`}
+                    checked={selection.selectedIds.includes(room.id)}
+                    disabled={!!deleteBlock(room)}
+                    onChange={() => toggleSelected(room.id)} />
+                )}
                 <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                   <Text fw={600} size="sm" lineClamp={1}>
                     {room.name}
@@ -436,10 +495,14 @@ export function RoomsPage() {
                     {room.exhibitsCount} hiện vật
                   </Badge>
                   <Text size="xs" c="dimmed">
-                    {new Date(room.createdAt).toLocaleDateString('vi-VN')}
+                    {trash ? `Xóa lúc ${formatDeletedAt(room.deletedAt)}` : new Date(room.createdAt).toLocaleDateString('vi-VN')}
                   </Text>
                 </Group>
 
+                {trash ? (
+                  <RestoreRowButton label={`Khôi phục phòng ${room.name}`} disabled={restore.isPending}
+                    onClick={() => restore.confirmRestore([room.id])} />
+                ) : (
                 <Group gap={6} wrap="nowrap">
                   {canUpdate && (
                     <ActionIcon
@@ -470,6 +533,7 @@ export function RoomsPage() {
                     </Tooltip>
                   )}
                 </Group>
+                )}
               </Group>
             </Card>
           ))

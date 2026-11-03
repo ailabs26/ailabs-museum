@@ -7,6 +7,8 @@ export interface UserResponse {
   displayName: string;
   status: string;
   roles: string[];
+  /** Đã bật xác thực 2 lớp (để Admin biết có thể tắt hộ). */
+  twoFactorEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,9 +19,12 @@ export function toUserResponse(user: User): UserResponse {
     email: user.email,
     displayName: user.displayName,
     status: user.status,
+    // Vai trò đã xóa mềm không còn hiệu lực (liên kết cũ của tài khoản đã xóa vẫn giữ trong user_roles).
     roles: (user.userRoles ?? [])
+      .filter((userRole) => !userRole.role?.isDeleted)
       .map((userRole) => userRole.role?.code)
       .filter((code): code is string => Boolean(code)),
+    twoFactorEnabled: Boolean(user.totpEnabledAt),
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

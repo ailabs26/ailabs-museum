@@ -170,3 +170,36 @@ describe('SupabaseStorageDriver', () => {
     });
   });
 });
+
+describe('SupabaseStorageDriver.list', () => {
+  it('POST object/list theo từng thư mục, đi đệ quy vào thư mục con (id null), phân trang 1000, lấy updated_at', async () => {
+    const fake = new FakeFetch();
+    const driver = new SupabaseStorageDriver({ url: 'https://ref.supabase.co', serviceKey: 'k', bucket: 'aura-media', fetchFn: fake.fn });
+    const page1 = Array.from({ length: 1000 }, (_, i) => ({ name: `f${i}.png`, id: `id${i}`, updated_at: '2026-11-01T00:00:00Z' }));
+    fake.responses.push(
+      json(200, [{ name: 'images', id: null }, { name: 'audio', id: null }]), // uploads
+      json(200, page1),                                                       // uploads/images trang 1 (đầy)
+      json(200, [{ name: 'last.png', id: 'x', created_at: '2026-10-01T00:00:00Z' }]), // trang 2
+      json(200, []),                                                          // uploads/audio rỗng
+    );
+    const objects = [];
+    for await (const object of driver.list('uploads/')) objects.push(object);
+
+    assert.equal(objects.length, 1001);
+    assert.equal(objects[0].key, 'uploads/images/f0.png');
+    assert.equal(objects[0].lastModified.toISOString(), '2026-11-01T00:00:00.000Z');
+    assert.deepEqual(objects.at(-1), { key: 'uploads/images/last.png', lastModified: new Date('2026-10-01T00:00:00Z') });
+    assert.deepEqual(fake.calls.map((c) => [c.method, c.url]), Array(4).fill(['POST', 'https://ref.supabase.co/storage/v1/object/list/aura-media']));
+    const bodies = fake.calls.map((c) => JSON.parse(Buffer.from(c.body as Buffer).toString()));
+    assert.deepEqual(bodies.map((b) => [b.prefix, b.offset, b.limit]), [
+      ['uploads', 0, 1000], ['uploads/images', 0, 1000], ['uploads/images', 1000, 1000], ['uploads/audio', 0, 1000],
+    ]);
+  });
+
+  it('API lỗi → ném lỗi (job ghi log, không xóa nhầm)', async () => {
+    const fake = new FakeFetch();
+    const driver = new SupabaseStorageDriver({ url: 'https://ref.supabase.co', serviceKey: 'k', bucket: 'b', fetchFn: fake.fn });
+    fake.responses.push(json(403, { message: 'forbidden' }));
+    await assert.rejects(async () => { for await (const _ of driver.list('quarantine/')) void _; }, /không liệt kê được quarantine/);
+  });
+});

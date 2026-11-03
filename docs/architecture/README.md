@@ -30,7 +30,7 @@ quy ước và ranh giới module. Mỗi người code theo đúng khung ở đ�
 2. **Draft/Published tách biệt** — nội dung nháp không lọt ra API public (TTL cache ≤ 60s).
 3. **Repository pattern** — service không gọi thẳng TypeORM; đi qua `BaseRepository<T>` (mượn từ `IAsyncRepository` của bản .NET tham khảo).
 4. **Response & error đồng nhất** — mọi endpoint trả `ApiResponse<T>`; lỗi đi qua global exception filter.
-5. **RBAC theo action + scope** — guard kiểm quyền chi tiết từng endpoint.
+5. **RBAC theo permission `resource:action`** — guard kiểm quyền từng endpoint ở backend (không phân quyền theo phòng).
 6. **Progressive enhancement** — 2D luôn hoạt động không cần WebGL/XR; 3D và XR là lớp nâng cao.
 7. **Append-only audit** — mọi thao tác admin ghi vết, không ghi đè.
 

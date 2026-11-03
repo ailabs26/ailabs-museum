@@ -34,3 +34,11 @@ export function toApiException(error: unknown): ApiException {
   if (status === 0) return new ApiException('Không kết nối được máy chủ', 0);
   return new ApiException(axiosErr.message ?? 'Đã xảy ra lỗi', status);
 }
+
+/**
+ * Lỗi kết thúc phiên thật: chỉ 401 (refresh token hết hạn, bị thu hồi, phiên đã đổi).
+ * 429 / 5xx / mất mạng là sự cố tạm thời — giữ phiên để thử lại (issue #128).
+ */
+export function endsSession(error: unknown): boolean {
+  return toApiException(error).status === 401;
+}

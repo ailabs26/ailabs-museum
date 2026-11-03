@@ -7,9 +7,10 @@ import { PUBLIC_REPORT_CATEGORIES, reportsService, type CreatePublicReportInput 
 interface PublicReportModalProps extends Pick<CreatePublicReportInput, 'exhibitId' | 'reportedRevisionId'> {
   opened: boolean;
   onClose: () => void;
+  portalTarget?: HTMLElement;
 }
 
-export function PublicReportModal({ exhibitId, reportedRevisionId, opened, onClose }: PublicReportModalProps) {
+export function PublicReportModal({ exhibitId, reportedRevisionId, opened, onClose, portalTarget }: PublicReportModalProps) {
   const [category, setCategory] = useState('');
   const [message, setMessage] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -53,6 +54,7 @@ export function PublicReportModal({ exhibitId, reportedRevisionId, opened, onClo
 
   return (
     <Modal title="Báo cáo nội dung" opened={opened} onClose={handleClose}
+      portalProps={portalTarget ? { target: portalTarget } : undefined}
       closeOnClickOutside={!mutation.isPending} closeOnEscape={!mutation.isPending}>
       <form onSubmit={handleSubmit}>
         <Stack>

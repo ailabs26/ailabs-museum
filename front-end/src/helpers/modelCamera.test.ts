@@ -1,9 +1,17 @@
 import { expect, it } from 'vitest';
 import { PerspectiveCamera, Vector3 } from 'three';
-import { getExhibitView } from './museumCamera';
+import { getExhibitView, getMuseumFov } from './museumCamera';
 import { constrainCameraToRoom } from './museumCamera';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { MuseumDisplay } from '../interfaces/museumScene';
+
+it('widens portrait framing with a bounded lens and keeps landscape/XR baseline unchanged', () => {
+  expect(getMuseumFov(16 / 9)).toBe(60);
+  expect(getMuseumFov(1)).toBe(60);
+  expect(getMuseumFov(390 / 844)).toBe(82);
+  expect(getMuseumFov(.85)).toBeGreaterThan(60);
+  for (const aspect of [0, -1, NaN, Infinity]) expect(getMuseumFov(aspect)).toBe(60);
+});
 
 it('frames actual normalized bounds in landscape and portrait inside the walls', () => {
   const display: MuseumDisplay = { id: 'model', title: '', description: '', position: [4, 0, -3.7], shape: 'cylinder', color: '#fff' };

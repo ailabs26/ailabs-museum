@@ -6,6 +6,7 @@ import { PermissionDeniedException } from '../../../common/exceptions/permission
 import { AllExceptionsFilter } from '../../../common/filters/all-exceptions.filter';
 import { REQUEST_ID_HEADER } from '../../../common/middleware/request-id.middleware';
 import type { AuthUser } from '../../../common/types/auth-user.type';
+import { userAgentOf } from '../audit-request.util';
 import { AuditService } from '../services/audit.service';
 
 type AuditRequest = Request & { user?: AuthUser };
@@ -40,6 +41,8 @@ export class PermissionDeniedFilter extends AllExceptionsFilter {
       requiredPermissions: exception.requiredPermissions,
       missingPermissions: exception.missingPermissions,
       requestId,
+      ip: request.ip?.slice(0, 64) ?? null,
+      userAgent: userAgentOf(request),
     });
 
     super.catch(exception, host);

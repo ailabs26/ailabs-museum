@@ -1,0 +1,50 @@
+# Mutation M5 (review fix): bỏ điều kiện Not(displayOrder) -> reorder luôn tăng version, kể cả hiện vật không đổi chỗ
+# diff:
++   * VT-079: thứ tự thực sự đổi thì tăng `version`, để autosave đang mang thứ tự cũ nhận 409
++   * thay vì ghi đè. Hiện vật giữ nguyên vị trí không bị tăng version (tránh xung đột giả).
+-    await this.scoped(manager).update({ id, roomId }, { displayOrder });
++    await this.scoped(manager).update(
++      { id, roomId },
++      { displayOrder, version: () => 'version + 1' },
++    );
+-  /** Bỏ xóa mềm hiện vật và đặt lại thứ tự hiển thị. */
++  /** Bỏ xóa mềm hiện vật và đặt lại thứ tự hiển thị; tăng `version` để autosave cũ nhận 409 (VT-079). */
+-    await this.scoped(manager).update({ id }, { isDeleted: false, deletedAt: null, displayOrder });
++    await this.scoped(manager).update(
++      { id },
++      { isDeleted: false, deletedAt: null, displayOrder, version: () => 'version + 1' },
++    );
+▶ VT-079 · autosave chống ghi đè (PostgreSQL thật)
+  ✔ TC06 (AC2/AC4): replay bản A cũ sau khi bản B đã lưu → 409, DB vẫn giữ bản B (117.653284ms)
+  ✔ TC07 (AC3/R8): 2 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (41.560768ms)
+  ✔ TC07 (AC3/R8): 10 autosave song song cùng expectedVersion → đúng 1 thành công, version +1 (77.104409ms)
+  ✔ TC08 (R7): bản đã xuất bản + version khớp → fork revision mới; autosave cũ sau đó → 409 (59.912042ms)
+  ✔ TC09 (R5): đã gửi duyệt → autosave (version cũ hay khớp) bị từ chối, revision vẫn in_review (45.981558ms)
+  ✔ TC17 (R9, review dinhtienn): reorder trong lúc drawer mở → autosave cũ nhận 409, thứ tự mới được giữ (36.466685ms)
+  ✖ TC17b (R9): reorder không đổi vị trí một hiện vật → version của nó giữ nguyên, không xung đột giả (37.977847ms)
+  ✔ TC18 (R9): xóa rồi khôi phục trong lúc drawer mở → autosave cũ nhận 409 (44.138589ms)
+✖ VT-079 · autosave chống ghi đè (PostgreSQL thật) (2703.048987ms)
+ℹ tests 8
+ℹ suites 1
+ℹ pass 7
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4921.088012
+
+✖ failing tests:
+
+test at src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:150:24
+✖ TC17b (R9): reorder không đổi vị trí một hiện vật → version của nó giữ nguyên, không xung đột giả (37.977847ms)
+  ConflictException: Hiện vật đã có bản lưu mới hơn. Vui lòng tải lại trước khi lưu tiếp.
+      at /home/thang/Documents/hus-khmt-k68/Software-Engineer/ailabs-museum/back-end/src/modules/exhibits/services/exhibits.service.ts:324:15
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async EntityManager.transaction (/home/thang/Documents/hus-khmt-k68/Software-Engineer/ailabs-museum/back-end/node_modules/src/entity-manager/EntityManager.ts:157:28)
+      at async TestContext.<anonymous> (/home/thang/Documents/hus-khmt-k68/Software-Engineer/ailabs-museum/back-end/src/modules/exhibits/tests/exhibit-autosave.integration.spec.ts:182:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    response: { message: 'Hiện vật đã có bản lưu mới hơn. Vui lòng tải lại trước khi lưu tiếp.', error: 'Conflict', statusCode: 409 },
+    status: 409,
+    options: {}
+  }

@@ -51,6 +51,9 @@ main        ← chỉ release ổn định (KHÔNG merge trực tiếp)
 
 ## 9.4 Definition of Done (mỗi PR)
 
+- [ ] **CI xanh** (GitHub Actions `.github/workflows/ci.yml`, tự chạy trên mọi PR vào `dev`/`main` và mỗi lần push `dev`):
+  back-end typecheck → lint → build → `npm test` (PostgreSQL 16 tạm của runner) → `test:coverage` (≥ 80%);
+  front-end typecheck → lint → `test:unit` → build. CI đỏ → xem log ở tab Checks của PR, sửa trước khi merge.
 - [ ] Biên dịch/lint sạch (`typecheck`, `lint`).
 - [ ] Theo đúng cấu trúc thư mục & quy ước trong tài liệu này.
 - [ ] DTO tách Entity; endpoint trả `ApiResponse`.

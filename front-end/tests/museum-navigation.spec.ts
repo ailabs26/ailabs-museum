@@ -1,6 +1,7 @@
+import { museumExhibitButton, selectMuseumExhibit } from './fixtures/museumUi';
 import { expect, test, type Page } from '@playwright/test';
 import { installMuseumApi } from './fixtures/museumApi';
-import { installRendererProbe, readRendererProbe } from './fixtures/museumProbe';
+import { installRendererProbe, waitForGallerySurfaces, waitForRendererIdle } from './fixtures/museumProbe';
 import { installFiveModels } from './fixtures/museumGlb';
 
 // Local cold chunk transfer was measured at 18.9s; keep gesture assertions
@@ -18,6 +19,7 @@ async function openTour(page: Page) {
   await page.goto('/tour.html'); await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true });
   await expect(canvas).toBeVisible({ timeout: 30_000 });
+  await waitForGallerySurfaces(page);
   await expect.poll(() => cameraState(page)).not.toBeNull();
   return canvas;
 }
@@ -35,9 +37,7 @@ test('WASD walks, Shift sprints, focus loss stops input and idle rendering sleep
   }
   const after = (await cameraState(page))!;
   expect(Math.abs(after.position[0] - before[0])).toBeLessThan(0.02);
-  await page.waitForTimeout(900);
-  const frames = (await readRendererProbe(page)).at(-1)!.frames;
-  await page.waitForTimeout(300); expect((await readRendererProbe(page)).at(-1)!.frames).toBe(frames);
+  await waitForRendererIdle(page);
   await page.keyboard.down('d'); await page.waitForTimeout(100);
   await page.getByLabel('Chọn phòng trưng bày').focus(); await page.keyboard.up('d');
   const stopped = await cameraState(page); await page.waitForTimeout(200);
@@ -61,7 +61,7 @@ test('walking cannot pass through the central plinth; manual movement interrupts
   const canvas = await openTour(page); await canvas.focus();
   await page.keyboard.down('w'); await page.waitForTimeout(2600); await page.keyboard.up('w');
   expect((await cameraState(page))!.position[2]).toBeGreaterThan(1.45);
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
   await canvas.focus(); await page.keyboard.down('d'); await page.waitForTimeout(200); await page.keyboard.up('d');
   await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'explore');
   await page.getByRole('button', { name: 'Góc nhìn ban đầu' }).click();
@@ -78,13 +78,15 @@ test('Shift increases walking speed; narrow mouse viewport never shows a joystic
   await page.getByRole('button', { name: 'Góc nhìn ban đầu' }).click(); await canvas.focus();
   await page.keyboard.down('Shift'); await page.keyboard.down('d'); await page.waitForTimeout(700); await page.keyboard.up('d'); await page.keyboard.up('Shift');
   expect((await cameraState(page))!.position[0]).toBeGreaterThan(walking * 1.35);
+  await page.getByRole('button', { name: 'Hướng dẫn di chuyển', exact: true }).click();
+  await expect(page.locator('#navigation-instructions')).toBeVisible();
   await page.getByRole('button', { name: 'Ẩn hướng dẫn' }).click();
   await expect(page.locator('#navigation-instructions')).toHaveCount(0);
 });
 
 test('neutral viewport resize preserves focus instead of turning it into manual exploration', async ({ page }) => {
   await openTour(page);
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
   await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'inspect');
   await page.setViewportSize({ width: 700, height: 950 });
   await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'inspect');
@@ -101,7 +103,7 @@ test('reduced-motion focus completes without waiting for a future render frame',
   try {
     // Direct DOM clicks deliberately avoid Playwright's RAF-based stability
     // wait: this test proves focus does not depend on the next renderer frame.
-    await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).evaluate(button => button.click());
+    await museumExhibitButton(page, 'Xem chi tiết Hiện vật 2').evaluate(button => button.click());
     await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'inspect');
     const focused = await cameraState(page); expect(focused!.position).not.toEqual(before!.position);
     await page.getByRole('button', { name: 'Đóng chi tiết hiện vật' }).evaluate(button => button.click());
@@ -119,7 +121,7 @@ test('a selected delayed GLB still reframes after resize and remains fully visib
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/tour.html'); await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible({ timeout: 30_000 });
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 1');
   await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'inspect');
   await page.setViewportSize({ width: 390, height: 844 });
   const before = (await cameraState(page))!.position; finish();
@@ -161,11 +163,13 @@ test.describe('touch exploration', () => {
     expect(during.position[2]).toBeLessThan(before.position[2] - 0.15);
     expect(during.rotation).not.toEqual(before.rotation);
     await session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
-    await page.waitForTimeout(900); const stopped = await cameraState(page); await page.waitForTimeout(200);
+    await waitForRendererIdle(page); const stopped = await cameraState(page); await page.waitForTimeout(200);
     expect(await cameraState(page)).toEqual(stopped);
     await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);
     await expect(joystick).toHaveAttribute('aria-pressed', 'false');
     await page.screenshot({ path: testInfo.outputPath('navigation-mobile.png'), fullPage: true });
+    await page.getByRole('button', { name: 'Hướng dẫn di chuyển', exact: true }).tap();
+    await expect(page.locator('#navigation-instructions')).toBeVisible();
     await page.getByRole('button', { name: 'Ẩn hướng dẫn' }).tap();
     await expect(page.locator('#navigation-instructions')).toHaveCount(0);
     expect(await cameraState(page)).toEqual(stopped);
@@ -201,7 +205,7 @@ test.describe('touch exploration', () => {
       expect((await cameraState(page))!.position[2]).toBeLessThan(before.position[2] - 0.1);
     }
     await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    await page.waitForTimeout(900); const stopped = await cameraState(page); await page.waitForTimeout(200);
+    await waitForRendererIdle(page); const stopped = await cameraState(page); await page.waitForTimeout(200);
     expect(await cameraState(page)).toEqual(stopped);
     await expect(joystick).toHaveAttribute('aria-pressed', 'false');
     await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toHaveCount(0);

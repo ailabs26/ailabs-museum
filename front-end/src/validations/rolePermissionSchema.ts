@@ -5,6 +5,8 @@ export const roleSchema = z.object({
   code: z.string().min(1),
   name: z.string().min(1),
   permissions: z.array(z.string()),
+  /** Chỉ có khi xem mục Đã xóa (`deleted=true`). */
+  deletedAt: z.string().datetime({ offset: true }).nullable().optional(),
 });
 
 export const permissionSchema = z.object({

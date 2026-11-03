@@ -36,6 +36,12 @@ export const PERMISSIONS = {
   REPORT_RESOLVE: 'report:resolve',
   // hệ thống
   AUDIT_READ: 'audit:read',
+  // bản dịch đa ngôn ngữ (CMS i18n)
+  TRANSLATION_READ: 'translation:read',
+  TRANSLATION_MANAGE: 'translation:manage',
+  // API key đối tác
+  APIKEY_READ: 'apikey:read',
+  APIKEY_MANAGE: 'apikey:manage',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

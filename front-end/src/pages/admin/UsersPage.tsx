@@ -5,14 +5,21 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
-import { IconEdit, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react';
+import { IconEdit, IconPlus, IconSearch, IconShieldOff, IconTrash } from '@tabler/icons-react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiException } from '@/core/api/api-error';
 import { useAuth } from '@/core/auth/use-auth';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { confirmAction, notify } from '@/shared/components/feedback';
-import { DataTable, type Column } from '@/shared/components/data';
-import { FormPassword, FormTextField } from '@/shared/components/form';
+import { twoFactorService } from '@/services/twoFactor.service';
+import {
+  BulkActionBar, BulkDeleteFailures, DataTable, RestoreRowButton, TrashToggle, type Column,
+} from '@/shared/components/data';
+import { formatDeletedAt } from '@/helpers/bulkDelete';
+import { useBulkDelete, useBulkRestore } from '@/shared/hooks/useBulkDelete';
+import { useRowSelection } from '@/shared/hooks/useRowSelection';
+import { FormPassword, FormTextField, PasswordStrength } from '@/shared/components/form';
+import { passwordError } from '@/helpers/passwordPolicy';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { rolesService } from '@/services/roles.service';
 import {
@@ -41,6 +48,10 @@ const EMPTY_FORM: UserFormValues = {
   email: '', displayName: '', password: '', status: 'active', roleIds: [],
 };
 
+/** Tài khoản Admin không xóa được (back-end cũng chặn): phải bỏ vai trò Admin trước. */
+const adminDeleteBlock = (user: UserRow) =>
+  user.roles.includes('admin') ? 'Không thể xóa tài khoản Admin. Hãy bỏ vai trò Admin trước.' : null;
+
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof ApiException ? error.message : fallback;
 }
@@ -55,6 +66,8 @@ export function UsersPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebouncedValue(search, 300);
   const [status, setStatus] = useState<UserStatus | null>(null);
+  // Mục Đã xóa (thùng rác): xem và khôi phục tài khoản đã xóa mềm.
+  const [trash, setTrash] = useState(false);
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [opened, drawer] = useDisclosure(false);
   const [rolesInitialized, setRolesInitialized] = useState(false);
@@ -67,9 +80,10 @@ export function UsersPage() {
   const canReadRoles = hasPermission(PERMISSIONS.ROLE_READ);
 
   const usersQuery = useQuery({
-    queryKey: ['users', page, debouncedSearch, status],
+    queryKey: ['users', page, debouncedSearch, status, trash],
     queryFn: () => usersService.list({
       page, pageSize: 20, q: debouncedSearch.trim() || undefined, status: status ?? undefined,
+      deleted: trash || undefined,
     }),
     placeholderData: keepPreviousData,
   });
@@ -88,8 +102,8 @@ export function UsersPage() {
       email: (value) => /^\S+@\S+\.\S+$/.test(value.trim()) ? null : 'Email không hợp lệ',
       displayName: (value) => value.trim().length > 0 && value.trim().length <= 160
         ? null : 'Tên hiển thị cần từ 1 đến 160 ký tự',
-      password: (value) => editing && value.length === 0
-        ? null : value.length >= 8 && value.length <= 128 ? null : 'Mật khẩu cần từ 8 đến 128 ký tự',
+      password: (value, values) => editing && value.length === 0
+        ? null : passwordError(value, { email: values.email, displayName: values.displayName }),
     },
   });
 
@@ -121,6 +135,15 @@ export function UsersPage() {
       void invalidate();
     },
   });
+  const resetTwoFactor = useMutation({
+    mutationFn: (id: string) => twoFactorService.resetForUser(id),
+    onSuccess: async () => {
+      notify.success('Đã tắt xác thực 2 lớp và đăng xuất mọi thiết bị của tài khoản');
+      await invalidate();
+    },
+    onError: (error) => notify.error(errorMessage(error, 'Tắt xác thực 2 lớp thất bại')),
+  });
+
   const removeMutation = useMutation({
     mutationFn: (id: string) => usersService.remove(id),
     onSuccess: async () => {
@@ -132,7 +155,17 @@ export function UsersPage() {
     onError: (error) => notify.error(errorMessage(error, 'Xóa tài khoản thất bại')),
   });
 
-  const isBusy = saveMutation.isPending || removeMutation.isPending;
+  const selection = useRowSelection(`${page}|${debouncedSearch}|${status ?? ''}|${trash}`);
+  const nameOf = (id: string) => usersQuery.data?.items.find((user) => user.id === id)?.displayName;
+  const bulk = useBulkDelete({
+    removeMany: usersService.removeMany, noun: 'tài khoản', nameOf, onSuccess: selection.clear, onSettled: invalidate,
+  });
+  const restore = useBulkRestore({
+    restoreMany: usersService.restoreMany, noun: 'tài khoản', nameOf, onSuccess: selection.clear, onSettled: invalidate,
+  });
+  const bulkAction = trash ? restore : bulk;
+
+  const isBusy = saveMutation.isPending || removeMutation.isPending || bulk.isPending || restore.isPending;
   const canSelectRoles = canAssignRoles && canReadRoles
     && rolesQuery.isSuccess && rolesInitialized;
   const canSave = !editing || canUpdate || canSelectRoles;
@@ -191,7 +224,13 @@ export function UsersPage() {
         )) : <Badge color="gray" variant="outline">Chưa gán</Badge>}
       </Group>
     ) },
-    { key: 'actions', header: '', align: 'right', render: (user) => (
+    ...(trash ? [{ key: 'deletedAt', header: 'Ngày xóa', render: (user: UserRow) => formatDeletedAt(user.deletedAt) }] : []),
+    { key: 'actions', header: '', align: 'right', render: (user) => trash ? (
+      <Group gap={4} justify="flex-end" wrap="nowrap">
+        <RestoreRowButton label={`Khôi phục tài khoản ${user.displayName}`} disabled={isBusy}
+          onClick={() => restore.confirmRestore([user.id])} />
+      </Group>
+    ) : (
       <Group gap={4} justify="flex-end" wrap="nowrap">
         {(canUpdate || canAssignRoles) && (
           <ActionIcon variant="subtle" aria-label={canUpdate ? 'Sửa' : 'Gán vai trò'}
@@ -199,8 +238,22 @@ export function UsersPage() {
             <IconEdit size={18} />
           </ActionIcon>
         )}
+        {canUpdate && user.twoFactorEnabled && (
+          <ActionIcon variant="subtle" color="orange" aria-label={`Tắt xác thực 2 lớp của ${user.displayName}`}
+            title="Tắt xác thực 2 lớp (khi người dùng mất điện thoại)" disabled={isBusy}
+            onClick={() => confirmAction({
+              title: 'Tắt xác thực 2 lớp',
+              message: `Tắt xác thực 2 lớp của "${user.displayName}"? Chỉ làm khi người dùng mất điện thoại và mã khôi phục. Mọi thiết bị của tài khoản sẽ bị đăng xuất; người dùng có thể bật lại trong Cài đặt.`,
+              confirmLabel: 'Tắt 2FA',
+              danger: true,
+              onConfirm: () => resetTwoFactor.mutate(user.id),
+            })}>
+            <IconShieldOff size={18} />
+          </ActionIcon>
+        )}
         {canDelete && (
-          <ActionIcon variant="subtle" color="red" aria-label="Xóa tài khoản" disabled={isBusy}
+          <ActionIcon variant="subtle" color="red" aria-label="Xóa tài khoản" disabled={isBusy || !!adminDeleteBlock(user)}
+            title={adminDeleteBlock(user) ?? undefined}
             onClick={() => confirmAction({
               message: `Xóa mềm tài khoản "${user.displayName}"? Tài khoản sẽ bị loại khỏi danh sách và không đăng nhập được. Để khóa tạm thời, dùng Sửa → Trạng thái.`,
               danger: true,
@@ -217,7 +270,7 @@ export function UsersPage() {
   return (
     <>
       <PageHeader titleRef={titleRef} title="Tài khoản" description="Quản lý tài khoản Admin và vai trò"
-        actions={canCreate ? (
+        actions={canCreate && !trash ? (
           <Button leftSection={<IconPlus size={16} />} disabled={isBusy} onClick={() => openForm(null)}>
             Tạo tài khoản
           </Button>
@@ -228,6 +281,7 @@ export function UsersPage() {
           onChange={(event) => { setPage(1); setSearch(event.currentTarget.value); }} />
         <Select label="Trạng thái" placeholder="Tất cả" clearable data={STATUS_OPTIONS}
           value={status} onChange={(value) => { setPage(1); setStatus(value as UserStatus | null); }} />
+        {canDelete && <TrashToggle trash={trash} onChange={(value) => { setPage(1); setTrash(value); }} />}
       </Group>
       {usersQuery.isError ? (
         <Alert color="red" title="Không tải được tài khoản" role="alert">
@@ -238,10 +292,28 @@ export function UsersPage() {
           </Stack>
         </Alert>
       ) : (
+        <>
+        {canDelete && (
+          <>
+            <BulkActionBar count={selection.selectedIds.length} onClear={selection.clear}
+              action={trash ? 'restore' : 'delete'} loading={bulkAction.isPending}
+              onDelete={() => (trash ? restore.confirmRestore : bulk.confirmDelete)(selection.selectedIds)} />
+            <BulkDeleteFailures failures={bulkAction.failures} onClose={bulkAction.dismissFailures}
+              action={trash ? 'restore' : 'delete'} />
+          </>
+        )}
         <DataTable columns={columns} data={data?.items ?? []} rowKey={(user) => user.id}
+          selection={canDelete ? {
+            selectedIds: selection.selectedIds,
+            onChange: selection.setSelectedIds,
+            disabledReason: trash ? undefined : adminDeleteBlock,
+            rowLabel: (user) => user.displayName,
+          } : undefined}
           loading={usersQuery.isFetching} page={data?.page} pageSize={data?.pageSize}
           total={data?.total} onPageChange={setPage}
-          emptyText={debouncedSearch || status ? 'Không có tài khoản phù hợp' : 'Chưa có tài khoản'} />
+          emptyText={debouncedSearch || status ? 'Không có tài khoản phù hợp'
+            : trash ? 'Không có tài khoản đã xóa' : 'Chưa có tài khoản'} />
+        </>
       )}
       <Drawer ref={drawerRef} opened={opened} onClose={closeForm} position="right"
         onExitTransitionEnd={() => {
@@ -261,6 +333,10 @@ export function UsersPage() {
                 <FormPassword label={editing ? 'Mật khẩu mới (để trống nếu giữ nguyên)' : 'Mật khẩu'}
                   disabled={saveMutation.isPending}
                   withAsterisk={!editing} {...form.getInputProps('password')} />
+              )}
+              {(!editing || canUpdate) && (
+                <PasswordStrength value={form.values.password}
+                  context={{ email: form.values.email, displayName: form.values.displayName }} />
               )}
               {editing && (
                 <Select label="Trạng thái" data={STATUS_OPTIONS} allowDeselect={false}

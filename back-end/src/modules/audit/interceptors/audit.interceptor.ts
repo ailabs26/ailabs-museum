@@ -10,6 +10,7 @@ import type { Request } from 'express';
 import { Observable } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
 import { AuthUser } from '../../../common/types/auth-user.type';
+import { userAgentOf } from '../audit-request.util';
 import { AUDIT_KEY, AuditMeta } from '../decorators/audit.decorator';
 import { AuditService } from '../services/audit.service';
 
@@ -45,6 +46,8 @@ export class AuditInterceptor implements NestInterceptor {
               revisionId: meta.resourceType === 'revision' ? resourceId : null,
               reason: this.resolveReason(request),
               requestId: this.resolveRequestId(request),
+              ip: request.ip ?? null,
+              userAgent: userAgentOf(request),
             });
           }
         } catch {
@@ -66,13 +69,18 @@ export class AuditInterceptor implements NestInterceptor {
     return data;
   }
 
-  /** Ưu tiên danh sách id, rồi id trả về (tạo mới), sau đó tới param :id. */
+  /**
+   * Ưu tiên danh sách id (`roleIds` của ma trận quyền, `ids` của thao tác hàng loạt → 1 bản ghi/ID),
+   * rồi id trả về (tạo mới), sau đó tới param :id.
+   */
   private resolveResourceIds(request: AuditRequest, result: unknown): string[] {
     const data = this.unwrapEnvelope(result);
-    if (data && typeof data === 'object' && 'roleIds' in data) {
-      const roleIds = (data as { roleIds?: unknown }).roleIds;
-      if (Array.isArray(roleIds)) {
-        return roleIds.filter((id): id is string => typeof id === 'string');
+    for (const key of ['roleIds', 'ids'] as const) {
+      if (data && typeof data === 'object' && key in data) {
+        const ids = (data as Record<string, unknown>)[key];
+        if (Array.isArray(ids)) {
+          return ids.filter((id): id is string => typeof id === 'string');
+        }
       }
     }
     if (data && typeof data === 'object' && 'id' in data) {

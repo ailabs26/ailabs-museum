@@ -8,7 +8,9 @@ test('header and homepage links open the tour by keyboard without starting 3D', 
   for (const location of ['header', 'main']) {
     await page.goto('/');
     await expect(page.getByText('Sắp ra mắt', { exact: false })).toHaveCount(0);
-    const link = page.locator(location).getByRole('link', { name: 'Tham quan 3D', exact: true });
+    const link = location === 'header'
+      ? page.locator('header').getByRole('link', { name: 'Tham quan 3D', exact: true })
+      : page.getByRole('link', { name: 'Khám phá Không gian 3D (WebXR)', exact: true });
     await expect(link).toHaveAttribute('href', '/tour');
     await link.focus();
     await link.press('Enter');
@@ -27,7 +29,12 @@ test('tour navigation stays visible without horizontal overflow in light and dar
     for (const width of [320, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/');
-      await expect(page.locator('header').getByRole('link', { name: 'Tham quan 3D', exact: true })).toBeVisible();
+      if (width < 768) {
+        await page.getByRole('button', { name: 'Mở menu điều hướng' }).click();
+        await expect(page.getByRole('link', { name: 'Tham quan 3D', exact: true }).last()).toBeVisible();
+      } else {
+        await expect(page.locator('header').getByRole('link', { name: 'Tham quan 3D', exact: true })).toBeVisible();
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
   }

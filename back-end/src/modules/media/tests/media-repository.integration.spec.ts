@@ -316,4 +316,42 @@ describe('MediaRepository (PostgreSQL thật)', { skip }, () => {
       assert.ok(found?.createdAt instanceof Date);
     });
   });
+
+  describe('dọn Thùng rác (purge) và tra storage key', () => {
+    const DAY = 24 * 60 * 60 * 1000;
+    const softDeleted = (daysAgo: number) => ({ isDeleted: true, deletedAt: new Date(Date.now() - daysAgo * DAY) });
+
+    it('chỉ xóa media xóa mềm trước mốc và KHÔNG còn revision nào tham chiếu (xét cả slot audio / phụ đề en)', async () => {
+      const expired = await createMedia(softDeleted(40));
+      const referencedAudio = await createMedia({ ...softDeleted(40), kind: MediaKind.AUDIO });
+      const referencedSubtitle = await createMedia({ ...softDeleted(40), kind: MediaKind.SUBTITLE });
+      const recent = await createMedia(softDeleted(5));
+      const active = await createMedia();
+      await createRevision({ audioMediaId: referencedAudio.id });
+      const { revision } = await createRevision({});
+      await db.query('UPDATE exhibit_revisions SET subtitle_en_media_id = $1 WHERE id = $2', [referencedSubtitle.id, revision.id]);
+
+      const cutoff = new Date(Date.now() - 30 * DAY);
+      assert.ok(await repo.countPurgeable(cutoff) >= 1);
+      const removed = await db.transaction((m) => repo.deletePurgeable(cutoff, 500, m));
+      const removedIds = removed.map((r) => r.id);
+
+      assert.ok(removedIds.includes(expired.id));
+      assert.equal(removed.find((r) => r.id === expired.id)?.storageKey, expired.storageKey);
+      for (const kept of [referencedAudio, referencedSubtitle, recent, active]) {
+        assert.equal(removedIds.includes(kept.id), false, `không được xóa ${kept.id}`);
+        assert.ok(await db.getRepository(Media).existsBy({ id: kept.id }));
+      }
+      assert.equal(await db.getRepository(Media).existsBy({ id: expired.id }), false);
+    });
+
+    it('findExistingStorageKeys: trả key có bản ghi (kể cả đã xóa mềm), bỏ key lạ; mảng rỗng → rỗng', async () => {
+      const live = await createMedia();
+      const trashed = await createMedia(softDeleted(1));
+      const unknown = `uploads/images/${randomUUID()}.png`;
+      const found = await repo.findExistingStorageKeys([live.storageKey, trashed.storageKey, unknown]);
+      assert.deepEqual([...found].sort(), [live.storageKey, trashed.storageKey].sort());
+      assert.equal((await repo.findExistingStorageKeys([])).size, 0);
+    });
+  });
 });

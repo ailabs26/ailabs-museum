@@ -1,0 +1,9 @@
+.immersive { position: fixed; inset: 0; width: 100%; height: 100%; height: 100dvh; z-index: 250; isolation: isolate; overflow: hidden; color: #f6f0e4; background: #242722; color-scheme: light; }
+.immersive:fullscreen { width: 100%; height: 100%; }
+.header { position: absolute; z-index: 10; top: 0; inset-inline: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: max(20px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) 28px max(24px, env(safe-area-inset-left)); background: linear-gradient(#151b1be6, transparent); pointer-events: none; }
+.header button { pointer-events: auto; flex-shrink: 0; min-height: 44px; background: #f6f1e8ed; color: #30392f; border-color: #d1b78c80; }
+.identity { min-width: 0; text-shadow: 0 2px 12px #0009; }
+.identity span { font-size: 10px; letter-spacing: .22em; color: #dfcda8; }
+.identity h2 { margin: 5px 0 0; font: 500 clamp(18px, 2vw, 28px)/1.2 Georgia, 'Times New Roman', serif; overflow-wrap: anywhere; max-width: 60vw; }
+.immersive :focus-visible { outline: 2px solid #c49b59; outline-offset: 3px; }
+@media (max-width: 600px) { .header { padding: max(12px, env(safe-area-inset-top)) 12px 24px; gap: 8px; } .identity span { font-size: 8px; letter-spacing: .1em; } .identity h2 { max-width: 52vw; font-size: 18px; } .header button { font-size: 12px; padding-inline: 10px; } }

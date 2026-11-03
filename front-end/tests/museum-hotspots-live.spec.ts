@@ -1,3 +1,4 @@
+import { museumHotspotButton, openMuseumHotspots, selectMuseumHotspot } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { roomDetailSchema, roomResponseSchema } from '../src/validations/roomSchema';
 import { installRendererProbe, readRendererProbe } from './fixtures/museumProbe';
@@ -34,13 +35,14 @@ test('live private GLBs keep four healthy instances while one intercepted failur
   });
   const before = await state(); expect(Object.keys(before.models)).toHaveLength(4); expect(before.fallbacks).toEqual([failed.id]);
   expect(before.hotspots.sort()).toEqual(room.exhibits.map(item => item.id).sort());
+  await openMuseumHotspots(page);
   for (const item of room.exhibits) {
-    const button = page.getByRole('button', { name: `Điểm tương tác ${item.name}`, exact: true });
+    const button = museumHotspotButton(page, `Điểm tương tác ${item.name}`);
     await button.focus(); await page.keyboard.press('Enter');
     await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText(item.description);
     await expect(button).toHaveAttribute('aria-pressed', 'true');
   }
-  await page.getByRole('button', { name: `Điểm tương tác ${failed.name}`, exact: true }).click();
+  await selectMuseumHotspot(page, `Điểm tương tác ${failed.name}`);
   await page.screenshot({ path: testInfo.outputPath('live-failure-placeholder.png'), fullPage: true });
   await page.getByRole('button', { name: `Thử lại ${failed.name}`, exact: true }).click();
   await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 60_000 });
@@ -50,6 +52,6 @@ test('live private GLBs keep four healthy instances while one intercepted failur
   expect(errors).toEqual([]);
   const profile = (await readRendererProbe(page)).at(-1)!;
   await writeFile(testInfo.outputPath('live-hotspot-evidence.json'), JSON.stringify({ before, after, requests, profile }, null, 2));
-  await page.getByRole('button', { name: 'Dừng 3D' }).click();
+  await page.getByRole('button', { name: 'Thoát tham quan' }).click();
   await expect.poll(async () => (await readRendererProbe(page)).filter(item => item.live).length).toBe(0);
 });

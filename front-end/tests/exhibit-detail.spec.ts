@@ -159,6 +159,7 @@ test('[D05] collection and featured card links open details and return to the co
   for (const source of ['/collection?room=ceramics', '/']) {
     const item = source === '/' ? roomA.exhibits[0] : roomB.exhibits[0];
     const slug = source === '/' ? 'sculpture' : 'ceramics';
+    const roomName = source === '/' ? roomA.name : roomB.name;
     await page.goto(source);
     const link = page.getByRole('link', { name: `Xem chi tiết ${item.name}`, exact: true });
     await expect(link).toHaveAttribute('href', `/collection/${slug}/exhibits/${item.id}`);
@@ -169,7 +170,8 @@ test('[D05] collection and featured card links open details and return to the co
     const back = page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true });
     await expect(back).toHaveAttribute('href', `/collection?room=${slug}`);
     await back.click();
-    await expect(page.getByLabel('Chọn phòng trưng bày')).toHaveValue(slug);
+    await expect(page.getByRole('group', { name: 'Chọn phòng trưng bày' })
+      .getByRole('button', { name: roomName, exact: true })).toHaveAttribute('aria-pressed', 'true');
     await page.goBack();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(item.name);
   }
@@ -230,7 +232,7 @@ test('[D06] background refresh does not steal focus from the back link', async (
     await fulfillMuseum(route, envelope({ ...roomA, exhibits: roomA.exhibits.map((exhibit) => ({ ...exhibit, description: 'Mô tả đã cập nhật' })) }));
   });
   await page.getByRole('button', { name: 'Làm mới', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText('Đang cập nhật hiện vật…');
+  await expect(page.getByRole('status').filter({ hasText: 'Đang cập nhật hiện vật…' })).toBeVisible();
   // Navigate in the SPA so the same cache/request stays active.
   await page.getByRole('link', { name: `Xem chi tiết ${item.name}`, exact: true }).click();
   await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
@@ -257,7 +259,7 @@ test('[D06] complete detail remains readable without WebGL and reflows in both c
   });
   const unwanted: string[] = [];
   page.on('request', (request) => {
-    if (request.url().includes('/components/MuseumScene') || request.url().includes('/media/')) unwanted.push(request.url());
+    if (request.url().includes('/components/MuseumScene') || new URL(request.url()).pathname.startsWith('/media/')) unwanted.push(request.url());
   });
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme });
@@ -265,7 +267,7 @@ test('[D06] complete detail remains readable without WebGL and reflows in both c
       await page.setViewportSize({ width, height: 900 });
       await page.goto(`/collection/sculpture/exhibits/${item.id}`);
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(item.name);
-      await expect(page.getByRole('heading', { level: 1 })).toHaveCSS('font-family', '"Times New Roman", serif');
+      await expect(page.getByRole('heading', { level: 1 })).toHaveCSS('font-family', /"Plus Jakarta Sans"/);
       await expect(page.getByRole('heading', { level: 2 })).toHaveText(['Câu chuyện hiện vật', 'Bản thuyết minh', 'Điểm chú ý']);
       await expect(page.getByText(item.transcript, { exact: true })).toBeVisible();
       await expect(page.getByText('Chi tiết vẫn đọc được', { exact: true })).toBeVisible();

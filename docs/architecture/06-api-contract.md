@@ -27,7 +27,7 @@ Lỗi:
 | 401 | chưa/đã hết hạn đăng nhập |
 | 403 | thiếu quyền (RBAC) |
 | 404 | không tìm thấy |
-| 409 | xung đột (sửa đồng thời, slug trùng) — FE hiện cảnh báo reload |
+| 409 | xung đột (sửa đồng thời, slug trùng) — FE hiện cảnh báo reload; xóa bị chặn (kể cả xóa hàng loạt) |
 | 422 | validation thất bại (chi tiết trong `errors`) |
 | 429 | vượt rate limit |
 
@@ -38,16 +38,107 @@ Lỗi:
 
 ### Auth & quản trị hệ thống (phân hệ dựng trước)
 ```
-POST   /auth/login            POST /auth/refresh    POST /auth/logout    GET /auth/me
+POST   /auth/login            POST /auth/refresh    POST /auth/logout    GET /auth/me    PATCH /auth/me
+POST   /auth/change-password                                     # tự đổi mật khẩu
+GET    /auth/sessions         DELETE /auth/sessions/:id          # thiết bị đang đăng nhập của chính mình
+POST   /auth/sessions/revoke-others   POST /auth/logout-all
+POST   /auth/login/2fa             # bước 2 khi bật 2FA: { mfaToken, code | recoveryCode }
+GET    /auth/2fa   POST /auth/2fa/setup   POST /auth/2fa/enable   POST /auth/2fa/disable   POST /auth/2fa/recovery-codes
+POST   /users/:id/2fa/reset        # Admin tắt 2FA hộ (user:update)
 GET    /users                 POST /users           GET /users/:id       PATCH /users/:id     DELETE /users/:id
+POST   /users/bulk-delete     POST /users/bulk-restore           # xóa mềm / khôi phục nhiều tài khoản
 POST   /users/:id/roles       DELETE /users/:id/roles/:roleId
 GET    /roles                 POST /roles           PATCH /roles/:id     DELETE /roles/:id
+POST   /roles/bulk-delete     POST /roles/bulk-restore           # xóa mềm / khôi phục nhiều vai trò
 GET    /roles/:id/permissions PUT  /roles/:id/permissions        # set ma trận quyền
 GET    /permissions                                              # danh mục permission
 GET    /audit                 GET  /audit/:id                    # nhật ký (lọc theo actor/action/thời gian)
+GET    /audit/export                                             # xuất CSV cùng bộ lọc (tối đa 10.000 dòng)
 GET    /admin/stats/overview                                     # số liệu tổng quan Dashboard
 GET    /admin/stats/charts                                       # dữ liệu biểu đồ Dashboard
 ```
+
+#### Xác thực, phiên đăng nhập và đổi mật khẩu
+
+Mọi route dưới đây (trừ login/refresh/logout là `@Public`) chỉ thao tác trên **chính tài khoản đang đăng nhập**, không cần permission.
+Cơ chế phiên, thu hồi và rate limit: [05 — Bảo mật](05-security-rbac.md#511-thu-hồi-phiên-có-hiệu-lực-ngay--activesessionguard).
+
+| Route | Body / kết quả | Ghi chú | Audit |
+|---|---|---|---|
+| `POST /auth/login` | `{ email, password }` → `{ accessToken, user }` + cookie refresh | 401 sai/khóa; 429 khi vượt ngưỡng | — |
+| `POST /auth/refresh` | cookie → `{ accessToken }` + cookie mới | xoay vòng; 401 thì xóa cookie; chặn Origin lạ (403) | — |
+| `POST /auth/logout` | cookie → `null` | thu hồi family hiện tại, xóa cookie; gọi lại vẫn 200 | — |
+| `PATCH /auth/me` | `{ displayName }` (trim, 1–160) → AuthUser | chỉ sửa tên hiển thị của chính mình; gửi kèm trường khác → 400 | `auth.profile_update` |
+| `POST /auth/change-password` | `{ currentPassword, newPassword }` → `{ id }` | mới 8–128 ký tự, khác cũ; sai mật khẩu hiện tại → **400** gắn field `currentPassword` (không dùng 401 để FE không đăng xuất); 409 nếu Admin vừa đặt lại; đăng xuất mọi thiết bị khác | `auth.password_change` |
+| `GET /auth/sessions` | → `[{ id, userAgent, ip, signedInAt, lastActiveAt, expiresAt, current }]` | `id` = family; mỗi dòng một thiết bị còn đăng nhập | — |
+| `DELETE /auth/sessions/:id` | → `null` | 404 nếu không phải phiên của mình; là phiên hiện tại thì xóa cookie | `auth.session_revoke` |
+| `POST /auth/sessions/revoke-others` | → `{ id }` (userId) | giữ phiên hiện tại | `auth.session_revoke_others` |
+| `POST /auth/logout-all` | → `{ id }` (userId) | thu hồi tất cả, xóa cookie | `auth.logout_all` |
+
+#### Cổng API đối tác `/partner/v1` (API key)
+
+Header `X-API-Key: ak_live_…`; cơ chế xác thực/scope/rate limit: [05 — Bảo mật](05-security-rbac.md#513-api-key-cho-đối-tác-cổng-partnerv1).
+Nội dung giống API công khai (chỉ revision Published hiện hành).
+
+| Route | Scope | Kết quả |
+|---|---|---|
+| `GET /partner/v1/rooms` | `rooms:read` | danh sách phòng công khai |
+| `GET /partner/v1/rooms/:slug` | `exhibits:read` | phòng + hiện vật đã xuất bản (kèm URL media) |
+| `GET /partner/v1/rooms/:slug/tour` | `tour:embed` | `{ room, stops: [{ exhibitId, displayOrder, name, i18n }] }` theo `displayOrder` |
+| `GET /partner/v1/rooms/:slug/exhibits/:exhibitId/model` | `media:read` | tệp GLB |
+
+Mã lỗi: **401** key sai/thu hồi/hết hạn/đã xóa · **403** thiếu scope · **429** vượt `rate_limit_per_minute` (kèm `Retry-After`).
+Ví dụ: `curl -H "X-API-Key: ak_live_…" https://<host>/api/partner/v1/rooms`.
+
+Quản lý key (Admin): `GET /partner-api-keys` (`apikey:read`); `POST /partner-api-keys` body
+`{ partnerName, label?, scopes[], expiresInDays?, rateLimitPerMinute? }` → kèm `plaintext` (một lần); `POST /partner-api-keys/:id/revoke`;
+`DELETE /partner-api-keys/:id` (**xóa mềm**: thu hồi nếu đang hoạt động, ẩn khỏi danh sách) — đều cần `apikey:manage`, có audit `apikey.*`.
+
+#### Xóa mềm, xóa hàng loạt và khôi phục
+
+Mọi tài nguyên quản trị **xóa mềm** (`is_deleted`/`deleted_at`; truy vấn mặc định lọc bản ghi chưa xóa).
+
+| Tài nguyên | Xóa lẻ | Xóa hàng loạt | Permission | Bị chặn khi |
+|---|---|---|---|---|
+| Tài khoản | `DELETE /users/:id` | `POST /users/bulk-delete` | `user:delete` | có vai trò Admin; xóa xong đăng xuất mọi thiết bị |
+| Vai trò | `DELETE /roles/:id` | `POST /roles/bulk-delete` | `role:delete` | là `admin`; đang gán cho tài khoản chưa xóa |
+| Phòng | `DELETE /admin/rooms/:id` | `POST /admin/rooms/bulk-delete` | `room:delete` | còn hiện vật chưa xóa (BR-20) |
+| Media | `DELETE /admin/media/:id` | `POST /admin/media/bulk-delete` | `media:upload` | hiện vật đã xuất bản/bản chờ duyệt đang dùng (BR-21); **file trên storage được giữ** |
+| Hiện vật | `DELETE /admin/exhibits/:id` | `POST /admin/exhibits/bulk-delete` | `exhibit:update` | đã xuất bản/đang hiển thị/đã duyệt, đang chờ duyệt, có báo cáo (BR-20); revisions/hotspots được giữ |
+
+- Body hàng loạt `{ "ids": [uuid, …] }` (1–100, không trùng). Thành công → `{ ids }`.
+- **Tất cả hoặc không**: có mục bị chặn hoặc không tồn tại → **409**, không mục nào bị xóa:
+  ```json
+  { "success": false, "message": "Không xóa được 2 mục đã chọn. Không mục nào bị xóa.",
+    "errors": [ { "code": "delete_blocked", "field": "<id>", "message": "<lý do>" } ] }
+  ```
+- Xóa lẻ giữ 404 (không tồn tại) / 409 (bị chặn) như cũ. Kiểm tra chạy trong transaction có khóa dòng.
+
+**Thùng rác & khôi phục** — danh sách thêm query `deleted=true` (chỉ `true`/`false`, giá trị khác → 400): chỉ trả bản ghi
+đã xóa, mỗi mục kèm `deletedAt`, mới xóa trước; quyền như xem danh sách. Khôi phục: `POST <tài nguyên>/bulk-restore`
+body `{ ids }` (1–100), **tất cả hoặc không**, quyền như xóa, audit `<resource>.restore` một bản ghi/ID.
+
+| Tài nguyên | Danh sách đã xóa | Khôi phục | Bị chặn khi | Ghi chú |
+|---|---|---|---|---|
+| Tài khoản | `GET /users?deleted=true` | `POST /users/bulk-restore` | ID không nằm trong thùng rác | email unique toàn bảng nên không thể trùng; bỏ liên kết tới vai trò đã xóa; phiên cũ đã thu hồi → đăng nhập lại |
+| Vai trò | `GET /roles?deleted=true` | `POST /roles/bulk-restore` | mã đang thuộc vai trò chưa xóa khác, hoặc trùng mã trong cùng lô | quyền giữ nguyên như lúc xóa |
+| Phòng | `GET /admin/rooms?deleted=true` | `POST /admin/rooms/bulk-restore` | ID không nằm trong thùng rác | slug unique toàn bảng; hiện vật đã xóa trong phòng vẫn ở thùng rác |
+| Media | `GET /admin/media?deleted=true` | `POST /admin/media/bulk-restore` | ID không nằm trong thùng rác | file được giữ khi xóa nên dùng lại ngay |
+| Hiện vật | `GET /admin/exhibits?deleted=true` | `POST /admin/exhibits/bulk-restore` | phòng chứa hiện vật đã bị xóa (khôi phục phòng trước) | về cuối thứ tự hiển thị của phòng; vẫn là bản nháp |
+
+**Media trong Thùng rác có hạn** (job `MediaCleanupService`, 03:30 hằng đêm):
+- Media xóa mềm quá `MEDIA_TRASH_RETENTION_DAYS` (mặc định 30) ngày và không còn revision nào tham chiếu (6 slot media)
+  bị **xóa vĩnh viễn**: bản ghi và file, ghi audit `media.purge`. Sau mốc này không khôi phục được nữa.
+- File trong storage không có bản ghi media (upload dở) và cũ hơn 24 giờ cũng bị xóa. Job chỉ xét key do media sinh ra
+  (`uploads/<images|models|audio|subtitles>/<uuid>.<ext>`, `quarantine/<uuid>.bin`); model phòng, seed và file khác không
+  bị đụng.
+- `MEDIA_ORPHAN_CLEANUP` = `off` | `dry-run` (**mặc định**, chỉ log số lượng) | `on`. **Chỉ bật `on` khi storage và DB
+  đi cùng nhau.** Ví dụ chạy driver `local` mà trỏ DB khác (DB dùng chung, DB tạm) thì mọi file cục bộ không có trong DB
+  đó đều bị coi là mồ côi.
+
+- 409 khi khôi phục: `"Không khôi phục được n mục đã chọn. Không mục nào được khôi phục."`, `errors[].code = "restore_blocked"`.
+- Tạo phòng với slug của phòng đã xóa → 409 gợi ý khôi phục phòng đó (slug unique toàn bảng); email của tài khoản đã xóa → 409 như cũ.
+- Chưa có xóa vĩnh viễn và tự dọn thùng rác theo thời gian.
 
 #### Stats (Dashboard Admin) — Task 21
 
@@ -111,7 +202,11 @@ POST   /reports/:id/resolve  | /dismiss
 #### Reports (Task 23)
 
 - `GET /reports?page&pageSize&status` (`report:read`) → danh sách; `GET /reports/:id` (`report:read`) → chi tiết kèm phiên bản bị báo cáo.
-- `POST /reports/:id/assign` (`report:resolve`): open → in_progress, gán người tiếp nhận.
+- `POST /reports/:id/assign` (`report:resolve`), body tùy chọn `{ assigneeId? }`: bỏ trống = tự tiếp nhận; có = giao
+  cho người đó (user active có `report:resolve`, không thì **400** `invalid_assignee`). open/in_progress → in_progress
+  (cho phép giao lại khi đang xử lý); giao trùng người đang giữ → **409**. Người được giao (khác người giao) nhận thông báo
+  `report.assigned`.
+- `GET /reports/assignees` (`report:resolve`): người có thể được giao → `[{ id, email, displayName }]`.
 - `POST /reports/:id/resolve` body `{ resolution }` (`report:resolve`): → resolved.
 - `POST /reports/:id/dismiss` body `{ resolution }` (`report:resolve`): → dismissed.
 - `POST /public/reports` **@Public** body `{ exhibitId, reportedRevisionId?, category, message }`, rate-limit 5 lần/phút.
@@ -120,6 +215,12 @@ POST   /reports/:id/resolve  | /dismiss
 #### Audit (Task 24)
 
 `GET /audit?page&pageSize&actorId&action&resourceType&from&to` + `GET /audit/:id` (`audit:read`). Append-only, không có endpoint sửa/xóa.
+`GET /audit/export?actorId&action&resourceType&from&to` (`audit:read`) trả file `text/csv; charset=utf-8` (BOM UTF-8, CRLF,
+`Content-Disposition: attachment; filename="audit-logs-YYYYMMDD-HHmm.csv"`, `Cache-Control: no-store`; không bọc ApiResponse),
+mới nhất trước. Hơn 10.000 dòng khớp → 400 yêu cầu thu hẹp bộ lọc (không cắt bớt âm thầm). Ô bắt đầu `= + - @`/tab/CR được
+thêm `'` để chặn CSV injection. Mỗi lần xuất ghi `audit.export`.
+Mỗi bản ghi có `ip`, `userAgent`; `resourceId` là **null** khi sự kiện không gắn tài nguyên. `actor` chỉ gồm `{ id, email, displayName }`
+(không bao giờ trả `passwordHash`/trạng thái tài khoản).
 Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. Ánh xạ hành động CMS:
 
 | action | resourceType | revisionId | Nguồn |
@@ -129,18 +230,67 @@ Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. 
 | revision.reject | revision | = resourceId | RevisionsController |
 | exhibit.hide / exhibit.unhide | exhibit | — | ExhibitRevisionsController |
 | report.assign/resolve/dismiss | report | — | ReportsController |
+| user.delete, role.delete, media.delete, exhibit.delete | user / role / media / exhibit | — | xóa lẻ và `bulk-delete` |
+| user.restore, role.restore, room.restore, media.restore, exhibit.restore | user / role / room / media / exhibit | — | `bulk-restore` (một bản ghi/ID) |
+| media.purge | media | — | job dọn Thùng rác xóa vĩnh viễn media quá hạn; actor null; `reason` `{"storageKey","retentionDays"}` |
+| auth.password_change, auth.session_revoke_others, auth.logout_all | user | — | AuthController |
+| auth.session_revoke | session | — | AuthController (`resourceId` = family) |
+| auth.login | user | — | đăng nhập thành công; actor = tài khoản |
+| auth.login_failed | user | — | actor null; `resourceId` = tài khoản đích (null nếu email không tồn tại); `reason` `{"reason":"invalid_password\|account_disabled\|unknown_account\|credentials_changed\|invalid_2fa\|mfa_expired"}`; không ghi email/mật khẩu đã nhập |
+| auth.login_blocked | user | — | bị chặn 429; `resourceId` null; `reason` `{"limit":"ip\|email"}`; **1 lần mỗi cửa sổ chặn** cho mỗi IP/email (chống ngập DB) |
+| auth.refresh_blocked | user | — | `/auth/refresh` bị chặn 429; `reason` `{"limit":"ip\|session\|invalid"}`; `resourceId` = chủ phiên khi `session`, null khi khác; 1 lần mỗi phút cho mỗi IP/phiên |
+| auth.refresh_reuse_detected | user | — | refresh bằng token đã xoay vòng (nghi bị đánh cắp) → cả family bị thu hồi; actor null; `resourceId` = chủ phiên; `reason` `{"familyId":"…"}`. Token chỉ bị thu hồi/hết hạn thì **không** ghi |
+| auth.logout | user | — | đăng xuất có phiên; actor = chủ phiên |
+| auth.2fa_enable, auth.2fa_disable, auth.2fa_recovery_regenerate | user | — | tự bật/tắt 2FA, tạo lại mã khôi phục; actor = chính người đó |
+| user.2fa_reset | user | — | Admin tắt 2FA hộ (`POST /users/:id/2fa/reset`) |
+| access.denied | access | — | 403 thiếu quyền; `resourceId` null |
+| audit.export | audit | — | xuất CSV nhật ký; actor = người xuất; `resourceId` null; `reason` `{"filter":{…},"rows":N}` |
 
 > Với `resourceType='revision'`, interceptor lưu thêm FK `revisionId` để join `audit_logs → exhibit_revisions`.
+> Response có mảng `ids` (xóa hàng loạt) hoặc `roleIds` → interceptor ghi **1 bản ghi cho mỗi ID**.
+
+### Thông báo trong CMS (chuông)
+
+Chỉ cần đăng nhập (không cần quyền riêng); mọi thao tác chỉ trên thông báo **của chính mình**, thông báo của
+người khác trả 404. Không ghi audit.
+
+```
+GET    /notifications?page&pageSize      # của tôi, mới nhất trước → Paginated<{ id, type, title, body, link, read, createdAt }>
+GET    /notifications/unread-count       # { count } — badge chuông
+POST   /notifications/read-all           # { updated }
+PATCH  /notifications/:id/read           # null; đọc rồi thì giữ thời điểm đọc đầu
+DELETE /notifications/:id                # null; xóa hẳn
+```
+
+| `type` | Phát khi | Người nhận | `body` | `link` |
+|---|---|---|---|---|
+| `revision.submitted` | gửi bản nháp đi duyệt | user active có `revision:publish`, trừ người gửi | — | `/admin/moderation` |
+| `revision.approved` | bản được duyệt | tác giả (`created_by`), trừ khi tự duyệt | — | `/admin/exhibits` |
+| `revision.rejected` | bản bị từ chối | tác giả, trừ khi tự từ chối | lý do từ chối | `/admin/exhibits` |
+| `report.created` | khách gửi báo cáo | user active có `report:resolve` | nội dung báo cáo | `/admin/reports` |
+| `report.assigned` | báo cáo được người khác giao | người được giao (tự nhận thì không) | nội dung báo cáo | `/admin/reports` |
+
+Thông báo được tạo **sau** khi thao tác chính thành công. Lỗi tạo thông báo chỉ ghi log, không làm hỏng thao tác chính.
+Tiêu đề lấy tên hiện vật tiếng Việt (thiếu thì tiếng Anh), cắt còn 200 ký tự.
+
+### Health check (`@Public()`, không audit)
+```
+GET    /health          # liveness: process còn chạy → 200 { status: "ok" } (không chạm DB)
+GET    /health/ready    # readiness: SELECT 1 (timeout 2s) → 200 { status: "ok", db: "up", latencyMs }
+                        #            DB lỗi/treo → 503 "Cơ sở dữ liệu không sẵn sàng" (không lộ chi tiết lỗi)
+```
 
 ### Public (client — chỉ đọc nội dung published)
 ```
-GET    /public/rooms/:slug                # phòng + danh sách hiện vật published
-GET    /public/exhibits/:id               # chi tiết 1 hiện vật published
-GET    /public/rooms/:slug/tour           # thứ tự displayOrder cho guided tour
+GET    /rooms                             # danh sách phòng công khai (active)
+GET    /rooms/search                      # tìm kiếm hiện vật công khai (?q=&roomId=&page=&pageSize=)
+GET    /rooms/:slug                       # phòng + danh sách hiện vật published
+GET    /rooms/:slug/exhibits/:id/model    # tệp GLB công khai của hiện vật
 POST   /public/reports                    # gửi báo cáo nội dung sai (rate limit)
 ```
 
 > Public cache TTL ≤ 60s; không bao giờ trả revision `draft/pending`.
+> `GET /api/rooms/search`: chỉ trả hiện vật `APPROVED` + `visible` thuộc phòng `ACTIVE`; sắp xếp cố định `roomId, displayOrder, id` (`sort` bị bỏ qua); chi tiết xem [be/public-exhibit-search.md](be/public-exhibit-search.md).
 
 **Đã triển khai (Task 9):** `GET /api/rooms` và `GET /api/rooms/:slug` (`ExhibitsController`) là nguồn public chuẩn cho hiện vật; `Cache-Control: no-cache` (BR-22, AC-51) thay cho TTL. File media: `GET /media/uploads/<dir>/<uuid>.<ext>` (ngoài prefix `/api`) — chỉ phục vụ file được revision public hiện hành tham chiếu hoặc URL ký (Preview CMS); còn lại 404. Chi tiết: `docs/tasks/be/cms-media-attach.md`.
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, EntityManager, Repository, WhereExpressionBuilder } from 'typeorm';
+import { Brackets, EntityManager, In, Repository, WhereExpressionBuilder } from 'typeorm';
 import { BaseRepository } from '../../../common/repository/base.repository';
 import { Paginated } from '../../../common/types/paginated.type';
 import { REVISION_MEDIA_SLOTS } from '../../exhibits/constants/revision-media-slots';
@@ -48,7 +48,7 @@ export class MediaRepository extends BaseRepository<Media> {
 
     const qb = this.repo
       .createQueryBuilder('media')
-      .where('media.isDeleted = :isDeleted', { isDeleted: false });
+      .where('media.isDeleted = :isDeleted', { isDeleted: query.deleted ?? false });
 
     if (query.kind) qb.andWhere('media.kind = :kind', { kind: query.kind });
     if (query.state) qb.andWhere('media.processingState = :state', { state: query.state });
@@ -70,12 +70,26 @@ export class MediaRepository extends BaseRepository<Media> {
     }
 
     const [items, total] = await qb
-      .orderBy('media.createdAt', 'DESC')
+      // Thùng rác: mới xóa trước.
+      .orderBy(query.deleted ? 'media.deletedAt' : 'media.createdAt', 'DESC')
       .addOrderBy('media.id', 'DESC')
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getManyAndCount();
     return { items, total, page, pageSize };
+  }
+
+  /** Khóa dòng các media đang trong thùng rác (đã xóa mềm) để khôi phục. */
+  lockDeletedByIds(ids: string[], manager: EntityManager): Promise<Media[]> {
+    return manager.getRepository(Media).find({
+      where: { id: In(ids), isDeleted: true },
+      order: { id: 'ASC' },
+      lock: { mode: 'pessimistic_write' },
+    });
+  }
+
+  async markRestored(ids: string[], manager: EntityManager): Promise<void> {
+    await manager.getRepository(Media).update({ id: In(ids) }, { isDeleted: false, deletedAt: null });
   }
 
   /** Khóa dòng media (SELECT … FOR UPDATE) trong transaction để kiểm tra & xóa nguyên tử. */
@@ -158,4 +172,40 @@ export class MediaRepository extends BaseRepository<Media> {
 
     return { publishedExhibits, pendingRevisions };
   }
+
+  /** Số media đã xóa mềm trước `cutoff` và không còn revision nào tham chiếu (cho dry-run). */
+  async countPurgeable(cutoff: Date): Promise<number> {
+    const [row]: { count: string }[] = await this.repo.query(
+      `SELECT count(*) AS count FROM media m WHERE ${PURGEABLE}`, [cutoff],
+    );
+    return Number(row.count);
+  }
+
+  /**
+   * Xóa hẳn tối đa `limit` media đã xóa mềm trước `cutoff` và không còn revision nào tham chiếu; điều kiện kiểm lại ngay
+   * trong câu DELETE nên revision vừa gắn lại media không bị ảnh hưởng. Trả id + storage key để xóa file sau đó.
+   */
+  async deletePurgeable(cutoff: Date, limit: number, manager: EntityManager): Promise<{ id: string; storageKey: string }[]> {
+    const [rows]: [{ id: string; storage_key: string }[], number] = await manager.query(
+      `DELETE FROM media WHERE id IN (
+         SELECT m.id FROM media m WHERE ${PURGEABLE} ORDER BY m.deleted_at LIMIT $2 FOR UPDATE SKIP LOCKED
+       ) RETURNING id, storage_key`,
+      [cutoff, limit],
+    );
+    return rows.map((row) => ({ id: row.id, storageKey: row.storage_key }));
+  }
+
+  /** Trong các key đưa vào, những key đang có bản ghi media (kể cả đã xóa mềm). */
+  async findExistingStorageKeys(keys: string[]): Promise<Set<string>> {
+    if (keys.length === 0) return new Set();
+    const rows: { storage_key: string }[] = await this.repo.query(
+      'SELECT storage_key FROM media WHERE storage_key = ANY($1)', [keys],
+    );
+    return new Set(rows.map((row) => row.storage_key));
+  }
 }
+
+/** Đã xóa mềm trước $1 và không slot media nào của revision nào trỏ tới (6 slot lấy từ REVISION_MEDIA_SLOTS). */
+const PURGEABLE = `m.is_deleted = true AND m.deleted_at < $1 AND NOT EXISTS (
+  SELECT 1 FROM exhibit_revisions r WHERE ${REVISION_MEDIA_SLOTS.map((slot) => `r.${slot.dbColumn} = m.id`).join(' OR ')}
+)`;

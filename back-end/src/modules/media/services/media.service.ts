@@ -2,13 +2,14 @@ import { createHash } from 'node:crypto';
 import { Readable } from 'node:stream';
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
   PayloadTooLargeException,
 } from '@nestjs/common';
 import { TransactionManager } from '../../../common/database/transaction.manager';
+import { withDeletedAt, type Trashed } from '../../../common/dto/deleted-filter.dto';
+import { assertNothingBlocked, type BlockedDeletion } from '../../../common/exceptions/deletion-blocked';
 import { DomainValidationException } from '../../../common/exceptions/validation.exception';
 import { Paginated } from '../../../common/types/paginated.type';
 import { ListMediaQueryDto } from '../dto/list-media-query.dto';
@@ -18,7 +19,7 @@ import { UploadMediaDto } from '../dto/upload-media.dto';
 import { Media, MediaProcessingState } from '../entities/media.entity';
 import { MediaErrorCode, MediaFormatError } from '../inspection/media-format.error';
 import { MEGABYTE, MediaFormatSpec } from '../inspection/media-formats';
-import { MediaRepository } from '../repositories/media.repository';
+import { MediaRepository, type MediaUsage } from '../repositories/media.repository';
 import { MediaInspectionService } from './media-inspection.service';
 import { MediaStorageService } from './media-storage.service';
 import { MediaUrlService } from './media-url.service';
@@ -68,10 +69,10 @@ export class MediaService {
     private readonly urls: MediaUrlService,
   ) {}
 
-  /** Thư viện media cho Admin CMS (phân trang, lọc kind/trạng thái). */
-  async list(query: ListMediaQueryDto): Promise<Paginated<MediaResponse>> {
+  /** Thư viện media cho Admin CMS (phân trang, lọc kind/trạng thái); `deleted=true` → thùng rác. */
+  async list(query: ListMediaQueryDto): Promise<Paginated<MediaResponse | Trashed<MediaResponse>>> {
     const result = await this.mediaRepo.listPaginated(query);
-    return { ...result, items: result.items.map((media) => this.toResponse(media)) };
+    return { ...result, items: result.items.map((media) => withDeletedAt(this.toResponse(media), media, query.deleted)) };
   }
 
   async getById(id: string): Promise<MediaResponse> {
@@ -142,36 +143,67 @@ export class MediaService {
   /**
    * Xóa mềm media. BR-21: từ chối nếu exhibit đã xuất bản đang dùng; cũng từ chối khi
    * nội dung chờ duyệt đang dùng. Kiểm tra và xóa chạy trong transaction có khóa dòng.
+   * File trên storage được GIỮ LẠI để khôi phục được (xóa mềm đúng nghĩa); dọn file là việc riêng.
    */
-  async remove(id: string): Promise<void> {
-    const storageKey = await this.tx.run(async (manager) => {
-      const media = await this.mediaRepo.lockActiveById(id, manager);
-      if (!media) throw new NotFoundException('Không tìm thấy media');
+  remove(id: string): Promise<void> {
+    return this.softDelete([id], true);
+  }
 
-      const usage = await this.mediaRepo.countUsage(id, manager);
-      if (usage.publishedExhibits > 0) {
-        throw new ConflictException(
-          `Media đang được ${usage.publishedExhibits} hiện vật đã xuất bản sử dụng nên không thể xóa (BR-21)`,
-        );
-      }
-      if (usage.pendingRevisions > 0) {
-        throw new ConflictException(
-          `Media đang nằm trong ${usage.pendingRevisions} bản nội dung chờ duyệt nên không thể xóa`,
-        );
-      }
+  /** Xóa mềm nhiều media: tất cả hoặc không (BR-21 cho từng media). Trả lại danh sách ID để audit ghi từng media. */
+  async removeMany(ids: string[]): Promise<{ ids: string[] }> {
+    await this.softDelete(ids, false);
+    return { ids };
+  }
 
-      media.isDeleted = true;
-      media.deletedAt = new Date();
-      await this.mediaRepo.save(media, manager);
-      return media.storageKey;
+  private async softDelete(ids: string[], single: boolean): Promise<void> {
+    await this.tx.run(async (manager) => {
+      const deletable: Media[] = [];
+      const blocked: BlockedDeletion[] = [];
+      // Khóa theo thứ tự ID cố định để hai lệnh xóa hàng loạt chồng nhau không deadlock.
+      for (const id of [...ids].sort()) {
+        const media = await this.mediaRepo.lockActiveById(id, manager);
+        if (!media) {
+          blocked.push({ id, reason: 'Không tìm thấy media', notFound: true });
+          continue;
+        }
+        const reason = this.deletionBlock(await this.mediaRepo.countUsage(id, manager));
+        if (reason) blocked.push({ id, reason });
+        else deletable.push(media);
+      }
+      assertNothingBlocked(blocked, single);
+
+      for (const media of deletable) {
+        media.isDeleted = true;
+        media.deletedAt = new Date();
+        await this.mediaRepo.save(media, manager);
+      }
     });
+  }
 
-    // Database là nguồn sự thật; dọn file sau khi commit, lỗi dọn file chỉ ghi log.
-    try {
-      await this.storage.remove(storageKey);
-    } catch (error) {
-      this.logger.warn(`Không xóa được file ${storageKey}: ${(error as Error).message}`);
+  /**
+   * Khôi phục media trong thùng rác: tất cả hoặc không. File vẫn được giữ khi xóa mềm nên dùng lại
+   * được ngay. Trả lại danh sách ID để audit ghi từng media.
+   */
+  async restoreMany(ids: string[]): Promise<{ ids: string[] }> {
+    await this.tx.run(async (manager) => {
+      const found = new Set((await this.mediaRepo.lockDeletedByIds(ids, manager)).map((media) => media.id));
+      const blocked = ids
+        .filter((id) => !found.has(id))
+        .map((id): BlockedDeletion => ({ id, reason: 'Không tìm thấy media trong mục đã xóa', notFound: true }));
+      assertNothingBlocked(blocked, false, 'restore');
+      await this.mediaRepo.markRestored(ids, manager);
+    });
+    return { ids };
+  }
+
+  private deletionBlock(usage: MediaUsage): string | null {
+    if (usage.publishedExhibits > 0) {
+      return `Media đang được ${usage.publishedExhibits} hiện vật đã xuất bản sử dụng nên không thể xóa (BR-21)`;
     }
+    if (usage.pendingRevisions > 0) {
+      return `Media đang nằm trong ${usage.pendingRevisions} bản nội dung chờ duyệt nên không thể xóa`;
+    }
+    return null;
   }
 
   private identifyOrReject(buffer: Buffer): MediaFormatSpec {

@@ -1,14 +1,29 @@
+import { museumExhibitButton, openMuseumCatalogue, openMuseumTools, selectMuseumExhibit } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { installMuseumApi } from './fixtures/museumApi';
 import { envelope, roomA } from './fixtures/museumContent';
 import { aimXr, installXrSimulation } from './fixtures/museumXr';
-import { installRendererProbe, readRendererProbe } from './fixtures/museumProbe';
+import { installRendererProbe, readRendererProbe, waitForRendererIdle } from './fixtures/museumProbe';
 import { installFiveModels } from './fixtures/museumGlb';
 
 test.beforeEach(async ({ page }) => { await installMuseumApi(page); });
 test.setTimeout(60_000);
 // Match the existing navigation suite's cold production chunk readiness gate.
 const sceneReady = { timeout: 30_000 };
+
+test('decorative floor joints do not block teleport along the central aisle', async ({ page }) => {
+  await installRendererProbe(page); await installXrSimulation(page); await installFiveModels(page);
+  await page.goto('/tour'); await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
+  await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible(sceneReady);
+  await page.getByRole('button', { name: 'Enter VR', exact: true }).click();
+  await expect(page.locator('[data-xr-phase="active"]')).toBeVisible();
+  await aimXr(page, [0, 0, 4]);
+  await page.evaluate(() => window.museumXrFixture.select());
+  await expect.poll(() => page.evaluate(() => {
+    const camera = window.museumProbe.at(-1)!.camera!.deref()!;
+    return camera.parent!.position.z;
+  })).toBeCloseTo(4, 1);
+});
 test('2D catalogue renders published images and permits deliberate 3D retry without refetch or selection loss', async ({ page }) => {
   let requests = 0;
   await page.route('**/api/rooms/sculpture', async route => {
@@ -29,19 +44,20 @@ test('2D catalogue renders published images and permits deliberate 3D retry with
   });
   await page.goto('/tour.html?room=sculpture');
   await expect(page.getByRole('img', { name: 'Ảnh hiện vật xuất bản' })).toBeVisible();
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 1');
   await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
   await page.evaluate(() => Reflect.set(window, 'block3d', false));
   await page.getByRole('button', { name: 'Thử lại 3D', exact: true }).click();
   await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible(sceneReady);
-  await expect(page.getByRole('button', { name: 'Xem chi tiết Hiện vật 1', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(museumExhibitButton(page, 'Xem chi tiết Hiện vật 1')).toHaveAttribute('aria-pressed', 'true');
   expect(requests).toBe(1);
 });
 test('unsupported XR keeps the existing 3D scene and web navigation', async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(navigator, 'xr', { configurable: true, value: undefined }));
   await page.goto('/tour.html?room=sculpture'); await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
   await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible(sceneReady);
+  await openMuseumTools(page);
   await expect(page.getByText('VR không khả dụng trong trình duyệt hoặc thiết bị này. Bạn vẫn có thể tham quan 3D.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Enter VR', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Góc nhìn ban đầu', exact: true })).toBeEnabled();
@@ -54,7 +70,7 @@ test('a supported but refused VR request preserves canvas, selection and permits
   await page.goto('/tour.html?room=sculpture'); await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true }); await expect(canvas).toBeVisible(sceneReady);
   await canvas.evaluate(node => { node.dataset.identity = 'original'; });
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
   await page.getByRole('button', { name: 'Enter VR', exact: true }).click();
   await expect(page.getByText('Không thể vào VR. Bạn vẫn có thể tham quan 3D và thử lại.')).toBeVisible();
   await expect(canvas).toHaveAttribute('data-identity', 'original');
@@ -68,14 +84,14 @@ test('actual context restores the same canvas and keeps logical selection', asyn
   await page.goto('/tour.html?room=sculpture'); await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true }); await expect(canvas).toBeVisible(sceneReady);
   await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
   await canvas.evaluate((node: HTMLCanvasElement) => {
     node.dataset.identity = 'original';
     const extension = node.getContext('webgl2')!.getExtension('WEBGL_lose_context')!;
     (window as unknown as { restoreContext: () => void }).restoreContext = () => extension.restoreContext(); extension.loseContext();
   });
   await expect(page.getByText('Đang khôi phục không gian 3D. Bạn có thể tiếp tục đọc danh mục.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(museumExhibitButton(page, 'Xem chi tiết Hiện vật 2')).toHaveAttribute('aria-pressed', 'true');
   await page.evaluate(() => (window as unknown as { restoreContext: () => void }).restoreContext());
   await expect(page.locator('[data-webgl-status="ready"]')).toBeVisible();
   await expect(canvas).toHaveAttribute('data-identity', 'original');
@@ -93,6 +109,8 @@ test('simulated native XR renders stereo, selects once, teleports, snap-turns an
   await page.goto('/tour.html?room=sculpture'); await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
   await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 20_000 });
   await expect.poll(() => page.evaluate(() => !!window.museumProbe.at(-1)?.camera?.deref())).toBe(true);
+  await page.getByRole('button', { name: 'Góc nhìn ban đầu', exact: true }).click();
+  await waitForRendererIdle(page);
   const saved = await page.evaluate(() => {
     const camera = window.museumProbe.at(-1)!.camera!.deref()!;
     return { position: camera.position.toArray(), quaternion: camera.quaternion.toArray(), projection: camera.projectionMatrix.toArray(), aspect: (camera as import('three').PerspectiveCamera).aspect };
@@ -106,7 +124,7 @@ test('simulated native XR renders stereo, selects once, teleports, snap-turns an
   await expect.poll(() => page.evaluate(() => !!window.museumProbe.at(-1)!.scene!.deref()!.getObjectByName('xr-details'))).toBe(true);
   await aimXr(page, [1.8, 3.16, 2]);
   await page.evaluate(() => window.museumXrFixture.select());
-  await expect(page.getByRole('button', { name: 'Xem chi tiết Hiện vật 5', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(museumExhibitButton(page, 'Xem chi tiết Hiện vật 5')).toHaveAttribute('aria-pressed', 'true');
   // Move the target clear of the detail panel and away from exhibit proxies.
   await aimXr(page, [4, 0, 3.7]);
   await page.evaluate(() => window.museumXrFixture.select());
@@ -131,12 +149,11 @@ test('simulated native XR renders stereo, selects once, teleports, snap-turns an
     return { position: camera.position.toArray(), quaternion: camera.quaternion.toArray(), projection: camera.projectionMatrix.toArray(), aspect: (camera as import('three').PerspectiveCamera).aspect };
   });
   expect(restored.position).toEqual(saved.position); expect(restored.quaternion).toEqual(saved.quaternion);
-  // Selecting metadata changed the DOM viewport width while in XR. Restore the
-  // original vertical lens with the current responsive viewport's aspect.
+  // Restore the entry lens with the responsive viewport's current aspect.
   restored.projection.forEach((value, index) => { if (index !== 0) expect(value).toBeCloseTo(saved.projection[index], 5); });
   expect(restored.projection[0]).toBeCloseTo(restored.projection[5] / restored.aspect, 5);
   await expect(canvas).toHaveAttribute('data-identity', 'original');
-  await expect(page.getByRole('button', { name: 'Xem chi tiết Hiện vật 5', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(museumExhibitButton(page, 'Xem chi tiết Hiện vật 5')).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Enter VR', exact: true }).click();
   await expect(page.locator('[data-xr-phase="active"]')).toBeVisible();
   await page.evaluate(() => window.museumXrFixture.disconnect());
@@ -149,7 +166,7 @@ test('simulated native XR renders stereo, selects once, teleports, snap-turns an
 test('repeated actual context losses exhaust recovery into stable readable 2D', async ({ page }) => {
   await page.goto('/tour.html?room=sculpture'); await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true }); await expect(canvas).toBeVisible(sceneReady);
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
   for (let loss = 0; loss < 2; loss++) {
     await canvas.evaluate((node: HTMLCanvasElement) => {
       const extension = node.getContext('webgl2')!.getExtension('WEBGL_lose_context')!;
@@ -162,9 +179,10 @@ test('repeated actual context losses exhaust recovery into stable readable 2D', 
   await canvas.evaluate((node: HTMLCanvasElement) => node.getContext('webgl2')!.getExtension('WEBGL_lose_context')!.loseContext());
   await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible();
   await expect(page.locator('canvas')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(museumExhibitButton(page, 'Xem chi tiết Hiện vật 2')).toHaveAttribute('aria-pressed', 'true');
   await page.getByLabel('Chọn phòng trưng bày').selectOption('ceramics');
-  await expect(page.getByRole('button', { name: 'Xem chi tiết Bình gốm', exact: true })).toBeVisible();
+  await openMuseumCatalogue(page);
+  await expect(museumExhibitButton(page, 'Xem chi tiết Bình gốm')).toBeVisible();
 });
 
 test('native session end during initialization never resurrects XR or throws a renderer event error', async ({ page }) => {
@@ -182,11 +200,12 @@ test('native renderer binding failure recreates only Canvas and retains cached G
   const { requests } = await installFiveModels(page); const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/tour.html?room=sculpture'); await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
   await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 30_000 });
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
   await page.getByRole('button', { name: 'Enter VR', exact: true }).click();
-  await expect.poll(() => page.evaluate(() => window.museumProbe.length)).toBe(2);
+  await expect.poll(() => page.evaluate(() => window.museumXrFixture.requests)).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.museumProbe.length), { timeout: 15_000 }).toBe(2);
   await expect(page.locator('[data-webgl-status="ready"][data-xr-phase="idle"]')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(museumExhibitButton(page, 'Xem chi tiết Hiện vật 2')).toHaveAttribute('aria-pressed', 'true');
   expect(requests).toEqual([1, 1, 1, 1, 1]); expect(errors).toEqual([]);
   expect(await page.evaluate(() => window.museumXrFixture.requests)).toBe(1);
 });
@@ -197,7 +216,7 @@ test('actual context loss during XR ends the session and restores normal 3D with
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/tour.html?room=sculpture'); await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
   await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 30_000 });
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
   await page.getByRole('button', { name: 'Enter VR', exact: true }).click();
   await expect(page.locator('[data-xr-phase="active"]')).toBeVisible();
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true });
@@ -211,7 +230,7 @@ test('actual context loss during XR ends the session and restores normal 3D with
   await expect(page.locator('[data-webgl-status="ready"][data-xr-phase="idle"]')).toBeVisible();
   await expect(canvas).toHaveAttribute('data-identity', 'xr-original');
   await expect(page.getByRole('button', { name: 'Góc nhìn ban đầu', exact: true })).toBeEnabled();
-  await expect(page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(museumExhibitButton(page, 'Xem chi tiết Hiện vật 2')).toHaveAttribute('aria-pressed', 'true');
   expect(await page.evaluate(() => window.museumXrFixture.requests)).toBe(1);
   expect(requests).toEqual([1, 1, 1, 1, 1]); expect(errors).toEqual([]);
 });
@@ -222,7 +241,10 @@ test('a controller-free session can gaze at the in-world Exit without moving the
   await page.goto('/tour.html?room=sculpture'); await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
   await page.getByRole('button', { name: 'Enter VR', exact: true }).click();
   await expect(page.locator('[data-xr-phase="active"]')).toBeVisible();
-  await expect.poll(() => page.evaluate(() => !!window.museumProbe.at(-1)!.scene?.deref()?.getObjectByName('xr-details'))).toBe(true);
+  await expect.poll(() => page.evaluate(() => {
+    const panel = window.museumProbe.at(-1)!.scene?.deref()?.getObjectByName('xr-details');
+    return !!panel && panel.position.z < -.5;
+  })).toBe(true);
   const before = await page.evaluate(() => {
     window.museumXrFixture.disconnect();
     const record = window.museumProbe.at(-1)!, camera = record.camera!.deref()!, origin = camera.parent!;
@@ -246,7 +268,7 @@ test('persistent WebGL failure exhausts only two deliberate retries and leaves r
     } as typeof getContext;
   });
   await page.goto('/tour.html?room=sculpture');
-  await page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true }).click();
+  await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
   await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
   for (let retry = 0; retry < 2; retry++) {
     await expect(page.getByRole('heading', { name: 'Không thể mở không gian 3D' })).toBeVisible(sceneReady);
@@ -254,6 +276,6 @@ test('persistent WebGL failure exhausts only two deliberate retries and leaves r
   }
   await expect(page.getByText('Đã hết lượt thử 3D. Bạn vẫn có thể đọc toàn bộ nội dung 2D.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Thử lại 3D', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Xem chi tiết Hiện vật 2', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(museumExhibitButton(page, 'Xem chi tiết Hiện vật 2')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('canvas')).toHaveCount(0);
 });

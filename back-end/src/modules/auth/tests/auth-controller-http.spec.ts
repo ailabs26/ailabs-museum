@@ -12,8 +12,11 @@ import { appConfig, jwtConfig } from '../../../config';
 import { AuthController } from '../controllers/auth.controller';
 import { RefreshCookieOriginGuard } from '../guards/refresh-cookie-origin.guard';
 import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
+import { AuditService } from '../../audit/services/audit.service';
 import { AuthService } from '../services/auth.service';
+import { SessionsService } from '../services/sessions.service';
 import { TokenService } from '../services/token.service';
+import { TwoFactorService } from '../services/two-factor.service';
 
 const COOKIE = 'aura_rt';
 const USER = { id: 'u1', email: 'admin@aura.local', displayName: 'Admin', roles: ['admin'], permissions: [] };
@@ -41,8 +44,18 @@ describe('AuthController HTTP — refresh cookie', () => {
       providers: [
         RefreshCookieOriginGuard,
         AuthRateLimiter,
+        { provide: AuditService, useValue: { recordSafely: async () => undefined } },
+        { provide: SessionsService, useValue: {} },
+        { provide: TwoFactorService, useValue: {} },
         { provide: AuthService, useValue: auth },
-        { provide: TokenService, useValue: { refreshCookieMaxAgeMs: () => 7 * 24 * 3600 * 1000 } },
+        {
+          provide: TokenService,
+          useValue: {
+            refreshCookieMaxAgeMs: () => 7 * 24 * 3600 * 1000,
+            // Token không tồn tại → không có phiên (đếm theo IP); còn lại thuộc một phiên.
+            findSessionOwner: async (raw: string) => (raw === 'stolen' ? null : { familyId: 'fam-1', userId: 'u1' }),
+          },
+        },
       ],
     }).compile();
     app = moduleRef.createNestApplication();

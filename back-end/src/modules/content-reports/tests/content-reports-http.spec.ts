@@ -96,6 +96,27 @@ describe('Reports HTTP', () => {
     assert.equal(res.body.success, false);
   });
 
+  it('POST /reports/:id/assign: không body = tự nhận; có assigneeId = giao người đó; assigneeId sai định dạng/thừa field → 400', async () => {
+    const calls: unknown[][] = [];
+    const app = await makeApp({ assign: (...args: unknown[]) => { calls.push(args); return Promise.resolve({} as never); } });
+    apps.push(app);
+    const assignee = 'b1111111-1111-4111-8111-111111111111';
+
+    await request(app.getHttpServer()).post(`/reports/${UUID}/assign`).expect(201);
+    await request(app.getHttpServer()).post(`/reports/${UUID}/assign`).send({ assigneeId: assignee }).expect(201);
+    await request(app.getHttpServer()).post(`/reports/${UUID}/assign`).send({ assigneeId: 'abc' }).expect(400);
+    await request(app.getHttpServer()).post(`/reports/${UUID}/assign`).send({ userId: assignee }).expect(400);
+    assert.deepEqual(calls.map((c) => [c[0], c[2]]), [[UUID, undefined], [UUID, assignee]]);
+  });
+
+  it('GET /reports/assignees không bị bắt nhầm thành /reports/:id', async () => {
+    const people = [{ id: 'b1111111-1111-4111-8111-111111111111', email: 'mod@aura.local', displayName: 'Mod' }];
+    const app = await makeApp({ assignees: () => Promise.resolve(people), get: () => Promise.reject(new Error('không được gọi')) });
+    apps.push(app);
+    const res = await request(app.getHttpServer()).get('/reports/assignees').expect(200);
+    assert.deepEqual(res.body.data, people);
+  });
+
   it('POST /reports/:id/resolve: 400 khi thiếu kết luận', async () => {
     const app = await makeApp({ resolve: () => Promise.resolve({} as never) });
     apps.push(app);
