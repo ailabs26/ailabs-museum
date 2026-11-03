@@ -12,6 +12,7 @@ import { PermissionDeniedException } from '../../../common/exceptions/permission
 import { RoleKey } from '../../../common/enums/role.enum';
 import type { AuthUser } from '../../../common/types/auth-user.type';
 import type { Paginated } from '../../../common/types/paginated.type';
+import { assertPasswordPolicy } from '../../../common/security/password-policy';
 import { PasswordService } from '../../../common/security/password.service';
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { RefreshSessionsRepository } from '../../auth/repositories/refresh-sessions.repository';
@@ -72,6 +73,10 @@ export class UsersService {
     return this.tx.run(async (manager) => {
       await this.users.lockManagement(manager);
       const current = await this.requireDetail(id, manager);
+      if (dto.password !== undefined) {
+        // DTO đã kiểm độ dài/độ phổ biến; ở đây kiểm không chứa email/tên (tên mới nếu đổi cùng lúc).
+        assertPasswordPolicy(dto.password, { email: current.email, displayName: dto.displayName ?? current.displayName });
+      }
       const nextCodes = dto.roleIds === undefined
         ? toUserResponse(current).roles
         : await this.validateRoleCodes(dto.roleIds, manager);

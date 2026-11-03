@@ -10,6 +10,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { UserStatus } from '../entities/user.entity';
+import { IsStrongPassword } from '../../../common/security/password-policy';
 
 export class UpdateUserDto {
   @ValidateIf((_object, value) => value !== undefined)
@@ -25,9 +26,9 @@ export class UpdateUserDto {
 
   /** Đặt lại mật khẩu (tùy chọn). */
   @ValidateIf((_object, value) => value !== undefined)
+  /** Chính sách độ mạnh; việc không chứa email/tên của user được kiểm ở UsersService. */
   @IsString()
-  @MinLength(8, { message: 'Mật khẩu tối thiểu 8 ký tự' })
-  @MaxLength(128)
+  @IsStrongPassword()
   password?: string;
 
   /** Khi có trường này, thay toàn bộ vai trò trong cùng transaction cập nhật. */
