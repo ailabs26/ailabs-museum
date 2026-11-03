@@ -42,7 +42,7 @@ metadata:
 
 ## Enterprise Envelope Pattern (`ApiResponse<T>`)
 
-DTSoft backend APIs wrap responses inside a standardized payload envelope:
+AILabs backend APIs wrap responses inside a standardized payload envelope:
 
 ### 1. C# Backend Model
 ```csharp
