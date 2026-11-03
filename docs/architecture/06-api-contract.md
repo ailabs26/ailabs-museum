@@ -42,6 +42,9 @@ POST   /auth/login            POST /auth/refresh    POST /auth/logout    GET /au
 POST   /auth/change-password                                     # tự đổi mật khẩu
 GET    /auth/sessions         DELETE /auth/sessions/:id          # thiết bị đang đăng nhập của chính mình
 POST   /auth/sessions/revoke-others   POST /auth/logout-all
+POST   /auth/login/2fa             # bước 2 khi bật 2FA: { mfaToken, code | recoveryCode }
+GET    /auth/2fa   POST /auth/2fa/setup   POST /auth/2fa/enable   POST /auth/2fa/disable   POST /auth/2fa/recovery-codes
+POST   /users/:id/2fa/reset        # Admin tắt 2FA hộ (user:update)
 GET    /users                 POST /users           GET /users/:id       PATCH /users/:id     DELETE /users/:id
 POST   /users/bulk-delete     POST /users/bulk-restore           # xóa mềm / khôi phục nhiều tài khoản
 POST   /users/:id/roles       DELETE /users/:id/roles/:roleId
@@ -222,11 +225,13 @@ Ghi vết tự động qua `AuditInterceptor` + `@Audit(action, resourceType)`. 
 | auth.password_change, auth.session_revoke_others, auth.logout_all | user | — | AuthController |
 | auth.session_revoke | session | — | AuthController (`resourceId` = family) |
 | auth.login | user | — | đăng nhập thành công; actor = tài khoản |
-| auth.login_failed | user | — | actor null; `resourceId` = tài khoản đích (null nếu email không tồn tại); `reason` `{"reason":"invalid_password\|account_disabled\|unknown_account\|credentials_changed"}`; không ghi email/mật khẩu đã nhập |
+| auth.login_failed | user | — | actor null; `resourceId` = tài khoản đích (null nếu email không tồn tại); `reason` `{"reason":"invalid_password\|account_disabled\|unknown_account\|credentials_changed\|invalid_2fa\|mfa_expired"}`; không ghi email/mật khẩu đã nhập |
 | auth.login_blocked | user | — | bị chặn 429; `resourceId` null; `reason` `{"limit":"ip\|email"}`; **1 lần mỗi cửa sổ chặn** cho mỗi IP/email (chống ngập DB) |
 | auth.refresh_blocked | user | — | `/auth/refresh` bị chặn 429; `reason` `{"limit":"ip\|session\|invalid"}`; `resourceId` = chủ phiên khi `session`, null khi khác; 1 lần mỗi phút cho mỗi IP/phiên |
 | auth.refresh_reuse_detected | user | — | refresh bằng token đã xoay vòng (nghi bị đánh cắp) → cả family bị thu hồi; actor null; `resourceId` = chủ phiên; `reason` `{"familyId":"…"}`. Token chỉ bị thu hồi/hết hạn thì **không** ghi |
 | auth.logout | user | — | đăng xuất có phiên; actor = chủ phiên |
+| auth.2fa_enable, auth.2fa_disable, auth.2fa_recovery_regenerate | user | — | tự bật/tắt 2FA, tạo lại mã khôi phục; actor = chính người đó |
+| user.2fa_reset | user | — | Admin tắt 2FA hộ (`POST /users/:id/2fa/reset`) |
 | access.denied | access | — | 403 thiếu quyền; `resourceId` null |
 | audit.export | audit | — | xuất CSV nhật ký; actor = người xuất; `resourceId` null; `reason` `{"filter":{…},"rows":N}` |
 
