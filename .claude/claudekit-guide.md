@@ -46,17 +46,17 @@ Chọn lệnh cài theo tình huống của dự án:
 
 | Tình huống | Lệnh | Ghi chú |
 | --- | --- | --- |
-| Dự án **.NET + Angular** của công ty | `agent-install` | Cài `.claude` + `.codegraph`, hỏi thông tin dự án, tự điền placeholder cho `commands/field/*` |
-| Dự án **khác** (Node, Python, CMS…) | `agent-install -NoCommands` | Bỏ bộ command `field:*` |
+| Dự án **.NET + Angular** của công ty | `agent-install -Profile dotnet-angular` | Cài `.claude` + `.codegraph`, dùng gói skill/agent và mẫu tài liệu .NET + Angular |
+| Dự án **khác** (Node, Python, CMS…) | `agent-install` | Dùng gói `workday` mặc định hoặc chọn `-Profile` phù hợp |
 | Dự án dùng **Agent CLI / Codex** | `agent-install -Agents` | Cài thêm `.agents/skills` (mặc định không cài) |
 | Muốn **rules ClaudeKit** (workflow bắt buộc) | `agent-install -Rules` | 7 file rule tự nạp vào mọi phiên; mặc định không cài để khỏi nạp trùng với `~/.claude/rules` |
 | **Giảm số skill/agent nạp** | `agent-install -Profile dotnet-angular` | Xem [Gói cài đặt](#gói-cài-đặt) — mặc định `workday` (gọn cho hằng ngày) |
 | Không muốn bị hỏi | `agent-install -NoPrompt` | Chỉ tự dò cấu trúc dự án |
 | **Xem trước** khi cài vào dự án đã có `.claude` | `agent-install -DryRun` (hoặc `install-kit.ps1 -Target <dự án> -DryRun`) | In ra sẽ thêm/ghi đè/xóa gì, không ghi gì |
 | Giữ nguyên skill/agent cũ đã gỡ khỏi kit | `-NoPrune` | Mặc định installer xóa đúng các tên trong `kit-dropped.json` khỏi dự án đã cài bản cũ |
-| Ghi đè cấu hình đã có | `agent-install -Force` | Ghi đè `settings.json`, `.ck.json`, `CLAUDE.md`, `commands/field` |
+| Ghi đè cấu hình đã có | `agent-install -Force` | Ghi đè `settings.json`, `.ck.json`, `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` |
 
-Đã cài `agent-install` từ trước? Chạy lại `setup-agent-install-command.ps1 -Force` để lệnh nhận cờ mới (như `-Rules`). Chưa có lệnh `agent-install`? Xem [README.md](../README.md) (cài lệnh toàn cục một lần mỗi máy, hoặc dùng `new-project.ps1`). Sau khi cài: viết `./CLAUDE.md` riêng cho dự án, kiểm tra `.claude/commands/field/*.md`, **restart Claude Code**.
+Đã cài `agent-install` từ trước? Chạy lại `setup-agent-install-command.ps1 -Force` để lệnh nhận cờ mới (như `-Rules`). Chưa có lệnh `agent-install`? Xem [README.md](../README.md) (cài lệnh toàn cục một lần mỗi máy, hoặc dùng `new-project.ps1`). Sau khi cài: viết `./CLAUDE.md` riêng cho dự án và **restart Claude Code**.
 
 ## Gói Cài Đặt
 
@@ -69,7 +69,7 @@ Kit có hơn 800 skill và 300 sub-agent — dự án nào cũng không cần h�
 | `dotnet-angular` | 245 / 82 | `workday` + .NET, kiến trúc Clean/CQRS/DDD, thiết kế API, Angular/TypeScript/UI/a11y/E2E + agent tương ứng | Dự án .NET + Angular của công ty |
 | `web` | 255 / 105 | `workday` + Angular/React/Next/Vue/Node và agent web | Dự án web JavaScript/TypeScript |
 | `research` | 230 / 39 | `workday` + Firecrawl, mem0, Browser Use | Nghiên cứu web-data, crawl/scrape, memory layer, browser automation |
-| `full` | <!--n:skills-->1828<!--/n--> / <!--n:agents-->332<!--/n--> | Toàn bộ kit | Khi cần đủ mọi chuyên môn |
+| `full` | <!--n:skills-->2324<!--/n--> / <!--n:agents-->362<!--/n--> | Toàn bộ kit | Khi cần đủ mọi chuyên môn |
 
 - Chọn gói: `agent-install -Profile dotnet-angular` (hoặc `install-kit.ps1 -Target <dự án> -Profile dotnet-angular`). Xem trước bằng `-DryRun`.
 - Gói ghi vào `.claude/kit-install.json` (cùng phiên bản kit); lần cài sau không nêu `-Profile` sẽ dùng lại gói đó. `-Profile` mới chỉ thêm phần thiếu, **không gỡ** skill đã có.
@@ -85,7 +85,7 @@ Bốn khối xây dựng của kit — hiểu chúng là hiểu kit:
 | **Skill** | Bộ chỉ dẫn (`SKILL.md` + `references/` + `scripts/`) dạy Claude làm một việc | `.claude/skills/<tên>/` | Gõ `/tên-skill`, hoặc Claude tự chọn theo mô tả |
 | **Sub-agent** | Trợ lý chuyên trách chạy trong ngữ cảnh riêng | `.claude/agents/<tên>.md` | Claude giao việc qua công cụ Task, hoặc skill gọi theo tên |
 | **Hook** | Script `.cjs` chạy theo sự kiện (mở phiên, trước/sau công cụ…) | `.claude/hooks/` | Tự động, đăng ký trong `.claude/settings.json` |
-| **Command** | Lệnh riêng của công ty, dạng template có placeholder | `.claude/commands/field/` | Gõ `/field:tên` |
+| **Command** | Lệnh tiện ích gọi trực tiếp | `.claude/commands/` | Gõ `/tên-command` |
 
 Lưu ý cách gọi: skill ClaudeKit khai báo `name: ck:plan` nên gõ **`/ck:plan`** (thư mục là `ck-plan`). Skill của nguồn khác gõ theo tên thư mục, ví dụ `/brainstorming`. Gặp tên trùng, xem [Quy ước trùng tên](#quy-ước-trùng-tên--claudekit-thắng).
 
@@ -93,11 +93,11 @@ Lưu ý cách gọi: skill ClaudeKit khai báo `name: ck:plan` nên gõ **`/ck:p
 
 | Thư mục / Tập tin | Quy mô | Vai trò |
 | --- | :---: | --- |
-| `.claude/skills/` | **<!--n:skills-->1828<!--/n--> skill** | Toàn bộ kỹ năng (mỗi thư mục = 1 slash command hoặc skill tự kích hoạt); 77 skill là của ClaudeKit (`ck:*`) |
-| `.agents/skills/` | **<!--n:agents-skills-->1763<!--/n--> skill** | Cây kỹ năng tương thích Agent CLI / Codex (tuỳ chọn khi cài) |
-| `.claude/agents/` | **<!--n:agents-->332<!--/n--> agent** | Sub-agent theo ngôn ngữ, kiến trúc, cơ sở dữ liệu, cloud, bảo mật; 13 agent cốt lõi của ClaudeKit |
-| `.claude/mcps/` | **<!--n:mcps-->103<!--/n--> mẫu** | Cấu hình mẫu MCP Server (Database, Playwright, DevTools, Web Data, Productivity…) |
-| `.claude/commands/field/` | **<!--n:field-commands-->9<!--/n--> lệnh** | Workflow thêm trường dữ liệu xuyên 4 tầng .NET Clean Arch + Angular |
+| `.claude/skills/` | **<!--n:skills-->2324<!--/n--> skill** | Toàn bộ kỹ năng (mỗi thư mục = 1 slash command hoặc skill tự kích hoạt); 77 skill là của ClaudeKit (`ck:*`) |
+| `.agents/skills/` | **<!--n:agents-skills-->2258<!--/n--> skill** | Cây kỹ năng tương thích Agent CLI / Codex (tuỳ chọn khi cài) |
+| `.claude/agents/` | **<!--n:agents-->362<!--/n--> agent** | Sub-agent theo ngôn ngữ, kiến trúc, cơ sở dữ liệu, cloud, bảo mật; 13 agent cốt lõi của ClaudeKit |
+| `.claude/mcps/` | **<!--n:mcps-->106<!--/n--> mẫu** | Cấu hình mẫu MCP Server (Database, Playwright, DevTools, Web Data, Productivity…) |
+| `.claude/commands/` | Lệnh tiện ích | Workflow gọi trực tiếp ngoài skill |
 | `.claude/hooks/` | **<!--n:hooks-->19<!--/n--> hook** | Kiểm soát chất lượng, bảo mật, nhắc YAGNI/KISS, Kanban, statusline |
 | `.claude/rules/` | 7 rule + script | Rule quy trình ClaudeKit (tuỳ chọn khi cài) và script chuẩn hoá mã .NET |
 | `.claude/{scripts,output-styles,schemas,.ck.json,.ckignore}` | Nền ClaudeKit | Script hỗ trợ, 6 mức `coding-level`, schema cấu hình, cấu hình mặc định hook |
@@ -336,7 +336,7 @@ Nhiều skill bảo mật có vai trò **khác nhau** — không trùng nhau. Ch
 
 ## Sub-Agent
 
-Kit có **<!--n:agents-->332<!--/n--> sub-agent**. Claude tự giao việc cho agent phù hợp, hoặc bạn nêu tên: "dùng `database-optimizer` để tối ưu truy vấn này".
+Kit có **<!--n:agents-->362<!--/n--> sub-agent**. Claude tự giao việc cho agent phù hợp, hoặc bạn nêu tên: "dùng `database-optimizer` để tối ưu truy vấn này".
 
 ### Agent cốt lõi của ClaudeKit (13)
 
@@ -382,25 +382,6 @@ Kiểm kê chi tiết chồng chéo giữa các agent (kể cả 13 agent đã g
 
 ---
 
-## Commands Riêng Cho .NET + Angular
-
-Nhóm `field:*` phục vụ quy trình thêm một trường dữ liệu xuyên 4 tầng của công ty (cài khi dự án là .NET + Angular; `-NoCommands` để bỏ):
-
-| Command | Mục đích |
-| --- | --- |
-| `/field:scan-be <field - kiểu>` | Vừa thêm field vào Entity → quét BE xem tầng nào còn thiếu (Domain/Dto/Application/API) |
-| `/field:add-be <Tên_Trường>` | Viết code BE hoàn chỉnh: Domain → Dto → Application → API |
-| `/field:scan-fe <Dto/trường>` | Quét frontend Angular tìm component, service chưa bind field |
-| `/field:add-fe <Tên_Trường + kiểu>` | Viết code Angular đưa field lên giao diện |
-| `/field:validate <trường + ràng buộc>` | Sinh FluentValidation (BE) + ReactiveForm (FE) theo message chuẩn tiếng Việt |
-| `/field:uml <tính năng> + <loại sơ đồ>` | Sinh sơ đồ UML Mermaid v11 / PlantUML |
-| `/field:docs-spd <thay đổi> + <mã tài liệu>` | Gap analysis bộ tài liệu phân tích kỹ thuật (SRS, FSD, DD…) |
-| `/field:hdsd <đối tượng> + <tính năng>` | Soạn/cập nhật tài liệu Hướng dẫn sử dụng |
-
-**Luồng chuẩn:** `/field:scan-be` → `/field:add-be` → `/field:validate` → `/field:scan-fe` → `/field:add-fe` → `/ck:code-review --pending`
-
-Các command này là **template**: installer điền `{{SLN_PATH}}`, `{{DOMAIN_PROJECT}}`, `{{DOMAINS}}`… bằng cách dò cấu trúc dự án. Kiểm tra `.claude/commands/field/*.md` sau khi cài xem tên project đã đúng chưa.
-
 ## Hook & An Toàn
 
 Mọi hook chạy qua `node-hook-runner.sh` (tự tìm Node, thoát êm nếu thiếu Node) và đăng ký trong `.claude/settings.json`:
@@ -422,7 +403,7 @@ Mọi hook chạy qua `node-hook-runner.sh` (tự tìm Node, thoát êm nếu th
 
 ## MCP
 
-`.claude/mcps/` mang theo **<!--n:mcps-->103<!--/n--> file JSON mẫu**: `database/` (PostgreSQL, Neon, Supabase, MySQL, Redis, MongoDB…), `browser_automation/` (Playwright, browser-use, Browserbase…), `devtools/` (Sentry, GitHub, Grafana, Figma, Terraform, Chrome DevTools…), `web-data/` (Firecrawl, Bright Data, Apify…), `productivity/` (Google Workspace, Notion, Monday…).
+`.claude/mcps/` mang theo **<!--n:mcps-->106<!--/n--> file JSON mẫu**: `database/` (PostgreSQL, Neon, Supabase, MySQL, Redis, MongoDB…), `browser_automation/` (Playwright, browser-use, Browserbase…), `devtools/` (Sentry, GitHub, Grafana, Figma, Terraform, Chrome DevTools…), `web-data/` (Firecrawl, Bright Data, Apify…), `productivity/` (Google Workspace, Notion, Monday…).
 
 **Kích hoạt một MCP:** mở mẫu trong `.claude/mcps/<danh-mục>/<tên>.json` → chép block `mcpServers` → dán vào `.mcp.json` ở gốc dự án (file này đã có mục `codegraph` do `codegraph install` tạo) → restart Claude Code. Dùng `/ck:use-mcp` để khám phá/thực thi công cụ MCP đã cấu hình; `/ck:mcp-builder` để tự viết MCP server.
 
@@ -443,9 +424,9 @@ Chi tiết và quy trình chuẩn: 📖 [`.claude/codegraph-guide.md`](codegraph
 
 ```text
    ClaudeKit Engineer v2.18.0  ──────────────►  .claude/   (payload: skills, agents, hooks, rules, scripts…)
-   (claudekit-engineer-main, tải riêng)   sync-claudekit-base.ps1
+   (claudekit-engineer-main, tải riêng)   kit-base.ps1
                                                    ▲
-   Superpowers · ECC · Templates · Matt Pocock ────┘   update-skills.ps1  (lớp bổ sung, không ghi đè nền)
+   Superpowers · ECC · Templates · Matt Pocock ────┘   kit-upstream.ps1  (lớp bổ sung, không ghi đè nền)
    VoltAgent · Diagram Design · Ponytail · ADHD
                                                    │
                                                    ▼   install-kit.ps1 / agent-install
@@ -453,7 +434,7 @@ Chi tiết và quy trình chuẩn: 📖 [`.claude/codegraph-guide.md`](codegraph
 ```
 
 - **ClaudeKit là bộ chính.** Khung repo (`CLAUDE.md`, `docs/`, `guide/`, `scripts/`, `.claude-archived/`, `LICENSE`…) nằm thẳng ở thư mục gốc kit; payload `claude/` nằm trong `.claude/` (phiên bản ghi ở `.claude/metadata.json`).
-- **Các nguồn khác xếp lên trên.** `update-skills.ps1` không ghi đè skill/agent thuộc nền ClaudeKit và không chép lại các skill đã gỡ (`$DroppedSkills`).
+- **Các nguồn khác xếp lên trên.** `kit-upstream.ps1` không ghi đè skill/agent thuộc nền ClaudeKit và không chép lại các skill đã gỡ (`$DroppedSkills`).
 - **Cài vào dự án** chỉ copy payload (loại `hooks/.logs`, `__pycache__`), giữ nguyên `settings.json`/`.ck.json` nếu đã có.
 
 ### Quy ước trùng tên — ClaudeKit thắng
@@ -469,6 +450,7 @@ Skill/agent của nguồn khác trùng tên với ClaudeKit đã được **đ�
 | `/ck:skill-creator` | `/skill-creator-anthropic` | ClaudeKit: eval-driven, benchmark. Bản đổi tên: bản gốc Anthropic |
 | `/ck:context-engineering` | `/context-engineering-setup` | ClaudeKit: giới hạn/quota ngữ cảnh. Bản đổi tên: cấu hình rules/context cho phiên |
 | `/ck:retro` | `/retro-session` (Matt Pocock) | ClaudeKit: hồi cứu kỹ thuật từ lịch sử git. Bản đổi tên: hồi cứu một phiên làm việc để cải thiện môi trường của agent |
+| `/security-audit` | `/cloudflare-security-audit` (Cloudflare) | Bản có sẵn: bundle workflow chung. Bản đổi tên: quy trình audit bảo mật 6 giai đoạn chính thức từ Cloudflare |
 
 ### Vì sao kit "gọn" hơn danh sách nguồn
 
@@ -482,7 +464,7 @@ Skill/agent của nguồn khác trùng tên với ClaudeKit đã được **đ�
 
 | # | Nguồn | Repository | Đóng góp |
 | :---: | --- | --- | --- |
-| **1** | **ClaudeKit Engineer** (bộ chính) | [claudekit/claudekit-engineer](https://github.com/claudekit/claudekit-engineer) v2.18.0 | Hooks, statusline, 13 agent quy trình, core skills (`ck:*`), rules, scripts, output-styles. Giấy phép proprietary — đã mua license, kit chỉ dùng nội bộ (repo private) |
+| **1** | **ClaudeKit Engineer** (bộ chính) | [SmartNL/claudekit-engineer](https://github.com/SmartNL/claudekit-engineer) | Hooks, statusline, agent quy trình, core skills (`ck:*`), rules, scripts, output-styles. Giấy phép proprietary — chỉ đồng bộ qua nguồn licensed/manual |
 | **2** | Superpowers | [obra/superpowers](https://github.com/obra/superpowers) | TDD kỷ luật, `systematic-debugging`, `brainstorming`, `executing-plans`, `finishing-a-development-branch`, `writing-plans` |
 | **3** | Everything Claude Code (ECC) | [affaan-m/ecc](https://github.com/affaan-m/ecc) | Hàng trăm skill và sub-agent: Developer, DevOps, Cloud, AI/ML, Swift, Automation |
 | **4** | Claude Code Templates | [davila7/claude-code-templates](https://github.com/davila7/claude-code-templates) | Skill/agent .NET, Angular, C#, Cloud/Azure, MCP Dev Team, UI analysis; 103 mẫu MCP |
@@ -492,9 +474,17 @@ Skill/agent của nguồn khác trùng tên với ClaudeKit đã được **đ�
 | **8** | I Have ADHD | [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) | Trả lời action-first, giảm tải nhận thức |
 | **9** | Archify | [tt-a1i/archify](https://github.com/tt-a1i/archify) | Sơ đồ kiến trúc/workflow tương tác HTML/SVG |
 | **10** | CodeGraph | [colbymchenry/codegraph](https://github.com/colbymchenry/codegraph) | Đồ thị tri thức mã nguồn cục bộ (Rust + SQLite FTS5); xem [codegraph-guide.md](codegraph-guide.md) |
-| **11** | Firecrawl Skills | [firecrawl/skills](https://github.com/firecrawl/skills) | 34 skill chính thức cho Firecrawl CLI/MCP/API: search, scrape, crawl, interact, research/developer index, web-data workflows; thay thế `firecrawl-scraper` cũ; khóa trong `skills-lock.json` |
+| **11** | Firecrawl Skills | [firecrawl/skills](https://github.com/firecrawl/skills) | 37 skill chính thức cho Firecrawl CLI/MCP/API: search, scrape, crawl, interact, research/developer index, web-data workflows; thay thế `firecrawl-scraper` cũ; khóa trong `skills-lock.json` |
 | **12** | mem0 Skills | [mem0ai/mem0](https://github.com/mem0ai/mem0) | 6 skill chính thức `mem0*` cho memory layer trong AI app/agent: SDK, CLI, Vercel AI SDK, integrate/test/migrate; khóa trong `skills-lock.json` |
 | **13** | Browser Use | [browser-use/browser-use](https://github.com/browser-use/browser-use) | Skill chính thức `browser-use` cho browser automation qua CDP/CLI; chỉ cập nhật skill chính để tránh các tên chung như `qa`, `cloud`; khóa trong `skills-lock.json` |
+| **14** | Anthropic Skills | [anthropics/skills](https://github.com/anthropics/skills) | 14 skill Apache-2.0 đã allowlist; ba tên trùng nền được giữ ở `*-anthropic`; không auto-vendor nhóm document source-available |
+| **15** | Taste Skill | [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | `design-taste-frontend`, đồng bộ theo layout/giới hạn đã review |
+| **16** | Humanizer | [blader/humanizer](https://github.com/blader/humanizer) | Skill `humanizer`; chỉ copy ba file cần thiết, không nhập metadata plugin |
+| **17** | Marketing Skills | [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) | 52 skill; `copywriting` đổi thành `copywriting-marketing` để không ghi đè ClaudeKit |
+| **18** | Composio | [ComposioHQ/awesome-claude-skills](https://github.com/ComposioHQ/awesome-claude-skills) | 800+ automation skill qua handler chuyên biệt |
+| **19** | NanoClaw Skills | [nanocoai/nanoclaw](https://github.com/nanocoai/nanoclaw) | 54 skill trong `.claude/skills`; không cài runtime/container/credential gateway |
+
+`upstream-sources.json` còn theo dõi nhưng không vendor chín app/plugin hoặc bộ opt-in (`paperclip`, Open Code Review, Agentic Awesome Skills, Claude Mem, Context Mode, REA, wshobson Agents, Oh My ClaudeCode, Anthropic Cybersecurity Skills), sáu nguồn tham khảo (Awesome Claude Code, Prompt Engineering Guide, Claude Code Best Practice, Scientific Agent Skills, AI Agents for Beginners, Awesome Agent Skills), và chặn `system_prompts_leaks`. K-Dense giữ license riêng theo từng skill; bộ cybersecurity có 818 skill cùng hơn 1.000 script Python và nội dung red-team nên chỉ cài theo nhu cầu trong môi trường được ủy quyền. Các entry này luôn `SKIP` với lý do/cách dùng đúng; chúng không được generic adapter thực thi.
 
 ### Ứng viên chờ kiểm thử & tích hợp
 
@@ -505,7 +495,6 @@ Các repository dưới đây **chưa được tích hợp** (hoặc mới tích
 | **Claude Code Toolkit** | [viknesh20-20/claude-code-tool-kit](https://github.com/viknesh20-20/claude-code-tool-kit) | 12 agents, 30 skills, 9 rules, 2 hooks `.sh`, 45+ cấu hình MCP; MIT, 7 sao. Phần lớn trùng kit; hooks `.sh` cần chuyển `.cjs`. Giá trị: cấu hình MCP dựng sẵn, chọn bundle theo loại dự án | Chờ đánh giá |
 | **gstack** | [garrytan/gstack](https://github.com/garrytan/gstack) | MIT, 133.6k sao, 53 skill (luồng Think → Plan → Build → Review → Test → Ship). Đã viết lại `careful` + `freeze` bằng Node; bỏ `plan-eng-review`. Rủi ro: cài bằng `./setup` (bash), telemetry opt-in | Đã tích hợp một phần |
 | **duthaho/claudekit** | [duthaho/claudekit](https://github.com/duthaho/claudekit) | MIT, 15 skills + 8 agents, verification-first. Chức năng gần `verification-before-completion`, `writing-plans`, `systematic-debugging` — cần so nội dung | Chờ đánh giá |
-| **wshobson/agents** | [wshobson/agents](https://github.com/wshobson/agents) | MIT, 94 plugins, 202 agents, 183 skills. 36/137 agent và 26/183 skill trùng tên. Dùng như marketplace theo nhu cầu (`/plugin marketplace add wshobson/agents`) | Không tích hợp |
 | **VoltAgent Subagents** | [VoltAgent/awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) | MIT, 160 agent; 90/160 đã có. Đã tích hợp `ai-engineer`, `data-engineer`, `mlops-engineer`, `llm-architect`, `legacy-modernizer`, `payment-integration`, `workflow-orchestrator`; bỏ `docker-expert`, `git-workflow-manager` (trùng skill) | Đã tích hợp 7 agent |
 | **VoltAgent Framework** | [VoltAgent/voltagent](https://github.com/VoltAgent/voltagent) | Framework TypeScript xây AI agent, không phải cấu hình Claude Code | Không tích hợp |
 
@@ -518,8 +507,8 @@ Các repository dưới đây **chưa được tích hợp** (hoặc mới tích
 | Việc | Lệnh | Lấy từ đâu |
 | --- | --- | --- |
 | Lấy bản kit mới của nhóm | `git pull` | GitLab nội bộ |
-| Cập nhật nền ClaudeKit | `.\sync-claudekit-base.ps1 -Source <thư mục giải nén>` (hoặc `install-kit.ps1 -Update`; biến `CLAUDEKIT_SOURCE`) | Bản ClaudeKit đã mua |
-| Cập nhật các nguồn bổ sung | `.\update-skills.ps1 [-Source claudekit\|mattpocock\|superpowers\|diagramdesign\|ponytail\|adhd\|ecc\|agentskills\|agkit\|codexkit\|firecrawlskills\|mem0\|browseruse\|composio\|nanoclaw]` (hoặc `update-skills.bat`) | Repo upstream |
+| Cập nhật nền ClaudeKit | `.\kit-base.ps1` để chọn **Trong máy** / **Đường dẫn**, hoặc `.\kit-base.ps1 -SourceMode Path -SourcePath <thư mục giải nén>` | Bản ClaudeKit đã mua; `sync-claudekit-base.ps1` là alias cũ |
+| Cập nhật các nguồn bổ sung | `.\kit-upstream.ps1 -Source <id-hoặc-alias>`; dùng `-SkipInstalled` với mặc định `all` cho toàn bộ nguồn catalog đã duyệt | `upstream-sources.json` v2; `update-skills.ps1` chỉ là alias tương thích |
 | Kiểm tra toàn vẹn kit | `node scripts/validate-kit.cjs` (`--fix` để cập nhật số liệu trong tài liệu) | Chạy trong repo kit |
 | Kiểm tra installer/statusline | `npm run test:install` · `npm run test:statusline` | Chạy trong repo kit |
 | Cập nhật kit trong một dự án | `install-kit.ps1 -Target <dự án>` (giữ `settings.json`) | Kit cục bộ |

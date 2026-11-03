@@ -7,7 +7,7 @@
  * When statuslineLayout is absent, output is IDENTICAL to pre-refactor behavior.
  */
 
-const { stdin, env } = require('process');
+const { env } = require('process');
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
@@ -25,6 +25,7 @@ const {
 const { resolveLayout } = require('./hooks/lib/statusline-section-registry.cjs');
 const { render, renderCompact, renderMinimal } = require('./hooks/lib/statusline-render-modes.cjs');
 const { formatCountdown } = require('./hooks/lib/statusline-string-utils.cjs');
+const { readStatuslineInput } = require('./hooks/lib/statusline-stdin-reader.cjs');
 
 const AUTOCOMPACT_BUFFER = 40000;
 const USAGE_CACHE_RENDER_TTL_MS = 300000;
@@ -36,27 +37,6 @@ const USAGE_CACHE_RENDER_TTL_MS = 300000;
 function expandHome(filePath) {
   const homeDir = os.homedir();
   return filePath.startsWith(homeDir) ? filePath.replace(homeDir, '~') : filePath;
-}
-
-// Read stdin with optional inactivity timeout (CK_STATUSLINE_STDIN_TIMEOUT_MS)
-async function readStdin() {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    stdin.setEncoding('utf8');
-    const parsedTimeout = Number.parseInt(env.CK_STATUSLINE_STDIN_TIMEOUT_MS || '', 10);
-    const timeoutMs = Number.isFinite(parsedTimeout) && parsedTimeout > 0 ? parsedTimeout : 0;
-    let timer = null;
-    const clearTimer = () => { if (timer) { clearTimeout(timer); timer = null; } };
-    const armTimer = () => {
-      if (!timeoutMs) return;
-      clearTimer();
-      timer = setTimeout(() => reject(new Error(`stdin timeout after ${timeoutMs}ms`)), timeoutMs);
-    };
-    armTimer();
-    stdin.on('data', chunk => { chunks.push(chunk); armTimer(); });
-    stdin.on('end', () => { clearTimer(); resolve(chunks.join('')); });
-    stdin.on('error', err => { clearTimer(); reject(err); });
-  });
 }
 
 // Build usage window strings from cache (e.g. ["5h 20% (1h30m)", "wk 45% (4d)"])
@@ -102,7 +82,7 @@ function extractActivePlanLabel(planPath) {
 
 async function main() {
   try {
-    const input = await readStdin();
+    const input = await readStatuslineInput();
     if (!input.trim()) { console.error('No input provided'); process.exit(1); }
 
     const data = JSON.parse(input);
