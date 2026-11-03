@@ -1,7 +1,8 @@
 import { UnauthorizedException } from '@nestjs/common';
 
 /** Lý do đăng nhập thất bại — chỉ dùng cho audit, client luôn nhận thông điệp chung. */
-export type LoginFailureReason = 'unknown_account' | 'invalid_password' | 'account_disabled' | 'credentials_changed';
+export type LoginFailureReason =
+  | 'unknown_account' | 'invalid_password' | 'account_disabled' | 'credentials_changed' | 'invalid_2fa' | 'mfa_expired';
 
 /**
  * 401 đăng nhập thất bại kèm thông tin cho audit (tài khoản đích nếu email tồn tại, lý do).

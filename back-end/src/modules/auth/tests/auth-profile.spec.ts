@@ -26,6 +26,7 @@ import { AuditService } from '../../audit/services/audit.service';
 import { AuthService } from '../services/auth.service';
 import { SessionsService } from '../services/sessions.service';
 import { TokenService } from '../services/token.service';
+import { TwoFactorService } from '../services/two-factor.service';
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
@@ -45,7 +46,7 @@ describe('AuthService.updateProfile', () => {
         if (user) Object.assign(user, patch);
       },
     } as unknown as UsersRepository;
-    const service = new AuthService(users, {} as PasswordService, {} as TokenService, {} as TransactionManager, {} as RefreshSessionsRepository);
+    const service = new AuthService(users, {} as PasswordService, {} as TokenService, {} as TransactionManager, {} as RefreshSessionsRepository, {} as TwoFactorService, new AuthRateLimiter());
     return { service, updates };
   }
 
@@ -89,6 +90,7 @@ describe('AuthController HTTP — PATCH /auth/me', () => {
         { provide: APP_GUARD, useClass: ActiveSessionGuard },
         { provide: RefreshSessionsRepository, useValue: { isFamilyLive: async () => true } },
         { provide: SessionsService, useValue: {} },
+        { provide: TwoFactorService, useValue: {} },
         { provide: AuthService, useValue: auth },
         { provide: TokenService, useValue: { refreshCookieMaxAgeMs: () => 1000 } },
         RefreshCookieOriginGuard,

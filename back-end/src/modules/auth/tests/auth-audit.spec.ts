@@ -19,6 +19,7 @@ import { AuthRateLimiter } from '../services/auth-rate-limiter.service';
 import { AuthService } from '../services/auth.service';
 import { SessionsService } from '../services/sessions.service';
 import { TokenService } from '../services/token.service';
+import { TwoFactorService } from '../services/two-factor.service';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
 const FAMILY_ID = '33333333-3333-4333-8333-333333333333';
@@ -51,6 +52,7 @@ describe('Audit đăng nhập / đăng xuất (AuthController)', () => {
         AuthRateLimiter,
         { provide: AuditService, useValue: { recordSafely: async (input: RecordAuditInput) => void recorded.push(input) } },
         { provide: SessionsService, useValue: {} },
+        { provide: TwoFactorService, useValue: {} },
         { provide: AuthService, useValue: auth },
         { provide: TokenService, useValue: { refreshCookieMaxAgeMs: () => 1000, findSessionOwner: async () => null } },
       ],

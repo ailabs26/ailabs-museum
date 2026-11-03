@@ -30,6 +30,9 @@ import { User, UserStatus } from '../../modules/users/entities/user.entity';
 import { UserRolesRepository } from '../../modules/users/repositories/user-roles.repository';
 import { UsersRepository } from '../../modules/users/repositories/users.repository';
 import { TransactionManager } from '../database/transaction.manager';
+import type { TwoFactorService } from '../../modules/auth/services/two-factor.service';
+import { AuthRateLimiter } from '../../modules/auth/services/auth-rate-limiter.service';
+import type { LoginResult } from '../../modules/auth/services/auth.service';
 
 /**
  * Integration test lõi (Transaction + repository + khóa advisory) trên PostgreSQL THẬT.
@@ -544,7 +547,7 @@ describe('Core DB (PostgreSQL thật)', { skip }, () => {
     it('tự đổi mật khẩu: hash mới được lưu, thiết bị khác bị thu hồi, thiết bị hiện tại giữ; đăng nhập lại bằng mật khẩu mới', async () => {
       const sessions = new RefreshSessionsRepository(db.getRepository(RefreshSession));
       const passwords = new PasswordService({ getOrThrow: () => 4 } as unknown as ConfigService);
-      const auth = new AuthService(users, passwords, service, tx, sessions);
+      const auth = new AuthService(users, passwords, service, tx, sessions, {} as TwoFactorService, new AuthRateLimiter());
       const owner = await createUser('change-pw', { passwordHash: await passwords.hash('Old-Passw0rd') });
       const current = await service.issueRefresh(owner.id);
       const other = await service.issueRefresh(owner.id);
@@ -554,7 +557,7 @@ describe('Core DB (PostgreSQL thật)', { skip }, () => {
 
       assert.equal(await sessions.isFamilyLive(current.session.familyId), true);
       assert.equal(await sessions.isFamilyLive(other.session.familyId), false);
-      const login = await auth.login({ email: owner.email, password: 'New-Passw0rd' });
+      const login = <LoginResult>await auth.login({ email: owner.email, password: 'New-Passw0rd' });
       assert.ok(login.accessToken);
       await assert.rejects(auth.login({ email: owner.email, password: 'Old-Passw0rd' }), UnauthorizedException);
     });

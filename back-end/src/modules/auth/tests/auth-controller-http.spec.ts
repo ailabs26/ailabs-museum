@@ -16,6 +16,7 @@ import { AuditService } from '../../audit/services/audit.service';
 import { AuthService } from '../services/auth.service';
 import { SessionsService } from '../services/sessions.service';
 import { TokenService } from '../services/token.service';
+import { TwoFactorService } from '../services/two-factor.service';
 
 const COOKIE = 'aura_rt';
 const USER = { id: 'u1', email: 'admin@aura.local', displayName: 'Admin', roles: ['admin'], permissions: [] };
@@ -45,6 +46,7 @@ describe('AuthController HTTP — refresh cookie', () => {
         AuthRateLimiter,
         { provide: AuditService, useValue: { recordSafely: async () => undefined } },
         { provide: SessionsService, useValue: {} },
+        { provide: TwoFactorService, useValue: {} },
         { provide: AuthService, useValue: auth },
         {
           provide: TokenService,

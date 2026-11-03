@@ -31,6 +31,7 @@ import { AuditService } from '../../audit/services/audit.service';
 import { AuthService } from '../services/auth.service';
 import { SessionsService } from '../services/sessions.service';
 import { TokenService } from '../services/token.service';
+import { TwoFactorService } from '../services/two-factor.service';
 
 const MANAGER = { tag: 'tx' } as unknown as EntityManager;
 const ACTOR: AuthUser = {
@@ -83,7 +84,7 @@ function harness(options: { status?: UserStatus; freshHash?: string; freshMissin
       }
     },
   } as unknown as TransactionManager;
-  const service = new AuthService(users, passwords, {} as TokenService, tx, sessions);
+  const service = new AuthService(users, passwords, {} as TokenService, tx, sessions, {} as TwoFactorService, new AuthRateLimiter());
   return { service, log, stored };
 }
 
@@ -154,6 +155,7 @@ describe('AuthController HTTP — POST /auth/change-password', () => {
         { provide: APP_GUARD, useClass: ActiveSessionGuard },
         { provide: RefreshSessionsRepository, useValue: { isFamilyLive: async () => true } },
         { provide: SessionsService, useValue: {} },
+        { provide: TwoFactorService, useValue: {} },
         { provide: AuthService, useValue: auth },
         { provide: TokenService, useValue: { refreshCookieMaxAgeMs: () => 1000 } },
         RefreshCookieOriginGuard,

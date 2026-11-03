@@ -5,6 +5,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { RefreshSession } from './entities/refresh-session.entity';
+import { UserRecoveryCode } from './entities/user-recovery-code.entity';
+import { User } from '../users/entities/user.entity';
+import { UserTwoFactorController } from './controllers/user-two-factor.controller';
+import { TwoFactorRepository } from './repositories/two-factor.repository';
+import { TwoFactorService } from './services/two-factor.service';
 import { AuditModule } from '../audit/audit.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './controllers/auth.controller';
@@ -21,14 +26,16 @@ import { TokenService } from './services/token.service';
     UsersModule, // tái sử dụng UsersRepository + RefreshSessionsRepository
     AuditModule, // ghi audit đăng nhập/đăng xuất
     JwtModule.register({}), // secret/expiresIn truyền tường minh ở TokenService
-    TypeOrmModule.forFeature([RefreshSession]),
+    TypeOrmModule.forFeature([RefreshSession, User, UserRecoveryCode]),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, UserTwoFactorController],
   providers: [
     AuthService,
     SessionsService,
     SessionsCleanupService, // cron dọn refresh_sessions đã chết
     TokenService,
+    TwoFactorService,
+    TwoFactorRepository,
     AuthRateLimiter,
     RefreshCookieOriginGuard,
     // Guard toàn cục theo thứ tự: JwtAuthGuard xác thực → ActiveSessionGuard kiểm phiên còn sống

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -33,6 +34,8 @@ import { Audit } from '../../audit/decorators/audit.decorator';
 import { auditClientInfo } from '../../audit/audit-request.util';
 import { AuditService } from '../../audit/services/audit.service';
 import { LoginFailedException } from '../exceptions/login-failed.exception';
+import { DisableTwoFactorDto, LoginTwoFactorDto, TwoFactorCodeDto } from '../dto/two-factor.dto';
+import { TwoFactorService } from '../services/two-factor.service';
 import { RefreshFailedException } from '../exceptions/refresh-failed.exception';
 import { AuthService } from '../services/auth.service';
 import { ChangePasswordDto } from '../dto/change-password.dto';
@@ -58,6 +61,7 @@ export class AuthController {
     private readonly limiter: AuthRateLimiter,
     private readonly sessions: SessionsService,
     private readonly audit: AuditService,
+    private readonly twoFactor: TwoFactorService,
   ) {}
 
   @Public()
@@ -73,7 +77,7 @@ export class AuthController {
     @Body() dto: LoginDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ accessToken: string; user: AuthUser }> {
+  ): Promise<{ accessToken: string; user: AuthUser } | { mfaRequired: true; mfaToken: string }> {
     const ip = req.ip ?? 'unknown';
     await this.limitWithAudit(req, res, 'auth.login_blocked', 'ip', ip, null, () => this.limiter.consumeIp(ip));
     await this.limitWithAudit(req, res, 'auth.login_blocked', 'email', dto.email, null,
@@ -93,8 +97,46 @@ export class AuthController {
       throw error;
     }
     this.limiter.resetEmail(dto.email);
+    if ('mfaRequired' in result) {
+      // Đúng mật khẩu, tài khoản bật 2FA: chưa cấp phiên, chờ POST /auth/login/2fa.
+      return { mfaRequired: true, mfaToken: result.mfaToken };
+    }
     this.setRefreshCookie(res, result.refreshToken);
     await this.recordAuthEvent(req, 'auth.login', result.user.id, result.user.id);
+    return { accessToken: result.accessToken, user: result.user };
+  }
+
+  @Public()
+  @Post('login/2fa')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Bước 2 đăng nhập khi bật 2FA: mfaToken + mã 6 số (hoặc mã khôi phục)' })
+  @ApiUnauthorizedResponse({ description: 'Mã sai, token hết hạn (5 phút) hoặc tài khoản bị khóa.' })
+  @ApiTooManyRequestsResponse({ description: 'Sai mã quá 5 lần / 15 phút / tài khoản, hoặc quá nhiều request theo IP.' })
+  @ApiOkResponse({ description: 'Như /auth/login thành công: access token + user; refresh token qua cookie HttpOnly.' })
+  async loginTwoFactor(
+    @Body() dto: LoginTwoFactorDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ accessToken: string; user: AuthUser }> {
+    const ip = req.ip ?? 'unknown';
+    await this.limitWithAudit(req, res, 'auth.login_blocked', 'ip', ip, null, () => this.limiter.consumeIp(ip));
+    if (!dto.code === !dto.recoveryCode) {
+      throw new BadRequestException('Nhập mã 6 số hoặc mã khôi phục (chỉ một trong hai)');
+    }
+    let result;
+    try {
+      result = await this.auth.loginTwoFactor(dto, this.clientOf(req));
+    } catch (error) {
+      if (error instanceof LoginFailedException) {
+        await this.recordAuthEvent(req, 'auth.login_failed', null, error.userId, { reason: error.reason });
+      } else if (error instanceof HttpException && error.getStatus() === HttpStatus.TOO_MANY_REQUESTS) {
+        const body = error.getResponse() as { retryAfter?: number };
+        if (body.retryAfter) res.setHeader('Retry-After', String(body.retryAfter));
+      }
+      throw error;
+    }
+    this.setRefreshCookie(res, result.refreshToken);
+    await this.recordAuthEvent(req, 'auth.login', result.user.id, result.user.id, { twoFactor: dto.code ? 'totp' : 'recovery_code' });
     return { accessToken: result.accessToken, user: result.user };
   }
 
@@ -257,6 +299,77 @@ export class AuthController {
     }
     this.limiter.resetEmail(user.email);
     return { id: user.id };
+  }
+
+  @Get('2fa')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Trạng thái 2FA của tôi (đang bật, số mã khôi phục còn lại)' })
+  twoFactorStatus(@CurrentUser() user: AuthUser) {
+    return this.twoFactor.status(user.id);
+  }
+
+  @Post('2fa/setup')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bắt đầu bật 2FA: secret mới + QR cho app Authenticator (chưa có hiệu lực tới khi xác nhận)' })
+  twoFactorSetup(@CurrentUser() user: AuthUser) {
+    return this.twoFactor.setup(user);
+  }
+
+  @Post('2fa/enable')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @Audit('auth.2fa_enable', 'user')
+  @ApiOperation({ summary: 'Xác nhận mã đầu tiên → bật 2FA; trả 10 mã khôi phục (chỉ hiện một lần); đăng xuất thiết bị khác' })
+  async twoFactorEnable(@CurrentUser() user: AuthUser, @Body() dto: TwoFactorCodeDto) {
+    return { id: user.id, ...(await this.twoFactor.enable(user, dto.code)) };
+  }
+
+  @Post('2fa/disable')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @Audit('auth.2fa_disable', 'user')
+  @ApiOperation({ summary: 'Tắt 2FA: mật khẩu hiện tại + mã 6 số hoặc mã khôi phục; đăng xuất thiết bị khác' })
+  @ApiTooManyRequestsResponse({ description: 'Nhập sai mật khẩu hiện tại quá nhiều lần; xem Retry-After.' })
+  async twoFactorDisable(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: DisableTwoFactorDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ id: string }> {
+    if (!dto.code === !dto.recoveryCode) {
+      throw new BadRequestException('Nhập mã 6 số hoặc mã khôi phục (chỉ một trong hai)');
+    }
+    // Sai mật khẩu tính chung bộ đếm với đăng nhập sai theo email; sai mã tính bộ đếm 2FA của tài khoản.
+    this.limitOrRetryAfter(res, () => this.limiter.assertEmailAllowed(user.email));
+    this.limitOrRetryAfter(res, () => this.limiter.assertMfaAllowed(user.id));
+    try {
+      await this.twoFactor.disable(user, dto.password, { code: dto.code, recoveryCode: dto.recoveryCode });
+    } catch (error) {
+      if (error instanceof WrongCurrentPasswordException) this.limiter.recordEmailFailure(user.email);
+      else if (error instanceof BadRequestException) this.limiter.recordMfaFailure(user.id);
+      throw error;
+    }
+    this.limiter.resetMfa(user.id);
+    return { id: user.id };
+  }
+
+  @Post('2fa/recovery-codes')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @Audit('auth.2fa_recovery_regenerate', 'user')
+  @ApiOperation({ summary: 'Tạo 10 mã khôi phục mới (bộ cũ hết hiệu lực); cần mã 6 số hiện tại' })
+  async twoFactorRecoveryCodes(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: TwoFactorCodeDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    this.limitOrRetryAfter(res, () => this.limiter.assertMfaAllowed(user.id));
+    try {
+      return { id: user.id, ...(await this.twoFactor.regenerateRecoveryCodes(user, dto.code)) };
+    } catch (error) {
+      if (error instanceof BadRequestException) this.limiter.recordMfaFailure(user.id);
+      throw error;
+    }
   }
 
   @Get('sessions')

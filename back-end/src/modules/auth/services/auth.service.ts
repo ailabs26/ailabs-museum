@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { AuthUser } from '../../../common/types/auth-user.type';
-import { UserStatus } from '../../users/entities/user.entity';
+import { User, UserStatus } from '../../users/entities/user.entity';
 import { PasswordService } from '../../../common/security/password.service';
 import { UsersRepository } from '../../users/repositories/users.repository';
 import { toAuthUser } from '../../users/user-access.util';
@@ -11,13 +11,27 @@ import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { LoginFailedException } from '../exceptions/login-failed.exception';
 import { WrongCurrentPasswordException } from '../exceptions/wrong-current-password.exception';
 import { RefreshSessionsRepository } from '../repositories/refresh-sessions.repository';
-import { SessionClient, TokenService } from './token.service';
+import { AuthRateLimiter } from './auth-rate-limiter.service';
+import { passwordFingerprint, SessionClient, TokenService } from './token.service';
+import { TwoFactorService } from './two-factor.service';
 
 export interface LoginResult {
   accessToken: string;
   user: AuthUser;
   /** raw refresh token để controller set vào httpOnly cookie. */
   refreshToken: string;
+}
+
+/** Đúng mật khẩu nhưng tài khoản bật 2FA: chưa cấp phiên, chờ `POST /auth/login/2fa`. */
+export interface MfaChallenge {
+  mfaRequired: true;
+  mfaToken: string;
+}
+
+export interface LoginTwoFactorInput {
+  mfaToken: string;
+  code?: string;
+  recoveryCode?: string;
 }
 
 export interface RefreshResult {
@@ -33,9 +47,11 @@ export class AuthService {
     private readonly tokens: TokenService,
     private readonly tx: TransactionManager,
     private readonly sessions: RefreshSessionsRepository,
+    private readonly twoFactor: TwoFactorService,
+    private readonly limiter: AuthRateLimiter,
   ) {}
 
-  async login(dto: LoginDto, client: SessionClient = {}): Promise<LoginResult> {
+  async login(dto: LoginDto, client: SessionClient = {}): Promise<LoginResult | MfaChallenge> {
     const user = await this.users.findByEmailWithAccess(dto.email);
     // So khớp mật khẩu kể cả khi không tìm thấy user để tránh lộ user tồn tại qua thời gian phản hồi.
     const passwordOk = await this.passwords.compare(dto.password, user?.passwordHash);
@@ -51,6 +67,38 @@ export class AuthService {
       throw new LoginFailedException('account_disabled', user.id, 'Tài khoản đã bị khóa');
     }
 
+    if (user.totpEnabledAt) {
+      return { mfaRequired: true, mfaToken: await this.tokens.signMfaChallenge(user.id, user.passwordHash) };
+    }
+    return this.issueSession(user, client);
+  }
+
+  /**
+   * Bước 2 đăng nhập: kiểm token tạm + mã TOTP (hoặc mã khôi phục) rồi mới cấp phiên. Sai quá 5 lần / 15 phút / tài
+   * khoản → 429. Token hết hạn, sai, hoặc mật khẩu đã đổi giữa chừng → phải đăng nhập lại từ đầu.
+   */
+  async loginTwoFactor(dto: LoginTwoFactorInput, client: SessionClient = {}): Promise<LoginResult> {
+    const claims = await this.tokens.verifyMfaChallenge(dto.mfaToken);
+    const expired = () => new LoginFailedException('mfa_expired', claims?.userId ?? null,
+      'Phiên xác thực đã hết hạn, vui lòng đăng nhập lại');
+    if (!claims) throw expired();
+    const user = await this.users.findByIdWithAccess(claims.userId);
+    if (!user || passwordFingerprint(user.passwordHash) !== claims.pwd) throw expired();
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new LoginFailedException('account_disabled', user.id, 'Tài khoản đã bị khóa');
+    }
+
+    this.limiter.assertMfaAllowed(user.id);
+    if (!(await this.twoFactor.verifyLoginCode(user.id, { code: dto.code, recoveryCode: dto.recoveryCode }))) {
+      this.limiter.recordMfaFailure(user.id);
+      throw new LoginFailedException('invalid_2fa', user.id, 'Mã xác thực không đúng hoặc đã hết hạn');
+    }
+    this.limiter.resetMfa(user.id);
+    return this.issueSession(user, client);
+  }
+
+  /** Cấp phiên sau khi đã xác thực đủ (mật khẩu, và 2FA nếu bật). */
+  private async issueSession(user: User, client: SessionClient): Promise<LoginResult> {
     // Phát hành phiên dưới khóa user và đọc lại: nếu Admin vừa đổi mật khẩu/khóa trong lúc so bcrypt
     // thì không cấp phiên bằng mật khẩu cũ (revokeAllForUser giữ khóa độc quyền cùng key).
     const issued = await this.tx.run(async (manager) => {
@@ -119,12 +167,12 @@ export class AuthService {
     return this.me(userId);
   }
 
-  async me(userId: string): Promise<AuthUser> {
+  async me(userId: string): Promise<AuthUser & { twoFactorEnabled: boolean }> {
     const user = await this.users.findByIdWithAccess(userId);
     if (!user || user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException('Phiên đăng nhập không hợp lệ');
     }
-    return toAuthUser(user);
+    return { ...toAuthUser(user), twoFactorEnabled: Boolean(user.totpEnabledAt) };
   }
 
   /** Thu hồi phiên của cookie; trả userId của phiên (null nếu không có cookie/phiên) để ghi audit. */

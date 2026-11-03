@@ -11,6 +11,7 @@ import { Media } from '../modules/media/entities/media.entity';
 import { Notification } from '../modules/notifications/entities/notification.entity';
 import { Permission } from '../modules/roles/entities/permission.entity';
 import { RefreshSession } from '../modules/auth/entities/refresh-session.entity';
+import { UserRecoveryCode } from '../modules/auth/entities/user-recovery-code.entity';
 import { RolePermission } from '../modules/roles/entities/role-permission.entity';
 import { Role } from '../modules/roles/entities/role.entity';
 import { Room } from '../modules/rooms/entities/room.entity';
@@ -52,6 +53,7 @@ export const dataSource = new DataSource({
     Translation,
     PartnerApiKey,
     Notification,
+    UserRecoveryCode,
   ],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
   synchronize: false,

@@ -25,6 +25,7 @@ import { AuditService } from '../../audit/services/audit.service';
 import { AuthService } from '../services/auth.service';
 import { SessionsService } from '../services/sessions.service';
 import { TokenService } from '../services/token.service';
+import { TwoFactorService } from '../services/two-factor.service';
 
 const SECRET = 'auth-sessions-spec-secret-0123456789';
 const USER_ID = '11111111-1111-4111-8111-111111111111';
@@ -107,6 +108,7 @@ describe('AuthController HTTP — phiên đăng nhập', () => {
         { provide: APP_GUARD, useClass: ActiveSessionGuard },
         { provide: RefreshSessionsRepository, useValue: memory.repo },
         { provide: SessionsService, useFactory: () => new SessionsService(memory.repo, tx) },
+        { provide: TwoFactorService, useValue: {} },
         RefreshCookieOriginGuard,
         AuthRateLimiter,
         { provide: AuditService, useValue: { recordSafely: async () => undefined } },
