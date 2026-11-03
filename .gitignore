@@ -13,15 +13,10 @@
 plans/**/scripts/shots/
 plans/**/scripts/t10files/
 
-# Agent Kit (Claude Code, Codex, Antigravity)
-.claude/
+# Agent Kit - chỉ bỏ qua các công cụ CLI khác không cài trong dự án này
+# (.claude/ và CLAUDE.md VẪN được track vì dự án commit bộ kit vào git)
 .agents/
 .codex/
 .codex-kit/
 .opencode/
 codex/
-CLAUDE.md
-AGENTS.md
-GEMINI.md
-.ck.json
-.mcp.json
