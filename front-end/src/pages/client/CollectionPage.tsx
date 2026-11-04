@@ -10,6 +10,7 @@ import { favoritesStore, isSameExhibit } from '@/helpers/visitorState';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { FavoriteButton } from './visitor/FavoriteButton';
 import { VisitorStorageStatus } from './visitor/VisitorStorageStatus';
+import { GlobalExhibitSearch } from './visitor/GlobalExhibitSearch';
 import { RecentlyViewed } from './visitor/RecentlyViewed';
 import { useExhibitComparison } from '@/hooks/useExhibitComparison';
 import { ExhibitComparison } from './visitor/ExhibitComparison';
@@ -57,6 +58,11 @@ export function CollectionPage() {
     setSearchParams(next);
     setQuery('');
   };
+
+  const globalSearch = rooms.isSuccess
+    ? <GlobalExhibitSearch query={query} currentRoomId={selectedRoom?.id} rooms={rooms.data} /> : null;
+  // Phòng đang xem không có kết quả: đưa kết quả phòng khác lên trước để khách không tưởng là không tìm thấy.
+  const noLocalMatch = Boolean(query.trim()) && exhibits.length > 0 && filtered.length === 0;
 
   return (
     <Container size="lg" className={classes.page}>
@@ -113,6 +119,7 @@ export function CollectionPage() {
           <Button mt="sm" onClick={() => void room.refetch()}>Thử lại</Button>
         </Alert> : null}
 
+      {noLocalMatch && globalSearch}
       {detail && (
         <section aria-labelledby="collection-room-title">
           <div className={classes.roomHeader}>
@@ -145,6 +152,7 @@ export function CollectionPage() {
           )}
         </section>
       )}
+      {!noLocalMatch && globalSearch}
       <RecentlyViewed rooms={rooms.data ?? []} isRoomsReady={rooms.isSuccess} />
       {reportTarget && <PublicReportModal key={`${reportTarget.exhibitId}:${reportTarget.reportedRevisionId}`}
         {...reportTarget} opened onClose={() => setReportTarget(null)} />}
