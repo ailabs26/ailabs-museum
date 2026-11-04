@@ -1,4 +1,6 @@
 import { Button, Container, Title } from '@mantine/core';
+import { usePublicLocale } from '@/core/i18n/public-locale';
+import { localizeExhibit } from '@/helpers/localizeExhibit';
 import { IconCube } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
@@ -19,6 +21,7 @@ import { VisitorNotes } from './visitor/VisitorNotes';
 import classes from './ExhibitDetailPage.module.css';
 
 export function ExhibitDetailPage() {
+  const { locale } = usePublicLocale();
   const [isReportOpen, setIsReportOpen] = useState(false);
   const favorites = useVisitorStore(favoritesStore);
   const reading = useVisitorStore(readingStore);
@@ -26,7 +29,8 @@ export function ExhibitDetailPage() {
   const { rooms, room, selectedRoom } = useMuseumRooms(roomSlug ?? '');
   const isValidId = z.string().uuid().safeParse(exhibitId).success;
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
-  const exhibit = detail && isValidId ? detail.exhibits.find((item) => item.id === exhibitId) : undefined;
+  const found = detail && isValidId ? detail.exhibits.find((item) => item.id === exhibitId) : undefined;
+  const exhibit = found ? localizeExhibit(found, locale) : undefined;
   const viewedRef = useRef<string | null>(null);
   const validRoomId = exhibit?.roomId;
   const validExhibitId = exhibit?.id;

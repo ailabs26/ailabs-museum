@@ -1,26 +1,43 @@
-import { Burger, Container, Drawer, Stack } from '@mantine/core';
+import { Burger, Container, Drawer, NativeSelect, type NativeSelectProps, Stack } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconCube, IconShieldLock } from '@tabler/icons-react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import auraMark from '@/assets/aura-mark.svg';
+import { PublicLocaleProvider, usePublicLocale } from '@/core/i18n/public-locale';
 import { useScrolled } from '@/hooks/useScrolled';
+import { LOCALES } from '@/services/translations.service';
 import { ThemeToggle } from '@/shared/components/layout/ThemeToggle';
 import classes from './PublicLayout.module.css';
 
 const NAV = [
-  { to: '/', label: 'Trang chủ', end: true },
-  { to: '/collection', label: 'Bộ sưu tập', end: false },
-  { to: '/tour', label: 'Tham quan 3D', end: false },
+  { to: '/', key: 'ui.nav.home', label: 'Trang chủ', end: true },
+  { to: '/collection', key: 'ui.nav.collection', label: 'Bộ sưu tập', end: false },
+  { to: '/tour', key: 'ui.nav.tour', label: 'Tham quan 3D', end: false },
 ];
+
+/** Ô chọn ngôn ngữ dạng native: dùng được bàn phím và trình đọc màn hình sẵn. */
+function LanguageSelect(props: Pick<NativeSelectProps, 'visibleFrom'>) {
+  const { locale, setLocale, t } = usePublicLocale();
+  return (
+    <NativeSelect {...props} size="xs" aria-label={t('ui.language.label', 'Ngôn ngữ')} value={locale}
+      onChange={(event) => setLocale(event.currentTarget.value)}
+      data={LOCALES.map((item) => ({ value: item.code, label: item.label }))} />
+  );
+}
 
 /** Khung trang cho phần client công khai (trang chủ, collection, chi tiết, tour). */
 export function PublicLayout() {
+  return <PublicLocaleProvider><PublicLayoutContent /></PublicLocaleProvider>;
+}
+
+function PublicLayoutContent() {
+  const { t } = usePublicLocale();
   const scrolled = useScrolled();
   const [drawer, { open, close }] = useDisclosure(false);
 
   return (
     <div className={classes.layout}>
-      <a className={classes.skipLink} href="#public-content">Đến nội dung chính</a>
+      <a className={classes.skipLink} href="#public-content">{t('ui.skip-link', 'Đến nội dung chính')}</a>
       <header className={`${classes.header} ${scrolled ? classes.headerScrolled : ''}`}>
         <Container size="lg" className={classes.headerInner}>
           <Link to="/" className={classes.brand} aria-label="Aura Museum — Trang chủ">
@@ -30,15 +47,17 @@ export function PublicLayout() {
 
           <nav aria-label="Điều hướng chính" className={classes.navigation}>
             {NAV.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.end} className={classes.navLink}>{item.label}</NavLink>
+              <NavLink key={item.to} to={item.to} end={item.end} className={classes.navLink}>{t(item.key, item.label)}</NavLink>
             ))}
           </nav>
 
           <div className={classes.headerActions}>
+            {/* Điện thoại: nằm trong Drawer để header không tràn ngang ở 320px. */}
+            <LanguageSelect visibleFrom="sm" />
             <ThemeToggle />
             <Link to="/tour" className={classes.vrButton}>
               <IconCube size={18} aria-hidden="true" />
-              <span>Vào không gian 3D</span>
+              <span>{t('ui.cta.enter-3d', 'Vào không gian 3D')}</span>
             </Link>
             <Burger opened={drawer} onClick={open} hiddenFrom="sm" size="sm" aria-label="Mở menu điều hướng" />
           </div>
@@ -48,8 +67,9 @@ export function PublicLayout() {
       <Drawer opened={drawer} onClose={close} position="right" size="xs" title="Điều hướng" hiddenFrom="sm">
         <Stack gap="xs">
           {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} className={classes.navLink} onClick={close}>{item.label}</NavLink>
+            <NavLink key={item.to} to={item.to} end={item.end} className={classes.navLink} onClick={close}>{t(item.key, item.label)}</NavLink>
           ))}
+          <LanguageSelect />
         </Stack>
       </Drawer>
 
@@ -66,8 +86,7 @@ export function PublicLayout() {
                 Aura Museum
               </Link>
               <p className={classes.footerManifesto}>
-                Bảo tồn và kể lại câu chuyện di sản bằng không gian số 3D WebXR — để mọi người,
-                ở bất cứ đâu, đều có thể chạm tới nghệ thuật và lịch sử.
+                {t('ui.footer.manifesto', 'Bảo tồn và kể lại câu chuyện di sản bằng không gian số 3D WebXR — để mọi người, ở bất cứ đâu, đều có thể chạm tới nghệ thuật và lịch sử.')}
               </p>
               <span className={classes.footerBadge}>✦ Cam kết tiếp cận WCAG 2.2 AA</span>
             </div>
