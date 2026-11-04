@@ -3,9 +3,13 @@ import { analyzeMuseumAudit, museumAuditRunSchema } from './museumAuditMetrics';
 import { MuseumAuditRecorder } from './museumAudit';
 
 const metadata = { buildSha: 'a'.repeat(40), device: 'unit fixture', conditions: 'synthetic logic test', scenario: 'P03', kind: 'continuous', source: 'fixture', target: 'desktop' } as const;
+const workload = { roomId: 'fixture-room', exhibits: 5, visibleExhibits: 5, tier: 'balanced', dprCap: 1.5, shadowSize: 1024, anisotropy: 4,
+  viewportWidth: 1280, viewportHeight: 720, renderWidth: 1280, renderHeight: 720, devicePixelRatio: 1,
+  expectedGlbAssets: 0, readyGlbAssets: 0, failedGlbAssets: 0, failedGlbRenders: 0, xrPresenting: false };
 function run(intervals: number[]) {
   const recorder = new MuseumAuditRecorder();
   recorder.start(metadata, 0, '2026-11-04T00:00:00.000Z');
+  recorder.event(0, 'workload', workload);
   recorder.frame(0, 1, 1);
   let time = 0;
   for (const interval of intervals) { time += interval; recorder.frame(time, 2, 1); }
@@ -51,6 +55,25 @@ describe('audit metric contract', () => {
     expect(analyzeMuseumAudit({ ...raw, droppedSamples: 1 }).eligible).toBe(false);
     expect(analyzeMuseumAudit({ ...raw, events: [{ at: 20, type: 'hidden', detail: {} }] }).eligible).toBe(false);
     expect(analyzeMuseumAudit({ ...raw, endedAt: 60_000 }).issues).toContain('continuous-coverage-gap');
+  });
+
+  it.each([
+    { viewportWidth: 720, viewportHeight: 1280 }, { tier: 'low' }, { xrPresenting: true },
+    { exhibits: 6 }, { renderWidth: 1920 }, { devicePixelRatio: 2 },
+  ])('rejects same-renderer captures mixing workload/quality/orientation %#', change => {
+    const raw = run(Array<number>(2000).fill(16));
+    raw.events.push({ at: 20_000, type: 'workload', detail: { ...workload, ...change } });
+    expect(analyzeMuseumAudit(raw).issues).toContain('workload-changed');
+    expect(analyzeMuseumAudit(raw).eligible).toBe(false);
+  });
+
+  it('requires observed complete GLB workload and rejects known render failure or transient resize', () => {
+    const raw = run(Array<number>(2000).fill(16));
+    expect(analyzeMuseumAudit({ ...raw, events: [] }).issues).toContain('workload-unavailable');
+    for (const change of [{ expectedGlbAssets: 1 }, { failedGlbAssets: 1 }, { failedGlbRenders: 1 }]) {
+      expect(analyzeMuseumAudit({ ...raw, events: [{ at: 0, type: 'workload', detail: { ...workload, ...change } }] }).issues).toContain('incomplete-glb-workload');
+    }
+    expect(analyzeMuseumAudit({ ...raw, events: [...raw.events, { at: 1, type: 'viewport-changed', detail: {} }] }).eligible).toBe(false);
   });
 
   it.each([

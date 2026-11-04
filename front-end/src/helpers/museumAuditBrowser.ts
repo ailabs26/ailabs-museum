@@ -28,14 +28,17 @@ export function startMuseumAudit(metadata: AuditMetadata) {
   try { observer?.observe({ type: 'longtask' }); }
   catch { auditRecorder.event(performance.now(), 'observer-error'); }
   const visibility = () => auditRecorder.event(performance.now(), document.hidden ? 'hidden' : 'visible');
+  const resize = () => auditRecorder.event(performance.now(), 'viewport-changed');
   const pagehide = () => { auditRecorder.event(performance.now(), 'pagehide'); stopMuseumAudit(); };
   document.addEventListener('visibilitychange', visibility);
   window.addEventListener('pagehide', pagehide);
+  window.addEventListener('resize', resize);
   if (document.hidden) visibility();
   cleanupObservation = () => {
     if (observer) { acceptTasks(observer.takeRecords()); observer.disconnect(); }
     document.removeEventListener('visibilitychange', visibility);
     window.removeEventListener('pagehide', pagehide);
+    window.removeEventListener('resize', resize);
   };
 }
 
@@ -52,13 +55,14 @@ export function attachMuseumAudit(renderer: WebGLRenderer, readWorkload: () => M
   rendererEnvironment = {
     rendererId, webglVersion: String(context.getParameter(context.VERSION)),
     renderer: extension ? String(context.getParameter(extension.UNMASKED_RENDERER_WEBGL)) : 'unavailable',
-    ...readWorkload(),
   };
   attachedRenderers++;
   const environment = { ...rendererEnvironment };
   const render = renderer.render;
   let lastResourceAt = -Infinity;
   let captureStart: number | null = null;
+  let previousWorkload: MuseumAuditRun['environment'] | null = null;
+  let previousDimensions = '';
   const wrapped: WebGLRenderer['render'] = function (scene, camera) {
     if (!auditRecorder.isRecording) return render.call(renderer, scene, camera);
     const start = performance.now();
@@ -71,9 +75,19 @@ export function attachMuseumAudit(renderer: WebGLRenderer, readWorkload: () => M
     // First successful submission of each capture records the current workload;
     // resource snapshots occur only on rendered frames, never on an idle timer.
     const startedAt = auditRecorder.startedAt;
-    if (captureStart !== startedAt) {
+    const isNewCapture = captureStart !== startedAt;
+    if (isNewCapture) {
       captureStart = startedAt; lastResourceAt = -Infinity;
       auditRecorder.event(start, 'renderer-observed', environment);
+    }
+    const workload = readWorkload();
+    const dimensions = `${renderer.domElement.width},${renderer.domElement.height},${innerWidth},${innerHeight},${devicePixelRatio},${renderer.xr.isPresenting}`;
+    // Read plain props/dimensions, never traverse the scene. Emit state changes
+    // even when shorter than the1Hz resource sampling interval.
+    if (isNewCapture || workload !== previousWorkload || dimensions !== previousDimensions) {
+      previousWorkload = workload; previousDimensions = dimensions;
+      auditRecorder.event(start, 'workload', { ...workload, renderWidth: renderer.domElement.width, renderHeight: renderer.domElement.height,
+        viewportWidth: innerWidth, viewportHeight: innerHeight, devicePixelRatio, xrPresenting: renderer.xr.isPresenting });
     }
     if (start - lastResourceAt < 1000) return;
     lastResourceAt = start;
@@ -81,8 +95,8 @@ export function attachMuseumAudit(renderer: WebGLRenderer, readWorkload: () => M
     auditRecorder.resource(start, { rendererId, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
       geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures,
       programs: renderer.info.programs?.length ?? 0, heapBytes: heap?.usedJSHeapSize ?? null });
-    auditRecorder.event(start, 'workload', { ...readWorkload(), renderWidth: renderer.domElement.width, renderHeight: renderer.domElement.height,
-      viewportWidth: innerWidth, viewportHeight: innerHeight, devicePixelRatio, xrPresenting: renderer.xr.isPresenting });
+    auditRecorder.event(start, 'camera-checkpoint', { x: camera.position.x, y: camera.position.y, z: camera.position.z,
+      qx: camera.quaternion.x, qy: camera.quaternion.y, qz: camera.quaternion.z, qw: camera.quaternion.w });
   };
   renderer.render = wrapped;
   const lost = () => auditRecorder.event(performance.now(), 'context-lost', { rendererId });

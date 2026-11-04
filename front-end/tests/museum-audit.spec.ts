@@ -69,15 +69,27 @@ test('opt-in exports actual submissions, stays idle and releases renderer observ
   expect(await page.evaluate(() => Reflect.has(window, 'museumAudit'))).toBe(false);
 });
 
-test('audit controls and navigation remain reachable on emulated touch after orientation change', async ({ page }) => {
+test.describe('touch audit controls', () => {
+test.use({ hasTouch: true, isMobile: true });
+test('audit controls work by touch after orientation resize', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/tour?museumAudit=1');
-  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  const panel = page.getByRole('group', { name: 'Performance audit' });
+  await panel.getByLabel('Build SHA').fill('a'.repeat(40));
+  await panel.getByLabel('Thiết bị').fill('emulated touch regression');
+  await panel.getByLabel('Điều kiện đo').fill('not a physical phone measurement');
+  await panel.getByLabel('Target').selectOption('mobile');
+  await panel.getByLabel('Data source').selectOption('fixture');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).tap();
   await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible();
   await page.setViewportSize({ width: 844, height: 390 });
-  await expect(page.getByRole('button', { name: 'Start', exact: true })).toBeInViewport();
-  await page.getByRole('button', { name: 'Thu gọn audit' }).click();
+  await page.getByRole('button', { name: 'Start', exact: true }).tap();
+  expect(await page.evaluate(() => window.museumAudit!.state().recording)).toBe(true);
+  await page.getByRole('button', { name: 'Stop', exact: true }).tap();
+  expect(await page.evaluate(() => window.museumAudit!.state().observing)).toBe(false);
+  await page.getByRole('button', { name: 'Thu gọn audit' }).tap();
   await page.getByLabel('Phòng trưng bày 3D').press('ArrowRight');
-  await page.getByRole('button', { name: 'Thoát tham quan' }).click();
+  await page.getByRole('button', { name: 'Thoát tham quan' }).tap();
   await expect(page.getByRole('button', { name: 'Mở phòng 3D' })).toBeFocused();
+});
 });

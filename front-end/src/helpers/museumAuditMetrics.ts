@@ -37,6 +37,13 @@ export const museumAuditRunSchema = z.object({
   }
 });
 export type MuseumAuditRun = z.infer<typeof museumAuditRunSchema>;
+export const museumAuditWorkloadSchema = z.object({
+  roomId: z.string().min(1), exhibits: nonnegative.int(), visibleExhibits: nonnegative.int(),
+  tier: z.enum(['low', 'balanced']), dprCap: nonnegative.positive(), shadowSize: nonnegative.int(), anisotropy: nonnegative.positive(),
+  viewportWidth: nonnegative.int().positive(), viewportHeight: nonnegative.int().positive(),
+  renderWidth: nonnegative.int().positive(), renderHeight: nonnegative.int().positive(), devicePixelRatio: nonnegative.positive(),
+  expectedGlbAssets: nonnegative.int(), readyGlbAssets: nonnegative.int(), failedGlbAssets: nonnegative.int(), failedGlbRenders: nonnegative.int(), xrPresenting: z.boolean(),
+});
 
 /** Nearest rank; null for missing data, no interpolation/rounding of raw measurements. */
 function percentile(values: number[], fraction: number): number | null {
@@ -60,7 +67,12 @@ export function analyzeMuseumAudit(input: unknown) {
   if (intervals.length < 100) issues.push('fewer-than-100-intervals');
   if (run.droppedSamples) issues.push('samples-dropped');
   if (segments) issues.push('multiple-renderer-lifetimes');
-  if (run.events.some(event => ['hidden', 'context-lost', 'render-error', 'pagehide', 'observer-error'].includes(event.type))) issues.push('capture-interrupted');
+  if (run.events.some(event => ['hidden', 'context-lost', 'render-error', 'pagehide', 'observer-error', 'viewport-changed'].includes(event.type))) issues.push('capture-interrupted');
+  const workloads = run.events.filter(event => event.type === 'workload').map(event => museumAuditWorkloadSchema.safeParse(event.detail));
+  if (!workloads.length || workloads.some(workload => !workload.success)) issues.push('workload-unavailable');
+  const observedWorkloads = workloads.flatMap(workload => workload.success ? [workload.data] : []);
+  if (new Set(observedWorkloads.map(workload => JSON.stringify(workload))).size > 1) issues.push('workload-changed');
+  if (observedWorkloads.some(workload => workload.expectedGlbAssets !== workload.readyGlbAssets || workload.failedGlbAssets > 0 || workload.failedGlbRenders > 0)) issues.push('incomplete-glb-workload');
   const lastAt = run.frames.at(-1)?.[0] ?? run.startedAt;
   const firstAt = run.frames[0]?.[0] ?? run.startedAt;
   if (firstAt - run.startedAt > 1000 || (run.endedAt ?? lastAt) - lastAt > 1000 || intervals.some(ms => ms > 1000)) issues.push('continuous-coverage-gap');

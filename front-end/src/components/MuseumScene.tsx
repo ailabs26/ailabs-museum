@@ -140,6 +140,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
         expectedGlbAssets: new Set(displays.flatMap(display => display.model && !display.isOutsideRoom ? [display.model.checksumSha256] : [])).size,
         readyGlbAssets: Object.values(models).filter(model => model.status === 'ready').length,
         failedGlbAssets: Object.values(models).filter(model => model.status === 'error').length,
+        failedGlbRenders: displays.filter(display => display.model && renderStates[display.id]?.checksum === display.model.checksumSha256 && renderStates[display.id]?.failed).length,
         tier: quality.tier, dprCap: quality.dpr, shadowSize: quality.shadowSize, anisotropy: quality.anisotropy } : undefined} />
       <MuseumXr available={webglStatus === 'ready'} displays={displays} selectedId={selectedId} onSelect={onSelect}
         onController={setXrOwner} onStatus={setXrStatus} onHover={setXrHoveredId} onRendererReset={handleRendererReset} />

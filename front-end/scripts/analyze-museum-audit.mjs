@@ -1,6 +1,6 @@
 // Node >=22.18: native TypeScript stripping reuses exactly the browser metric logic.
 import { readFile, stat } from 'node:fs/promises';
-import { analyzeMuseumAudit, museumAuditRunSchema } from '../src/helpers/museumAuditMetrics.ts';
+import { analyzeMuseumAudit, museumAuditRunSchema, museumAuditWorkloadSchema } from '../src/helpers/museumAuditMetrics.ts';
 
 try {
   const files = process.argv.slice(2);
@@ -13,8 +13,8 @@ try {
     const result = analyzeMuseumAudit(raw);
     runs.push({ file, ...result });
     const workloads = raw.events.filter(event => event.type === 'workload').map(event => {
-      const { roomId, tier, viewportWidth, viewportHeight, renderWidth, renderHeight, expectedGlbAssets, readyGlbAssets } = event.detail;
-      return { roomId, tier, viewportWidth, viewportHeight, renderWidth, renderHeight, expectedGlbAssets, readyGlbAssets };
+      const parsed = museumAuditWorkloadSchema.safeParse(event.detail);
+      return parsed.success ? parsed.data : { unavailable: true };
     });
     const workloadSignatures = [...new Set(workloads.map(workload => JSON.stringify(workload)))].sort();
     const renderer = raw.environment.renderer ?? raw.events.find(event => event.type === 'renderer-observed')?.detail.renderer ?? 'unavailable';
@@ -32,11 +32,11 @@ try {
     interpretation: 'Render submissions, not presented FPS. Eligibility concerns capture validity only; physical-device and profiler evidence remain required. No CI FPS gate.',
     runs,
     groups: [...groups].map(([key, results]) => ({
-      workload: JSON.parse(key), runCount: results.length, sufficientRepeats: results.length >= 3,
+      workload: JSON.parse(key), runCount: results.length, sufficientRepeats: results.filter(result => result.eligible).length >= 3,
       eligibleRunCount: results.filter(result => result.eligible).length,
-      meanFps: variation(results.map(result => result.frame.meanFps).filter(value => value !== null)),
-      medianFps: variation(results.map(result => result.frame.medianFps).filter(value => value !== null)),
-      p95FrametimeMs: variation(results.map(result => result.frame.p95Ms).filter(value => value !== null)),
+      meanFps: variation(results.filter(result => result.eligible).map(result => result.frame.meanFps).filter(value => value !== null)),
+      medianFps: variation(results.filter(result => result.eligible).map(result => result.frame.medianFps).filter(value => value !== null)),
+      p95FrametimeMs: variation(results.filter(result => result.eligible).map(result => result.frame.p95Ms).filter(value => value !== null)),
     })),
   }, null, 2));
 } catch (error) {
