@@ -32,6 +32,11 @@ describe('public locale persistence', () => {
     expect(store.getSnapshot()).toEqual({ value: 'en', error: null });
   });
 
+  it('uses vi without an error when no locale has been saved', () => {
+    const store = createPublicLocaleStore(() => memoryStorage());
+    expect(store.getSnapshot()).toEqual({ value: 'vi', error: null });
+  });
+
   it.each([
     '{',
     '{"version":2,"value":"en"}',

@@ -51,3 +51,45 @@ test('public routes retain locale while Vietnamese content and admin stay unchan
   await page.goto('/tests/fixtures/public-locale.html');
   await expect(page.getByTestId('locale-first')).toHaveText('en');
 });
+
+test('locale survives a full page reload', async ({ page }) => {
+  await page.goto('/tests/fixtures/public-locale.html');
+  await page.getByRole('button', { name: 'Set locale to English' }).click();
+  await page.reload();
+  await expect(page.getByTestId('locale-first')).toHaveText('en');
+});
+
+test('blocked storage keeps locale usable in the current tab', async ({ page }) => {
+  await page.addInitScript(() => {
+    const getItem = Storage.prototype.getItem;
+    const setItem = Storage.prototype.setItem;
+    Storage.prototype.getItem = function (key) {
+      if (key === 'aura:visitor:locale:v1') throw new DOMException('blocked', 'SecurityError');
+      return getItem.call(this, key);
+    };
+    Storage.prototype.setItem = function (key, value) {
+      if (key === 'aura:visitor:locale:v1') throw new DOMException('blocked', 'SecurityError');
+      return setItem.call(this, key, value);
+    };
+  });
+  await page.goto('/tests/fixtures/public-locale.html');
+
+  await expect(page.getByTestId('storage-error')).toHaveText('unavailable');
+  await page.getByRole('button', { name: 'Set locale to English' }).click();
+  await expect(page.getByTestId('locale-first')).toHaveText('en');
+  await expect(page.getByTestId('locale-second')).toHaveText('en');
+  await expect(page.getByTestId('storage-error')).toHaveText('unavailable');
+});
+
+test('another tab receives locale changes and removal', async ({ page, context }) => {
+  await page.goto('/tests/fixtures/public-locale.html');
+  const otherTab = await context.newPage();
+  await otherTab.goto('/tests/fixtures/public-locale.html');
+  await expect(otherTab.getByTestId('locale-first')).toHaveText('vi');
+
+  await page.getByRole('button', { name: 'Set locale to English' }).click();
+  await expect(otherTab.getByTestId('locale-first')).toHaveText('en');
+  await page.evaluate(() => localStorage.removeItem('aura:visitor:locale:v1'));
+  await expect(otherTab.getByTestId('locale-first')).toHaveText('vi');
+  await otherTab.close();
+});
