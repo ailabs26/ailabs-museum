@@ -3,7 +3,7 @@
 | Mục | Nội dung |
 |---|---|
 | Công cụ | Claude Code (model Claude Opus 5.5), chạy trong VS Code, có quyền đọc/ghi repo và chạy lệnh trong worktree `feat/bt3-async-upload-jobs` |
-| Thời gian | 31/10/2026 |
+| Thời gian | 31/10/2026; sửa sau review PR #133 ngày 03–04/11/2026 |
 | Ràng buộc VT-078 | AI viết test **trước** implementation; sinh viên phải kiểm test fail **đúng lý do** trước khi sửa code |
 
 ## Prompt chính
@@ -30,5 +30,18 @@
 
 1. **Test đỏ "đúng kiểu" nhưng sai lý do.** 29/31 test đỏ đều báo 501 hoặc assertion, nhìn đúng như mong đợi. Nhưng TC04 thực ra fail vì `ECONNRESET` của hạ tầng test, và TC06 fail với 501 trong khi request vẫn gửi key — nếu implementation bỏ quên kiểm tra thiếu header, TC06 vẫn có thể xanh với lý do sai. Chỉ đọc từng message lỗi, không đếm số test đỏ, mới phát hiện.
 2. **Fake repository làm unique constraint "luôn đúng".** `FakeUploadJobRepository` kiểm tra rồi ghi trong cùng một tick JavaScript nên không bao giờ có race. TC04 xanh trên fake không chứng minh được gì về PostgreSQL. Phải có `upload-jobs-repository.integration.spec.ts` chạy 20 insert đồng thời trên PG thật (pool 25 connection) mới chứng minh invariant.
+
+## Sửa sau review PR #133
+
+Reviewer `dinhtienn` tìm ra lỗi P2 mà test do AI sinh và bước review diff của tôi đều bỏ sót: `MediaService.upload()` đã lưu media, nhưng nếu ghi job `succeeded` gặp lỗi DB tạm thời thì `catch` ghi job `failed`. Job khi đó không có `mediaId`, còn retry cùng key không chạy lại worker.
+
+*Prompt 4 (sửa review, rút gọn):* nêu lại finding P2 và yêu cầu tách lỗi hoàn tất job khỏi lỗi upload, `markSucceeded` thử lại tối đa 3 lần, hết lượt thì giữ `processing` và log `mediaId`, thêm TC19/TC19b, rebase lên `dev`, đổi timestamp migration trùng với `AddNotifications`.
+
+| Output của AI | Quyết định | Evidence |
+|---|---|---|
+| Patch `markSucceeded` + TC19, TC19b | Dùng sau review diff | Commit `ac6f842`; reviewer xác nhận P2 đã xử lý; mutation M3 làm đúng TC19, TC19b fail (`07-review-p2-fix.log`) |
+| Đổi tên migration `1793800000000-AddMediaUploadJobs` | Dùng | Commit `7cef13f` |
+
+Bản sửa chưa đóng hết rủi ro: xem mục "Rủi ro còn lại" trong `03-traceability.md`.
 
 Tôi chịu trách nhiệm kiểm chứng mọi nội dung AI tạo ra được dùng trong bài; không dùng "AI nói đúng" làm bằng chứng.

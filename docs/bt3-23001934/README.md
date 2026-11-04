@@ -65,7 +65,7 @@ Kiểm flaky theo thứ tự ngẫu nhiên: thêm `--test-randomize --test-rando
 | File | Nội dung |
 |---|---|
 | `01-spec-and-plan.md` | Problem statement, AC1–AC5, NFR, invariant, plan AI và review R1–R6 |
-| `02-test-strategy.md` | Phân bổ level, phân lớp tương đương, bảng 15 test case |
+| `02-test-strategy.md` | Phân bổ level, phân lớp tương đương, bảng 17 test case |
 | `03-traceability.md` | AC/Risk → test → file → commit → kết quả |
 | `04-ai-usage-log.md` | Prompt, output dùng/sửa/bác bỏ, 2 điểm AI chưa đáng tin |
 | `evidence/` | Log baseline, đỏ (cả lần sai lý do), xanh, mutation, coverage, flaky, kết quả tải |

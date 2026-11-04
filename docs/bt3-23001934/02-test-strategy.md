@@ -48,5 +48,7 @@ Mỗi lớp lấy **một đại diện**; với lớp có biên (độ dài key
 | TC12 | negative | API | GET `khong-phai-uuid` (J4) | 400 | P3 |
 | TC13 | NFR2 | Unit + Integration PG | Job `queued`/`processing` khi khởi động lại (H3) | `failed`, `job_interrupted`; job `succeeded` giữ nguyên | P2 |
 | TC14 | NFR1 | Load | 80 POST đồng thời, GLB 2 MB, 5 lần | p95 POST ≤ 2 500 ms; 80 retry cùng key → 1 job | P2 |
+| TC19 | Review P2 · **failure path** | Unit | Media đã lưu; ghi `succeeded` lỗi DB 2 lần rồi thành công | Thử 3 lần; `succeeded` có `mediaId`; không có patch `failed` | P1 |
+| TC19b | Review P2 · **failure path** | Unit | Media đã lưu; ghi `succeeded` lỗi liên tục, rồi retry cùng key | Media còn, file không bị xóa; job giữ `processing`, không có patch `failed`; retry không chạy lại worker, không tạo media thứ hai | P1 |
 
-Negative test: TC05, TC06, TC07 (cùng TC08, TC11, TC12). Failure-path gắn risk riêng: **TC09** (lỗi hạ tầng + retry không tạo trùng) và TC13.
+Negative test: TC05, TC06, TC07 (cùng TC08, TC11, TC12). Failure-path gắn risk riêng: **TC09** (lỗi hạ tầng + retry không tạo trùng), TC13 và **TC19/TC19b** (thêm sau review PR #133).
