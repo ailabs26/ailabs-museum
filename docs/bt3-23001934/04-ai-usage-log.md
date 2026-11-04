@@ -22,7 +22,7 @@
 | Test integration PG: `insert(row)` hai lần cùng object để thử unique | Sửa | `01c-red-pg-test-bug.log`: lỗi là `PK_media_upload_jobs` chứ không phải `UQ_..._actor_key` — TypeORM gắn `id` vào object sau lần insert đầu |
 | Helper `createJob(buffer, key = randomUUID())` và TC06 gọi `createJob(buf, undefined)` | Sửa | `02a-green-attempt-test-bugs.log` dòng 85: TC06 nhận 202 — `undefined` rơi vào giá trị mặc định nên request vẫn có key. Lúc đỏ, TC06 "fail" với 501 nên trông như đúng lý do |
 | TC04 dùng `request(app.getHttpServer())` cho 20 request đồng thời | Sửa | `01b-red.log` dòng 171: `ECONNRESET` — server chưa listen nên supertest tự `listen(0)` mỗi request. Lần review đỏ đầu tiên đã **bỏ sót** lý do này |
-| Patch service/repository/mapper | Dùng sau review diff | Commit `0e4514a`, `f8be5ab`; 1973/1973 test back-end pass, lint/typecheck sạch |
+| Patch service/repository/mapper | Dùng sau review diff | Commit `477e2b9`, `ff54c07`; 1973/1973 test back-end pass, lint/typecheck sạch |
 | Câu "ký tự Unicode bị Node chặn nên không kiểm được" trong test strategy | Sửa | Kiểm bằng `http.request().setHeader()`: `khóa` gửi được, chỉ ký tự > U+00FF bị `ERR_INVALID_CHAR` → thêm ca TC07 `khóa` |
 | Harness tải v1: client và server chung tiến trình | Sửa | `05a-load-same-process.json`: lần 1 p95 2 725 ms; client dựng 80 form 2 MB trên cùng event loop với server → tách server sang tiến trình con (`05b`, `05c`) |
 

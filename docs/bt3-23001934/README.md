@@ -4,6 +4,21 @@ Nguyễn Trọng Thành (23001934) · SE2026-T20 · 3D-WEB-03.
 Nhánh `feat/bt3-async-upload-jobs`, tách từ `origin/dev` tại baseline
 **`4c2a6d0cf89bbe52e76bb0e8509b5d0338178600`**. PR vào `dev`, **chưa merge** (chờ nhóm review).
 
+## Hash commit sau rebase
+
+Nhánh đã rebase lên `dev` ngày 03/11/2026 nên hash đổi. Tài liệu dùng hash mới; log gốc trong `evidence/` giữ nguyên hash cũ.
+
+| Cũ | Mới | Nội dung |
+|---|---|---|
+| `7b076d8` | `b652d4d` | Spec, AC, invariant, review plan |
+| `f5ccfab` | `cb08073` | Test trước + stub (đỏ) |
+| `3636842` | `7a0aeb8` | Entity, migration, đăng ký module |
+| `0e4514a` | `477e2b9` | Repository |
+| `f8be5ab` | `ff54c07` | Service, worker, mapper |
+| `068a783` | `57f9e3e` | Evidence coverage, flaky |
+| `e3d5e12` | `1740d2c` | Harness tải |
+| `2ab9c9d` | `8688456` | Test strategy, ca key Latin-1 |
+
 ## Thay đổi
 
 - `POST /api/admin/media/upload-jobs` (multipart `file` + header `Idempotency-Key`) → 202 `{ id, status, progress, ... }`; retry cùng key + cùng nội dung → 200 job cũ; khác nội dung → 409.
