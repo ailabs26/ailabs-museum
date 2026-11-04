@@ -3,10 +3,10 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, unlinkSync, rmdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { execPath } from 'node:process';
+import { execPath, features } from 'node:process';
 import { MuseumAuditRecorder } from './museumAudit';
 
-it('re-analyzes exported raw JSON and separates workloads rather than pooling device FPS', () => {
+it.skipIf(!Reflect.get(features, 'typescript'))('re-analyzes raw JSON on native-TS Node and separates workloads rather than pooling device FPS', () => {
   const folder = mkdtempSync(join(tmpdir(), 'museum-audit-analysis-'));
   const files = [join(folder, 'one.json'), join(folder, 'two.json'), join(folder, 'other-device.json'), join(folder, 'short.json')];
   try {
@@ -29,6 +29,9 @@ it('re-analyzes exported raw JSON and separates workloads rather than pooling de
     expect(result.groups[0].eligibleRunCount).toBe(2);
     expect(result.groups[0].meanFps).toMatchObject({ min: 50, max: 62.5, mean: 56.25 });
     expect(result.groups[0].sufficientRepeats).toBe(false);
+    const unsupported = spawnSync(execPath, ['--no-experimental-strip-types', 'scripts/analyze-museum-audit.mjs', files[0]], { encoding: 'utf8' });
+    expect(unsupported.status).toBe(1);
+    expect(unsupported.stderr).toContain('requires native TypeScript support');
     writeFileSync(files[0], '{"schemaVersion":99}');
     const invalid = spawnSync(execPath, ['scripts/analyze-museum-audit.mjs', files[0]], { encoding: 'utf8' });
     expect(invalid.status).toBe(1);

@@ -1,8 +1,9 @@
 // Node >=22.18: native TypeScript stripping reuses exactly the browser metric logic.
 import { readFile, stat } from 'node:fs/promises';
-import { analyzeMuseumAudit, museumAuditRunSchema, museumAuditWorkloadSchema } from '../src/helpers/museumAuditMetrics.ts';
 
 try {
+  if (!Reflect.get(process.features, 'typescript')) throw new Error('Analysis requires native TypeScript support (Node22.18+ or24+). The application itself still supports its existing runtime.');
+  const { analyzeMuseumAudit, museumAuditRunSchema, museumAuditWorkloadSchema } = await import('../src/helpers/museumAuditMetrics.ts');
   const files = process.argv.slice(2);
   if (!files.length) throw new Error('Usage: node scripts/analyze-museum-audit.mjs <raw.json> [raw2.json ...]');
   const runs = [];
