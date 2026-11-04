@@ -1,4 +1,4 @@
-# Comment "@claude review" trên PR để Claude review. Chỉ góp ý bằng comment: không sửa code, không chặn merge.
+# nguyenthangdev comment "@claude review" trên PR của mình để Claude review. Chỉ góp ý bằng comment: không sửa code, không chặn merge.
 # Cần secret CLAUDE_CODE_OAUTH_TOKEN (tạo bằng `claude setup-token`, tính vào hạn mức gói Claude).
 # GitHub chỉ chạy workflow issue_comment từ nhánh mặc định, nên file này phải có trên main mới hoạt động.
 name: Claude Review
@@ -13,8 +13,12 @@ concurrency:
 jobs:
   review:
     name: Claude Review
-    # Action tự từ chối người không có quyền ghi vào repo.
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '@claude review')
+    # Dùng token gói Claude cá nhân: chỉ chạy khi chủ token comment trên PR do chính mình tạo.
+    if: >-
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '@claude review') &&
+      github.event.comment.user.login == 'nguyenthangdev' &&
+      github.event.issue.user.login == 'nguyenthangdev'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
