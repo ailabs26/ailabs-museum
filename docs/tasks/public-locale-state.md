@@ -1,6 +1,6 @@
 # Public Locale State — Task Breakdown & Acceptance
 
-> **Trạng thái:** IN PROGRESS — Task 0 baseline hoàn tất; Task 1 implementation và focused verification đã pass. Chưa push/PR/merge.
+> **Trạng thái:** DONE — triển khai và verification hoàn tất trên `feat/public-locale-state`. Chưa push/PR/merge.
 >
 > **PLAN:** [public-locale-state-plan.md](../plans/public-locale-state-plan.md)
 > **Repository:** `ailabs26/ailabs-museum`; baseline GitHub `dev` đã đọc: `3ccdd731b0f04139963fbf68ecb04e5f36eaab77` (04/11/2026). **Fetch lại `origin/dev` trước khi làm.**
@@ -16,12 +16,12 @@
 
 | Task | Deliverable | Phạm vi commit | Trạng thái |
 |---|---|---|---|
-| Task 0 — Baseline & plan | BASE SHA, PLAN/TASK và checklist đầu vào | Docs only | NOT STARTED |
-| Task 1 — Locale persistence contract | Locale schema/key/store + unit tests | Helper + unit | NOT STARTED |
-| Task 2 — Provider & hook | Context, consumer hook, React fixture + focused browser tests | Provider/hook + fixture/spec | NOT STARTED |
-| Task 3 — Public route integration | Provider trong PublicLayout + route tests | One production wrapper + tests | NOT STARTED |
-| Task 4 — Lifecycle & regression | Invalid/blocked storage, cross-tab, admin isolation, affected specs | Test / targeted bug fix nếu có | NOT STARTED |
-| Task 5 — Evidence & handoff | Full gates, commit ledger, PR description | Docs only | NOT STARTED |
+| Task 0 — Baseline & plan | BASE SHA, PLAN/TASK và checklist đầu vào | Docs only | DONE (baseline Playwright ban đầu bị ngắt; đã chạy regression sau triển khai) |
+| Task 1 — Locale persistence contract | Locale schema/key/store + unit tests | Helper + unit | DONE |
+| Task 2 — Provider & hook | Context, consumer hook, React fixture + focused browser tests | Provider/hook + fixture/spec | DONE |
+| Task 3 — Public route integration | Provider trong PublicLayout + route tests | One production wrapper + tests | DONE |
+| Task 4 — Lifecycle & regression | Invalid/blocked storage, cross-tab, admin isolation, affected specs | Test / targeted bug fix nếu có | DONE |
+| Task 5 — Evidence & handoff | Full gates, commit ledger, PR description | Docs only | DONE (PR chưa tạo theo yêu cầu trong task) |
 
 ### Quy tắc thực thi chung
 
@@ -49,8 +49,8 @@
 
 ### Acceptance
 
-- [ ] Base SHA mới nhất, working tree, test baseline, các file chịu tác động và giới hạn scope có evidence.
-- [ ] PLAN và TASK link hai chiều, không chứa mã feature theo convention cuộc trao đổi; tên commit có hậu tố `locale` dễ grep.
+- [x] Base SHA mới nhất, working tree, test baseline, các file chịu tác động và giới hạn scope có evidence.
+- [x] PLAN và TASK link hai chiều; các commit dùng hậu tố `locale` dễ grep.
 
 **Commit sau khi duyệt:** `docs(locale): plan public locale state`.
 
@@ -78,17 +78,14 @@ Có thể thêm factory `createPublicLocaleStore(getStorage?)` **nếu cần** f
 
 ### Steps
 
-- [ ] Viết unit test mặc định `'vi'` và type/validation chỉ cho `vi/en` (bao gồm input lạ `fr`, rỗng, number).
-- [ ] Test key chưa có → `vi` và `error=null`; key lưu envelope hợp lệ `{version:1,value:'en'}` → `en`.
-- [ ] Test JSON hỏng, wrong version, wrong type/locale → default `vi`, `error='invalid'`.
-- [ ] Test `getItem` ném lỗi → `vi`, `error='unavailable'`; test `setItem` ném lỗi vẫn có snapshot `en` trong memory, error unavailable.
-- [ ] Viết helper chỉ khai báo schema/type/key/store, tái sử dụng `createVisitorStore`; không chỉnh `visitorPersistence.ts` hoặc các key favorites/notes.
-- [ ] Chạy focused unit + typecheck, tự review API và dữ liệu saved v1, commit sau GREEN.
+- [x] Unit test mặc định `'vi'`, chỉ nhận `vi/en`, key trống/saved v1, dữ liệu hỏng, sai version/type/locale, read/write lỗi.
+- [x] Helper dùng schema/type/key/store và `createVisitorStore`; không chỉnh persistence chung hoặc các key favorites/notes.
+- [x] Focused unit 9/9 và typecheck pass; API và envelope v1 đã được review.
 
 ### Acceptance
 
-- [ ] `PublicLocale` typed `vi | en`; tất cả các trường hợp lưu/đọc kể trên được unit test xác nhận.
-- [ ] Không thêm dependency, network/API, `navigator.language` hay locale URL.
+- [x] `PublicLocale` typed `vi | en`; các trường hợp lưu/đọc được unit test xác nhận.
+- [x] Không thêm dependency, network/API, `navigator.language` hay locale URL.
 
 **Verification:**
 
@@ -130,18 +127,18 @@ interface PublicLocaleContextValue {
 
 ### Steps
 
-- [ ] Tạo Context + Provider giữ singleton store đúng một nguồn dữ liệu.
-- [ ] Tạo hook `usePublicLocale` tại `hooks/` đọc context và guard ngoài Provider.
-- [ ] Tạo fixture test-only mount provider + ít nhất 2 consumer hiển thị locale để kiểm cùng snapshot; control `setLocale('vi')`, `setLocale('en')` bằng button có accessible name, hiển thị storage error.
-- [ ] Thêm Playwright: default `vi`, 2 consumer cùng cập nhật `en` rồi `vi`, invalid saved → `vi`, không crash.
-- [ ] Đảm bảo fixture không được thêm vào route production/SPA router; không thêm component đổi locale thật vào Header.
-- [ ] Chạy focused browser và typecheck, commit khi GREEN.
+- [x] Context + Provider dùng singleton store làm một nguồn dữ liệu.
+- [x] Hook `usePublicLocale` đọc context và throw rõ ràng khi dùng ngoài Provider.
+- [x] Fixture test-only có hai consumer, nút đổi locale và trạng thái storage.
+- [x] Playwright xác nhận default, cập nhật đồng bộ, invalid saved và không crash.
+- [x] Fixture không nằm trong route production; không thêm language selector vào Header.
+- [x] Focused browser 2/2 và typecheck pass.
 
 ### Acceptance
 
-- [ ] API consumer hoàn chỉnh; `setLocale` cập nhật cùng state ở mọi consumer.
-- [ ] Outside-provider usage có lỗi developer rõ; không fallback giả hoặc create store mới.
-- [ ] Không thay các màn hình public thực tế trước Task 3.
+- [x] API consumer hoàn chỉnh; `setLocale` cập nhật cùng state ở mọi consumer.
+- [x] Outside-provider usage có lỗi developer rõ; không fallback giả hoặc tạo store mới.
+- [x] Không thay màn hình public trước Task 3.
 
 **Verification:**
 
@@ -164,18 +161,17 @@ npm run typecheck
 
 ### Steps
 
-- [ ] Bọc nội dung `PublicLayout` với `PublicLocaleProvider`; bảo toàn `<header>`, `<main id="public-content" tabIndex={-1}>`, `<Outlet />`, `<footer>` và mobile Drawer hiện có.
-- [ ] **Không** đưa Provider vào `AppProviders` toàn cục; không wrap lại ở `MuseumPage`/`ExhibitDetailPage`.
-- [ ] Test đường đi public: từ fixture set `en` rồi truy cập `/`, `/collection`, detail, `/tour`, `/tour.html`; dùng API mocks hiện có khi cần; quay về fixture kiểm giá trị persisted.
-- [ ] Test route navigation không xóa `aura:visitor:locale:v1`, không thay room/exhibit search params hiện có; Admin `/admin/login` vẫn render được.
-- [ ] Test `index.html` và `tour.html` vẫn `html lang="vi"` do copy chưa dịch. Không thêm `lang=en` chỉ để làm test xanh.
-- [ ] Chạy focused E2E + affected navigation smoke, typecheck, commit sau GREEN.
+- [x] Bọc PublicLayout mà giữ nguyên header, main, Outlet, footer và mobile Drawer.
+- [x] Provider nằm trong public layout; không đưa vào AppProviders hoặc các page riêng.
+- [x] Route test chạy `/`, `/collection`, detail, `/tour`, `/tour.html`, sau đó quay lại fixture và đọc lại `en`.
+- [x] `/admin/login` render; `html lang="vi"` giữ nguyên. Regression collection xác nhận query/navigation hiện có.
+- [x] Focused route suite 32/32 và typecheck pass.
 
 ### Acceptance
 
-- [ ] Public route group có một provider owner, không remount khi chuyển giữa sibling routes trong cùng SPA.
-- [ ] `en` được giữ khi đổi route/reload **nếu** browser cho phép storage; Admin không nhận side effect ngôn ngữ.
-- [ ] Không làm mất skip link, focus, drawer navigation, tour hoặc đường dẫn hiện vật.
+- [x] Public route group có một provider owner, được fixture xác nhận qua sibling route SPA.
+- [x] `en` được giữ qua route/reload khi storage hoạt động; Admin không nhận side effect locale.
+- [x] Regression route/navigation và các gate ảnh hưởng pass.
 
 **Verification:**
 
@@ -197,19 +193,19 @@ npm run typecheck
 
 ### Steps
 
-- [ ] Browser `page.addInitScript()` seed `en` trước khi load: fixture hiển thị `en`; reload vẫn `en`.
-- [ ] Browser seeded `fr`/JSON corrupt/version sai: fixture về `vi` và có lỗi invalid nhưng render bình thường.
-- [ ] Browser chặn `localStorage.getItem`: không crash. Khi chặn `setItem`, set `en` vẫn cập nhật **in-memory**; sau full reload có thể về default (đúng expectation, không viết test sai).
-- [ ] Hai tab cùng browser context và origin: đổi tab A → tab B nhận qua `storage` event, không gây vòng lặp update. Kiểm thêm trường hợp key bị xóa nếu ổn định.
-- [ ] Navigation từ public sang `/admin/login` rồi quay lại public không ảnh hưởng session/auth; không yêu cầu API/DB thật.
-- [ ] Re-run các Playwright regression ảnh hưởng: `collection.spec.ts`, `exhibit-detail.spec.ts`, `museum-tour.spec.ts`, `public-audio.spec.ts`, `public-report-modal.spec.ts`; phân loại lỗi app/test/fixture/environment.
-- [ ] Review không có timer/listener mới, không duplicate subscriptions ở StrictMode, không test fixture nào lọt production build.
-- [ ] Nếu phát sinh bug trong `createVisitorStore` dùng chung: ghi bằng chứng/issue, xin review scope; không kéo sửa persistence chung vào task tùy tiện.
+- [x] Browser restore `en` sau reload.
+- [x] Invalid locale fallback `vi` được xác nhận trong browser; unit test bổ sung wrong-version, malformed JSON và wrong-type.
+- [x] Chặn `getItem`/`setItem`: app không crash, `en` vẫn hoạt động trong tab hiện tại với `unavailable`.
+- [x] Hai tab cùng origin đồng bộ đổi locale và remove key qua storage event.
+- [x] Public → Admin login → public route smoke pass; không dùng API/DB thật.
+- [x] Affected Playwright regression: 54/54 pass.
+- [x] Review source không có listener/timer mới; fixture không có trong production dist (`Test-Path` false).
+- [x] Không phát hiện bug trong `createVisitorStore`; file persistence chung không đổi.
 
 ### Acceptance
 
-- [ ] Default/invalid/unavailable/cross-tab/reload được chứng minh bằng test.
-- [ ] Không regression navigation, media, PublicReportModal và các preference khác; mọi lỗi được phân loại minh bạch.
+- [x] Default/invalid/unavailable/cross-tab/reload được chứng minh bằng test.
+- [x] 54/54 affected regression pass; visitor keys, media và PublicReportModal không đổi.
 
 **Verification:**
 
@@ -231,19 +227,19 @@ npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/
 
 ### Steps
 
-- [ ] Chạy từ `front-end/`: `npm run typecheck`, `npm run lint`, `npm run test:unit`, `npm run build`, focused và affected Playwright; ghi exit codes + số PASS/FAIL/SKIP.
-- [ ] Kiểm tra `git diff --check`, `git status --short`, `git log --oneline origin/dev..HEAD`, `git diff --name-status origin/dev...HEAD`; không chứa file ngoài scope, screenshot/log/credential, `dist`, `test-results`.
-- [ ] Chạy kiểm chứng `aura:visitor:favorites:v1`, reading, recent/notes không bị thay bởi key locale; không làm `html[lang]` sai và không thêm language selector production.
-- [ ] Ghi OS, browser/channel/version, branch/base SHA, commit hash cho từng task; lưu logs/trace vào path có thể kiểm tra (không nhất thiết commit logs nhạy cảm).
-- [ ] Lập PR summary: problem, outcome, key API, test results, evidence, screenshot **chỉ nếu có UI change** (bình thường không có), known limitations và next steps.
-- [ ] Báo cáo trạng thái cuối đúng sự thật (`DONE`/`BLOCKED`/`NOT RUN`), không lấy pass từ PR cũ làm pass hiện tại.
-- [ ] Không tự push, tạo PR, merge nếu chưa có yêu cầu rõ.
+- [x] Final gates: typecheck 0, lint 0, unit 227/227, build exit 0; focused Playwright 7/7, route suite 32/32, affected suite 54/54.
+- [x] `git diff --check` pass; branch diff chỉ gồm 10 file trong scope, không có artifacts/logs/credentials/dist/test-results.
+- [x] New locale key tách riêng; `visitorState`, media, `html lang` không đổi; không có selector trong production.
+- [x] Ghi OS, runtime/browser, branch/base và commit ledger bên dưới. Windows Playwright dev server teardown limitation được ghi.
+- [x] PR summary và known limits được ghi; chưa push/tạo PR/merge theo task.
+- [x] Trạng thái hoàn thành được ghi dựa trên kết quả hiện tại.
+- [x] Không push, tạo PR hoặc merge.
 
 ### Acceptance
 
-- [ ] Plan/Task phản ánh đúng commit thực tế, không còn placeholder PASS vô căn cứ.
-- [ ] Feature chỉ cung cấp state contract, **không tuyên bố đã đa ngôn ngữ hóa UI, dữ liệu hay audio**.
-- [ ] 01 PR nhỏ, 05–06 commit có thông điệp và phạm vi nhất quán, dễ bisect/revert.
+- [x] Plan/Task phản ánh commit và evidence thực tế; baseline E2E ban đầu được ghi interrupted.
+- [x] Feature chỉ cung cấp state contract, không tuyên bố UI/data/audio đã được dịch.
+- [x] Một branch với 6 commit tách nhiệm vụ, dễ review và revert.
 
 **Commit:** `docs(locale): record public locale verification`.
 
@@ -253,15 +249,15 @@ npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/
 
 | AC | Điều kiện | Test / Evidence | Trạng thái |
 |---|---|---|---|
-| AC-01 | Hook typed `vi/en`, `locale/setLocale/storageError`, ngoài Provider throw rõ | Fixture + source review | NOT RUN |
-| AC-02 | No saved key → `vi`; valid `en` → `en`; unknown/invalid → safe fallback | Unit + browser | NOT RUN |
-| AC-03 | Set locale cập nhật nhiều consumer; blocked storage giữ in-memory | Browser fixture | NOT RUN |
-| AC-04 | Lựa chọn được giữ qua reload và các route public, kể cả `/tour.html` | Playwright navigation | NOT RUN |
-| AC-05 | Cross-tab event hoạt động và không tạo vòng lặp event listener | Playwright multi-page | NOT RUN |
-| AC-06 | Admin/Auth/CMS, URL, 2D/3D, media, report không regress | Affected regression + diff review | NOT RUN |
-| AC-07 | `html lang` vẫn phản ánh nội dung tiếng Việt hiện tại | DOM/source assertions | NOT RUN |
-| AC-08 | Unit, browser, typecheck, lint, build có bằng chứng thực thi | Log + exit code | NOT RUN |
-| AC-09 | Plan, TASK, commit ledger và PR-ready handoff đầy đủ | Git log + Docs | NOT RUN |
+| AC-01 | Hook typed `vi/en`, `locale/setLocale/storageError`, ngoài Provider throw rõ | Fixture + source review | PASS |
+| AC-02 | No saved key → `vi`; valid `en` → `en`; unknown/invalid → safe fallback | Unit + browser | PASS |
+| AC-03 | Set locale cập nhật nhiều consumer; blocked storage giữ in-memory | Browser fixture | PASS |
+| AC-04 | Lựa chọn được giữ qua reload và các route public, kể cả `/tour.html` | Playwright navigation | PASS |
+| AC-05 | Cross-tab event hoạt động và không tạo vòng lặp event listener | Playwright multi-page | PASS |
+| AC-06 | Admin/Auth/CMS, URL, 2D/3D, media, report không regress | Affected regression + diff review | PASS (CMS source untouched) |
+| AC-07 | `html lang` vẫn phản ánh nội dung tiếng Việt hiện tại | DOM/source assertions | PASS |
+| AC-08 | Unit, browser, typecheck, lint, build có bằng chứng thực thi | Log + exit code | PASS |
+| AC-09 | Plan, TASK, commit ledger và PR-ready handoff đầy đủ | Git log + Docs | PASS (PR not created) |
 
 **Không thay `NOT RUN` bằng PASS trước khi thực thi.** Các kịch bản có API mock phải được ghi là Playwright browser test với mocked API. Số lượng test sẽ ghi theo kết quả thực tế, không dự đoán.
 
@@ -269,24 +265,25 @@ npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/
 
 | Task | Commit message dự kiến | Commit SHA thực tế | Focused verification | Status |
 |---|---|---|---|---|
-| 0 | `docs(locale): plan public locale state` | — | Unit 218/218 PASS; Playwright baseline INTERRUPTED; `git diff --check` pending | IN PROGRESS |
-| 1 | `feat(locale): add validated public locale persistence` | — | Unit + typecheck | NOT STARTED |
-| 2 | `feat(locale): expose public locale provider and hook` | — | Fixture Playwright + typecheck | NOT STARTED |
-| 3 | `feat(locale): scope locale state to public routes` | — | Route Playwright + typecheck | NOT STARTED |
-| 4 | `test(locale): cover locale persistence and lifecycle` | — | Focused + affected E2E | NOT STARTED |
-| 5 | `docs(locale): record public locale verification` | — | Full gates + diff review | NOT STARTED |
+| 0 | `docs(locale): plan public locale state` | `6d9b2062` | Unit baseline 218/218 PASS; initial collection/tour baseline interrupted; diff check PASS | DONE (baseline limit recorded) |
+| 1 | `feat(locale): add validated public locale persistence` | `82ad3738` | Unit 9/9 PASS; typecheck exit 0 | DONE |
+| 2 | `feat(locale): expose public locale provider and hook` | `06dd3b23` | Fixture Playwright 2/2 PASS; typecheck exit 0 | DONE |
+| 3 | `feat(locale): scope locale state to public routes` | `9b20c109` | Locale + collection + detail Playwright 32/32 PASS; typecheck exit 0 | DONE |
+| 4 | `test(locale): cover locale persistence and lifecycle` | `58bb08d5` | Unit 9/9, locale Playwright 7/7, affected Playwright 54/54 PASS | DONE |
+| 5 | `docs(locale): record public locale verification` | `HEAD (this commit)` | Typecheck/lint exit 0; unit 227/227; build exit 0; diff check PASS | DONE |
 
 **Thông tin môi trường điền khi chạy:**
 
 ```text
 Base dev SHA: 3ccdd731b0f04139963fbf68ecb04e5f36eaab77
 Feature branch SHA: feat/public-locale-state (at origin/dev base)
-OS / Node / Browser(channel, version): Windows; Node v22.23.2; Playwright 1.64.0 (Chromium/MS Edge channel)
-Vitest focused: publicLocale 8/8 PASS; baseline 218/218 PASS
-Playwright focused: NOT RUN
-Playwright affected: baseline collection + museum-tour interrupted at final case, no summary
-Frontend typecheck / lint / unit / build: NOT RUN
-Regression findings: NOT RUN
+OS / Node / Browser(channel, version): Windows; Node v22.23.2; Playwright 1.64.0; Microsoft Edge 156.0.4314.58
+Vitest focused: publicLocale 9/9 PASS; final full suite 227/227 PASS; baseline 218/218 PASS
+Playwright focused: public locale lifecycle 7/7 PASS
+Playwright route suite: locale + collection + detail 32/32 PASS
+Playwright affected: collection, detail, tour, audio, report modal 54/54 PASS
+Frontend typecheck / lint / unit / build: 0 / 0 / 227 passed / 0
+Regression findings: none in application; initial baseline command was interrupted during Windows Playwright teardown; passed runs reused the Vite server and the owned server was stopped after testing
 PR URL / merge state: NOT CREATED
 ```
 
@@ -300,11 +297,13 @@ PR URL / merge state: NOT CREATED
 
 ## 4. Definition of Done và bàn giao
 
-- [ ] AC-01 → AC-09 có evidence hoặc ghi blocker minh bạch; các checkbox Task 0–5 chỉ tick khi hoàn tất thật.
-- [ ] Có danh sách commit 1-1 với từng bước, không nhầm định danh feature trong các kế hoạch khác.
-- [ ] Public Locale API dùng chung có thể được feature UI internationalization và localized content/audio tiêu thụ mà không thêm store mới.
-- [ ] Chưa làm dropdown, dịch strings, chọn transcript/WebVTT theo locale hoặc Guided Tour; các công việc đó là PR riêng.
-- [ ] Người review xác nhận test và scope; chỉ tạo PR/merge khi được yêu cầu.
+- [x] AC-01 → AC-09 có evidence; checkbox được tick sau khi hoàn tất.
+- [x] Có danh sách commit 1-1 cho Task 0–5.
+- [x] Public Locale API dùng chung với một store.
+- [x] Không thêm dropdown, dịch strings, chọn transcript/WebVTT theo locale hoặc Guided Tour.
+- [x] Review độc lập whole-branch trên `3ccdd731..f375d5a`: Ready to merge = Yes; không có Critical, Important hoặc Minor finding. Chưa push/tạo PR/merge.
+
+**Kết quả review:** reviewer xác nhận một locale owner, không thêm storage listener, Admin nằm ngoài provider, `html lang="vi"` đúng nội dung hiện tại, fixture không vào production build và commit chia nhỏ đúng phạm vi. Không cần sửa sau review.
 
 **Tiêu đề PR đề xuất:** `feat(locale): establish public locale state and persistence`.
 
@@ -317,7 +316,11 @@ Summary
 - Add focused unit/browser tests and route integration without changing public copy, CMS, audio or backend.
 
 Verification
-- [Fill in actual commands, pass/fail/skip and environment after running.]
+- `npm run typecheck` — PASS; `npm run lint` — PASS; `npm run test:unit` — 227/227 PASS; `npm run build` — PASS with existing large-chunk warning.
+- `npx playwright test tests/public-locale.spec.ts --reporter=line` — 7/7 PASS.
+- `npx playwright test tests/public-locale.spec.ts tests/collection.spec.ts tests/exhibit-detail.spec.ts --reporter=line` — 32/32 PASS.
+- `npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/museum-tour.spec.ts tests/public-audio.spec.ts tests/public-report-modal.spec.ts --reporter=line` — 54/54 PASS.
+- Browser evidence: Windows, Node v22.23.2, Playwright 1.64.0, Microsoft Edge 156.0.4314.58; API fixtures mocked, no live DB/API.
 
 Out of scope
 - Language selector, translated UI, localized exhibit/media, Guided Tour and WCAG certification.

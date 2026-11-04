@@ -1,6 +1,6 @@
 # Public Locale State — Implementation Plan
 
-> **Trạng thái:** DRAFT — tài liệu thiết kế, **chưa triển khai hoặc chạy test**.
+> **Trạng thái:** DONE — triển khai trên `feat/public-locale-state`; verification và acceptance được ghi trong [TASK](../tasks/public-locale-state.md). Chưa push hoặc tạo PR.
 >
 > **Task / Acceptance:** [public-locale-state.md](../tasks/public-locale-state.md)
 
