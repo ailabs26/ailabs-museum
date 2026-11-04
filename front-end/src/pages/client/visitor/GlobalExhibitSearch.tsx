@@ -2,6 +2,7 @@ import { Alert, Button, Text, Title } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { usePublicLocale } from '@/core/i18n/public-locale';
 import { museumService } from '@/services/museum.service';
 import type { RoomSummary } from '@/validations/roomSchema';
 import classes from '../CollectionPage.module.css';
@@ -17,6 +18,7 @@ export function GlobalExhibitSearch({ query, currentRoomId, rooms }: {
   currentRoomId: string | undefined;
   rooms: RoomSummary[];
 }) {
+  const { t } = usePublicLocale();
   const [debounced] = useDebouncedValue(query.trim(), 300);
   const enabled = debounced.length >= MIN_QUERY_LENGTH;
   const search = useInfiniteQuery({
@@ -35,7 +37,7 @@ export function GlobalExhibitSearch({ query, currentRoomId, rooms }: {
 
   return (
     <section aria-labelledby="global-search-title" className={classes.globalSearch}>
-      <Title order={2} id="global-search-title" className={classes.roomTitle}>Ở các phòng khác</Title>
+      <Title order={2} id="global-search-title" className={classes.roomTitle}>{t('ui.collection.other-rooms', 'Ở các phòng khác')}</Title>
       {search.isPending ? <p role="status">Đang tìm trong toàn bảo tàng…</p>
         : search.isError ? (
           <Alert color="red" role="alert" title="Không tìm được ở các phòng khác">
