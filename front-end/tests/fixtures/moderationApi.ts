@@ -40,6 +40,15 @@ export async function installModerationApi(page: Page, { authenticated = true, p
     if (path === '/auth/login') { await fulfillMuseum(route, envelope({ accessToken: 'keyboard-fixture-token', user })); return; }
     if (path === '/auth/logout') { writes.push(path); await fulfillMuseum(route, envelope(null)); return; }
     if (request.method() !== 'GET') { writes.push(path); await fulfillMuseum(route, envelope({})); return; }
+    // AdminLayout đọc số liệu này cho badge sidebar; thiếu thì cả trang crash.
+    if (path === '/admin/stats/overview') {
+      await fulfillMuseum(route, envelope({
+        rooms: { total: 0, active: 0, archived: 0 }, exhibits: { total: 0, visible: 0, hidden: 0 },
+        revisions: { inReview: 0, draft: 0 }, reports: { open: 0, inProgress: 0 },
+        system: { api: 'up', db: 'up', uptimeSec: 1, serverTime: '2026-10-19T00:00:00Z' },
+      }));
+      return;
+    }
     if (path === '/moderation/queue') {
       const pageNumber = Number(new URL(request.url()).searchParams.get('page') ?? 1);
       await fulfillMuseum(route, { ...envelope(pageNumber === 1 ? revisions : []), meta: { page: pageNumber, pageSize: 20, total: 21 } });
