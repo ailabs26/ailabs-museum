@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { installCmsSession } from './cmsSession';
 
 export interface TestMediaItem {
   id: string;
@@ -50,23 +51,14 @@ export async function installCmsMediaApi(page: Page, customMedia: TestMediaItem[
   let mediaList: TestMediaItem[] = [...customMedia];
   const writes: Array<{ method: string; path: string; data?: unknown }> = [];
 
-  await page.route('**/api/auth/me', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        success: true,
-        data: {
-          id: 'admin-user-id',
-          email: 'admin@aura.local',
-          displayName: 'Administrator',
-          roles: ['admin'],
-          permissions: ['media:upload', 'media:read', 'media:update', 'media:delete'],
-        },
-        message: null,
-      }),
-    });
-  });
+  await installCmsSession(page, ['media:upload', 'media:read', 'media:update', 'media:delete']);
+
+  // Thanh dung lượng đầu trang: thiếu thì trang crash vì không có `byKind`.
+  await page.route('**/api/admin/stats/storage*', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ success: true, data: { byKind: [], totalBytes: 0, totalCount: 0 }, message: null }),
+  }));
 
   // GET & POST upload
   await page.route('**/api/admin/media*', async (route) => {

@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { installCmsSession } from './cmsSession';
 
 export interface TestRoom {
   id: string;
@@ -7,7 +8,7 @@ export interface TestRoom {
   description: string | null;
   status: 'active' | 'archived';
   isDeleted: boolean;
-  exhibitCount?: number;
+  exhibitsCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,7 +21,7 @@ export const initialTestRooms: TestRoom[] = [
     description: 'Trưng bày các hiện vật lịch sử kháng chiến hào hùng',
     status: 'active',
     isDeleted: false,
-    exhibitCount: 5,
+    exhibitsCount: 5,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -31,7 +32,7 @@ export const initialTestRooms: TestRoom[] = [
     description: 'Trưng bày văn hóa Đông Sơn thời kỳ tiền sử',
     status: 'archived',
     isDeleted: false,
-    exhibitCount: 3,
+    exhibitsCount: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -42,23 +43,7 @@ export async function installCmsRoomsApi(page: Page, customRooms: TestRoom[] = i
   const writes: Array<{ method: string; path: string; data?: unknown }> = [];
 
   // Giả lập quyền Admin đầy đủ
-  await page.route('**/api/auth/me', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        success: true,
-        data: {
-          id: 'admin-user-id',
-          email: 'admin@aura.local',
-          displayName: 'Administrator',
-          roles: ['admin'],
-          permissions: ['room:read', 'room:create', 'room:update', 'room:delete'],
-        },
-        message: null,
-      }),
-    });
-  });
+  await installCmsSession(page, ['room:read', 'room:create', 'room:update', 'room:delete']);
 
   // GET /api/admin/rooms
   await page.route('**/api/admin/rooms*', async (route) => {
@@ -101,7 +86,7 @@ export async function installCmsRoomsApi(page: Page, customRooms: TestRoom[] = i
         description: body.description ?? null,
         status: body.status ?? 'active',
         isDeleted: false,
-        exhibitCount: 0,
+        exhibitsCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };

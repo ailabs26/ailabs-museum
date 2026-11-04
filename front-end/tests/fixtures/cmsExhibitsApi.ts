@@ -1,39 +1,48 @@
 import type { Page } from '@playwright/test';
+import { installCmsSession } from './cmsSession';
 
+/** Cùng shape với `ExhibitRow` mà `GET /admin/exhibits` trả về. */
 export interface TestExhibit {
   id: string;
   roomId: string;
-  roomName: string;
-  name: string;
-  nameVi: string;
-  nameEn: string;
-  descriptionVi: string;
-  descriptionEn: string;
-  displayOrder: number;
-  status: 'draft' | 'in_review' | 'approved' | 'rejected';
+  status: 'draft' | 'published' | 'archived';
   visibility: 'visible' | 'hidden';
   version: number;
-  hasDraftRevision: boolean;
-  publishedRevisionId?: string;
-  latestRevisionId?: string;
+  displayOrder: number;
+  publishedRevisionId: string | null;
+  currentRevisionNo: number;
+  revisionState: 'draft' | 'in_review' | 'approved' | 'rejected';
+  content: {
+    name: { vi: string; en: string };
+    description: { vi: string; en: string };
+    position: { x: number; y: number; z: number };
+  };
+  hotspotsCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
+
+const NOW = new Date().toISOString();
 
 export const initialTestExhibits: TestExhibit[] = [
   {
     id: 'exhibit-001',
     roomId: 'room-001',
-    roomName: 'Phòng Lịch Sử Kháng Chiến',
-    name: 'Súng Trường K54',
-    nameVi: 'Súng Trường K54',
-    nameEn: 'K54 Rifle',
-    descriptionVi: 'Vũ khí tiêu chuẩn của lực lượng quân đội.',
-    descriptionEn: 'Standard military rifle used during wartime.',
-    displayOrder: 1,
     status: 'draft',
     visibility: 'visible',
     version: 1,
-    hasDraftRevision: true,
-    latestRevisionId: 'rev-001',
+    displayOrder: 1,
+    publishedRevisionId: null,
+    currentRevisionNo: 1,
+    revisionState: 'draft',
+    content: {
+      name: { vi: 'Súng Trường K54', en: 'K54 Rifle' },
+      description: { vi: 'Vũ khí tiêu chuẩn của lực lượng quân đội.', en: 'Standard military rifle used during wartime.' },
+      position: { x: 0, y: 0, z: 0 },
+    },
+    hotspotsCount: 0,
+    createdAt: NOW,
+    updatedAt: NOW,
   },
 ];
 
@@ -42,23 +51,7 @@ export async function installCmsExhibitsApi(page: Page, customExhibits: TestExhi
   const writes: Array<{ method: string; path: string; data?: unknown }> = [];
 
   // Auth permissions
-  await page.route('**/api/auth/me', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        success: true,
-        data: {
-          id: 'admin-user-id',
-          email: 'admin@aura.local',
-          displayName: 'Administrator',
-          roles: ['admin'],
-          permissions: ['exhibit:read', 'exhibit:create', 'exhibit:update', 'exhibit:delete', 'revision:submit', 'revision:publish', 'revision:reject', 'revision:hide', 'room:read'],
-        },
-        message: null,
-      }),
-    });
-  });
+  await installCmsSession(page, ['exhibit:read', 'exhibit:create', 'exhibit:update', 'exhibit:delete', 'revision:submit', 'revision:publish', 'revision:reject', 'revision:hide', 'room:read']);
 
   // Rooms for select options
   await page.route('**/api/admin/rooms*', async (route) => {
@@ -91,15 +84,15 @@ export async function installCmsExhibitsApi(page: Page, customExhibits: TestExhi
   });
 
   // Exhibits listing & creating
-  await page.route('**/api/admin/exhibits*', async (route) => {
+  await page.route('**/api/admin/exhibits**', async (route) => {
     const url = new URL(route.request().url());
     const method = route.request().method();
 
-    if (method === 'GET' && !url.pathname.includes('/revisions') && !url.pathname.includes('/preview')) {
+    if (method === 'GET' && url.pathname.endsWith('/admin/exhibits')) {
       const q = url.searchParams.get('q')?.toLowerCase() || '';
       let filtered = exhibits;
       if (q) {
-        filtered = filtered.filter((e) => e.nameVi.toLowerCase().includes(q) || e.nameEn.toLowerCase().includes(q));
+        filtered = filtered.filter((e) => e.content.name.vi.toLowerCase().includes(q) || e.content.name.en.toLowerCase().includes(q));
       }
 
       await route.fulfill({
@@ -120,20 +113,15 @@ export async function installCmsExhibitsApi(page: Page, customExhibits: TestExhi
       writes.push({ method: 'POST', path: '/admin/exhibits', data: body });
 
       const newExhibit: TestExhibit = {
+        ...initialTestExhibits[0],
         id: `exhibit-${Date.now()}`,
         roomId: body.roomId,
-        roomName: 'Phòng Lịch Sử Kháng Chiến',
-        name: body.content?.name?.vi || 'Hiện vật mới',
-        nameVi: body.content?.name?.vi || 'Hiện vật mới',
-        nameEn: body.content?.name?.en || 'New Exhibit',
-        descriptionVi: body.content?.description?.vi || '',
-        descriptionEn: body.content?.description?.en || '',
-        displayOrder: body.displayOrder || 1,
-        status: 'draft',
-        visibility: 'visible',
-        version: 1,
-        hasDraftRevision: true,
-        latestRevisionId: `rev-${Date.now()}`,
+        displayOrder: body.displayOrder ?? 1,
+        content: {
+          name: { vi: body.name?.vi ?? '', en: body.name?.en ?? '' },
+          description: { vi: body.description?.vi ?? '', en: body.description?.en ?? '' },
+          position: { x: 0, y: 0, z: 0 },
+        },
       };
       exhibits.unshift(newExhibit);
 
@@ -151,8 +139,7 @@ export async function installCmsExhibitsApi(page: Page, customExhibits: TestExhi
       writes.push({ method: 'POST', path: `/admin/exhibits/${id}/submit-review` });
       const ex = exhibits.find((e) => e.id === id);
       if (ex) {
-        ex.status = 'in_review';
-        ex.hasDraftRevision = false;
+        ex.revisionState = 'in_review';
       }
       await route.fulfill({
         status: 200,
@@ -162,7 +149,7 @@ export async function installCmsExhibitsApi(page: Page, customExhibits: TestExhi
       return;
     }
 
-    await route.continue();
+    await route.fallback();
   });
 
   return { getExhibits: () => exhibits, writes };
