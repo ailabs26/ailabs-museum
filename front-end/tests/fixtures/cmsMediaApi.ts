@@ -61,11 +61,11 @@ export async function installCmsMediaApi(page: Page, customMedia: TestMediaItem[
   }));
 
   // GET & POST upload
-  await page.route('**/api/admin/media*', async (route) => {
+  await page.route('**/api/admin/media**', async (route) => {
     const method = route.request().method();
     const url = new URL(route.request().url());
 
-    if (method === 'GET') {
+    if (method === 'GET' && url.pathname.endsWith('/admin/media')) {
       const q = url.searchParams.get('q')?.toLowerCase() || '';
       let filtered = mediaList;
       if (q) {
@@ -111,7 +111,7 @@ export async function installCmsMediaApi(page: Page, customMedia: TestMediaItem[
       return;
     }
 
-    await route.continue();
+    await route.fallback();
   });
 
   // DELETE & PATCH /api/admin/media/:id
@@ -159,7 +159,7 @@ export async function installCmsMediaApi(page: Page, customMedia: TestMediaItem[
       return;
     }
 
-    await route.continue();
+    await route.fallback();
   });
 
   return { getMedia: () => mediaList, writes };

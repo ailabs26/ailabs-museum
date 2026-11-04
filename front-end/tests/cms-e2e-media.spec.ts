@@ -24,7 +24,7 @@ test.describe('E2E: Quản lý Thư viện Media & Quy tắc xóa BR-21', () => 
     const row = page.getByRole('row').filter({ hasText: 'anh-hien-vat-dong-son.png' });
     await row.getByRole('button', { name: 'Sửa thông tin' }).click();
 
-    const drawer = page.getByRole('dialog');
+    const drawer = page.getByRole('dialog', { name: 'Thông tin media' });
     await expect(drawer).toBeVisible();
 
     // Cập nhật tác giả và nguồn gốc

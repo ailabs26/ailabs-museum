@@ -100,7 +100,7 @@ export async function installCmsRoomsApi(page: Page, customRooms: TestRoom[] = i
       return;
     }
 
-    await route.continue();
+    await route.fallback();
   });
 
   // PATCH / DELETE /api/admin/rooms/:id
@@ -137,7 +137,7 @@ export async function installCmsRoomsApi(page: Page, customRooms: TestRoom[] = i
       return;
     }
 
-    await route.continue();
+    await route.fallback();
   });
 
   return { getRooms: () => rooms, writes };

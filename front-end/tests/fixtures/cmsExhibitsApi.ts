@@ -47,7 +47,7 @@ export const initialTestExhibits: TestExhibit[] = [
 ];
 
 export async function installCmsExhibitsApi(page: Page, customExhibits: TestExhibit[] = initialTestExhibits) {
-  const exhibits: TestExhibit[] = [...customExhibits];
+  const exhibits: TestExhibit[] = structuredClone(customExhibits);
   const writes: Array<{ method: string; path: string; data?: unknown }> = [];
 
   // Auth permissions

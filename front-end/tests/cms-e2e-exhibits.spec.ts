@@ -38,7 +38,11 @@ test.describe('E2E: Quản lý Hiện vật & Phiên bản (Exhibits & Revisions
     await expect(page.getByRole('table').getByText('Mũ Tai Bèo Bộ Đội')).toBeVisible();
 
     const postCall = writes.find((w) => w.method === 'POST' && w.path === '/admin/exhibits');
-    expect(postCall).toBeTruthy();
+    expect(postCall?.data).toMatchObject({
+      roomId: 'room-001',
+      name: { vi: 'Mũ Tai Bèo Bộ Đội', en: 'Vietnamese Flap Cap' },
+      description: { vi: 'Trang bị đặc trưng của quân giải phóng.', en: 'Iconic gear of liberation forces.' },
+    });
   });
 
   test('Gửi yêu cầu kiểm duyệt phiên bản nháp', async ({ page }) => {
