@@ -5,11 +5,13 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { TrustProxy } from './config/app.config';
 import { PermissionDeniedFilter } from './modules/audit/filters/permission-denied.filter';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { SECURITY_HEADERS } from './common/security/security-headers';
 import { MEDIA_DELIVERY_ROUTE } from './modules/media/controllers/media-delivery.controller';
 
 async function bootstrap() {
@@ -18,6 +20,9 @@ async function bootstrap() {
 
   // Sau reverse proxy: lấy IP client thật từ X-Forwarded-For cho rate limit, phiên, audit (TRUST_PROXY).
   app.set('trust proxy', config.getOrThrow<TrustProxy>('app.trustProxy'));
+
+  // Header bảo mật cho mọi response, kể cả lỗi và Swagger; đăng ký trước mọi route.
+  app.use(helmet(SECURITY_HEADERS));
 
   // Mọi API dưới /api (xem 06-api-contract.md). Riêng file media giữ URL /media/... (ngoài
   // prefix) — được phân phối có kiểm soát bởi MediaDeliveryController.
