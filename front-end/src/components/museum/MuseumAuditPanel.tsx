@@ -26,10 +26,12 @@ export function MuseumAuditPanel({ isSceneOpen, containerRef }: { isSceneOpen: b
   };
   const update = <Key extends keyof AuditMetadata>(key: Key, value: AuditMetadata[Key]) => setMetadata(previous => ({ ...previous, [key]: value }));
   return createPortal(<Paper role="group" aria-label="Performance audit" withBorder shadow="sm" p="xs"
-    style={{ position: 'fixed', zIndex: 1500, top: 95, right: 8, width: 'min(300px, calc(100vw - 16px))', maxHeight: 'calc(100dvh - 110px)', overflowY: 'auto' }}>
+    style={{ position: 'fixed', zIndex: 1500, top: isCollapsed ? 4 : 95, right: isCollapsed ? undefined : 8,
+      left: isCollapsed ? '50%' : undefined, transform: isCollapsed ? 'translateX(-50%)' : undefined,
+      width: isCollapsed ? 'auto' : 'min(300px, calc(100vw - 16px))', maxHeight: 'calc(100dvh - 110px)', overflowY: 'auto' }}>
     <Group justify="space-between" wrap="nowrap">
-      <Text size="sm" fw={700}>Performance audit</Text>
-      <Button size="compact-xs" variant="default" onClick={() => setIsCollapsed(value => !value)} aria-label={isCollapsed ? 'Mở audit' : 'Thu gọn audit'}>{isCollapsed ? 'Mở' : 'Thu gọn'}</Button>
+      {!isCollapsed && <Text size="sm" fw={700}>Performance audit</Text>}
+      <Button size="compact-xs" variant="default" style={{ minWidth: 44, minHeight: 44 }} onClick={() => setIsCollapsed(value => !value)} aria-label={isCollapsed ? 'Mở audit' : 'Thu gọn audit'}>{isCollapsed ? 'Audit' : 'Thu gọn'}</Button>
     </Group>
     {!isCollapsed && <Stack gap={6} mt={6}>
       <Group grow>

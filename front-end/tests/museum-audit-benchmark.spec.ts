@@ -9,7 +9,7 @@ import { installRendererProbe, readRendererProbe, waitForGallerySurfaces, waitFo
 import { getAuditNavigationInput } from './fixtures/museumAuditRoute';
 
 test.skip(process.env.MUSEUM_HARDWARE_AUDIT !== '1', 'Manual hardware audit only; never an FPS gate in CI/SwiftShader.');
-test.use({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+test.use({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, actionTimeout: 15_000 });
 
 function metadata(scenario: string, kind: AuditMetadata['kind'] = 'continuous'): AuditMetadata {
   return { buildSha: process.env.MUSEUM_AUDIT_SHA ?? '', device: process.env.MUSEUM_AUDIT_DEVICE ?? '',

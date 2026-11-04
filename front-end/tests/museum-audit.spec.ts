@@ -49,6 +49,9 @@ test('opt-in exports actual submissions, stays idle and releases renderer observ
   await waitForGallerySurfaces(page);
   await waitForRendererIdle(page);
   await expect.poll(() => page.evaluate(() => window.museumAudit!.state().attachedRenderers)).toBe(1);
+  await panel.getByRole('button', { name: 'Thu gọn audit' }).click();
+  await page.getByRole('button', { name: 'Góc nhìn ban đầu', exact: true }).click({ timeout: 3000 });
+  await panel.getByRole('button', { name: 'Mở audit' }).click();
   await panel.getByRole('button', { name: 'Stop', exact: true }).click();
   const raw = await page.evaluate(() => window.museumAudit!.snapshot());
   expect(museumAuditRunSchema.safeParse(raw).success).toBe(true);
