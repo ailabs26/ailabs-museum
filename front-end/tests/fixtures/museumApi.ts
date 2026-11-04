@@ -13,7 +13,18 @@ export async function installMuseumApi(page: Page) {
   await page.route('**/api/auth/me', (route) => fulfillMuseum(route, { success: false, data: null, message: 'Unauthenticated' }, 401));
   await page.route('**/api/auth/refresh', (route) => fulfillMuseum(route, { success: false, data: null, message: 'Unauthenticated' }, 401));
   await page.route('**/api/rooms**', async (route) => {
-    const path = new URL(route.request().url()).pathname;
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+    if (path === '/api/rooms/search') {
+      // Tìm toàn bảo tàng trên dữ liệu mẫu; không tính vào `requests` (các test đó đếm request tải phòng).
+      const q = (url.searchParams.get('q') ?? '').toLowerCase();
+      const page = Number(url.searchParams.get('page') ?? 1);
+      const pageSize = Number(url.searchParams.get('pageSize') ?? 12);
+      const found = [roomA, roomB, roomC].flatMap((room) => room.exhibits)
+        .filter((exhibit) => `${exhibit.name} ${exhibit.description}`.toLowerCase().includes(q));
+      await fulfillMuseum(route, { ...envelope(found.slice((page - 1) * pageSize, page * pageSize)), meta: { page, pageSize, total: found.length } });
+      return;
+    }
     requests.push(path);
     const slug = decodeURIComponent(path.slice('/api/rooms/'.length));
     const details = { sculpture: roomA, ceramics: roomB, empty: roomC };
