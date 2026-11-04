@@ -17,6 +17,7 @@ import type { XrSessionController, XrSnapshot } from '@/helpers/xrSession';
 import classes from './MuseumPage.module.css';
 
 const LazyMuseumScene = lazy(() => import('@/components/MuseumScene').then((module) => ({ default: module.MuseumScene })));
+const LazyMuseumAuditPanel = lazy(() => import('@/components/museum/MuseumAuditPanel').then(module => ({ default: module.MuseumAuditPanel })));
 const exhibitIdSchema = z.string().uuid();
 
 export function MuseumPage() {
@@ -193,6 +194,9 @@ export function MuseumPage() {
         {reportModal}
       </ImmersiveTour>}
       {!isSceneOpen && reportModal}
+      {searchParams.get('museumAudit') === '1' && <Suspense fallback={null}>
+        <LazyMuseumAuditPanel isSceneOpen={isSceneOpen} containerRef={containerRef} />
+      </Suspense>}
     </Container>
   );
 }
