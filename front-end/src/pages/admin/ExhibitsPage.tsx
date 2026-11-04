@@ -958,7 +958,7 @@ export function ExhibitsPage() {
                 <ActionIcon
                   variant="subtle"
                   color="yellow"
-                  aria-label={`Gửi kiểm duyệt hiện vật ${getDisplayText(r.content.name)}`}
+                  aria-label={`Gửi kiểm duyệt hiện vật ${getDisplayText(r.content.name) || 'chưa đặt tên'}`}
                   onClick={() => handleSubmitReview(r)}
                 >
                   <IconSend size={18} />
@@ -1154,7 +1154,7 @@ export function ExhibitsPage() {
                       </Tooltip>
                     )}
                     {canSubmit && (r.revisionState === 'draft' || r.revisionState === 'rejected') && (
-                      <Tooltip label="Gửi kiểm duyệt"><ActionIcon variant="subtle" color="yellow" aria-label={`Gửi kiểm duyệt hiện vật ${getDisplayText(r.content.name)}`} onClick={() => handleSubmitReview(r)}><IconSend size={18} /></ActionIcon></Tooltip>
+                      <Tooltip label="Gửi kiểm duyệt"><ActionIcon variant="subtle" color="yellow" aria-label={`Gửi kiểm duyệt hiện vật ${getDisplayText(r.content.name) || 'chưa đặt tên'}`} onClick={() => handleSubmitReview(r)}><IconSend size={18} /></ActionIcon></Tooltip>
                     )}
                     {canHide && r.visibility === 'visible' && r.publishedRevisionId && (
                       <Tooltip label="Ẩn khỏi bảo tàng"><ActionIcon variant="subtle" color="gray" disabled={isActionBusy} onClick={() => handleHide(r)}><IconEyeOff size={18} /></ActionIcon></Tooltip>
