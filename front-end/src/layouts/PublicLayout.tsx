@@ -4,6 +4,7 @@ import { IconCube, IconShieldLock } from '@tabler/icons-react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import auraMark from '@/assets/aura-mark.svg';
 import { useScrolled } from '@/hooks/useScrolled';
+import { PublicLocaleProvider } from '@/contexts/PublicLocaleContext';
 import { ThemeToggle } from '@/shared/components/layout/ThemeToggle';
 import classes from './PublicLayout.module.css';
 
@@ -19,6 +20,7 @@ export function PublicLayout() {
   const [drawer, { open, close }] = useDisclosure(false);
 
   return (
+    <PublicLocaleProvider>
     <div className={classes.layout}>
       <a className={classes.skipLink} href="#public-content">Đến nội dung chính</a>
       <header className={`${classes.header} ${scrolled ? classes.headerScrolled : ''}`}>
@@ -97,5 +99,6 @@ export function PublicLayout() {
         </Container>
       </footer>
     </div>
+    </PublicLocaleProvider>
   );
 }

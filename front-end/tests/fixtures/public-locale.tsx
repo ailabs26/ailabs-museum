@@ -2,9 +2,11 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@mantine/core/styles.css';
 import { Button, MantineProvider, Stack, Text } from '@mantine/core';
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { theme } from '@/app/theme';
 import { PublicLocaleProvider } from '@/contexts/PublicLocaleContext';
 import { usePublicLocale } from '@/hooks/usePublicLocale';
+import { PublicLayout } from '@/layouts/PublicLayout';
 
 function LocaleConsumer({ name }: { name: string }) {
   const { locale } = usePublicLocale();
@@ -36,4 +38,34 @@ function PublicLocaleFixture() {
   );
 }
 
-createRoot(document.getElementById('root')!).render(<StrictMode><PublicLocaleFixture /></StrictMode>);
+function LayoutLocaleRoute({ name, next }: { name: string; next: string }) {
+  const { locale, setLocale } = usePublicLocale();
+  return (
+    <Stack p="md">
+      <Text data-testid={`layout-locale-${name}`}>{locale}</Text>
+      <Button onClick={() => setLocale('en')}>Set layout locale to English</Button>
+      <Link to={next}>Go to {next} layout route</Link>
+    </Stack>
+  );
+}
+
+function PublicLayoutFixture() {
+  return (
+    <MemoryRouter initialEntries={['/first']}>
+      <Routes>
+        <Route element={<PublicLayout />}>
+          <Route path="/first" element={<LayoutLocaleRoute name="first" next="/second" />} />
+          <Route path="/second" element={<LayoutLocaleRoute name="second" next="/first" />} />
+        </Route>
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <MantineProvider theme={theme}>
+      {new URLSearchParams(location.search).has('layout') ? <PublicLayoutFixture /> : <PublicLocaleFixture />}
+    </MantineProvider>
+  </StrictMode>,
+);
