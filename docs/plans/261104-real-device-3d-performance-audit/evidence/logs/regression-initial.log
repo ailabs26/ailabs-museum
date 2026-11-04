@@ -1,0 +1,196 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test museum-tour.spec.ts museum-performance.spec.ts museum-resource-budget.spec.ts museum-lifecycle.spec.ts museum-fullscreen.spec.ts museum-immersive-ui.spec.ts museum-navigation.spec.ts museum-interaction.spec.ts museum-camera.spec.ts museum-gallery.spec.ts museum-xr.spec.ts museum-glb.spec.ts tour-2d-fallback.spec.ts museum-audit.spec.ts museum-audit-benchmark.spec.ts --reporter=line --output=test-results/audit-regression
+
+
+[WebServer] (node:20704) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:26192) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 96 tests using 1 worker
+
+[1/96] tests\museum-audit-benchmark.spec.ts:39:1 › physical desktop fixture: repeated steady navigation and ten-minute session
+[2/96] tests\museum-audit-benchmark.spec.ts:110:1 › physical desktop fixture: startup, interactions and repeated lifecycle checkpoints
+
+(node:9840) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[3/96] tests\museum-audit.spec.ts:9:1 › audit off loads no instrumentation, records nothing and preserves demand idle
+[4/96] tests\museum-audit.spec.ts:25:1 › opt-in exports actual submissions, stays idle and releases renderer observers across rooms
+[5/96] tests\museum-audit.spec.ts:72:1 › audit controls and navigation remain reachable on emulated touch after orientation change
+[6/96] tests\museum-camera.spec.ts:7:1 › focus safely frames centre, wall and corner exhibits without moving their coordinates
+[7/96] tests\museum-camera.spec.ts:25:1 › outside-room or below-floor exhibits have no camera focus destination
+[8/96] tests\museum-fullscreen.spec.ts:19:1 › opening fills the viewport and detail selection never shrinks Canvas
+[9/96] tests\museum-fullscreen.spec.ts:42:1 › three open/close cycles restore scroll, focus, background and release renderers
+[10/96] tests\museum-fullscreen.spec.ts:72:1 › rejected native fullscreen keeps a usable overlay
+[11/96] tests\museum-fullscreen.spec.ts:83:1 › a late native fullscreen grant after closing is released without reopening the tour
+[12/96] tests\museum-fullscreen.spec.ts:111:1 › external native fullscreen exit reconciles tour state
+[13/96] tests\museum-fullscreen.spec.ts:121:1 › closing preserves selected exhibit for the readable page
+[14/96] tests\museum-fullscreen.spec.ts:132:1 › room loading preserves native fullscreen and its reachable exit
+[15/96] tests\museum-fullscreen.spec.ts:148:1 › Escape can close the tour after an XR scene unmounts during room loading
+[16/96] tests\museum-gallery.spec.ts:6:1 › gallery uses local PBR finishes and shared instanced architecture
+[17/96] tests\museum-gallery.spec.ts:46:1 › contact shadow outside the plinth leaves walkable floor unselected
+[18/96] tests\museum-gallery.spec.ts:64:1 › photo exports a PNG matching the fullscreen drawing buffer
+[19/96] tests\museum-gallery.spec.ts:82:1 › decoded gallery finishes reach the GPU without a camera action
+[20/96] tests\museum-gallery.spec.ts:97:1 › late surface downloads repaint an idle room without camera input
+[21/96] tests\museum-glb.spec.ts:13:1 › permission failures and corrupt GLBs stay isolated and can be retried without crashing the room
+[22/96] tests\museum-glb.spec.ts:39:1 › switching rooms while two GLBs are loading cancels the queue and keeps the next room usable
+[23/96] tests\museum-glb.spec.ts:64:1 › background clicks clear selection but dragging the background does not
+[24/96] tests\museum-glb.spec.ts:80:41 › finishing a real GLB download respects an earlier camera reset
+[25/96] tests\museum-glb.spec.ts:80:41 › finishing a real GLB download respects an earlier camera drag
+[26/96] tests\museum-immersive-ui.spec.ts:11:3 › immersive controls remain reachable at 1440x900
+[27/96] tests\museum-immersive-ui.spec.ts:11:3 › immersive controls remain reachable at 320x568
+[28/96] tests\museum-immersive-ui.spec.ts:11:3 › immersive controls remain reachable at 390x844
+[29/96] tests\museum-immersive-ui.spec.ts:11:3 › immersive controls remain reachable at 844x390
+[30/96] tests\museum-immersive-ui.spec.ts:47:1 › report modal owns Escape before exhibit and tour
+[31/96] tests\museum-interaction.spec.ts:10:1 › short mobile viewport keeps the gallery and touch controls at the intended height
+[32/96] tests\museum-interaction.spec.ts:19:1 › keyboard catalogue selection has one pressed item and clears on room change
+[33/96] tests\museum-interaction.spec.ts:34:1 › detail uses published text, stays nonmodal and Escape restores its trigger
+[34/96] tests\museum-interaction.spec.ts:55:1 › room changes and failed refresh remove selected details
+[35/96] tests\museum-interaction.spec.ts:68:1 › real scene picking selects the plinth and hover gives pointer feedback
+[36/96] tests\museum-interaction.spec.ts:83:1 › selecting an exhibit focuses the camera and reset retains published detail
+[37/96] tests\museum-interaction.spec.ts:119:1 › reselecting the dock exhibit refocuses after manual camera input
+[38/96] tests\museum-interaction.spec.ts:142:1 › outside-room exhibits retain detail but cannot focus the camera outside the gallery
+[39/96] tests\museum-interaction.spec.ts:152:1 › narrow screens keep controls and detail over the fullscreen scene
+[40/96] tests\museum-interaction.spec.ts:180:1 › dragging a display navigates without selecting it
+[41/96] tests\museum-interaction.spec.ts:193:1 › focus settles, manual input cancels motion and unmount stays usable
+[42/96] tests\museum-interaction.spec.ts:235:3 › touch interaction › a real touch tap selects the display and mobile detail remains readable
+[43/96] tests\museum-interaction.spec.ts:249:1 › desktop detail leaves the scene visible and long published text wraps
+[44/96] tests\museum-interaction.spec.ts:277:1 › selecting a lower catalogue card reveals focused detail and closing reveals the trigger
+[45/96] tests\museum-interaction.spec.ts:291:1 › automatic dark scheme preserves contrast in the tour and warm detail surfaces
+[46/96] tests\museum-interaction.spec.ts:317:1 › clicking a visible annotation selects its exhibit above nearer geometry
+[47/96] tests\museum-lifecycle.spec.ts:10:1 › idle scene stops GPU draw calls and repeated start/stop stays usable
+[48/96] tests\museum-lifecycle.spec.ts:46:1 › leaving the tour releases its canvas and returning starts in DOM mode
+  1) tests\museum-lifecycle.spec.ts:46:1 › leaving the tour releases its canvas and returning starts in DOM mode 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('canvas')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" locator('canvas') with timeout 5000ms
+      - waiting for locator('canvas')
+        12 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      50 |   await exitMuseumIfOpen(page);
+      51 |   await page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true }).click();
+    > 52 |   await expect(page.locator('canvas')).toHaveCount(0);
+         |                                        ^
+      53 |   await page.getByRole('banner').getByRole('link', { name: 'Tham quan 3D', exact: true }).click();
+      54 |   await expect(page.getByRole('button', { name: 'Mở phòng 3D' })).toBeVisible();
+      55 |   await expect(page.locator('canvas')).toHaveCount(0);
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-lifecycle.spec.ts:52:40
+
+    Error Context: test-results\audit-regression\museum-lifecycle-leaving-t-2015a-eturning-starts-in-DOM-mode\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\audit-regression\museum-lifecycle-leaving-t-2015a-eturning-starts-in-DOM-mode\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\audit-regression\museum-lifecycle-leaving-t-2015a-eturning-starts-in-DOM-mode\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:26044) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[49/96] tests\museum-navigation.spec.ts:27:1 › WASD walks, Shift sprints, focus loss stops input and idle rendering sleeps
+[50/96] tests\museum-navigation.spec.ts:48:1 › drag look changes orientation without selecting, returning drag stays rejected, tap still works
+[51/96] tests\museum-navigation.spec.ts:60:1 › walking cannot pass through the central plinth; manual movement interrupts focus and reset recovers
+[52/96] tests\museum-navigation.spec.ts:73:1 › Shift increases walking speed; narrow mouse viewport never shows a joystick
+[53/96] tests\museum-navigation.spec.ts:87:1 › neutral viewport resize preserves focus instead of turning it into manual exploration
+[54/96] tests\museum-navigation.spec.ts:95:1 › reduced-motion focus completes without waiting for a future render frame
+[55/96] tests\museum-navigation.spec.ts:117:1 › a selected delayed GLB still reframes after resize and remains fully visible in portrait
+[56/96] tests\museum-navigation.spec.ts:148:3 › touch exploration › analog joystick and look work simultaneously, release/cancel stops, UI does not rotate camera
+[57/96] tests\museum-navigation.spec.ts:178:52 › touch exploration › multitouch release joystick keeps the other pointer independent
+[58/96] tests\museum-navigation.spec.ts:178:52 › touch exploration › multitouch release look keeps the other pointer independent
+[59/96] tests\museum-performance.spec.ts:7:1 › production scene resource and lifecycle profile
+[60/96] tests\museum-performance.spec.ts:75:1 › selecting an exhibit updates its plaque without replacing GPU textures
+[61/96] tests\museum-resource-budget.spec.ts:5:1 › static gallery stays within the reduced draw and resource budgets
+[62/96] tests\museum-resource-budget.spec.ts:24:1 › repeated room switches release previous contexts and keep current-room resources bounded
+[63/96] tests\museum-tour.spec.ts:11:1 › opening and stopping the scene keep keyboard focus in the tour
+[64/96] tests\museum-tour.spec.ts:19:1 › gallery resizes on mobile and caps the drawing buffer
+[65/96] tests\museum-tour.spec.ts:34:1 › zoom stops at both safe boundaries
+[66/96] tests\museum-tour.spec.ts:50:1 › reduced motion stops camera inertia when the drag ends
+[67/96] tests\museum-tour.spec.ts:65:1 › unrecovered context exits the renderer after its deadline and focuses a readable fallback
+[68/96] tests\museum-tour.spec.ts:83:1 › unavailable WebGL preserves the API catalogue
+[69/96] tests\museum-tour.spec.ts:97:1 › failed scene chunk leaves navigation and catalogue available
+[70/96] tests\museum-tour.spec.ts:106:1 › focused keyboard navigation and reset work without trapping focus
+[71/96] tests\museum-tour.spec.ts:132:1 › mouse navigation changes the rendered view
+[72/96] tests\museum-tour.spec.ts:146:1 › API catalogue stays readable without starting WebGL
+[73/96] tests\museum-tour.spec.ts:158:1 › scene starts on demand and releases canvas when stopped
+[74/96] tests\museum-tour.spec.ts:170:1 › HTML entry and SPA route expose the museum with public navigation
+[75/96] tests\museum-xr.spec.ts:14:1 › decorative floor joints do not block teleport along the central aisle
+  2) tests\museum-xr.spec.ts:14:1 › decorative floor joints do not block teleport along the central aisle 
+
+    Error: expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 4
+    Received: 5.8
+
+    Expected precision:    1
+    Expected difference: < 0.05
+    Received difference:   1.7999999999999998
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      23 |     const camera = window.museumProbe.at(-1)!.camera!.deref()!;
+      24 |     return camera.parent!.position.z;
+    > 25 |   })).toBeCloseTo(4, 1);
+         |       ^
+      26 | });
+      27 | test('2D catalogue renders published images and permits deliberate 3D retry without refetch or selection loss', async ({ page }) => {
+      28 |   let requests = 0;
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-xr.spec.ts:25:7
+
+    Error Context: test-results\audit-regression\museum-xr-decorative-floor-af6d9-ort-along-the-central-aisle\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\audit-regression\museum-xr-decorative-floor-af6d9-ort-along-the-central-aisle\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\audit-regression\museum-xr-decorative-floor-af6d9-ort-along-the-central-aisle\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:5720) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[76/96] tests\museum-xr.spec.ts:27:1 › 2D catalogue renders published images and permits deliberate 3D retry without refetch or selection loss
+[77/96] tests\museum-xr.spec.ts:56:1 › unsupported XR keeps the existing 3D scene and web navigation
+[78/96] tests\museum-xr.spec.ts:65:1 › a supported but refused VR request preserves canvas, selection and permits retry
+[79/96] tests\museum-xr.spec.ts:81:1 › actual context restores the same canvas and keeps logical selection
+[80/96] tests\museum-xr.spec.ts:105:1 › simulated native XR renders stereo, selects once, teleports, snap-turns and restores web camera without reloading GLBs
+[81/96] tests\museum-xr.spec.ts:166:1 › repeated actual context losses exhaust recovery into stable readable 2D
+[82/96] tests\museum-xr.spec.ts:188:1 › native session end during initialization never resurrects XR or throws a renderer event error
+[83/96] tests\museum-xr.spec.ts:198:1 › native renderer binding failure recreates only Canvas and retains cached GLBs and selection
+[84/96] tests\museum-xr.spec.ts:213:1 › actual context loss during XR ends the session and restores normal 3D without automatic re-entry
+[85/96] tests\museum-xr.spec.ts:238:1 › a controller-free session can gaze at the in-world Exit without moving the origin
+[86/96] tests\museum-xr.spec.ts:263:1 › persistent WebGL failure exhausts only two deliberate retries and leaves readable 2D
+[87/96] tests\tour-2d-fallback.spec.ts:8:1 › [F02] panel link follows selected exhibit and navigates to readable 2D detail
+[88/96] tests\tour-2d-fallback.spec.ts:28:5 › [F03] webgl failure offers contextual 2D link with selection=false
+[89/96] tests\tour-2d-fallback.spec.ts:28:5 › [F03] webgl failure offers contextual 2D link with selection=true
+[90/96] tests\tour-2d-fallback.spec.ts:28:5 › [F03] context failure offers contextual 2D link with selection=false
+[91/96] tests\tour-2d-fallback.spec.ts:28:5 › [F03] context failure offers contextual 2D link with selection=true
+[92/96] tests\tour-2d-fallback.spec.ts:28:5 › [F03] chunk failure offers contextual 2D link with selection=false
+[93/96] tests\tour-2d-fallback.spec.ts:28:5 › [F03] chunk failure offers contextual 2D link with selection=true
+[94/96] tests\tour-2d-fallback.spec.ts:68:1 › [F04] missing WebGL cancels pending models and focuses collection after deliberate navigation
+[95/96] tests\tour-2d-fallback.spec.ts:105:1 › [F04] unrecovered context retains selection and releases in-flight GLBs after the bounded recovery deadline
+[96/96] tests\tour-2d-fallback.spec.ts:140:1 › [F04] fallback text and links reflow in light/dark and remain usable after API refresh failure
+  2 failed
+    tests\museum-lifecycle.spec.ts:46:1 › leaving the tour releases its canvas and returning starts in DOM mode 
+    tests\museum-xr.spec.ts:14:1 › decorative floor joints do not block teleport along the central aisle 
+  2 skipped
+  92 passed (10.3m)

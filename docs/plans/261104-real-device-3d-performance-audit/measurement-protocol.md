@@ -32,3 +32,47 @@ Không mở profiler nặng trong run chính; so A/B cùng tuyến opt-in on/off
 ## Phân tích và lưu bằng chứng
 
 Export raw sau Stop, đặt tên `<device>-<scenario>-<orientation>-run<n>.json`. Không sửa raw; nếu metadata sai chạy lại hoặc ghi correction riêng. JSON chỉ có counters/metadata, không model URLs/token/binary; notes do operator nhập cần kiểm tra trước commit. Lưu trace/ảnh profiler thật kèm build SHA. Dùng CLI được mô tả trong README evidence để tái tính; không hard gate60/30 trên SwiftShader/CI. So sánh median/min/max/CV giữa >=3 runs cùng device/scenario/scene/quality/orientation/network; không gộp workload khác.
+
+### Thực hiện trên máy nhóm bằng UI
+
+```powershell
+cd D:\CNPM\ailabs-museum\front-end
+git rev-parse HEAD
+npm.cmd run build
+npm.cmd run preview -- --host 127.0.0.1 --port 4173 --strictPort
+# Terminal khác, sau khi adb devices -l đã xác nhận thiết bị:
+adb reverse tcp:4173 tcp:4173
+adb reverse tcp:3001 tcp:3001
+```
+
+Trên phone mở `http://localhost:4173/tour?museumAudit=1`; điền SHA đã build, model và điều kiện; chọn Target=mobile, Data source=live, Scenario=P03, Workload=continuous. Mở3D, đợi n/n GLB + đủ texture và warmup10s; Start, thu gọn audit, dùng joystick+vuốt30–60s, mở audit, Stop, Export JSON. Không đổi hướng trong steady run; P09 là run riêng. Lặp3 lần và làm lại trên ít nhất ba cấu hình Android. P01 Start trước mở3D và dùng trace cho first frame; dữ liệu timestamp đầu tiên của observer có thể muộn vì lazy attach.
+
+Trường hợp LAN/iOS: build với `VITE_API_BASE_URL` trỏ NestJS `/api` qua HTTPS truy cập được, `VITE_MEDIA_BASE_URL` cho media public. Đây là public frontend config, không đưa credential/backend key vào Vite. Có thể đặt biến chỉ trong terminal build, không chỉnh/commit `.env`. Bắt đầu preview `--host 0.0.0.0` và dùng HTTPS proxy/certificate đã được nhóm cấp. Browser CORS phải được nhóm cấu hình cho đúng origin; Safari Web Inspector cần Mac như hướng dẫn trên.
+
+### CLI và automation fixture desktop
+
+```powershell
+# Từ front-end, Node >=22.18; các đường dẫn phải là raw export thật:
+node scripts/analyze-museum-audit.mjs phone1-P03-run1.json phone1-P03-run2.json phone1-P03-run3.json > phone1-summary.json
+```
+
+Schema raw v1: frames là tuple `[submissionStartMs, renderCallElapsedMs, rendererLifetimeId]`; environment có clock origin/UA/hints/GPU string, events có workload và camera checkpoint scalar, resources có counters/heap1Hz. Tối đa120000 frames,1200 resources,4000 events; bất kỳ droppedSamples>0 làm capture không eligible. Summary không tự chứng nhận thiết bị vật lý hoặc displayed FPS. Group chỉ tổng hợp variance/đủ3 lần từ run eligible; raw run lỗi vẫn được giữ để chẩn đoán. Workload thiếu/thay đổi, GLB chưa đủ hoặc lỗi render, resize/hidden/context loss làm steady run không eligible.
+
+Automation desktop chỉ dùng fixture5 hình khối/0GLB, không được coi là API/live P05:
+
+```powershell
+$env:PLAYWRIGHT_PREVIEW='1'
+$env:CI='1'
+$env:MUSEUM_HARDWARE_AUDIT='1'
+$env:MUSEUM_AUDIT_SHA=(git rev-parse HEAD).Trim() # phải đúng build đã tạo
+$env:MUSEUM_AUDIT_DEVICE='Điền model, CPU/GPU/RAM/OS thực tế'
+$env:MUSEUM_AUDIT_CONDITIONS='Điền network, battery/AC, thermal, power saver, Hz quan sát hoặc unavailable'
+$env:MUSEUM_AUDIT_OUTPUT='D:\CNPM\ailabs-museum\front-end\tmp\my-device-audit'
+$env:MUSEUM_AUDIT_LONG_SESSION='1'
+npm.cmd test -- museum-audit-benchmark.spec.ts --reporter=line
+Remove-Item Env:MUSEUM_HARDWARE_AUDIT,Env:MUSEUM_AUDIT_LONG_SESSION,Env:MUSEUM_AUDIT_SHA,Env:MUSEUM_AUDIT_DEVICE,Env:MUSEUM_AUDIT_CONDITIONS,Env:MUSEUM_AUDIT_OUTPUT,Env:PLAYWRIGHT_PREVIEW,Env:CI
+```
+
+Harness từ chối renderer string software và yêu cầu preview; operator vẫn đối chiếu GPU vật lý/OS. Headless/headed được ghi từ fixture thực. Không chạy regression/build hoặc tác vụ nặng đồng thời. Mỗi P03 warmup10s → Home/reset → settle500ms → capture30s; cả key direction và look cùng dựa trên monotonic elapsed time, camera checkpoint1Hz cho phép đối chiếu tuyến giữa runs. P07 dùng các đoạn60s nối nhau tổng>=600s; không reset room mỗi phút, có vài input-release gaps ngắn khi chuyển đoạn, raw giữ nguyên.
+
+Fixture routing Playwright tắt HTTP cache: “cold-browser-cache” chỉ là clear cache trước page load, và “warm-reopen” là cùng JS/process đã khởi tạo; **không** chứng minh warm HTTP-cache/network performance. `clickToCanvasVisibleMs` là DOM visibility proxy; `clickToVerifiedInteractionMs` là upper bound gồm automation và idle check1s, không phải first presented pixel. Live-device P01/P02 cần trace với cache condition thật như protocol chính.

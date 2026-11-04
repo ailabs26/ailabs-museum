@@ -1,0 +1,59 @@
+
+> aura-museum-web@0.1.0 test:unit
+> vitest run src/helpers/museumAuditMetrics.test.ts
+
+
+ RUN  v2.1.8 D:/CNPM/ailabs-museum/front-end
+
+ ❯ src/helpers/museumAuditMetrics.test.ts (22 tests | 7 failed) 381ms
+   × audit metric contract > rejects same-renderer captures mixing workload/quality/orientation 0 41ms
+     → expected [] to include 'workload-changed'
+   × audit metric contract > rejects same-renderer captures mixing workload/quality/orientation 1 27ms
+     → expected [] to include 'workload-changed'
+   × audit metric contract > rejects same-renderer captures mixing workload/quality/orientation 2 15ms
+     → expected [] to include 'workload-changed'
+   × audit metric contract > rejects same-renderer captures mixing workload/quality/orientation 3 87ms
+     → expected [] to include 'workload-changed'
+   × audit metric contract > rejects same-renderer captures mixing workload/quality/orientation 4 32ms
+     → expected [] to include 'workload-changed'
+   × audit metric contract > rejects same-renderer captures mixing workload/quality/orientation 5 19ms
+     → expected [] to include 'workload-changed'
+   × audit metric contract > requires observed complete GLB workload and rejects known render failure or transient resize 13ms
+     → expected [] to include 'workload-unavailable'
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/helpers/museumAuditMetrics.test.ts > audit metric contract > rejects same-renderer captures mixing workload/quality/orientation 0
+ FAIL  src/helpers/museumAuditMetrics.test.ts > audit metric contract > rejects same-renderer captures mixing workload/quality/orientation 1
+ FAIL  src/helpers/museumAuditMetrics.test.ts > audit metric contract > rejects same-renderer captures mixing workload/quality/orientation 2
+ FAIL  src/helpers/museumAuditMetrics.test.ts > audit metric contract > rejects same-renderer captures mixing workload/quality/orientation 3
+ FAIL  src/helpers/museumAuditMetrics.test.ts > audit metric contract > rejects same-renderer captures mixing workload/quality/orientation 4
+ FAIL  src/helpers/museumAuditMetrics.test.ts > audit metric contract > rejects same-renderer captures mixing workload/quality/orientation 5
+AssertionError: expected [] to include 'workload-changed'
+ ❯ src/helpers/museumAuditMetrics.test.ts:66:44
+     64|     const raw = run(Array<number>(2000).fill(16));
+     65|     raw.events.push({ at: 20_000, type: 'workload', detail: { ...workl…
+     66|     expect(analyzeMuseumAudit(raw).issues).toContain('workload-changed…
+       |                                            ^
+     67|     expect(analyzeMuseumAudit(raw).eligible).toBe(false);
+     68|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/helpers/museumAuditMetrics.test.ts > audit metric contract > requires observed complete GLB workload and rejects known render failure or transient resize
+AssertionError: expected [] to include 'workload-unavailable'
+ ❯ src/helpers/museumAuditMetrics.test.ts:72:63
+     70|   it('requires observed complete GLB workload and rejects known render…
+     71|     const raw = run(Array<number>(2000).fill(16));
+     72|     expect(analyzeMuseumAudit({ ...raw, events: [] }).issues).toContai…
+       |                                                               ^
+     73|     for (const change of [{ expectedGlbAssets: 1 }, { failedGlbAssets:…
+     74|       expect(analyzeMuseumAudit({ ...raw, events: [{ at: 0, type: 'wor…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 15 passed (22)
+   Start at  20:50:00
+   Duration  2.13s (transform 188ms, setup 0ms, collect 387ms, tests 381ms, environment 0ms, prepare 744ms)
+

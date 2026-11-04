@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-04T15:00:53.390Z",
+  "applicationSourceSha": "d4e1d5647a271cdae808ece9e8210ef6fcad2cef",
+  "analysisToolSourceSha": "03a2990e73f0188b487e7ff2d5e3ff3c69d2b0aa",
+  "timezone": "Asia/Saigon",
+  "interpretation": "Checksums preserve artifact integrity, not independent attestation of physical-device provenance. JSON/log byte preservation is enforced by local .gitattributes.",
+  "artifacts": [
+    {
+      "path": "desktop/aborted-at-reset-environment.json",
+      "kind": "supporting-json",
+      "bytes": 1696,
+      "sha256": "49a0fb149134b4f0d49cd05bb2880002c4c2605f80800c4abe6851e08e840302"
+    },
+    {
+      "path": "desktop/analysis.json",
+      "kind": "derived-analysis",
+      "bytes": 16256,
+      "sha256": "0745bed7c05302cb1b565e01d3c070b4c1d8574d6e0ab9c8f62b0dc2abbb3ee0"
+    },
+    {
+      "path": "desktop/derived-trends.json",
+      "kind": "derived-analysis",
+      "bytes": 9228,
+      "sha256": "06fb97e044bb159d38fb55b991993c3e21734668650872748a043a9124e55da6"
+    },
+    {
+      "path": "desktop/desktop-environment.json",
+      "kind": "supporting-json",
+      "bytes": 1696,
+      "sha256": "febf7c4c6fcefeedc1ecac1140199b9c05667cafc3a1727c82777fc370792b45"
+    },
+    {
+      "path": "desktop/desktop-fixture.png",
+      "kind": "screenshot",
+      "bytes": 462322,
+      "sha256": "d01993321cd612b4c1cd1d6b72ca297b067c1f45eec9470b6d05e727406f76c0"
+    },
+    {
+      "path": "desktop/desktop-idle.json",
+      "kind": "raw-render-capture",
+      "bytes": 1313,
+      "sha256": "40a0c920c8070fb291fcf11ded56c52d8c8b5e42a5bb0eed655f1d803c789e95"
+    },
+    {
+      "path": "desktop/desktop-lifecycle.json",
+      "kind": "measured-lifecycle-checkpoints",
+      "bytes": 49656,
+      "sha256": "6d1204d82c24a98b40a7aa097aebf080cb53bde2cc3c64d032b147a1bdc17065"
+    },
+    {
+      "path": "desktop/desktop-P03-profiler-trace.json.gz",
+      "kind": "profiler-trace",
+      "bytes": 2718924,
+      "sha256": "19cc513469e7b3c7403a6d643e2207eb197eb8af0c214d4a1da1c209606f7e89"
+    },
+    {
+      "path": "desktop/desktop-P03-run1.json",
+      "kind": "raw-render-capture",
+      "bytes": 108735,
+      "sha256": "55a5586404ed6159113982facbd01132eb88d032c3eaf7489a89212c68f5fe9a"
+    },
+    {
+      "path": "desktop/desktop-P03-run2.json",
+      "kind": "raw-render-capture",
+      "bytes": 107077,
+      "sha256": "094403d36b14ec39a62ce7cccd9b9357e9b9852386f41d8215129ce03411ca2f"
+    },
+    {
+      "path": "desktop/desktop-P03-run3.json",
+      "kind": "raw-render-capture",
+      "bytes": 110975,
+      "sha256": "c1d796ef3db47d45eedf0f15bada3e3e4374db72c2cbfdfd9540bbfb976d63ac"
+    },
+    {
+      "path": "desktop/desktop-P07-10min.json",
+      "kind": "raw-render-capture",
+      "bytes": 2147513,
+      "sha256": "bd5edcf27b3bb1f67c0dfbb9547257b38995e57ab0bb83deaa44ee66c3930b63"
+    },
+    {
+      "path": "desktop/estimated-footprint.json",
+      "kind": "derived-analysis",
+      "bytes": 4163,
+      "sha256": "3724e6fb898d008082fd7e236675f8ca88dd3f2b40df7313acd73e42e3f5d846"
+    },
+    {
+      "path": "environment-discovery.json",
+      "kind": "supporting-json",
+      "bytes": 2323,
+      "sha256": "d0e60d0000a025c5c40ab5f9dd54b96997889b258b7f26200de70d63847d4abf"
+    },
+    {
+      "path": "logs/audit-panel-final.log",
+      "kind": "verification-log",
+      "bytes": 1116,
+      "sha256": "c06512950fa8db7d5c6aa9a9bb7b201a48fe6adce49a14544b0ddc6857d0d772"
+    },
+    {
+      "path": "logs/audit-panel-red.log",
+      "kind": "verification-log",
+      "bytes": 4820,
+      "sha256": "f599b854a860fe48b8e26fac197e701a12aae9b05d9d95e6e4b5bc637513398f"
+    },
+    {
+      "path": "logs/build.log",
+      "kind": "verification-log",
+      "bytes": 1750,
+      "sha256": "5d6b3fa322afdab02d453bd448f70ef1f8788ae49bb38dcdbea4277da6c9969e"
+    },
+    {
+      "path": "logs/cli-runtime-red.log",
+      "kind": "verification-log",
+      "bytes": 2513,
+      "sha256": "edee2630a93ff5edc081c13a2a12fedd8326542eedf07fceb6aecccbd44984ac"
+    },
+    {
+      "path": "logs/hardware-final.log",
+      "kind": "verification-log",
+      "bytes": 2687,
+      "sha256": "c15f32624eb62aa5b94c9696fe245d01368e2f5e1d0b52f3b0d4a52b0dcd69b0"
+    },
+    {
+      "path": "logs/lint.log",
+      "kind": "verification-log",
+      "bytes": 46,
+      "sha256": "34cc97ed52f215d6a65ec5c70ee79b286016923822c71481a334673cf4bc058c"
+    },
+    {
+      "path": "logs/regression-initial.log",
+      "kind": "verification-log",
+      "bytes": 17078,
+      "sha256": "5be8c50e6011a7075932ee524ee34cc3bb60bf87d082c657625b86d321fa7eda"
+    },
+    {
+      "path": "logs/regression-reviewed.log",
+      "kind": "verification-log",
+      "bytes": 2928,
+      "sha256": "d3eaf1e849f359e5879de5fd0f8c6019e39f51dd15c68b4866f9a60a07bc5a2c"
+    },
+    {
+      "path": "logs/review-cli-red.log",
+      "kind": "verification-log",
+      "bytes": 1677,
+      "sha256": "36c83e60f74f268c08178f26318882002f15cfe25358a55909db187248d62119"
+    },
+    {
+      "path": "logs/review-workload-red.log",
+      "kind": "verification-log",
+      "bytes": 3860,
+      "sha256": "23c868d922204ed9aaedea452c7f5935859e2c018b22c77387aca4a6e45bec30"
+    },
+    {
+      "path": "logs/typecheck.log",
+      "kind": "verification-log",
+      "bytes": 64,
+      "sha256": "46ebbb2868cab470f0ebd44e132477daa327d46f103e03222c07ab6cd34ecc20"
+    },
+    {
+      "path": "logs/unit.log",
+      "kind": "verification-log",
+      "bytes": 2842,
+      "sha256": "95918c4af66808fffa99611c877d57a1b70432be934f4d9e5bc0ee0b3d2b1d55"
+    },
+    {
+      "path": "quality-gates.json",
+      "kind": "supporting-json",
+      "bytes": 3351,
+      "sha256": "610b6d54f169df085f073d1807d1714de0fa13dd7a62e5b3528e2ad981eee88e"
+    }
+  ]
+}

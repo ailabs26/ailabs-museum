@@ -1,0 +1,383 @@
+{
+  "source": "desktop-P07-10min.json",
+  "method": "Non-overlapping60000ms windows using the same analyzeMuseumAudit function; final~1.27s remainder remains in whole-run analysis.",
+  "firstGeometry71Seconds": 421.86359999999775,
+  "firstTextures16Seconds": 362.43069999999926,
+  "geometryValuesAfterFirst71": [
+    71
+  ],
+  "periods": [
+    {
+      "minute": 1,
+      "frames": 5395,
+      "meanFps": 89.98488574221346,
+      "p95Ms": 12.600000001490116,
+      "p99Ms": 14,
+      "over16_67": {
+        "count": 8,
+        "ratio": 0.0014831294030404152
+      },
+      "over33_33": {
+        "count": 0,
+        "ratio": 0
+      },
+      "firstResources": {
+        "at": 180969.3999999985,
+        "rendererId": 1,
+        "calls": 57,
+        "triangles": 10112,
+        "geometries": 67,
+        "textures": 15,
+        "programs": 12,
+        "heapBytes": 18377536
+      },
+      "lastResources": {
+        "at": 240335.19999999925,
+        "rendererId": 1,
+        "calls": 58,
+        "triangles": 10114,
+        "geometries": 67,
+        "textures": 15,
+        "programs": 12,
+        "heapBytes": 17880085
+      }
+    },
+    {
+      "minute": 2,
+      "frames": 5400,
+      "meanFps": 90.00103353659665,
+      "p95Ms": 12.5,
+      "p99Ms": 14.199999999254942,
+      "over16_67": {
+        "count": 5,
+        "ratio": 0.0009260974254491572
+      },
+      "over33_33": {
+        "count": 0,
+        "ratio": 0
+      },
+      "firstResources": {
+        "at": 241346.69999999925,
+        "rendererId": 1,
+        "calls": 58,
+        "triangles": 10114,
+        "geometries": 67,
+        "textures": 15,
+        "programs": 12,
+        "heapBytes": 19068415
+      },
+      "lastResources": {
+        "at": 300746.19999999925,
+        "rendererId": 1,
+        "calls": 58,
+        "triangles": 10114,
+        "geometries": 68,
+        "textures": 15,
+        "programs": 12,
+        "heapBytes": 21470596
+      }
+    },
+    {
+      "minute": 3,
+      "frames": 5400,
+      "meanFps": 90.00163366551087,
+      "p95Ms": 12.600000001490116,
+      "p99Ms": 14.5,
+      "over16_67": {
+        "count": 9,
+        "ratio": 0.0016669753658084831
+      },
+      "over33_33": {
+        "count": 0,
+        "ratio": 0
+      },
+      "firstResources": {
+        "at": 301756.09999999776,
+        "rendererId": 1,
+        "calls": 55,
+        "triangles": 9424,
+        "geometries": 68,
+        "textures": 15,
+        "programs": 12,
+        "heapBytes": 22686138
+      },
+      "lastResources": {
+        "at": 360156.59999999776,
+        "rendererId": 1,
+        "calls": 24,
+        "triangles": 2574,
+        "geometries": 69,
+        "textures": 15,
+        "programs": 12,
+        "heapBytes": 21907171
+      }
+    },
+    {
+      "minute": 4,
+      "frames": 5401,
+      "meanFps": 90.00060000399779,
+      "p95Ms": 12.100000001490116,
+      "p99Ms": 13,
+      "over16_67": {
+        "count": 2,
+        "ratio": 0.00037037037037037035
+      },
+      "over33_33": {
+        "count": 0,
+        "ratio": 0
+      },
+      "firstResources": {
+        "at": 361166.30000000075,
+        "rendererId": 1,
+        "calls": 49,
+        "triangles": 5812,
+        "geometries": 69,
+        "textures": 15,
+        "programs": 12,
+        "heapBytes": 22965455
+      },
+      "lastResources": {
+        "at": 420566.80000000075,
+        "rendererId": 1,
+        "calls": 32,
+        "triangles": 2692,
+        "geometries": 69,
+        "textures": 15,
+        "programs": 12,
+        "heapBytes": 19122583
+      }
+    },
+    {
+      "minute": 5,
+      "frames": 5332,
+      "meanFps": 88.8683661290033,
+      "p95Ms": 12.300000000745058,
+      "p99Ms": 19.199999999254942,
+      "over16_67": {
+        "count": 73,
+        "ratio": 0.013693490902269742
+      },
+      "over33_33": {
+        "count": 3,
+        "ratio": 0.0005627462014631402
+      },
+      "firstResources": {
+        "at": 421576,
+        "rendererId": 1,
+        "calls": 29,
+        "triangles": 2624,
+        "geometries": 69,
+        "textures": 15,
+        "programs": 12,
+        "heapBytes": 20056605
+      },
+      "lastResources": {
+        "at": 479954.09999999776,
+        "rendererId": 1,
+        "calls": 27,
+        "triangles": 2610,
+        "geometries": 69,
+        "textures": 15,
+        "programs": 12,
+        "heapBytes": 20299191
+      }
+    },
+    {
+      "minute": 6,
+      "frames": 5401,
+      "meanFps": 90.00405018225709,
+      "p95Ms": 12.199999999254942,
+      "p99Ms": 13,
+      "over16_67": {
+        "count": 1,
+        "ratio": 0.00018518518518518518
+      },
+      "over33_33": {
+        "count": 0,
+        "ratio": 0
+      },
+      "firstResources": {
+        "at": 480965.09999999776,
+        "rendererId": 1,
+        "calls": 47,
+        "triangles": 5904,
+        "geometries": 69,
+        "textures": 15,
+        "programs": 12,
+        "heapBytes": 19906659
+      },
+      "lastResources": {
+        "at": 540340.6999999993,
+        "rendererId": 1,
+        "calls": 16,
+        "triangles": 2222,
+        "geometries": 69,
+        "textures": 15,
+        "programs": 12,
+        "heapBytes": 31406091
+      }
+    },
+    {
+      "minute": 7,
+      "frames": 5388,
+      "meanFps": 89.80204209210252,
+      "p95Ms": 12.099999997764826,
+      "p99Ms": 12.899999998509884,
+      "over16_67": {
+        "count": 10,
+        "ratio": 0.0018563207722294413
+      },
+      "over33_33": {
+        "count": 0,
+        "ratio": 0
+      },
+      "firstResources": {
+        "at": 541340.6999999993,
+        "rendererId": 1,
+        "calls": 27,
+        "triangles": 2610,
+        "geometries": 69,
+        "textures": 15,
+        "programs": 12,
+        "heapBytes": 23572783
+      },
+      "lastResources": {
+        "at": 600772.8000000007,
+        "rendererId": 1,
+        "calls": 19,
+        "triangles": 2258,
+        "geometries": 70,
+        "textures": 16,
+        "programs": 12,
+        "heapBytes": 19779431
+      }
+    },
+    {
+      "minute": 8,
+      "frames": 5400,
+      "meanFps": 90.00223380243408,
+      "p95Ms": 12.199999999254942,
+      "p99Ms": 13.199999999254942,
+      "over16_67": {
+        "count": 0,
+        "ratio": 0
+      },
+      "over33_33": {
+        "count": 0,
+        "ratio": 0
+      },
+      "firstResources": {
+        "at": 601772.8000000007,
+        "rendererId": 1,
+        "calls": 20,
+        "triangles": 2270,
+        "geometries": 70,
+        "textures": 16,
+        "programs": 12,
+        "heapBytes": 25580994
+      },
+      "lastResources": {
+        "at": 660138.8999999985,
+        "rendererId": 1,
+        "calls": 29,
+        "triangles": 3398,
+        "geometries": 71,
+        "textures": 16,
+        "programs": 12,
+        "heapBytes": 25186163
+      }
+    },
+    {
+      "minute": 9,
+      "frames": 5400,
+      "meanFps": 90.00373417974964,
+      "p95Ms": 12.199999999254942,
+      "p99Ms": 13.199999999254942,
+      "over16_67": {
+        "count": 0,
+        "ratio": 0
+      },
+      "over33_33": {
+        "count": 0,
+        "ratio": 0
+      },
+      "firstResources": {
+        "at": 661149.8000000007,
+        "rendererId": 1,
+        "calls": 22,
+        "triangles": 2274,
+        "geometries": 71,
+        "textures": 16,
+        "programs": 12,
+        "heapBytes": 31247527
+      },
+      "lastResources": {
+        "at": 720459.3000000007,
+        "rendererId": 1,
+        "calls": 25,
+        "triangles": 3526,
+        "geometries": 71,
+        "textures": 16,
+        "programs": 12,
+        "heapBytes": 25159797
+      }
+    },
+    {
+      "minute": 10,
+      "frames": 5400,
+      "meanFps": 90.00163366551087,
+      "p95Ms": 12.199999999254942,
+      "p99Ms": 13.199999999254942,
+      "over16_67": {
+        "count": 2,
+        "ratio": 0.0003704389701796629
+      },
+      "over33_33": {
+        "count": 0,
+        "ratio": 0
+      },
+      "firstResources": {
+        "at": 721460,
+        "rendererId": 1,
+        "calls": 28,
+        "triangles": 3396,
+        "geometries": 71,
+        "textures": 16,
+        "programs": 12,
+        "heapBytes": 31418889
+      },
+      "lastResources": {
+        "at": 780814,
+        "rendererId": 1,
+        "calls": 25,
+        "triangles": 3526,
+        "geometries": 71,
+        "textures": 16,
+        "programs": 12,
+        "heapBytes": 23646237
+      }
+    }
+  ],
+  "profiler": {
+    "source": "desktop-P03-profiler-trace.json.gz",
+    "fireAnimationFrameEvents": 907,
+    "firstToLastRafMs": 10078.104,
+    "commitAndDrawEvents": 906,
+    "interpretation": "Browser animation/compositor cadence only, not physical display presentation or GPU frametime."
+  },
+  "replayComparability": {
+    "sources": [
+      "desktop-P03-run1.json",
+      "desktop-P03-run2.json",
+      "desktop-P03-run3.json"
+    ],
+    "method": "Nearest elapsed-time1Hz camera checkpoints compared to run1; actual controller input, no direct pose mutation.",
+    "checkpointCounts": [
+      30,
+      30,
+      30
+    ],
+    "maxNearestCheckpointPositionDifferenceMetres": 0.7886682493842376,
+    "interpretation": "Same room/quality/time-indexed commands, not pixel-identical camera replay; input dispatch/integration/collision introduce pose drift. Do not treat tiny FPS variance as identical-image performance evidence."
+  }
+}
