@@ -32,6 +32,16 @@ const FINGERPRINT_FIELDS = ['kind', 'altText', 'source', 'author', 'license'] as
 const INTERNAL_ERROR_MESSAGE = 'Lỗi không xác định khi xử lý file; hãy upload lại với Idempotency-Key mới';
 /** Số lần thử ghi job succeeded sau khi media đã lưu (lỗi DB tạm thời). */
 const COMPLETION_ATTEMPTS = 3;
+const DEFAULT_CONCURRENCY = 3;
+
+/** Dữ liệu một job chờ chạy. Buffer file nằm ở đây cho tới khi job xong. */
+interface UploadTask {
+  jobId: string;
+  file: UploadedMediaFile;
+  dto: UploadMediaDto;
+  actorId: string;
+  client: AuditClientInfo;
+}
 
 function headerError(code: string, message: string): ApiError[] {
   return [{ field: IDEMPOTENCY_KEY_HEADER, code, message }];
@@ -58,12 +68,17 @@ function describeFailure(error: unknown): { code: string; message: string } {
 /**
  * Upload media bất đồng bộ (VT-078). Request chỉ kiểm tra rẻ (key, có file) và tạo job;
  * pipeline có sẵn `MediaService.upload()` chạy sau khi response đã trả. Chỉ request tạo
- * mới job mới khởi chạy worker, nên retry cùng key không bao giờ chạy lại pipeline.
+ * mới job mới vào hàng đợi, nên retry cùng key không bao giờ chạy lại pipeline.
+ *
+ * Hàng đợi FIFO trong tiến trình giới hạn số pipeline chạy cùng lúc. Nó không giới hạn RAM:
+ * job đang chờ vẫn giữ buffer file (multer đã đọc xong trước khi vào service).
  */
 @Injectable()
 export class MediaUploadJobService implements OnApplicationBootstrap {
   private readonly logger = new Logger(MediaUploadJobService.name);
   private readonly running = new Set<Promise<void>>();
+  private readonly queue: UploadTask[] = [];
+  private readonly concurrency: number;
   /** Thời gian chờ giữa các lần thử ghi job succeeded; public để test đặt 0. */
   completionRetryDelayMs = 200;
 
@@ -71,8 +86,10 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
     private readonly jobs: MediaUploadJobRepository,
     private readonly media: MediaService,
     private readonly audit: AuditService,
-    private readonly config: ConfigService,
-  ) {}
+    config: ConfigService,
+  ) {
+    this.concurrency = config.get<number>('media.uploadJobConcurrency') ?? DEFAULT_CONCURRENCY;
+  }
 
   /**
    * Buffer file chỉ nằm trong RAM của tiến trình, nên job dang dở từ lần chạy trước không thể
@@ -106,7 +123,10 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
       const message = 'Idempotency-Key này đã dùng cho một upload khác; hãy dùng key mới';
       throw new ConflictException({ message, errors: headerError('idempotency_key_reused', message) });
     }
-    if (created) this.schedule(job.id, file, dto, actorId, client);
+    if (created) {
+      this.queue.push({ jobId: job.id, file, dto, actorId, client });
+      this.drain();
+    }
     return { job: toUploadJobResponse(job), created };
   }
 
@@ -116,7 +136,10 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
     return toUploadJobResponse(job);
   }
 
-  /** Chờ mọi job đang chạy trong tiến trình này xong (dùng khi test/shutdown). */
+  /**
+   * Chờ mọi job trong tiến trình này xong, kể cả job còn trong hàng đợi (dùng khi test/shutdown):
+   * job kế tiếp được đưa vào `running` trước khi job vừa xong resolve, nên vòng lặp không thoát sớm.
+   */
   async whenIdle(): Promise<void> {
     while (this.running.size > 0) await Promise.allSettled([...this.running]);
   }
@@ -133,20 +156,26 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
     return value;
   }
 
-  /** Chạy pipeline sau khi response đã gửi (setImmediate), không chặn request tạo job. */
-  private schedule(jobId: string, file: UploadedMediaFile, dto: UploadMediaDto, actorId: string, client: AuditClientInfo): void {
-    const task = new Promise<void>((resolve) => setImmediate(resolve)).then(() => this.process(jobId, file, dto, actorId, client));
-    this.running.add(task);
-    void task.finally(() => this.running.delete(task));
+  /**
+   * Lấy job từ đầu hàng đợi tới khi đủ slot. Pipeline chạy sau khi response đã gửi (setImmediate),
+   * không chặn request tạo job. Slot luôn được trả ở `finally`, kể cả khi worker ném lỗi.
+   */
+  private drain(): void {
+    while (this.running.size < this.concurrency) {
+      const task = this.queue.shift();
+      if (!task) return;
+      const run: Promise<void> = new Promise<void>((resolve) => setImmediate(resolve))
+        .then(() => this.process(task))
+        .catch((error: Error) => this.logger.error(`Worker job upload ${task.jobId} lỗi: ${error?.message ?? String(error)}`))
+        .finally(() => {
+          this.running.delete(run);
+          this.drain();
+        });
+      this.running.add(run);
+    }
   }
 
-  private async process(
-    jobId: string,
-    file: UploadedMediaFile,
-    dto: UploadMediaDto,
-    actorId: string,
-    client: AuditClientInfo,
-  ): Promise<void> {
+  private async process({ jobId, file, dto, actorId, client }: UploadTask): Promise<void> {
     let mediaId: string;
     try {
       await this.jobs.patch(jobId, { status: UploadJobStatus.PROCESSING, progress: 50 });
