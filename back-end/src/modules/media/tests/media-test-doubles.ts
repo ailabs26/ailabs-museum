@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import type { ConfigService } from '@nestjs/config';
 import type { EntityManager } from 'typeorm';
 import { Paginated } from '../../../common/types/paginated.type';
 import { AuditLog } from '../../audit/entities/audit-log.entity';
@@ -195,6 +196,53 @@ export class FakeUploadJobRepository {
     });
     this.rows.set(row.id, row);
     return row;
+  }
+}
+
+/** ConfigService tối giản cho `MediaUploadJobService`; bỏ trống key nào thì service dùng mặc định của key đó. */
+export function testUploadJobConfig(media: Record<string, number> = {}): ConfigService {
+  return { get: (key: string) => media[key.replace('media.', '')] } as unknown as ConfigService;
+}
+
+/**
+ * Thay `MediaService` để test tự quyết định lúc nào từng upload xong (không dùng sleep).
+ * Nhận diện job qua `originalname`; `peak` là số upload chạy cùng lúc cao nhất.
+ */
+export class GatedMediaService {
+  started: string[] = [];
+  active = 0;
+  peak = 0;
+  private gates = new Map<string, { resolve(value: { id: string }): void; reject(error: Error): void }>();
+  private waiters: Array<() => void> = [];
+
+  upload(file: { originalname?: string }): Promise<{ id: string }> {
+    const name = file.originalname ?? '';
+    this.started.push(name);
+    this.active++;
+    this.peak = Math.max(this.peak, this.active);
+    for (const wake of this.waiters.splice(0)) wake();
+    return new Promise<{ id: string }>((resolve, reject) => this.gates.set(name, { resolve, reject })).finally(() => {
+      this.active--;
+    });
+  }
+
+  /** Chờ tới khi đã có ít nhất `count` upload bắt đầu. */
+  async waitForStarted(count: number): Promise<void> {
+    while (this.started.length < count) await new Promise<void>((wake) => this.waiters.push(wake));
+  }
+
+  release(name: string): void {
+    this.gates.get(name)?.resolve({ id: randomUUID() });
+    this.gates.delete(name);
+  }
+
+  fail(name: string, error: Error): void {
+    this.gates.get(name)?.reject(error);
+    this.gates.delete(name);
+  }
+
+  releaseAll(): void {
+    for (const name of [...this.gates.keys()]) this.release(name);
   }
 }
 

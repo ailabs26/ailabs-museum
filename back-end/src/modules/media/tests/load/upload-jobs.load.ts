@@ -5,6 +5,7 @@
  *   LOAD_CONCURRENCY (mặc định 80), LOAD_RUNS (5), LOAD_FILE_BYTES (2_000_000, bội số của 4),
  *   MEDIA_TEST_DATABASE_URL=postgres://...@localhost/...  → repository PostgreSQL thật
  *   (không đặt → repository fake trong bộ nhớ). Storage luôn là đĩa cục bộ tạm.
+ *   MEDIA_UPLOAD_JOB_CONCURRENCY (3) = số job worker chạy cùng lúc.
  *   LOAD_OUTPUT=đường-dẫn.json để ghi kết quả.
  *   Mỗi lần chạy ghi đỉnh RSS và đỉnh `arrayBuffers` (Buffer file nằm ở đây) của tiến trình server.
  *   LOAD_SAME_PROCESS=1 → client và server chung một tiến trình (chỉ để so sánh: client tranh
@@ -21,6 +22,7 @@ import { cpus, tmpdir, totalmem } from 'node:os';
 import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { CanActivate, ExecutionContext, INestApplication, Injectable, ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
@@ -44,12 +46,19 @@ import { MEDIA_URL_OPTIONS, MediaUrlService } from '../../services/media-url.ser
 import { MediaService } from '../../services/media.service';
 import { LocalStorageDriver } from '../../storage/local-storage.driver';
 import { MEDIA_STORAGE_DRIVER } from '../../storage/media-storage-driver';
-import { FakeMediaRepository, FakeTransactionManager, FakeUploadJobRepository, TEST_MEDIA_URL_OPTIONS } from '../media-test-doubles';
+import {
+  FakeMediaRepository,
+  FakeTransactionManager,
+  FakeUploadJobRepository,
+  TEST_MEDIA_URL_OPTIONS,
+  testUploadJobConfig,
+} from '../media-test-doubles';
 import { buildGlbOfSize } from '../media-test-files';
 
 const CONCURRENCY = Number(process.env.LOAD_CONCURRENCY ?? 80);
 const RUNS = Number(process.env.LOAD_RUNS ?? 5);
 const FILE_BYTES = Number(process.env.LOAD_FILE_BYTES ?? 2_000_000);
+const JOB_CONCURRENCY = Number(process.env.MEDIA_UPLOAD_JOB_CONCURRENCY ?? 3);
 const P95_TARGET_MS = 2_500;
 const DATABASE_URL = process.env.MEDIA_TEST_DATABASE_URL;
 const SAME_PROCESS = process.env.LOAD_SAME_PROCESS === '1';
@@ -148,6 +157,7 @@ async function startServer(): Promise<LoadServer> {
       { provide: TransactionManager, useValue: new FakeTransactionManager() },
       // Audit không phải đối tượng đo: bỏ ghi DB để harness không cần dọn nhật ký append-only.
       { provide: AuditService, useValue: { recordSafely: async () => undefined } },
+      { provide: ConfigService, useValue: testUploadJobConfig({ uploadJobConcurrency: JOB_CONCURRENCY }) },
       { provide: APP_GUARD, useClass: LoadAuthGuard },
       { provide: APP_GUARD, useClass: PermissionsGuard },
     ],
@@ -305,7 +315,7 @@ async function main() {
   const allPost = runs.flatMap((r) => [r.s1.post.p95]);
   const report = {
     generatedAt: new Date().toISOString(),
-    config: { concurrency: CONCURRENCY, runs: RUNS, fileBytes: FILE_BYTES, repository: useRealDb ? 'postgresql-16 (docker, localhost)' : 'in-memory fake', topology: SAME_PROCESS ? 'client+server cùng tiến trình' : 'server ở tiến trình con (fork)', storage: 'local disk (tmp)', p95TargetMs: P95_TARGET_MS },
+    config: { concurrency: CONCURRENCY, jobConcurrency: JOB_CONCURRENCY, runs: RUNS, fileBytes: FILE_BYTES, repository: useRealDb ? 'postgresql-16 (docker, localhost)' : 'in-memory fake', topology: SAME_PROCESS ? 'client+server cùng tiến trình' : 'server ở tiến trình con (fork)', storage: 'local disk (tmp)', p95TargetMs: P95_TARGET_MS },
     machine: { node: process.version, cpus: cpus().length, cpuModel: cpus()[0]?.model, totalMemGb: Math.round(totalmem() / 1e9) },
     runs,
     worstRunPostP95Ms: Math.max(...allPost),

@@ -21,6 +21,7 @@ import {
   FakeTransactionManager,
   FakeUploadJobRepository,
   testMediaUrlService,
+  testUploadJobConfig,
 } from './media-test-doubles';
 import { EXE_FILE, buildGlb } from './media-test-files';
 
@@ -64,6 +65,7 @@ describe('Audit media.upload của worker upload-jobs', () => {
       jobRepo as unknown as MediaUploadJobRepository,
       mediaService,
       new AuditService(auditRepo as unknown as AuditRepository),
+      testUploadJobConfig(),
     );
     service.completionRetryDelayMs = 0;
   });

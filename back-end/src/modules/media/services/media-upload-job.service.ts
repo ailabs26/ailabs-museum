@@ -8,6 +8,7 @@ import {
   NotFoundException,
   OnApplicationBootstrap,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiError } from '../../../common/dto/api-response';
 import type { AuditClientInfo } from '../../audit/audit-request.util';
 import { AuditService } from '../../audit/services/audit.service';
@@ -70,6 +71,7 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
     private readonly jobs: MediaUploadJobRepository,
     private readonly media: MediaService,
     private readonly audit: AuditService,
+    private readonly config: ConfigService,
   ) {}
 
   /**

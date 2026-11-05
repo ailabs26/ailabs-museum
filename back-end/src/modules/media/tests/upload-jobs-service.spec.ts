@@ -23,6 +23,7 @@ import {
   FakeTransactionManager,
   FakeUploadJobRepository,
   testMediaUrlService,
+  testUploadJobConfig,
 } from './media-test-doubles';
 import { buildGlb } from './media-test-files';
 
@@ -58,6 +59,7 @@ describe('MediaUploadJobService (unit, VT-078)', () => {
       jobRepo as unknown as MediaUploadJobRepository,
       mediaService,
       new AuditService(new FakeAuditRepository() as unknown as AuditRepository),
+      testUploadJobConfig(),
     );
   });
 

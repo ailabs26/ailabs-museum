@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, afterEach, before, beforeEach, describe, it } from 'node:test';
 import { CanActivate, ExecutionContext, INestApplication, Injectable, ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -34,6 +35,7 @@ import {
   FakeTransactionManager,
   FakeUploadJobRepository,
   TEST_MEDIA_URL_OPTIONS,
+  testUploadJobConfig,
 } from './media-test-doubles';
 import { EXE_FILE, buildGlb, buildGlbOfSize, buildPngOfSize } from './media-test-files';
 
@@ -113,6 +115,7 @@ describe('Upload media bất đồng bộ (VT-078) — HTTP', () => {
         { provide: MediaUploadJobRepository, useValue: jobRepo },
         { provide: TransactionManager, useValue: new FakeTransactionManager() },
         { provide: AuditService, useValue: audit },
+        { provide: ConfigService, useValue: testUploadJobConfig() },
         { provide: APP_GUARD, useClass: TestAuthGuard },
         { provide: APP_GUARD, useClass: PermissionsGuard },
         { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
