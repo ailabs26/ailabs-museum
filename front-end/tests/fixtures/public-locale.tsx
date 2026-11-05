@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@mantine/core/styles.css';
 import { Button, MantineProvider, Stack, Text } from '@mantine/core';
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -7,6 +8,8 @@ import { theme } from '@/app/theme';
 import { PublicLocaleProvider } from '@/contexts/PublicLocaleContext';
 import { usePublicLocale } from '@/hooks/usePublicLocale';
 import { PublicLayout } from '@/layouts/PublicLayout';
+
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 function LocaleConsumer({ name }: { name: string }) {
   const { locale } = usePublicLocale();
@@ -51,14 +54,16 @@ function LayoutLocaleRoute({ name, next }: { name: string; next: string }) {
 
 function PublicLayoutFixture() {
   return (
-    <MemoryRouter initialEntries={['/first']}>
-      <Routes>
-        <Route element={<PublicLayout />}>
-          <Route path="/first" element={<LayoutLocaleRoute name="first" next="/second" />} />
-          <Route path="/second" element={<LayoutLocaleRoute name="second" next="/first" />} />
-        </Route>
-      </Routes>
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/first']}>
+        <Routes>
+          <Route element={<PublicLayout />}>
+            <Route path="/first" element={<LayoutLocaleRoute name="first" next="/second" />} />
+            <Route path="/second" element={<LayoutLocaleRoute name="second" next="/first" />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 }
 

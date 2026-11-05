@@ -88,15 +88,17 @@ Là khách tham quan, tôi muốn chọn ngôn ngữ trên giao diện công kha
 
 **Steps**
 
-- [ ] Chạy case `fr` cũ: xác minh locale mới thuộc `LOCALES`, kỳ vọng valid; dùng `de` hoặc giá trị sai khác để test invalid fallback.
-- [ ] Sửa assertion `html.lang` trên routes public theo locale đã chọn, xác minh `/admin/login` reset về `vi` và app vẫn hiển thị nội dung hợp lệ.
-- [ ] Kiểm behavior key migration `aura:public-locale` → `aura:visitor:locale:v1` và refresh/multi-tab.
-- [ ] Chạy `public-language.spec.ts`, `public-locale.spec.ts`, unit, typecheck; phân loại failure thực nếu có.
-- [ ] Nếu phát hiện bug production, mở checklist riêng và commit `fix(i18n): ...` có regression test, không hạ tiêu chuẩn assertion để che lỗi.
+- [x] Chạy case `fr` cũ: xác minh locale mới thuộc `LOCALES`, kỳ vọng valid; dùng `de` hoặc giá trị sai khác để test invalid fallback.
+- [x] Sửa assertion `html.lang` trên routes public theo locale đã chọn, xác minh `/admin/login` reset về `vi` và app vẫn hiển thị nội dung hợp lệ.
+- [x] Kiểm behavior key migration `aura:public-locale` → `aura:visitor:locale:v1` và refresh/multi-tab.
+- [x] Chạy `public-language.spec.ts`, `public-locale.spec.ts`, unit, typecheck; phân loại failure thực nếu có.
+- [x] Không phát hiện bug runtime cần production fix trong Task 1.
 
 **Acceptance:** hai suite contract i18n có kết quả thực tế; không giới hạn về `vi/en` khi `LOCALES` đang cung cấp 5 locale.
 
 **Commit dự kiến:** `test(i18n): align locale regression with merged behavior`.
+
+**Verification:** `public-locale.spec.ts` PASS 7/7; `public-language.spec.ts` PASS 4/4 trước khi thêm test của Task 2; `test:unit` PASS 45 files / 255 tests; frontend typecheck PASS. Lượt chạy `public-locale.spec.ts` với timeout mỗi test 10 giây hết hạn ở lần chuyển route; chạy lại với timeout mặc định và global timeout 60 giây PASS 7/7.
 
 ### Task 2 — Public shell và Home
 
@@ -260,8 +262,8 @@ npm run build
 
 | Task | Commit dự kiến | SHA thực tế | Verification | Trạng thái |
 |---|---|---|---|---|
-| 0 | `docs(i18n): plan public UI localization completion` | pending | Baseline recorded above | DONE |
-| 1 | `test(i18n): align locale regression with merged behavior` | — | — | NOT STARTED |
+| 0 | `docs(i18n): plan public UI localization completion` | `263f11d` | Baseline recorded above | DONE |
+| 1 | `test(i18n): align locale regression with merged behavior` | pending | `public-locale` 7/7, `public-language` 4/4, unit 255/255, typecheck PASS | DONE |
 | 2 | `feat(i18n): complete public shell and home translations` | — | — | NOT STARTED |
 | 3 | `feat(i18n): translate collection and visitor UI` | — | — | NOT STARTED |
 | 4 | `feat(i18n): translate exhibit detail and feedback UI` | — | — | NOT STARTED |

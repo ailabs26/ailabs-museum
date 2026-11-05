@@ -14,7 +14,7 @@ test('two public consumers share locale updates', async ({ page }) => {
 });
 
 test('invalid saved locale falls back to vi without crashing', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('aura:visitor:locale:v1', '{"version":1,"value":"fr"}'));
+  await page.addInitScript(() => localStorage.setItem('aura:visitor:locale:v1', '{"version":1,"value":"de"}'));
   await page.goto('/tests/fixtures/public-locale.html');
 
   await expect(page.getByTestId('locale-first')).toHaveText('vi');
@@ -22,6 +22,9 @@ test('invalid saved locale falls back to vi without crashing', async ({ page }) 
 });
 
 test('PublicLayout owns one locale provider across route changes', async ({ page }) => {
+  await page.route('**/api/public/translations**', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: {} }),
+  }));
   await page.goto('/tests/fixtures/public-locale.html?layout');
   await expect(page.getByTestId('layout-locale-first')).toHaveText('vi');
   await page.getByRole('button', { name: 'Set layout locale to English' }).click();
@@ -40,7 +43,7 @@ test('public routes retain locale while Vietnamese content and admin stay unchan
     const response = await page.goto(path);
     expect(response?.ok()).toBe(true);
     await expect(page.getByRole('banner')).toBeVisible();
-    await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('aura:visitor:locale:v1')!).value)).toBe('en');
   }
 
