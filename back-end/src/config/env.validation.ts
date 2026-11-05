@@ -157,6 +157,12 @@ class Environment {
   @Max(3650)
   MEDIA_TRASH_RETENTION_DAYS: number = 30;
 
+  /** Số job upload media chạy cùng lúc; tối thiểu 1 vì 0 làm hàng đợi không bao giờ chạy. */
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  MEDIA_UPLOAD_JOB_CONCURRENCY: number = 3;
+
   /** Project URL của Supabase, vd https://<ref>.supabase.co — bắt buộc khi driver = supabase. */
   @ValidateIf((env: Environment) => env.MEDIA_STORAGE_DRIVER === 'supabase')
   @IsUrl({ require_tld: false, require_protocol: true, protocols: ['http', 'https'] })
