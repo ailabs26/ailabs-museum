@@ -1,0 +1,6 @@
+# Preserve raw measurements/logs byte-for-byte across Windows/Linux checkouts.
+*.json -text
+# Console output keeps its original CRLF and padding; code whitespace rules do not apply.
+*.log -text -whitespace
+*.gz -text
+*.png -text

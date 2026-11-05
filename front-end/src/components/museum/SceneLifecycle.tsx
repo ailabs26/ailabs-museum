@@ -3,13 +3,21 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { watchWebglRecovery, type WebglStatus } from '@/helpers/webglRecovery';
 import { guardWebglRender } from '@/helpers/webglRenderGuard';
 
-export function SceneLifecycle({ onStatus }: { onStatus: (status: WebglStatus) => void }) {
+export function SceneLifecycle({ onStatus, auditWorkload = {} }: { onStatus: (status: WebglStatus) => void; auditWorkload?: Record<string, string | number | boolean | null> }) {
   const { gl, invalidate, setFrameloop } = useThree();
   const statusRef = useRef<WebglStatus>('ready');
   const recoveryRef = useRef<ReturnType<typeof watchWebglRecovery>>();
   const frameCheck = useRef<ReturnType<typeof setTimeout>>();
+  const workloadRef = useRef(auditWorkload); workloadRef.current = auditWorkload;
   useEffect(() => {
     const unguard = guardWebglRender(gl);
+    let isDisposed = false;
+    let detachAudit: (() => void) | undefined;
+    if (new URLSearchParams(window.location.search).get('museumAudit') === '1') {
+      void import('@/helpers/museumAuditBrowser').then(({ attachMuseumAudit }) => {
+        if (!isDisposed) detachAudit = attachMuseumAudit(gl, () => workloadRef.current);
+      });
+    }
     const recovery = watchWebglRecovery(gl.domElement, status => {
       statusRef.current = status;
       setFrameloop(status === 'recovering' || status === 'failed' ? 'never' : 'demand');
@@ -17,7 +25,7 @@ export function SceneLifecycle({ onStatus }: { onStatus: (status: WebglStatus) =
       if (status === 'verifying') invalidate();
     });
     recoveryRef.current = recovery;
-    return () => { recovery.dispose(); unguard(); clearTimeout(frameCheck.current); };
+    return () => { isDisposed = true; detachAudit?.(); recovery.dispose(); unguard(); clearTimeout(frameCheck.current); };
   }, [gl, invalidate, setFrameloop, onStatus]);
   useFrame(() => {
     if (statusRef.current !== 'verifying' || frameCheck.current !== undefined) return;

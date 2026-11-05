@@ -1,7 +1,7 @@
 import { exitMuseumIfOpen } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { installMuseumApi } from './fixtures/museumApi';
-import { installRendererProbe, waitForGallerySurfaces, waitForRendererIdle } from './fixtures/museumProbe';
+import { installRendererProbe, readRendererProbe, waitForGallerySurfaces, waitForRendererIdle } from './fixtures/museumProbe';
 
 test.beforeEach(async ({ page }) => { await installMuseumApi(page); });
 
@@ -44,12 +44,17 @@ test('idle scene stops GPU draw calls and repeated start/stop stays usable', asy
 });
 
 test('leaving the tour releases its canvas and returning starts in DOM mode', async ({ page }) => {
+  await installRendererProbe(page);
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible();
+  const museumRendererCount = (await readRendererProbe(page)).length;
   await exitMuseumIfOpen(page);
   await page.getByRole('banner').getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true }).click();
-  await expect(page.locator('canvas')).toHaveCount(0);
+  // Home intentionally mounts HeroCanvas. Verify the retired museum renderers,
+  // without treating another page's legitimate canvas as a museum leak.
+  await expect(page.getByLabel('Phòng trưng bày 3D')).toHaveCount(0);
+  await expect.poll(async () => (await readRendererProbe(page)).slice(0, museumRendererCount).filter(item => item.live).length).toBe(0);
   await page.getByRole('banner').getByRole('link', { name: 'Tham quan 3D', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Mở phòng 3D' })).toBeVisible();
   await expect(page.locator('canvas')).toHaveCount(0);

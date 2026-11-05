@@ -1,0 +1,70 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test museum-audit.spec.ts --grep opt-in exports --reporter=line --output=test-results/audit-panel-red
+
+
+[WebServer] (node:24216) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:20296) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 1 test using 1 worker
+
+
+(node:27364) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[1/1] tests\museum-audit.spec.ts:25:1 › opt-in exports actual submissions, stays idle and releases renderer observers across rooms
+  1) tests\museum-audit.spec.ts:25:1 › opt-in exports actual submissions, stays idle and releases renderer observers across rooms 
+
+    TimeoutError: locator.click: Timeout 3000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: 'Góc nhìn ban đầu', exact: true })
+        - locator resolved to <button type="button" data-variant="default" aria-label="Góc nhìn ban đầu" title="Góc nhìn ban đầu (Home)" class="mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root">…</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <p data-size="sm" class="mantine-focus-auto m_b6d8b162 mantine-Text-root">Performance audit</p> from <div role="group" data-with-border="true" aria-label="Performance audit" class="m_1b7284a3 mantine-Paper-root">…</div> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <p data-size="sm" class="mantine-focus-auto m_b6d8b162 mantine-Text-root">Performance audit</p> from <div role="group" data-with-border="true" aria-label="Performance audit" class="m_1b7284a3 mantine-Paper-root">…</div> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        5 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <p data-size="sm" class="mantine-focus-auto m_b6d8b162 mantine-Text-root">Performance audit</p> from <div role="group" data-with-border="true" aria-label="Performance audit" class="m_1b7284a3 mantine-Paper-root">…</div> subtree intercepts pointer events
+        - retrying click action
+          - waiting 500ms
+
+
+      51 |   await expect.poll(() => page.evaluate(() => window.museumAudit!.state().attachedRenderers)).toBe(1);
+      52 |   await panel.getByRole('button', { name: 'Thu gọn audit' }).click();
+    > 53 |   await page.getByRole('button', { name: 'Góc nhìn ban đầu', exact: true }).click({ timeout: 3000 });
+         |                                                                             ^
+      54 |   await panel.getByRole('button', { name: 'Mở audit' }).click();
+      55 |   await panel.getByRole('button', { name: 'Stop', exact: true }).click();
+      56 |   const raw = await page.evaluate(() => window.museumAudit!.snapshot());
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-audit.spec.ts:53:77
+
+    Error Context: test-results\audit-panel-red\museum-audit-opt-in-export-fae74-erer-observers-across-rooms\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\audit-panel-red\museum-audit-opt-in-export-fae74-erer-observers-across-rooms\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\audit-panel-red\museum-audit-opt-in-export-fae74-erer-observers-across-rooms\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    tests\museum-audit.spec.ts:25:1 › opt-in exports actual submissions, stays idle and releases renderer observers across rooms 

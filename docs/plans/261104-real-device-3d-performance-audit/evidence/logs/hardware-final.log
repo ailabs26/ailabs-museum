@@ -1,0 +1,49 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test museum-audit-benchmark.spec.ts --reporter=line --output=test-results/audit-hardware-final
+
+
+[WebServer] (node:11960) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:3168) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:6192) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[1/2] tests\museum-audit-benchmark.spec.ts:39:1 › physical desktop fixture: repeated steady navigation and ten-minute session
+tests\museum-audit-benchmark.spec.ts:39:1 › physical desktop fixture: repeated steady navigation and ten-minute session
+P03 run1: {"meanFps":90.00402754708621,"medianFps":90.09009007799597,"p5Fps":77.51937985391572,"onePercentLowFps":63.89776357946983,"medianMs":11.100000001490116,"p95Ms":12.899999998509884,"p99Ms":14.799999997019768,"over16_67":{"count":2,"ratio":0.0007396449704142012},"over33_33":{"count":0,"ratio":0},"submissionCpuMedianMs":2.699999999254942,"submissionCpuP95Ms":4.900000002235174}
+
+P03 run2: {"meanFps":90.0021976119239,"medianFps":90.09009007799597,"p5Fps":79.3650793556934,"onePercentLowFps":62.93549112023021,"medianMs":11.100000001490116,"p95Ms":12.600000001490116,"p99Ms":14.599999997764826,"over16_67":{"count":7,"ratio":0.002589715131335553},"over33_33":{"count":0,"ratio":0},"submissionCpuMedianMs":2.800000000745058,"submissionCpuP95Ms":5.099999997764826}
+
+P03 run3: {"meanFps":90.00186532364035,"medianFps":90.09009007799597,"p5Fps":81.96721311975986,"onePercentLowFps":71.02993404443818,"medianMs":11.100000001490116,"p95Ms":12.199999999254942,"p99Ms":13.5,"over16_67":{"count":0,"ratio":0},"over33_33":{"count":0,"ratio":0},"submissionCpuMedianMs":2.300000000745058,"submissionCpuP95Ms":3.300000000745058}
+
+P07 elapsed 1 minutes
+
+P07 elapsed 2 minutes
+
+P07 elapsed 3 minutes
+
+P07 elapsed 4 minutes
+
+P07 elapsed 5 minutes
+
+P07 elapsed 6 minutes
+
+P07 elapsed 7 minutes
+
+P07 elapsed 8 minutes
+
+P07 elapsed 9 minutes
+
+P07 elapsed 10 minutes
+
+[2/2] tests\museum-audit-benchmark.spec.ts:112:1 › physical desktop fixture: startup, interactions and repeated lifecycle checkpoints
+  Slow test file: tests\museum-audit-benchmark.spec.ts (14.4m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  2 passed (14.5m)
