@@ -7,13 +7,15 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Req,
   Res,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { auditClientInfo } from '../../audit/audit-request.util';
 import { Audit } from '../../audit/decorators/audit.decorator';
 import { PERMISSIONS } from '../../../common/constants/permissions.constant';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
@@ -42,9 +44,10 @@ export class AdminUploadJobsController {
     @Body() dto: UploadMediaDto,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
     @CurrentUser('id') actorId: string,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { job, created } = await this.jobs.enqueue(file, dto, actorId, idempotencyKey);
+    const { job, created } = await this.jobs.enqueue(file, dto, actorId, idempotencyKey, auditClientInfo(req));
     res.status(created ? HttpStatus.ACCEPTED : HttpStatus.OK);
     return job;
   }

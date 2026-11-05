@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -90,7 +90,7 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
     dto: UploadMediaDto,
     actorId: string,
     idempotencyKey: string | undefined,
-    _client?: AuditClientInfo,
+    client: AuditClientInfo = { ip: null, userAgent: null, requestId: randomUUID() },
   ): Promise<EnqueueResult> {
     const key = this.parseKey(idempotencyKey);
     if (!file || !Buffer.isBuffer(file.buffer)) {
@@ -104,7 +104,7 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
       const message = 'Idempotency-Key này đã dùng cho một upload khác; hãy dùng key mới';
       throw new ConflictException({ message, errors: headerError('idempotency_key_reused', message) });
     }
-    if (created) this.schedule(job.id, file, dto, actorId);
+    if (created) this.schedule(job.id, file, dto, actorId, client);
     return { job: toUploadJobResponse(job), created };
   }
 
@@ -132,13 +132,19 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
   }
 
   /** Chạy pipeline sau khi response đã gửi (setImmediate), không chặn request tạo job. */
-  private schedule(jobId: string, file: UploadedMediaFile, dto: UploadMediaDto, actorId: string): void {
-    const task = new Promise<void>((resolve) => setImmediate(resolve)).then(() => this.process(jobId, file, dto, actorId));
+  private schedule(jobId: string, file: UploadedMediaFile, dto: UploadMediaDto, actorId: string, client: AuditClientInfo): void {
+    const task = new Promise<void>((resolve) => setImmediate(resolve)).then(() => this.process(jobId, file, dto, actorId, client));
     this.running.add(task);
     void task.finally(() => this.running.delete(task));
   }
 
-  private async process(jobId: string, file: UploadedMediaFile, dto: UploadMediaDto, actorId: string): Promise<void> {
+  private async process(
+    jobId: string,
+    file: UploadedMediaFile,
+    dto: UploadMediaDto,
+    actorId: string,
+    client: AuditClientInfo,
+  ): Promise<void> {
     let mediaId: string;
     try {
       await this.jobs.patch(jobId, { status: UploadJobStatus.PROCESSING, progress: 50 });
@@ -150,6 +156,8 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
     // Media đã lưu: từ đây lỗi chỉ là lỗi ghi trạng thái job, KHÔNG được ghi failed (job sẽ thiếu mediaId
     // trong khi media "ready" tồn tại, và retry cùng key không chạy lại worker).
     await this.markSucceeded(jobId, mediaId);
+    // Worker chạy ngoài AuditInterceptor nên tự ghi. Ghi cả khi job kẹt processing: media đã tồn tại thật.
+    await this.audit.recordSafely({ actorId, action: 'media.upload', resourceType: 'media', resourceId: mediaId, ...client });
   }
 
   private async markFailed(jobId: string, error: unknown): Promise<void> {
