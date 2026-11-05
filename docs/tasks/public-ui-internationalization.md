@@ -108,15 +108,17 @@ Là khách tham quan, tôi muốn chọn ngôn ngữ trên giao diện công kha
 
 **Steps**
 
-- [ ] Bỏ sót còn lại ở header/footer/Drawer/nav labels, icon aria-label/status, `ThemeToggle` khi dùng tại public (không làm hỏng Admin).
-- [ ] Dịch hero/badge/title/intro/CTA, section headings, feature cards và featured loading/empty/error/retry.
-- [ ] Không đổi tên riêng của hiện vật hoặc tuyên bố WCAG/media thành bằng chứng tính năng; dịch đúng nghĩa bản copy hiện có.
-- [ ] Add Playwright fixture English đầy đủ cho Home, khẳng định `vi` không fetch translation API và `en` render đúng nhãn.
-- [ ] Chạy affected tests `public-language`, homepage, navigation/responsive (các tên spec cần xác minh từ HEAD).
+- [x] Dịch header/footer/Drawer/nav, skip link, theme toggle và nhãn trợ năng; `ThemeToggle` vẫn mặc định dùng tiếng Việt ngoài public.
+- [x] Dịch hero/badge/title/intro/CTA, section headings, feature cards và featured loading/empty/error/retry.
+- [x] Giữ tên riêng và thông tin hiện vật trong showcase; chỉ dịch copy giao diện và dịch đúng nghĩa nội dung WCAG hiện có.
+- [x] Mở rộng Playwright English fixture cho Home/shell; xác minh `vi` không fetch translation API và `en` render đúng nhãn.
+- [x] Chạy affected tests `public-language`, navigation và responsive 320px.
 
 **Acceptance:** Home + shell dùng tiếng Anh khi đủ key; không hardcode copy UI quan trọng; mobile 320px không tràn.
 
 **Commit dự kiến:** `feat(i18n): complete public shell and home translations`.
+
+**Verification:** `public-language.spec.ts` PASS 6/6 và `public-locale.spec.ts` PASS 7/7 (API fixture/mock); frontend typecheck PASS, lint PASS, unit PASS 45 files / 255 tests. Kịch bản Home và Collection ở 320px không tràn ngang; Drawer, theme toggle, navigation và footer dùng nhãn English fixture.
 
 ### Task 3 — Collection và visitor tools
 
@@ -263,8 +265,8 @@ npm run build
 | Task | Commit dự kiến | SHA thực tế | Verification | Trạng thái |
 |---|---|---|---|---|
 | 0 | `docs(i18n): plan public UI localization completion` | `263f11d` | Baseline recorded above | DONE |
-| 1 | `test(i18n): align locale regression with merged behavior` | pending | `public-locale` 7/7, `public-language` 4/4, unit 255/255, typecheck PASS | DONE |
-| 2 | `feat(i18n): complete public shell and home translations` | — | — | NOT STARTED |
+| 1 | `test(i18n): align locale regression with merged behavior` | `4182d24` | `public-locale` 7/7, `public-language` 4/4, unit 255/255, typecheck PASS | DONE |
+| 2 | `feat(i18n): complete public shell and home translations` | pending | `public-language` 6/6, `public-locale` 7/7, unit 255/255, typecheck/lint PASS | DONE |
 | 3 | `feat(i18n): translate collection and visitor UI` | — | — | NOT STARTED |
 | 4 | `feat(i18n): translate exhibit detail and feedback UI` | — | — | NOT STARTED |
 | 5 | `feat(i18n): translate tour interface controls` | — | — | NOT STARTED |

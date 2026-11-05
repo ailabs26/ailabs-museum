@@ -4,7 +4,65 @@ import { envelope, roomA } from './fixtures/museumContent';
 
 /** Chuỗi UI từ CMS theo ngôn ngữ; `en` đủ, `ja` chỉ một phần để kiểm dự phòng. */
 const STRINGS: Record<string, Record<string, string>> = {
-  en: { 'ui.nav.collection': 'Collection', 'ui.collection.title': 'Our Collection', 'ui.collection.refresh': 'Refresh', 'ui.language.label': 'Language' },
+  en: {
+    'ui.brand.home-aria': 'Aura Museum — Home',
+    'ui.skip-link': 'Skip to main content',
+    'ui.nav.home': 'Home',
+    'ui.nav.collection': 'Collection',
+    'ui.nav.main': 'Main navigation',
+    'ui.nav.open': 'Open navigation menu',
+    'ui.nav.tour': '3D Tour',
+    'ui.cta.enter-3d': 'Enter the 3D space',
+    'ui.drawer.title': 'Navigation',
+    'ui.theme.to-dark': 'Switch to dark theme',
+    'ui.collection.title': 'Our Collection',
+    'ui.collection.refresh': 'Refresh',
+    'ui.language.label': 'Language',
+    'ui.footer.accessibility': 'Accessibility commitment: WCAG 2.2 AA',
+    'ui.footer.manifesto': 'Preserving heritage and retelling its stories in 3D WebXR so everyone, anywhere, can reach art and history.',
+    'ui.footer.explore': 'Explore',
+    'ui.footer.home': 'Home',
+    'ui.footer.collection': '2D Collection',
+    'ui.footer.tour': '3D WebXR Tour',
+    'ui.footer.system': 'System',
+    'ui.footer.admin': 'Administrator portal',
+    'ui.footer.copyright': '© 2026 Aura Museum · Digital museum project · ailabs26 team',
+    'ui.footer.design-credit': 'Designed with Aura Design System 2.0',
+    'ui.home.hero.badge': 'The next-generation 3D WebXR museum',
+    'ui.home.hero.title.primary': 'Touch Heritage.',
+    'ui.home.hero.title.secondary': 'Explore without limits.',
+    'ui.home.hero.introduction': 'Explore interactive 3D galleries and hear stories from history in your browser.',
+    'ui.home.hero.cta.tour': 'Explore the 3D space',
+    'ui.home.hero.cta.collection': 'Browse the collection',
+    'ui.home.stats.rooms': 'Virtual galleries',
+    'ui.home.stats.exploration': '3D & WebXR exploration',
+    'ui.home.stats.audio': 'Audio guide & subtitles',
+    'ui.home.stats.audio-value': 'Bilingual',
+    'ui.home.stats.setup': 'No setup required',
+    'ui.home.showcase.tag': 'Interactive 3D model',
+    'ui.home.about.eyebrow': 'About Aura Museum',
+    'ui.home.about.title.primary': 'Digital spaces.',
+    'ui.home.about.title.secondary': 'Real connection.',
+    'ui.home.about.webxr.title': 'Immersive WebXR virtual space',
+    'ui.home.about.webxr.description': 'Walk through 3D exhibition rooms in your browser. Compatible with VR headsets (Quest, Pico, HTC Vive) and flexible WASD / touch controls.',
+    'ui.home.about.audio.title': 'Audio guides with animated sound waves',
+    'ui.home.about.audio.description': 'Audio player with bilingual WebVTT subtitles synchronized to every sentence.',
+    'ui.home.about.heritage.title': 'High-detail heritage recreations',
+    'ui.home.about.heritage.description': 'Explore ceramic and bronze patterns, materials, and smart annotations in detail.',
+    'ui.home.about.accessibility.title': 'Accessible to everyone (WCAG 2.2 AA)',
+    'ui.home.about.accessibility.description': 'Fully keyboard navigable, standards-compliant contrast, and a smooth 2D fallback when WebGL is unavailable.',
+    'ui.home.featured.eyebrow': 'From the collection',
+    'ui.home.featured.title': 'Featured exhibits',
+    'ui.home.featured.loading-rooms': 'Loading galleries…',
+    'ui.home.featured.rooms-error': 'Could not load galleries',
+    'ui.home.featured.retry': 'Try again',
+    'ui.home.featured.empty-rooms': 'No public galleries yet.',
+    'ui.home.featured.loading-exhibits': 'Loading featured exhibits…',
+    'ui.home.featured.exhibits-error': 'Could not load featured exhibits',
+    'ui.home.featured.description': 'A selection of exhibits in display order',
+    'ui.home.featured.empty-exhibits': 'This gallery has no published exhibits yet.',
+    'ui.home.featured.room-collection': 'View this gallery’s collection',
+  },
   ja: { 'ui.nav.collection': 'コレクション' },
 };
 
@@ -67,9 +125,56 @@ test('trang chi tiết hiện vật theo ngôn ngữ đã chọn', async ({ page
   await expect(page.getByText('English description')).toBeVisible();
 });
 
+test('Home hero and featured section use the selected language', async ({ page }) => {
+  const { requested } = await install(page);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Chạm vào Di sản. Khám phá Không giới hạn.', level: 1 })).toBeVisible();
+  expect(requested).toEqual([]);
+
+  await language(page).selectOption('en');
+  await expect(page.getByRole('heading', { name: 'Touch Heritage. Explore without limits.', level: 1 })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Browse the collection', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeAttached();
+  await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: '3D Tour' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Home' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Aura Museum — Home' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Switch to dark theme' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Enter the 3D space' })).toBeVisible();
+  await expect(page.getByText('Virtual galleries')).toBeVisible();
+  await expect(page.getByText('Bilingual', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Immersive WebXR virtual space' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Featured exhibits', level: 2 })).toBeVisible();
+  await expect(page.getByText('A selection of exhibits in display order')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'View this gallery’s collection' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Explore' })).toBeVisible();
+  await expect(page.getByText('Preserving heritage and retelling its stories in 3D WebXR so everyone, anywhere, can reach art and history.')).toBeVisible();
+  await expect(page.getByText('Accessibility commitment: WCAG 2.2 AA')).toBeVisible();
+  expect(requested).toContain('en');
+});
+
+test('Home featured empty and error states are translated', async ({ page }) => {
+  await install(page);
+  let status = 200;
+  let response = envelope([]);
+  await page.route('**/api/rooms', (route) => fulfillMuseum(route, response, status));
+  await page.goto('/');
+  await language(page).selectOption('en');
+  await expect(page.getByRole('status').filter({ hasText: 'No public galleries yet.' })).toBeVisible();
+
+  status = 500;
+  response = { success: false, data: null, message: 'Server error' };
+  await page.reload();
+  await expect(page.getByRole('alert', { name: 'Could not load galleries' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+});
+
 test('320px: không tràn ngang; ô ngôn ngữ nằm trong menu và vẫn đổi được', async ({ page }) => {
   await install(page);
   await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Chạm vào Di sản. Khám phá Không giới hạn.', level: 1 })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
   await page.goto('/collection');
   await expect(page.getByRole('heading', { name: 'Bộ sưu tập', level: 1 })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -77,4 +182,5 @@ test('320px: không tràn ngang; ô ngôn ngữ nằm trong menu và vẫn đổ
   await page.getByRole('button', { name: 'Mở menu điều hướng' }).click();
   await page.getByRole('dialog').getByRole('combobox', { name: 'Ngôn ngữ' }).selectOption('en');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.getByRole('dialog').getByRole('heading', { name: 'Navigation' })).toBeVisible();
 });

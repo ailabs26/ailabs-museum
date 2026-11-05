@@ -40,12 +40,12 @@ function PublicLayoutContent() {
       <a className={classes.skipLink} href="#public-content">{t('ui.skip-link', 'Đến nội dung chính')}</a>
       <header className={`${classes.header} ${scrolled ? classes.headerScrolled : ''}`}>
         <Container size="lg" className={classes.headerInner}>
-          <Link to="/" className={classes.brand} aria-label="Aura Museum — Trang chủ">
+          <Link to="/" className={classes.brand} aria-label={t('ui.brand.home-aria', 'Aura Museum — Trang chủ')}>
             <span className={classes.brandMark}><img src={auraMark} width="26" height="26" alt="" /></span>
             <span>AURA <span className={classes.brandDetail}>DIGITAL MUSEUM</span></span>
           </Link>
 
-          <nav aria-label="Điều hướng chính" className={classes.navigation}>
+          <nav aria-label={t('ui.nav.main', 'Điều hướng chính')} className={classes.navigation}>
             {NAV.map((item) => (
               <NavLink key={item.to} to={item.to} end={item.end} className={classes.navLink}>{t(item.key, item.label)}</NavLink>
             ))}
@@ -54,17 +54,20 @@ function PublicLayoutContent() {
           <div className={classes.headerActions}>
             {/* Điện thoại: nằm trong Drawer để header không tràn ngang ở 320px. */}
             <LanguageSelect visibleFrom="sm" />
-            <ThemeToggle />
+            <ThemeToggle
+              darkLabel={t('ui.theme.to-dark', 'Chuyển sang giao diện tối')}
+              lightLabel={t('ui.theme.to-light', 'Chuyển sang giao diện sáng')}
+            />
             <Link to="/tour" className={classes.vrButton}>
               <IconCube size={18} aria-hidden="true" />
               <span>{t('ui.cta.enter-3d', 'Vào không gian 3D')}</span>
             </Link>
-            <Burger opened={drawer} onClick={open} hiddenFrom="sm" size="sm" aria-label="Mở menu điều hướng" />
+            <Burger opened={drawer} onClick={open} hiddenFrom="sm" size="sm" aria-label={t('ui.nav.open', 'Mở menu điều hướng')} />
           </div>
         </Container>
       </header>
 
-      <Drawer opened={drawer} onClose={close} position="right" size="xs" title="Điều hướng" hiddenFrom="sm">
+      <Drawer opened={drawer} onClose={close} position="right" size="xs" title={t('ui.drawer.title', 'Điều hướng')} hiddenFrom="sm">
         <Stack gap="xs">
           {NAV.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end} className={classes.navLink} onClick={close}>{t(item.key, item.label)}</NavLink>
@@ -88,30 +91,30 @@ function PublicLayoutContent() {
               <p className={classes.footerManifesto}>
                 {t('ui.footer.manifesto', 'Bảo tồn và kể lại câu chuyện di sản bằng không gian số 3D WebXR — để mọi người, ở bất cứ đâu, đều có thể chạm tới nghệ thuật và lịch sử.')}
               </p>
-              <span className={classes.footerBadge}>✦ Cam kết tiếp cận WCAG 2.2 AA</span>
+              <span className={classes.footerBadge}>✦ {t('ui.footer.accessibility', 'Cam kết tiếp cận WCAG 2.2 AA')}</span>
             </div>
 
-            <nav aria-label="Khám phá" className={classes.footerCol}>
-              <p className={classes.footerColTitle}>Khám phá</p>
+            <nav aria-label={t('ui.footer.explore', 'Khám phá')} className={classes.footerCol}>
+              <p className={classes.footerColTitle}>{t('ui.footer.explore', 'Khám phá')}</p>
               <div className={classes.footerLinks}>
-                <Link to="/">Trang chủ</Link>
-                <Link to="/collection">Bộ sưu tập 2D</Link>
-                <Link to="/tour">Tham quan 3D WebXR</Link>
+                <Link to="/">{t('ui.footer.home', 'Trang chủ')}</Link>
+                <Link to="/collection">{t('ui.footer.collection', 'Bộ sưu tập 2D')}</Link>
+                <Link to="/tour">{t('ui.footer.tour', 'Tham quan 3D WebXR')}</Link>
               </div>
             </nav>
 
-            <nav aria-label="Hệ thống" className={classes.footerCol}>
-              <p className={classes.footerColTitle}>Hệ thống</p>
+            <nav aria-label={t('ui.footer.system', 'Hệ thống')} className={classes.footerCol}>
+              <p className={classes.footerColTitle}>{t('ui.footer.system', 'Hệ thống')}</p>
               <div className={classes.footerLinks}>
                 <Link to="/admin" className={classes.adminLink}>
-                  <IconShieldLock size={16} aria-hidden="true" /> Cổng Quản trị viên
+                  <IconShieldLock size={16} aria-hidden="true" /> {t('ui.footer.admin', 'Cổng Quản trị viên')}
                 </Link>
               </div>
             </nav>
           </div>
           <div className={classes.footerBottom}>
-            <small>© 2026 Aura Museum · Dự án bảo tàng số · Nhóm ailabs26</small>
-            <small>Thiết kế theo Aura Design System 2.0</small>
+            <small>{t('ui.footer.copyright', '© 2026 Aura Museum · Dự án bảo tàng số · Nhóm ailabs26')}</small>
+            <small>{t('ui.footer.design-credit', 'Thiết kế theo Aura Design System 2.0')}</small>
           </div>
         </Container>
       </footer>
