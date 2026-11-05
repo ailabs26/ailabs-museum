@@ -154,7 +154,7 @@ async function startServer(): Promise<LoadServer> {
       },
       { provide: MediaRepository, useValue: mediaRepo },
       { provide: MediaUploadJobRepository, useValue: jobRepo },
-      { provide: TransactionManager, useValue: new FakeTransactionManager() },
+      { provide: TransactionManager, useValue: db ? new TransactionManager(db) : new FakeTransactionManager() },
       // Audit không phải đối tượng đo: bỏ ghi DB để harness không cần dọn nhật ký append-only.
       { provide: AuditService, useValue: { recordSafely: async () => undefined } },
       { provide: ConfigService, useValue: testUploadJobConfig({ uploadJobConcurrency: JOB_CONCURRENCY }) },
