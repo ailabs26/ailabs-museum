@@ -18,6 +18,7 @@ export const mediaConfig = registerAs('media', () => ({
   orphanCleanup: (process.env.MEDIA_ORPHAN_CLEANUP ?? 'dry-run') as 'off' | 'dry-run' | 'on',
   trashRetentionDays: parseInt(process.env.MEDIA_TRASH_RETENTION_DAYS ?? '30', 10),
   /** Số job upload bất đồng bộ chạy cùng lúc trong một tiến trình; job còn lại chờ FIFO. */
+  uploadJobRetentionDays: undefined as unknown as number,
   uploadJobConcurrency: parseInt(process.env.MEDIA_UPLOAD_JOB_CONCURRENCY ?? '3', 10),
   supabase: {
     url: (process.env.SUPABASE_URL ?? '').replace(/\/+$/, ''),

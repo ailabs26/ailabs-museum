@@ -130,6 +130,9 @@ export class FakeUploadJobRepository {
   insertCalls = 0;
   /** Hook giả lập lỗi DB khi patch; trả Error để patch đó ném lỗi (không được ghi vào `patches`). */
   patchError?: (data: UploadJobPatch) => Error | undefined;
+  deleteCutoffs: Date[] = [];
+  deleteError?: Error;
+  failInterruptedError?: Error;
 
   async insertOrFindExisting(data: NewUploadJob): Promise<{ job: MediaUploadJob; created: boolean }> {
     this.insertCalls++;
@@ -167,10 +170,25 @@ export class FakeUploadJobRepository {
   }
 
   async failInterrupted(): Promise<number> {
+    if (this.failInterruptedError) throw this.failInterruptedError;
     let count = 0;
     for (const row of this.rows.values()) {
       if (row.status === UploadJobStatus.QUEUED || row.status === UploadJobStatus.PROCESSING) {
         Object.assign(row, { status: UploadJobStatus.FAILED, progress: 100, errorCode: 'job_interrupted', updatedAt: new Date() });
+        count++;
+      }
+    }
+    return count;
+  }
+
+  async deleteFinishedBefore(cutoff: Date): Promise<number> {
+    this.deleteCutoffs.push(cutoff);
+    if (this.deleteError) throw this.deleteError;
+    let count = 0;
+    for (const row of [...this.rows.values()]) {
+      const finished = row.status === UploadJobStatus.SUCCEEDED || row.status === UploadJobStatus.FAILED;
+      if (finished && row.updatedAt < cutoff) {
+        this.rows.delete(row.id);
         count++;
       }
     }

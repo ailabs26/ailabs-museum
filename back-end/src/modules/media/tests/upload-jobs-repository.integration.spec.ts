@@ -101,4 +101,36 @@ describe('MediaUploadJobRepository (PostgreSQL thật)', { skip }, () => {
     assert.equal(reloaded?.errorCode, 'job_interrupted');
     assert.equal((await repo.findOwned(done.id, actor))?.status, UploadJobStatus.SUCCEEDED);
   });
+
+  it('TC35-DB — deleteFinishedBefore chỉ xóa job succeeded/failed cũ hơn mốc; job dang dở và job mới giữ nguyên', async () => {
+    const actor = await createUser();
+    const insert = async (key: string, status: UploadJobStatus, daysOld: number) => {
+      const { job } = await repo.insertOrFindExisting({ createdById: actor, idempotencyKey: key, requestChecksum: 'f'.repeat(64) });
+      await db.query(`UPDATE media_upload_jobs SET status = $2, updated_at = now() - make_interval(days => $3) WHERE id = $1`, [job.id, status, daysOld]);
+      return job.id;
+    };
+    const oldSucceeded = await insert('old-ok', UploadJobStatus.SUCCEEDED, 10);
+    const oldFailed = await insert('old-fail', UploadJobStatus.FAILED, 10);
+    const recent = await insert('recent', UploadJobStatus.SUCCEEDED, 1);
+    const oldQueued = await insert('old-queued', UploadJobStatus.QUEUED, 10);
+    const oldProcessing = await insert('old-processing', UploadJobStatus.PROCESSING, 10);
+
+    const removed = await repo.deleteFinishedBefore(new Date(Date.now() - 7 * 86_400_000));
+
+    assert.ok(removed >= 2);
+    assert.equal(await repo.findOwned(oldSucceeded, actor), null);
+    assert.equal(await repo.findOwned(oldFailed, actor), null);
+    for (const kept of [recent, oldQueued, oldProcessing]) assert.ok(await repo.findOwned(kept, actor), `phải giữ ${kept}`);
+  });
+
+  it('TC35b-DB — failInterrupted đặt lại updated_at nên job vừa bị gián đoạn không bị dọn ngay trong cùng lần khởi động', async () => {
+    const actor = await createUser();
+    const { job } = await repo.insertOrFindExisting({ createdById: actor, idempotencyKey: 'stale', requestChecksum: 'f'.repeat(64) });
+    await db.query(`UPDATE media_upload_jobs SET updated_at = now() - interval '30 days' WHERE id = $1`, [job.id]);
+
+    await repo.failInterrupted();
+    await repo.deleteFinishedBefore(new Date(Date.now() - 7 * 86_400_000));
+
+    assert.equal((await repo.findOwned(job.id, actor))?.errorCode, 'job_interrupted');
+  });
 });

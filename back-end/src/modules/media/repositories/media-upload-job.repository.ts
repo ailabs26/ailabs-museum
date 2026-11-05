@@ -54,6 +54,10 @@ export class MediaUploadJobRepository extends BaseRepository<MediaUploadJob> {
     return result.affected ?? 0;
   }
 
+  async deleteFinishedBefore(_cutoff: Date): Promise<number> {
+    throw new Error('Not implemented');
+  }
+
   private isActorKeyConflict(error: unknown): boolean {
     if (!(error instanceof QueryFailedError)) return false;
     const driver = error.driverError as { code?: string; constraint?: string };
