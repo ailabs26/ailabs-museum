@@ -1,0 +1,61 @@
+▶ user restore affected-row contract
+  ✖ repository returns the affected-row count, or zero when the driver omits it (3.6458ms)
+  ✖ rejects a zero-row update instead of reporting a successful restore (0.5609ms)
+  ✖ property: for seeded batches of 1–100 IDs, success requires every row updated (0.3594ms)
+  ✔ propagates a persistence rejection and does not clean role links (0.3096ms)
+✖ user restore affected-row contract (5.5615ms)
+ℹ tests 4
+ℹ suites 1
+ℹ pass 1
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2072.4268
+
+✖ failing tests:
+
+test at src\modules\users\tests\users-restore.spec.ts:58:24
+✖ repository returns the affected-row count, or zero when the driver omits it (3.6458ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  undefined !== 2
+
+      at TestContext.<anonymous> (D:\CNPM\ailabs-museum\back-end\src\modules\users\tests\users-restore.spec.ts:84:12)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1516:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\modules\users\tests\users-restore.spec.ts:77:24
+✖ rejects a zero-row update instead of reporting a successful restore (0.5609ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (InternalServerErrorException).
+      at async TestContext.<anonymous> (D:\CNPM\ailabs-museum\back-end\src\modules\users\tests\users-restore.spec.ts:93:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src\modules\users\tests\users-restore.spec.ts:83:24
+✖ property: for seeded batches of 1–100 IDs, success requires every row updated (0.3594ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (InternalServerErrorException): seed=1
+      at async TestContext.<anonymous> (D:\CNPM\ailabs-museum\back-end\src\modules\users\tests\users-restore.spec.ts:108:9)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }

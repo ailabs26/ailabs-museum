@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -134,7 +135,10 @@ export class UsersService {
         .filter((id) => !found.has(id))
         .map((id): BlockedDeletion => ({ id, reason: 'Không tìm thấy tài khoản trong mục đã xóa', notFound: true }));
       assertNothingBlocked(blocked, false, 'restore');
-      await this.users.markRestored(ids, manager);
+      const restored = await this.users.markRestored(ids, manager);
+      if (restored !== ids.length) {
+        throw new InternalServerErrorException('Không thể khôi phục toàn bộ tài khoản');
+      }
       await this.userRoles.removeDeletedRoleLinks(ids, manager);
     });
     return { ids };

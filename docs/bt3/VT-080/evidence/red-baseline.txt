@@ -1,0 +1,13 @@
+Original test-first run on baseline 795103d9f5b28af248e11023d55e18538fc6f221, before the production patch.
+This is a transcription of the original tool output excerpt; raw stdout was not redirected to a file at that time.
+
+Command (from back-end/):
+node -r reflect-metadata -r ts-node/register --test src/modules/users/tests/users-restore.spec.ts
+
+Exit code: 1
+tests 1; pass 0; fail 1
+✖ rejects a zero-row update instead of reporting a successful restore
+AssertionError [ERR_ASSERTION]: Missing expected rejection (InternalServerErrorException).
+
+Cause: UsersService.restoreMany returned { ids } after its repository double reported zero updated rows.
+The test compiled and reached the assertion; it did not fail because of fixture setup or a missing import.
