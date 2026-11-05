@@ -1,33 +1,20 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { http } from '@/core/api/http-client';
-import { LOCALES, SOURCE_LOCALE } from '@/services/translations.service';
+import { SOURCE_LOCALE } from '@/services/translations.service';
+import { PublicLocaleProvider as StoredLocaleProvider } from '@/contexts/PublicLocaleContext';
+import { usePublicLocale as useStoredLocale } from '@/hooks/usePublicLocale';
 
-const STORAGE_KEY = 'aura:public-locale';
-
-interface PublicLocaleValue {
-  locale: string;
-  setLocale: (locale: string) => void;
-  /** Chuỗi giao diện theo ngôn ngữ đang chọn; chưa dịch hoặc chưa tải xong thì dùng `fallback` (tiếng Việt). */
-  t: (key: string, fallback: string) => string;
-}
-
-const PublicLocaleContext = createContext<PublicLocaleValue>({
-  locale: SOURCE_LOCALE, setLocale: () => undefined, t: (_key, fallback) => fallback,
-});
-
-function savedLocale(): string {
-  try {
-    const value = localStorage.getItem(STORAGE_KEY);
-    return LOCALES.some((locale) => locale.code === value) ? value! : SOURCE_LOCALE;
-  } catch {
-    return SOURCE_LOCALE; // localStorage bị chặn: dùng ngôn ngữ nguồn.
-  }
-}
+type Translator = (key: string, fallback: string) => string;
+const PublicTranslationsContext = createContext<Translator>((_key, fallback) => fallback);
 
 /** Ngôn ngữ của phần công khai: lưu trên trình duyệt, đồng bộ `<html lang>`, chuỗi lấy từ CMS (loại `ui`). */
 export function PublicLocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState(savedLocale);
+  return <StoredLocaleProvider><PublicTranslationsProvider>{children}</PublicTranslationsProvider></StoredLocaleProvider>;
+}
+
+function PublicTranslationsProvider({ children }: { children: ReactNode }) {
+  const { locale } = useStoredLocale();
   const strings = useQuery({
     queryKey: ['public-translations', locale],
     queryFn: () => http.get<Record<string, string>>('/public/translations', { params: { locale } }),
@@ -40,21 +27,14 @@ export function PublicLocaleProvider({ children }: { children: ReactNode }) {
     return () => { document.documentElement.lang = SOURCE_LOCALE; };
   }, [locale]);
 
-  const setLocale = useCallback((next: string) => {
-    setLocaleState(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // Không lưu được thì chỉ áp dụng cho phiên hiện tại.
-    }
-  }, []);
-
-  const value = useMemo<PublicLocaleValue>(() => {
+  const t = useMemo<Translator>(() => {
     const map = locale === SOURCE_LOCALE ? undefined : strings.data;
-    return { locale, setLocale, t: (key, fallback) => map?.[key] || fallback };
-  }, [locale, setLocale, strings.data]);
+    return (key, fallback) => map?.[key] || fallback;
+  }, [locale, strings.data]);
 
-  return <PublicLocaleContext.Provider value={value}>{children}</PublicLocaleContext.Provider>;
+  return <PublicTranslationsContext.Provider value={t}>{children}</PublicTranslationsContext.Provider>;
 }
 
-export const usePublicLocale = () => useContext(PublicLocaleContext);
+export function usePublicLocale() {
+  return { ...useStoredLocale(), t: useContext(PublicTranslationsContext) };
+}
