@@ -252,6 +252,22 @@ describe('MediaUploadJobRepository (PostgreSQL thật)', { skip }, () => {
     }
   });
 
+  it('TC45-DB — failInterrupted tự bỏ qua job đã có media, kể cả khi bước đối soát chưa chạy được', async () => {
+    const actor = await createUser();
+    repo.failSucceeded = true;
+    const worker = startService();
+    const { job } = await worker.enqueue(glb(), {}, actor, randomUUID());
+    await worker.whenIdle();
+    repo.failSucceeded = false;
+
+    await repo.failInterrupted();
+
+    const row = await repo.findOwned(job.id, actor);
+    assert.equal(row?.status, UploadJobStatus.PROCESSING);
+    assert.equal(row?.errorCode, null);
+    assert.ok(row?.mediaId);
+  });
+
   it('TC41-DB — nguyên tử: ghi liên kết lỗi → rollback, không còn media mồ côi, job failed không có mediaId', async () => {
     const actor = await createUser();
     repo.failAfterLink = true;
