@@ -30,6 +30,7 @@ import { AllExceptionsFilter } from '../../../../common/filters/all-exceptions.f
 import { PermissionsGuard } from '../../../../common/guards/permissions.guard';
 import { ResponseInterceptor } from '../../../../common/interceptors/response.interceptor';
 import { dataSource as appDataSource } from '../../../../config/data-source';
+import { AuditService } from '../../../audit/services/audit.service';
 import { User } from '../../../users/entities/user.entity';
 import { AdminUploadJobsController } from '../../controllers/admin-upload-jobs.controller';
 import { Media } from '../../entities/media.entity';
@@ -145,6 +146,8 @@ async function startServer(): Promise<LoadServer> {
       { provide: MediaRepository, useValue: mediaRepo },
       { provide: MediaUploadJobRepository, useValue: jobRepo },
       { provide: TransactionManager, useValue: new FakeTransactionManager() },
+      // Audit không phải đối tượng đo: bỏ ghi DB để harness không cần dọn nhật ký append-only.
+      { provide: AuditService, useValue: { recordSafely: async () => undefined } },
       { provide: APP_GUARD, useClass: LoadAuthGuard },
       { provide: APP_GUARD, useClass: PermissionsGuard },
     ],
