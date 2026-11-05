@@ -24,6 +24,15 @@ Nhánh đã rebase lên `dev` ngày 03/11/2026 nên hash đổi. Tài liệu dù
 - `POST /api/admin/media/upload-jobs` (multipart `file` + header `Idempotency-Key`) → 202 `{ id, status, progress, ... }`; retry cùng key + cùng nội dung → 200 job cũ; khác nội dung → 409.
 - `GET /api/admin/media/upload-jobs/:id` → trạng thái `queued → processing → succeeded | failed`, `progress`, `mediaId`, `errorCode`.
 - Bảng `media_upload_jobs` với unique `(created_by, idempotency_key)` — migration `1793800000000-AddMediaUploadJobs.ts`.
+- Media tạo qua job có audit `media.upload` (resource là media, actor là người tạo job, cùng `requestId`/IP/User-Agent với request tạo job).
+- Hàng đợi FIFO trong tiến trình giới hạn số job chạy cùng lúc (`MEDIA_UPLOAD_JOB_CONCURRENCY`, mặc định 3). Job chờ giữ `queued`, `progress = 0`, chỉ chuyển `processing` khi tới lượt.
+- Job `succeeded`/`failed` cũ hơn `MEDIA_UPLOAD_JOB_RETENTION_DAYS` ngày (mặc định 7) bị xóa một lần khi API khởi động.
+
+## Giả định vận hành
+
+**Chỉ một instance API xử lý job.** Hàng đợi và buffer file nằm trong RAM của tiến trình. Khi một instance khởi động, `failInterrupted()` đánh dấu `failed` mọi job `queued`/`processing` trong bảng mà không phân biệt instance. Nếu chạy nhiều instance, hoặc rolling deploy có hai bản chạy chồng nhau, instance mới sẽ đánh dấu `failed` cả job đang chạy tốt ở instance khác. Giả định này chưa được xác nhận trên môi trường triển khai.
+
+**Giới hạn concurrency không giới hạn RAM.** Job đang chờ vẫn giữ buffer file, nên đỉnh RAM gần như không đổi (xem `03-traceability.md`).
 
 Code: `back-end/src/modules/media/{controllers/admin-upload-jobs.controller.ts, services/media-upload-job.service.ts, repositories/media-upload-job.repository.ts, entities/media-upload-job.entity.ts, dto/upload-job-response.dto.ts}`.
 
@@ -41,11 +50,13 @@ Integration test và harness tải trên PostgreSQL thật (chỉ chấp nhận 
 ```bash
 docker run -d --name bt3-pg -e POSTGRES_PASSWORD=bt3 -e POSTGRES_DB=bt3 -p 127.0.0.1:55432:5432 postgres:16-alpine
 export MEDIA_TEST_DATABASE_URL=postgres://postgres:bt3@127.0.0.1:55432/bt3
-npm run test:upload-jobs          # thêm 3 test PG thật (migration chạy tự động)
+npm run test:upload-jobs          # thêm 5 test PG thật (migration chạy tự động)
 npm run load:upload-jobs          # 80 upload đồng thời × 5 lần, in p50/p95/max
 LOAD_OUTPUT=out.json LOAD_CONCURRENCY=80 LOAD_RUNS=5 LOAD_FILE_BYTES=2000000 npm run load:upload-jobs
 docker rm -f bt3-pg
 ```
+
+Harness in thêm đỉnh RSS và `arrayBuffers` của server; `MEDIA_UPLOAD_JOB_CONCURRENCY` đổi số job chạy cùng lúc. Kịch bản 8 MB cần khoảng 2 GB đĩa tạm: nếu `/tmp` không đủ thì đặt `TMPDIR` sang phân vùng khác, nếu không job sẽ lỗi `ENOSPC` và số đo vô nghĩa.
 
 Coverage cho các file của slice:
 
@@ -65,7 +76,7 @@ Kiểm flaky theo thứ tự ngẫu nhiên: thêm `--test-randomize --test-rando
 | File | Nội dung |
 |---|---|
 | `01-spec-and-plan.md` | Problem statement, AC1–AC5, NFR, invariant, plan AI và review R1–R6 |
-| `02-test-strategy.md` | Phân bổ level, phân lớp tương đương, bảng 17 test case |
+| `02-test-strategy.md` | Phân bổ level, phân lớp tương đương, bảng test case |
 | `03-traceability.md` | AC/Risk → test → file → commit → kết quả |
 | `04-ai-usage-log.md` | Prompt, output dùng/sửa/bác bỏ, 2 điểm AI chưa đáng tin |
 | `evidence/` | Log baseline, đỏ (cả lần sai lý do), xanh, mutation, coverage, flaky, kết quả tải |

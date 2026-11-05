@@ -74,3 +74,15 @@ Trước đó agent đã được yêu cầu "phân tích yêu cầu làm bài t
 | R4 | Kiểm tra flaky bằng `--test-shuffle` | **Bác bỏ** | `node --help` (v26.3.0) không có `--test-shuffle`; cờ đúng là `--test-randomize` kèm `--test-random-seed`. |
 | R5 | Harness tải ở `back-end/scripts/load/` chạy bằng `ts-node` | **Sửa** | `tsconfig.json` có `rootDir: ./src`, `include: ["src/**/*.ts"]`; thư mục `scripts/` không thuộc project và `npm run typecheck` không kiểm tra nó. Đặt harness ở `src/modules/media/tests/load/` (không phải `*.spec.ts` nên không chạy cùng test). |
 | R6 | Danh sách file không có `config/data-source.ts` | **Bổ sung** | `data-source.ts` khai báo entity tường minh và `DatabaseModule` đặt `autoLoadEntities: false`; thiếu entity mới thì migration và repository lỗi lúc chạy thật. |
+
+## 7. Bổ sung sau đợt review (05/11/2026)
+
+| ID | Yêu cầu | Cách làm |
+|---|---|---|
+| AC6 | Media tạo qua upload-jobs có audit `media.upload`, resource là media, actor là người tạo job. Không ghi khi job `failed`, không ghi lại khi retry cùng key. Lỗi ghi audit không làm hỏng job. | Worker gọi `AuditService.recordSafely()` sau `markSucceeded()`. Controller truyền `auditClientInfo(req)` để giữ `requestId`, IP, User-Agent của request gốc. |
+| AC7 | Tối đa `MEDIA_UPLOAD_JOB_CONCURRENCY` job (mặc định 3) chạy cùng lúc, thứ tự FIFO. Job chờ giữ `queued`, `progress = 0`. `whenIdle()` chờ cả job trong hàng đợi. Job ném lỗi vẫn trả slot. | `queue` + `drain()` trong `MediaUploadJobService`; slot trả ở `finally`. |
+| AC8 | Job đã kết thúc cũ hơn N ngày (mặc định 7) bị xóa khi khởi động, không thêm scheduler. | `deleteFinishedBefore()` gọi sau `failInterrupted()` trong `onApplicationBootstrap`. Không cần migration. |
+
+**Quyết định cần người review xác nhận.** AC6 ghi "khi job chuyển sang `succeeded`", nhưng code ghi audit cả khi media đã lưu mà 3 lần ghi `succeeded` đều lỗi (job giữ `processing`, TC24b). Lý do: lúc đó media `ready` có thật, bỏ audit thì đúng lỗi đang sửa lại xuất hiện. Hệ quả: nếu server khởi động lại, job đó thành `failed` trong khi audit `media.upload` đã có.
+
+**Giả định một instance:** hàng đợi và buffer chỉ nằm trong tiến trình, và `failInterrupted()` không phân biệt instance. Chạy nhiều instance sẽ làm job của instance khác bị đánh dấu `failed`.
