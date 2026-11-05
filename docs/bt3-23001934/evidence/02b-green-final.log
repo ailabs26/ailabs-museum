@@ -1,0 +1,83 @@
+# GREEN cuối — nhánh nộp 2ab9c9d — 2026-10-31T23:37:33+07:00 — có MEDIA_TEST_DATABASE_URL (PG16 docker)
+
+> aura-museum-api@0.1.0 test:upload-jobs
+> node -r reflect-metadata -r ts-node/register --test src/modules/media/tests/upload-jobs-*.spec.ts
+
+▶ Upload media bất đồng bộ (VT-078) — HTTP
+  ▶ AC1–AC2: tạo job và theo dõi tiến trình
+    ✔ TC01 — GLB hợp lệ + key mới → 202, status queued, progress 0, có id (82.75538ms)
+    ✔ TC02 — E2E API: tạo job → poll → succeeded, progress 100, mediaId trỏ tới media ready (46.899998ms)
+    ✔ ghi audit với resource type media_upload_job và id của job (13.070664ms)
+  ✔ AC1–AC2: tạo job và theo dõi tiến trình (144.607449ms)
+  ▶ AC3: retry cùng Idempotency-Key không tạo bản ghi trùng
+    ✔ TC03 — gửi lại tuần tự cùng key + cùng file → 200, cùng job, 1 job, 1 media (40.267725ms)
+    ✔ TC04 — 20 request đồng thời cùng key → đúng 1 lần 202, cùng một job, 1 media (70.264895ms)
+    ✔ cùng key nhưng khác người tạo → hai job độc lập (key chỉ duy nhất theo người tạo) (11.007529ms)
+  ✔ AC3: retry cùng Idempotency-Key không tạo bản ghi trùng (122.481062ms)
+  ▶ AC5: phân lớp tương đương Idempotency-Key
+    ✔ TC05 — key đã dùng + nội dung khác → 409 idempotency_key_reused, không thêm job (13.581279ms)
+    ✔ TC06 — thiếu header → 400 idempotency_key_required, không tạo job (4.821547ms)
+    ✔ TC06b — header rỗng → 400 idempotency_key_required (5.09016ms)
+    ✔ TC07 — key 129 ký tự (ngay trên biên) → 400 idempotency_key_invalid (5.475199ms)
+    ✔ TC07 — key chứa khoảng trắng → 400 idempotency_key_invalid (3.925963ms)
+    ✔ TC07 — key chứa ký tự "/" → 400 idempotency_key_invalid (5.512355ms)
+    ✔ TC07 — key chứa ký tự Latin-1 ngoài ASCII → 400 idempotency_key_invalid (5.378328ms)
+    ✔ key 1 ký tự (biên dưới) → 202 (5.245559ms)
+    ✔ key 128 ký tự (biên trên) → 202 (6.207214ms)
+    ✔ key dạng UUID (đại diện lớp hợp lệ) → 202 (5.300664ms)
+  ✔ AC5: phân lớp tương đương Idempotency-Key (61.90417ms)
+  ▶ AC4: phân lớp tương đương file — lỗi pipeline thành job failed
+    ✔ TC08 — file EXE đổi đuôi .glb → 202 rồi failed (media_unsupported_type), không có media ready (8.695756ms)
+    ✔ TC08b — PNG vượt 2 MB (giới hạn theo định dạng) → 202 rồi failed (media_too_large), không có media ready (59.021718ms)
+    ✔ TC08c — GLB hỏng cấu trúc → 202 rồi failed (media_corrupted), không có media ready (10.620954ms)
+    ✔ thiếu file → 400 ngay, không tạo job (7.554747ms)
+    ✔ vượt giới hạn multipart (> 10 MB) → 413 ngay, không tạo job (66.13192ms)
+  ✔ AC4: phân lớp tương đương file — lỗi pipeline thành job failed (152.959793ms)
+  ▶ GET /admin/media/upload-jobs/:id — phân lớp jobId
+    ✔ TC11 — UUID không tồn tại → 404 (7.311278ms)
+    ✔ TC11b — job của biên tập viên khác → 404 (không lộ sự tồn tại) (15.559906ms)
+    ✔ TC12 — id không phải UUID → 400 (9.476871ms)
+  ✔ GET /admin/media/upload-jobs/:id — phân lớp jobId (33.189371ms)
+✔ Upload media bất đồng bộ (VT-078) — HTTP (648.60138ms)
+▶ MediaUploadJobRepository (PostgreSQL thật)
+  ✔ 20 insert đồng thời cùng key → đúng 1 created, cả 20 nhận cùng job, bảng có 1 dòng (187.706153ms)
+  ✔ unique constraint tồn tại đúng tên; created_by NOT NULL (21.852397ms)
+  ✔ findOwned chỉ trả job của đúng người tạo; failInterrupted chỉ đổi job dang dở (46.437294ms)
+✔ MediaUploadJobRepository (PostgreSQL thật) (8148.064007ms)
+[31m[Nest] 1366954  - [39m10/31/2026, 11:37:52 PM [31m  ERROR[39m [38;5;3m[MediaUploadJobService] [39m[31mJob upload d8a2b623-cc78-454e-9bd1-706be09dd3b0 lỗi: ECONNRESET supabase://bucket/secret-path[39m
+▶ MediaUploadJobService (unit, VT-078)
+  ✔ TC09 — failure path: storage lỗi → job failed (internal_error, không lộ chi tiết); retry cùng key trả job failed cũ, không chạy lại pipeline (15.313851ms)
+[33m[Nest] 1366954  - [39m10/31/2026, 11:37:52 PM [33m   WARN[39m [38;5;3m[MediaUploadJobService] [39m[33mĐánh dấu 2 job upload bị gián đoạn khi khởi động lại[39m
+  ✔ fingerprint gồm cả metadata: cùng key, cùng file nhưng altText khác → 409 (5.939579ms)
+  ✔ TC13 — khởi động lại: job queued/processing → failed job_interrupted; job đã xong giữ nguyên (1.290891ms)
+✔ MediaUploadJobService (unit, VT-078) (34.497094ms)
+▶ toUploadJobResponse (unit) — TC10
+  ✔ ánh xạ đúng từng field, không lộ checksum/key/người tạo (1.860872ms)
+  ✔ job failed giữ errorCode/errorMessage, mediaId null (0.310727ms)
+✔ toUploadJobResponse (unit) — TC10 (2.55587ms)
+▶ MediaUploadJobRepository.insertOrFindExisting (unit, lỗi 23505)
+  ✔ insert thành công → created true (0.622362ms)
+  ✔ vi phạm UQ actor+key (request đồng thời thắng trước) → đọc lại job đã có, created false (0.794384ms)
+  ✔ vi phạm constraint khác hoặc lỗi DB khác → ném lại, không nuốt lỗi (0.413395ms)
+✔ MediaUploadJobRepository.insertOrFindExisting (unit, lỗi 23505) (2.303391ms)
+ℹ tests 35
+ℹ suites 10
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 22324.385169
+
+# Toàn bộ back-end: npm run test (không đặt DB) + lint + typecheck
+ℹ tests 1974
+ℹ suites 225
+ℹ pass 1974
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+> eslint .
+
+
+(lint và typecheck không in lỗi nào ở trên; xem lại bằng: npm run lint && npm run typecheck)

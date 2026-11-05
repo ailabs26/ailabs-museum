@@ -1,0 +1,36 @@
+== M6: LIFO (pop thay shift)
+ℹ cancelled 2
+ℹ fail 1
+ℹ pass 19
+✖ TC26 — 5 job, giới hạn 3: chỉ 3 job chạy; job chờ giữ queued/progress 0, không có patch; x
+✖ TC27 — FIFO: giới hạn 1 thì job chạy đúng thứ tự enqueue, từng job một (2004.743186ms)
+✖ TC28 — whenIdle chờ cả job đang chạy lẫn job còn trong hàng đợi (2004.282994ms)
+== M7: whenIdle không lặp, chỉ chờ lượt đang chạy
+ℹ cancelled 0
+ℹ fail 1
+ℹ pass 21
+✖ TC28 — whenIdle chờ cả job đang chạy lẫn job còn trong hàng đợi (7.207247ms)
+== M8: bỏ catch trong drain
+ℹ cancelled 0
+ℹ fail 1
+ℹ pass 21
+✖ TC29c — failure path: worker ném lỗi ngoài dự kiến (sau khi media đã lưu) → slot được t
+== M9: không drain lại sau khi job xong
+ℹ cancelled 8
+ℹ fail 0
+ℹ pass 14
+✖ TC26 — 5 job, giới hạn 3: chỉ 3 job chạy; job chờ giữ queued/progress 0, không có patch; x
+✖ TC27 — FIFO: giới hạn 1 thì job chạy đúng thứ tự enqueue, từng job một (2003.659872ms)
+✖ TC28 — whenIdle chờ cả job đang chạy lẫn job còn trong hàng đợi (2002.333853ms)
+✖ TC29b — failure path: patch processing lỗi và cả patch failed cũng lỗi → slot vẫn được t
+✖ TC29c — failure path: worker ném lỗi ngoài dự kiến (sau khi media đã lưu) → slot được t
+✖ TC29 — failure path: job lỗi pipeline trả slot, job sau vẫn chạy và job lỗi là failed (2002.
+✖ TC30 — retry cùng key khi job còn trong hàng đợi: trả job queued cũ, không thêm vào hàng đ
+✖ TC31 — media đã lưu, ghi succeeded lỗi liên tục: job giữ processing, không ghi failed, slot �
+== M10: retry cũng vào hàng đợi
+ℹ cancelled 1
+ℹ fail 2
+ℹ pass 19
+✖ TC09 — failure path: storage lỗi → job failed (internal_error, không lộ chi tiết); retry cùng 
+✖ TC19b — media đã lưu, patch succeeded lỗi liên tục → media vẫn còn, job giữ processing, k
+✖ TC30 — retry cùng key khi job còn trong hàng đợi: trả job queued cũ, không thêm vào hàng đ

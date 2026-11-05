@@ -7,6 +7,7 @@ import {
   NotFoundException,
   PayloadTooLargeException,
 } from '@nestjs/common';
+import type { EntityManager } from 'typeorm';
 import { TransactionManager } from '../../../common/database/transaction.manager';
 import { withDeletedAt, type Trashed } from '../../../common/dto/deleted-filter.dto';
 import { assertNothingBlocked, type BlockedDeletion } from '../../../common/exceptions/deletion-blocked';
@@ -29,6 +30,9 @@ export interface UploadedMediaFile {
   buffer: Buffer;
   originalname?: string;
 }
+
+/** Chạy trong cùng transaction với việc tạo media `ready`; ném lỗi thì media không được lưu. */
+export type MediaSavedHook = (mediaId: string, manager: EntityManager) => Promise<void>;
 
 const METADATA_FIELDS = ['altText', 'source', 'author', 'license'] as const;
 const MAX_ORIGINAL_NAME_LENGTH = 255;
@@ -95,8 +99,14 @@ export class MediaService {
    * Pipeline upload (FR-55–57, NFR-19): nhận diện định dạng thực tế → kiểm tra dung lượng
    * theo định dạng → parse/decode → lưu file → tạo bản ghi. File bị từ chối không được lưu.
    * File gây lỗi không rõ nguyên nhân khi phân tích được đưa vào quarantine.
+   * `onSaved` chỉ chạy cho media `ready`; không truyền thì không mở transaction (upload đồng bộ).
    */
-  async upload(file: UploadedMediaFile | undefined, dto: UploadMediaDto, actorId: string | null): Promise<MediaResponse> {
+  async upload(
+    file: UploadedMediaFile | undefined,
+    dto: UploadMediaDto,
+    actorId: string | null,
+    onSaved?: MediaSavedHook,
+  ): Promise<MediaResponse> {
     if (!file || !Buffer.isBuffer(file.buffer)) {
       const message = 'Thiếu file upload (field "file" trong multipart/form-data)';
       throw new BadRequestException({ message, errors: fileError(MediaErrorCode.FILE_REQUIRED, message) });
@@ -127,7 +137,7 @@ export class MediaService {
       );
     }
 
-    const media = await this.persist(buffer, spec, file, dto, actorId, MediaProcessingState.READY);
+    const media = await this.persist(buffer, spec, file, dto, actorId, MediaProcessingState.READY, onSaved);
     return this.toResponse(media);
   }
 
@@ -223,6 +233,7 @@ export class MediaService {
     dto: UploadMediaDto,
     actorId: string | null,
     state: MediaProcessingState,
+    onSaved?: MediaSavedHook,
   ): Promise<Media> {
     const storageKey = this.storage.createKey(spec, state === MediaProcessingState.QUARANTINED);
     await this.storage.save(storageKey, buffer);
@@ -241,7 +252,12 @@ export class MediaService {
         license: dto.license ?? null,
         createdById: actorId,
       });
-      return (await this.mediaRepo.save(media)) as Media;
+      if (!onSaved) return (await this.mediaRepo.save(media)) as Media;
+      return await this.tx.run(async (manager) => {
+        const saved = (await this.mediaRepo.save(media, manager)) as Media;
+        await onSaved(saved.id, manager);
+        return saved;
+      });
     } catch (error) {
       await this.storage.remove(storageKey).catch((cleanupError: Error) =>
         this.logger.warn(`Không dọn được file ${storageKey}: ${cleanupError.message}`),

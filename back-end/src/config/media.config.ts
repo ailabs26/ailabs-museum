@@ -17,6 +17,10 @@ export const mediaConfig = registerAs('media', () => ({
   /** Chế độ job dọn media mồ côi: off | dry-run | on. */
   orphanCleanup: (process.env.MEDIA_ORPHAN_CLEANUP ?? 'dry-run') as 'off' | 'dry-run' | 'on',
   trashRetentionDays: parseInt(process.env.MEDIA_TRASH_RETENTION_DAYS ?? '30', 10),
+  /** Số job upload bất đồng bộ chạy cùng lúc trong một tiến trình; job còn lại chờ FIFO. */
+  uploadJobConcurrency: parseInt(process.env.MEDIA_UPLOAD_JOB_CONCURRENCY ?? '3', 10),
+  /** Số ngày giữ job upload đã kết thúc; dọn một lần khi khởi động. */
+  uploadJobRetentionDays: parseInt(process.env.MEDIA_UPLOAD_JOB_RETENTION_DAYS ?? '7', 10),
   supabase: {
     url: (process.env.SUPABASE_URL ?? '').replace(/\/+$/, ''),
     // Khóa mới `sb_secret_...` ưu tiên; khóa legacy service_role vẫn dùng được.

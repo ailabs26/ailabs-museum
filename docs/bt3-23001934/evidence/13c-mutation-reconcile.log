@@ -1,0 +1,62 @@
+# Mutation đối soát — code tại e8551aa — có PostgreSQL — 2026-11-05T22:31:47+07:00
+== M12: bỏ bước đối soát khi khởi động
+ℹ cancelled 0
+ℹ fail 5
+ℹ pass 72
+✖ TC38-DB — review P2: media lưu xong → 3 lần ghi succeeded lỗi → restart → retry cù
+✖ TC38 — review P2: upload thành công → 3 lần ghi succeeded lỗi → restart → retry c�
+✖ TC39-DB — khởi động: job có media → succeeded; job processing và queued chưa có med
+✖ TC39 — khởi động: job không có media vẫn failed job_interrupted như cũ; job có med
+✖ TC45 — failure path: bước đối soát lỗi lúc khởi động → job có media vẫn kh
+== M13: failInterrupted không loại job đã có media (repository thật)
+ℹ cancelled 0
+ℹ fail 0
+ℹ pass 77
+== M14: worker không truyền hook liên kết
+ℹ cancelled 0
+ℹ fail 7
+ℹ pass 0
+== M15: markFailed ghi failed không điều kiện
+ℹ cancelled 0
+ℹ fail 1
+ℹ pass 76
+✖ TC42 — transaction đã commit nhưng upload() vẫn ném lỗi sau đó: job không bị ghi 
+== M16: liên kết cả media bị cách ly
+ℹ cancelled 0
+ℹ fail 1
+ℹ pass 76
+✖ TC40 — negative: media bị cách ly không được liên kết: job failed media_quarantined
+== M17: lưu media ngoài transaction của liên kết
+ℹ cancelled 0
+ℹ fail 3
+ℹ pass 74
+✖ TC41-DB — nguyên tử: ghi liên kết lỗi → rollback, không còn media mồ côi, job f
+✖ TC43-DB — job không còn processing lúc liên kết (instance khác đã ghi failed) → rol
+✖ TC44 — liên kết chạy cùng transaction với media; đường upload đồng bộ không 
+== M18: linkMedia không kiểm job còn processing
+ℹ cancelled 0
+ℹ fail 1
+ℹ pass 76
+✖ TC43-DB — job không còn processing lúc liên kết (instance khác đã ghi failed) → rol
+
+# Ghi chú: M13 sống sót (77/77) vì bước đối soát chạy trước, TC45 chỉ kiểm guard của fake → thêm TC45-DB.
+# M14 ở trên không hợp lệ (fail 7, pass 0 = lỗi compile của mutation) → viết lại. Chạy lại cả hai:
+== M13 (lần 2): failInterrupted không loại job đã có media (repository thật)
+ℹ cancelled 0
+ℹ fail 1
+ℹ pass 77
+✖ TC45-DB — failInterrupted tự bỏ qua job đã có media, kể cả khi bước đối soát
+== M14 (lần 2): worker không truyền hook liên kết
+ℹ cancelled 0
+ℹ fail 10
+ℹ pass 68
+✖ TC38b — retry cùng key khi job còn kẹt processing (chưa restart): trả job cũ đã có 
+✖ TC38-DB — review P2: media lưu xong → 3 lần ghi succeeded lỗi → restart → retry cù
+✖ TC38 — review P2: upload thành công → 3 lần ghi succeeded lỗi → restart → retry c�
+✖ TC39-DB — khởi động: job có media → succeeded; job processing và queued chưa có med
+✖ TC41-DB — nguyên tử: ghi liên kết lỗi → rollback, không còn media mồ côi, job f
+✖ TC41 — failure path: ghi liên kết lỗi → upload coi là thất bại: file bị dọn, j
+✖ TC42 — transaction đã commit nhưng upload() vẫn ném lỗi sau đó: job không bị ghi 
+✖ TC43-DB — job không còn processing lúc liên kết (instance khác đã ghi failed) → rol
+✖ TC44 — liên kết chạy cùng transaction với media; đường upload đồng bộ không 
+✖ TC45-DB — failInterrupted tự bỏ qua job đã có media, kể cả khi bước đối soát

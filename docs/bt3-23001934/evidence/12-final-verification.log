@@ -1,0 +1,17 @@
+# Kiểm tra cuối — code tại d82783e — 2026-11-05T21:47:56+07:00 — node v26.3.0
+typecheck exit 0
+lint exit 0
+== test:upload-jobs (không DB)
+ℹ tests 60 ℹ pass 60 ℹ fail 0 ℹ cancelled 0 ℹ skipped 0 
+== test:media (không DB)
+ℹ tests 584 ℹ pass 584 ℹ fail 0 ℹ cancelled 0 ℹ skipped 0 
+== test:rooms (không DB)
+ℹ tests 446 ℹ pass 446 ℹ fail 0 ℹ cancelled 0 ℹ skipped 0 
+== test:exhibits (không DB)
+ℹ tests 633 ℹ pass 633 ℹ fail 0 ℹ cancelled 0 ℹ skipped 0 
+== test:upload-jobs (PostgreSQL 16 docker)
+ℹ tests 65 ℹ pass 65 ℹ fail 0 ℹ cancelled 0 ℹ skipped 0 
+== test:media (PostgreSQL 16 docker, --test-concurrency=1)
+ℹ tests 653 ℹ pass 653 ℹ fail 0 ℹ cancelled 0 ℹ skipped 0 
+== npm run test (toàn back-end, không DB)
+ℹ tests 2133 ℹ pass 2133 ℹ fail 0 ℹ cancelled 0 ℹ skipped 0 

@@ -2,12 +2,16 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminMediaController } from './controllers/admin-media.controller';
+import { AdminUploadJobsController } from './controllers/admin-upload-jobs.controller';
 import { MediaDeliveryController } from './controllers/media-delivery.controller';
 import { Media } from './entities/media.entity';
+import { MediaUploadJob } from './entities/media-upload-job.entity';
 import { MediaRepository } from './repositories/media.repository';
+import { MediaUploadJobRepository } from './repositories/media-upload-job.repository';
 import { MediaInspectionService } from './services/media-inspection.service';
 import { MediaStorageService } from './services/media-storage.service';
 import { MediaService } from './services/media.service';
+import { MediaUploadJobService } from './services/media-upload-job.service';
 import { MediaDeliveryService } from './services/media-delivery.service';
 import { MediaReferenceValidator } from './services/media-reference.validator';
 import { MEDIA_URL_OPTIONS, MediaUrlOptions, MediaUrlService } from './services/media-url.service';
@@ -18,12 +22,14 @@ import { MediaCleanupService } from './services/media-cleanup.service';
 import { SupabaseStorageDriver } from './storage/supabase-storage.driver';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Media]), AuditModule],
-  controllers: [AdminMediaController, MediaDeliveryController],
+  imports: [TypeOrmModule.forFeature([Media, MediaUploadJob]), AuditModule],
+  controllers: [AdminMediaController, AdminUploadJobsController, MediaDeliveryController],
   providers: [
     MediaCleanupService, // cron dọn media mồ côi 03:30
     MediaRepository,
     MediaService,
+    MediaUploadJobRepository,
+    MediaUploadJobService,
     MediaInspectionService,
     MediaStorageService,
     MediaUrlService,

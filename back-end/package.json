@@ -31,6 +31,8 @@
     "test:audit": "node -r reflect-metadata -r ts-node/register --test src/modules/audit/tests/*.spec.ts",
     "test:exhibits": "node -r reflect-metadata -r ts-node/register --test src/modules/exhibits/tests/*.spec.ts",
     "test:media": "node -r reflect-metadata -r ts-node/register --test src/modules/media/tests/*.spec.ts",
+    "test:upload-jobs": "node -r reflect-metadata -r ts-node/register --test src/modules/media/tests/upload-jobs-*.spec.ts",
+    "load:upload-jobs": "node -r reflect-metadata -r ts-node/register src/modules/media/tests/load/upload-jobs.load.ts",
     "test:service": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/rooms-service*.spec.ts",
     "test:extended": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/rooms-service-extended.spec.ts"
   },

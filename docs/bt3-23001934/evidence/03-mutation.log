@@ -1,0 +1,79 @@
+# MUTATION M1 (a97b196): toUploadJobResponse mediaId: job.mediaId ?? null  →  mediaId: job.id
+a97b196486c30a5feb477480be2294f7a7df4b1d TEMP mutation M1: mediaId map nhầm sang job.id (KHÔNG MERGE)
+
+ back-end/src/modules/media/dto/upload-job-response.dto.ts | 2 +-
+diff --git a/back-end/src/modules/media/dto/upload-job-response.dto.ts b/back-end/src/modules/media/dto/upload-job-response.dto.ts
+index 4be6a40..1ec590a 100644
+--- a/back-end/src/modules/media/dto/upload-job-response.dto.ts
++++ b/back-end/src/modules/media/dto/upload-job-response.dto.ts
+@@ -18,7 +18,7 @@ export function toUploadJobResponse(job: MediaUploadJob): UploadJobResponse {
+     id: job.id,
+     status: job.status,
+     progress: job.progress,
+-    mediaId: job.mediaId ?? null,
++    mediaId: job.id,
+     errorCode: job.errorCode ?? null,
+     errorMessage: job.errorMessage ?? null,
+     createdAt: job.createdAt,
+✖ Upload media bất đồng bộ (VT-078) — HTTP (362.682244ms)
+✖ toUploadJobResponse (unit) — TC10 (10.295563ms)
+ℹ tests 31
+ℹ pass 24
+ℹ fail 7
+✖ failing tests:
+✖ TC01 — GLB hợp lệ + key mới → 202, status queued, progress 0, có id (53.835544ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  + 'b4bda270-8daa-4245-aa4e-063c85d94935'
+  - null
+✖ TC02 — E2E API: tạo job → poll → succeeded, progress 100, mediaId trỏ tới media ready (32.108856ms)
+✖ TC08 — file EXE đổi đuôi .glb → 202 rồi failed (media_unsupported_type), không có media ready (5.951245ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  + '21a99578-566d-4bda-a111-21ef8fc59a50'
+  - null
+✖ TC08b — PNG vượt 2 MB (giới hạn theo định dạng) → 202 rồi failed (media_too_large), không có media ready (27.902196ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  + '916140a0-e4fb-4222-845b-3fc6838ff348'
+  - null
+✖ TC08c — GLB hỏng cấu trúc → 202 rồi failed (media_corrupted), không có media ready (5.625501ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  + '3801c41e-2d29-44b4-8905-9ab12d1ee99c'
+  - null
+✖ ánh xạ đúng từng field, không lộ checksum/key/người tạo (8.911292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  +   mediaId: '11111111-1111-4111-8111-111111111111',
+  -   mediaId: '22222222-2222-4222-8222-222222222222',
+✖ job failed giữ errorCode/errorMessage, mediaId null (0.975345ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  + '1447e7ed-dcbf-4b20-a915-e2bba5f8f51b'
+  - null
+
+# MUTATION M2 (5b23ab9): toUploadJobResponse errorCode: job.errorCode ?? null  →  errorCode: job.errorMessage ?? null
+diff --git a/back-end/src/modules/media/dto/upload-job-response.dto.ts b/back-end/src/modules/media/dto/upload-job-response.dto.ts
+index 4be6a40..93858aa 100644
+--- a/back-end/src/modules/media/dto/upload-job-response.dto.ts
++++ b/back-end/src/modules/media/dto/upload-job-response.dto.ts
+@@ -19,7 +19,7 @@ export function toUploadJobResponse(job: MediaUploadJob): UploadJobResponse {
+     status: job.status,
+     progress: job.progress,
+     mediaId: job.mediaId ?? null,
+-    errorCode: job.errorCode ?? null,
++    errorCode: job.errorMessage ?? null,
+     errorMessage: job.errorMessage ?? null,
+     createdAt: job.createdAt,
+     updatedAt: job.updatedAt,
+✖ Upload media bất đồng bộ (VT-078) — HTTP (366.335537ms)
+✖ toUploadJobResponse (unit) — TC10 (10.661745ms)
+ℹ tests 31
+ℹ pass 27
+ℹ fail 4
+✖ failing tests:
+✖ TC08 — file EXE đổi đuôi .glb → 202 rồi failed (media_unsupported_type), không có media ready (8.018711ms)
+✖ TC08b — PNG vượt 2 MB (giới hạn theo định dạng) → 202 rồi failed (media_too_large), không có media ready (17.560607ms)
+✖ TC08c — GLB hỏng cấu trúc → 202 rồi failed (media_corrupted), không có media ready (6.620122ms)
+✖ job failed giữ errorCode/errorMessage, mediaId null (8.387826ms)

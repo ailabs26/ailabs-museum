@@ -1,0 +1,28 @@
+# Flaky — code tại e2276be — 2026-11-05T22:41:09+07:00 — có PostgreSQL
+lặp 1: ℹ pass 78 ℹ fail 0 
+lặp 2: ℹ pass 78 ℹ fail 0 
+lặp 3: ℹ pass 78 ℹ fail 0 
+lặp 4: ℹ pass 78 ℹ fail 0 
+lặp 5: ℹ pass 78 ℹ fail 0 
+lặp 6: ℹ pass 78 ℹ fail 0 
+lặp 7: ℹ pass 78 ℹ fail 0 
+lặp 8: ℹ pass 78 ℹ fail 0 
+lặp 9: ℹ pass 78 ℹ fail 0 
+lặp 10: ℹ pass 78 ℹ fail 0 
+lặp 11: ℹ pass 78 ℹ fail 0 
+lặp 12: ℹ pass 78 ℹ fail 0 
+lặp 13: ℹ pass 78 ℹ fail 0 
+lặp 14: ℹ pass 78 ℹ fail 0 
+lặp 15: ℹ pass 78 ℹ fail 0 
+lặp 16: ℹ pass 78 ℹ fail 0 
+lặp 17: ℹ pass 78 ℹ fail 0 
+lặp 18: ℹ pass 78 ℹ fail 0 
+lặp 19: ℹ pass 78 ℹ fail 0 
+lặp 20: ℹ pass 78 ℹ fail 0 
+test:upload-jobs xanh 20/20
+seed 11: ℹ pass 78 ℹ fail 0 
+seed 22: ℹ pass 78 ℹ fail 0 
+seed 33: ℹ pass 78 ℹ fail 0 
+seed 44: ℹ pass 78 ℹ fail 0 
+seed 55: ℹ pass 78 ℹ fail 0 
+randomize xanh 5/5
