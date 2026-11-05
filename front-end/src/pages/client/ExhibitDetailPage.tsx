@@ -21,7 +21,7 @@ import { VisitorNotes } from './visitor/VisitorNotes';
 import classes from './ExhibitDetailPage.module.css';
 
 export function ExhibitDetailPage() {
-  const { locale } = usePublicLocale();
+  const { locale, t } = usePublicLocale();
   const [isReportOpen, setIsReportOpen] = useState(false);
   const favorites = useVisitorStore(favoritesStore);
   const reading = useVisitorStore(readingStore);
@@ -51,30 +51,30 @@ export function ExhibitDetailPage() {
   let isLoading = false;
   let isError = false;
   if (!isValidId) {
-    statusTitle = 'Đường dẫn hiện vật không hợp lệ';
-    statusMessage = 'Mã hiện vật trong đường dẫn không đúng định dạng.';
+    statusTitle = t('ui.detail.error.invalid.title', 'Đường dẫn hiện vật không hợp lệ');
+    statusMessage = t('ui.detail.error.invalid.message', 'Mã hiện vật trong đường dẫn không đúng định dạng.');
   } else if (rooms.isPending) {
-    statusTitle = 'Chi tiết hiện vật';
-    statusMessage = 'Đang tải danh sách phòng…';
+    statusTitle = t('ui.detail.loading.title', 'Chi tiết hiện vật');
+    statusMessage = t('ui.detail.loading.rooms', 'Đang tải danh sách phòng…');
     isLoading = true;
   } else if (rooms.isError) {
-    statusTitle = 'Không tải được nội dung';
+    statusTitle = t('ui.detail.error.load', 'Không tải được nội dung');
     statusMessage = rooms.error.message;
     isError = true;
   } else if (!selectedRoom) {
-    statusTitle = 'Không tìm thấy phòng trưng bày';
-    statusMessage = 'Phòng trong đường dẫn không có trong danh sách công khai.';
+    statusTitle = t('ui.detail.error.room.title', 'Không tìm thấy phòng trưng bày');
+    statusMessage = t('ui.detail.error.room.message', 'Phòng trong đường dẫn không có trong danh sách công khai.');
   } else if (room.isPending) {
-    statusTitle = 'Chi tiết hiện vật';
-    statusMessage = 'Đang tải hiện vật…';
+    statusTitle = t('ui.detail.loading.title', 'Chi tiết hiện vật');
+    statusMessage = t('ui.detail.loading.exhibit', 'Đang tải hiện vật…');
     isLoading = true;
   } else if (room.isError) {
-    statusTitle = 'Không tải được nội dung';
+    statusTitle = t('ui.detail.error.load', 'Không tải được nội dung');
     statusMessage = room.error.message;
     isError = true;
   } else if (!exhibit) {
-    statusTitle = 'Không tìm thấy hiện vật';
-    statusMessage = 'Hiện vật không có trong bộ sưu tập công khai của phòng này.';
+    statusTitle = t('ui.detail.error.exhibit.title', 'Không tìm thấy hiện vật');
+    statusMessage = t('ui.detail.error.exhibit.message', 'Hiện vật không có trong bộ sưu tập công khai của phòng này.');
   }
 
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -87,19 +87,19 @@ export function ExhibitDetailPage() {
       {statusTitle ? <>
         <Title ref={titleRef} tabIndex={-1} order={1} className={classes.title}>{statusTitle}</Title>
         <p role={isError ? 'alert' : isLoading ? 'status' : undefined} className={classes.body}>{statusMessage}</p>
-        {isError && <Button mt="md" onClick={() => void (rooms.isError ? rooms.refetch() : room.refetch())}>Thử lại</Button>}
-        {!isLoading && <p><Link to="/collection">Về bộ sưu tập</Link></p>}
+        {isError && <Button mt="md" onClick={() => void (rooms.isError ? rooms.refetch() : room.refetch())}>{t('ui.detail.retry', 'Thử lại')}</Button>}
+        {!isLoading && <p><Link to="/collection">{t('ui.detail.back-to-collection', 'Về bộ sưu tập')}</Link></p>}
       </> : detail && exhibit ? <article aria-labelledby="exhibit-title">
-        <Link className={classes.backLink} to={`/collection?${new URLSearchParams({ room: detail.slug })}`}>Quay lại bộ sưu tập của phòng này</Link>
+        <Link className={classes.backLink} to={`/collection?${new URLSearchParams({ room: detail.slug })}`}>{t('ui.detail.back', 'Quay lại bộ sưu tập của phòng này')}</Link>
         <header className={classes.header}>
           <p className={classes.roomName}>{detail.name}</p>
           <Title ref={titleRef} tabIndex={-1} order={1} id="exhibit-title" className={classes.title}>{exhibit.name}</Title>
           <div className={classes.headerActions}>
             <Link className={classes.jump3d}
               to={`/tour?${new URLSearchParams({ room: detail.slug, exhibit: exhibit.id })}`}>
-              <IconCube size={18} aria-hidden="true" /> Xem trong không gian 3D
+              <IconCube size={18} aria-hidden="true" /> {t('ui.detail.tour', 'Xem trong không gian 3D')}
             </Link>
-            <Button variant="default" onClick={() => setIsReportOpen(true)}>Báo nội dung</Button>
+            <Button variant="default" onClick={() => setIsReportOpen(true)}>{t('ui.detail.report', 'Báo nội dung')}</Button>
             <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name} />
           </div>
           <VisitorStorageStatus error={favorites.error} />
@@ -111,19 +111,20 @@ export function ExhibitDetailPage() {
             shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
           <div className={classes.sections}>
             <div className={classes.audioDock}>
-              <AudioPlayer key={`${detail.id}:${exhibit.id}:vi`} src={audio?.audio.url} subtitleUrl={audio?.subtitle?.url} locale="vi" />
+              <AudioPlayer key={`${detail.id}:${exhibit.id}:vi`} src={audio?.audio.url} label={t('ui.audio.label', 'Thuyết minh audio')}
+                subtitleUrl={audio?.subtitle?.url} locale="vi" translate={t} />
             </div>
             <section aria-labelledby="exhibit-description-title">
-              <Title order={2} id="exhibit-description-title" className={classes.sectionTitle}>Câu chuyện hiện vật</Title>
-              <p className={classes.body}>{exhibit.description || 'Chưa có mô tả.'}</p>
+              <Title order={2} id="exhibit-description-title" className={classes.sectionTitle}>{t('ui.detail.section.story', 'Câu chuyện hiện vật')}</Title>
+              <p className={classes.body}>{exhibit.description || t('ui.detail.description.empty', 'Chưa có mô tả.')}</p>
             </section>
             {transcript && <section aria-labelledby="exhibit-transcript-title">
-              <Title order={2} id="exhibit-transcript-title" className={classes.sectionTitle}>Bản thuyết minh</Title>
+              <Title order={2} id="exhibit-transcript-title" className={classes.sectionTitle}>{t('ui.detail.section.transcript', 'Bản thuyết minh')}</Title>
               <p className={classes.body}>{transcript}</p>
             </section>}
             {exhibit.hotspots.length > 0 && <section aria-labelledby="exhibit-hotspots-title">
-              <Title order={2} id="exhibit-hotspots-title" className={classes.sectionTitle}>Điểm chú ý</Title>
-              <ul className={classes.hotspots} aria-label="Điểm chú ý của hiện vật">
+              <Title order={2} id="exhibit-hotspots-title" className={classes.sectionTitle}>{t('ui.detail.section.hotspots', 'Điểm chú ý')}</Title>
+              <ul className={classes.hotspots} aria-label={t('ui.detail.section.hotspots.aria', 'Điểm chú ý của hiện vật')}>
                 {[...exhibit.hotspots].sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
                   .map((hotspot) => <li key={hotspot.id}>
                     <p className={classes.hotspotLabel}>{hotspot.label}</p>
@@ -132,7 +133,7 @@ export function ExhibitDetailPage() {
               </ul>
             </section>}
             {credits.length > 0 && <section aria-labelledby="exhibit-credits-title">
-              <Title order={2} id="exhibit-credits-title" className={classes.sectionTitle}>Nguồn & bản quyền</Title>
+              <Title order={2} id="exhibit-credits-title" className={classes.sectionTitle}>{t('ui.detail.section.credits', 'Nguồn & bản quyền')}</Title>
               <MediaCreditList credits={credits} className={classes.body} />
             </section>}
           </div>
@@ -140,7 +141,7 @@ export function ExhibitDetailPage() {
         <VisitorNotes key={`${detail.id}:${exhibit.id}`} target={{ roomId: detail.id, exhibitId: exhibit.id }} />
       </article> : null}
       {exhibit && isReportOpen && <PublicReportModal key={`${exhibit.id}:${exhibit.revisionId}`} exhibitId={exhibit.id}
-        reportedRevisionId={exhibit.revisionId} opened onClose={() => setIsReportOpen(false)} />}
+        reportedRevisionId={exhibit.revisionId} opened onClose={() => setIsReportOpen(false)} translate={t} />}
     </Container>
   );
 }

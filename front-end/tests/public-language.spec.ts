@@ -151,6 +151,63 @@ const STRINGS: Record<string, Record<string, string>> = {
     'ui.visitor.notes.unsaved': 'Note is not saved in this browser.',
     'ui.visitor.notes.clear': 'Delete note',
     'ui.visitor.notes.retry': 'Try saving note again',
+    'ui.detail.back': 'Back to this gallery’s collection',
+    'ui.detail.tour': 'View in 3D space',
+    'ui.detail.report': 'Report content',
+    'ui.detail.error.invalid.title': 'Invalid exhibit URL',
+    'ui.detail.error.invalid.message': 'The exhibit ID in the URL is not valid.',
+    'ui.detail.loading.title': 'Exhibit details',
+    'ui.detail.loading.rooms': 'Loading galleries…',
+    'ui.detail.loading.exhibit': 'Loading exhibit…',
+    'ui.detail.error.load': 'Could not load content',
+    'ui.detail.error.room.title': 'Gallery not found',
+    'ui.detail.error.room.message': 'The gallery in this URL is not public.',
+    'ui.detail.error.exhibit.title': 'Exhibit not found',
+    'ui.detail.error.exhibit.message': 'This exhibit is not in the gallery’s public collection.',
+    'ui.detail.back-to-collection': 'Back to collection',
+    'ui.detail.section.story': 'Exhibit story',
+    'ui.detail.description.empty': 'No description available.',
+    'ui.detail.section.transcript': 'Narration transcript',
+    'ui.detail.section.hotspots': 'Points of interest',
+    'ui.detail.section.hotspots.aria': 'Points of interest for this exhibit',
+    'ui.detail.section.credits': 'Sources & copyright',
+    'ui.report.title': 'Report content',
+    'ui.report.close': 'Close report form',
+    'ui.report.category': 'Category',
+    'ui.report.category.placeholder': 'Select a category',
+    'ui.report.category.wrong_info': 'Incorrect information',
+    'ui.report.category.typo': 'Typo',
+    'ui.report.category.inappropriate_content': 'Inappropriate image/content',
+    'ui.report.category.other': 'Other',
+    'ui.report.message': 'Additional details',
+    'ui.report.validation.message-required': 'Please enter report details.',
+    'ui.report.validation.message-too-long': 'Report details must not exceed 2000 characters.',
+    'ui.report.validation.category-required': 'Select a report category.',
+    'ui.report.cancel': 'Cancel',
+    'ui.report.submit': 'Submit report',
+    'ui.report.success': 'Report submitted',
+    'ui.audio.label': 'Audio narration',
+    'ui.audio.status.empty': 'No audio available',
+    'ui.audio.status.ready': 'Ready to play',
+    'ui.audio.status.loading': 'Loading audio…',
+    'ui.audio.status.playing': 'Playing',
+    'ui.audio.status.paused': 'Paused',
+    'ui.audio.status.ended': 'Playback complete',
+    'ui.audio.status.error': 'Could not play audio. Please try again.',
+    'ui.audio.play': 'Play',
+    'ui.audio.pause': 'Pause',
+    'ui.audio.resume': 'Resume',
+    'ui.audio.retry': 'Try again',
+    'ui.audio.stop': 'Stop',
+    'ui.audio.seek.aria': 'Seek audio',
+    'ui.audio.volume.aria': 'Volume',
+    'ui.audio.time.current.aria': 'Current time',
+    'ui.audio.time.total.aria': 'Total duration',
+    'ui.audio.captions.title': 'WebVTT subtitles',
+    'ui.audio.captions.enable': 'Turn subtitles on',
+    'ui.audio.captions.disable': 'Turn subtitles off',
+    'ui.audio.captions.error': 'Could not load subtitles. You can still read the transcript.',
+    'ui.audio.captions.current.aria': 'Current subtitles',
   },
   ja: { 'ui.nav.collection': 'コレクション' },
 };
@@ -212,6 +269,16 @@ test('trang chi tiết hiện vật theo ngôn ngữ đã chọn', async ({ page
   await page.goto(`/collection/sculpture/exhibits/${first.id}`);
   await expect(page.getByRole('heading', { name: 'Bronze statue', level: 1 })).toBeVisible();
   await expect(page.getByText('English description')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to this gallery’s collection' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'View in 3D space' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Report content' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Exhibit story', level: 2 })).toBeVisible();
+  const audio = page.getByRole('region', { name: 'Audio narration' });
+  await expect(audio.getByRole('status')).toHaveText('No audio available');
+  await expect(audio.getByRole('button', { name: 'Play', exact: true })).toBeDisabled();
+  await expect(audio.getByRole('button', { name: 'Stop', exact: true })).toBeDisabled();
+  await expect(audio.getByRole('slider', { name: 'Seek audio' })).toBeDisabled();
+  await expect(audio.getByRole('slider', { name: 'Volume' })).toBeDisabled();
   await expect(page.getByRole('region', { name: 'Exhibit reading preferences' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Reading mode' })).toBeVisible();
   await page.getByRole('button', { name: 'Reading mode' }).click();
@@ -228,6 +295,41 @@ test('trang chi tiết hiện vật theo ngôn ngữ đã chọn', async ({ page
   await expect(page.getByRole('status', { name: 'Note status' })).toHaveText('Note saved in this browser.');
   await page.getByRole('button', { name: 'Delete note' }).click();
   await expect(page.getByRole('status', { name: 'Note status' })).toHaveText('No note yet.');
+});
+
+test('report labels follow the locale while preserving the submitted category and revision', async ({ page }) => {
+  const { first } = await install(page);
+  let payload: Record<string, unknown> | undefined;
+  await page.route('**/api/public/reports', async route => {
+    payload = route.request().postDataJSON();
+    await fulfillMuseum(route, envelope({ id: 'c1111111-1111-4111-8111-111111111111', status: 'open' }), 201);
+  });
+  await page.goto('/collection');
+  await language(page).selectOption('en');
+  await page.getByRole('link', { name: 'View details Bronze statue' }).click();
+  await page.getByRole('button', { name: 'Report content' }).click();
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('heading', { name: 'Report content' })).toBeVisible();
+  const category = dialog.getByLabel('Category');
+  await category.selectOption('wrong_info');
+  await expect(category.locator('option:checked')).toHaveText('Incorrect information');
+  const message = dialog.getByLabel('Additional details');
+  await message.fill('   ');
+  await dialog.getByRole('button', { name: 'Submit report' }).click();
+  await expect(dialog.getByRole('alert')).toHaveText('Please enter report details.');
+  await message.fill('  Check the date  ');
+
+  await language(page).selectOption('vi');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
+  await expect(dialog.getByRole('heading', { name: 'Báo cáo nội dung' })).toBeVisible();
+  await expect(dialog.getByLabel('Danh mục')).toHaveValue('wrong_info');
+  await expect(dialog.getByLabel('Danh mục').locator('option:checked')).toHaveText('Sai thông tin');
+  await expect(dialog.getByLabel('Nội dung bổ sung')).toHaveValue('  Check the date  ');
+  await dialog.getByRole('button', { name: 'Gửi báo cáo' }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(payload).toEqual({ exhibitId: first.id, reportedRevisionId: first.revisionId, category: 'wrong_info', message: 'Check the date' });
+  await expect(page.getByText('Đã gửi báo cáo nội dung')).toBeVisible();
 });
 
 test('Collection search, cards and visitor actions use the selected language', async ({ page }) => {

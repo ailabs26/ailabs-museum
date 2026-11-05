@@ -148,13 +148,15 @@ Là khách tham quan, tôi muốn chọn ngôn ngữ trên giao diện công kha
 
 **Steps**
 
-- [ ] Dịch breadcrumb, section header, form/action, error/empty/retry và aria-label trên trang Detail.
-- [ ] Dịch nhãn category, submit/cancel/error/success trong report modal; giữ **value category** và revision ID gửi API nguyên dạng.
-- [ ] Truyền `labels`/`t` dạng prop tùy chọn cho shared player/modal nếu đang được dùng ngoài Public; không bắt buộc public hook ở Admin.
-- [ ] Dịch Play/Pause/Stop/captions/volume labels của AudioPlayer mà **không đổi** `src`, `subtitleUrl`, `audio.vi`, `currentTime` và track locale.
-- [ ] Test mở modal, chuyển locale khi đang nhập, submit đúng payload; audio đang phát không bị reset chỉ vì text UI đổi.
+- [x] Dịch breadcrumb, section header, form/action, error/empty/retry và aria-label trên trang Detail.
+- [x] Dịch nhãn category, submit/cancel/error/success trong report modal; giữ **value category** và revision ID gửi API nguyên dạng.
+- [x] Truyền `translate` dạng prop tùy chọn cho shared player/modal; mặc định tiếng Việt khi không có prop.
+- [x] Dịch Play/Pause/Stop/captions/volume labels của AudioPlayer mà **không đổi** `src`, `subtitleUrl`, `audio.vi`, `currentTime` và track locale.
+- [x] Test mở modal, chuyển locale khi đang nhập, submit đúng payload; audio đang phát tiếp tục phát mà không đổi nguồn hoặc reset thời điểm.
 
 **Acceptance:** labels đổi theo locale, dữ liệu và media không thay đổi; shared usage không throw.
+
+**Verification:** `npm.cmd run typecheck` PASS; `npm.cmd run lint` PASS; `git diff --check` PASS. Playwright command `npx.cmd playwright test tests/public-language.spec.ts tests/public-audio.spec.ts tests/public-report-modal.spec.ts tests/exhibit-detail.spec.ts --reporter=line --trace=off` PASS 38/38 (3m; API dùng fixture/mock); sau khi tăng ca audio từ paused sang actively playing, ca đó chạy lại riêng và PASS 1/1. Ca mới kiểm tra modal giữ category/message qua locale switch và payload giữ nguyên exhibit/revision/category; audio UI đổi tiếng Anh trong khi cùng phần tử audio tiếp tục phát và giữ nguyên `currentTime`, `src`, subtitle URL và `srclang`. Unit/build sẽ chạy ở Task 8.
 
 **Commit dự kiến:** `feat(i18n): translate exhibit detail and feedback UI`.
 
@@ -256,7 +258,7 @@ npm run build
 | Frontend unit | All relevant PASS | BASELINE PASS | `npm.cmd run test:unit`, 45 files / 255 tests |
 | Frontend build | exit 0 | BASELINE PASS | `npm.cmd run build`, exit 0; chunk >500 kB warning |
 | Playwright locale + language | All PASS | BASELINE RED | language 4/4; locale 4/7, 3 stale/fixture failures listed above |
-| Playwright affected public/tour/media | All PASS | NOT RUN | Chưa triển khai |
+| Playwright affected public/tour/media | All PASS | PARTIAL PASS | Task 4: 38/38 `public-language`, `public-audio`, `public-report-modal`, `exhibit-detail`; Tasks 5–7 chưa chạy |
 | Backend tests/seed (nếu thay đổi) | All relevant PASS | NOT RUN | Chưa triển khai |
 | Diff/PR scope | No unintended changes | NOT RUN | Chưa triển khai |
 
@@ -269,8 +271,8 @@ npm run build
 | 0 | `docs(i18n): plan public UI localization completion` | `263f11d` | Baseline recorded above | DONE |
 | 1 | `test(i18n): align locale regression with merged behavior` | `4182d24` | `public-locale` 7/7, `public-language` 4/4, unit 255/255, typecheck PASS | DONE |
 | 2 | `feat(i18n): complete public shell and home translations` | `5c423077c738850723e1cab855f91428e342d9e0` | `public-language` 6/6, `public-locale` 7/7, unit 255/255, typecheck/lint PASS | DONE |
-| 3 | `feat(i18n): translate collection and visitor UI` | pending | `public-language` 8/8; collection 14/14; global search 3/3; unit 255/255; typecheck/lint PASS | DONE |
-| 4 | `feat(i18n): translate exhibit detail and feedback UI` | — | — | NOT STARTED |
+| 3 | `feat(i18n): translate collection and visitor UI` | `a856ea0d3af55d67db831bfd3ab1d2d9c3fb1ad2` | `public-language` 8/8; collection 14/14; global search 3/3; unit 255/255; typecheck/lint PASS | DONE |
+| 4 | `feat(i18n): translate exhibit detail and feedback UI` | pending | `public-language` + `public-audio` + `public-report-modal` + `exhibit-detail` 38/38; typecheck/lint PASS | IN PROGRESS |
 | 5 | `feat(i18n): translate tour interface controls` | — | — | NOT STARTED |
 | 6 | `feat(i18n): seed remaining public UI strings` | — | — | NOT STARTED |
 | 7 | `test(i18n): cover public language switching journeys` | — | — | NOT STARTED |

@@ -1,5 +1,30 @@
 import { expect, test } from '@playwright/test';
 import { installMedia } from './fixtures/publicMediaApi';
+import { fulfillMuseum } from './fixtures/museumApi';
+
+const EN_AUDIO_STRINGS = {
+  'ui.audio.label': 'Audio narration',
+  'ui.audio.status.ready': 'Ready to play',
+  'ui.audio.status.loading': 'Loading audio…',
+  'ui.audio.status.playing': 'Playing',
+  'ui.audio.status.paused': 'Paused',
+  'ui.audio.status.ended': 'Playback complete',
+  'ui.audio.status.error': 'Could not play audio. Please try again.',
+  'ui.audio.play': 'Play',
+  'ui.audio.pause': 'Pause',
+  'ui.audio.resume': 'Resume',
+  'ui.audio.retry': 'Try again',
+  'ui.audio.stop': 'Stop',
+  'ui.audio.seek.aria': 'Seek audio',
+  'ui.audio.volume.aria': 'Volume',
+  'ui.audio.time.current.aria': 'Current time',
+  'ui.audio.time.total.aria': 'Total duration',
+  'ui.audio.captions.title': 'WebVTT subtitles',
+  'ui.audio.captions.enable': 'Turn subtitles on',
+  'ui.audio.captions.disable': 'Turn subtitles off',
+  'ui.audio.captions.error': 'Could not load subtitles. You can still read the transcript.',
+  'ui.audio.captions.current.aria': 'Current subtitles',
+};
 
 for (const view of ['detail', 'tour']) {
   test(`API audio plays in ${view} and stops when leaving the owner`, async ({ page }) => {
@@ -144,4 +169,36 @@ test('corrupt audio bytes show an error without hiding the transcript', async ({
   await page.getByRole('button', { name: 'Phát', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Thử lại', exact: true })).toBeVisible();
   await expect(page.getByText('Thuyết minh', { exact: true })).toBeVisible();
+});
+
+test('detail audio labels follow locale without resetting Vietnamese playback or subtitles', async ({ page }) => {
+  const room = await installMedia(page);
+  await page.route('**/api/public/translations**', route => fulfillMuseum(route, {
+    success: true, data: EN_AUDIO_STRINGS, message: null,
+  }));
+  await page.goto(`/collection/${room.slug}/exhibits/${room.exhibits[0].id}`);
+
+  const audio = page.locator('audio');
+  const oldAudio = await audio.elementHandle();
+  const audioSource = await audio.getAttribute('src');
+  const track = page.locator('track');
+  const trackBefore = { src: await track.getAttribute('src'), lang: await track.getAttribute('srclang') };
+  await page.getByRole('button', { name: 'Phát', exact: true }).click();
+  await expect.poll(() => audio.evaluate(el => el.currentTime)).toBeGreaterThan(0);
+  const playingAt = await audio.evaluate(el => el.currentTime);
+
+  const englishTranslations = page.waitForResponse(response => {
+    const url = new URL(response.url());
+    return url.pathname.endsWith('/api/public/translations') && url.searchParams.get('locale') === 'en';
+  });
+  await page.getByRole('combobox', { name: 'Ngôn ngữ' }).first().selectOption('en');
+  await englishTranslations;
+  const player = page.getByRole('region', { name: 'Audio narration' });
+  await expect(player.getByRole('status')).toHaveText('Playing');
+  await expect(player.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+  await expect.poll(() => oldAudio!.evaluate(el => document.querySelector('audio') === el)).toBe(true);
+  await expect(audio).toHaveJSProperty('paused', false);
+  await expect.poll(() => audio.evaluate(el => el.currentTime)).toBeGreaterThanOrEqual(playingAt);
+  expect(await audio.getAttribute('src')).toBe(audioSource);
+  expect({ src: await track.getAttribute('src'), lang: await track.getAttribute('srclang') }).toEqual(trackBefore);
 });

@@ -160,7 +160,7 @@ export function CollectionPage() {
       {!noLocalMatch && globalSearch}
       <RecentlyViewed rooms={rooms.data ?? []} isRoomsReady={rooms.isSuccess} />
       {reportTarget && <PublicReportModal key={`${reportTarget.exhibitId}:${reportTarget.reportedRevisionId}`}
-        {...reportTarget} opened onClose={() => setReportTarget(null)} />}
+        {...reportTarget} opened onClose={() => setReportTarget(null)} translate={t} />}
     </Container>
   );
 }
