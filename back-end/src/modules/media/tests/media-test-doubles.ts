@@ -131,6 +131,10 @@ export class FakeUploadJobRepository {
   /** Hook giả lập lỗi DB khi patch; trả Error để patch đó ném lỗi (không được ghi vào `patches`). */
   patchError?: (data: UploadJobPatch) => Error | undefined;
   deleteCutoffs: Date[] = [];
+  /** Lịch sử liên kết job↔media kèm manager của transaction. */
+  links: Array<{ id: string; mediaId: string; manager: EntityManager }> = [];
+  linkError?: Error;
+  completeLinkedError?: Error;
   deleteError?: Error;
   failInterruptedError?: Error;
 
@@ -175,6 +179,37 @@ export class FakeUploadJobRepository {
     for (const row of this.rows.values()) {
       if (row.status === UploadJobStatus.QUEUED || row.status === UploadJobStatus.PROCESSING) {
         Object.assign(row, { status: UploadJobStatus.FAILED, progress: 100, errorCode: 'job_interrupted', updatedAt: new Date() });
+        count++;
+      }
+    }
+    return count;
+  }
+
+  async findById(id: string): Promise<MediaUploadJob | null> {
+    const row = this.rows.get(id);
+    return row ? Object.assign(new MediaUploadJob(), row) : null;
+  }
+
+  async linkMedia(id: string, mediaId: string, manager: EntityManager): Promise<void> {
+    if (this.linkError) throw this.linkError;
+    const row = this.rows.get(id);
+    if (row?.status !== UploadJobStatus.PROCESSING) throw new Error(`Job ${id} không còn ở processing`);
+    this.links.push({ id, mediaId, manager });
+    Object.assign(row, { mediaId, updatedAt: new Date() });
+  }
+
+  async failUnlinked(id: string, data: UploadJobPatch): Promise<boolean> {
+    if (this.rows.get(id)?.mediaId) return false;
+    await this.patch(id, data);
+    return true;
+  }
+
+  async completeLinked(): Promise<number> {
+    if (this.completeLinkedError) throw this.completeLinkedError;
+    let count = 0;
+    for (const row of this.rows.values()) {
+      if (row.mediaId && row.status === UploadJobStatus.PROCESSING) {
+        Object.assign(row, { status: UploadJobStatus.SUCCEEDED, progress: 100, updatedAt: new Date() });
         count++;
       }
     }

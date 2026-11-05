@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, LessThan, QueryFailedError, Repository } from 'typeorm';
+import { EntityManager, In, LessThan, QueryFailedError, Repository } from 'typeorm';
 import { BaseRepository } from '../../../common/repository/base.repository';
 import { MediaUploadJob, UPLOAD_JOB_ACTOR_KEY_CONSTRAINT, UploadJobStatus } from '../entities/media-upload-job.entity';
 
@@ -55,6 +55,10 @@ export class MediaUploadJobRepository extends BaseRepository<MediaUploadJob> {
   }
 
   /** Xóa job đã kết thúc từ trước `cutoff`; job `queued`/`processing` không bao giờ bị xóa ở đây. */
+  async linkMedia(_id: string, _mediaId: string, _manager: EntityManager): Promise<void> {
+    throw new Error('Not implemented');
+  }
+
   async deleteFinishedBefore(cutoff: Date): Promise<number> {
     const result = await this.repo.delete({
       status: In([UploadJobStatus.SUCCEEDED, UploadJobStatus.FAILED]),

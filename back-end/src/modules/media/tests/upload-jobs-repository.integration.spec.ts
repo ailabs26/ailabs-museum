@@ -1,12 +1,45 @@
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
-import { DataSource, QueryFailedError } from 'typeorm';
+import { DataSource, EntityManager, QueryFailedError } from 'typeorm';
+import { TransactionManager } from '../../../common/database/transaction.manager';
 import { dataSource as appDataSource } from '../../../config/data-source';
+import { AuditRepository } from '../../audit/repositories/audit.repository';
+import { AuditService } from '../../audit/services/audit.service';
 import { User } from '../../users/entities/user.entity';
+import { Media } from '../entities/media.entity';
 import { MediaUploadJob, UPLOAD_JOB_ACTOR_KEY_CONSTRAINT, UploadJobStatus } from '../entities/media-upload-job.entity';
-import { MediaUploadJobRepository } from '../repositories/media-upload-job.repository';
+import { MediaUploadJobRepository, UploadJobPatch } from '../repositories/media-upload-job.repository';
+import { MediaRepository } from '../repositories/media.repository';
+import { MediaInspectionService } from '../services/media-inspection.service';
+import { MediaStorageService } from '../services/media-storage.service';
+import { MediaUploadJobService } from '../services/media-upload-job.service';
+import { MediaService } from '../services/media.service';
+import { LocalStorageDriver } from '../storage/local-storage.driver';
+import { FakeAuditRepository, testMediaUrlService, testUploadJobConfig } from './media-test-doubles';
+import { buildGlb } from './media-test-files';
+
+/** Repository thật, chỉ cài thêm lỗi vào đúng bước test cần. */
+class FlakyJobRepository extends MediaUploadJobRepository {
+  failSucceeded = false;
+  failAfterLink = false;
+  beforeLink?: (id: string) => Promise<void>;
+
+  override async patch(id: string, data: UploadJobPatch): Promise<void> {
+    if (this.failSucceeded && data.status === UploadJobStatus.SUCCEEDED) throw new Error('connection terminated unexpectedly');
+    await super.patch(id, data);
+  }
+
+  override async linkMedia(id: string, mediaId: string, manager: EntityManager): Promise<void> {
+    await this.beforeLink?.(id);
+    await super.linkMedia(id, mediaId, manager);
+    if (this.failAfterLink) throw new Error('connection terminated unexpectedly');
+  }
+}
 
 /**
  * Invariant VT-078 trên PostgreSQL THẬT: N request đồng thời cùng (người tạo, key) chỉ tạo
@@ -18,7 +51,10 @@ const skip = isLocalDatabase ? false : 'Cần MEDIA_TEST_DATABASE_URL trỏ tớ
 
 describe('MediaUploadJobRepository (PostgreSQL thật)', { skip }, () => {
   let db: DataSource;
-  let repo: MediaUploadJobRepository;
+  let repo: FlakyJobRepository;
+  let mediaService: MediaService;
+  let auditRepo: FakeAuditRepository;
+  let workDir: string;
   const tag = `itest-${randomUUID().slice(0, 8)}`;
   const userIds: string[] = [];
 
@@ -37,13 +73,40 @@ describe('MediaUploadJobRepository (PostgreSQL thật)', { skip }, () => {
     db = new DataSource({ ...appDataSource.options, url: TEST_DATABASE_URL, extra: { max: 25 } } as typeof appDataSource.options);
     await db.initialize();
     await db.runMigrations();
-    repo = new MediaUploadJobRepository(db.getRepository(MediaUploadJob));
+    repo = new FlakyJobRepository(db.getRepository(MediaUploadJob));
+    workDir = await mkdtemp(join(tmpdir(), 'upload-jobs-pg-'));
+    mediaService = new MediaService(
+      new MediaRepository(db.getRepository(Media)),
+      new MediaStorageService(new LocalStorageDriver({ publicRoot: join(workDir, 'public'), quarantineRoot: join(workDir, 'quarantine') })),
+      new MediaInspectionService(),
+      new TransactionManager(db),
+      testMediaUrlService(),
+    );
   });
 
+  /** Mỗi lần gọi là một "tiến trình" mới trên cùng database. */
+  function startService(): MediaUploadJobService {
+    auditRepo ??= new FakeAuditRepository();
+    const service = new MediaUploadJobService(
+      repo,
+      mediaService,
+      new AuditService(auditRepo as unknown as AuditRepository),
+      testUploadJobConfig(),
+    );
+    service.completionRetryDelayMs = 0;
+    return service;
+  }
+
+  const glb = () => ({ buffer: buildGlb(), originalname: 'tuong-phat.glb' });
+
+  const mediaOf = (actor: string): Promise<Media[]> => db.getRepository(Media).find({ where: { createdById: actor } });
+
   after(async () => {
+    await rm(workDir, { recursive: true, force: true });
     if (!db?.isInitialized) return;
     if (userIds.length) {
       await db.query('DELETE FROM media_upload_jobs WHERE created_by = ANY($1)', [userIds]);
+      await db.query('DELETE FROM media WHERE created_by = ANY($1)', [userIds]);
       await db.query('DELETE FROM users WHERE id = ANY($1)', [userIds]);
     }
     await db.destroy();
@@ -132,5 +195,88 @@ describe('MediaUploadJobRepository (PostgreSQL thật)', { skip }, () => {
     await repo.deleteFinishedBefore(new Date(Date.now() - 7 * 86_400_000));
 
     assert.equal((await repo.findOwned(job.id, actor))?.errorCode, 'job_interrupted');
+  });
+
+  it('TC38-DB — review P2: media lưu xong → 3 lần ghi succeeded lỗi → restart → retry cùng key: job succeeded có mediaId, không có media thứ hai', async () => {
+    const actor = await createUser();
+    const key = randomUUID();
+    repo.failSucceeded = true;
+    const worker = startService();
+    const { job } = await worker.enqueue(glb(), {}, actor, key);
+    await worker.whenIdle();
+    repo.failSucceeded = false;
+
+    const [media, ...others] = await mediaOf(actor);
+    assert.ok(media, 'media đã lưu');
+    assert.equal(others.length, 0);
+    const stuck = await repo.findOwned(job.id, actor);
+    assert.equal(stuck?.status, UploadJobStatus.PROCESSING);
+    assert.equal(stuck?.mediaId, media.id, 'liên kết phải nằm trong database, không chỉ trong log');
+
+    const restarted = startService();
+    await restarted.onApplicationBootstrap();
+
+    const recovered = await repo.findOwned(job.id, actor);
+    assert.equal(recovered?.status, UploadJobStatus.SUCCEEDED);
+    assert.equal(recovered?.mediaId, media.id);
+    assert.equal(recovered?.progress, 100);
+    assert.equal(recovered?.errorCode, null);
+
+    const retry = await restarted.enqueue(glb(), {}, actor, key);
+    await restarted.whenIdle();
+    assert.equal(retry.created, false);
+    assert.equal(retry.job.id, job.id);
+    assert.equal(retry.job.status, UploadJobStatus.SUCCEEDED);
+    assert.equal(retry.job.mediaId, media.id);
+    assert.equal((await mediaOf(actor)).length, 1, 'retry không tạo media thứ hai');
+  });
+
+  it('TC39-DB — khởi động: job có media → succeeded; job processing và queued chưa có media → failed job_interrupted', async () => {
+    const actor = await createUser();
+    repo.failSucceeded = true;
+    const worker = startService();
+    const { job: linked } = await worker.enqueue(glb(), {}, actor, randomUUID());
+    await worker.whenIdle();
+    repo.failSucceeded = false;
+    const { job: running } = await repo.insertOrFindExisting({ createdById: actor, idempotencyKey: 'no-media', requestChecksum: 'd'.repeat(64) });
+    await repo.patch(running.id, { status: UploadJobStatus.PROCESSING, progress: 50 });
+    const { job: waiting } = await repo.insertOrFindExisting({ createdById: actor, idempotencyKey: 'waiting', requestChecksum: 'd'.repeat(64) });
+
+    await startService().onApplicationBootstrap();
+
+    assert.equal((await repo.findOwned(linked.id, actor))?.status, UploadJobStatus.SUCCEEDED);
+    for (const id of [running.id, waiting.id]) {
+      const row = await repo.findOwned(id, actor);
+      assert.equal(row?.status, UploadJobStatus.FAILED);
+      assert.equal(row?.errorCode, 'job_interrupted');
+    }
+  });
+
+  it('TC41-DB — nguyên tử: ghi liên kết lỗi → rollback, không còn media mồ côi, job failed không có mediaId', async () => {
+    const actor = await createUser();
+    repo.failAfterLink = true;
+    const worker = startService();
+    const { job } = await worker.enqueue(glb(), {}, actor, randomUUID());
+    await worker.whenIdle();
+    repo.failAfterLink = false;
+
+    assert.deepEqual(await mediaOf(actor), []);
+    const row = await repo.findOwned(job.id, actor);
+    assert.equal(row?.status, UploadJobStatus.FAILED);
+    assert.equal(row?.mediaId, null);
+  });
+
+  it('TC43-DB — job không còn processing lúc liên kết (instance khác đã ghi failed) → rollback media, job vẫn failed', async () => {
+    const actor = await createUser();
+    repo.beforeLink = (id) => repo.patch(id, { status: UploadJobStatus.FAILED, progress: 100, errorCode: 'job_interrupted' });
+    const worker = startService();
+    const { job } = await worker.enqueue(glb(), {}, actor, randomUUID());
+    await worker.whenIdle();
+    repo.beforeLink = undefined;
+
+    assert.deepEqual(await mediaOf(actor), []);
+    const row = await repo.findOwned(job.id, actor);
+    assert.equal(row?.status, UploadJobStatus.FAILED);
+    assert.equal(row?.mediaId, null);
   });
 });
