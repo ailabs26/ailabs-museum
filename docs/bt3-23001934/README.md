@@ -27,6 +27,7 @@ Nhánh đã rebase lên `dev` ngày 03/11/2026 nên hash đổi. Tài liệu dù
 - Media tạo qua job có audit `media.upload` (resource là media, actor là người tạo job, cùng `requestId`/IP/User-Agent với request tạo job).
 - Hàng đợi FIFO trong tiến trình giới hạn số job chạy cùng lúc (`MEDIA_UPLOAD_JOB_CONCURRENCY`, mặc định 3). Job chờ giữ `queued`, `progress = 0`, chỉ chuyển `processing` khi tới lượt.
 - Job `succeeded`/`failed` cũ hơn `MEDIA_UPLOAD_JOB_RETENTION_DAYS` ngày (mặc định 7) bị xóa một lần khi API khởi động.
+- `job.mediaId` được ghi cùng transaction với media `ready`. Job đã có media không bao giờ bị ghi `failed`; khi khởi động, job `processing` có `mediaId` chuyển `succeeded`, job chưa có media vẫn `failed`/`job_interrupted`.
 
 ## Giả định vận hành
 
@@ -50,7 +51,7 @@ Integration test và harness tải trên PostgreSQL thật (chỉ chấp nhận 
 ```bash
 docker run -d --name bt3-pg -e POSTGRES_PASSWORD=bt3 -e POSTGRES_DB=bt3 -p 127.0.0.1:55432:5432 postgres:16-alpine
 export MEDIA_TEST_DATABASE_URL=postgres://postgres:bt3@127.0.0.1:55432/bt3
-npm run test:upload-jobs          # thêm 5 test PG thật (migration chạy tự động)
+npm run test:upload-jobs          # thêm 10 test PG thật (migration chạy tự động)
 npm run load:upload-jobs          # 80 upload đồng thời × 5 lần, in p50/p95/max
 LOAD_OUTPUT=out.json LOAD_CONCURRENCY=80 LOAD_RUNS=5 LOAD_FILE_BYTES=2000000 npm run load:upload-jobs
 docker rm -f bt3-pg

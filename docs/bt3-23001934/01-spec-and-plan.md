@@ -83,6 +83,28 @@ Trước đó agent đã được yêu cầu "phân tích yêu cầu làm bài t
 | AC7 | Tối đa `MEDIA_UPLOAD_JOB_CONCURRENCY` job (mặc định 3) chạy cùng lúc, thứ tự FIFO. Job chờ giữ `queued`, `progress = 0`. `whenIdle()` chờ cả job trong hàng đợi. Job ném lỗi vẫn trả slot. | `queue` + `drain()` trong `MediaUploadJobService`; slot trả ở `finally`. |
 | AC8 | Job đã kết thúc cũ hơn N ngày (mặc định 7) bị xóa khi khởi động, không thêm scheduler. | `deleteFinishedBefore()` gọi sau `failInterrupted()` trong `onApplicationBootstrap`. Không cần migration. |
 
-**Quyết định cần người review xác nhận.** AC6 ghi "khi job chuyển sang `succeeded`", nhưng code ghi audit cả khi media đã lưu mà 3 lần ghi `succeeded` đều lỗi (job giữ `processing`, TC24b). Lý do: lúc đó media `ready` có thật, bỏ audit thì đúng lỗi đang sửa lại xuất hiện. Hệ quả: nếu server khởi động lại, job đó thành `failed` trong khi audit `media.upload` đã có.
+**Quyết định cần người review xác nhận.** AC6 ghi "khi job chuyển sang `succeeded`", nhưng code ghi audit cả khi media đã lưu mà 3 lần ghi `succeeded` đều lỗi (job giữ `processing`, TC24b). Lý do: lúc đó media `ready` có thật, bỏ audit thì đúng lỗi đang sửa lại xuất hiện. Hệ quả ban đầu (job thành `failed` sau restart trong khi đã có audit) đã hết nhờ AC9.
 
 **Giả định một instance:** hàng đợi và buffer chỉ nằm trong tiến trình, và `failInterrupted()` không phân biệt instance. Chạy nhiều instance sẽ làm job của instance khác bị đánh dấu `failed`.
+
+## 8. Đối soát job với media (review P2 lần 2, 05/11/2026)
+
+| ID | Tiêu chí |
+|---|---|
+| AC9 | Đã có media `ready` thì job không bao giờ bị ghi `failed`/`job_interrupted`. Khi khởi động, job `processing` có `mediaId` chuyển `succeeded`; job không có media vẫn `failed`/`job_interrupted`. Retry cùng key trả đúng job và media, không chạy lại worker, không tạo media thứ hai. |
+
+**Cách chọn: ghi liên kết trong cùng transaction với media.** `MediaService.upload()` nhận hook tùy chọn `onSaved`; worker truyền hook gọi `linkMedia()`. Media và `job.mediaId` cùng commit hoặc cùng rollback, nên không còn thời điểm media tồn tại mà database không biết thuộc job nào.
+
+Không chọn đối soát bằng checksum lúc khởi động, vì đó là suy đoán: cùng người tạo có thể upload hai lần cùng một file bằng hai key khác nhau. Cách đó cũng không đóng khe giữa lúc lưu media và lúc ghi job.
+
+**Không cần migration:** cột `media_id` và FK đã có trong `1793800000000-AddMediaUploadJobs.ts`.
+
+Các quy tắc đi kèm:
+
+- `linkMedia()` chỉ ghi khi job còn `processing`. Job đã bị ghi `failed` thì transaction rollback, không để lại media mồ côi.
+- `failUnlinked()` chỉ ghi `failed` khi `media_id IS NULL`. `upload()` có thể ném lỗi sau khi commit (ví dụ lúc ký URL); khi đó worker đọc lại `mediaId` và hoàn tất như thành công.
+- `failInterrupted()` tự loại job có `mediaId`, nên bước đối soát `completeLinked()` lỗi cũng không làm job đó `failed`.
+- Media bị cách ly không được liên kết: nó không `ready`, job vẫn `failed` với `media_quarantined`.
+- Đường upload đồng bộ không truyền hook nên không mở transaction, hành vi không đổi.
+- Không cần sửa dữ liệu cũ: tính năng chưa merge nên chưa có job ở môi trường thật.
+
