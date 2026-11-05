@@ -61,10 +61,23 @@ class TestAuthGuard implements CanActivate {
   }
 }
 
+interface RecordedAudit {
+  actorId: string | null;
+  action: string;
+  resourceType: string;
+  resourceId: string | null;
+  requestId: string;
+  ip?: string | null;
+  userAgent?: string | null;
+}
+
 class RecordingAuditService {
-  entries: Array<{ action: string; resourceType: string; resourceId: string | null }> = [];
-  async record(entry: { action: string; resourceType: string; resourceId: string | null }) {
+  entries: RecordedAudit[] = [];
+  async record(entry: RecordedAudit) {
     this.entries.push(entry);
+  }
+  recordSafely(entry: RecordedAudit) {
+    return this.record(entry);
   }
 }
 
@@ -186,9 +199,26 @@ describe('Upload media bất đồng bộ (VT-078) — HTTP', () => {
     it('ghi audit với resource type media_upload_job và id của job', async () => {
       const res = await createJob(buildGlb()).expect(202);
       assert.deepEqual(
-        audit.entries.map((e) => [e.action, e.resourceType, e.resourceId]),
+        audit.entries.filter((e) => e.action === 'media.upload_job.create').map((e) => [e.action, e.resourceType, e.resourceId]),
         [['media.upload_job.create', 'media_upload_job', res.body.data.id]],
       );
+    });
+
+    it('TC25 — E2E API: job xong có thêm audit media.upload trỏ tới media, cùng actor và cùng request-id với request tạo job', async () => {
+      const requestId = randomUUID();
+      const res = await createJob(buildGlb()).set('x-request-id', requestId).set('user-agent', 'tc25-agent').expect(202);
+      await jobService.whenIdle();
+
+      const media = mediaRepo.only();
+      const uploads = audit.entries.filter((e) => e.action === 'media.upload');
+      assert.equal(uploads.length, 1);
+      assert.equal(uploads[0].resourceType, 'media');
+      assert.equal(uploads[0].resourceId, media.id);
+      assert.notEqual(uploads[0].resourceId, res.body.data.id);
+      assert.equal(uploads[0].actorId, EDITOR.id);
+      assert.equal(uploads[0].requestId, requestId);
+      assert.equal(uploads[0].userAgent, 'tc25-agent');
+      assert.ok(uploads[0].ip, 'giữ IP của request tạo job');
     });
   });
 

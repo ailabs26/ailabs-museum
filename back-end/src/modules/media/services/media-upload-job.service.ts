@@ -9,6 +9,8 @@ import {
   OnApplicationBootstrap,
 } from '@nestjs/common';
 import { ApiError } from '../../../common/dto/api-response';
+import type { AuditClientInfo } from '../../audit/audit-request.util';
+import { AuditService } from '../../audit/services/audit.service';
 import { toUploadJobResponse, UploadJobResponse } from '../dto/upload-job-response.dto';
 import { UploadMediaDto } from '../dto/upload-media.dto';
 import { UploadJobStatus } from '../entities/media-upload-job.entity';
@@ -67,6 +69,7 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
   constructor(
     private readonly jobs: MediaUploadJobRepository,
     private readonly media: MediaService,
+    private readonly audit: AuditService,
   ) {}
 
   /**
@@ -87,6 +90,7 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
     dto: UploadMediaDto,
     actorId: string,
     idempotencyKey: string | undefined,
+    _client?: AuditClientInfo,
   ): Promise<EnqueueResult> {
     const key = this.parseKey(idempotencyKey);
     if (!file || !Buffer.isBuffer(file.buffer)) {

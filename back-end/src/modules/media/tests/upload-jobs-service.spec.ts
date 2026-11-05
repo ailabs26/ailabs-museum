@@ -14,8 +14,11 @@ import { MediaInspectionService } from '../services/media-inspection.service';
 import { MediaUploadJobService } from '../services/media-upload-job.service';
 import { MediaService } from '../services/media.service';
 import { TransactionManager } from '../../../common/database/transaction.manager';
+import { AuditRepository } from '../../audit/repositories/audit.repository';
+import { AuditService } from '../../audit/services/audit.service';
 import {
   FailingStorage,
+  FakeAuditRepository,
   FakeMediaRepository,
   FakeTransactionManager,
   FakeUploadJobRepository,
@@ -51,7 +54,11 @@ describe('MediaUploadJobService (unit, VT-078)', () => {
       new FakeTransactionManager() as unknown as TransactionManager,
       testMediaUrlService(),
     );
-    service = new MediaUploadJobService(jobRepo as unknown as MediaUploadJobRepository, mediaService);
+    service = new MediaUploadJobService(
+      jobRepo as unknown as MediaUploadJobRepository,
+      mediaService,
+      new AuditService(new FakeAuditRepository() as unknown as AuditRepository),
+    );
   });
 
   const glb = () => ({ buffer: buildGlb(), originalname: 'tuong-phat.glb' });

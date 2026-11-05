@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import type { EntityManager } from 'typeorm';
 import { Paginated } from '../../../common/types/paginated.type';
+import { AuditLog } from '../../audit/entities/audit-log.entity';
 import { ListMediaQueryDto } from '../dto/list-media-query.dto';
 import { Media } from '../entities/media.entity';
 import { MediaUploadJob, UploadJobStatus } from '../entities/media-upload-job.entity';
@@ -194,6 +195,26 @@ export class FakeUploadJobRepository {
     });
     this.rows.set(row.id, row);
     return row;
+  }
+}
+
+/** Repository audit trong bộ nhớ, đặt sau `AuditService` thật để chạy đúng đường `recordSafely`. */
+export class FakeAuditRepository {
+  rows: Array<Partial<AuditLog>> = [];
+  saveError?: Error;
+
+  create(data: Partial<AuditLog>): Partial<AuditLog> {
+    return data;
+  }
+
+  async save(row: Partial<AuditLog>): Promise<Partial<AuditLog>> {
+    if (this.saveError) throw this.saveError;
+    this.rows.push(row);
+    return row;
+  }
+
+  byAction(action: string): Array<Partial<AuditLog>> {
+    return this.rows.filter((row) => row.action === action);
   }
 }
 
