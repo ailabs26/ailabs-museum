@@ -6,6 +6,7 @@
  *   MEDIA_TEST_DATABASE_URL=postgres://...@localhost/...  → repository PostgreSQL thật
  *   (không đặt → repository fake trong bộ nhớ). Storage luôn là đĩa cục bộ tạm.
  *   LOAD_OUTPUT=đường-dẫn.json để ghi kết quả.
+ *   Mỗi lần chạy ghi đỉnh RSS và đỉnh `arrayBuffers` (Buffer file nằm ở đây) của tiến trình server.
  *   LOAD_SAME_PROCESS=1 → client và server chung một tiến trình (chỉ để so sánh: client tranh
  *   event loop với server nên số đo bị lẫn). Mặc định server chạy ở tiến trình con (fork).
  *
@@ -79,10 +80,38 @@ function summarize(values: number[]) {
   return { n: values.length, p50: round(percentile(values, 50)), p95: round(percentile(values, 95)), max: round(Math.max(...values)) };
 }
 
+interface MemoryPeak {
+  peakRssMb: number;
+  peakArrayBuffersMb: number;
+}
+
 interface LoadServer {
   url: string;
   idle(): Promise<void>;
+  /** Trả đỉnh bộ nhớ từ lần gọi trước rồi đặt lại. */
+  memory(): Promise<MemoryPeak>;
   close(): Promise<void>;
+}
+
+/** Lấy mẫu bộ nhớ của tiến trình server theo chu kỳ ngắn (đỉnh, không phải giá trị cuối). */
+function startMemorySampler() {
+  const peak = { rss: 0, arrayBuffers: 0 };
+  const sample = () => {
+    const usage = process.memoryUsage();
+    peak.rss = Math.max(peak.rss, usage.rss);
+    peak.arrayBuffers = Math.max(peak.arrayBuffers, usage.arrayBuffers);
+  };
+  const timer = setInterval(sample, 20);
+  return {
+    stop: () => clearInterval(timer),
+    take: (): MemoryPeak => {
+      sample();
+      const result = { peakRssMb: Math.round(peak.rss / 1e6), peakArrayBuffersMb: Math.round(peak.arrayBuffers / 1e6) };
+      peak.rss = 0;
+      peak.arrayBuffers = 0;
+      return result;
+    },
+  };
 }
 
 /** Dựng app Nest với pipeline thật, storage đĩa tạm và repository thật/fake. */
@@ -126,10 +155,13 @@ async function startServer(): Promise<LoadServer> {
   app.useGlobalFilters(new AllExceptionsFilter());
   await app.listen(0, '127.0.0.1');
   const jobs = app.get(MediaUploadJobService);
+  const sampler = startMemorySampler();
   return {
     url: `${await app.getUrl()}/admin/media/upload-jobs`,
     idle: () => jobs.whenIdle(),
+    memory: async () => sampler.take(),
     close: async () => {
+      sampler.stop();
       await app.close();
       if (db) {
         await db.query('DELETE FROM media_upload_jobs WHERE created_by = $1', [actorId]);
@@ -147,8 +179,9 @@ async function runServerChild(): Promise<void> {
   const server = await startServer();
   process.on('message', async (message: { type: string; id: number }) => {
     if (message.type === 'idle') await server.idle();
+    const memory = message.type === 'memory' ? await server.memory() : undefined;
     if (message.type === 'close') await server.close();
-    process.send?.({ type: 'done', id: message.id });
+    process.send?.({ type: 'done', id: message.id, memory });
     if (message.type === 'close') process.exit(0);
   });
   process.send?.({ type: 'ready', url: server.url });
@@ -159,12 +192,12 @@ function forkServer(): Promise<LoadServer> {
   const child = fork(__filename, [], { env: { ...process.env, LOAD_ROLE: 'server' }, execArgv: process.execArgv });
   let seq = 0;
   const call = (type: string) =>
-    new Promise<void>((resolve) => {
+    new Promise<MemoryPeak | undefined>((resolve) => {
       const id = ++seq;
-      const onMessage = (message: { type: string; id: number }) => {
+      const onMessage = (message: { type: string; id: number; memory?: MemoryPeak }) => {
         if (message.type === 'done' && message.id === id) {
           child.off('message', onMessage);
-          resolve();
+          resolve(message.memory);
         }
       };
       child.on('message', onMessage);
@@ -173,7 +206,12 @@ function forkServer(): Promise<LoadServer> {
   return new Promise((resolve, reject) => {
     child.once('error', reject);
     child.once('message', (message: { type: string; url: string }) =>
-      resolve({ url: message.url, idle: () => call('idle'), close: () => call('close') }),
+      resolve({
+        url: message.url,
+        idle: async () => void (await call('idle')),
+        memory: async () => (await call('memory')) as MemoryPeak,
+        close: async () => void (await call('close')),
+      }),
     );
   });
 }
@@ -233,9 +271,11 @@ async function main() {
     const retries = await Promise.all(Array.from({ length: CONCURRENCY }, () => post(key)));
     await server.idle();
 
+    const memory = await server.memory();
     const s1Post = summarize(results.map((r) => r.ms));
     runs.push({
       run,
+      memory,
       s1: {
         post: s1Post,
         postStatus: Object.fromEntries([...new Set(results.map((r) => r.status))].map((s) => [s, results.filter((r) => r.status === s).length])),
@@ -254,7 +294,8 @@ async function main() {
     console.log(
       `run ${run}: S1 POST p50=${s1Post.p50}ms p95=${s1Post.p95}ms max=${s1Post.max}ms (${s1Post.p95 <= P95_TARGET_MS ? 'ĐẠT' : 'KHÔNG ĐẠT'} ≤ ${P95_TARGET_MS}ms)` +
         ` | hoàn tất p95=${summarize(done.completionMs).p95}ms ${JSON.stringify(done.statuses)}` +
-        ` | S2 202=${runs[runs.length - 1].s2.accepted202} jobId khác nhau=${runs[runs.length - 1].s2.distinctJobIds}`,
+        ` | S2 202=${runs[runs.length - 1].s2.accepted202} jobId khác nhau=${runs[runs.length - 1].s2.distinctJobIds}` +
+        ` | RSS đỉnh=${memory.peakRssMb}MB arrayBuffers đỉnh=${memory.peakArrayBuffersMb}MB`,
     );
   }
 
@@ -265,6 +306,8 @@ async function main() {
     machine: { node: process.version, cpus: cpus().length, cpuModel: cpus()[0]?.model, totalMemGb: Math.round(totalmem() / 1e9) },
     runs,
     worstRunPostP95Ms: Math.max(...allPost),
+    peakRssMb: Math.max(...runs.map((r) => r.memory.peakRssMb)),
+    peakArrayBuffersMb: Math.max(...runs.map((r) => r.memory.peakArrayBuffersMb)),
     allRunsMeetTarget: runs.every((r) => r.s1.meetsTarget),
     idempotencyHeldInAllRuns: runs.every((r) => r.s2.accepted202 === 1 && r.s2.distinctJobIds === 1),
   };
