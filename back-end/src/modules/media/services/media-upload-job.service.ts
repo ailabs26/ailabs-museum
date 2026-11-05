@@ -17,7 +17,7 @@ import { UploadMediaDto } from '../dto/upload-media.dto';
 import { UploadJobStatus } from '../entities/media-upload-job.entity';
 import { MediaErrorCode } from '../inspection/media-format.error';
 import { MediaUploadJobRepository } from '../repositories/media-upload-job.repository';
-import { MediaService, UploadedMediaFile } from './media.service';
+import { MediaSavedHook, MediaService, UploadedMediaFile } from './media.service';
 
 export interface EnqueueResult {
   job: UploadJobResponse;
@@ -96,10 +96,18 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
   }
 
   /**
-   * Buffer file chỉ nằm trong RAM của tiến trình, nên job dang dở từ lần chạy trước không thể
-   * tiếp tục: đánh dấu failed để client không chờ mãi. Giả định một instance API xử lý job.
+   * Job đã có media chỉ còn thiếu trạng thái nên được hoàn tất. Job chưa có media thì không thể tiếp
+   * tục vì buffer file chỉ nằm trong RAM: đánh dấu failed để client không chờ mãi. Hai bước độc lập:
+   * `failInterrupted` tự bỏ qua job có media nên đối soát lỗi cũng không làm job đó failed.
+   * Giả định một instance API xử lý job.
    */
   async onApplicationBootstrap(): Promise<void> {
+    try {
+      const completed = await this.jobs.completeLinked();
+      if (completed > 0) this.logger.warn(`Đối soát ${completed} job upload đã có media sang succeeded`);
+    } catch (error) {
+      this.logger.error(`Không đối soát được job upload đã có media: ${(error as Error)?.message ?? String(error)}`);
+    }
     try {
       const interrupted = await this.jobs.failInterrupted();
       if (interrupted > 0) this.logger.warn(`Đánh dấu ${interrupted} job upload bị gián đoạn khi khởi động lại`);
@@ -191,34 +199,41 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
   }
 
   private async process({ jobId, file, dto, actorId, client }: UploadTask): Promise<void> {
-    let mediaId: string;
+    let mediaId: string | null;
     try {
       await this.jobs.patch(jobId, { status: UploadJobStatus.PROCESSING, progress: 50 });
-      mediaId = (await this.media.upload(file, dto, actorId)).id;
+      const link: MediaSavedHook = (id, manager) => this.jobs.linkMedia(jobId, id, manager);
+      mediaId = (await this.media.upload(file, dto, actorId, link)).id;
     } catch (error) {
-      await this.markFailed(jobId, error);
-      return;
+      // upload() có thể ném lỗi sau khi transaction đã commit: job đã liên kết thì vẫn là thành công.
+      mediaId = await this.markFailed(jobId, error);
+      if (!mediaId) return;
     }
-    // Media đã lưu: từ đây lỗi chỉ là lỗi ghi trạng thái job, KHÔNG được ghi failed (job sẽ thiếu mediaId
-    // trong khi media "ready" tồn tại, và retry cùng key không chạy lại worker).
+    // Media đã lưu và job đã giữ mediaId: từ đây lỗi chỉ là lỗi ghi trạng thái, không được ghi failed.
     await this.markSucceeded(jobId, mediaId);
     // Worker chạy ngoài AuditInterceptor nên tự ghi. Ghi cả khi job kẹt processing: media đã tồn tại thật.
     await this.audit.recordSafely({ actorId, action: 'media.upload', resourceType: 'media', resourceId: mediaId, ...client });
   }
 
-  private async markFailed(jobId: string, error: unknown): Promise<void> {
+  /** Ghi failed nếu job chưa có media; job đã có media thì trả mediaId để worker hoàn tất. */
+  private async markFailed(jobId: string, error: unknown): Promise<string | null> {
     const failure = describeFailure(error);
     if (failure.code === 'internal_error') {
       this.logger.error(`Job upload ${jobId} lỗi: ${(error as Error)?.message ?? String(error)}`);
     }
-    await this.jobs
-      .patch(jobId, { status: UploadJobStatus.FAILED, progress: 100, errorCode: failure.code, errorMessage: failure.message })
-      .catch((patchError: Error) => this.logger.error(`Không cập nhật được job ${jobId}: ${patchError.message}`));
+    try {
+      const patch = { status: UploadJobStatus.FAILED, progress: 100, errorCode: failure.code, errorMessage: failure.message };
+      if (await this.jobs.failUnlinked(jobId, patch)) return null;
+      return (await this.jobs.findById(jobId))?.mediaId ?? null;
+    } catch (patchError) {
+      this.logger.error(`Không cập nhật được job ${jobId}: ${(patchError as Error).message}`);
+      return null;
+    }
   }
 
   /**
    * Thử ghi succeeded tối đa COMPLETION_ATTEMPTS lần. Nếu vẫn lỗi: giữ job ở processing (không xóa
-   * media, không ghi failed) và log mediaId để đối soát thủ công.
+   * media, không ghi failed); job đã có mediaId nên lần khởi động sau sẽ hoàn tất.
    */
   private async markSucceeded(jobId: string, mediaId: string): Promise<void> {
     for (let attempt = 1; ; attempt++) {
@@ -229,7 +244,7 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
         const reason = (error as Error)?.message ?? String(error);
         if (attempt >= COMPLETION_ATTEMPTS) {
           this.logger.error(
-            `Job upload ${jobId}: media ${mediaId} đã lưu nhưng không ghi được trạng thái succeeded sau ${attempt} lần (${reason}); job giữ processing, cần đối soát`,
+            `Job upload ${jobId}: media ${mediaId} đã lưu nhưng không ghi được trạng thái succeeded sau ${attempt} lần (${reason}); job giữ processing tới lần khởi động sau`,
           );
           return;
         }

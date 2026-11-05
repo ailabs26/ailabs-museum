@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, In, LessThan, QueryFailedError, Repository } from 'typeorm';
+import { EntityManager, In, IsNull, LessThan, Not, QueryFailedError, Repository } from 'typeorm';
 import { BaseRepository } from '../../../common/repository/base.repository';
 import { MediaUploadJob, UPLOAD_JOB_ACTOR_KEY_CONSTRAINT, UploadJobStatus } from '../entities/media-upload-job.entity';
 
@@ -40,10 +40,10 @@ export class MediaUploadJobRepository extends BaseRepository<MediaUploadJob> {
     await this.repo.update(id, data);
   }
 
-  /** Job còn dang dở khi tiến trình khởi động lại → `failed` (buffer file chỉ nằm trong RAM). */
+  /** Job chưa có media khi tiến trình khởi động lại → `failed` (buffer file chỉ nằm trong RAM). */
   async failInterrupted(): Promise<number> {
     const result = await this.repo.update(
-      { status: In([UploadJobStatus.QUEUED, UploadJobStatus.PROCESSING]) },
+      { status: In([UploadJobStatus.QUEUED, UploadJobStatus.PROCESSING]), mediaId: IsNull() },
       {
         status: UploadJobStatus.FAILED,
         progress: 100,
@@ -55,8 +55,28 @@ export class MediaUploadJobRepository extends BaseRepository<MediaUploadJob> {
   }
 
   /** Xóa job đã kết thúc từ trước `cutoff`; job `queued`/`processing` không bao giờ bị xóa ở đây. */
-  async linkMedia(_id: string, _mediaId: string, _manager: EntityManager): Promise<void> {
-    throw new Error('Not implemented');
+  /**
+   * Gắn media vào job trong transaction tạo media. Job không còn `processing` (instance khác đã ghi
+   * `failed`) thì ném lỗi để rollback: thà không có media còn hơn có media mồ côi.
+   */
+  async linkMedia(id: string, mediaId: string, manager: EntityManager): Promise<void> {
+    const result = await this.scoped(manager).update({ id, status: UploadJobStatus.PROCESSING }, { mediaId });
+    if (!result.affected) throw new Error(`Job upload ${id} không còn ở processing`);
+  }
+
+  /** Ghi `failed` chỉ khi job chưa có media. Trả `false` nếu job đã liên kết media, khi đó job không được failed. */
+  async failUnlinked(id: string, data: UploadJobPatch): Promise<boolean> {
+    const result = await this.repo.update({ id, mediaId: IsNull() }, data);
+    return (result.affected ?? 0) > 0;
+  }
+
+  /** Đối soát khi khởi động: job kẹt `processing` đã có media là job đã xong, chỉ chưa ghi được trạng thái. */
+  async completeLinked(): Promise<number> {
+    const result = await this.repo.update(
+      { status: UploadJobStatus.PROCESSING, mediaId: Not(IsNull()) },
+      { status: UploadJobStatus.SUCCEEDED, progress: 100 },
+    );
+    return result.affected ?? 0;
   }
 
   async deleteFinishedBefore(cutoff: Date): Promise<number> {

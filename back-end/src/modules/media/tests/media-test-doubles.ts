@@ -177,7 +177,7 @@ export class FakeUploadJobRepository {
     if (this.failInterruptedError) throw this.failInterruptedError;
     let count = 0;
     for (const row of this.rows.values()) {
-      if (row.status === UploadJobStatus.QUEUED || row.status === UploadJobStatus.PROCESSING) {
+      if (!row.mediaId && (row.status === UploadJobStatus.QUEUED || row.status === UploadJobStatus.PROCESSING)) {
         Object.assign(row, { status: UploadJobStatus.FAILED, progress: 100, errorCode: 'job_interrupted', updatedAt: new Date() });
         count++;
       }
