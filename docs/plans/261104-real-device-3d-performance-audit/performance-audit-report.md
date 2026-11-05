@@ -2,6 +2,8 @@
 
 Ngày audit: **2026-11-04**, Asia/Saigon. Phạm vi: đo đạc, instrumentation opt-in, regression và handoff; không tối ưu/redesign engine.
 
+**Xác nhận coverage ngày 2026-11-05 theo yêu cầu sau review PR #159.** Chưa có điện thoại vật lý, iOS/Safari, headset hoặc live complex room để đo do thiết bị/API chưa sẵn có trong môi trường audit. Evidence bàn giao hiện chỉ bao gồm desktop headless dùng GPU vật lý với fixture 5 hình minh họa/0 GLB. Ba cấu hình Android vật lý còn BLOCKED. iOS/Safari, headset và live complex room còn NOT MEASURED. Coverage toàn nhiệm vụ còn chờ bổ sung evidence hoặc quyết định điều chỉnh acceptance của người phụ trách.
+
 ## 1. Executive Summary
 
 Đã bổ sung công cụ đo production và tái phân tích JSON, kiểm chứng logic/lifecycle, thu ba baseline desktop trên GPU vật lý Intel Iris Xe. **P03 fixture PASS mục tiêu 60 submission FPS**: ba run eligible đạt mean 90.0019–90.0040 FPS. Phiên dài 601.27 giây đạt mean 89.87 FPS, P95 12.3 ms. Idle 30.01 giây có 0 submissions, đúng demand loop.

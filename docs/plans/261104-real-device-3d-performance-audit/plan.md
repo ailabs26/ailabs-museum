@@ -32,6 +32,12 @@ Overhead: hai lần đọc clock và append tuple/frame, counters tối đa 1 Hz
 
 ## Acceptance
 
+### Xác nhận giới hạn coverage ngày 2026-11-05
+
+Theo yêu cầu xác nhận lại trong docs sau review PR #159, phạm vi bàn giao hiện tại gồm công cụ đo, regression và evidence desktop headless dùng GPU vật lý trên fixture 5 hình minh họa/0 GLB. Chưa có điện thoại vật lý, iOS/Safari, headset hoặc live complex room để đo do thiết bị/API chưa sẵn có trong môi trường audit.
+
+Ba cấu hình Android vật lý còn BLOCKED. iOS/Safari, headset và live complex room còn NOT MEASURED. Tiêu chí coverage đầy đủ bên dưới vẫn chưa đạt. Việc xác nhận giới hạn này ghi nhận phần đã bàn giao và phần còn thiếu. Nghiệm thu toàn bộ audit cần bổ sung evidence hoặc quyết định điều chỉnh acceptance của người phụ trách.
+
 - Metrics từ render submissions, cold/idle/continuous tách riêng; raw JSON bounded có metadata, thời gian, schema; export tái phân tích được.
 - Continuous primary run chỉ eligible khi >=30s, >=100 intervals, không mất sample/hidden/context loss, cùng workload ổn định; >=3 run tương đương. Mean FPS là intervals / tổng thời gian giữa submissions; median/p5 là percentile instantaneous FPS. Desktop >=60, mobile >=30 theo mean FPS (sai số cadence công bố); median và p95/p99 pacing báo riêng, không che jank bằng average. Presented FPS/GPU time chỉ kết luận khi profiler hỗ trợ.
 - Desktop GPU vật lý + tối thiểu ba cấu hình điện thoại vật lý để nghiệm thu coverage; thiếu máy ghi NOT MEASURED. Không emulation thay thế physical.
