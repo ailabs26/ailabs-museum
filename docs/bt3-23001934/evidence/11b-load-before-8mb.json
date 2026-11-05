@@ -1,0 +1,160 @@
+{
+  "generatedAt": "2026-11-05T14:36:36.490Z",
+  "config": {
+    "concurrency": 80,
+    "runs": 3,
+    "fileBytes": 8000000,
+    "repository": "postgresql-16 (docker, localhost)",
+    "topology": "server ở tiến trình con (fork)",
+    "storage": "local disk (tmp)",
+    "p95TargetMs": 2500
+  },
+  "machine": {
+    "node": "v26.3.0",
+    "cpus": 16,
+    "cpuModel": "AMD Ryzen 7 7730U with Radeon Graphics",
+    "totalMemGb": 14
+  },
+  "runs": [
+    {
+      "run": 1,
+      "memory": {
+        "peakRssMb": 1464,
+        "peakArrayBuffersMb": 810
+      },
+      "s1": {
+        "post": {
+          "n": 80,
+          "p50": 2880.4,
+          "p95": 3034.7,
+          "max": 3040.2
+        },
+        "postStatus": {
+          "202": 80
+        },
+        "meetsTarget": false,
+        "getStatus": {
+          "n": 4292,
+          "p50": 23.7,
+          "p95": 273.9,
+          "max": 1096.1
+        },
+        "completion": {
+          "n": 80,
+          "p50": 10684,
+          "p95": 10756,
+          "max": 10756.6
+        },
+        "jobStatuses": {
+          "succeeded": 80
+        }
+      },
+      "s2": {
+        "post": {
+          "n": 80,
+          "p50": 3341.9,
+          "p95": 3448.8,
+          "max": 3456.3
+        },
+        "accepted202": 1,
+        "replay200": 79,
+        "distinctJobIds": 1
+      }
+    },
+    {
+      "run": 2,
+      "memory": {
+        "peakRssMb": 1338,
+        "peakArrayBuffersMb": 748
+      },
+      "s1": {
+        "post": {
+          "n": 80,
+          "p50": 2262.2,
+          "p95": 2357.7,
+          "max": 2374.9
+        },
+        "postStatus": {
+          "202": 80
+        },
+        "meetsTarget": true,
+        "getStatus": {
+          "n": 3614,
+          "p50": 23.6,
+          "p95": 37.4,
+          "max": 314.6
+        },
+        "completion": {
+          "n": 80,
+          "p50": 6853.7,
+          "p95": 6861.4,
+          "max": 6862
+        },
+        "jobStatuses": {
+          "succeeded": 80
+        }
+      },
+      "s2": {
+        "post": {
+          "n": 80,
+          "p50": 3132.9,
+          "p95": 3137.2,
+          "max": 3148.1
+        },
+        "accepted202": 1,
+        "replay200": 79,
+        "distinctJobIds": 1
+      }
+    },
+    {
+      "run": 3,
+      "memory": {
+        "peakRssMb": 1327,
+        "peakArrayBuffersMb": 742
+      },
+      "s1": {
+        "post": {
+          "n": 80,
+          "p50": 2173.5,
+          "p95": 2211.4,
+          "max": 2213.8
+        },
+        "postStatus": {
+          "202": 80
+        },
+        "meetsTarget": true,
+        "getStatus": {
+          "n": 3440,
+          "p50": 23.3,
+          "p95": 39.2,
+          "max": 319.6
+        },
+        "completion": {
+          "n": 80,
+          "p50": 6579.3,
+          "p95": 6587.4,
+          "max": 6588
+        },
+        "jobStatuses": {
+          "succeeded": 80
+        }
+      },
+      "s2": {
+        "post": {
+          "n": 80,
+          "p50": 3004,
+          "p95": 3008.2,
+          "max": 3009.4
+        },
+        "accepted202": 1,
+        "replay200": 79,
+        "distinctJobIds": 1
+      }
+    }
+  ],
+  "worstRunPostP95Ms": 3034.7,
+  "peakRssMb": 1464,
+  "peakArrayBuffersMb": 810,
+  "allRunsMeetTarget": false,
+  "idempotencyHeldInAllRuns": true
+}
