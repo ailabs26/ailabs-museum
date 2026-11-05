@@ -163,7 +163,11 @@ class Environment {
   @Max(50)
   MEDIA_UPLOAD_JOB_CONCURRENCY: number = 3;
 
-  MEDIA_UPLOAD_JOB_RETENTION_DAYS?: number;
+  /** Số ngày giữ job upload đã kết thúc; sau mốc này Idempotency-Key của job đó dùng lại được. */
+  @IsInt()
+  @Min(1)
+  @Max(3650)
+  MEDIA_UPLOAD_JOB_RETENTION_DAYS: number = 7;
 
   /** Project URL của Supabase, vd https://<ref>.supabase.co — bắt buộc khi driver = supabase. */
   @ValidateIf((env: Environment) => env.MEDIA_STORAGE_DRIVER === 'supabase')
