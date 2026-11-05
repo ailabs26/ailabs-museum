@@ -2,6 +2,7 @@ import { Button, Title } from '@mantine/core';
 import { IconArrowRight } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { usePublicLocale } from '@/core/i18n/public-locale';
 import type { RoomDetail } from '@/validations/roomSchema';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import classes from './ExhibitGrid.module.css';
@@ -12,6 +13,7 @@ export function ExhibitGrid({ exhibits, roomSlug, onReport, renderActions }: {
   onReport?: (exhibit: RoomDetail['exhibits'][number]) => void;
   renderActions?: (exhibit: RoomDetail['exhibits'][number]) => ReactNode;
 }) {
+  const { t } = usePublicLocale();
   return (
     <ul className={classes.grid} aria-label="Hiện vật trong bộ sưu tập">
       {exhibits.map((exhibit, index) => (
@@ -29,7 +31,7 @@ export function ExhibitGrid({ exhibits, roomSlug, onReport, renderActions }: {
               <Link className={classes.detailLink}
                 to={`/collection/${encodeURIComponent(roomSlug)}/exhibits/${encodeURIComponent(exhibit.id)}`}
                 aria-label={`Xem chi tiết ${exhibit.name}`}>
-                Xem chi tiết <IconArrowRight size={16} aria-hidden="true" />
+                {t('ui.collection.details', 'Xem chi tiết')} <IconArrowRight size={16} aria-hidden="true" />
               </Link>
               {onReport && <Button variant="subtle" size="compact-sm" color="gray" onClick={() => onReport(exhibit)}>Báo nội dung</Button>}
             </div>

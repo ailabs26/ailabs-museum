@@ -1,0 +1,454 @@
+{
+  "interpretation": "Render submissions, not presented FPS. Eligibility concerns capture validity only; physical-device and profiler evidence remain required. No CI FPS gate.",
+  "runs": [
+    {
+      "file": "../docs/plans/261104-real-device-3d-performance-audit/evidence/desktop/desktop-P03-run1.json",
+      "schemaVersion": 1,
+      "metadata": {
+        "buildSha": "d4e1d5647a271cdae808ece9e8210ef6fcad2cef",
+        "device": "D01 ASUS Vivobook X1405VA; Intel i5-13500H; Iris Xe driver32.0.101.7076; RAM16786575360 bytes; Windows11 10.0.26200",
+        "conditions": "Local fixture over loopback; Edge hardware ANGLE D3D11; battery91percent at preflight, AC=True, charging=True; Balanced power plan; thermal and battery-saver state unavailable; display refresh unavailable; no concurrent build/test; controlled automated input, no CPU/network throttling",
+        "scenario": "P03",
+        "kind": "continuous",
+        "source": "fixture",
+        "target": "desktop"
+      },
+      "durationMs": 30095.699999999255,
+      "renderedFrames": 2705,
+      "intervalCount": 2704,
+      "eligible": true,
+      "issues": [],
+      "frame": {
+        "meanFps": 90.00402754708621,
+        "medianFps": 90.09009007799597,
+        "p5Fps": 77.51937985391572,
+        "onePercentLowFps": 63.89776357946983,
+        "medianMs": 11.100000001490116,
+        "p95Ms": 12.899999998509884,
+        "p99Ms": 14.799999997019768,
+        "over16_67": {
+          "count": 2,
+          "ratio": 0.0007396449704142012
+        },
+        "over33_33": {
+          "count": 0,
+          "ratio": 0
+        },
+        "submissionCpuMedianMs": 2.699999999254942,
+        "submissionCpuP95Ms": 4.900000002235174
+      },
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "resources": {
+        "first": {
+          "at": 22562.39999999851,
+          "rendererId": 1,
+          "calls": 57,
+          "triangles": 10112,
+          "geometries": 65,
+          "textures": 15,
+          "programs": 12,
+          "heapBytes": 24507101
+        },
+        "last": {
+          "at": 51750,
+          "rendererId": 1,
+          "calls": 57,
+          "triangles": 10112,
+          "geometries": 67,
+          "textures": 15,
+          "programs": 12,
+          "heapBytes": 26045297
+        }
+      },
+      "gpuMemory": {
+        "classification": "unavailable",
+        "bytes": null
+      },
+      "gpuTimeMs": null,
+      "confirmedDisplayedDrops": null
+    },
+    {
+      "file": "../docs/plans/261104-real-device-3d-performance-audit/evidence/desktop/desktop-P03-run2.json",
+      "schemaVersion": 1,
+      "metadata": {
+        "buildSha": "d4e1d5647a271cdae808ece9e8210ef6fcad2cef",
+        "device": "D01 ASUS Vivobook X1405VA; Intel i5-13500H; Iris Xe driver32.0.101.7076; RAM16786575360 bytes; Windows11 10.0.26200",
+        "conditions": "Local fixture over loopback; Edge hardware ANGLE D3D11; battery91percent at preflight, AC=True, charging=True; Balanced power plan; thermal and battery-saver state unavailable; display refresh unavailable; no concurrent build/test; controlled automated input, no CPU/network throttling",
+        "scenario": "P03",
+        "kind": "continuous",
+        "source": "fixture",
+        "target": "desktop"
+      },
+      "durationMs": 30079.199999999255,
+      "renderedFrames": 2704,
+      "intervalCount": 2703,
+      "eligible": true,
+      "issues": [],
+      "frame": {
+        "meanFps": 90.0021976119239,
+        "medianFps": 90.09009007799597,
+        "p5Fps": 79.3650793556934,
+        "onePercentLowFps": 62.93549112023021,
+        "medianMs": 11.100000001490116,
+        "p95Ms": 12.600000001490116,
+        "p99Ms": 14.599999997764826,
+        "over16_67": {
+          "count": 7,
+          "ratio": 0.002589715131335553
+        },
+        "over33_33": {
+          "count": 0,
+          "ratio": 0
+        },
+        "submissionCpuMedianMs": 2.800000000745058,
+        "submissionCpuP95Ms": 5.099999997764826
+      },
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "resources": {
+        "first": {
+          "at": 63628.099999997765,
+          "rendererId": 1,
+          "calls": 57,
+          "triangles": 10112,
+          "geometries": 67,
+          "textures": 15,
+          "programs": 12,
+          "heapBytes": 28325145
+        },
+        "last": {
+          "at": 92826.89999999851,
+          "rendererId": 1,
+          "calls": 57,
+          "triangles": 10112,
+          "geometries": 67,
+          "textures": 15,
+          "programs": 12,
+          "heapBytes": 33796221
+        }
+      },
+      "gpuMemory": {
+        "classification": "unavailable",
+        "bytes": null
+      },
+      "gpuTimeMs": null,
+      "confirmedDisplayedDrops": null
+    },
+    {
+      "file": "../docs/plans/261104-real-device-3d-performance-audit/evidence/desktop/desktop-P03-run3.json",
+      "schemaVersion": 1,
+      "metadata": {
+        "buildSha": "d4e1d5647a271cdae808ece9e8210ef6fcad2cef",
+        "device": "D01 ASUS Vivobook X1405VA; Intel i5-13500H; Iris Xe driver32.0.101.7076; RAM16786575360 bytes; Windows11 10.0.26200",
+        "conditions": "Local fixture over loopback; Edge hardware ANGLE D3D11; battery91percent at preflight, AC=True, charging=True; Balanced power plan; thermal and battery-saver state unavailable; display refresh unavailable; no concurrent build/test; controlled automated input, no CPU/network throttling",
+        "scenario": "P03",
+        "kind": "continuous",
+        "source": "fixture",
+        "target": "desktop"
+      },
+      "durationMs": 30065.10000000149,
+      "renderedFrames": 2703,
+      "intervalCount": 2702,
+      "eligible": true,
+      "issues": [],
+      "frame": {
+        "meanFps": 90.00186532364035,
+        "medianFps": 90.09009007799597,
+        "p5Fps": 81.96721311975986,
+        "onePercentLowFps": 71.02993404443818,
+        "medianMs": 11.100000001490116,
+        "p95Ms": 12.199999999254942,
+        "p99Ms": 13.5,
+        "over16_67": {
+          "count": 0,
+          "ratio": 0
+        },
+        "over33_33": {
+          "count": 0,
+          "ratio": 0
+        },
+        "submissionCpuMedianMs": 2.300000000745058,
+        "submissionCpuP95Ms": 3.300000000745058
+      },
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "resources": {
+        "first": {
+          "at": 104637.80000000075,
+          "rendererId": 1,
+          "calls": 57,
+          "triangles": 10112,
+          "geometries": 67,
+          "textures": 15,
+          "programs": 12,
+          "heapBytes": 29842061
+        },
+        "last": {
+          "at": 133837.19999999925,
+          "rendererId": 1,
+          "calls": 57,
+          "triangles": 10112,
+          "geometries": 67,
+          "textures": 15,
+          "programs": 12,
+          "heapBytes": 23004674
+        }
+      },
+      "gpuMemory": {
+        "classification": "unavailable",
+        "bytes": null
+      },
+      "gpuTimeMs": null,
+      "confirmedDisplayedDrops": null
+    },
+    {
+      "file": "../docs/plans/261104-real-device-3d-performance-audit/evidence/desktop/desktop-P07-10min.json",
+      "schemaVersion": 1,
+      "metadata": {
+        "buildSha": "d4e1d5647a271cdae808ece9e8210ef6fcad2cef",
+        "device": "D01 ASUS Vivobook X1405VA; Intel i5-13500H; Iris Xe driver32.0.101.7076; RAM16786575360 bytes; Windows11 10.0.26200",
+        "conditions": "Local fixture over loopback; Edge hardware ANGLE D3D11; battery91percent at preflight, AC=True, charging=True; Balanced power plan; thermal and battery-saver state unavailable; display refresh unavailable; no concurrent build/test; controlled automated input, no CPU/network throttling",
+        "scenario": "P07",
+        "kind": "continuous",
+        "source": "fixture",
+        "target": "desktop"
+      },
+      "durationMs": 601268.5999999978,
+      "renderedFrames": 54030,
+      "intervalCount": 54029,
+      "eligible": true,
+      "issues": [],
+      "frame": {
+        "meanFps": 89.86695186881146,
+        "medianFps": 90.09009007799597,
+        "p5Fps": 81.30081300320538,
+        "onePercentLowFps": 63.52151042614006,
+        "medianMs": 11.100000001490116,
+        "p95Ms": 12.300000000745058,
+        "p99Ms": 13.599999997764826,
+        "over16_67": {
+          "count": 110,
+          "ratio": 0.0020359436598863575
+        },
+        "over33_33": {
+          "count": 3,
+          "ratio": 0.00005552573617871884
+        },
+        "submissionCpuMedianMs": 2,
+        "submissionCpuP95Ms": 4.199999999254942
+      },
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "resources": {
+        "first": {
+          "at": 180969.3999999985,
+          "rendererId": 1,
+          "calls": 57,
+          "triangles": 10112,
+          "geometries": 67,
+          "textures": 15,
+          "programs": 12,
+          "heapBytes": 18377536
+        },
+        "last": {
+          "at": 781814.6999999993,
+          "rendererId": 1,
+          "calls": 28,
+          "triangles": 3552,
+          "geometries": 71,
+          "textures": 16,
+          "programs": 12,
+          "heapBytes": 29625721
+        }
+      },
+      "gpuMemory": {
+        "classification": "unavailable",
+        "bytes": null
+      },
+      "gpuTimeMs": null,
+      "confirmedDisplayedDrops": null
+    },
+    {
+      "file": "../docs/plans/261104-real-device-3d-performance-audit/evidence/desktop/desktop-idle.json",
+      "schemaVersion": 1,
+      "metadata": {
+        "buildSha": "d4e1d5647a271cdae808ece9e8210ef6fcad2cef",
+        "device": "D01 ASUS Vivobook X1405VA; Intel i5-13500H; Iris Xe driver32.0.101.7076; RAM16786575360 bytes; Windows11 10.0.26200",
+        "conditions": "Local fixture over loopback; Edge hardware ANGLE D3D11; battery91percent at preflight, AC=True, charging=True; Balanced power plan; thermal and battery-saver state unavailable; display refresh unavailable; no concurrent build/test; controlled automated input, no CPU/network throttling",
+        "scenario": "P03",
+        "kind": "idle",
+        "source": "fixture",
+        "target": "desktop"
+      },
+      "durationMs": 30012.300000000745,
+      "renderedFrames": 0,
+      "intervalCount": 0,
+      "eligible": false,
+      "issues": [
+        "fewer-than-100-intervals",
+        "workload-unavailable",
+        "continuous-coverage-gap",
+        "not-continuous-workload"
+      ],
+      "frame": {
+        "meanFps": null,
+        "medianFps": null,
+        "p5Fps": null,
+        "onePercentLowFps": null,
+        "medianMs": null,
+        "p95Ms": null,
+        "p99Ms": null,
+        "over16_67": {
+          "count": 0,
+          "ratio": null
+        },
+        "over33_33": {
+          "count": 0,
+          "ratio": null
+        },
+        "submissionCpuMedianMs": null,
+        "submissionCpuP95Ms": null
+      },
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "resources": {
+        "first": null,
+        "last": null
+      },
+      "gpuMemory": {
+        "classification": "unavailable",
+        "bytes": null
+      },
+      "gpuTimeMs": null,
+      "confirmedDisplayedDrops": null
+    }
+  ],
+  "groups": [
+    {
+      "workload": {
+        "buildSha": "d4e1d5647a271cdae808ece9e8210ef6fcad2cef",
+        "device": "D01 ASUS Vivobook X1405VA; Intel i5-13500H; Iris Xe driver32.0.101.7076; RAM16786575360 bytes; Windows11 10.0.26200",
+        "conditions": "Local fixture over loopback; Edge hardware ANGLE D3D11; battery91percent at preflight, AC=True, charging=True; Balanced power plan; thermal and battery-saver state unavailable; display refresh unavailable; no concurrent build/test; controlled automated input, no CPU/network throttling",
+        "scenario": "P03",
+        "kind": "continuous",
+        "source": "fixture",
+        "target": "desktop",
+        "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x0000A7A0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "workloadSignatures": [
+          "{\"roomId\":\"00000000-0000-4000-8000-000000000001\",\"exhibits\":5,\"visibleExhibits\":5,\"tier\":\"balanced\",\"dprCap\":1.5,\"shadowSize\":1024,\"anisotropy\":4,\"viewportWidth\":1280,\"viewportHeight\":720,\"renderWidth\":1280,\"renderHeight\":720,\"devicePixelRatio\":1,\"expectedGlbAssets\":0,\"readyGlbAssets\":0,\"failedGlbAssets\":0,\"failedGlbRenders\":0,\"xrPresenting\":false}"
+        ]
+      },
+      "runCount": 3,
+      "sufficientRepeats": true,
+      "eligibleRunCount": 3,
+      "meanFps": {
+        "min": 90.00186532364035,
+        "max": 90.00402754708621,
+        "mean": 90.00269682755015,
+        "sampleStdDev": 0.0011643516387157488,
+        "cv": 0.00001293685278060842
+      },
+      "medianFps": {
+        "min": 90.09009007799597,
+        "max": 90.09009007799597,
+        "mean": 90.09009007799597,
+        "sampleStdDev": 0,
+        "cv": 0
+      },
+      "p95FrametimeMs": {
+        "min": 12.199999999254942,
+        "max": 12.899999998509884,
+        "mean": 12.566666666418314,
+        "sampleStdDev": 0.3511884581809124,
+        "cv": 0.027946031155532056
+      }
+    },
+    {
+      "workload": {
+        "buildSha": "d4e1d5647a271cdae808ece9e8210ef6fcad2cef",
+        "device": "D01 ASUS Vivobook X1405VA; Intel i5-13500H; Iris Xe driver32.0.101.7076; RAM16786575360 bytes; Windows11 10.0.26200",
+        "conditions": "Local fixture over loopback; Edge hardware ANGLE D3D11; battery91percent at preflight, AC=True, charging=True; Balanced power plan; thermal and battery-saver state unavailable; display refresh unavailable; no concurrent build/test; controlled automated input, no CPU/network throttling",
+        "scenario": "P07",
+        "kind": "continuous",
+        "source": "fixture",
+        "target": "desktop",
+        "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x0000A7A0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "workloadSignatures": [
+          "{\"roomId\":\"00000000-0000-4000-8000-000000000001\",\"exhibits\":5,\"visibleExhibits\":5,\"tier\":\"balanced\",\"dprCap\":1.5,\"shadowSize\":1024,\"anisotropy\":4,\"viewportWidth\":1280,\"viewportHeight\":720,\"renderWidth\":1280,\"renderHeight\":720,\"devicePixelRatio\":1,\"expectedGlbAssets\":0,\"readyGlbAssets\":0,\"failedGlbAssets\":0,\"failedGlbRenders\":0,\"xrPresenting\":false}"
+        ]
+      },
+      "runCount": 1,
+      "sufficientRepeats": false,
+      "eligibleRunCount": 1,
+      "meanFps": {
+        "min": 89.86695186881146,
+        "max": 89.86695186881146,
+        "mean": 89.86695186881146,
+        "sampleStdDev": null,
+        "cv": null
+      },
+      "medianFps": {
+        "min": 90.09009007799597,
+        "max": 90.09009007799597,
+        "mean": 90.09009007799597,
+        "sampleStdDev": null,
+        "cv": null
+      },
+      "p95FrametimeMs": {
+        "min": 12.300000000745058,
+        "max": 12.300000000745058,
+        "mean": 12.300000000745058,
+        "sampleStdDev": null,
+        "cv": null
+      }
+    },
+    {
+      "workload": {
+        "buildSha": "d4e1d5647a271cdae808ece9e8210ef6fcad2cef",
+        "device": "D01 ASUS Vivobook X1405VA; Intel i5-13500H; Iris Xe driver32.0.101.7076; RAM16786575360 bytes; Windows11 10.0.26200",
+        "conditions": "Local fixture over loopback; Edge hardware ANGLE D3D11; battery91percent at preflight, AC=True, charging=True; Balanced power plan; thermal and battery-saver state unavailable; display refresh unavailable; no concurrent build/test; controlled automated input, no CPU/network throttling",
+        "scenario": "P03",
+        "kind": "idle",
+        "source": "fixture",
+        "target": "desktop",
+        "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x0000A7A0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "workloadSignatures": []
+      },
+      "runCount": 1,
+      "sufficientRepeats": false,
+      "eligibleRunCount": 0,
+      "meanFps": {
+        "min": null,
+        "max": null,
+        "mean": null,
+        "sampleStdDev": null,
+        "cv": null
+      },
+      "medianFps": {
+        "min": null,
+        "max": null,
+        "mean": null,
+        "sampleStdDev": null,
+        "cv": null
+      },
+      "p95FrametimeMs": {
+        "min": null,
+        "max": null,
+        "mean": null,
+        "sampleStdDev": null,
+        "cv": null
+      }
+    }
+  ]
+}

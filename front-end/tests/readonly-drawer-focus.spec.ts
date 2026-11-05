@@ -52,7 +52,7 @@ test('exhibit detail loading does not move focus outside the drawer when data ar
 for (const record of [
   { route: 'roles', heading: 'Vai trò', confirm: 'Đồng ý', trigger: 'Xóa' },
   { route: 'rooms', heading: 'Quản lý Phòng trưng bày', confirm: 'Đồng ý', trigger: 'Xóa' },
-  { route: 'exhibits', heading: 'Hiện vật', confirm: 'Xóa vĩnh viễn bản nháp', trigger: '' },
+  { route: 'exhibits', heading: 'Hiện vật', confirm: 'Xóa bản nháp', trigger: '' },
 ]) {
   test(`${record.route} delete restores a stable page target after the invoker disappears`, async ({ page }) => {
     await installOverlayApi(page);

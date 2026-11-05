@@ -1,0 +1,9 @@
+# Reflection draft (student review required)
+
+This is AI-assisted wording for the student's PDF, not a signed personal statement. The student should check every claim and rewrite it in their own voice before submission.
+
+Khi bắt đầu bài VT-080, tôi tưởng cần thêm toàn bộ chức năng xóa mềm và khôi phục. Đọc module `users` cho thấy nhóm đã có cột đánh dấu xóa, API thùng rác, giao dịch khôi phục và xử lý liên kết vai trò. Vì vậy tôi chọn một lát cắt nhỏ: khi câu lệnh cập nhật không tác động đủ số tài khoản, API không được báo thành công. Test đầu tiên thất bại đúng ở chỗ service trả success với `affected=0`; sau patch, test và toàn bộ suite backend đều pass. Điều này làm tôi tin hơn vào hợp đồng giữa Repository và Service, chứ không chỉ tin vào việc code biên dịch.
+
+Tôi tin hơn vào test sau khi cố tình bỏ điều kiện kiểm tra persistence: test một ID và property test với 100 bộ dữ liệu đều phát hiện lỗi. Tôi cũng bỏ tạm `@Permissions(user:read)` ở route chi tiết; test HTTP mới phát hiện người không có quyền có thể nhận dữ liệu của tài khoản khác. Chạy lặp, đổi múi giờ và đảo thứ tự file không phát hiện flaky trong các điều kiện đã thử.
+
+Tuy vậy, mức tin cậy vẫn có giới hạn. Test HTTP dùng service giả, còn test Repository dùng kết quả cập nhật giả. Bộ integration PostgreSQL hiện có không được chạy vì setup của nó chạy migration, cần phê duyệt của người phụ trách database. Harness 100 tác vụ mô phỏng khóa và độ trễ ghi, nên p95 đo được không chứng minh hiệu năng API thật. Lần đầu tôi cũng để AI thấy context rộng hơn module `users`; bản kế hoạch giới hạn context không thể xóa đi sai lệch lịch sử đó. Test tiếp theo có giá trị cao nhất là chạy trên database thử nghiệm đã được người phụ trách cho phép, dùng hai tài khoản và vai trò thật, ép lỗi ghi giữa giao dịch rồi xác nhận không có khôi phục một phần hoặc rò rỉ dữ liệu qua API.

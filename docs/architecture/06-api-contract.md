@@ -273,6 +273,12 @@ DELETE /notifications/:id                # null; xóa hẳn
 Thông báo được tạo **sau** khi thao tác chính thành công. Lỗi tạo thông báo chỉ ghi log, không làm hỏng thao tác chính.
 Tiêu đề lấy tên hiện vật tiếng Việt (thiếu thì tiếng Anh), cắt còn 200 ký tự.
 
+### Bản dịch giao diện cho khách
+
+`GET /public/translations?locale=vi|en|fr|ja|zh` (`@Public()`) → `{ "<namespace>": "<text>" }`, bỏ chuỗi chưa dịch; sai `locale` → 400.
+**Chỉ trả loại `ui`.** Chuỗi `exhibit`/`room` trong CMS có thể thuộc nội dung chưa duyệt nên không ra API công khai; nội dung
+hiện vật đa ngôn ngữ đi theo revision đã xuất bản (trường `i18n`, hiện có vi/en).
+
 ### Health check (`@Public()`, không audit)
 ```
 GET    /health          # liveness: process còn chạy → 200 { status: "ok" } (không chạm DB)

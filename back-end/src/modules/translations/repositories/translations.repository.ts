@@ -2,12 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseRepository } from '../../../common/repository/base.repository';
-import { Translation } from '../entities/translation.entity';
+import { Translation, TranslationCategory } from '../entities/translation.entity';
 
 @Injectable()
 export class TranslationsRepository extends BaseRepository<Translation> {
   constructor(@InjectRepository(Translation) repo: Repository<Translation>) {
     super(repo);
+  }
+
+  listByCategory(category: TranslationCategory): Promise<Translation[]> {
+    return this.repo.find({ where: { category } });
   }
 
   listAll(): Promise<Translation[]> {

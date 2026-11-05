@@ -103,5 +103,17 @@ export function roomResponseSchema<Schema extends z.ZodTypeAny>(dataSchema: Sche
   return z.object({ success: z.literal(true), data: dataSchema, message: z.string().nullable() });
 }
 
+/** GET /rooms/search — chỉ lấy trường cần hiển thị; hiện vật đầy đủ đọc ở trang chi tiết. */
+export const exhibitSearchResponseSchema = z.object({
+  success: z.literal(true),
+  data: z.array(z.object({
+    id: z.string().uuid(), roomId: z.string().uuid(), name: z.string().min(1), description: z.string(),
+  })),
+  meta: z.object({
+    page: z.number().int().positive(), pageSize: z.number().int().positive(), total: z.number().int().nonnegative(),
+  }),
+});
+
+export type ExhibitSearchResult = z.infer<typeof exhibitSearchResponseSchema>['data'][number];
 export type RoomSummary = z.infer<typeof roomSummarySchema>;
 export type RoomDetail = z.infer<typeof roomDetailSchema>;

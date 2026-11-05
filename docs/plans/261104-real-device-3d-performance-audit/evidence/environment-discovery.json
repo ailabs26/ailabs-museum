@@ -1,0 +1,54 @@
+{
+  "observedDateLocal": "2026-11-04",
+  "timezone": "Asia/Saigon",
+  "baseSha": "3ccdd731b0f04139963fbf68ecb04e5f36eaab77",
+  "method": "Read-only PowerShell CIM, present PnP devices, command/process lookup and TCP connection check",
+  "host": {
+    "manufacturer": "ASUSTeK COMPUTER INC.",
+    "model": "Vivobook_ASUSLaptop X1405VA_A1405VA",
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13500H",
+    "logicalProcessors": 16,
+    "ramBytes": 16786575360,
+    "gpu": "Intel(R) Iris(R) Xe Graphics",
+    "gpuDriver": "32.0.101.7076",
+    "os": "Microsoft Windows 11 Home Single Language",
+    "osVersion": "10.0.26200",
+    "node": "24.8.0"
+  },
+  "android": {
+    "adbInPath": false,
+    "defaultSdkAdbExists": false,
+    "adbProcessObserved": false,
+    "presentPhonePnpMatches": [],
+    "adbDevicesCommand": "unavailable — executable not found; no claim that adb devices ran",
+    "status": "BLOCKED — PHYSICAL DEVICE REQUIRED"
+  },
+  "ios": { "accessibleDevice": false, "macosInspector": false, "status": "NOT MEASURED" },
+  "localApiPort3001Reachable": false,
+  "browserPreflight": {
+    "browser": "Microsoft Edge 156.0.4314.58",
+    "headless": true,
+    "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x0000A7A0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "forcedSoftwareAngle": false,
+    "method": "Playwright browser WebGL debug renderer info, cross-checked against host CIM GPU",
+    "note": "Restricted launch initially closed; authorized unrestricted local launch succeeded. GPU hardware rendering does not prove presented display FPS."
+  },
+  "powerPreflight": {
+    "batteryPercent": 69,
+    "powerOnline": true,
+    "charging": true,
+    "discharging": false,
+    "powerPlan": "Balanced",
+    "thermalState": "unavailable",
+    "batterySaverState": "unavailable",
+    "displayRefreshRateHz": null
+  },
+  "gpuMemoryBytes": { "classification": "unavailable", "value": null },
+  "limitations": [
+    "Integrated GPU adapter capacity is not GPU memory usage.",
+    "No device serial numbers collected. PnP/ADB checks do not inventory the LAN.",
+    "Browser renderer must be verified separately; host GPU presence does not prove browser hardware rendering.",
+    "Battery, thermal, display refresh and network conditions not observed yet."
+  ]
+}

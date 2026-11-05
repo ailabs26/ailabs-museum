@@ -195,6 +195,8 @@ flowchart LR
 
 ## 5.5 Bảo mật chung
 
+- Header bảo mật: `helmet` cho mọi response của API, kể cả lỗi và Swagger (`common/security/security-headers.ts`). CORP đặt
+  `cross-origin` vì front-end và API có thể khác site; file media tự đặt CSP/CORP chặt hơn ở `MediaDeliveryController`.
 - Mật khẩu: hash **argon2id** (hoặc bcrypt), không log plaintext.
 - Chính sách độ mạnh (`common/security/password-policy.ts`, theo hướng NIST SP 800-63B), áp dụng khi **đặt** mật khẩu
   (Admin tạo hoặc đặt lại, người dùng tự đổi). Mật khẩu cũ yếu vẫn đăng nhập được. Seed không qua chính sách.

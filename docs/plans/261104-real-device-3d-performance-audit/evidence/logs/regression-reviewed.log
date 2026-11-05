@@ -1,0 +1,35 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test museum-audit.spec.ts museum-lifecycle.spec.ts museum-xr.spec.ts --reporter=line --output=test-results/audit-reviewed
+
+
+[WebServer] (node:18908) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:13836) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 17 tests using 1 worker
+
+(node:25508) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[1/17] tests\museum-audit.spec.ts:9:1 › audit off loads no instrumentation, records nothing and preserves demand idle
+[2/17] tests\museum-audit.spec.ts:25:1 › opt-in exports actual submissions, stays idle and releases renderer observers across rooms
+[3/17] tests\museum-audit.spec.ts:74:1 › touch audit controls › audit controls work by touch after orientation resize
+[4/17] tests\museum-lifecycle.spec.ts:10:1 › idle scene stops GPU draw calls and repeated start/stop stays usable
+[5/17] tests\museum-lifecycle.spec.ts:46:1 › leaving the tour releases its canvas and returning starts in DOM mode
+[6/17] tests\museum-xr.spec.ts:14:1 › decorative floor joints do not block teleport along the central aisle
+[7/17] tests\museum-xr.spec.ts:27:1 › 2D catalogue renders published images and permits deliberate 3D retry without refetch or selection loss
+[8/17] tests\museum-xr.spec.ts:56:1 › unsupported XR keeps the existing 3D scene and web navigation
+[9/17] tests\museum-xr.spec.ts:65:1 › a supported but refused VR request preserves canvas, selection and permits retry
+[10/17] tests\museum-xr.spec.ts:81:1 › actual context restores the same canvas and keeps logical selection
+[11/17] tests\museum-xr.spec.ts:105:1 › simulated native XR renders stereo, selects once, teleports, snap-turns and restores web camera without reloading GLBs
+[12/17] tests\museum-xr.spec.ts:166:1 › repeated actual context losses exhaust recovery into stable readable 2D
+[13/17] tests\museum-xr.spec.ts:188:1 › native session end during initialization never resurrects XR or throws a renderer event error
+[14/17] tests\museum-xr.spec.ts:198:1 › native renderer binding failure recreates only Canvas and retains cached GLBs and selection
+[15/17] tests\museum-xr.spec.ts:213:1 › actual context loss during XR ends the session and restores normal 3D without automatic re-entry
+[16/17] tests\museum-xr.spec.ts:238:1 › a controller-free session can gaze at the in-world Exit without moving the origin
+[17/17] tests\museum-xr.spec.ts:263:1 › persistent WebGL failure exhausts only two deliberate retries and leaves readable 2D
+  17 passed (4.4m)

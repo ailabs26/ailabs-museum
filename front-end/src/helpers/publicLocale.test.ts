@@ -5,6 +5,7 @@ import {
   PUBLIC_LOCALE_STORAGE_KEY,
   publicLocaleSchema,
 } from './publicLocale';
+import { LOCALES } from '@/services/translations.service';
 
 function memoryStorage(initial?: string) {
   const values = new Map(initial === undefined ? [] : [[PUBLIC_LOCALE_STORAGE_KEY, initial]]);
@@ -15,13 +16,26 @@ function memoryStorage(initial?: string) {
 }
 
 describe('public locale persistence', () => {
-  it('accepts only vi and en and defaults to vi', () => {
+  it('accepts the public UI locales and defaults to vi', () => {
     expect(DEFAULT_PUBLIC_LOCALE).toBe('vi');
-    expect(publicLocaleSchema.safeParse('vi').success).toBe(true);
-    expect(publicLocaleSchema.safeParse('en').success).toBe(true);
-    for (const value of ['fr', 'ja', '', 1]) {
+    for (const { code } of LOCALES) {
+      expect(publicLocaleSchema.safeParse(code).success).toBe(true);
+    }
+    for (const value of ['de', '', 1]) {
       expect(publicLocaleSchema.safeParse(value).success).toBe(false);
     }
+  });
+
+  it('migrates a saved locale from the previous public key', () => {
+    const values = new Map([['aura:public-locale', 'en']]);
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+    };
+    const store = createPublicLocaleStore(() => storage);
+
+    expect(store.getSnapshot()).toEqual({ value: 'en', error: null });
+    expect(storage.getItem(PUBLIC_LOCALE_STORAGE_KEY)).toBe('{"version":1,"value":"en"}');
   });
 
   it('reads a valid saved locale and uses the versioned visitor key', () => {
@@ -40,7 +54,7 @@ describe('public locale persistence', () => {
   it.each([
     '{',
     '{"version":2,"value":"en"}',
-    '{"version":1,"value":"fr"}',
+    '{"version":1,"value":"de"}',
     '{"version":1,"value":1}',
   ])('falls back to vi for invalid saved data (%#)', (saved) => {
     const store = createPublicLocaleStore(() => memoryStorage(saved));

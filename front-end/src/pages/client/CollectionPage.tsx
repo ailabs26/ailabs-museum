@@ -2,6 +2,8 @@ import { Alert, Button, Checkbox, Container, Text, TextInput, Title, VisuallyHid
 import { IconArrowRight, IconSearch } from '@tabler/icons-react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { usePublicLocale } from '@/core/i18n/public-locale';
+import { localizeExhibit } from '@/helpers/localizeExhibit';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitGrid } from '@/shared/components/data/ExhibitGrid';
 import { ExhibitSkeleton } from '@/shared/components/feedback/ExhibitSkeleton';
@@ -10,12 +12,14 @@ import { favoritesStore, isSameExhibit } from '@/helpers/visitorState';
 import { useVisitorStore } from '@/hooks/useVisitorStore';
 import { FavoriteButton } from './visitor/FavoriteButton';
 import { VisitorStorageStatus } from './visitor/VisitorStorageStatus';
+import { GlobalExhibitSearch } from './visitor/GlobalExhibitSearch';
 import { RecentlyViewed } from './visitor/RecentlyViewed';
 import { useExhibitComparison } from '@/hooks/useExhibitComparison';
 import { ExhibitComparison } from './visitor/ExhibitComparison';
 import classes from './CollectionPage.module.css';
 
 export function CollectionPage() {
+  const { locale, t } = usePublicLocale();
   const [reportTarget, setReportTarget] = useState<{ exhibitId: string; reportedRevisionId: string } | null>(null);
   const [query, setQuery] = useState('');
   const [isFavoritesOnly, setIsFavoritesOnly] = useState(false);
@@ -37,7 +41,8 @@ export function CollectionPage() {
   }, [loadingMessage]);
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const exhibits = useMemo(() => detail ? [...detail.exhibits].sort((left, right) =>
-    left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)) : [], [detail]);
+    left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
+    .map((exhibit) => localizeExhibit(exhibit, locale)) : [], [detail, locale]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return exhibits.filter((e) => (!q || `${e.name} ${e.description}`.toLowerCase().includes(q))
@@ -58,6 +63,11 @@ export function CollectionPage() {
     setQuery('');
   };
 
+  const globalSearch = rooms.isSuccess
+    ? <GlobalExhibitSearch query={query} currentRoomId={selectedRoom?.id} rooms={rooms.data} /> : null;
+  // Phòng đang xem không có kết quả: đưa kết quả phòng khác lên trước để khách không tưởng là không tìm thấy.
+  const noLocalMatch = Boolean(query.trim()) && exhibits.length > 0 && filtered.length === 0;
+
   return (
     <Container size="lg" className={classes.page}>
       <VisuallyHidden role="status" aria-live="polite" aria-atomic="true" aria-label="Trạng thái tải bộ sưu tập">
@@ -65,9 +75,8 @@ export function CollectionPage() {
       </VisuallyHidden>
       <header className={classes.intro}>
         <p className={classes.eyebrow}>Aura Museum / Khám phá hiện vật</p>
-        <Title ref={titleRef} tabIndex={-1} order={1} className={classes.title}>Bộ sưu tập</Title>
-        <p className={classes.description}>Dành một chút thời gian cho mỗi câu chuyện.
-          Khám phá nội dung hiện vật trong giao diện 2D, không cần mở không gian 3D.</p>
+        <Title ref={titleRef} tabIndex={-1} order={1} className={classes.title}>{t('ui.collection.title', 'Bộ sưu tập')}</Title>
+        <p className={classes.description}>{t('ui.collection.intro', 'Dành một chút thời gian cho mỗi câu chuyện. Khám phá nội dung hiện vật trong giao diện 2D, không cần mở không gian 3D.')}</p>
       </header>
 
       {/* Filter pills + live search */}
@@ -86,10 +95,10 @@ export function CollectionPage() {
           </div>
           <div className={classes.toolbarRight}>
             <TextInput className={classes.search} value={query} onChange={(e) => setQuery(e.currentTarget.value)}
-              placeholder="Tìm hiện vật theo tên hoặc từ khóa…" aria-label="Tìm kiếm hiện vật"
+              placeholder={t('ui.collection.search', 'Tìm hiện vật theo tên hoặc từ khóa…')} aria-label="Tìm kiếm hiện vật"
               leftSection={<IconSearch size={16} aria-hidden="true" />} />
             <Button variant="default" disabled={rooms.isFetching || room.isFetching}
-              onClick={() => void refresh()}>Làm mới</Button>
+              onClick={() => void refresh()}>{t('ui.collection.refresh', 'Làm mới')}</Button>
           </div>
         </div>
       )}
@@ -113,6 +122,7 @@ export function CollectionPage() {
           <Button mt="sm" onClick={() => void room.refetch()}>Thử lại</Button>
         </Alert> : null}
 
+      {noLocalMatch && globalSearch}
       {detail && (
         <section aria-labelledby="collection-room-title">
           <div className={classes.roomHeader}>
@@ -145,6 +155,7 @@ export function CollectionPage() {
           )}
         </section>
       )}
+      {!noLocalMatch && globalSearch}
       <RecentlyViewed rooms={rooms.data ?? []} isRoomsReady={rooms.isSuccess} />
       {reportTarget && <PublicReportModal key={`${reportTarget.exhibitId}:${reportTarget.reportedRevisionId}`}
         {...reportTarget} opened onClose={() => setReportTarget(null)} />}
