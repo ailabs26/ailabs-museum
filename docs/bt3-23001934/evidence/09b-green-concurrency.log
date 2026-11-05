@@ -1,0 +1,109 @@
+# Mục 2 — xanh — 2026-11-05T21:42:13+07:00 — node v26.3.0 — có PostgreSQL
+
+> aura-museum-api@0.1.0 test:upload-jobs
+> node -r reflect-metadata -r ts-node/register --test src/modules/media/tests/upload-jobs-*.spec.ts
+
+▶ Audit media.upload của worker upload-jobs
+  ✔ TC20 — job succeeded → đúng 1 audit media.upload: resource là media vừa tạo, actor là người tạo job, giữ client info (8.968446ms)
+  ✔ TC20b — không có client info (gọi ngoài HTTP) vẫn ghi audit với requestId sinh mới (3.326911ms)
+[Nest] 70271  - 11/05/2026, 9:42:22 PM    WARN [AuditService] {"action":"media.upload","requestId":"9159ccb1-4aba-45fc-8c8a-2e3b90a732f8","message":"Không ghi được audit"}
+  ✔ TC21 — failure path: ghi audit lỗi → job vẫn succeeded có mediaId, không có patch failed (3.118992ms)
+[Nest] 70271  - 11/05/2026, 9:42:22 PM   ERROR [MediaUploadJobService] Job upload e93c6921-fefe-4d13-8ce7-ea27eb9b9531 lỗi: ECONNRESET
+  ✔ TC22 — negative: job failed (file bị từ chối, storage lỗi) → không có audit media.upload (3.611166ms)
+  ✔ TC23 — risk: retry cùng key (tuần tự sau khi xong và 20 request đồng thời) chỉ có 1 audit media.upload (3.9939ms)
+  ✔ TC24 — ghi succeeded lỗi 2 lần rồi được: chỉ 1 audit, không ghi theo số lần thử (4.600824ms)
+[Nest] 70271  - 11/05/2026, 9:42:22 PM   ERROR [MediaUploadJobService] Job upload 2f9e05d0-d705-459f-b35f-7238f4ffa6d9: media 37858a08-9ac5-46e7-8642-b846f25f4e35 đã lưu nhưng không ghi được trạng thái succeeded sau 3 lần (connection terminated unexpectedly); job giữ processing, cần đối soát
+  ✔ TC24b — media đã lưu nhưng không ghi được succeeded: job giữ processing, media có thật nên vẫn có audit (4.637631ms)
+✔ Audit media.upload của worker upload-jobs (40.622743ms)
+▶ Hàng đợi concurrency của MediaUploadJobService
+  ✔ TC26 — 5 job, giới hạn 3: chỉ 3 job chạy; job chờ giữ queued/progress 0, không có patch; xong 1 thì job kế tiếp mới processing (11.623479ms)
+  ✔ TC27 — FIFO: giới hạn 1 thì job chạy đúng thứ tự enqueue, từng job một (2.519819ms)
+  ✔ TC28 — whenIdle chờ cả job đang chạy lẫn job còn trong hàng đợi (2.216777ms)
+[Nest] 70272  - 11/05/2026, 9:42:22 PM   ERROR [MediaUploadJobService] Job upload 2b7642e8-994c-45cf-835f-0c5a82812e13 lỗi: pipeline nổ
+  ✔ TC29 — failure path: job lỗi pipeline trả slot, job sau vẫn chạy và job lỗi là failed (2.581141ms)
+[Nest] 70272  - 11/05/2026, 9:42:22 PM   ERROR [MediaUploadJobService] Job upload a7ada933-1966-424e-93fd-62287e04c845 lỗi: connection terminated unexpectedly
+[Nest] 70272  - 11/05/2026, 9:42:22 PM   ERROR [MediaUploadJobService] Không cập nhật được job a7ada933-1966-424e-93fd-62287e04c845: connection terminated unexpectedly
+  ✔ TC29b — failure path: patch processing lỗi và cả patch failed cũng lỗi → slot vẫn được trả (1.816584ms)
+[Nest] 70272  - 11/05/2026, 9:42:22 PM   ERROR [MediaUploadJobService] Worker job upload 94fef73b-a966-4c1f-99c3-b2fd97002f8d lỗi: audit nổ
+[Nest] 70272  - 11/05/2026, 9:42:22 PM   ERROR [MediaUploadJobService] Worker job upload 47d25743-af5b-4be6-a573-0733ce293614 lỗi: audit nổ
+  ✔ TC29c — failure path: worker ném lỗi ngoài dự kiến (sau khi media đã lưu) → slot được trả, hàng đợi không kẹt (1.531559ms)
+  ✔ TC30 — retry cùng key khi job còn trong hàng đợi: trả job queued cũ, không thêm vào hàng đợi, pipeline chạy đúng 1 lần (1.003486ms)
+[Nest] 70272  - 11/05/2026, 9:42:22 PM   ERROR [MediaUploadJobService] Job upload c7b726d7-2a8d-45e5-befb-531d84535081: media f24c8b53-f121-482a-bf5e-be8b7c4f4046 đã lưu nhưng không ghi được trạng thái succeeded sau 3 lần (connection terminated unexpectedly); job giữ processing, cần đối soát
+  ✔ TC31 — media đã lưu, ghi succeeded lỗi liên tục: job giữ processing, không ghi failed, slot được trả cho job sau (3.577014ms)
+[Nest] 70272  - 11/05/2026, 9:42:22 PM    WARN [MediaUploadJobService] Đánh dấu 2 job upload bị gián đoạn khi khởi động lại
+  ✔ TC32 — khởi động lại khi còn job processing và queued: failInterrupted đánh dấu cả hai job_interrupted (3.871047ms)
+  ✔ TC33 — không cấu hình: mặc định 3 job chạy cùng lúc (3.986636ms)
+✔ Hàng đợi concurrency của MediaUploadJobService (37.969874ms)
+▶ Cấu hình MEDIA_UPLOAD_JOB_CONCURRENCY
+  ✔ TC34 — media.config: mặc định 3, đọc được env (0.501464ms)
+  ✔ TC34b — negative: env.validation từ chối 0 (hàng đợi sẽ không bao giờ chạy), số âm, số lẻ, chữ; nhận biên 1 và 50 (11.422963ms)
+✔ Cấu hình MEDIA_UPLOAD_JOB_CONCURRENCY (12.138493ms)
+▶ Upload media bất đồng bộ (VT-078) — HTTP
+  ▶ AC1–AC2: tạo job và theo dõi tiến trình
+    ✔ TC01 — GLB hợp lệ + key mới → 202, status queued, progress 0, có id (46.629201ms)
+    ✔ TC02 — E2E API: tạo job → poll → succeeded, progress 100, mediaId trỏ tới media ready (25.998373ms)
+    ✔ ghi audit với resource type media_upload_job và id của job (5.527205ms)
+    ✔ TC25 — E2E API: job xong có thêm audit media.upload trỏ tới media, cùng actor và cùng request-id với request tạo job (4.791492ms)
+  ✔ AC1–AC2: tạo job và theo dõi tiến trình (84.050958ms)
+  ▶ AC3: retry cùng Idempotency-Key không tạo bản ghi trùng
+    ✔ TC03 — gửi lại tuần tự cùng key + cùng file → 200, cùng job, 1 job, 1 media (24.09791ms)
+    ✔ TC04 — 20 request đồng thời cùng key → đúng 1 lần 202, cùng một job, 1 media (34.645967ms)
+    ✔ cùng key nhưng khác người tạo → hai job độc lập (key chỉ duy nhất theo người tạo) (6.706342ms)
+  ✔ AC3: retry cùng Idempotency-Key không tạo bản ghi trùng (65.930801ms)
+  ▶ AC5: phân lớp tương đương Idempotency-Key
+    ✔ TC05 — key đã dùng + nội dung khác → 409 idempotency_key_reused, không thêm job (7.976205ms)
+    ✔ TC06 — thiếu header → 400 idempotency_key_required, không tạo job (2.968413ms)
+    ✔ TC06b — header rỗng → 400 idempotency_key_required (3.334454ms)
+    ✔ TC07 — key 129 ký tự (ngay trên biên) → 400 idempotency_key_invalid (2.532322ms)
+    ✔ TC07 — key chứa khoảng trắng → 400 idempotency_key_invalid (2.447673ms)
+    ✔ TC07 — key chứa ký tự "/" → 400 idempotency_key_invalid (2.372803ms)
+    ✔ TC07 — key chứa ký tự Latin-1 ngoài ASCII → 400 idempotency_key_invalid (2.865816ms)
+    ✔ key 1 ký tự (biên dưới) → 202 (4.681351ms)
+    ✔ key 128 ký tự (biên trên) → 202 (3.548798ms)
+    ✔ key dạng UUID (đại diện lớp hợp lệ) → 202 (3.650138ms)
+  ✔ AC5: phân lớp tương đương Idempotency-Key (37.20832ms)
+  ▶ AC4: phân lớp tương đương file — lỗi pipeline thành job failed
+    ✔ TC08 — file EXE đổi đuôi .glb → 202 rồi failed (media_unsupported_type), không có media ready (6.05416ms)
+    ✔ TC08b — PNG vượt 2 MB (giới hạn theo định dạng) → 202 rồi failed (media_too_large), không có media ready (13.99293ms)
+    ✔ TC08c — GLB hỏng cấu trúc → 202 rồi failed (media_corrupted), không có media ready (5.381305ms)
+    ✔ thiếu file → 400 ngay, không tạo job (4.578615ms)
+    ✔ vượt giới hạn multipart (> 10 MB) → 413 ngay, không tạo job (40.476215ms)
+  ✔ AC4: phân lớp tương đương file — lỗi pipeline thành job failed (71.030504ms)
+  ▶ GET /admin/media/upload-jobs/:id — phân lớp jobId
+    ✔ TC11 — UUID không tồn tại → 404 (3.385788ms)
+    ✔ TC11b — job của biên tập viên khác → 404 (không lộ sự tồn tại) (5.438016ms)
+    ✔ TC12 — id không phải UUID → 400 (1.757987ms)
+  ✔ GET /admin/media/upload-jobs/:id — phân lớp jobId (10.874706ms)
+✔ Upload media bất đồng bộ (VT-078) — HTTP (321.647627ms)
+▶ MediaUploadJobRepository (PostgreSQL thật)
+  ✔ 20 insert đồng thời cùng key → đúng 1 created, cả 20 nhận cùng job, bảng có 1 dòng (73.96665ms)
+  ✔ unique constraint tồn tại đúng tên; created_by NOT NULL (7.66506ms)
+  ✔ findOwned chỉ trả job của đúng người tạo; failInterrupted chỉ đổi job dang dở (18.903083ms)
+✔ MediaUploadJobRepository (PostgreSQL thật) (4163.951817ms)
+[Nest] 70290  - 11/05/2026, 9:42:22 PM   ERROR [MediaUploadJobService] Job upload 7d0b6deb-02c8-490a-b9a5-8b9b522a4d51 lỗi: ECONNRESET supabase://bucket/secret-path
+▶ MediaUploadJobService (unit, VT-078)
+  ✔ TC09 — failure path: storage lỗi → job failed (internal_error, không lộ chi tiết); retry cùng key trả job failed cũ, không chạy lại pipeline (11.132702ms)
+  ✔ fingerprint gồm cả metadata: cùng key, cùng file nhưng altText khác → 409 (3.848209ms)
+  ✔ TC19 — media đã lưu, patch succeeded lỗi DB tạm thời 2 lần rồi thành công → job succeeded có mediaId, không ghi failed (4.951569ms)
+[Nest] 70290  - 11/05/2026, 9:42:22 PM   ERROR [MediaUploadJobService] Job upload 899254a4-3ec4-49bc-b842-882e99f41dc7: media 8fb3aeb1-3639-4c9a-8d84-94593bacea3e đã lưu nhưng không ghi được trạng thái succeeded sau 3 lần (connection terminated unexpectedly); job giữ processing, cần đối soát
+[Nest] 70290  - 11/05/2026, 9:42:22 PM    WARN [MediaUploadJobService] Đánh dấu 2 job upload bị gián đoạn khi khởi động lại
+  ✔ TC19b — media đã lưu, patch succeeded lỗi liên tục → media vẫn còn, job giữ processing, không ghi failed; retry cùng key không chạy lại worker (4.971404ms)
+  ✔ TC13 — khởi động lại: job queued/processing → failed job_interrupted; job đã xong giữ nguyên (0.986444ms)
+✔ MediaUploadJobService (unit, VT-078) (35.239692ms)
+▶ toUploadJobResponse (unit) — TC10
+  ✔ ánh xạ đúng từng field, không lộ checksum/key/người tạo (0.723909ms)
+  ✔ job failed giữ errorCode/errorMessage, mediaId null (0.41046ms)
+✔ toUploadJobResponse (unit) — TC10 (1.461508ms)
+▶ MediaUploadJobRepository.insertOrFindExisting (unit, lỗi 23505)
+  ✔ insert thành công → created true (0.707008ms)
+  ✔ vi phạm UQ actor+key (request đồng thời thắng trước) → đọc lại job đã có, created false (0.905568ms)
+  ✔ vi phạm constraint khác hoặc lỗi DB khác → ném lại, không nuốt lỗi (0.459209ms)
+✔ MediaUploadJobRepository.insertOrFindExisting (unit, lỗi 23505) (2.441597ms)
+ℹ tests 57
+ℹ suites 13
+ℹ pass 57
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10989.852215
