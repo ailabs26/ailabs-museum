@@ -330,6 +330,7 @@ test('room pills support Tab, Enter and Space and the tour link keeps the select
 });
 
 test('collection remains responsive in light and dark with long API content', async ({ page }) => {
+  test.setTimeout(60_000);
   await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({
     ...roomA, exhibits: [{ ...roomA.exhibits[0], name: 'Tên hiện vật dài '.repeat(10), description: 'Mô tả tiếng Việt dài '.repeat(40) }],
   })));

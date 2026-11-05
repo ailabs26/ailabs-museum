@@ -38,18 +38,21 @@ export function GlobalExhibitSearch({ query, currentRoomId, rooms }: {
   return (
     <section aria-labelledby="global-search-title" className={classes.globalSearch}>
       <Title order={2} id="global-search-title" className={classes.roomTitle}>{t('ui.collection.other-rooms', 'Ở các phòng khác')}</Title>
-      {search.isPending ? <p role="status">Đang tìm trong toàn bảo tàng…</p>
+      {search.isPending ? <p role="status">{t('ui.collection.search.loading', 'Đang tìm trong toàn bảo tàng…')}</p>
         : search.isError ? (
-          <Alert color="red" role="alert" title="Không tìm được ở các phòng khác">
+          <Alert color="red" role="alert" title={t('ui.collection.search.error', 'Không tìm được ở các phòng khác')}>
             <Text>{search.error.message}</Text>
-            <Button mt="sm" onClick={() => void search.refetch()}>Thử lại</Button>
+            <Button mt="sm" onClick={() => void search.refetch()}>{t('ui.action.retry', 'Thử lại')}</Button>
           </Alert>
         ) : results.length === 0 && !search.hasNextPage ? (
-          <p role="status" className={classes.count}>Không có hiện vật khớp “{debounced}” ở phòng khác.</p>
+          <p role="status" className={classes.count}>{t('ui.collection.search.empty', 'Không có hiện vật khớp “{query}” ở phòng khác.')
+            .replace('{query}', debounced)}</p>
         ) : (
           <>
-          <p role="status" className={classes.count}>Tìm thấy {results.length} hiện vật ở phòng khác</p>
-          <ul className={classes.globalResults} aria-label="Kết quả ở các phòng khác">
+          <p role="status" className={classes.count}>{t(results.length === 1 ? 'ui.collection.search.count.one' : 'ui.collection.search.count.many',
+            results.length === 1 ? 'Tìm thấy {count} hiện vật ở phòng khác' : 'Tìm thấy {count} hiện vật ở phòng khác')
+            .replace('{count}', String(results.length))}</p>
+          <ul className={classes.globalResults} aria-label={t('ui.collection.search.results.aria', 'Kết quả ở các phòng khác')}>
             {results.map((item) => {
               const room = roomById.get(item.roomId)!;
               return (
@@ -68,7 +71,7 @@ export function GlobalExhibitSearch({ query, currentRoomId, rooms }: {
         )}
       {search.hasNextPage && (
         <Button variant="default" mt="sm" loading={search.isFetchingNextPage} onClick={() => void search.fetchNextPage()}>
-          Xem thêm kết quả
+          {t('ui.collection.search.more', 'Xem thêm kết quả')}
         </Button>
       )}
     </section>

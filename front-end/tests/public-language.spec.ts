@@ -62,6 +62,95 @@ const STRINGS: Record<string, Record<string, string>> = {
     'ui.home.featured.description': 'A selection of exhibits in display order',
     'ui.home.featured.empty-exhibits': 'This gallery has no published exhibits yet.',
     'ui.home.featured.room-collection': 'View this gallery’s collection',
+    'ui.collection.eyebrow': 'Aura Museum / Discover exhibits',
+    'ui.collection.intro': 'Take a moment with each story. Explore exhibits in a 2D interface without entering the 3D space.',
+    'ui.collection.search': 'Search exhibits by name or keyword…',
+    'ui.collection.rooms.label': 'Choose a gallery',
+    'ui.collection.rooms.unavailable': 'Selected gallery is unavailable',
+    'ui.collection.search.aria': 'Search exhibits',
+    'ui.collection.favorites.only': 'Show only favorites in this gallery',
+    'ui.collection.error.rooms': 'Could not load galleries',
+    'ui.collection.empty.rooms': 'No public galleries yet.',
+    'ui.collection.error.room-unavailable': 'This gallery is not public. Choose another gallery.',
+    'ui.collection.error.exhibits': 'Could not load exhibits',
+    'ui.collection.count.filtered': '{matched}/{total} exhibits match search',
+    'ui.collection.count.published': '{count} published exhibits',
+    'ui.collection.tour.room': 'Visit this gallery in 3D',
+    'ui.collection.loading.updated': 'Updating exhibits…',
+    'ui.collection.empty.exhibits': 'This gallery has no published exhibits yet.',
+    'ui.collection.empty.favorites-search': 'No favorite exhibits match in this gallery. Favorite an exhibit or change your search.',
+    'ui.collection.empty.search': 'No exhibits match “{query}”.',
+    'ui.collection.exhibits.aria': 'Exhibits in this collection',
+    'ui.collection.exhibit.badge': 'Exhibit {number}',
+    'ui.collection.exhibit.preview': 'Exhibit preview',
+    'ui.collection.exhibit.image-missing': 'No image',
+    'ui.collection.details.aria': 'View details {name}',
+    'ui.collection.report': 'Report content',
+    'ui.collection.compare.action': 'Compare',
+    'ui.collection.compare.aria': 'Compare {name}',
+    'ui.action.retry': 'Try again',
+    'ui.collection.other-rooms': 'In other galleries',
+    'ui.collection.search.loading': 'Searching the museum…',
+    'ui.collection.search.error': 'Could not search other galleries',
+    'ui.collection.search.empty': 'No exhibits match “{query}” in other galleries.',
+    'ui.collection.search.count.one': 'Found {count} exhibit in other galleries',
+    'ui.collection.search.count.many': 'Found {count} exhibits in other galleries',
+    'ui.collection.search.results.aria': 'Results in other galleries',
+    'ui.collection.search.more': 'Show more results',
+    'ui.visitor.storage.unavailable': 'This browser cannot save changes. They may be lost when you reload.',
+    'ui.visitor.storage.limit': 'Storage is full. Remove an item before adding another.',
+    'ui.visitor.storage.invalid': 'Saved data is invalid or from another version. Using defaults.',
+    'ui.visitor.favorite.add': 'Add to favorites',
+    'ui.visitor.favorite.saved': 'Favorited',
+    'ui.visitor.favorite.aria-add': 'Add {name} to favorites',
+    'ui.visitor.favorite.aria-remove': 'Remove {name} from favorites',
+    'ui.visitor.recent.title': 'Recently viewed',
+    'ui.visitor.recent.clear': 'Clear history',
+    'ui.visitor.recent.empty': 'No recently viewed exhibits yet.',
+    'ui.visitor.recent.rooms-unavailable': 'The public gallery list could not be verified.',
+    'ui.visitor.recent.loading': 'Checking recently viewed exhibits…',
+    'ui.visitor.recent.continue': 'Continue exploring: {exhibit} — {room}',
+    'ui.visitor.recent.missing': 'Some exhibits are no longer available or could not be verified.',
+    'ui.visitor.recent.reload-help': 'Use Refresh to load public content again.',
+    'ui.visitor.compare.title': 'Comparison selections',
+    'ui.visitor.compare.instructions': 'Choose 2–3 exhibits, including exhibits from different galleries.',
+    'ui.visitor.compare.status': 'Comparison status',
+    'ui.visitor.compare.removing': 'Verifying exhibit',
+    'ui.visitor.compare.missing': 'Exhibit unavailable',
+    'ui.visitor.compare.remove.aria': 'Remove {name} from comparison',
+    'ui.visitor.compare.remove': 'Remove',
+    'ui.visitor.compare.load-error': 'Could not load some content. Use Refresh to try again.',
+    'ui.visitor.compare.open': 'Open comparison ({count})',
+    'ui.visitor.compare.clear': 'Clear comparison selection',
+    'ui.visitor.compare.modal.title': 'Compare exhibits',
+    'ui.visitor.compare.modal.close': 'Close comparison',
+    'ui.visitor.compare.loading': 'Checking comparison content…',
+    'ui.visitor.compare.insufficient': 'At least 2 public exhibits are needed to compare.',
+    'ui.visitor.compare.region': 'Comparison content, scroll horizontally on small screens',
+    'ui.visitor.compare.description': 'Description',
+    'ui.visitor.compare.no-description': 'No description yet.',
+    'ui.visitor.compare.message.removed': 'Removed from comparison.',
+    'ui.visitor.compare.message.maximum': 'You can compare up to 3 exhibits. Remove one before adding another.',
+    'ui.visitor.compare.message.added': 'Added to comparison.',
+    'ui.visitor.compare.message.cleared': 'Comparison selection cleared.',
+    'ui.visitor.reading.section': 'Exhibit reading preferences',
+    'ui.visitor.reading.toggle': 'Reading mode',
+    'ui.visitor.reading.decrease': 'Decrease text size',
+    'ui.visitor.reading.size.aria': 'Reading text size',
+    'ui.visitor.reading.size': 'Text size {percent}%',
+    'ui.visitor.reading.increase': 'Increase text size',
+    'ui.visitor.reading.reset': 'Reset reading preferences',
+    'ui.visitor.notes.section': 'Private notes',
+    'ui.visitor.notes.label': 'Your note',
+    'ui.visitor.notes.description': 'Notes are stored only in this browser',
+    'ui.visitor.notes.count': '{count}/2000 characters · Saved automatically as you type.',
+    'ui.visitor.notes.full': 'You have 100 notes. Delete a note from another exhibit before creating a new one.',
+    'ui.visitor.notes.status.aria': 'Note status',
+    'ui.visitor.notes.saved': 'Note saved in this browser.',
+    'ui.visitor.notes.empty': 'No note yet.',
+    'ui.visitor.notes.unsaved': 'Note is not saved in this browser.',
+    'ui.visitor.notes.clear': 'Delete note',
+    'ui.visitor.notes.retry': 'Try saving note again',
   },
   ja: { 'ui.nav.collection': 'コレクション' },
 };
@@ -123,6 +212,80 @@ test('trang chi tiết hiện vật theo ngôn ngữ đã chọn', async ({ page
   await page.goto(`/collection/sculpture/exhibits/${first.id}`);
   await expect(page.getByRole('heading', { name: 'Bronze statue', level: 1 })).toBeVisible();
   await expect(page.getByText('English description')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Exhibit reading preferences' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reading mode' })).toBeVisible();
+  await page.getByRole('button', { name: 'Reading mode' }).click();
+  await expect(page.getByRole('button', { name: 'Decrease text size' })).toBeVisible();
+  await expect(page.getByRole('status', { name: 'Reading text size' })).toHaveText('Text size 100%');
+  await expect(page.getByRole('button', { name: 'Increase text size' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reset reading preferences' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Private notes' })).toBeVisible();
+  const note = page.getByRole('textbox', { name: 'Your note' });
+  await expect(note).toBeVisible();
+  await expect(page.getByRole('status', { name: 'Note status' })).toHaveText('No note yet.');
+  await note.fill('Museum');
+  await expect(page.getByText('6/2000 characters · Saved automatically as you type.')).toBeVisible();
+  await expect(page.getByRole('status', { name: 'Note status' })).toHaveText('Note saved in this browser.');
+  await page.getByRole('button', { name: 'Delete note' }).click();
+  await expect(page.getByRole('status', { name: 'Note status' })).toHaveText('No note yet.');
+});
+
+test('Collection search, cards and visitor actions use the selected language', async ({ page }) => {
+  test.setTimeout(60_000);
+  await install(page);
+  await page.goto('/collection');
+  await language(page).selectOption('en');
+
+  const rooms = page.getByRole('group', { name: 'Choose a gallery' });
+  await expect(rooms.getByRole('button', { name: roomA.name, exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('Take a moment with each story. Explore exhibits in a 2D interface without entering the 3D space.')).toBeVisible();
+  const search = page.getByRole('textbox', { name: 'Search exhibits' });
+  await expect(search).toHaveAttribute('placeholder', 'Search exhibits by name or keyword…');
+  const cards = page.getByRole('list', { name: 'Exhibits in this collection' }).getByRole('listitem');
+  await expect(cards).toHaveCount(5);
+  await expect(page.getByText('No image', { exact: true })).toHaveCount(5);
+  await expect(page.getByText('5 published exhibits')).toBeVisible();
+  const first = cards.first();
+  await expect(first.getByText('Exhibit 01')).toBeVisible();
+  await expect(first.getByRole('link', { name: 'View details Bronze statue' })).toBeVisible();
+  await expect(first.getByRole('button', { name: 'Report content' })).toBeVisible();
+
+  const favorite = first.getByRole('button', { name: 'Add Bronze statue to favorites' });
+  await favorite.click();
+  await expect(first.getByRole('button', { name: 'Remove Bronze statue from favorites' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(first.getByRole('button', { name: 'Remove Bronze statue from favorites' })).toHaveText('Favorited');
+  const onlyFavorites = page.getByRole('checkbox', { name: 'Show only favorites in this gallery' });
+  await onlyFavorites.check();
+  await expect(cards).toHaveCount(1);
+  await onlyFavorites.uncheck();
+  await expect(cards).toHaveCount(5);
+
+  const compare = first.getByRole('button', { name: 'Compare Bronze statue' });
+  await compare.click();
+  await expect(page.getByRole('status', { name: 'Comparison status' })).toHaveText('Added to comparison.');
+  await cards.nth(1).getByRole('button', { name: /^Compare / }).click();
+  await expect(page.getByRole('button', { name: 'Open comparison (2)' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Open comparison (2)' }).click();
+  const comparison = page.getByRole('dialog', { name: 'Compare exhibits' });
+  await expect(comparison.getByRole('heading', { name: 'Description', level: 4 })).toHaveCount(2);
+  await expect(comparison.getByText('English description')).toBeVisible();
+  await expect(comparison.getByText('No image', { exact: true })).toHaveCount(2);
+  await comparison.getByRole('button', { name: 'Close comparison' }).click();
+
+  await search.fill('not-found-phrase');
+  await expect(page.getByRole('status').filter({ hasText: 'No exhibits match “not-found-phrase” in other galleries.' })).toBeVisible();
+  await expect(page.getByText('0/5 exhibits match search')).toBeVisible();
+});
+
+test('Recently viewed content uses the selected exhibit language', async ({ page }) => {
+  const { first } = await install(page);
+  await page.goto('/collection');
+  await language(page).selectOption('en');
+  await page.goto(`/collection/sculpture/exhibits/${first.id}`);
+  await expect(page.getByRole('heading', { name: 'Bronze statue', level: 1 })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('aura:visitor:recent:v1'))).toContain(first.id);
+  await page.goto('/collection');
+  await expect(page.getByRole('link', { name: `Continue exploring: Bronze statue — ${roomA.name}` })).toBeVisible();
 });
 
 test('Home hero and featured section use the selected language', async ({ page }) => {
@@ -157,8 +320,14 @@ test('Home featured empty and error states are translated', async ({ page }) => 
   let status = 200;
   let response = envelope([]);
   await page.route('**/api/rooms', (route) => fulfillMuseum(route, response, status));
+  await page.addInitScript(() => localStorage.setItem('aura:visitor:locale:v1', JSON.stringify({ version: 1, value: 'en' })));
+  const englishTranslations = page.waitForResponse(response => {
+    const url = new URL(response.url());
+    return url.pathname.endsWith('/api/public/translations') && url.searchParams.get('locale') === 'en';
+  });
   await page.goto('/');
-  await language(page).selectOption('en');
+  await englishTranslations;
+  await expect(page.getByRole('heading', { name: 'Touch Heritage. Explore without limits.', level: 1 })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('status').filter({ hasText: 'No public galleries yet.' })).toBeVisible();
 
   status = 500;

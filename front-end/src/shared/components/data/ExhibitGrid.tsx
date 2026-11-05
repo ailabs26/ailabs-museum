@@ -15,14 +15,17 @@ export function ExhibitGrid({ exhibits, roomSlug, onReport, renderActions }: {
 }) {
   const { t } = usePublicLocale();
   return (
-    <ul className={classes.grid} aria-label="Hiện vật trong bộ sưu tập">
+    <ul className={classes.grid} aria-label={t('ui.collection.exhibits.aria', 'Hiện vật trong bộ sưu tập')}>
       {exhibits.map((exhibit, index) => (
         <li key={exhibit.id} className={classes.card}>
           <div className={classes.media}>
             <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } : null}
-              shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
+              shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview}
+              labels={{ preview: t('ui.collection.exhibit.preview', 'Hình minh họa thay thế'),
+                imageMissing: t('ui.collection.exhibit.image-missing', 'Chưa có ảnh') }} />
             <span className={classes.mediaOverlay} aria-hidden="true" />
-            <span className={classes.badge}>Hiện vật {String(index + 1).padStart(2, '0')}</span>
+            <span className={classes.badge}>{t('ui.collection.exhibit.badge', 'Hiện vật {number}')
+              .replace('{number}', String(index + 1).padStart(2, '0'))}</span>
           </div>
           <div className={classes.cardBody}>
             <Title order={3} className={classes.exhibitTitle}>{exhibit.name}</Title>
@@ -30,10 +33,10 @@ export function ExhibitGrid({ exhibits, roomSlug, onReport, renderActions }: {
             <div className={classes.actions}>
               <Link className={classes.detailLink}
                 to={`/collection/${encodeURIComponent(roomSlug)}/exhibits/${encodeURIComponent(exhibit.id)}`}
-                aria-label={`Xem chi tiết ${exhibit.name}`}>
+                aria-label={t('ui.collection.details.aria', 'Xem chi tiết {name}').replace('{name}', exhibit.name)}>
                 {t('ui.collection.details', 'Xem chi tiết')} <IconArrowRight size={16} aria-hidden="true" />
               </Link>
-              {onReport && <Button variant="subtle" size="compact-sm" color="gray" onClick={() => onReport(exhibit)}>Báo nội dung</Button>}
+              {onReport && <Button variant="subtle" size="compact-sm" color="gray" onClick={() => onReport(exhibit)}>{t('ui.collection.report', 'Báo nội dung')}</Button>}
             </div>
             {renderActions && <div className={classes.actions}>{renderActions(exhibit)}</div>}
           </div>

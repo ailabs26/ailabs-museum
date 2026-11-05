@@ -128,15 +128,17 @@ Là khách tham quan, tôi muốn chọn ngôn ngữ trên giao diện công kha
 
 **Steps**
 
-- [ ] Dịch filter pill labels, search placeholder/aria-label, số lượng/tìm kiếm, empty/loading/error/retry và link sang Tour.
-- [ ] Dịch Favorites/Comparison/Global Search/Reading/Recently Viewed/Storage Status và các action labels trên cards.
-- [ ] Thêm phương án nội suy `{count}`/`{name}` nếu cần; viết unit test chuỗi chứa biến, không dùng HTML interpolation.
-- [ ] Giữ `localizeExhibit` (đã có) để tên/mô tả revision được xuất bản; không tạo đường dịch CMS cho `exhibit/room` chưa kiểm duyệt.
-- [ ] Test locale switch với query, favorites, sorting, URL và loading/failure, không gãy locator tiếng Việt trong locale mặc định.
+- [x] Dịch filter pill labels, search placeholder/aria-label, số lượng/tìm kiếm, empty/loading/error/retry và link sang Tour.
+- [x] Dịch Favorites/Comparison/Global Search/Reading/Recently Viewed/Storage Status và các action labels trên cards.
+- [x] Nội suy `{count}`/`{name}` trực tiếp tại nơi dùng, không tạo helper HTML; Playwright kiểm tra số đếm và tên động.
+- [x] Giữ `localizeExhibit` và dùng lại cho tên hiện vật trong Recently Viewed; không tạo đường dịch CMS cho `exhibit/room` chưa kiểm duyệt.
+- [x] Kiểm behavior Collection mặc định tiếng Việt, English fixture, favorites/comparison/search, URL, responsive và loading/failure; locator tiếng Việt mặc định vẫn hợp lệ.
 
 **Acceptance:** UI Collection có copy `en` đầy đủ trong scope; behavior collection cũ giữ nguyên.
 
 **Commit dự kiến:** `feat(i18n): translate collection and visitor UI`.
+
+**Verification:** frontend `typecheck`, `lint`, `test:unit` PASS (45 files / 255 tests); `public-language.spec.ts` PASS 8/8 sau khi đồng bộ fixture English trước khi kiểm featured empty state; `collection.spec.ts` + `collection-global-search.spec.ts` PASS 17/17 trong lượt kết hợp. API browser fixtures đều mocked. `git diff --check` sạch. Suite kết hợp ban đầu có 24/25 do race trong Home English fixture; đã sửa bằng cách nạp locale từ trước khi khởi tạo app và xác nhận lại suite `public-language` PASS 8/8.
 
 ### Task 4 — Exhibit Detail, feedback và media labels
 
@@ -266,8 +268,8 @@ npm run build
 |---|---|---|---|---|
 | 0 | `docs(i18n): plan public UI localization completion` | `263f11d` | Baseline recorded above | DONE |
 | 1 | `test(i18n): align locale regression with merged behavior` | `4182d24` | `public-locale` 7/7, `public-language` 4/4, unit 255/255, typecheck PASS | DONE |
-| 2 | `feat(i18n): complete public shell and home translations` | pending | `public-language` 6/6, `public-locale` 7/7, unit 255/255, typecheck/lint PASS | DONE |
-| 3 | `feat(i18n): translate collection and visitor UI` | — | — | NOT STARTED |
+| 2 | `feat(i18n): complete public shell and home translations` | `5c423077c738850723e1cab855f91428e342d9e0` | `public-language` 6/6, `public-locale` 7/7, unit 255/255, typecheck/lint PASS | DONE |
+| 3 | `feat(i18n): translate collection and visitor UI` | pending | `public-language` 8/8; collection 14/14; global search 3/3; unit 255/255; typecheck/lint PASS | DONE |
 | 4 | `feat(i18n): translate exhibit detail and feedback UI` | — | — | NOT STARTED |
 | 5 | `feat(i18n): translate tour interface controls` | — | — | NOT STARTED |
 | 6 | `feat(i18n): seed remaining public UI strings` | — | — | NOT STARTED |

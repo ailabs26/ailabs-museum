@@ -24,7 +24,7 @@ export function CollectionPage() {
   const [query, setQuery] = useState('');
   const [isFavoritesOnly, setIsFavoritesOnly] = useState(false);
   const favorites = useVisitorStore(favoritesStore);
-  const comparison = useExhibitComparison();
+  const comparison = useExhibitComparison(t);
   const [loadingAnnouncement, setLoadingAnnouncement] = useState('');
   const location = useLocation();
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -32,9 +32,9 @@ export function CollectionPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { rooms, room, selectedRoom, selectedSlug, refresh } = useMuseumRooms(searchParams.get('room'));
   const loadingMessage = rooms.isPending
-    ? 'Đang tải danh sách phòng trưng bày…'
+    ? t('ui.collection.loading.rooms', 'Đang tải danh sách phòng trưng bày…')
     : selectedRoom && room.isPending
-      ? `Đang tải hiện vật của phòng ${selectedRoom.name}…`
+      ? t('ui.collection.loading.exhibits', 'Đang tải hiện vật của phòng {name}…').replace('{name}', selectedRoom.name)
       : '';
   useEffect(() => {
     setLoadingAnnouncement(loadingMessage);
@@ -70,11 +70,11 @@ export function CollectionPage() {
 
   return (
     <Container size="lg" className={classes.page}>
-      <VisuallyHidden role="status" aria-live="polite" aria-atomic="true" aria-label="Trạng thái tải bộ sưu tập">
+      <VisuallyHidden role="status" aria-live="polite" aria-atomic="true" aria-label={t('ui.collection.loading.aria', 'Trạng thái tải bộ sưu tập')}>
         {loadingAnnouncement}
       </VisuallyHidden>
       <header className={classes.intro}>
-        <p className={classes.eyebrow}>Aura Museum / Khám phá hiện vật</p>
+        <p className={classes.eyebrow}>{t('ui.collection.eyebrow', 'Aura Museum / Khám phá hiện vật')}</p>
         <Title ref={titleRef} tabIndex={-1} order={1} className={classes.title}>{t('ui.collection.title', 'Bộ sưu tập')}</Title>
         <p className={classes.description}>{t('ui.collection.intro', 'Dành một chút thời gian cho mỗi câu chuyện. Khám phá nội dung hiện vật trong giao diện 2D, không cần mở không gian 3D.')}</p>
       </header>
@@ -82,9 +82,9 @@ export function CollectionPage() {
       {/* Filter pills + live search */}
       {rooms.data && rooms.data.length > 0 && (
         <div className={classes.toolbar}>
-          <div className={classes.pills} role="group" aria-label="Chọn phòng trưng bày">
+          <div className={classes.pills} role="group" aria-label={t('ui.collection.rooms.label', 'Chọn phòng trưng bày')}>
             {!selectedRoom && selectedSlug && (
-              <span className={`${classes.pill} ${classes.pillActive}`}>Phòng không khả dụng</span>
+              <span className={`${classes.pill} ${classes.pillActive}`}>{t('ui.collection.rooms.unavailable', 'Phòng không khả dụng')}</span>
             )}
             {rooms.data.map((item) => (
               <button key={item.slug} type="button"
@@ -95,7 +95,7 @@ export function CollectionPage() {
           </div>
           <div className={classes.toolbarRight}>
             <TextInput className={classes.search} value={query} onChange={(e) => setQuery(e.currentTarget.value)}
-              placeholder={t('ui.collection.search', 'Tìm hiện vật theo tên hoặc từ khóa…')} aria-label="Tìm kiếm hiện vật"
+              placeholder={t('ui.collection.search', 'Tìm hiện vật theo tên hoặc từ khóa…')} aria-label={t('ui.collection.search.aria', 'Tìm kiếm hiện vật')}
               leftSection={<IconSearch size={16} aria-hidden="true" />} />
             <Button variant="default" disabled={rooms.isFetching || room.isFetching}
               onClick={() => void refresh()}>{t('ui.collection.refresh', 'Làm mới')}</Button>
@@ -103,23 +103,23 @@ export function CollectionPage() {
         </div>
       )}
 
-      <Checkbox my="md" label="Chỉ hiện vật yêu thích trong phòng này" checked={isFavoritesOnly}
+      <Checkbox my="md" label={t('ui.collection.favorites.only', 'Chỉ hiện vật yêu thích trong phòng này')} checked={isFavoritesOnly}
         onChange={event => setIsFavoritesOnly(event.currentTarget.checked)} />
       <VisitorStorageStatus error={favorites.error} />
       <ExhibitComparison selection={comparison.selection} message={comparison.message} rooms={rooms.isSuccess ? rooms.data : []}
         onRemove={comparison.toggle} onClear={comparison.clear} />
 
       {rooms.isPending ? <ExhibitSkeleton />
-        : rooms.isError ? <Alert color="red" role="alert" title="Không tải được danh sách phòng">
+        : rooms.isError ? <Alert color="red" role="alert" title={t('ui.collection.error.rooms', 'Không tải được danh sách phòng')}>
           <Text>{rooms.error.message}</Text>
-          <Button mt="sm" onClick={() => void rooms.refetch()}>Thử lại</Button>
+          <Button mt="sm" onClick={() => void rooms.refetch()}>{t('ui.action.retry', 'Thử lại')}</Button>
         </Alert>
-        : rooms.data.length === 0 ? <p role="status" className={classes.empty}>Chưa có phòng trưng bày công khai.</p>
-        : !selectedRoom ? <Alert color="red" role="alert">Phòng được chọn không có trong danh sách công khai. Hãy chọn phòng khác.</Alert>
+        : rooms.data.length === 0 ? <p role="status" className={classes.empty}>{t('ui.collection.empty.rooms', 'Chưa có phòng trưng bày công khai.')}</p>
+        : !selectedRoom ? <Alert color="red" role="alert">{t('ui.collection.error.room-unavailable', 'Phòng được chọn không có trong danh sách công khai. Hãy chọn phòng khác.')}</Alert>
         : room.isPending ? <ExhibitSkeleton />
-        : room.isError ? <Alert color="red" role="alert" title="Không tải được hiện vật">
+        : room.isError ? <Alert color="red" role="alert" title={t('ui.collection.error.exhibits', 'Không tải được hiện vật')}>
           <Text>{room.error.message}</Text>
-          <Button mt="sm" onClick={() => void room.refetch()}>Thử lại</Button>
+          <Button mt="sm" onClick={() => void room.refetch()}>{t('ui.action.retry', 'Thử lại')}</Button>
         </Alert> : null}
 
       {noLocalMatch && globalSearch}
@@ -130,27 +130,29 @@ export function CollectionPage() {
               <Title order={2} id="collection-room-title" className={classes.roomTitle}>{detail.name}</Title>
               {detail.description && <p className={classes.roomDescription}>{detail.description}</p>}
               <p className={classes.count}>
-                {query.trim() ? `${filtered.length}/${exhibits.length}` : exhibits.length} hiện vật
-                {query.trim() ? ' khớp tìm kiếm' : ' đã xuất bản'}
+                {query.trim()
+                  ? t('ui.collection.count.filtered', '{matched}/{total} hiện vật khớp tìm kiếm')
+                    .replace('{matched}', String(filtered.length)).replace('{total}', String(exhibits.length))
+                  : t('ui.collection.count.published', '{count} hiện vật đã xuất bản').replace('{count}', String(exhibits.length))}
               </p>
             </div>
             <Link to={`/tour?${new URLSearchParams({ room: detail.slug })}`} className={classes.tourLink}>
-              Tham quan phòng này trong 3D <IconArrowRight size={18} aria-hidden="true" />
+              {t('ui.collection.tour.room', 'Tham quan phòng này trong 3D')} <IconArrowRight size={18} aria-hidden="true" />
             </Link>
           </div>
-          {room.isFetching && <p role="status">Đang cập nhật hiện vật…</p>}
-          {exhibits.length === 0 ? <p role="status" className={classes.empty}>Phòng này chưa có hiện vật được xuất bản.</p>
+          {room.isFetching && <p role="status">{t('ui.collection.loading.updated', 'Đang cập nhật hiện vật…')}</p>}
+          {exhibits.length === 0 ? <p role="status" className={classes.empty}>{t('ui.collection.empty.exhibits', 'Phòng này chưa có hiện vật được xuất bản.')}</p>
             : filtered.length === 0 ? <p role="status" className={classes.empty}>{isFavoritesOnly
-              ? 'Không có hiện vật yêu thích khớp trong phòng này. Hãy đánh dấu yêu thích hoặc thay đổi tìm kiếm.'
-              : `Không có hiện vật nào khớp với “${query}”.`}</p> : (
+              ? t('ui.collection.empty.favorites-search', 'Không có hiện vật yêu thích khớp trong phòng này. Hãy đánh dấu yêu thích hoặc thay đổi tìm kiếm.')
+              : t('ui.collection.empty.search', 'Không có hiện vật nào khớp với “{query}”.').replace('{query}', query)}</p> : (
             <ExhibitGrid exhibits={filtered} roomSlug={detail.slug} onReport={(exhibit) =>
               setReportTarget({ exhibitId: exhibit.id, reportedRevisionId: exhibit.revisionId })}
               renderActions={exhibit => <>
                 <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name}
                   onRemove={isFavoritesOnly ? () => titleRef.current?.focus() : undefined} />
-                <Button variant="default" size="sm" aria-label={`So sánh ${exhibit.name}`}
+                <Button variant="default" size="sm" aria-label={t('ui.collection.compare.aria', 'So sánh {name}').replace('{name}', exhibit.name)}
                   aria-pressed={comparison.selection.some(ref => isSameExhibit(ref, { roomId: detail.id, exhibitId: exhibit.id }))}
-                  onClick={() => comparison.toggle({ roomId: detail.id, exhibitId: exhibit.id })}>So sánh</Button>
+                  onClick={() => comparison.toggle({ roomId: detail.id, exhibitId: exhibit.id })}>{t('ui.collection.compare.action', 'So sánh')}</Button>
               </>} />
           )}
         </section>
