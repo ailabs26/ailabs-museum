@@ -84,7 +84,22 @@ Mỗi lớp lấy **một đại diện**; với lớp có biên (độ dài key
 | TC36b | AC8 · **failure path** | Unit | `failInterrupted` lỗi | Vẫn dọn job cũ, khởi động không hỏng | P3 |
 | TC37 | AC8 | Unit | `media.config` có và không có env | Mặc định 7, đọc được env | P3 |
 | TC37b | AC8 · negative | Unit | Env 0, -1, 1.5, `abc`, 3651 / 1, 3650 | Từ chối / nhận | P3 |
+| TC38 | AC9 · Risk · **failure path** | Unit | Upload xong → 3 lần ghi `succeeded` lỗi → restart → retry cùng key | Job giữ `mediaId` khi kẹt; sau restart `succeeded`, không `errorCode`; retry trả đúng job, không chạy lại worker, 1 media, 1 audit | P1 |
+| TC38-DB | AC9 · Risk · **failure path** | Integration PG | Cùng chuỗi trên repository, transaction và migration thật | Như TC38; `mediaId` nằm trong database | P1 |
+| TC38b | AC9 | Unit | Retry cùng key khi job còn kẹt `processing` | Trả job cũ đã có `mediaId`, không chạy lại worker | P2 |
+| TC39 | AC9 · NFR2 | Unit | Khởi động với job có media, job `processing` và `queued` không có media | Job có media `succeeded`; hai job còn lại `job_interrupted` | P1 |
+| TC39-DB | AC9 · NFR2 | Integration PG | Như TC39 | Như TC39 | P1 |
+| TC40 | AC9 · **negative** | Unit | Media bị cách ly | Job `failed` `media_quarantined`, `mediaId` null, không liên kết | P1 |
+| TC41 | AC9 · **failure path** | Unit | Ghi liên kết lỗi | File bị dọn, job `failed` `internal_error`, không có audit | P1 |
+| TC41-DB | AC9 · **failure path** | Integration PG | Lỗi ngay sau khi ghi liên kết, trước commit | Rollback: 0 media, job `failed`, `mediaId` null | P1 |
+| TC42 | AC9 · **failure path** | Unit | Transaction đã commit, `upload()` ném lỗi khi ký URL | Job `succeeded` có `mediaId`, không có patch `failed`, có audit | P1 |
+| TC43-DB | AC9 · **failure path** | Integration PG | Job bị ghi `failed` ngay trước khi liên kết | Rollback: 0 media, job vẫn `failed` | P2 |
+| TC44 | AC9 | Unit | Worker và upload đồng bộ | Media và liên kết dùng cùng manager; đồng bộ không mở transaction | P1 |
+| TC45 | AC9 · **failure path** | Unit | Bước đối soát lỗi lúc khởi động | Khởi động không hỏng, job có media không `failed`, lần sau `succeeded` | P2 |
+| TC45-DB | AC9 · **failure path** | Integration PG | `failInterrupted` với job có media, chưa đối soát | Job giữ `processing`, không có `errorCode` | P1 |
 
 Test concurrency không dùng sleep: `GatedMediaService` giữ từng upload tới khi test mở cổng, `settle()` chỉ nhường event loop để khẳng định không có job nào khác chạy. Mỗi test có timeout 2 giây để job kẹt làm đúng test đó đỏ.
 
-Negative test: TC05, TC06, TC07 (cùng TC08, TC11, TC12). Failure-path gắn risk riêng: **TC09** (lỗi hạ tầng + retry không tạo trùng), TC13 và **TC19/TC19b** (thêm sau review PR #133), **TC21, TC24b, TC29–TC29c, TC36, TC36b** (đợt review 05/11).
+Negative test: TC05, TC06, TC07 (cùng TC08, TC11, TC12). Failure-path gắn risk riêng: **TC09** (lỗi hạ tầng + retry không tạo trùng), TC13 và **TC19/TC19b** (thêm sau review PR #133), **TC21, TC24b, TC29–TC29c, TC36, TC36b** (đợt review 05/11), **TC38–TC45-DB** (review P2 lần 2).
+
+Test PostgreSQL của AC9 nằm chung file với test `failInterrupted` cũ: lệnh này quét toàn bảng, nếu tách file thì `node --test` chạy song song và hai file phá job của nhau.
