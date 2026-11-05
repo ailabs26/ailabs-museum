@@ -33,6 +33,8 @@ const INTERNAL_ERROR_MESSAGE = 'Lỗi không xác định khi xử lý file; hã
 /** Số lần thử ghi job succeeded sau khi media đã lưu (lỗi DB tạm thời). */
 const COMPLETION_ATTEMPTS = 3;
 const DEFAULT_CONCURRENCY = 3;
+const DEFAULT_RETENTION_DAYS = 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Dữ liệu một job chờ chạy. Buffer file nằm ở đây cho tới khi job xong. */
 interface UploadTask {
@@ -79,6 +81,7 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
   private readonly running = new Set<Promise<void>>();
   private readonly queue: UploadTask[] = [];
   private readonly concurrency: number;
+  private readonly retentionDays: number;
   /** Thời gian chờ giữa các lần thử ghi job succeeded; public để test đặt 0. */
   completionRetryDelayMs = 200;
 
@@ -89,6 +92,7 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
     config: ConfigService,
   ) {
     this.concurrency = config.get<number>('media.uploadJobConcurrency') ?? DEFAULT_CONCURRENCY;
+    this.retentionDays = config.get<number>('media.uploadJobRetentionDays') ?? DEFAULT_RETENTION_DAYS;
   }
 
   /**
@@ -101,6 +105,17 @@ export class MediaUploadJobService implements OnApplicationBootstrap {
       if (interrupted > 0) this.logger.warn(`Đánh dấu ${interrupted} job upload bị gián đoạn khi khởi động lại`);
     } catch (error) {
       this.logger.error(`Không dọn được job upload dang dở: ${(error as Error)?.message ?? String(error)}`);
+    }
+    await this.purgeFinishedJobs();
+  }
+
+  /** Chạy sau `failInterrupted`, và job vừa bị gián đoạn có `updatedAt` mới nên không bị xóa ngay. */
+  private async purgeFinishedJobs(): Promise<void> {
+    try {
+      const removed = await this.jobs.deleteFinishedBefore(new Date(Date.now() - this.retentionDays * DAY_MS));
+      if (removed > 0) this.logger.log(`Đã dọn ${removed} job upload cũ hơn ${this.retentionDays} ngày`);
+    } catch (error) {
+      this.logger.error(`Không dọn được job upload cũ: ${(error as Error)?.message ?? String(error)}`);
     }
   }
 

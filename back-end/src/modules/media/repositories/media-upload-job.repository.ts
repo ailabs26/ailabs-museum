@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, QueryFailedError, Repository } from 'typeorm';
+import { In, LessThan, QueryFailedError, Repository } from 'typeorm';
 import { BaseRepository } from '../../../common/repository/base.repository';
 import { MediaUploadJob, UPLOAD_JOB_ACTOR_KEY_CONSTRAINT, UploadJobStatus } from '../entities/media-upload-job.entity';
 
@@ -54,8 +54,13 @@ export class MediaUploadJobRepository extends BaseRepository<MediaUploadJob> {
     return result.affected ?? 0;
   }
 
-  async deleteFinishedBefore(_cutoff: Date): Promise<number> {
-    throw new Error('Not implemented');
+  /** Xóa job đã kết thúc từ trước `cutoff`; job `queued`/`processing` không bao giờ bị xóa ở đây. */
+  async deleteFinishedBefore(cutoff: Date): Promise<number> {
+    const result = await this.repo.delete({
+      status: In([UploadJobStatus.SUCCEEDED, UploadJobStatus.FAILED]),
+      updatedAt: LessThan(cutoff),
+    });
+    return result.affected ?? 0;
   }
 
   private isActorKeyConflict(error: unknown): boolean {
