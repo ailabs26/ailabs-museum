@@ -11,11 +11,13 @@ import { ArtifactFallback3D } from './ArtifactFallback3D';
 import { ArtifactModelBoundary } from './ArtifactModelBoundary';
 import { useGallerySurfaces } from './GallerySurfaces';
 import { ExhibitPlaceholder } from './ExhibitPlaceholder';
+import type { Translator } from '@/core/i18n/public-locale';
 
-export function ExhibitionDisplay({ display, isSelected, isXrHovered = false, onSelect, modelState, renderAttempt = 0, hasRenderError = false, onRenderError }: {
+export function ExhibitionDisplay({ display, isSelected, isXrHovered = false, onSelect, modelState, renderAttempt = 0, hasRenderError = false, onRenderError, translate }: {
   isXrHovered?: boolean;
   display: MuseumDisplay; isSelected: boolean; onSelect: (id: string) => void; modelState?: ModelLoadState;
   renderAttempt?: number; hasRenderError?: boolean; onRenderError: () => void;
+  translate: Translator;
 }) {
   const [isPointerHovered, setIsHovered] = useState(false);
   const { stone, walnut, bronze, charcoal, contact } = useGallerySurfaces();
@@ -52,14 +54,14 @@ export function ExhibitionDisplay({ display, isSelected, isXrHovered = false, on
         {isRoundPlinth ? <cylinderGeometry args={[isCenterpiece ? 1.13 : 0.7, isCenterpiece ? 1.13 : 0.7, 0.04, 32]} /> : <boxGeometry args={[1.09, 0.04, 1.09]} />}
       </mesh>
       {display.model ? modelState?.status === 'ready' ?
-        <ArtifactModelBoundary key={`${display.model.checksumSha256}:${renderAttempt}`} onError={onRenderError} fallback={<ArtifactFallback3D artifactId={display.id} />}>
+        <ArtifactModelBoundary key={`${display.model.checksumSha256}:${renderAttempt}`} onError={onRenderError} fallback={<ArtifactFallback3D artifactId={display.id} translate={translate} />}>
           <ArtifactModel asset={modelState.asset} artifactId={display.id} />
         </ArtifactModelBoundary> :
-        <ArtifactFallback3D artifactId={display.id} isLoading={modelState?.status !== 'error'} />
+        <ArtifactFallback3D artifactId={display.id} isLoading={modelState?.status !== 'error'} translate={translate} />
         : <ExhibitPlaceholder shape={display.shape} color={display.color} isSelected={isSelected} isHovered={isHovered} />}
       <ExhibitLabel title={display.title} isSelected={isSelected} isCenterpiece={isCenterpiece} />
       {getArtifactHotspots(display, !hasRenderError && modelState?.status === 'ready' ? modelState.asset.normalization : undefined).map(hotspot =>
-        <ArtifactHotspot key={hotspot.id} hotspot={hotspot} artifactTitle={display.title} isSelected={isSelected} isXrHovered={isXrHovered} onSelect={onSelect} />)}
+        <ArtifactHotspot key={hotspot.id} hotspot={hotspot} artifactTitle={display.title} isSelected={isSelected} isXrHovered={isXrHovered} onSelect={onSelect} translate={translate} />)}
     </group>
   );
 }

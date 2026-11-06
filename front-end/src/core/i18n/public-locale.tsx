@@ -5,7 +5,7 @@ import { SOURCE_LOCALE } from '@/services/translations.service';
 import { PublicLocaleProvider as StoredLocaleProvider } from '@/contexts/PublicLocaleContext';
 import { usePublicLocale as useStoredLocale } from '@/hooks/usePublicLocale';
 
-type Translator = (key: string, fallback: string) => string;
+export type Translator = (key: string, fallback: string) => string;
 const PublicTranslationsContext = createContext<Translator>((_key, fallback) => fallback);
 
 /** Ngôn ngữ của phần công khai: lưu trên trình duyệt, đồng bộ `<html lang>`, chuỗi lấy từ CMS (loại `ui`). */

@@ -3,30 +3,34 @@ import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { EmptyState } from '@/shared/components/data/EmptyState';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import classes from './MuseumCatalogue.module.css';
+import type { Translator } from '@/core/i18n/public-locale';
 
-export function MuseumCatalogue({ displays, selectedId, onSelect }: {
+export function MuseumCatalogue({ displays, selectedId, onSelect, translate }: {
   displays: readonly MuseumDisplay[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  translate: Translator;
 }) {
   return (
     <section aria-labelledby="catalogue-title" id="museum-catalogue" tabIndex={-1}>
       <Stack gap="md">
-        <Title order={2} id="catalogue-title">Trong phòng trưng bày</Title>
-        <Text c="dimmed">{displays.some(display => display.model) ? 'Các mô hình hiện vật có thể khám phá trong phòng 3D. Danh mục vẫn đọc được khi không dùng 3D.' : 'Chưa có ảnh hoặc mô hình 3D; đang hiển thị hình khối thay thế.'}</Text>
-        {displays.some((display) => display.isOutsideRoom) && <Text role="status" c="orange.8">Một số hiện vật chỉ có thể đọc trong danh mục bên dưới vì nằm ngoài phạm vi phòng 3D.</Text>}
-        {displays.length === 0 && <EmptyState text="Phòng này chưa có hiện vật được xuất bản." />}
-        <SimpleGrid component="ul" aria-label="Các hiện vật" cols={{ base: 1, sm: 2, lg: 3 }} p={0} m={0} style={{ listStyle: 'none' }}>
+        <Title order={2} id="catalogue-title">{translate('ui.tour.catalogue.title', 'Trong phòng trưng bày')}</Title>
+        <Text c="dimmed">{displays.some(display => display.model)
+          ? translate('ui.tour.catalogue.models', 'Các mô hình hiện vật có thể khám phá trong phòng 3D. Danh mục vẫn đọc được khi không dùng 3D.')
+          : translate('ui.tour.catalogue.placeholders', 'Chưa có ảnh hoặc mô hình 3D; đang hiển thị hình khối thay thế.')}</Text>
+        {displays.some((display) => display.isOutsideRoom) && <Text role="status" c="orange.8">{translate('ui.tour.catalogue.outside', 'Một số hiện vật chỉ có thể đọc trong danh mục bên dưới vì nằm ngoài phạm vi phòng 3D.')}</Text>}
+        {displays.length === 0 && <EmptyState text={translate('ui.tour.catalogue.empty', 'Phòng này chưa có hiện vật được xuất bản.')} />}
+        <SimpleGrid component="ul" aria-label={translate('ui.tour.catalogue.exhibits', 'Các hiện vật')} cols={{ base: 1, sm: 2, lg: 3 }} p={0} m={0} style={{ listStyle: 'none' }}>
           {displays.map((display, index) => (
             <Card component="li" key={display.id} withBorder padding="lg" className={classes.card} data-selected={selectedId === display.id}>
               <ExhibitImage image={display.image} shape={display.shape} color={display.color} className={classes.preview} />
-              <Badge variant="light" color="gray" mb="md">Hiện vật {String(index + 1).padStart(2, '0')}</Badge>
+              <Badge variant="light" color="gray" mb="md">{translate('ui.tour.catalogue.item', 'Hiện vật {number}').replace('{number}', String(index + 1).padStart(2, '0'))}</Badge>
               <Title order={3} size="h4" mb="xs">{display.title}</Title>
               <Text size="sm" c="dimmed" mb="md">{display.description}</Text>
               <Button mt="md" variant={selectedId === display.id ? 'filled' : 'light'} color="teal.9"
-                aria-label={`Xem chi tiết ${display.title}`} aria-pressed={selectedId === display.id}
-                onClick={() => onSelect(display.id)}>{selectedId === display.id ? 'Đang xem chi tiết' : 'Xem chi tiết'}</Button>
-              {display.isOutsideRoom && <Text size="sm" c="orange.8" mt="sm">Hiện vật này nằm ngoài phạm vi phòng 3D. Bạn có thể đọc thông tin tại đây.</Text>}
+                aria-label={translate('ui.tour.catalogue.select.aria', 'Xem chi tiết {name}').replace('{name}', display.title)} aria-pressed={selectedId === display.id}
+                onClick={() => onSelect(display.id)}>{selectedId === display.id ? translate('ui.tour.catalogue.selected', 'Đang xem chi tiết') : translate('ui.tour.catalogue.select', 'Xem chi tiết')}</Button>
+              {display.isOutsideRoom && <Text size="sm" c="orange.8" mt="sm">{translate('ui.tour.catalogue.outside-room', 'Hiện vật này nằm ngoài phạm vi phòng 3D. Bạn có thể đọc thông tin tại đây.')}</Text>}
             </Card>
           ))}
         </SimpleGrid>

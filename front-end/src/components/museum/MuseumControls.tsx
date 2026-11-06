@@ -19,11 +19,12 @@ interface FocusTransition {
 }
 
 /** Sole transform owner: exploration and focus share one demand-frame pipeline. */
-export function MuseumControls({ enabled = true, command, selectedDisplay, focusBounds, displays, input, gestures, onModeChange, onActiveChange }: {
+export function MuseumControls({ enabled = true, command, selectedDisplay, focusBounds, displays, input, gestures, onModeChange, onActiveChange, canvasLabel }: {
   enabled?: boolean;
   command: CameraCommand | null; selectedDisplay?: MuseumDisplay; focusBounds?: ModelFocusBounds;
   displays: readonly MuseumDisplay[]; input: NavigationInput; gestures: NavigationGestures;
   onModeChange: (mode: NavigationMode) => void; onActiveChange: (isActive: boolean) => void;
+  canvasLabel: string;
 }) {
   const { camera, gl, invalidate, size } = useThree();
   const prefersReducedMotion = useReducedMotion(false, { getInitialValueInEffect: false });
@@ -138,6 +139,8 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
       input.wake = input.invalidate = input.stop = () => {};
     };
   }, [enabled, camera, gl, invalidate, input, gestures, runtime]);
+
+  useEffect(() => { gl.domElement.setAttribute('aria-label', canvasLabel); }, [gl, canvasLabel]);
 
   useEffect(() => {
     if (introAttemptedRef.current || !enabled) return;

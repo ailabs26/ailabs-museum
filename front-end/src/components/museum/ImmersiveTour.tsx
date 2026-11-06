@@ -1,12 +1,15 @@
 import { useEffect, useLayoutEffect, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { Button, FocusTrap } from '@mantine/core';
+import { LanguageSelect } from '@/shared/components/layout/LanguageSelect';
+import type { Translator } from '@/core/i18n/public-locale';
 import classes from './ImmersiveTour.module.css';
 
-export function ImmersiveTour({ containerRef, roomName, onClose, onEscape, hasModal, children }: {
+export function ImmersiveTour({ containerRef, roomName, onClose, onEscape, hasModal, children, translate }: {
   containerRef: RefObject<HTMLDivElement>; roomName: string; onClose: () => void;
-  onEscape: () => void; hasModal: boolean; children: ReactNode;
+  onEscape: () => void; hasModal: boolean; children: ReactNode; translate: Translator;
 }) {
+  const t = translate;
   useEffect(() => {
     // Removing a focused canvas/XR button can temporarily leave focus on body.
     // Keep Escape owned by the active tour even during loading and recovery.
@@ -40,10 +43,15 @@ export function ImmersiveTour({ containerRef, roomName, onClose, onEscape, hasMo
   return createPortal(
     <FocusTrap active={!hasModal} innerRef={containerRef}>
       <div className={classes.immersive} data-immersive-tour="true" role="dialog" aria-modal="true"
-        aria-label="Tham quan bảo tàng" tabIndex={-1}>
+        aria-label={t('ui.tour.dialog.label', 'Tham quan bảo tàng')} tabIndex={-1}>
         <header className={classes.header}>
-          <div className={classes.identity}><span>AURA MUSEUM / KHÔNG GIAN DI SẢN</span><h2>{roomName}</h2></div>
-          <Button variant="default" onClick={onClose} aria-label="Thoát tham quan">Thoát tham quan <span aria-hidden="true"> ×</span></Button>
+          <div className={classes.identity}><span>{t('ui.tour.dialog.brand', 'AURA MUSEUM / KHÔNG GIAN DI SẢN')}</span><h2>{roomName}</h2></div>
+          <div className={classes.headerControls}>
+            <LanguageSelect style={{ width: 128 }} />
+            <Button variant="default" onClick={onClose} aria-label={t('ui.tour.dialog.exit', 'Thoát tham quan')}>
+              {t('ui.tour.dialog.exit', 'Thoát tham quan')} <span aria-hidden="true"> ×</span>
+            </Button>
+          </div>
         </header>
         {children}
       </div>

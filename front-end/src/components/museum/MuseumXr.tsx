@@ -7,11 +7,13 @@ import { getDisplayColliders, NAVIGATION } from '@/helpers/museumNavigation';
 import { MUSEUM_ROOM_SIZE, type MuseumDisplay } from '@/interfaces/museumScene';
 import { XrDetailsPanel } from './XrDetailsPanel';
 import { bindXrRenderer } from '@/helpers/xrRendererBinding';
+import type { Translator } from '@/core/i18n/public-locale';
 
-export function MuseumXr({ available, displays, selectedId, onSelect, onController, onStatus, onHover, onRendererReset }: {
+export function MuseumXr({ available, displays, selectedId, onSelect, onController, onStatus, onHover, onRendererReset, translate }: {
   available: boolean; displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void;
   onController: (controller: XrSessionController | null) => void; onStatus: (snapshot: XrSnapshot) => void; onHover: (id: string | null) => void;
   onRendererReset: () => void;
+  translate: Translator;
 }) {
   const { camera, gl, scene, invalidate, get } = useThree();
   const origin = useMemo(() => new Group(), []);
@@ -179,7 +181,7 @@ export function MuseumXr({ available, displays, selectedId, onSelect, onControll
   });
   return <>
     <primitive object={origin}>
-      {session && <XrDetailsPanel display={displays.find(display => display.id === selectedId)} page={page} onPageCount={setPageCount} />}
+      {session && <XrDetailsPanel display={displays.find(display => display.id === selectedId)} page={page} onPageCount={setPageCount} translate={translate} />}
     </primitive>
     {session && <>
       {[0, 1, 2].map(index => <group key={index} userData={{ xrIgnore: true }}>

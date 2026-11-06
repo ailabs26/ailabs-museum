@@ -1,5 +1,6 @@
 import { MUSEUM_ROOM_SIZE } from '@/interfaces/museumScene';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
+import type { Translator } from '@/core/i18n/public-locale';
 import classes from './SpatialMinimap.module.css';
 
 const PAD = 6;
@@ -20,23 +21,24 @@ function toPlan(x: number, z: number) {
  * Mini-map 2D (radar) ở góc màn hình: sơ đồ mặt bằng phòng + chấm sáng từng hiện vật,
  * chấm được chọn phát hào quang. Click vào chấm để chọn hiện vật đó.
  */
-export function SpatialMinimap({ displays, selectedId, onSelect }: {
+export function SpatialMinimap({ displays, selectedId, onSelect, translate }: {
   displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void;
+  translate: Translator;
 }) {
   const inRoom = displays.filter((d) => !d.isOutsideRoom);
   if (inRoom.length === 0) return null;
 
   return (
-    <div className={classes.map} role="group" aria-label="Sơ đồ mặt bằng phòng trưng bày">
-      <p className={classes.caption}>Sơ đồ phòng</p>
-      <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className={classes.svg} aria-label={`Sơ đồ ${inRoom.length} hiện vật trong phòng`}>
+    <div className={classes.map} role="group" aria-label={translate('ui.tour.minimap.group', 'Sơ đồ mặt bằng phòng trưng bày')}>
+      <p className={classes.caption}>{translate('ui.tour.minimap.title', 'Sơ đồ phòng')}</p>
+      <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className={classes.svg} aria-label={translate('ui.tour.minimap.svg', 'Sơ đồ {count} hiện vật trong phòng').replace('{count}', String(inRoom.length))}>
         <rect x="2" y="2" width={VB_W - 4} height={VB_H - 4} rx="6" className={classes.room} />
         {inRoom.map((d) => {
           const { cx, cy } = toPlan(d.position[0], d.position[2]);
           const active = d.id === selectedId;
           return (
             <g key={d.id} className={active ? classes.dotActive : classes.dot} onClick={() => onSelect(d.id)}
-              role="button" tabIndex={0} aria-label={`Đi tới ${d.title}`} aria-pressed={active}
+              role="button" tabIndex={0} aria-label={translate('ui.tour.minimap.go', 'Đi tới {name}').replace('{name}', d.title)} aria-pressed={active}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(d.id); } }}>
               <circle cx={cx} cy={cy} r="12" className={classes.hitArea} />
               {active && <circle cx={cx} cy={cy} r="7" className={classes.halo} />}

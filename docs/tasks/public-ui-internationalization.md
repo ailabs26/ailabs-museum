@@ -168,14 +168,16 @@ Là khách tham quan, tôi muốn chọn ngôn ngữ trên giao diện công kha
 
 **Steps**
 
-- [ ] Dịch CTA mở 3D, room selector label, overlay exit, catalogue, selection, empty/error/loading/retry và hướng dẫn điều khiển.
-- [ ] Dịch DOM label của điều khiển 3D, hotspot controls và các panel; với UI VR CanvasTexture, truyền copy qua props từ owner, tránh gọi hook trong Three canvas/low-level objects không đúng nơi.
-- [ ] Không động vào geometry/camera/movement, load model, URL/query/exhibit IDs, Tour reducer (chưa có) hoặc XR session lifecycle.
-- [ ] Test đổi locale khi scene đang mở, modal/fallback/close, keyboard Escape, renderer không bị remount ngoài ý muốn.
+- [x] Dịch CTA mở 3D, room selector label, overlay exit, catalogue, selection, empty/error/loading/retry và hướng dẫn điều khiển.
+- [x] Dịch DOM label của điều khiển 3D, hotspot controls và các panel; với UI VR CanvasTexture, truyền copy qua props từ owner, tránh gọi hook trong Three canvas/low-level objects không đúng nơi.
+- [x] Không động vào geometry/camera/movement, load model, URL/query/exhibit IDs, Tour reducer (chưa có) hoặc XR session lifecycle.
+- [x] Test đổi locale khi scene đang mở, modal/fallback/close, keyboard Escape, renderer không bị remount ngoài ý muốn.
 
 **Acceptance:** Tour UI đổi theo locale nhưng runtime 3D/2D không regress; không nhầm với Guided Tour điều khiển tự động.
 
 **Commit dự kiến:** `feat(i18n): translate tour interface controls`.
+
+**Verification:** frontend typecheck PASS (`npm run build` chạy `tsc -b` trước Vite), lint PASS, build PASS (Vite báo chunk lớn nhất vượt ngưỡng 500 kB). `museum-tour.spec.ts` PASS 13/13; ca locale trong scene xác nhận EN → JA fallback tiếng Việt, UI/aria đổi theo locale, canvas và renderer giữ nguyên. `museum-fullscreen.spec.ts` PASS 8/8. Một lượt kết hợp ban đầu có 4 timeout WebGL ở suite fullscreen; chạy lại suite riêng PASS 8/8. Targeted report-modal case assertions PASS, nhưng Playwright runner kết thúc với timeout teardown của plugin harness sau khi test qua; không phải assertion failure. API browser tests dùng fixture/mock. `git diff --check` sạch.
 
 ### Task 6 — Đăng ký bản dịch UI trong CMS seed
 
@@ -272,8 +274,8 @@ npm run build
 | 1 | `test(i18n): align locale regression with merged behavior` | `4182d24` | `public-locale` 7/7, `public-language` 4/4, unit 255/255, typecheck PASS | DONE |
 | 2 | `feat(i18n): complete public shell and home translations` | `5c423077c738850723e1cab855f91428e342d9e0` | `public-language` 6/6, `public-locale` 7/7, unit 255/255, typecheck/lint PASS | DONE |
 | 3 | `feat(i18n): translate collection and visitor UI` | `a856ea0d3af55d67db831bfd3ab1d2d9c3fb1ad2` | `public-language` 8/8; collection 14/14; global search 3/3; unit 255/255; typecheck/lint PASS | DONE |
-| 4 | `feat(i18n): translate exhibit detail and feedback UI` | pending | `public-language` + `public-audio` + `public-report-modal` + `exhibit-detail` 38/38; typecheck/lint PASS | IN PROGRESS |
-| 5 | `feat(i18n): translate tour interface controls` | — | — | NOT STARTED |
+| 4 | `feat(i18n): translate exhibit detail and feedback UI` | `53176aec0a1fa2a77575772ead85cbc0fe86ae8e` | `public-language` + `public-audio` + `public-report-modal` + `exhibit-detail` 38/38; typecheck/lint PASS | DONE |
+| 5 | `feat(i18n): translate tour interface controls` | pending | `museum-tour` 13/13, `museum-fullscreen` 8/8; typecheck/lint/build PASS | IN PROGRESS |
 | 6 | `feat(i18n): seed remaining public UI strings` | — | — | NOT STARTED |
 | 7 | `test(i18n): cover public language switching journeys` | — | — | NOT STARTED |
 | 8 | `docs(i18n): record UI localization verification` | — | — | NOT STARTED |

@@ -1,11 +1,11 @@
-import { Burger, Container, Drawer, NativeSelect, type NativeSelectProps, Stack } from '@mantine/core';
+import { Burger, Container, Drawer, Stack } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconCube, IconShieldLock } from '@tabler/icons-react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import auraMark from '@/assets/aura-mark.svg';
 import { PublicLocaleProvider, usePublicLocale } from '@/core/i18n/public-locale';
 import { useScrolled } from '@/hooks/useScrolled';
-import { LOCALES } from '@/services/translations.service';
+import { LanguageSelect } from '@/shared/components/layout/LanguageSelect';
 import { ThemeToggle } from '@/shared/components/layout/ThemeToggle';
 import classes from './PublicLayout.module.css';
 
@@ -14,16 +14,6 @@ const NAV = [
   { to: '/collection', key: 'ui.nav.collection', label: 'Bộ sưu tập', end: false },
   { to: '/tour', key: 'ui.nav.tour', label: 'Tham quan 3D', end: false },
 ];
-
-/** Ô chọn ngôn ngữ dạng native: dùng được bàn phím và trình đọc màn hình sẵn. */
-function LanguageSelect(props: Pick<NativeSelectProps, 'visibleFrom'>) {
-  const { locale, setLocale, t } = usePublicLocale();
-  return (
-    <NativeSelect {...props} size="xs" aria-label={t('ui.language.label', 'Ngôn ngữ')} value={locale}
-      onChange={(event) => setLocale(event.currentTarget.value)}
-      data={LOCALES.map((item) => ({ value: item.code, label: item.label }))} />
-  );
-}
 
 /** Khung trang cho phần client công khai (trang chủ, collection, chi tiết, tour). */
 export function PublicLayout() {
