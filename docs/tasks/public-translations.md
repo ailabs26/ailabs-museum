@@ -2,6 +2,12 @@
 
 Người phụ trách: Nguyễn Văn Thắng. Nhánh `feat/public-translations`.
 
+## Cập nhật — 06/11/2026
+
+Follow-up `feat/public-ui-internationalization` mở rộng catalog public từ 13 lên 331 khóa `ui.*` có cặp `vi/en`; khóa cũ được giữ nguyên và seed dùng `.orIgnore()` để tránh ghi đè bản dịch CMS. Nhãn AudioPlayer, report modal, Collection, Detail và Tour đã được nối với locale hiện có. Audio asset, transcript và track phụ đề vẫn theo dữ liệu hiện có.
+
+Kiểm chứng follow-up: `test:translations` 11/11; `test:seed` 10/10; backend typecheck/lint/build PASS. Playwright dùng API mock. Seed hai lần trên DB cô lập chưa chạy vì không có DB cô lập được cấu hình/phê duyệt; không chạy migration hoặc seed trong follow-up này.
+
 ## Bối cảnh
 
 Admin nhập được bản dịch trong CMS (vi/en/fr/ja/zh), nhưng API `/translations` cần quyền nên khách không thấy gì. Trang công
@@ -12,25 +18,23 @@ khai cũng chưa có chỗ chọn ngôn ngữ.
 - Back-end:
   - `GET /public/translations?locale=` trả `{ namespace: text }`, **chỉ loại `ui`**. Chuỗi `exhibit`/`room` có thể thuộc nội
     dung chưa duyệt, mở ra sẽ bỏ qua kiểm duyệt;
-  - seed thêm 13 chuỗi giao diện (vi + en), chạy lại an toàn và không ghi đè bản dịch Admin đã sửa.
+  - bản đầu thêm 13 chuỗi giao diện `vi/en`; follow-up 06/11/2026 mở rộng tổng số lên 331 khóa `ui.*`.
 - Front-end:
   - `core/i18n/public-locale.tsx`: `PublicLocaleProvider` + `usePublicLocale()`. Lựa chọn lưu trên trình duyệt, đồng bộ
     `<html lang>`. `t(key, tiếng Việt)` luôn có dự phòng, nên chuỗi chưa dịch hay API lỗi vẫn hiện tiếng Việt;
   - ô chọn ngôn ngữ: ở header từ màn hình `sm`, trong menu Drawer ở điện thoại (tránh tràn ngang 320px);
   - tên/mô tả hiện vật lấy từ `i18n` của revision đã xuất bản (`localizeExhibit`); hiện chỉ có vi/en.
 
-Chưa làm:
-- Mới nối 14 chuỗi chính (menu, header, chân trang, đầu trang Bộ sưu tập). Còn lại vẫn tiếng Việt: trang chủ, trang chi tiết,
-  khối so sánh, yêu thích, thông báo trạng thái, trang tham quan 3D.
+Giới hạn còn lại:
 - Tên và mô tả phòng chưa dịch (bảng `rooms` chưa có trường đa ngôn ngữ).
-- Audio và phụ đề vẫn theo tiếng Việt.
+- Nội dung thuyết minh/audio, transcript và WebVTT chưa đổi theo locale; chỉ nhãn điều khiển AudioPlayer được dịch.
+- Guided Tour tự động chưa triển khai.
 
 ## Vận hành
 
-Cần chạy `npm run seed` để có 13 chuỗi mới; chưa seed thì trang vẫn chạy bằng tiếng Việt. Muốn thêm ngôn ngữ, Admin dịch các
-chuỗi `ui.*` trong CMS.
+Cần seed catalog để CMS/API có 331 khóa; chưa seed thì giao diện vẫn dùng fallback trong front-end. `npm run seed` còn tạo dữ liệu RBAC/admin/API key mẫu, nên chỉ chạy trong môi trường đã xác định và được phép. Muốn thêm bản dịch, Admin cập nhật các chuỗi `ui.*` trong CMS.
 
-## Kiểm chứng ngày 04/11/2026
+## Kiểm chứng lịch sử — 04/11/2026
 
 - Back-end: lint, typecheck đạt; `npm test` 2183/2183 với PostgreSQL 16 tạm (0 skip, 0 cancelled). `public-translations.spec.ts`:
   chỉ loại `ui`, bỏ chuỗi trống, `exhibit`/`room` không lộ, locale sai 400, route `@Public`.
