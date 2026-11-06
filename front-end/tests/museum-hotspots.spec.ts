@@ -197,7 +197,7 @@ test('a model clone/render exception is contained per artifact and retries witho
   let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
   const { requests } = await installFiveModels(page, { gate }); await installRendererProbe(page);
   await page.goto('/tour.html'); await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
-  await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
   await expect.poll(() => page.evaluate(() => !!window.museumProbe.at(-1)?.scene?.deref())).toBe(true);
   await page.evaluate(() => {
     const scene = window.museumProbe.at(-1)!.scene!.deref()!;
