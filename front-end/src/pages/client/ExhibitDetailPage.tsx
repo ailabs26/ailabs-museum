@@ -108,7 +108,9 @@ export function ExhibitDetailPage() {
         <div className={`${classes.content} ${reading.value.enabled ? classes.reading : ''}`}
           style={{ '--reading-scale': reading.value.fontScale } as CSSProperties}>
           <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } : null}
-            shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
+            shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview}
+            labels={{ preview: t('ui.collection.exhibit.preview', 'Hình minh họa thay thế'),
+              imageMissing: t('ui.collection.exhibit.image-missing', 'Chưa có ảnh') }} />
           <div className={classes.sections}>
             <div className={classes.audioDock}>
               <AudioPlayer key={`${detail.id}:${exhibit.id}:vi`} src={audio?.audio.url} label={t('ui.audio.label', 'Thuyết minh audio')}
@@ -134,7 +136,7 @@ export function ExhibitDetailPage() {
             </section>}
             {credits.length > 0 && <section aria-labelledby="exhibit-credits-title">
               <Title order={2} id="exhibit-credits-title" className={classes.sectionTitle}>{t('ui.detail.section.credits', 'Nguồn & bản quyền')}</Title>
-              <MediaCreditList credits={credits} className={classes.body} />
+              <MediaCreditList credits={credits} className={classes.body} translate={t} />
             </section>}
           </div>
         </div>

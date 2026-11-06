@@ -29,10 +29,12 @@ export function ExhibitDetailPanel({ display, onClose, detail2dHref, onReport, t
         <Title ref={titleRef} tabIndex={-1} order={2} size="h3" className={classes.title}>{display.title}</Title>
         {detail2dHref && <Link to={detail2dHref}>{t('ui.tour.panel.read2d', 'Đọc chi tiết 2D')}</Link>}
         {onReport && <Button variant="default" onClick={onReport}>{t('ui.tour.panel.report', 'Báo nội dung')}</Button>}
-        <ExhibitImage image={display.image} shape={display.shape} color={display.color} className={classes.preview} />
+        <ExhibitImage image={display.image} shape={display.shape} color={display.color} className={classes.preview}
+          labels={{ preview: t('ui.collection.exhibit.preview', 'Hình minh họa thay thế'),
+            imageMissing: t('ui.collection.exhibit.image-missing', 'Chưa có ảnh') }} />
         {display.model && <Text size="sm" c="teal.9">{t('ui.tour.panel.model', 'Khám phá mô hình hiện vật trong phòng 3D.')}</Text>}
         <AudioPlayer key={`${display.roomId}:${display.id}:${display.audioLocale ?? 'vi'}`} src={display.audio?.audio.url}
-          subtitleUrl={display.audio?.subtitle?.url} locale={display.audioLocale} translate={translate} />
+          label={t('ui.audio.label', 'Thuyết minh audio')} subtitleUrl={display.audio?.subtitle?.url} locale={display.audioLocale} translate={translate} />
         <section aria-label={t('ui.tour.panel.description', 'Mô tả hiện vật')}>
           <Title order={3} size="h5" mb="xs">{t('ui.tour.panel.story', 'Câu chuyện hiện vật')}</Title>
           <Text size="sm" className={classes.body}>{display.description || t('ui.tour.panel.empty', 'Chưa có mô tả.')}</Text>
@@ -50,7 +52,7 @@ export function ExhibitDetailPanel({ display, onClose, detail2dHref, onReport, t
         </section>}
         {!!display.credits?.length && <section aria-label={t('ui.tour.panel.credits.aria', 'Nguồn và bản quyền')}>
           <Title order={3} size="h5" mb="xs">{t('ui.tour.panel.credits', 'Nguồn & bản quyền')}</Title>
-          <Text size="sm" component="div" className={classes.body}><MediaCreditList credits={display.credits} /></Text>
+          <Text size="sm" component="div" className={classes.body}><MediaCreditList credits={display.credits} translate={t} /></Text>
         </section>}
         {display.isOutsideRoom && <Text size="sm">{t('ui.tour.panel.outside-room', 'Hiện vật nằm ngoài phạm vi phòng 3D. Thông tin vẫn có thể đọc tại đây.')}</Text>}
         <Text size="xs" c="dimmed">{t('ui.tour.panel.help', 'Escape để đóng · Chọn hiện vật khác để tiếp tục khám phá')}</Text>

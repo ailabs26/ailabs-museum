@@ -31,7 +31,7 @@ export function ExhibitComparison({ selection, rooms, message, onRemove, onClear
           : t('ui.visitor.compare.missing', 'Hiện vật không khả dụng'));
         return <Group key={exhibitRefKey(ref)} justify="space-between" wrap="wrap">
           <Text className={classes.name}>{name}</Text>
-          <Button variant="subtle" aria-label={t('ui.visitor.compare.remove.aria', 'Bỏ so sánh {name}').replace('{name}', name)}
+          <Button variant="subtle" aria-label={t('ui.visitor.compare.remove.aria', 'Bỏ so sánh {name}').replace('{name}', () => name)}
             onClick={() => onRemove(ref)}>{t('ui.visitor.compare.remove', 'Bỏ')}</Button>
         </Group>;
       })}
@@ -39,7 +39,7 @@ export function ExhibitComparison({ selection, rooms, message, onRemove, onClear
     {hasError && <Text c="dimmed">{t('ui.visitor.compare.load-error', 'Không tải được một số nội dung. Dùng Làm mới để thử lại.')}</Text>}
     <Group>
       <Button disabled={isLoading || available.length < 2} onClick={() => setIsOpen(true)}>
-        {t('ui.visitor.compare.open', 'Mở so sánh ({count})').replace('{count}', String(selection.length))}
+        {t('ui.visitor.compare.open', 'Mở so sánh ({count})').replace('{count}', () => String(selection.length))}
       </Button>
       <Button variant="default" disabled={selection.length === 0} onClick={onClear}>
         {t('ui.visitor.compare.clear', 'Xóa lựa chọn so sánh')}
@@ -60,7 +60,7 @@ export function ExhibitComparison({ selection, rooms, message, onRemove, onClear
                     imageMissing: t('ui.collection.exhibit.image-missing', 'Chưa có ảnh') }} />
                 <Title order={4} mt="md" size="h5">{t('ui.visitor.compare.description', 'Mô tả')}</Title>
                 <Text className={classes.description}>{exhibit.description || t('ui.visitor.compare.no-description', 'Chưa có mô tả.')}</Text>
-                <MediaCreditList credits={collectMediaCredits(exhibit)} className={classes.description} />
+                <MediaCreditList credits={collectMediaCredits(exhibit)} className={classes.description} translate={t} />
               </article>)}
             </div>
           </div>}

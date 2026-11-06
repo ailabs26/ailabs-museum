@@ -28,7 +28,7 @@ export function RecentlyViewed({ rooms, isRoomsReady }: { rooms: readonly RoomSu
             {available.map(({ room, exhibit }) => <Link key={exhibitRefKey({ roomId: room.id, exhibitId: exhibit.id })}
               to={`/collection/${encodeURIComponent(room.slug)}/exhibits/${encodeURIComponent(exhibit.id)}`}>
               {t('ui.visitor.recent.continue', 'Tiếp tục khám phá: {exhibit} — {room}')
-                .replace('{exhibit}', localizeExhibit(exhibit, locale).name).replace('{room}', room.name)}
+                .replace('{exhibit}', () => localizeExhibit(exhibit, locale).name).replace('{room}', () => room.name)}
             </Link>)}
             {available.length < recent.value.length && <Text c="dimmed">{t('ui.visitor.recent.missing', 'Một số hiện vật không còn khả dụng hoặc chưa xác minh được.')}</Text>}
             {hasError && <Text c="dimmed">{t('ui.visitor.recent.reload-help', 'Hãy dùng Làm mới để thử tải lại nội dung công khai.')}</Text>}

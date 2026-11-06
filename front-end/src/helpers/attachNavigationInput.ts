@@ -8,7 +8,7 @@ export type NavigationAction = typeof ACTION_KEYS[keyof typeof ACTION_KEYS];
 
 /** Only the focused canvas consumes keyboard input; global listeners only release it. */
 export function attachNavigationInput(canvas: HTMLCanvasElement, input: NavigationInput, gestures: NavigationGestures,
-  onAction: (action: NavigationAction) => void, onActive: (isActive: boolean) => void): () => void {
+  onAction: (action: NavigationAction) => void, onActive: (isActive: boolean) => void, canvasLabel = 'Phòng trưng bày 3D'): () => void {
   const doc = canvas.ownerDocument, view = doc.defaultView!;
   let pointer: { id: number; x: number; y: number; startX: number; startY: number; dragged: boolean } | null = null;
   const releasePointer = () => {
@@ -61,7 +61,7 @@ export function attachNavigationInput(canvas: HTMLCanvasElement, input: Navigati
   const visibility = () => { if (doc.hidden) clear(); };
   const wheel = (event: WheelEvent) => { event.preventDefault(); onAction(event.deltaY < 0 ? 'in' : 'out'); };
   canvas.tabIndex = 0;
-  canvas.setAttribute('aria-label', 'Phòng trưng bày 3D');
+  canvas.setAttribute('aria-label', canvasLabel);
   canvas.setAttribute('aria-describedby', 'museum-controls-help');
   canvas.style.touchAction = 'none';
   canvas.addEventListener('keydown', keydown); view.addEventListener('keyup', keyup);

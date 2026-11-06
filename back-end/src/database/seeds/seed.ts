@@ -129,7 +129,7 @@ async function seedAdmin(roles: Map<RoleKey, Role>): Promise<void> {
 }
 
 /** Chuỗi giao diện công khai; `vi` trùng giá trị dự phòng ở front-end. Admin dịch thêm trong CMS. */
-const PUBLIC_UI_STRINGS: [namespace: string, context: string, vi: string, en: string][] = [
+export const PUBLIC_UI_STRINGS: [namespace: string, context: string, vi: string, en: string][] = [
   ['ui.skip-link', 'Liên kết bỏ qua điều hướng', 'Đến nội dung chính', 'Skip to main content'],
   ['ui.nav.home', 'Menu chính', 'Trang chủ', 'Home'],
   ['ui.nav.collection', 'Menu chính', 'Bộ sưu tập', 'Collection'],
@@ -276,6 +276,22 @@ const PUBLIC_UI_STRINGS: [namespace: string, context: string, vi: string, en: st
   ["ui.report.submit", "Báo cáo nội dung", "Gửi báo cáo", "Submit report"],
   ["ui.report.success", "Báo cáo nội dung", "Đã gửi báo cáo nội dung", "Report submitted"],
   ["ui.report.title", "Báo cáo nội dung", "Báo cáo nội dung", "Report content"],
+  ["ui.report.category.wrong_info", "Danh mục báo cáo", "Sai thông tin", "Incorrect information"],
+  ["ui.report.category.typo", "Danh mục báo cáo", "Lỗi chính tả", "Typo"],
+  ["ui.report.category.inappropriate_content", "Danh mục báo cáo", "Ảnh/nội dung không phù hợp", "Inappropriate image/content"],
+  ["ui.report.category.other", "Danh mục báo cáo", "Khác", "Other"],
+  ["ui.report.validation.message-required", "Báo cáo nội dung", "Vui lòng nhập nội dung báo cáo.", "Please enter report details."],
+  ["ui.report.validation.message-too-long", "Báo cáo nội dung", "Nội dung báo cáo không được vượt quá 2000 ký tự.", "Report details must not exceed 2000 characters."],
+  ["ui.report.validation.category-required", "Báo cáo nội dung", "Vui lòng chọn danh mục báo cáo.", "Select a report category."],
+  ["ui.media.credit.author", "Ghi công media", "Tác giả", "Author"],
+  ["ui.media.credit.source", "Ghi công media", "Nguồn", "Source"],
+  ["ui.media.credit.license", "Ghi công media", "Giấy phép", "License"],
+  ["ui.media.type.model", "Ghi công media", "Mô hình 3D", "3D model"],
+  ["ui.media.type.image", "Ghi công media", "Hình ảnh", "Image"],
+  ["ui.media.type.narration.vi", "Ghi công media", "Thuyết minh tiếng Việt", "Vietnamese narration"],
+  ["ui.media.type.narration.en", "Ghi công media", "Thuyết minh tiếng Anh", "English narration"],
+  ["ui.media.type.subtitle.vi", "Ghi công media", "Phụ đề tiếng Việt", "Vietnamese subtitles"],
+  ["ui.media.type.subtitle.en", "Ghi công media", "Phụ đề tiếng Anh", "English subtitles"],
   ["ui.theme.to-dark", "Giao diện", "Chuyển sang giao diện tối", "Switch to dark theme"],
   ["ui.theme.to-light", "Giao diện", "Chuyển sang giao diện sáng", "Switch to light theme"],
   ["ui.tour.camera.controls", "Tham quan 3D", "Điều khiển góc nhìn", "View controls"],

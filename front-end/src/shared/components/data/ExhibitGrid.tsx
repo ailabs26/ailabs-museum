@@ -33,7 +33,7 @@ export function ExhibitGrid({ exhibits, roomSlug, onReport, renderActions }: {
             <div className={classes.actions}>
               <Link className={classes.detailLink}
                 to={`/collection/${encodeURIComponent(roomSlug)}/exhibits/${encodeURIComponent(exhibit.id)}`}
-                aria-label={t('ui.collection.details.aria', 'Xem chi tiết {name}').replace('{name}', exhibit.name)}>
+                aria-label={t('ui.collection.details.aria', 'Xem chi tiết {name}').replace('{name}', () => exhibit.name)}>
                 {t('ui.collection.details', 'Xem chi tiết')} <IconArrowRight size={16} aria-hidden="true" />
               </Link>
               {onReport && <Button variant="subtle" size="compact-sm" color="gray" onClick={() => onReport(exhibit)}>{t('ui.collection.report', 'Báo nội dung')}</Button>}

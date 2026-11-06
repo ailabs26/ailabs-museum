@@ -23,12 +23,14 @@ export function MuseumCatalogue({ displays, selectedId, onSelect, translate }: {
         <SimpleGrid component="ul" aria-label={translate('ui.tour.catalogue.exhibits', 'Các hiện vật')} cols={{ base: 1, sm: 2, lg: 3 }} p={0} m={0} style={{ listStyle: 'none' }}>
           {displays.map((display, index) => (
             <Card component="li" key={display.id} withBorder padding="lg" className={classes.card} data-selected={selectedId === display.id}>
-              <ExhibitImage image={display.image} shape={display.shape} color={display.color} className={classes.preview} />
-              <Badge variant="light" color="gray" mb="md">{translate('ui.tour.catalogue.item', 'Hiện vật {number}').replace('{number}', String(index + 1).padStart(2, '0'))}</Badge>
+              <ExhibitImage image={display.image} shape={display.shape} color={display.color} className={classes.preview}
+                labels={{ preview: translate('ui.collection.exhibit.preview', 'Hình minh họa thay thế'),
+                  imageMissing: translate('ui.collection.exhibit.image-missing', 'Chưa có ảnh') }} />
+              <Badge variant="light" color="gray" mb="md">{translate('ui.tour.catalogue.item', 'Hiện vật {number}').replace('{number}', () => String(index + 1).padStart(2, '0'))}</Badge>
               <Title order={3} size="h4" mb="xs">{display.title}</Title>
               <Text size="sm" c="dimmed" mb="md">{display.description}</Text>
               <Button mt="md" variant={selectedId === display.id ? 'filled' : 'light'} color="teal.9"
-                aria-label={translate('ui.tour.catalogue.select.aria', 'Xem chi tiết {name}').replace('{name}', display.title)} aria-pressed={selectedId === display.id}
+                aria-label={translate('ui.tour.catalogue.select.aria', 'Xem chi tiết {name}').replace('{name}', () => display.title)} aria-pressed={selectedId === display.id}
                 onClick={() => onSelect(display.id)}>{selectedId === display.id ? translate('ui.tour.catalogue.selected', 'Đang xem chi tiết') : translate('ui.tour.catalogue.select', 'Xem chi tiết')}</Button>
               {display.isOutsideRoom && <Text size="sm" c="orange.8" mt="sm">{translate('ui.tour.catalogue.outside-room', 'Hiện vật này nằm ngoài phạm vi phòng 3D. Bạn có thể đọc thông tin tại đây.')}</Text>}
             </Card>

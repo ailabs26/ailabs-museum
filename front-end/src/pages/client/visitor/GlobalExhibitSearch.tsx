@@ -46,12 +46,12 @@ export function GlobalExhibitSearch({ query, currentRoomId, rooms }: {
           </Alert>
         ) : results.length === 0 && !search.hasNextPage ? (
           <p role="status" className={classes.count}>{t('ui.collection.search.empty', 'Không có hiện vật khớp “{query}” ở phòng khác.')
-            .replace('{query}', debounced)}</p>
+            .replace('{query}', () => debounced)}</p>
         ) : (
           <>
           <p role="status" className={classes.count}>{t(results.length === 1 ? 'ui.collection.search.count.one' : 'ui.collection.search.count.many',
             results.length === 1 ? 'Tìm thấy {count} hiện vật ở phòng khác' : 'Tìm thấy {count} hiện vật ở phòng khác')
-            .replace('{count}', String(results.length))}</p>
+            .replace('{count}', () => String(results.length))}</p>
           <ul className={classes.globalResults} aria-label={t('ui.collection.search.results.aria', 'Kết quả ở các phòng khác')}>
             {results.map((item) => {
               const room = roomById.get(item.roomId)!;

@@ -10,7 +10,7 @@ import { RoleKey } from '../../common/enums/role.enum';
 import { Permission } from '../../modules/roles/entities/permission.entity';
 import { RolePermission } from '../../modules/roles/entities/role-permission.entity';
 import { Role } from '../../modules/roles/entities/role.entity';
-import { seedRoles } from './seed';
+import { PUBLIC_UI_STRINGS, seedRoles } from './seed';
 
 function createInMemoryRbacStore() {
   const permissionsByCode = new Map<string, Permission>();
@@ -192,6 +192,32 @@ describe('seedRoles — bảo toàn quyền RBAC tùy chỉnh (#112)', () => {
       store.getCodesForRole(RoleKey.MODERATOR),
       [...DEFAULT_ROLE_PERMISSIONS[RoleKey.MODERATOR]].sort(),
     );
+  });
+});
+
+describe('PUBLIC_UI_STRINGS', () => {
+  it('includes dynamic public report and media credit keys', () => {
+    const seededNamespaces = new Set(PUBLIC_UI_STRINGS.map(([namespace]) => namespace));
+    const requiredNamespaces = [
+      'ui.report.category.wrong_info',
+      'ui.report.category.typo',
+      'ui.report.category.inappropriate_content',
+      'ui.report.category.other',
+      'ui.report.validation.message-required',
+      'ui.report.validation.message-too-long',
+      'ui.report.validation.category-required',
+      'ui.media.credit.author',
+      'ui.media.credit.source',
+      'ui.media.credit.license',
+      'ui.media.type.model',
+      'ui.media.type.image',
+      'ui.media.type.narration.vi',
+      'ui.media.type.narration.en',
+      'ui.media.type.subtitle.vi',
+      'ui.media.type.subtitle.en',
+    ];
+
+    assert.deepEqual(requiredNamespaces.filter((namespace) => !seededNamespaces.has(namespace)), []);
   });
 });
 

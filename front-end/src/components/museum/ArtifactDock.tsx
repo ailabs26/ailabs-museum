@@ -19,7 +19,7 @@ export function ArtifactDock({ displays, selectedId, onSelect, onFocus, translat
           <li key={d.id} className={classes.item}>
             <button type="button"
               className={`${classes.btn} ${d.id === selectedId ? classes.btnActive : ''}`}
-              aria-label={translate('ui.tour.dock.focus', 'Lia camera tới {name}').replace('{name}', d.title)} aria-pressed={d.id === selectedId}
+              aria-label={translate('ui.tour.dock.focus', 'Lia camera tới {name}').replace('{name}', () => d.title)} aria-pressed={d.id === selectedId}
               onClick={() => { onSelect(d.id); if (d.id === selectedId) onFocus(); }}>
               <span className={classes.num}>{String(i + 1).padStart(2, '0')}</span>
               <span className={classes.name}>{d.title}</span>

@@ -167,6 +167,8 @@ const STRINGS: Record<string, Record<string, string>> = {
     'ui.detail.error.exhibit.message': 'This exhibit is not in the gallery’s public collection.',
     'ui.detail.back-to-collection': 'Back to collection',
     'ui.detail.section.story': 'Exhibit story',
+    'ui.tour.catalogue.select.aria': 'View details for {name}',
+    'ui.tour.panel.label': 'Exhibit details',
     'ui.detail.description.empty': 'No description available.',
     'ui.detail.section.transcript': 'Narration transcript',
     'ui.detail.section.hotspots': 'Points of interest',
@@ -184,6 +186,15 @@ const STRINGS: Record<string, Record<string, string>> = {
     'ui.report.validation.message-required': 'Please enter report details.',
     'ui.report.validation.message-too-long': 'Report details must not exceed 2000 characters.',
     'ui.report.validation.category-required': 'Select a report category.',
+    'ui.media.credit.author': 'Author',
+    'ui.media.credit.source': 'Source',
+    'ui.media.credit.license': 'License',
+    'ui.media.type.model': '3D model',
+    'ui.media.type.image': 'Image',
+    'ui.media.type.narration.vi': 'Vietnamese narration',
+    'ui.media.type.narration.en': 'English narration',
+    'ui.media.type.subtitle.vi': 'Vietnamese subtitles',
+    'ui.media.type.subtitle.en': 'English subtitles',
     'ui.report.cancel': 'Cancel',
     'ui.report.submit': 'Submit report',
     'ui.report.success': 'Report submitted',
@@ -272,8 +283,15 @@ test('public language journey keeps translations from Home through Tour and fall
   await expect(page.getByRole('heading', { name: 'Our Collection', level: 1 })).toBeVisible();
   await page.getByRole('link', { name: 'View details Bronze statue' }).first().click();
   await expect(page.getByRole('heading', { name: 'Bronze statue', level: 1 })).toBeVisible();
+  await expect(page.getByText('Exhibit preview')).toBeVisible();
+  await expect(page.getByText('No image', { exact: true })).toBeVisible();
   await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: '3D Tour' }).click();
   await expect(page.getByRole('button', { name: 'Open 3D gallery' })).toBeVisible();
+  await expect(page.getByText('Exhibit preview').first()).toBeVisible();
+  await page.getByRole('button', { name: 'View details for Hiện vật 1' }).click();
+  const tourDetails = page.getByRole('complementary', { name: 'Exhibit details' });
+  await expect(tourDetails.getByText('Exhibit preview')).toBeVisible();
+  await expect(tourDetails.getByRole('region', { name: 'Audio narration' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 
   for (const locale of ['ja', 'fr', 'zh']) {
@@ -285,6 +303,40 @@ test('public language journey keeps translations from Home through Tour and fall
   }
   await language(page).selectOption('vi');
   await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
+});
+
+test('media credit labels follow English while attribution values stay unchanged', async ({ page }) => {
+  const { first } = await install(page);
+  const checksum = 'a'.repeat(64);
+  const rights = { author: 'Curator A', source: 'Museum archive', license: 'CC0' };
+  const media = (index: number) => ({
+    id: `30000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
+    url: `http://127.0.0.1:4173/media-${index}`,
+    mimeType: 'audio/mpeg', sizeBytes: 128, rights,
+  });
+  const withMedia = {
+    ...first,
+    model: {
+      id: '30000000-0000-4000-8000-000000000001', storageKey: 'models/example.glb', sizeBytes: 1024,
+      checksumSha256: checksum, url: `/rooms/sculpture/exhibits/${first.id}/model?version=${checksum}`, rights,
+    },
+    image: { ...media(2), altText: { vi: null, en: null } },
+    audio: {
+      vi: { audio: media(3), subtitle: media(4), transcript: null },
+      en: { audio: media(5), subtitle: media(6), transcript: null },
+    },
+  };
+  await page.route('**/api/rooms/sculpture', route => fulfillMuseum(route, envelope({ ...roomA, exhibits: [withMedia, ...roomA.exhibits.slice(1)] })));
+  await page.goto(`/collection/sculpture/exhibits/${first.id}`);
+  await language(page).selectOption('en');
+
+  const credits = page.locator('ul').filter({ hasText: 'Museum archive' });
+  for (const label of ['3D model:', 'Image:', 'Vietnamese narration:', 'Vietnamese subtitles:', 'English narration:', 'English subtitles:']) {
+    await expect(credits.getByText(label, { exact: true })).toBeVisible();
+  }
+  await expect(credits).toContainText('Author: Curator A');
+  await expect(credits).toContainText('Source: Museum archive');
+  await expect(credits).toContainText('License: CC0');
 });
 
 test('chuỗi chưa dịch giữ tiếng Việt (không hiện khóa); API lỗi vẫn dùng được; lựa chọn còn sau khi tải lại', async ({ page }) => {
@@ -416,8 +468,9 @@ test('Collection search, cards and visitor actions use the selected language', a
   await expect(comparison.getByText('No image', { exact: true })).toHaveCount(2);
   await comparison.getByRole('button', { name: 'Close comparison' }).click();
 
-  await search.fill('not-found-phrase');
-  await expect(page.getByRole('status').filter({ hasText: 'No exhibits match “not-found-phrase” in other galleries.' })).toBeVisible();
+  await search.fill('$&');
+  await expect(page.getByRole('status').filter({ hasText: 'No exhibits match “$&”.' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'No exhibits match “$&” in other galleries.' })).toBeVisible();
   await expect(page.getByText('0/5 exhibits match search')).toBeVisible();
 });
 

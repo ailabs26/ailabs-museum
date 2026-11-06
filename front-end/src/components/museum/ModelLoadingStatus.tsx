@@ -33,10 +33,11 @@ export function ModelLoadingStatus({ displays, models, onRetry, renderStates = {
       if (state?.status !== 'error' && !failedRender(display)) return null;
       const retriesRemaining = state?.status === 'error' ? state.retriesRemaining : 3 - renderState.attempts;
       const isCoolingDown = state?.status === 'error' && state.retryAt > Math.max(now, Date.now());
+      const errorMessage = state?.status === 'error' ? state.message : translate('ui.tour.model.render-error', 'Lỗi hiển thị mô hình.');
       return <Group key={display.id} gap="sm"><Text size="sm" c="red.8">{translate('ui.tour.model.error', 'Không tải được mô hình: {name}. {error}')
-        .replace('{name}', display.title).replace('{error}', state?.status === 'error' ? state.message : translate('ui.tour.model.render-error', 'Lỗi hiển thị mô hình.'))}</Text>
+        .replace('{name}', () => display.title).replace('{error}', () => errorMessage)}</Text>
         <Button size="xs" variant="light" disabled={retriesRemaining === 0 || isCoolingDown}
-          onClick={() => state?.status === 'error' ? onRetry(display.model!.checksumSha256) : onRetryRender?.(display.id)}>{translate('ui.tour.model.retry', 'Thử lại {name}').replace('{name}', display.title)}</Button>
+          onClick={() => state?.status === 'error' ? onRetry(display.model!.checksumSha256) : onRetryRender?.(display.id)}>{translate('ui.tour.model.retry', 'Thử lại {name}').replace('{name}', () => display.title)}</Button>
         <Text size="xs">{retriesRemaining === 0 ? translate('ui.tour.model.exhausted', 'Đã hết lượt thử. Vui lòng mở lại 3D hoặc liên hệ quản trị.')
           : isCoolingDown ? translate('ui.tour.model.cooldown', 'Vui lòng chờ trước khi thử lại.')
             : translate('ui.tour.model.retries', 'Còn {count} lượt thử.').replace('{count}', String(retriesRemaining))}</Text>

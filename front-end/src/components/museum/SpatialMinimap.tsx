@@ -38,7 +38,7 @@ export function SpatialMinimap({ displays, selectedId, onSelect, translate }: {
           const active = d.id === selectedId;
           return (
             <g key={d.id} className={active ? classes.dotActive : classes.dot} onClick={() => onSelect(d.id)}
-              role="button" tabIndex={0} aria-label={translate('ui.tour.minimap.go', 'Đi tới {name}').replace('{name}', d.title)} aria-pressed={active}
+              role="button" tabIndex={0} aria-label={translate('ui.tour.minimap.go', 'Đi tới {name}').replace('{name}', () => d.title)} aria-pressed={active}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(d.id); } }}>
               <circle cx={cx} cy={cy} r="12" className={classes.hitArea} />
               {active && <circle cx={cx} cy={cy} r="7" className={classes.halo} />}

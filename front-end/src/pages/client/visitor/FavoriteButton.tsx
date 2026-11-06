@@ -12,7 +12,7 @@ export function FavoriteButton({ target, name, onRemove }: { target: VisitorExhi
   const Icon = isFavorite ? IconHeartFilled : IconHeart;
   return <Button variant={isFavorite ? 'light' : 'default'} size="sm" aria-pressed={isFavorite}
     aria-label={t(isFavorite ? 'ui.visitor.favorite.aria-remove' : 'ui.visitor.favorite.aria-add',
-      isFavorite ? 'Bỏ yêu thích {name}' : 'Thêm {name} vào yêu thích').replace('{name}', name)}
+      isFavorite ? 'Bỏ yêu thích {name}' : 'Thêm {name} vào yêu thích').replace('{name}', () => name)}
     leftSection={<Icon size={16} aria-hidden="true" />}
     onClick={() => {
       favoritesStore.update(refs => toggleFavorite(refs, target));

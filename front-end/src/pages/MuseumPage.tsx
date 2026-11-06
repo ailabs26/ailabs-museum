@@ -155,7 +155,7 @@ export function MuseumPage() {
             <Stack className={classes.intro} align="center" justify="center" p="xl" ta="center">
               <Text className={classes.eyebrow} size="xs" fw={700}>{t('ui.tour.intro.eyebrow', 'KHÔNG GIAN KHÁM PHÁ')}</Text>
               <Title order={2} className={classes.introTitle}>{t('ui.tour.intro.title', 'Bước vào phòng trưng bày')}</Title>
-              <Text maw={420}>{t('ui.tour.intro.description', `Khám phá ${detail.name} trong không gian 3D.`).replace('{name}', detail.name)}</Text>
+              <Text maw={420}>{t('ui.tour.intro.description', `Khám phá ${detail.name} trong không gian 3D.`).replace('{name}', () => detail.name)}</Text>
               <Button ref={startButtonRef} color="teal.9" size="lg" onClick={handleOpenScene}>{t('ui.tour.open', 'Mở phòng 3D')}</Button>
               <Text size="sm">{t('ui.tour.readable', 'Bạn cũng có thể đọc toàn bộ nội dung ngay bên dưới.')}</Text>
             </Stack>

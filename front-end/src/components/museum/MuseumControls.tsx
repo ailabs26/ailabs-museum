@@ -29,6 +29,7 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
   const { camera, gl, invalidate, size } = useThree();
   const prefersReducedMotion = useReducedMotion(false, { getInitialValueInEffect: false });
   const reducedRef = useRef(prefersReducedMotion); reducedRef.current = prefersReducedMotion;
+  const canvasLabelRef = useRef(canvasLabel); canvasLabelRef.current = canvasLabel;
   const colliders = useMemo(() => getDisplayColliders(displays), [displays]);
   const collidersRef = useRef(colliders); collidersRef.current = colliders;
   const selectedRef = useRef(selectedDisplay); selectedRef.current = selectedDisplay;
@@ -133,7 +134,7 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
       invalidate();
     };
     actionRef.current = action;
-    const detach = attachNavigationInput(gl.domElement, input, gestures, action, active => callbacks.current.onActiveChange(active));
+    const detach = attachNavigationInput(gl.domElement, input, gestures, action, active => callbacks.current.onActiveChange(active), canvasLabelRef.current);
     return () => {
       detach(); transitionRef.current = null; actionRef.current = null;
       input.wake = input.invalidate = input.stop = () => {};

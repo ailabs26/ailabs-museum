@@ -34,7 +34,7 @@ export function CollectionPage() {
   const loadingMessage = rooms.isPending
     ? t('ui.collection.loading.rooms', 'Đang tải danh sách phòng trưng bày…')
     : selectedRoom && room.isPending
-      ? t('ui.collection.loading.exhibits', 'Đang tải hiện vật của phòng {name}…').replace('{name}', selectedRoom.name)
+      ? t('ui.collection.loading.exhibits', 'Đang tải hiện vật của phòng {name}…').replace('{name}', () => selectedRoom.name)
       : '';
   useEffect(() => {
     setLoadingAnnouncement(loadingMessage);
@@ -144,13 +144,13 @@ export function CollectionPage() {
           {exhibits.length === 0 ? <p role="status" className={classes.empty}>{t('ui.collection.empty.exhibits', 'Phòng này chưa có hiện vật được xuất bản.')}</p>
             : filtered.length === 0 ? <p role="status" className={classes.empty}>{isFavoritesOnly
               ? t('ui.collection.empty.favorites-search', 'Không có hiện vật yêu thích khớp trong phòng này. Hãy đánh dấu yêu thích hoặc thay đổi tìm kiếm.')
-              : t('ui.collection.empty.search', 'Không có hiện vật nào khớp với “{query}”.').replace('{query}', query)}</p> : (
+                  : t('ui.collection.empty.search', 'Không có hiện vật nào khớp với “{query}”.').replace('{query}', () => query)}</p> : (
             <ExhibitGrid exhibits={filtered} roomSlug={detail.slug} onReport={(exhibit) =>
               setReportTarget({ exhibitId: exhibit.id, reportedRevisionId: exhibit.revisionId })}
               renderActions={exhibit => <>
                 <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name}
                   onRemove={isFavoritesOnly ? () => titleRef.current?.focus() : undefined} />
-                <Button variant="default" size="sm" aria-label={t('ui.collection.compare.aria', 'So sánh {name}').replace('{name}', exhibit.name)}
+                <Button variant="default" size="sm" aria-label={t('ui.collection.compare.aria', 'So sánh {name}').replace('{name}', () => exhibit.name)}
                   aria-pressed={comparison.selection.some(ref => isSameExhibit(ref, { roomId: detail.id, exhibitId: exhibit.id }))}
                   onClick={() => comparison.toggle({ roomId: detail.id, exhibitId: exhibit.id })}>{t('ui.collection.compare.action', 'So sánh')}</Button>
               </>} />
