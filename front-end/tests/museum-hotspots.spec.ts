@@ -216,7 +216,7 @@ test('a model clone/render exception is contained per artifact and retries witho
   expect(requests).toEqual([1, 1, 1, 1, 1]);
 });
 
-for (const failure of [403, 404, 502, 'network', 'corrupt'] as const) test(`one ${failure} GLB preserves four healthy models, interactive placeholder and isolated retry`, async ({ page }) => {
+for (const failure of [401, 403, 404, 500, 502, 'network', 'timeout', 'corrupt', 'checksum', 'truncated'] as const) test(`one ${failure} GLB preserves four healthy models, interactive placeholder and isolated retry`, async ({ page }, info) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   const { exhibits, requests } = await installFiveModels(page, { failIndex: 1, failure }); await installRendererProbe(page);
   await page.goto('/tour.html'); await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
@@ -246,4 +246,5 @@ for (const failure of [403, 404, 502, 'network', 'corrupt'] as const) test(`one 
   const after = await snapshot(); expect(after.fallbacks).toEqual([]);
   for (const [id, uuid] of Object.entries(before.models)) expect(after.models[id]).toBe(uuid);
   expect(requests).toEqual([1, 2, 1, 1, 1]); expect(errors).toEqual([]);
+  await info.attach('glb-isolation.json', { body: JSON.stringify({ failure, before, after, requests, errors, renderers: await readRendererProbe(page) }, null, 2), contentType: 'application/json' });
 });

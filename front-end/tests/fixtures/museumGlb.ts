@@ -23,7 +23,7 @@ export function createMuseumGlb(tag: string, invalidMesh = false, brokenAccessor
   return Buffer.concat([header, padded, binHeader, binary]);
 }
 
-export async function installFiveModels(page: Page, options: { failIndex?: number; failure?: number | 'network' | 'corrupt'; invalidMesh?: boolean; brokenAccessor?: boolean; gate?: Promise<void> } = {}) {
+export async function installFiveModels(page: Page, options: { failIndex?: number; failure?: number | 'network' | 'timeout' | 'corrupt' | 'checksum' | 'truncated'; invalidMesh?: boolean; brokenAccessor?: boolean; gate?: Promise<void> } = {}) {
   await installMuseumApi(page);
   const binaries = roomA.exhibits.map((_, i) => createMuseumGlb(String(i), options.invalidMesh && i === 1, options.brokenAccessor && i === 1));
   const requests = Array<number>(5).fill(0);
@@ -39,9 +39,16 @@ export async function installFiveModels(page: Page, options: { failIndex?: numbe
     await options.gate;
     if (index === options.failIndex && requests[index] === 1) {
       if (options.failure === 'network') return route.abort('failed');
-      if (options.failure !== 'corrupt') return fulfillMuseum(route, { success: false, data: null, message: 'Controlled failure' }, options.failure ?? 404);
+      if (options.failure === 'timeout') return route.abort('timedout');
+      if (typeof options.failure === 'number' || options.failure === undefined) return fulfillMuseum(route, { success: false, data: null, message: 'Controlled failure' }, options.failure ?? 404);
     }
-    return route.fulfill({ status: 200, contentType: 'model/gltf-binary', body: index === options.failIndex && requests[index] === 1 ? Buffer.alloc(binaries[index].length) : binaries[index],
+    let body = binaries[index];
+    if (index === options.failIndex && requests[index] === 1) {
+      if (options.failure === 'corrupt') body = Buffer.alloc(body.length);
+      if (options.failure === 'truncated') body = body.subarray(0, body.length - 12);
+      if (options.failure === 'checksum') { body = Buffer.from(body); body[body.length - 1] ^= 1; }
+    }
+    return route.fulfill({ status: 200, contentType: 'model/gltf-binary', body,
       headers: { 'Access-Control-Allow-Origin': 'http://127.0.0.1:4173', 'Access-Control-Allow-Credentials': 'true' } });
   });
   return { exhibits, requests };
