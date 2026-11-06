@@ -59,7 +59,7 @@ for (const order of ['end-first', 'device-first'] as const) {
     test.setTimeout(60_000);
     const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
     await installXrSimulation(page);
-    const { requests } = await installFiveModels(page);
+    const { requests, exhibits } = await installFiveModels(page);
     await openRoom(page);
     await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
     await page.getByRole('button', { name: 'Góc nhìn ban đầu', exact: true }).click();
@@ -72,20 +72,30 @@ for (const order of ['end-first', 'device-first'] as const) {
     await canvas.evaluate(node => { node.dataset.identity = 'before-disconnect'; });
     const samples = [];
     for (let cycle = 0; cycle < 3; cycle++) {
-      await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
-      await page.getByRole('button', { name: 'Góc nhìn ban đầu', exact: true }).click();
-      await waitForRendererIdle(page);
+      // Alternate actual XR targets so every new session must change selection,
+      // without repeating catalogue/focus setup in the web recovery interval.
+      const selection = exhibits[[4, 2, 4][cycle]];
       await enter(page);
-      await aimXr(page, [1.8, 3.16, 2]);
+      const point = await page.evaluate(id => {
+        const record = window.museumProbe.at(-1)!, scene = record.scene!.deref()!;
+        scene.updateMatrixWorld(true);
+        let point: number[] | undefined;
+        scene.traverse(object => {
+          if (object.userData.museumLabel && object.parent?.userData.artifactId === id) point = object.getWorldPosition(record.camera!.deref()!.position.clone()).toArray();
+        });
+        if (!point) throw new Error('Expected a rendered exhibit label');
+        return point;
+      }, selection.id);
+      await aimXr(page, point);
       await page.evaluate(() => window.museumXrFixture.select());
-      await expect(museumExhibitButton(page, 'Xem chi tiết Hiện vật 5')).toHaveAttribute('aria-pressed', 'true');
-      samples.push({ stage: `active-${cycle}`, requests: [...requests], renderers: await readRendererProbe(page) });
+      await expect(museumExhibitButton(page, `Xem chi tiết ${selection.name}`)).toHaveAttribute('aria-pressed', 'true');
+      samples.push({ stage: `active-${cycle}`, target: { id: selection.id, point }, requests: [...requests], renderers: await readRendererProbe(page) });
       await page.evaluate(order => window.museumXrFixture.terminateHeadset(order), order);
       await expect(phase(page, 'idle')).toBeVisible();
       await assertReleased(page);
       await expect(page.getByRole('button', { name: 'Enter VR', exact: true })).toHaveCount(0);
       await expect(canvas).toHaveAttribute('data-identity', 'before-disconnect');
-      await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText('Hiện vật 5');
+      await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText(selection.name);
       expect(await page.evaluate(() => {
         const camera = window.museumProbe.at(-1)!.camera!.deref()!;
         return { position: camera.position.toArray(), quaternion: camera.quaternion.toArray() };

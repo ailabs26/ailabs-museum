@@ -26,6 +26,9 @@ async function projectedPoint(page: import('@playwright/test').Page, artifactId:
 }
 
 test('3D hotspot mouse picking shares selection, hover tooltip and drag rejection', async ({ page }, testInfo) => {
+  // Five real picking/focus cycles exceeded 30s on the recorded loaded host.
+  // Use the existing multi-cycle XR budget, without changing assertion deadlines.
+  test.setTimeout(60_000);
   const { exhibits } = await installFiveModels(page); await installRendererProbe(page); await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/tour.html'); await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
