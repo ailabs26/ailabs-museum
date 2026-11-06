@@ -299,7 +299,7 @@ npm run build
 | 3 | `feat(i18n): translate collection and visitor UI` | `a856ea0d3af55d67db831bfd3ab1d2d9c3fb1ad2` | `public-language` 8/8; collection 14/14; global search 3/3; unit 255/255; typecheck/lint PASS | DONE |
 | 4 | `feat(i18n): translate exhibit detail and feedback UI` | `53176aec0a1fa2a77575772ead85cbc0fe86ae8e` | `public-language` + `public-audio` + `public-report-modal` + `exhibit-detail` 38/38; typecheck/lint PASS | DONE |
 | 5 | `feat(i18n): translate tour interface controls` | `fb2561051cced714a9cd356564ee7452e7038189` | `museum-tour` 13/13, `museum-fullscreen` 8/8; typecheck/lint/build PASS | DONE |
-| 6 | `feat(i18n): seed remaining public UI strings` | — | 331/331 keys; translations 11/11; seed units 10/10; backend typecheck/lint/build PASS; isolated DB seed NOT RUN | IN PROGRESS |
+| 6 | `feat(i18n): seed remaining public UI strings` | `733f6fa322b7bcedb0a1068baad108b5dcf0af9b` | 331/331 keys; translations 11/11; seed units 10/10; backend typecheck/lint/build PASS; isolated DB seed NOT RUN | IN PROGRESS |
 | 7 | `test(i18n): cover public language switching journeys` | — | language 11/11; locale 7/7; collection/detail/audio 40/40; report 3/3; tour 13/13; fullscreen 8/8 | IN PROGRESS |
 | 8 | `docs(i18n): record UI localization verification` | — | AC-01..08, AC-10 PASS; AC-09 NOT RUN; final review pending | IN PROGRESS |
 

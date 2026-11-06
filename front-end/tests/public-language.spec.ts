@@ -12,6 +12,7 @@ const STRINGS: Record<string, Record<string, string>> = {
     'ui.nav.main': 'Main navigation',
     'ui.nav.open': 'Open navigation menu',
     'ui.nav.tour': '3D Tour',
+    'ui.tour.open': 'Open 3D gallery',
     'ui.cta.enter-3d': 'Enter the 3D space',
     'ui.drawer.title': 'Navigation',
     'ui.theme.to-dark': 'Switch to dark theme',
@@ -243,6 +244,47 @@ test('mặc định tiếng Việt, không gọi API bản dịch; chọn Englis
   await expect(page.getByText('English description')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Refresh', exact: true })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+});
+
+test('slow translation response keeps Vietnamese fallback until English strings arrive', async ({ page }) => {
+  await installMuseumApi(page);
+  await page.route('**/api/public/translations**', async (route) => {
+    const locale = new URL(route.request().url()).searchParams.get('locale') ?? '';
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await fulfillMuseum(route, envelope(STRINGS[locale] ?? {}));
+  });
+  await page.goto('/collection');
+
+  await language(page).selectOption('en');
+  await expect(page.getByRole('heading', { name: 'Bộ sưu tập', level: 1 })).toBeVisible();
+  await expect(page.getByText('ui.collection.title')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Our Collection', level: 1 })).toBeVisible();
+});
+
+test('public language journey keeps translations from Home through Tour and falls back safely', async ({ page }) => {
+  await install(page);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Chạm vào Di sản. Khám phá Không giới hạn.', level: 1 })).toBeVisible();
+
+  await language(page).selectOption('en');
+  await expect(page.getByRole('heading', { name: 'Touch Heritage. Explore without limits.', level: 1 })).toBeVisible();
+  await page.getByRole('link', { name: 'Browse the collection', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Our Collection', level: 1 })).toBeVisible();
+  await page.getByRole('link', { name: 'View details Bronze statue' }).first().click();
+  await expect(page.getByRole('heading', { name: 'Bronze statue', level: 1 })).toBeVisible();
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: '3D Tour' }).click();
+  await expect(page.getByRole('button', { name: 'Open 3D gallery' })).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+
+  for (const locale of ['ja', 'fr', 'zh']) {
+    await language(page).selectOption(locale);
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    await expect(page.getByRole('link', { name: locale === 'ja' ? 'コレクション' : 'Bộ sưu tập' }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Mở phòng 3D' })).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/ui\.[\w.-]+/);
+  }
+  await language(page).selectOption('vi');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
 });
 
 test('chuỗi chưa dịch giữ tiếng Việt (không hiện khóa); API lỗi vẫn dùng được; lựa chọn còn sau khi tải lại', async ({ page }) => {
