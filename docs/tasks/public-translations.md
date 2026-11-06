@@ -6,7 +6,7 @@ Người phụ trách: Nguyễn Văn Thắng. Nhánh `feat/public-translations`.
 
 Follow-up `feat/public-ui-internationalization` mở rộng catalog public từ 13 lên 347 khóa `ui.*` có cặp `vi/en`: 331 khóa tham chiếu tĩnh, 7 khóa report tạo động và 9 khóa ghi công media. Khóa cũ được giữ nguyên và seed dùng `.orIgnore()` để tránh ghi đè bản dịch CMS. Nhãn AudioPlayer, report modal, Collection, Detail và Tour đã được nối với locale hiện có. Audio asset, transcript và track phụ đề vẫn theo dữ liệu hiện có.
 
-Kiểm chứng follow-up: `test:translations` 11/11; `test:seed` 11/11; backend typecheck/lint/build PASS. Các browser regression sau review dùng API mock và PASS. Seed hai lần trên DB cô lập chưa chạy vì không có DB cô lập được cấu hình/phê duyệt; không chạy migration hoặc seed trong follow-up này.
+Kiểm chứng follow-up: `test:translations` 11/11; `test:seed` 11/11; backend typecheck/lint/build PASS. Theo xác nhận của người dùng, parameterized catalog-only SQL insert đã thêm 347 khóa vào DB remote `postgres`; lượt hai thêm 0. Không chạy seed runner. API local trả 348 khóa `ui` (gồm một khóa cũ ngoài catalog), và smoke check tại `localhost:5173` hiển thị Home bằng English sau khi chọn locale. Không có hàng cũ trùng namespace catalog nên preservation giá trị Admin đã sửa chưa được thực nghiệm; DB không cô lập. Kết nối SQL được mã hóa TLS nhưng chứng chỉ chưa được xác thực theo CA; không chạy migration/seed tổng thể.
 
 ## Bối cảnh
 
@@ -32,7 +32,7 @@ Giới hạn còn lại:
 
 ## Vận hành
 
-Cần seed catalog để CMS/API có 347 khóa; chưa seed thì giao diện vẫn dùng fallback trong front-end. `npm run seed` còn tạo dữ liệu RBAC/admin/API key mẫu, nên chỉ chạy trong môi trường đã xác định và được phép. Muốn thêm bản dịch, Admin cập nhật các chuỗi `ui.*` trong CMS.
+Cần seed catalog để CMS/API có 347 khóa; catalog hiện đã được nạp vào DB remote được người dùng phê duyệt. `npm run seed` còn tạo dữ liệu RBAC/admin/API key mẫu, nên chỉ chạy trong môi trường đã xác định và được phép. Muốn thêm bản dịch, Admin cập nhật các chuỗi `ui.*` trong CMS.
 
 ## Kiểm chứng lịch sử — 04/11/2026
 

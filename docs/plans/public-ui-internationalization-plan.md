@@ -1,6 +1,6 @@
 # Public UI Internationalization — Implementation Plan
 
-> **Trạng thái:** LOCAL IMPLEMENTATION COMPLETE — các gate và review đã chạy; xác minh seed trên DB cô lập chưa chạy (AC-09). Không push, không tạo PR, không merge theo yêu cầu.
+> **Trạng thái:** LOCAL IMPLEMENTATION COMPLETE — catalog đã nạp vào DB remote theo xác nhận của người dùng; lượt chạy thứ hai không thêm dòng. DB không cô lập và chứng chỉ TLS chưa được xác thực theo CA. Không push, không tạo PR, không merge theo yêu cầu.
 > **Task / Acceptance:** [public-ui-internationalization.md](../tasks/public-ui-internationalization.md)
 
 **Repository:** `ailabs26/ailabs-museum`
@@ -29,7 +29,7 @@
 - Không chọn bản thuyết minh, track audio, transcript hay WebVTT theo locale; thuộc feature multilingual media tiếp theo. **Được dịch nhãn điều khiển AudioPlayer**, không thay đổi nguồn audio.
 - Không mở rộng data model `rooms` để dịch tên/mô tả phòng; không sửa publish/revision, CMS editor hoặc nội dung exhibit đã xuất bản. `localizeExhibit` đã có được giữ nguyên, không làm lại.
 - Không dịch nội dung người dùng, nội dung do backend trả tự do (`error.message` không có mã ổn định), hoặc toàn bộ hệ thống Admin.
-- Không thay DB schema/migration, không truy cập DB dùng chung, không chạy seed vào môi trường thật khi chưa được phê duyệt.
+- Không thay DB schema/migration; không truy cập DB dùng chung hoặc chạy seed vào môi trường thật khi chưa được phê duyệt. Trong follow-up này, người dùng đã cho phép chèn riêng catalog vào DB remote; không chạy migration hoặc seed tổng thể.
 - Không đưa thêm thư viện i18n, event bus, global store hay test debug panel vào production.
 
 ## 2. Source audit trên `dev` (đã đọc mã nguồn, chưa chạy test mới)
@@ -79,7 +79,7 @@
 
 - Chốt danh sách key mới từ file map trước khi thêm seed, tránh key tạo rồi không dùng.
 - Dùng `PUBLIC_UI_STRINGS` hiện có, thêm record `category='ui'` với cặp `vi/en`; `orIgnore` giữ các bản dịch Admin đã sửa, không update hàng loạt.
-- Thêm unit/integration test cho seed/lọc category nếu logic backend thay đổi. Test với DB riêng hoặc mocked repository; **không** chạy seed trên production/staging/shared DB khi chưa được phép.
+- Thêm unit/integration test cho seed/lọc category nếu logic backend thay đổi. Test với DB riêng hoặc mocked repository; **không** chạy seed trên production/staging/shared DB khi chưa được phép. Kết quả DB remote được phép trong lần triển khai này và giới hạn xác minh được ghi ở TASK.
 - UI khi chưa seed vẫn không hỏng, hiển thị fallback tiếng Việt; report đây là mode suy giảm được kiểm soát, không ghi “English UI complete” nếu bản dịch thực tế thiếu.
 
 ## 4. File map dự kiến
@@ -122,7 +122,7 @@
 4. **Responsive/a11y:** 320px/desktop, keyboard `Tab/Enter`, Drawer/modal focus, aria-label bằng đúng locale, không overflow.
 5. **Dynamic messages:** số lượng/count, search result, error/retry, success toast, report categories; ngôn ngữ fallback khi key thiếu/API 500.
 6. **Media/tour:** khi đổi locale UI vẫn không tự phát audio, không đổi track hoặc mất `currentTime` bất ngờ; Tour/VR scene không bị remount ngoài ý muốn, 2D fallback/escape/report hoạt động.
-7. **Backend:** `GET /public/translations` chỉ trả category `ui`, không tiết lộ `exhibit`/`room` chưa publish; seed idempotent trên DB cô lập; không ghi đè bản dịch Admin.
+7. **Backend:** `GET /public/translations` chỉ trả category `ui`, không tiết lộ `exhibit`/`room` chưa publish; seed idempotent và không ghi đè bản dịch Admin. Trong lần triển khai này chỉ chạy parameterized catalog insert hai lần vào DB remote đã được cho phép, không chạy seed runner; không có hàng catalog cũ để kiểm tra preservation.
 
 ## 7. Verification commands (dự kiến)
 
@@ -137,7 +137,7 @@ npx playwright test tests/public-locale.spec.ts tests/public-language.spec.ts --
 npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/public-report-modal.spec.ts tests/public-audio.spec.ts tests/museum-tour.spec.ts --reporter=line
 ```
 
-Khi có thay đổi seed ở `back-end/`, chạy `npm run typecheck`, `npm run lint`, `npm run build` và các test liên quan từ `back-end/`; không chạy migration hoặc seed lên DB dùng chung. Với Windows PowerShell có thể dùng `npm.cmd`/`npx.cmd` nếu execution policy chặn lệnh.
+Khi có thay đổi seed ở `back-end/`, chạy `npm run typecheck`, `npm run lint`, `npm run build` và các test liên quan từ `back-end/`; không chạy migration hoặc seed lên DB dùng chung khi chưa được phép. Với Windows PowerShell có thể dùng `npm.cmd`/`npx.cmd` nếu execution policy chặn lệnh.
 
 ## 8. Acceptance / Definition of Done
 
@@ -155,8 +155,8 @@ Khi có thay đổi seed ở `back-end/`, chạy `npm run typecheck`, `npm run l
 
 ## 9. Review notes và rủi ro
 
-- **Rủi ro lớn nhất:** dịch UI nhưng CMS chưa có bản dịch mới => trang vẫn tiếng Việt; cần test với fixture đầy đủ và seed trên DB cô lập, không chỉ kiểm fallback.
+- **Rủi ro lớn nhất:** dịch UI nhưng CMS chưa có bản dịch mới => trang vẫn tiếng Việt; cần test với fixture đầy đủ và kiểm tra dữ liệu thực tế, không chỉ kiểm fallback. Lần này catalog đã được nạp vào DB remote, nhưng không có hàng cũ để xác minh preservation giá trị Admin.
 - **Regression sau merge:** bộ `public-locale.spec.ts` từ PR cũ có assertions không còn đúng; không đánh dấu PASS dựa vào PR #153/#156 trước đó.
 - **Phạm vi shared:** AudioPlayer, Modal có thể được dùng bởi CMS/fixture; hook public bắt buộc gây crash ngoài Provider.
 - **Phạm vi marketing copy:** các tuyên bố 100% hoặc “song ngữ hoàn chỉnh” trong Home là nội dung cố định hiện có, không xem là bằng chứng chứng nhận WCAG hay media đa ngôn ngữ.
-- **Kiểm thử:** thời điểm soạn PLAN chỉ đọc GitHub source, không chạy lệnh local. Kết quả triển khai và các giới hạn xác minh hiện được ghi trong [TASK](../tasks/public-ui-internationalization.md); riêng seed trên DB cô lập vẫn `NOT RUN`.
+- **Kiểm thử:** thời điểm soạn PLAN chỉ đọc GitHub source, không chạy lệnh local. Kết quả triển khai và giới hạn xác minh được ghi trong [TASK](../tasks/public-ui-internationalization.md): parameterized catalog insert chạy hai lần vào DB remote đã được người dùng cho phép, nhưng không chạy seed runner; DB không cô lập, TLS certificate không được xác thực theo CA, và preservation bản dịch Admin chưa được thực nghiệm.
