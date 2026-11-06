@@ -1,6 +1,6 @@
 # Public UI Internationalization — Implementation Plan
 
-> **Trạng thái:** IN PROGRESS — đang triển khai trên nhánh `feat/public-ui-internationalization`.
+> **Trạng thái:** LOCAL IMPLEMENTATION COMPLETE — các gate và review đã chạy; xác minh seed trên DB cô lập chưa chạy (AC-09). Không push, không tạo PR, không merge theo yêu cầu.
 > **Task / Acceptance:** [public-ui-internationalization.md](../tasks/public-ui-internationalization.md)
 
 **Repository:** `ailabs26/ailabs-museum`
@@ -159,4 +159,4 @@ Khi có thay đổi seed ở `back-end/`, chạy `npm run typecheck`, `npm run l
 - **Regression sau merge:** bộ `public-locale.spec.ts` từ PR cũ có assertions không còn đúng; không đánh dấu PASS dựa vào PR #153/#156 trước đó.
 - **Phạm vi shared:** AudioPlayer, Modal có thể được dùng bởi CMS/fixture; hook public bắt buộc gây crash ngoài Provider.
 - **Phạm vi marketing copy:** các tuyên bố 100% hoặc “song ngữ hoàn chỉnh” trong Home là nội dung cố định hiện có, không xem là bằng chứng chứng nhận WCAG hay media đa ngôn ngữ.
-- **Kiểm thử:** thời điểm soạn PLAN chỉ đọc GitHub source, **không chạy lệnh local**; toàn bộ số liệu hậu triển khai ở TASK hiện là `NOT RUN`.
+- **Kiểm thử:** thời điểm soạn PLAN chỉ đọc GitHub source, không chạy lệnh local. Kết quả triển khai và các giới hạn xác minh hiện được ghi trong [TASK](../tasks/public-ui-internationalization.md); riêng seed trên DB cô lập vẫn `NOT RUN`.

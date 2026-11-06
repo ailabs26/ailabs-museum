@@ -4,9 +4,9 @@ Người phụ trách: Nguyễn Văn Thắng. Nhánh `feat/public-translations`.
 
 ## Cập nhật — 06/11/2026
 
-Follow-up `feat/public-ui-internationalization` mở rộng catalog public từ 13 lên 331 khóa `ui.*` có cặp `vi/en`; khóa cũ được giữ nguyên và seed dùng `.orIgnore()` để tránh ghi đè bản dịch CMS. Nhãn AudioPlayer, report modal, Collection, Detail và Tour đã được nối với locale hiện có. Audio asset, transcript và track phụ đề vẫn theo dữ liệu hiện có.
+Follow-up `feat/public-ui-internationalization` mở rộng catalog public từ 13 lên 347 khóa `ui.*` có cặp `vi/en`: 331 khóa tham chiếu tĩnh, 7 khóa report tạo động và 9 khóa ghi công media. Khóa cũ được giữ nguyên và seed dùng `.orIgnore()` để tránh ghi đè bản dịch CMS. Nhãn AudioPlayer, report modal, Collection, Detail và Tour đã được nối với locale hiện có. Audio asset, transcript và track phụ đề vẫn theo dữ liệu hiện có.
 
-Kiểm chứng follow-up: `test:translations` 11/11; `test:seed` 10/10; backend typecheck/lint/build PASS. Playwright dùng API mock. Seed hai lần trên DB cô lập chưa chạy vì không có DB cô lập được cấu hình/phê duyệt; không chạy migration hoặc seed trong follow-up này.
+Kiểm chứng follow-up: `test:translations` 11/11; `test:seed` 11/11; backend typecheck/lint/build PASS. Các browser regression sau review dùng API mock và PASS. Seed hai lần trên DB cô lập chưa chạy vì không có DB cô lập được cấu hình/phê duyệt; không chạy migration hoặc seed trong follow-up này.
 
 ## Bối cảnh
 
@@ -18,7 +18,7 @@ khai cũng chưa có chỗ chọn ngôn ngữ.
 - Back-end:
   - `GET /public/translations?locale=` trả `{ namespace: text }`, **chỉ loại `ui`**. Chuỗi `exhibit`/`room` có thể thuộc nội
     dung chưa duyệt, mở ra sẽ bỏ qua kiểm duyệt;
-  - bản đầu thêm 13 chuỗi giao diện `vi/en`; follow-up 06/11/2026 mở rộng tổng số lên 331 khóa `ui.*`.
+  - bản đầu thêm 13 chuỗi giao diện `vi/en`; follow-up 06/11/2026 mở rộng tổng số lên 347 khóa `ui.*` (331 tham chiếu tĩnh, 7 khóa report tạo động, 9 khóa ghi công media).
 - Front-end:
   - `core/i18n/public-locale.tsx`: `PublicLocaleProvider` + `usePublicLocale()`. Lựa chọn lưu trên trình duyệt, đồng bộ
     `<html lang>`. `t(key, tiếng Việt)` luôn có dự phòng, nên chuỗi chưa dịch hay API lỗi vẫn hiện tiếng Việt;
@@ -32,7 +32,7 @@ Giới hạn còn lại:
 
 ## Vận hành
 
-Cần seed catalog để CMS/API có 331 khóa; chưa seed thì giao diện vẫn dùng fallback trong front-end. `npm run seed` còn tạo dữ liệu RBAC/admin/API key mẫu, nên chỉ chạy trong môi trường đã xác định và được phép. Muốn thêm bản dịch, Admin cập nhật các chuỗi `ui.*` trong CMS.
+Cần seed catalog để CMS/API có 347 khóa; chưa seed thì giao diện vẫn dùng fallback trong front-end. `npm run seed` còn tạo dữ liệu RBAC/admin/API key mẫu, nên chỉ chạy trong môi trường đã xác định và được phép. Muốn thêm bản dịch, Admin cập nhật các chuỗi `ui.*` trong CMS.
 
 ## Kiểm chứng lịch sử — 04/11/2026
 
