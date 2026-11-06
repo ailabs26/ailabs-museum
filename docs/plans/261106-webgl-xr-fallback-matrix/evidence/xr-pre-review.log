@@ -1,0 +1,75 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test museum-xr-disconnect.spec.ts museum-xr.spec.ts --reporter=list --output=tmp/fallback-xr-check
+
+[WebServer] (node:12732) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:3156) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 22 tests using 1 worker
+
+(node:10984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, end-first (12.9s)
+  ok  2 tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, device-first (11.8s)
+  ok  3 tests\museum-xr-disconnect.spec.ts:117:1 › F13 blurred visibility ignores select and snap-turn, hidden ends the session (10.4s)
+  ok  4 tests\museum-xr-disconnect.spec.ts:135:3 › F14 native end during pending compatibility cannot resurrect presentation (5.4s)
+  ok  5 tests\museum-xr-disconnect.spec.ts:135:3 › F14 native end during pending binding cannot resurrect presentation (6.1s)
+  ok  6 tests\museum-xr-disconnect.spec.ts:155:3 › F17 close while native request is pending ends the late session without binding (5.0s)
+  ok  7 tests\museum-xr-disconnect.spec.ts:155:3 › F17 room while native request is pending ends the late session without binding (4.8s)
+  ok  8 tests\museum-xr-disconnect.spec.ts:175:3 › F15 real context loss with native termination, binding=false (6.8s)
+  ok  9 tests\museum-xr-disconnect.spec.ts:175:3 › F15 real context loss with native termination, binding=true (6.1s)
+  ok 10 tests\museum-xr-disconnect.spec.ts:193:1 › F04 F18 three partial binding failures exhaust the Canvas reset budget into readable 2D (12.7s)
+  x  11 tests\museum-xr.spec.ts:14:1 › decorative floor joints do not block teleport along the central aisle (9.0s)
+(node:14668) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 12 tests\museum-xr.spec.ts:27:1 › 2D catalogue renders published images and permits deliberate 3D retry without refetch or selection loss (4.5s)
+  ok 13 tests\museum-xr.spec.ts:56:1 › unsupported XR keeps the existing 3D scene and web navigation (3.8s)
+  ok 14 tests\museum-xr.spec.ts:65:1 › a supported but refused VR request preserves canvas, selection and permits retry (4.7s)
+  ok 15 tests\museum-xr.spec.ts:81:1 › actual context restores the same canvas and keeps logical selection (8.5s)
+  ok 16 tests\museum-xr.spec.ts:115:1 › simulated native XR renders stereo, selects once, teleports, snap-turns and restores web camera without reloading GLBs (7.1s)
+  ok 17 tests\museum-xr.spec.ts:176:1 › repeated actual context losses exhaust recovery into stable readable 2D (10.3s)
+  ok 18 tests\museum-xr.spec.ts:198:1 › native session end during initialization never resurrects XR or throws a renderer event error (3.7s)
+  ok 19 tests\museum-xr.spec.ts:208:1 › native renderer binding failure recreates only Canvas and retains cached GLBs and selection (6.3s)
+  ok 20 tests\museum-xr.spec.ts:223:1 › actual context loss during XR ends the session and restores normal 3D without automatic re-entry (8.1s)
+  ok 21 tests\museum-xr.spec.ts:248:1 › a controller-free session can gaze at the in-world Exit without moving the origin (8.0s)
+  ok 22 tests\museum-xr.spec.ts:273:1 › persistent WebGL failure exhausts only two deliberate retries and leaves readable 2D (3.1s)
+
+
+  1) tests\museum-xr.spec.ts:14:1 › decorative floor joints do not block teleport along the central aisle 
+
+    Error: expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 4
+    Received: 5.8
+
+    Expected precision:    1
+    Expected difference: < 0.05
+    Received difference:   1.7999999999999998
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      23 |     const camera = window.museumProbe.at(-1)!.camera!.deref()!;
+      24 |     return camera.parent!.position.z;
+    > 25 |   })).toBeCloseTo(4, 1);
+         |       ^
+      26 | });
+      27 | test('2D catalogue renders published images and permits deliberate 3D retry without refetch or selection loss', async ({ page }) => {
+      28 |   let requests = 0;
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-xr.spec.ts:25:7
+
+    Error Context: tmp\fallback-xr-check\museum-xr-decorative-floor-af6d9-ort-along-the-central-aisle\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\fallback-xr-check\museum-xr-decorative-floor-af6d9-ort-along-the-central-aisle\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\fallback-xr-check\museum-xr-decorative-floor-af6d9-ort-along-the-central-aisle\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests\museum-xr.spec.ts:14:1 › decorative floor joints do not block teleport along the central aisle 
+  21 passed (2.7m)

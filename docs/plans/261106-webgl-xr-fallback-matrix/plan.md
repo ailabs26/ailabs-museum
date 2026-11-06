@@ -19,13 +19,13 @@ New coverage targets native headset termination with devicechange in both orders
 
 ## Tasks and acceptance
 
-- [ ] Extend `tests/fixtures/museumXr.ts` with native termination, availability, visibility, request/compatibility/binding gates and listener/event snapshots. Preserve controller disconnect semantics.
-- [ ] Add `tests/museum-xr-disconnect.spec.ts` for F10–F18. Assert active entry, actual select, web camera restore, same Canvas, cached GLBs, listener teardown, no errors and deliberate fresh-session reconnect. Use controllable boundaries for races.
-- [ ] Extend helper regressions for ordered capability checks, stale sessions and post-timeout restore. Run targeted Vitest.
-- [ ] Add `tests/museum-fallback-matrix.spec.ts` for GLB fault variants, successful isolated retries and renderer reset exhaustion. Reuse valid GLB fixture.
-- [ ] Any production change requires an observed failing regression, diagnosis and minimal owner-layer fix with its own commit.
-- [ ] Run typecheck, lint, full unit suite, build, then required Playwright suites on strict production preview. Preserve result logs and structured evidence in `evidence/`.
-- [ ] Review complete diff and commit the actual completed pieces. Record hardware limitations and final acceptance honestly.
+- [x] Extend `tests/fixtures/museumXr.ts` with native termination, availability, visibility, request/compatibility/binding gates and listener/event snapshots. Preserve controller disconnect semantics.
+- [x] Add `tests/museum-xr-disconnect.spec.ts` for F10–F18. Assert active entry, actual select, web camera restore, same Canvas, cached GLBs, listener teardown, no errors and deliberate fresh-session reconnect. Use controllable boundaries for races.
+- [x] Extend helper regressions for ordered capability checks, stale sessions and post-timeout restore. Run targeted Vitest.
+- [x] Extend the existing `tests/museum-hotspots.spec.ts` failure table for GLB fault variants and successful isolated retries. Renderer reset exhaustion lives alongside the XR disconnect tests. Source tracing found that reusing these existing test owners avoids duplicating a separate fallback spec.
+- [x] Reproduce F17 stale binding before production changes. Commit the minimal detached-Canvas guard separately, confirm RED → GREEN and independent review.
+- [x] Run typecheck, lint, full unit suite, build, then required Playwright suites on strict production preview. PASS 261 unit and 75 browser cases. Preserve result logs and structured evidence in `evidence/`.
+- [x] Review complete diff and commit completed pieces. Record hardware limitations and final acceptance honestly. Intel GPU subset also PASS 3/3, with independently probed renderer identity.
 
 ## Constraints and review focus
 
@@ -34,3 +34,10 @@ Frontend/tests/docs only. Preserve 8000 ms policy, two recovery/reset budgets, s
 ## Related work
 
 Use the existing [performance audit](../261104-real-device-3d-performance-audit/performance-audit-report.md) and [measurement protocol](../261104-real-device-3d-performance-audit/measurement-protocol.md) for GPU/performance methodology. See [XR architecture](../webxr-immersive-tour-plan.md) and [immersive UI verification](../261026-immersive-museum-redesign/verification.md). This task measures fallback correctness, with software WebGL explicitly identified.
+
+## Execution decisions
+
+- Follow the user's requested task branch in the clean existing checkout. The prior `chore/3d-performance-audit` branch and commits remain intact.
+- Continue through implementation without an additional plan approval gate, as explicitly requested in the task.
+- API fixture request timeout uses `route.abort('timedout')`. Record its injection semantics rather than infer actual server deadline coverage.
+- Independent review strengthened F17, per-session input selection, recovered web navigation and both processed WebGL/XR event orders. Final evidence uses the reviewed test source hashes.
