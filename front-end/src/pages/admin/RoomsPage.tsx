@@ -43,12 +43,15 @@ import {
   RoomStatus,
   UpdateRoomInput,
 } from '@/services/rooms.service';
+import { RoomTranslationsFields } from '@/components/cms/RoomTranslationsFields';
+import { toRoomTranslationsInput, toRoomTranslationValues, type RoomTranslationValues } from '@/helpers/roomTranslations';
 
 interface RoomFormValues {
   name: string;
   slug: string;
   description: string;
   status: RoomStatus;
+  translations: RoomTranslationValues;
 }
 
 const STATUS_FILTER_OPTIONS = [
@@ -110,6 +113,7 @@ export function RoomsPage() {
       slug: '',
       description: '',
       status: 'active',
+      translations: toRoomTranslationValues(),
     },
     validate: {
       name: (v) => (v.trim().length === 0 ? 'Tên phòng không được để trống' : null),
@@ -152,6 +156,7 @@ export function RoomsPage() {
           name: values.name.trim(),
           description: values.description.trim() || undefined,
           status: values.status,
+          translations: toRoomTranslationsInput(values.translations),
         };
         return roomsService.update(editing.id, patch);
       }
@@ -159,6 +164,7 @@ export function RoomsPage() {
         name: values.name.trim(),
         slug: values.slug.trim(),
         description: values.description.trim() || undefined,
+        translations: toRoomTranslationsInput(values.translations),
       };
       return roomsService.create(input);
     },
@@ -205,7 +211,7 @@ export function RoomsPage() {
     setEditing(null);
     setAutoSlug(true);
     form.reset();
-    form.setValues({ name: '', slug: '', description: '', status: 'active' });
+    form.setValues({ name: '', slug: '', description: '', status: 'active', translations: toRoomTranslationValues() });
     drawer.open();
   };
 
@@ -217,6 +223,7 @@ export function RoomsPage() {
       slug: room.slug,
       description: room.description ?? '',
       status: room.status,
+      translations: toRoomTranslationValues(room.translations),
     });
     drawer.open();
   };
@@ -602,6 +609,11 @@ export function RoomsPage() {
               value={form.values.description}
               onChange={(e) => form.setFieldValue('description', e.currentTarget.value)}
               error={form.errors.description}
+            />
+
+            <RoomTranslationsFields
+              source={{ name: form.values.name, description: form.values.description }}
+              getInputProps={form.getInputProps}
             />
 
             {editing && (

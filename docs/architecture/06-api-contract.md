@@ -97,6 +97,7 @@ Ví dụ: `curl -H "X-API-Key: ak_live_…" https://<host>/api/partner/v1/rooms`
 - Có `lang`: `name`, `description`, `transcript`, `hotspots[].label`, `hotspots[].body` và `image.localizedAltText` theo ngôn ngữ đó; thiếu bản dịch thì về tiếng Việt, rồi tiếng Anh. `contentLocale` là ngôn ngữ thật của `name`, khác `lang` nghĩa là đã fallback.
 - Không có `lang`: như cũ, tiếng Việt rồi tiếng Anh; không có `contentLocale`, `localizedAltText`.
 - `i18n` luôn có đủ 6 ngôn ngữ, thiếu thì `null`. `audio` chỉ có `vi`, `en` và không tự thay bằng ngôn ngữ khác.
+- Phòng cũng nhận `lang` ở `GET /rooms`, `GET /rooms/:slug`, `GET /public/rooms`, `GET /public/rooms/:slug`, `GET /partner/v1/rooms`: `name`, `description` theo ngôn ngữ, kèm `i18n` và `contentLocale` như hiện vật. Tìm kiếm công khai quét cả bản dịch tên phòng.
 
 Quản lý key (Admin): `GET /partner-api-keys` (`apikey:read`); `POST /partner-api-keys` body
 `{ partnerName, label?, scopes[], expiresInDays?, rateLimitPerMinute? }` → kèm `plaintext` (một lần); `POST /partner-api-keys/:id/revoke`;

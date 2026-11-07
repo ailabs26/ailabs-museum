@@ -46,3 +46,13 @@ export function localizedAltText(altText: Partial<Record<string, string | null>>
 export function hasTranslation(exhibit: { i18n?: Partial<Record<string, LocalizedCopy>> }, locale: string): boolean {
   return locale === 'vi' || !!exhibit.i18n?.[locale]?.name;
 }
+
+/** Tên và mô tả phòng theo ngôn ngữ; thiếu thì giữ tiếng Việt. Không có gì để thay thì trả đúng object cũ. */
+export function localizeRoom<T extends { name: string; description: string | null; i18n?: Partial<Record<string, { name: string | null; description: string | null }>> }>(
+  room: T,
+  locale: string,
+): T {
+  const copy = locale === 'vi' ? undefined : room.i18n?.[locale];
+  if (!copy) return room;
+  return { ...room, name: copy.name || room.name, description: copy.description || room.description };
+}
