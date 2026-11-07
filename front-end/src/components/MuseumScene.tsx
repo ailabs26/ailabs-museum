@@ -119,7 +119,10 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
   const handlePhoto = async () => {
     setIsCapturing(true);
     try {
-      const ok = await downloadScenePhoto(captureRef.current?.() ?? null);
+      // `<html lang>` theo ngôn ngữ khách (PublicLocaleProvider); ở trang xem trước admin là `vi`.
+      const ok = await downloadScenePhoto(captureRef.current?.() ?? null, {
+        caption: t('ui.tour.photo-caption', 'Ảnh kỷ niệm không gian 3D'), locale: document.documentElement.lang || 'vi',
+      });
       if (ok) notify.success(t('ui.tour.photo-saved', 'Đã lưu ảnh kỷ niệm không gian 3D'));
       else notify.error(t('ui.tour.photo-failed', 'Chưa chụp được ảnh. Hãy thử lại sau khi khung 3D hiển thị xong.'));
     } finally {

@@ -10,6 +10,7 @@ import { attachNavigationInput, type NavigationAction } from '@/helpers/attachNa
 import type { NavigationGestures } from '@/helpers/navigationGestures';
 import type { NavigationMode } from './NavigationHud';
 import { cinematicPosition, getCinematicEntrance, type Vec3 } from '@/helpers/cinematicIntro';
+import { usePublicT } from '@/core/i18n/public-locale';
 
 export type CameraAction = NavigationAction;
 export interface CameraCommand { action: CameraAction; sequence: number }
@@ -25,6 +26,8 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
   displays: readonly MuseumDisplay[]; input: NavigationInput; gestures: NavigationGestures;
   onModeChange: (mode: NavigationMode) => void; onActiveChange: (isActive: boolean) => void;
 }) {
+  const t = usePublicT();
+  const canvasLabel = t('ui.tour.canvas-aria', 'Phòng trưng bày 3D');
   const { camera, gl, invalidate, size } = useThree();
   const prefersReducedMotion = useReducedMotion(false, { getInitialValueInEffect: false });
   const reducedRef = useRef(prefersReducedMotion); reducedRef.current = prefersReducedMotion;
@@ -132,12 +135,12 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
       invalidate();
     };
     actionRef.current = action;
-    const detach = attachNavigationInput(gl.domElement, input, gestures, action, active => callbacks.current.onActiveChange(active));
+    const detach = attachNavigationInput(gl.domElement, input, gestures, action, active => callbacks.current.onActiveChange(active), canvasLabel);
     return () => {
       detach(); transitionRef.current = null; actionRef.current = null;
       input.wake = input.invalidate = input.stop = () => {};
     };
-  }, [enabled, camera, gl, invalidate, input, gestures, runtime]);
+  }, [enabled, camera, gl, invalidate, input, gestures, runtime, canvasLabel]);
 
   useEffect(() => {
     if (introAttemptedRef.current || !enabled) return;

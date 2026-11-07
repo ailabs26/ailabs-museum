@@ -17,10 +17,12 @@ import { RecentlyViewed } from './visitor/RecentlyViewed';
 import { useExhibitComparison } from '@/hooks/useExhibitComparison';
 import { ExhibitComparison } from './visitor/ExhibitComparison';
 import classes from './CollectionPage.module.css';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 export function CollectionPage() {
   const { locale, t } = usePublicLocale();
   const errorText = usePublicErrorText();
+  usePageTitle(t('ui.collection.title', 'Bộ sưu tập'));
   const [reportTarget, setReportTarget] = useState<{ exhibitId: string; reportedRevisionId: string } | null>(null);
   const [query, setQuery] = useState('');
   const [isFavoritesOnly, setIsFavoritesOnly] = useState(false);

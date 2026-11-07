@@ -19,6 +19,7 @@ import { VisitorStorageStatus } from './visitor/VisitorStorageStatus';
 import { ReadingControls } from './visitor/ReadingControls';
 import { VisitorNotes } from './visitor/VisitorNotes';
 import classes from './ExhibitDetailPage.module.css';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 export function ExhibitDetailPage() {
   const { locale, t } = usePublicLocale();
@@ -32,6 +33,7 @@ export function ExhibitDetailPage() {
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const found = detail && isValidId ? detail.exhibits.find((item) => item.id === exhibitId) : undefined;
   const exhibit = found ? localizeExhibit(found, locale) : undefined;
+  usePageTitle(exhibit?.name ?? t('ui.exhibit.page-title', 'Chi tiết hiện vật'));
   const viewedRef = useRef<string | null>(null);
   const validRoomId = exhibit?.roomId;
   const validExhibitId = exhibit?.id;
