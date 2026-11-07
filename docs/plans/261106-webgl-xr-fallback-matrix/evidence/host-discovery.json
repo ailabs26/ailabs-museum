@@ -1,0 +1,32 @@
+{
+  "collectedAt": "2026-11-06 Asia/Saigon",
+  "os": [
+    {
+      "Caption": "Microsoft Windows 11 Home Single Language",
+      "Version": "10.0.26200"
+    }
+  ],
+  "gpu": [
+    {
+      "Name": "Intel(R) Iris(R) Xe Graphics",
+      "DriverVersion": "32.0.101.7076"
+    }
+  ],
+  "connectedTargets": [],
+  "computer": [
+    {
+      "Manufacturer": "ASUSTeK COMPUTER INC.",
+      "Model": "Vivobook_ASUSLaptop X1405VA_A1405VA"
+    }
+  ],
+  "browsers": [
+    {
+      "ProductName": "Microsoft Edge",
+      "ProductVersion": "156.0.4314.58"
+    },
+    {
+      "ProductName": "Google Chrome",
+      "ProductVersion": "156.0.8078.80"
+    }
+  ]
+}

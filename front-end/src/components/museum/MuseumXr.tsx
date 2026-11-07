@@ -43,7 +43,8 @@ export function MuseumXr({ available, displays, selectedId, onSelect, onControll
     };
     const owner = new XrSessionController({ xr: navigator.xr, secure: window.isSecureContext,
       attach: async (nextSession, type, space) => {
-        if (!mounted || !props.current.available) throw new Error('Renderer unavailable');
+        // Canvas can leave the DOM before R3F commits its asynchronous teardown.
+        if (!mounted || !gl.domElement.isConnected || !props.current.available) throw new Error('Renderer unavailable');
         snapshot = { parent: camera.parent, position: camera.position.clone(), quaternion: camera.quaternion.clone(), scale: camera.scale.clone(), fov: camera instanceof PerspectiveCamera ? camera.fov : undefined, zoom: camera.zoom };
         const yaw = new Euler().setFromQuaternion(camera.quaternion, 'YXZ').y;
         origin.position.set(camera.position.x, type === 'local' ? NAVIGATION.eyeHeight : 0, camera.position.z); origin.rotation.set(0, yaw, 0);

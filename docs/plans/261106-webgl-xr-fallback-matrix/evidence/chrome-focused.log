@@ -1,0 +1,158 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test museum-xr-disconnect.spec.ts museum-hotspots.spec.ts museum-fullscreen.spec.ts --grep native mid-session|3D hotspot mouse|room loading preserves --reporter=list,json --output=tmp/chrome-focused
+
+[WebServer] (node:32796) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:24432) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:8080) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 tests\museum-fullscreen.spec.ts:132:1 › room loading preserves native fullscreen and its reachable exit (10.7s)
+(node:34028) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 tests\museum-hotspots.spec.ts:28:1 › 3D hotspot mouse picking shares selection, hover tooltip and drag rejection (34.2s)
+(node:10452) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, end-first (33.4s)
+(node:17056) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  4 tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, device-first (34.1s)
+
+
+  1) tests\museum-fullscreen.spec.ts:132:1 › room loading preserves native fullscreen and its reachable exit 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByLabel('Phòng trưng bày 3D')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByLabel('Phòng trưng bày 3D') with timeout 5000ms
+      - waiting for getByLabel('Phòng trưng bày 3D')
+
+
+      142 |   expect(await page.evaluate(() => document.fullscreenElement?.getAttribute('data-immersive-tour'))).toBe('true');
+      143 |   release();
+    > 144 |   await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible();
+          |                                                       ^
+      145 |   await expect(page.getByRole('dialog', { name: 'Tham quan bảo tàng' }).getByRole('heading', { name: 'Gốm Việt' })).toBeVisible();
+      146 | });
+      147 |
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-fullscreen.spec.ts:144:55
+
+    Error Context: tmp\chrome-focused\museum-fullscreen-room-loa-1365e-reen-and-its-reachable-exit\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\chrome-focused\museum-fullscreen-room-loa-1365e-reen-and-its-reachable-exit\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\chrome-focused\museum-fullscreen-room-loa-1365e-reen-and-its-reachable-exit\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) tests\museum-hotspots.spec.ts:28:1 › 3D hotspot mouse picking shares selection, hover tooltip and drag rejection 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: keyboard.press: Test timeout of 30000ms exceeded.
+
+      42 |   }
+      43 |   await canvas.screenshot({ path: testInfo.outputPath('hotspots-desktop.png') });
+    > 44 |   await page.keyboard.press('Escape'); await canvas.scrollIntoViewIfNeeded();
+         |                       ^
+      45 |   const point = await projectedPoint(page, exhibits[4].id, 'hotspot'); const box = (await canvas.boundingBox())!;
+      46 |   const x = box.x + (point[0] + 1) * box.width / 2, y = box.y + (1 - point[1]) * box.height / 2;
+      47 |   await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 35, y, { steps: 8 }); await page.mouse.up();
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-hotspots.spec.ts:44:23
+
+    Error Context: tmp\chrome-focused\museum-hotspots-3D-hotspot-93d53--tooltip-and-drag-rejection\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\chrome-focused\museum-hotspots-3D-hotspot-93d53--tooltip-and-drag-rejection\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\chrome-focused\museum-hotspots-3D-hotspot-93d53--tooltip-and-drag-rejection\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, end-first 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  locator('#museum-catalogue').getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true, includeHidden: true })
+    Expected: "true"
+    Received: "false"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveAttribute" locator('#museum-catalogue').getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true, includeHidden: true }) with timeout 5000ms
+      - waiting for locator('#museum-catalogue').getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true, includeHidden: true })
+        10 × locator resolved to <button type="button" data-variant="light" aria-pressed="false" aria-label="Xem chi tiết Hiện vật 3" class="mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root">…</button>
+           - unexpected value "false"
+
+
+      79 |       await aimXr(page, selection.point);
+      80 |       await page.evaluate(() => window.museumXrFixture.select());
+    > 81 |       await expect(museumExhibitButton(page, `Xem chi tiết ${selection.name}`)).toHaveAttribute('aria-pressed', 'true');
+         |                                                                                 ^
+      82 |       samples.push({ stage: `active-${cycle}`, requests: [...requests], renderers: await readRendererProbe(page) });
+      83 |       await page.evaluate(order => window.museumXrFixture.terminateHeadset(order), order);
+      84 |       await expect(phase(page, 'idle')).toBeVisible();
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-xr-disconnect.spec.ts:81:81
+
+    Error Context: tmp\chrome-focused\museum-xr-disconnect-F11-F-9854d-d-fresh-reconnect-end-first\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\chrome-focused\museum-xr-disconnect-F11-F-9854d-d-fresh-reconnect-end-first\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\chrome-focused\museum-xr-disconnect-F11-F-9854d-d-fresh-reconnect-end-first\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, device-first 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  locator('#museum-catalogue').getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true, includeHidden: true })
+    Expected: "true"
+    Received: "false"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveAttribute" locator('#museum-catalogue').getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true, includeHidden: true }) with timeout 5000ms
+      - waiting for locator('#museum-catalogue').getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true, includeHidden: true })
+        9 × locator resolved to <button type="button" data-variant="light" aria-pressed="false" aria-label="Xem chi tiết Hiện vật 3" class="mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root">…</button>
+          - unexpected value "false"
+
+
+      79 |       await aimXr(page, selection.point);
+      80 |       await page.evaluate(() => window.museumXrFixture.select());
+    > 81 |       await expect(museumExhibitButton(page, `Xem chi tiết ${selection.name}`)).toHaveAttribute('aria-pressed', 'true');
+         |                                                                                 ^
+      82 |       samples.push({ stage: `active-${cycle}`, requests: [...requests], renderers: await readRendererProbe(page) });
+      83 |       await page.evaluate(order => window.museumXrFixture.terminateHeadset(order), order);
+      84 |       await expect(phase(page, 'idle')).toBeVisible();
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-xr-disconnect.spec.ts:81:81
+
+    Error Context: tmp\chrome-focused\museum-xr-disconnect-F11-F-aedf4-resh-reconnect-device-first\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\chrome-focused\museum-xr-disconnect-F11-F-aedf4-resh-reconnect-device-first\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\chrome-focused\museum-xr-disconnect-F11-F-aedf4-resh-reconnect-device-first\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4 failed
+    tests\museum-fullscreen.spec.ts:132:1 › room loading preserves native fullscreen and its reachable exit 
+    tests\museum-hotspots.spec.ts:28:1 › 3D hotspot mouse picking shares selection, hover tooltip and drag rejection 
+    tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, end-first 
+    tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, device-first 
