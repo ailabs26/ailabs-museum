@@ -3969,4 +3969,28 @@ export const PUBLIC_UI_STRINGS: PublicUiString[] = [
       ja: "モデルを読み込めませんでした。もう一度お試しください。",
     },
   },
+  {
+    namespace: "ui.notify.success",
+    context: "Tiêu đề thông báo thành công",
+    values: {
+      vi: "Thành công",
+      en: "Success",
+      fr: "Succès",
+      zh: "成功",
+      ko: "성공",
+      ja: "成功",
+    },
+  },
+  {
+    namespace: "ui.notify.error",
+    context: "Tiêu đề thông báo lỗi",
+    values: {
+      vi: "Lỗi",
+      en: "Error",
+      fr: "Erreur",
+      zh: "错误",
+      ko: "오류",
+      ja: "エラー",
+    },
+  },
 ];

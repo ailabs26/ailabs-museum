@@ -19,7 +19,7 @@ export function PublicReportModal({ exhibitId, reportedRevisionId, opened, onClo
   const mutation = useMutation({
     mutationFn: reportsService.createPublic,
     onSuccess: () => {
-      notify.success(t('ui.report.sent', 'Đã gửi báo cáo nội dung'));
+      notify.success(t('ui.report.sent', 'Đã gửi báo cáo nội dung'), t('ui.notify.success', 'Thành công'));
       onClose();
     },
   });

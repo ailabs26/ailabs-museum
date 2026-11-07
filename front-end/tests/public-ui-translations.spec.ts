@@ -134,3 +134,23 @@ test('tiêu đề tab và mô tả trang theo ngôn ngữ và theo trang', async
   await expect(page).toHaveTitle(value('ui.meta.title').replace('{page}', value('ui.not-found.title')));
 });
 
+test('ko: tiêu đề thông báo sau khi gửi báo cáo cũng đã dịch', async ({ page }) => {
+  const value = (key: string) => PUBLIC_UI_STRINGS.find((item) => item.namespace === key)!.values.ko;
+  await installMuseumApi(page);
+  await installStrings(page);
+  await page.route('**/api/public/reports', (route) =>
+    fulfillMuseum(route, envelope({ id: 'c1111111-1111-4111-8111-111111111111', status: 'open' }), 201));
+  await page.addInitScript(() => localStorage.setItem('aura:visitor:locale:v1', '{"version":1,"value":"ko"}'));
+  await page.goto('/collection/sculpture/exhibits/10000000-0000-4000-8000-000000000001');
+
+  await page.getByRole('button', { name: value('ui.common.report-content') }).click();
+  const dialog = page.getByRole('dialog', { name: value('ui.report.title') });
+  await dialog.getByRole('combobox', { name: value('ui.report.category') }).selectOption('typo');
+  await dialog.getByRole('textbox', { name: value('ui.report.details') }).fill('오타가 있습니다');
+  await dialog.getByRole('button', { name: value('ui.report.send') }).click();
+
+  const notification = page.getByRole('alert').filter({ hasText: value('ui.report.sent') });
+  await expect(notification).toContainText(value('ui.notify.success'));
+  await expect(notification).not.toContainText('Thành công');
+});
+
