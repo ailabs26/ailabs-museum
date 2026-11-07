@@ -1,9 +1,11 @@
 import { Button, Center, Stack, Text, Title } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import { usePublicLocale } from '@/core/i18n/public-locale';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 export function NotFoundPage() {
   const { t } = usePublicLocale();
+  usePageTitle(t('ui.not-found.title', 'Không tìm thấy trang'));
   return (
     <Center mih="100vh" p="md">
       <Stack align="center" gap="xs">

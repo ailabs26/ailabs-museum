@@ -16,6 +16,7 @@ import { usePublicErrorText, usePublicLocale } from '@/core/i18n/public-locale';
 import { useImmersiveTour } from '@/hooks/useImmersiveTour';
 import type { XrSessionController, XrSnapshot } from '@/helpers/xrSession';
 import classes from './MuseumPage.module.css';
+import { usePageTitle } from '@/hooks/usePageTitle';
 
 const LazyMuseumScene = lazy(() => import('@/components/MuseumScene').then((module) => ({ default: module.MuseumScene })));
 const LazyMuseumAuditPanel = lazy(() => import('@/components/museum/MuseumAuditPanel').then(module => ({ default: module.MuseumAuditPanel })));
@@ -28,6 +29,7 @@ export function MuseumPage() {
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const { locale, t } = usePublicLocale();
   const errorText = usePublicErrorText();
+  usePageTitle(detail?.name ?? t('ui.tour.title', 'Tham quan bảo tàng'));
   const displays = useMemo(() => detail ? mapRoomDisplays(detail, locale) : [], [detail, locale]);
   const requestedExhibitId = searchParams.get('exhibit');
   const isRequestedExhibitValid = requestedExhibitId !== null && exhibitIdSchema.safeParse(requestedExhibitId).success;

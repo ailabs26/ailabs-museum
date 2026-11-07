@@ -35,3 +35,12 @@ Nội dung hiện vật đã có 6 ngôn ngữ, nhưng chữ giao diện trang C
 - Không dịch: `MuseumAuditPanel` (công cụ đo cho dev), nút "Enter VR"/"Exit VR" (vốn là tiếng Anh ở mọi ngôn ngữ).
 - Đổi ngôn ngữ khi đã chọn hiện vật: hiện vật đang chọn và mô hình giữ nguyên (theo id và checksum); nếu người dùng chưa di chuyển, camera có thể lấy nét lại đúng hiện vật đó. Khi tour mở toàn màn hình thì không đổi được ngôn ngữ.
 
+## Bổ sung chỗ còn sót (`fix/public-i18n-gaps`)
+
+- Tiêu đề tab theo trang và ngôn ngữ (`usePageTitle`), mô tả trang theo ngôn ngữ (`usePageDescription`). `index.html` vẫn giữ tiếng Việt cho lần tải đầu.
+- Lỗi tải mô hình 3D từ `roomModelAssets` dịch lúc hiển thị bằng bảng `key`/`label`.
+- Ảnh kỷ niệm trong tour: chữ in trên ảnh và định dạng ngày theo ngôn ngữ.
+- Nhãn khung 3D cho trình đọc màn hình theo ngôn ngữ.
+- Xóa `sampleDisplays.ts` (không còn dùng).
+- Thêm chuỗi mới: sửa trực tiếp `back-end/src/database/seeds/public-ui-strings.ts`.
+

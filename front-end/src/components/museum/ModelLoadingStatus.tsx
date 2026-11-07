@@ -3,7 +3,18 @@ import type { ModelSnapshot } from '@/helpers/roomModelAssets';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { useEffect, useState } from 'react';
 import type { ArtifactRenderState } from './ArtifactModelBoundary';
-import { usePublicT } from '@/core/i18n/public-locale';
+import { usePublicT, type Translator } from '@/core/i18n/public-locale';
+
+/** Lỗi do `roomModelAssets` (không có React) đặt bằng tiếng Việt: dịch lúc hiển thị. */
+const MODEL_MESSAGES = [
+  { key: 'ui.models.error.format', label: 'Tệp mô hình bị hỏng hoặc có định dạng chưa hỗ trợ.' },
+  { key: 'ui.models.error.load', label: 'Không tải được mô hình. Vui lòng thử lại.' },
+] as const;
+
+function modelMessage(message: string, t: Translator): string {
+  const known = MODEL_MESSAGES.find((item) => item.label === message);
+  return known ? t(known.key, known.label) : message;
+}
 
 export function ModelLoadingStatus({ displays, models, onRetry, renderStates = {}, onRetryRender }: {
   displays: readonly MuseumDisplay[]; models: ModelSnapshot; onRetry: (checksum: string) => void;
@@ -33,7 +44,7 @@ export function ModelLoadingStatus({ displays, models, onRetry, renderStates = {
       if (state?.status !== 'error' && !failedRender(display)) return null;
       const retriesRemaining = state?.status === 'error' ? state.retriesRemaining : 3 - renderState.attempts;
       const isCoolingDown = state?.status === 'error' && state.retryAt > Math.max(now, Date.now());
-      return <Group key={display.id} gap="sm"><Text size="sm" c="red.8">{t('ui.models.failed', 'Không tải được mô hình: {name}.', { name: display.title })} {state?.status === 'error' ? state.message : t('ui.models.render-error', 'Lỗi hiển thị mô hình.')}</Text>
+      return <Group key={display.id} gap="sm"><Text size="sm" c="red.8">{t('ui.models.failed', 'Không tải được mô hình: {name}.', { name: display.title })} {state?.status === 'error' ? modelMessage(state.message, t) : t('ui.models.render-error', 'Lỗi hiển thị mô hình.')}</Text>
         <Button size="xs" variant="light" disabled={retriesRemaining === 0 || isCoolingDown}
           onClick={() => state?.status === 'error' ? onRetry(display.model!.checksumSha256) : onRetryRender?.(display.id)}>{t('ui.models.retry', 'Thử lại {name}', { name: display.title })}</Button>
         <Text size="xs">{retriesRemaining === 0 ? t('ui.models.no-retries', 'Đã hết lượt thử. Vui lòng mở lại 3D hoặc liên hệ quản trị.')

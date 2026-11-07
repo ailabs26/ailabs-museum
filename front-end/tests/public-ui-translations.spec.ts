@@ -116,3 +116,21 @@ test('ko: trang tour dịch phần giới thiệu, nút mở 3D và danh mục',
   await expect(page.getByText('Mở phòng 3D')).toHaveCount(0);
 });
 
+test('tiêu đề tab và mô tả trang theo ngôn ngữ và theo trang', async ({ page }) => {
+  const value = (key: string) => PUBLIC_UI_STRINGS.find((item) => item.namespace === key)!.values.ko;
+  await installMuseumApi(page);
+  await installStrings(page);
+  await page.goto('/');
+  await expect(page).toHaveTitle('Aura Museum — Nghệ thuật và di sản');
+
+  await page.addInitScript(() => localStorage.setItem('aura:visitor:locale:v1', '{"version":1,"value":"ko"}'));
+  await page.goto('/collection?room=sculpture');
+  await expect(page).toHaveTitle(value('ui.meta.title').replace('{page}', value('ui.collection.title')));
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', value('ui.meta.description'));
+
+  await page.goto('/collection/sculpture/exhibits/10000000-0000-4000-8000-000000000001');
+  await expect(page).toHaveTitle('Hiện vật 1 — Aura Museum');
+  await page.goto('/khong-co-trang-nay');
+  await expect(page).toHaveTitle(value('ui.meta.title').replace('{page}', value('ui.not-found.title')));
+});
+

@@ -8,6 +8,7 @@ import { useScrolled } from '@/hooks/useScrolled';
 import { LOCALES } from '@/services/translations.service';
 import { ThemeToggle } from '@/shared/components/layout/ThemeToggle';
 import classes from './PublicLayout.module.css';
+import { usePageDescription } from '@/hooks/usePageTitle';
 
 const NAV = [
   { to: '/', key: 'ui.nav.home', label: 'Trang chủ', end: true },
@@ -32,6 +33,7 @@ export function PublicLayout() {
 
 function PublicLayoutContent() {
   const { t } = usePublicLocale();
+  usePageDescription();
   const scrolled = useScrolled();
   const [drawer, { open, close }] = useDisclosure(false);
 
