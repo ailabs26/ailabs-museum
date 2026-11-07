@@ -1,3 +1,4 @@
+import { seedPublicUiStrings } from './seed-translations';
 import 'reflect-metadata';
 import { createHash, randomBytes } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
@@ -128,31 +129,6 @@ async function seedAdmin(roles: Map<RoleKey, Role>): Promise<void> {
   }
 }
 
-/** Chuỗi giao diện công khai; `vi` trùng giá trị dự phòng ở front-end. Admin dịch thêm trong CMS. */
-const PUBLIC_UI_STRINGS: [namespace: string, context: string, vi: string, en: string][] = [
-  ['ui.skip-link', 'Liên kết bỏ qua điều hướng', 'Đến nội dung chính', 'Skip to main content'],
-  ['ui.nav.home', 'Menu chính', 'Trang chủ', 'Home'],
-  ['ui.nav.collection', 'Menu chính', 'Bộ sưu tập', 'Collection'],
-  ['ui.nav.tour', 'Menu chính', 'Tham quan 3D', '3D Tour'],
-  ['ui.cta.enter-3d', 'Nút ở header', 'Vào không gian 3D', 'Enter the 3D space'],
-  ['ui.language.label', 'Nhãn ô chọn ngôn ngữ', 'Ngôn ngữ', 'Language'],
-  ['ui.footer.manifesto', 'Chân trang', 'Bảo tồn và kể lại câu chuyện di sản bằng không gian số 3D WebXR — để mọi người, ở bất cứ đâu, đều có thể chạm tới nghệ thuật và lịch sử.', 'Preserving and retelling heritage stories in a 3D WebXR digital space, so that everyone, anywhere, can reach art and history.'],
-  ['ui.collection.title', 'Tiêu đề trang Bộ sưu tập', 'Bộ sưu tập', 'Collection'],
-  ['ui.collection.intro', 'Mô tả trang Bộ sưu tập', 'Dành một chút thời gian cho mỗi câu chuyện. Khám phá nội dung hiện vật trong giao diện 2D, không cần mở không gian 3D.', 'Take a moment with each story. Explore the exhibits in 2D, without opening the 3D space.'],
-  ['ui.collection.search', 'Gợi ý ô tìm kiếm', 'Tìm hiện vật theo tên hoặc từ khóa…', 'Search exhibits by name or keyword…'],
-  ['ui.collection.refresh', 'Nút làm mới', 'Làm mới', 'Refresh'],
-  ['ui.collection.details', 'Nút trên thẻ hiện vật', 'Xem chi tiết', 'View details'],
-  ['ui.collection.other-rooms', 'Tiêu đề kết quả tìm kiếm', 'Ở các phòng khác', 'In other rooms'],
-];
-
-/** Thêm chuỗi còn thiếu, không ghi đè bản dịch Admin đã sửa (chạy lại an toàn). */
-async function seedPublicUiStrings(): Promise<void> {
-  const repo = dataSource.getRepository(Translation);
-  await repo.createQueryBuilder().insert().values(PUBLIC_UI_STRINGS.map(([namespace, context, vi, en]) => ({
-    namespace, context, category: 'ui' as const, values: { vi, en },
-  }))).orIgnore().execute();
-}
-
 /** Dữ liệu mẫu CMS i18n — chỉ seed khi bảng trống (idempotent). */
 async function seedTranslations(): Promise<void> {
   const repo = dataSource.getRepository(Translation);
@@ -222,7 +198,7 @@ async function run(): Promise<void> {
   await seedAdmin(roles);
   console.log('Seed: dữ liệu CMS mẫu (i18n + API key)...');
   await seedTranslations();
-  await seedPublicUiStrings();
+  await seedPublicUiStrings(dataSource.getRepository(Translation));
   await seedPartnerApiKeys();
   await dataSource.destroy();
   console.log('Seed xong.');

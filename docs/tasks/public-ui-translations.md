@@ -12,3 +12,11 @@ Nội dung hiện vật đã có 6 ngôn ngữ, nhưng chữ giao diện trang C
 - Form phòng ở CMS có phần "Bản dịch". Phòng không có revision nên lưu là có hiệu lực ngay, có `@Audit` như trước.
 - API công khai và đối tác nhận `?lang=`, xem `docs/architecture/06-api-contract.md`.
 - Front-end dịch trong `useMuseumRooms` bằng `select`, nên đổi ngôn ngữ không tải lại dữ liệu.
+
+## Nền tảng dịch giao diện (`feat/public-ui-i18n-core`)
+
+- `t(key, chữ dự phòng, params?)` thay `{name}` trong chuỗi. Mọi ngôn ngữ, kể cả tiếng Việt, đọc từ `/public/translations`; chưa tải xong hoặc lỗi thì dùng chữ dự phòng.
+- Chuỗi nằm ở `back-end/src/database/seeds/public-ui-strings.ts`. `npm run seed:translations` chỉ đụng bảng `translations`: thêm key thiếu, điền ngôn ngữ còn thiếu, không ghi đè bản Admin đã sửa.
+- `public-ui-strings.spec.ts` chặn lệch: mọi `t('ui.x', 'chữ')` phải có trong seed với `vi` trùng chữ dự phòng, đủ 6 ngôn ngữ, tham số giống nhau.
+- Thêm chuỗi mới: gọi `t()` trong code, thêm dòng vào seed, chạy `seed:translations`.
+

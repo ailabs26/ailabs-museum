@@ -26,11 +26,11 @@ async function install(page: Page) {
 
 const language = (page: Page) => page.getByRole('combobox', { name: /Ngôn ngữ|Language/ }).first();
 
-test('mặc định tiếng Việt, không gọi API bản dịch; chọn English đổi giao diện, nội dung hiện vật và html lang', async ({ page }) => {
+test('mặc định tiếng Việt, chỉ gọi API bản dịch của tiếng Việt; chọn English đổi giao diện, nội dung hiện vật và html lang', async ({ page }) => {
   const { requested } = await install(page);
   await page.goto('/collection');
   await expect(page.getByRole('heading', { name: 'Bộ sưu tập', level: 1 })).toBeVisible();
-  expect(requested).toEqual([]);
+  expect(requested).toEqual(['vi']);
   await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
 
   await language(page).selectOption('en');
