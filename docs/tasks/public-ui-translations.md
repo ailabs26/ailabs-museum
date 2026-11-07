@@ -20,3 +20,10 @@ Nội dung hiện vật đã có 6 ngôn ngữ, nhưng chữ giao diện trang C
 - `public-ui-strings.spec.ts` chặn lệch: mọi `t('ui.x', 'chữ')` phải có trong seed với `vi` trùng chữ dự phòng, đủ 6 ngôn ngữ, tham số giống nhau.
 - Thêm chuỗi mới: gọi `t()` trong code, thêm dòng vào seed, chạy `seed:translations`.
 
+## Các trang khách (`feat/public-ui-i18n-pages`)
+
+- Dịch bộ sưu tập, chi tiết hiện vật, công cụ khách (so sánh, ghi chú, đã xem, cỡ chữ, yêu thích), báo nội dung, `AudioPlayer`, ghi công media và nút sáng tối.
+- Component dùng chung với admin dùng `usePublicT()`: không cần provider, ở admin hiện chữ dự phòng.
+- Lỗi từ service viết bằng tiếng Việt: `usePublicErrorText()` giữ câu chi tiết khi xem tiếng Việt, ngôn ngữ khác hiện câu chung đã dịch.
+- `MediaPreview` chỉ dùng ở admin nên không dịch.
+

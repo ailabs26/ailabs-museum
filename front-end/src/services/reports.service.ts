@@ -5,10 +5,10 @@ import type { RevisionContent, UserBrief } from '@/services/moderation.service';
 export type ReportStatus = 'open' | 'in_progress' | 'resolved' | 'dismissed';
 
 export const PUBLIC_REPORT_CATEGORIES = [
-  { value: 'wrong_info', label: 'Sai thông tin' },
-  { value: 'typo', label: 'Lỗi chính tả' },
-  { value: 'inappropriate_content', label: 'Ảnh/nội dung không phù hợp' },
-  { value: 'other', label: 'Khác' },
+  { value: 'wrong_info', key: 'ui.report.category.wrong-info', label: 'Sai thông tin' },
+  { value: 'typo', key: 'ui.report.category.typo', label: 'Lỗi chính tả' },
+  { value: 'inappropriate_content', key: 'ui.report.category.inappropriate', label: 'Ảnh/nội dung không phù hợp' },
+  { value: 'other', key: 'ui.report.category.other', label: 'Khác' },
 ] as const;
 export type PublicReportCategory = (typeof PUBLIC_REPORT_CATEGORIES)[number]['value'];
 
