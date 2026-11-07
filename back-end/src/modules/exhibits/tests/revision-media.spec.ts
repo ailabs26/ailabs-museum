@@ -8,7 +8,7 @@ import { MediaKind } from '../../media/entities/media.entity';
 import { REVISION_MEDIA_RELATIONS, REVISION_MEDIA_SLOTS } from '../constants/revision-media-slots';
 import { CreateExhibitDto } from '../dto/create-exhibit.dto';
 import { UpdateExhibitDto } from '../dto/update-exhibit.dto';
-import { primaryText, resolveBilingual } from '../utils/bilingual';
+import { pickLocale, primaryText, resolveBilingual } from '../utils/bilingual';
 import {
   mediaReferencesOf,
   pickRevisionMedia,
@@ -140,8 +140,18 @@ describe('resolveBilingual', () => {
     ['số', 42, { vi: null, en: null }],
   ];
   for (const [label, input, expected] of cases) {
-    it(label, () => assert.deepEqual(resolveBilingual(input), expected));
+    it(label, () => assert.deepEqual(resolveBilingual(input), { fr: null, zh: null, ko: null, ja: null, ...expected }));
   }
+
+  it('pickLocale: ngôn ngữ yêu cầu → vi → en; dữ liệu cũ dạng chuỗi và {vi,en} vẫn đọc được', () => {
+    const value = resolveBilingual({ vi: 'A', en: 'B', ko: 'C', ja: '  ' });
+    assert.deepEqual(pickLocale(value, 'ko'), { text: 'C', locale: 'ko' });
+    assert.deepEqual(pickLocale(value, 'ja'), { text: 'A', locale: 'vi' }, 'chuỗi trắng coi như thiếu');
+    assert.deepEqual(pickLocale(resolveBilingual({ en: 'B' }), 'fr'), { text: 'B', locale: 'en' });
+    assert.deepEqual(pickLocale(resolveBilingual('Chuỗi cũ'), 'zh'), { text: 'Chuỗi cũ', locale: 'vi' });
+    assert.deepEqual(pickLocale(resolveBilingual(null), 'zh'), { text: null, locale: null });
+    assert.equal(resolveBilingual('{"ko":"입구"}').ko, '입구', 'chuỗi JSON chỉ có bản dịch mới');
+  });
 
   it('primaryText: vi trước, thiếu thì en, không có → null', () => {
     assert.equal(primaryText({ vi: 'A', en: 'B' }), 'A');

@@ -1,3 +1,4 @@
+import { LOCALE_LABELS, OPTIONAL_CONTENT_LOCALES, SupportedLocale } from '../../translations/constants/locales';
 import { IsOptional, IsString } from 'class-validator';
 
 export interface PublishValidationInput {
@@ -20,8 +21,8 @@ export interface PublishValidationInput {
   imageId?: string | null;
   altText?: { vi?: string | null; en?: string | null } | string | null;
   hotspots?: Array<{
-    label?: { vi?: string | null; en?: string | null } | string | null;
-    body?: { vi?: string | null; en?: string | null } | string | null;
+    label?: Partial<Record<SupportedLocale, string | null>> | string | null;
+    body?: Partial<Record<SupportedLocale, string | null>> | string | null;
     positionX?: number | null;
     positionY?: number | null;
     positionZ?: number | null;
@@ -189,6 +190,18 @@ export function validateForPublish(
       }
       if (!bodyEn || bodyEn.length > 5000) {
         errors.push(`hotspots[${idx}].body.en: Nội dung hotspot tiếng Anh bắt buộc từ 1 đến 5.000 ký tự`);
+      }
+      // Bản dịch không bắt buộc, nhưng có thì theo cùng giới hạn độ dài.
+      for (const locale of OPTIONAL_CONTENT_LOCALES) {
+        const language = LOCALE_LABELS[locale].toLowerCase();
+        const label = typeof hs.label === 'object' ? hs.label?.[locale] : null;
+        const body = typeof hs.body === 'object' ? hs.body?.[locale] : null;
+        if (label && label.trim().length > 200) {
+          errors.push(`hotspots[${idx}].label.${locale}: Tiêu đề hotspot ${language} tối đa 200 ký tự`);
+        }
+        if (body && body.trim().length > 5000) {
+          errors.push(`hotspots[${idx}].body.${locale}: Nội dung hotspot ${language} tối đa 5.000 ký tự`);
+        }
       }
 
       const hx = hs.positionX ?? 0;

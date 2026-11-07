@@ -83,12 +83,20 @@ Nội dung giống API công khai (chỉ revision Published hiện hành).
 | Route | Scope | Kết quả |
 |---|---|---|
 | `GET /partner/v1/rooms` | `rooms:read` | danh sách phòng công khai |
-| `GET /partner/v1/rooms/:slug` | `exhibits:read` | phòng + hiện vật đã xuất bản (kèm URL media) |
+| `GET /partner/v1/rooms/:slug` | `exhibits:read` | phòng + hiện vật đã xuất bản (kèm URL media); nhận `?lang=` |
 | `GET /partner/v1/rooms/:slug/tour` | `tour:embed` | `{ room, stops: [{ exhibitId, displayOrder, name, i18n }] }` theo `displayOrder` |
 | `GET /partner/v1/rooms/:slug/exhibits/:exhibitId/model` | `media:read` | tệp GLB |
 
 Mã lỗi: **401** key sai/thu hồi/hết hạn/đã xóa · **403** thiếu scope · **429** vượt `rate_limit_per_minute` (kèm `Retry-After`).
 Ví dụ: `curl -H "X-API-Key: ak_live_…" https://<host>/api/partner/v1/rooms`.
+
+#### Ngôn ngữ nội dung hiện vật (`?lang=`)
+
+`lang` nhận `vi, en, fr, zh, ko, ja`; giá trị khác trả 400. Áp dụng cho `GET /rooms/:slug`, `GET /rooms/search`, `GET /partner/v1/rooms/:slug`, `GET /partner/v1/rooms/:slug/tour`.
+
+- Có `lang`: `name`, `description`, `transcript`, `hotspots[].label`, `hotspots[].body` và `image.localizedAltText` theo ngôn ngữ đó; thiếu bản dịch thì về tiếng Việt, rồi tiếng Anh. `contentLocale` là ngôn ngữ thật của `name`, khác `lang` nghĩa là đã fallback.
+- Không có `lang`: như cũ, tiếng Việt rồi tiếng Anh; không có `contentLocale`, `localizedAltText`.
+- `i18n` luôn có đủ 6 ngôn ngữ, thiếu thì `null`. `audio` chỉ có `vi`, `en` và không tự thay bằng ngôn ngữ khác.
 
 Quản lý key (Admin): `GET /partner-api-keys` (`apikey:read`); `POST /partner-api-keys` body
 `{ partnerName, label?, scopes[], expiresInDays?, rateLimitPerMinute? }` → kèm `plaintext` (một lần); `POST /partner-api-keys/:id/revoke`;
@@ -289,8 +297,8 @@ GET    /health/ready    # readiness: SELECT 1 (timeout 2s) → 200 { status: "ok
 ### Public (client — chỉ đọc nội dung published)
 ```
 GET    /rooms                             # danh sách phòng công khai (active)
-GET    /rooms/search                      # tìm kiếm hiện vật công khai (?q=&roomId=&page=&pageSize=)
-GET    /rooms/:slug                       # phòng + danh sách hiện vật published
+GET    /rooms/search                      # tìm kiếm hiện vật công khai (?q=&roomId=&lang=&page=&pageSize=)
+GET    /rooms/:slug                       # phòng + danh sách hiện vật published (?lang=)
 GET    /rooms/:slug/exhibits/:id/model    # tệp GLB công khai của hiện vật
 POST   /public/reports                    # gửi báo cáo nội dung sai (rate limit)
 ```
