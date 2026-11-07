@@ -44,3 +44,16 @@ function PublicTranslationsProvider({ children }: { children: ReactNode }) {
 export function usePublicLocale() {
   return { ...useStoredLocale(), t: useContext(PublicTranslationsContext) };
 }
+
+/** Chỉ hàm dịch, không cần provider ngôn ngữ: dùng cho component dùng chung với trang admin (ở đó trả chữ dự phòng). */
+export function usePublicT(): Translator {
+  return useContext(PublicTranslationsContext);
+}
+
+/** Lỗi từ service viết bằng tiếng Việt: tiếng Việt giữ câu chi tiết, ngôn ngữ khác hiện câu chung đã dịch. */
+export function usePublicErrorText(): (error: Error) => string {
+  const { locale, t } = usePublicLocale();
+  return (error) => (locale === SOURCE_LOCALE
+    ? error.message
+    : t('ui.common.load-failed-detail', 'Vui lòng kiểm tra kết nối rồi thử lại.'));
+}
