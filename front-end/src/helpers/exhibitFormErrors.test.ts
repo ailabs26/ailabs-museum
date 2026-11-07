@@ -55,6 +55,15 @@ describe('mapExhibitErrors', () => {
     expect(result.firstTab).toBe('hotspots');
   });
 
+  it('maps translation errors onto the translations tab', () => {
+    const { fieldErrors, firstTab } = mapExhibitErrors([
+      { field: 'name.ko', code: 'x', message: 'Tên quá dài' },
+      { field: 'hotspots[1].body.ja', code: 'x', message: 'Nội dung quá dài' },
+    ]);
+    expect(fieldErrors).toEqual({ 'translations.ko.name': 'Tên quá dài', 'hotspots.1.translations.ja.body': 'Nội dung quá dài' });
+    expect(firstTab).toBe('translations');
+  });
+
   it('returns no tab when nothing maps to a field', () => {
     expect(mapExhibitErrors([{ code: 'x', message: 'y' }]).firstTab).toBeNull();
   });

@@ -5,7 +5,7 @@ export interface FieldApiError {
   message: string;
 }
 
-export type ExhibitFormTab = 'basic' | 'transform' | 'media' | 'hotspots';
+export type ExhibitFormTab = 'basic' | 'transform' | 'media' | 'hotspots' | 'translations';
 
 /**
  * Field của API (DTO / cổng Submit Review §5.2) → field của form hiện vật trong CMS.
@@ -34,8 +34,11 @@ const FIELD_MAP: Record<string, string> = {
   audio: 'transcriptVi',
 };
 
-/** Cổng gửi duyệt báo `hotspots[<i>].label.vi` / `.body.en` / `.position`. */
-const HOTSPOT_FIELD = /^hotspots\[(\d+)\]\.(?:(label|body)\.(vi|en)|(position))$/;
+/** Bản dịch không bắt buộc: `name.ko` → `translations.ko.name`. */
+const TRANSLATION_FIELD = /^(name|description|transcript|altText)\.(fr|zh|ko|ja)$/;
+
+/** Cổng gửi duyệt báo `hotspots[<i>].label.vi` / `.body.ko` / `.position`. */
+const HOTSPOT_FIELD = /^hotspots\[(\d+)\]\.(?:(label|body)\.(vi|en|fr|zh|ko|ja)|(position))$/;
 
 /** Field hotspot của API → `hotspots.<i>.<field>` (đường dẫn lồng nhau của Mantine form). */
 function hotspotFormField(apiField: string): string | undefined {
@@ -43,7 +46,13 @@ function hotspotFormField(apiField: string): string | undefined {
   if (!match) return undefined;
   const [, index, part, locale, position] = match;
   if (position) return `hotspots.${index}.positionX`;
+  if (locale !== 'vi' && locale !== 'en') return `hotspots.${index}.translations.${locale}.${part}`;
   return `hotspots.${index}.${part}${locale === 'vi' ? 'Vi' : 'En'}`;
+}
+
+function translationFormField(apiField: string): string | undefined {
+  const match = TRANSLATION_FIELD.exec(apiField);
+  return match ? `translations.${match[2]}.${match[1]}` : undefined;
 }
 
 const TAB_OF_FIELD: Record<string, ExhibitFormTab> = {
@@ -71,7 +80,9 @@ export function mapExhibitErrors(errors: readonly FieldApiError[]): MappedExhibi
   const fieldErrors: Record<string, string> = {};
   const general: string[] = [];
   for (const error of errors) {
-    const formField = error.field ? (FIELD_MAP[error.field] ?? hotspotFormField(error.field)) : undefined;
+    const formField = error.field
+      ? (FIELD_MAP[error.field] ?? translationFormField(error.field) ?? hotspotFormField(error.field))
+      : undefined;
     if (!formField) {
       general.push(error.field ? `${error.field}: ${error.message}` : error.message);
       continue;
@@ -85,6 +96,7 @@ const BASIC_FIELDS = new Set(['roomId', 'displayOrder']);
 const MEDIA_FIELDS = new Set(Object.values(FIELD_MAP).filter((field) => !(field in TAB_OF_FIELD)));
 
 function tabOf(field: string): ExhibitFormTab {
+  if (field.startsWith('translations.') || field.includes('.translations.')) return 'translations';
   if (field.startsWith('hotspots.')) return 'hotspots';
   return TAB_OF_FIELD[field] ?? (BASIC_FIELDS.has(field) ? 'basic' : MEDIA_FIELDS.has(field) ? 'media' : 'transform');
 }
@@ -95,5 +107,5 @@ function tabOf(field: string): ExhibitFormTab {
  */
 export function firstTabWithError(formFields: readonly string[]): ExhibitFormTab | null {
   const tabs = new Set(formFields.map(tabOf));
-  return (['basic', 'transform', 'media', 'hotspots'] as const).find((tab) => tabs.has(tab)) ?? null;
+  return (['basic', 'transform', 'media', 'hotspots', 'translations'] as const).find((tab) => tabs.has(tab)) ?? null;
 }

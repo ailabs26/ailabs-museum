@@ -12,6 +12,7 @@ import { EmptyState } from '@/shared/components/data/EmptyState';
 import { SceneFallback } from '@/components/museum/SceneFallback';
 import { ErrorBoundary } from '@/shared/components/feedback/ErrorBoundary';
 import { ImmersiveTour } from '@/components/museum/ImmersiveTour';
+import { usePublicLocale } from '@/core/i18n/public-locale';
 import { useImmersiveTour } from '@/hooks/useImmersiveTour';
 import type { XrSessionController, XrSnapshot } from '@/helpers/xrSession';
 import classes from './MuseumPage.module.css';
@@ -25,7 +26,8 @@ export function MuseumPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { rooms, room, selectedRoom, selectedSlug, refresh } = useMuseumRooms(searchParams.get('room'));
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
-  const displays = useMemo(() => detail ? mapRoomDisplays(detail) : [], [detail]);
+  const { locale } = usePublicLocale();
+  const displays = useMemo(() => detail ? mapRoomDisplays(detail, locale) : [], [detail, locale]);
   const requestedExhibitId = searchParams.get('exhibit');
   const isRequestedExhibitValid = requestedExhibitId !== null && exhibitIdSchema.safeParse(requestedExhibitId).success;
   const { isOpen: isSceneOpen, containerRef, isXrPresentingRef, open: openScene, close: closeScene } = useImmersiveTour();

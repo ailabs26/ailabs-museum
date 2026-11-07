@@ -22,7 +22,12 @@ const mediaSchema = z.object({
   rights: mediaRightsSchema,
 });
 
-const bilingualSchema = z.object({ vi: z.string().nullable(), en: z.string().nullable() });
+/** `vi`, `en` luôn có; bản dịch khác `.optional()` để payload cũ vẫn hợp lệ. zod bỏ khóa lạ nên phải khai báo đủ. */
+const byLocale = <T extends z.ZodTypeAny>(value: T) => z.object({
+  vi: value, en: value, fr: value.optional(), zh: value.optional(), ko: value.optional(), ja: value.optional(),
+});
+
+const bilingualSchema = byLocale(z.string().nullable());
 
 const audioTrackSchema = z.object({
   audio: mediaSchema,
@@ -62,7 +67,7 @@ const exhibitSchema = z.object({
   positionZ: z.number().finite().optional(),
   transcript: z.string().nullable(),
   // Bilingual copy and full transform (Task 9); optional so older payloads stay valid.
-  i18n: z.object({ vi: localizedTextSchema, en: localizedTextSchema }).optional(),
+  i18n: byLocale(localizedTextSchema).optional(),
   rotation: vector3Schema.optional(),
   scale: vector3Schema.refine(({ x, y, z }) => x > 0 && y > 0 && z > 0, 'Scale must be positive').optional(),
   placeholderShape: z.enum(['box', 'sphere', 'cylinder', 'cone', 'torus']),
@@ -74,10 +79,7 @@ const exhibitSchema = z.object({
   audio: z.object({ vi: audioTrackSchema.nullable(), en: audioTrackSchema.nullable() }).nullable(),
   hotspots: z.array(z.object({
     id: z.string().uuid(), label: z.string(), body: z.string(),
-    i18n: z.object({
-      vi: z.object({ label: z.string().nullable(), body: z.string().nullable() }),
-      en: z.object({ label: z.string().nullable(), body: z.string().nullable() }),
-    }).optional(),
+    i18n: byLocale(z.object({ label: z.string().nullable(), body: z.string().nullable() })).optional(),
     positionX: z.number().finite(), positionY: z.number().finite(), positionZ: z.number().finite(),
     displayOrder: z.number().int().nonnegative(),
   })),
