@@ -323,6 +323,9 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
           // KHÔNG cast cả JSONB `content` sang text: tránh khớp nhầm khóa JSON ("name", "position", "en")
           // và các trường nội bộ (màu, tọa độ...). Hỗ trợ cả hai dạng dữ liệu: object {vi,en} và chuỗi thường.
           sub.where(`room.name ILIKE :search ${LIKE_ESCAPE}`);
+          for (const lang of SUPPORTED_LOCALES) {
+            sub.orWhere(`"room"."translations"->'name'->>'${lang}' ILIKE :search ${LIKE_ESCAPE}`);
+          }
           for (const field of ['name', 'description'] as const) {
             for (const lang of SUPPORTED_LOCALES) {
               sub.orWhere(`${jsonText(field, lang)} ILIKE :search ${LIKE_ESCAPE}`);

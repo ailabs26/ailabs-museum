@@ -1,10 +1,16 @@
 import { z } from 'zod';
 
+/** `vi`, `en` luôn có; bản dịch khác `.optional()` để payload cũ vẫn hợp lệ. zod bỏ khóa lạ nên phải khai báo đủ. */
+const byLocale = <T extends z.ZodTypeAny>(value: T) => z.object({
+  vi: value, en: value, fr: value.optional(), zh: value.optional(), ko: value.optional(), ja: value.optional(),
+});
+
 const roomSummarySchema = z.object({
   id: z.string().uuid(),
   slug: z.string().min(1).max(120),
   name: z.string().min(1).max(200),
   description: z.string().nullable(),
+  i18n: byLocale(z.object({ name: z.string().nullable(), description: z.string().nullable() })).optional(),
 });
 
 /** Absolute http(s) URL issued by the API's managed media route; never a relative or script URL. */
@@ -20,11 +26,6 @@ const mediaSchema = z.object({
   mimeType: z.string().min(1),
   sizeBytes: z.number().int().positive(),
   rights: mediaRightsSchema,
-});
-
-/** `vi`, `en` luôn có; bản dịch khác `.optional()` để payload cũ vẫn hợp lệ. zod bỏ khóa lạ nên phải khai báo đủ. */
-const byLocale = <T extends z.ZodTypeAny>(value: T) => z.object({
-  vi: value, en: value, fr: value.optional(), zh: value.optional(), ko: value.optional(), ja: value.optional(),
 });
 
 const bilingualSchema = byLocale(z.string().nullable());

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasTranslation, localizedAltText, localizedTranscript, localizeExhibit } from './localizeExhibit';
+import { hasTranslation, localizedAltText, localizedTranscript, localizeExhibit, localizeRoom } from './localizeExhibit';
 
 const exhibit = {
   name: 'Trống đồng', description: 'Mô tả',
@@ -60,5 +60,16 @@ describe('localizedAltText và hasTranslation', () => {
     expect(hasTranslation({}, 'vi')).toBe(true);
     expect(hasTranslation({ i18n }, 'ko')).toBe(true);
     expect(hasTranslation({ i18n }, 'ja')).toBe(false);
+  });
+});
+
+describe('localizeRoom', () => {
+  const room = { name: 'Phòng gốm', description: 'Mô tả', i18n: { ko: { name: '도자기실', description: null }, ja: { name: null, description: null } } };
+
+  it('dùng bản dịch, ô thiếu giữ tiếng Việt; không có gì để thay thì trả đúng object cũ', () => {
+    expect(localizeRoom(room, 'ko')).toMatchObject({ name: '도자기실', description: 'Mô tả' });
+    expect(localizeRoom(room, 'ja')).toMatchObject({ name: 'Phòng gốm', description: 'Mô tả' });
+    expect(localizeRoom(room, 'vi')).toBe(room);
+    expect(localizeRoom(room, 'fr')).toBe(room);
   });
 });

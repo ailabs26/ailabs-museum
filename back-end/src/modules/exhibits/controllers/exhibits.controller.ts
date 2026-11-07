@@ -22,8 +22,8 @@ export class ExhibitsController {
   @Get()
   @Header('Cache-Control', PUBLIC_CACHE_CONTROL)
   @ApiOperation({ summary: 'Danh sách phòng công khai' })
-  listRooms() {
-    return this.service.roomsList();
+  listRooms(@Query() query: PublicLangQueryDto) {
+    return this.service.roomsList(query.lang);
   }
 
   // PHẢI đặt TRƯỚC route ':slug' — nếu không '/rooms/search' sẽ bị khớp vào ':slug' (slug='search').

@@ -25,8 +25,8 @@ export class PartnerApiController {
   @PartnerScope('rooms:read')
   @Header('Cache-Control', 'no-cache')
   @ApiOperation({ summary: 'Danh sách phòng công khai' })
-  listRooms() {
-    return this.exhibits.roomsList();
+  listRooms(@Query() query: PublicLangQueryDto) {
+    return this.exhibits.roomsList(query.lang);
   }
 
   @Get('rooms/:slug')
