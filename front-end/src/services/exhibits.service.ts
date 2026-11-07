@@ -9,6 +9,10 @@ export type ExhibitVisibility = 'visible' | 'hidden';
 export interface BilingualText {
   vi?: string;
   en?: string;
+  fr?: string;
+  zh?: string;
+  ko?: string;
+  ja?: string;
 }
 
 export interface Vector3 {

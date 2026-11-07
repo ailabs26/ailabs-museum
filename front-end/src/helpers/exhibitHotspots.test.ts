@@ -60,7 +60,7 @@ describe('validateHotspots', () => {
 
   it('enforces the publish-gate length limits and finite coordinates', () => {
     const errors = validateHotspots([
-      { labelVi: 'x'.repeat(201), labelEn: 'ok', bodyVi: 'x'.repeat(5001), bodyEn: 'ok', positionX: Number.NaN, positionY: 0, positionZ: 0 },
+      { ...emptyHotspot(), labelVi: 'x'.repeat(201), labelEn: 'ok', bodyVi: 'x'.repeat(5001), bodyEn: 'ok', positionX: Number.NaN, positionY: 0, positionZ: 0 },
     ]);
     expect(errors['hotspots.0.labelVi']).toMatch(/200/);
     expect(errors['hotspots.0.bodyVi']).toMatch(/5\.000/);

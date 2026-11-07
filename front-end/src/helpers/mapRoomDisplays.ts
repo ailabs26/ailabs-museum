@@ -1,26 +1,28 @@
 import type { RoomDetail } from '@/validations/roomSchema';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { isDisplayOutsideRoom } from './isDisplayOutsideRoom';
+import { localizedAltText, localizedTranscript, localizeExhibit } from './localizeExhibit';
 import { collectMediaCredits } from './mediaCredits';
 
 /** Backend coordinates anchor the existing display group, in metres / Y up. */
-export function mapRoomDisplays(room: RoomDetail): MuseumDisplay[] {
+export function mapRoomDisplays(room: RoomDetail, locale = 'vi'): MuseumDisplay[] {
   const exhibits = [...room.exhibits].sort((left, right) =>
     left.displayOrder - right.displayOrder || (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
   const hasModels = exhibits.some(exhibit => exhibit.model);
   const columns = hasModels ? Math.min(4, Math.ceil(Math.sqrt(exhibits.length))) : Math.ceil(Math.sqrt(exhibits.length));
   const rows = Math.ceil(exhibits.length / columns);
-  return exhibits.map((exhibit, index) => {
+  return exhibits.map((source, index) => {
+    const exhibit = localizeExhibit(source, locale);
     const display: MuseumDisplay = {
       id: exhibit.id,
       revisionId: exhibit.revisionId,
       roomId: room.id,
       title: exhibit.name,
       description: exhibit.description,
-      transcript: exhibit.audio?.vi?.transcript ?? (exhibit.i18n ? exhibit.i18n.vi.transcript : exhibit.transcript),
+      transcript: localizedTranscript(exhibit, locale),
       audio: exhibit.audio?.vi ?? null,
       audioLocale: 'vi',
-      ...(exhibit.image ? { image: { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } } : {}),
+      ...(exhibit.image ? { image: { url: exhibit.image.url, alt: localizedAltText(exhibit.image.altText, locale, exhibit.name) } } : {}),
       hotspots: [...exhibit.hotspots].sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
         .map(({ id, label, body, positionX, positionY, positionZ }) => ({ id, label, body, position: [positionX, positionY, positionZ] })),
       position: exhibit.positionX !== undefined && exhibit.positionY !== undefined && exhibit.positionZ !== undefined

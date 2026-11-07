@@ -40,6 +40,7 @@ import {
   IconInfoCircle,
   IconLayoutGrid,
   IconListNumbers,
+  IconLanguage,
   IconMapPin,
   IconPhoto,
   IconPlus,
@@ -83,6 +84,8 @@ import { useBulkDelete, useBulkRestore } from '@/shared/hooks/useBulkDelete';
 import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { confirmAction, notify } from '@/shared/components/feedback';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
+import { ExhibitTranslationsPanel } from '@/components/cms/ExhibitTranslationsPanel';
+import { toExhibitTranslations, translatedField, type ExhibitTranslations } from '@/helpers/exhibitTranslations';
 import { MediaPreview } from '@/shared/components/media/MediaPreview';
 import { MediaSlotSelect } from '@/shared/components/media/MediaSlotSelect';
 
@@ -114,6 +117,7 @@ interface ExhibitFormValues {
   altTextEn: string;
   transcriptVi: string;
   transcriptEn: string;
+  translations: ExhibitTranslations;
   hotspots: HotspotFormValue[];
 }
 
@@ -139,10 +143,10 @@ const PREVIEW_SLOTS: { slot: RevisionMediaSlot; label: string }[] = [
   { slot: 'subtitleEn', label: 'Phụ đề (English)' },
 ];
 
-/** Hai ô trống → `null` (xóa trên server); ngược lại gửi bản đã trim, bỏ ngôn ngữ rỗng. */
-function toBilingual(vi: string, en: string): BilingualText | null {
-  const value = { vi: vi.trim() || undefined, en: en.trim() || undefined };
-  return value.vi || value.en ? value : null;
+/** Mọi ô trống → `null` (xóa trên server); ngược lại gửi bản đã trim, bỏ ngôn ngữ rỗng. */
+function toBilingual(vi: string, en: string, translated: BilingualText): BilingualText | null {
+  const value = { vi: vi.trim() || undefined, en: en.trim() || undefined, ...translated };
+  return Object.values(value).some(Boolean) ? value : null;
 }
 
 /** Payload lưu bản nháp từ giá trị form — dùng chung cho nút Lưu và autosave (VT-079). */
@@ -152,10 +156,12 @@ function buildExhibitPayload(values: ExhibitFormValues): CreateExhibitInput {
     name: {
       vi: values.nameVi.trim(),
       en: values.nameEn.trim() || undefined,
+      ...translatedField(values.translations, 'name'),
     },
     description: {
       vi: values.descriptionVi.trim(),
       en: values.descriptionEn.trim() || undefined,
+      ...translatedField(values.translations, 'description'),
     },
     displayOrder: values.displayOrder,
     position: {
@@ -182,8 +188,8 @@ function buildExhibitPayload(values: ExhibitFormValues): CreateExhibitInput {
     audioEnId: values.audioEnId,
     subtitleViId: values.subtitleViId,
     subtitleEnId: values.subtitleEnId,
-    altText: toBilingual(values.altTextVi, values.altTextEn),
-    transcript: toBilingual(values.transcriptVi, values.transcriptEn),
+    altText: toBilingual(values.altTextVi, values.altTextEn, translatedField(values.translations, 'altText')),
+    transcript: toBilingual(values.transcriptVi, values.transcriptEn, translatedField(values.translations, 'transcript')),
     hotspots: toHotspotPayload(values.hotspots),
   };
 }
@@ -390,6 +396,7 @@ export function ExhibitsPage() {
       altTextEn: '',
       transcriptVi: '',
       transcriptEn: '',
+      translations: toExhibitTranslations(),
       hotspots: [],
     },
     validate: (values) => {
@@ -753,6 +760,7 @@ export function ExhibitsPage() {
       altTextEn: getLocalizedText(content.altText, 'en'),
       transcriptVi: getLocalizedText(content.transcript, 'vi'),
       transcriptEn: getLocalizedText(content.transcript, 'en'),
+      translations: toExhibitTranslations(content),
       hotspots: toHotspotFormValues(detail.hotspots),
     };
     form.setValues(values);
@@ -1265,6 +1273,9 @@ export function ExhibitsPage() {
                 <Tabs.Tab value="hotspots" leftSection={<IconMapPin size={14} />}>
                    Hotspots ({form.values.hotspots.length})
                 </Tabs.Tab>
+                <Tabs.Tab value="translations" leftSection={<IconLanguage size={14} />}>
+                  Bản dịch
+                </Tabs.Tab>
               </Tabs.List>
 
               {/* Tab 1: Thông tin cơ bản */}
@@ -1523,6 +1534,21 @@ export function ExhibitsPage() {
                   form={form}
                   modelId={form.values.modelId}
                   ready
+                />
+              </Tabs.Panel>
+
+              {/* Tab 5: Bản dịch */}
+              <Tabs.Panel value="translations">
+                <ExhibitTranslationsPanel
+                  translations={form.values.translations}
+                  hotspots={form.values.hotspots}
+                  source={{
+                    name: form.values.nameVi,
+                    description: form.values.descriptionVi,
+                    transcript: form.values.transcriptVi,
+                    altText: form.values.altTextVi,
+                  }}
+                  getInputProps={form.getInputProps}
                 />
               </Tabs.Panel>
             </Tabs>
