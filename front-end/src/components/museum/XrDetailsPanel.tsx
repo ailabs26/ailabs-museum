@@ -3,9 +3,11 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { CanvasTexture, Group, Matrix4, SRGBColorSpace } from 'three';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { placeXrPanel } from '@/helpers/xrInteraction';
+import { usePublicT } from '@/core/i18n/public-locale';
 
 /** Essential headset UI is a real scene object; ordinary DOM is not visible in VR. */
 export function XrDetailsPanel({ display, page, onPageCount }: { display?: MuseumDisplay; page: number; onPageCount: (count: number) => void }) {
+  const t = usePublicT();
   const { gl, invalidate } = useThree();
   const panel = useRef<Group>(null);
   const needsPlacement = useRef(true);
@@ -15,9 +17,9 @@ export function XrDetailsPanel({ display, page, onPageCount }: { display?: Museu
     const context = canvas.getContext('2d');
     if (!context) return;
     context.font = '30px sans-serif';
-    const copy = display ? [display.title, display.description || 'Chưa có mô tả.', display.transcript,
+    const copy = display ? [display.title, display.description || t('ui.common.no-description', 'Chưa có mô tả.'), display.transcript,
       ...display.hotspots?.map(hotspot => `${hotspot.label}: ${hotspot.body}`) ?? []].filter(Boolean).join('\n\n')
-      : 'Tham quan VR\n\nNgắm điểm tương tác và bóp cò để chọn hiện vật. Ngắm sàn trống và bóp cò để dịch chuyển (tối đa 8 m, đường thẳng không bị bệ chắn). Cần điều khiển bên phải: xoay từng bước 30°.\n\nKhông có controller: nhìn giữ 1,5 giây để chọn hoặc dùng thao tác chọn của thiết bị. Nhìn giữ không tự dịch chuyển.';
+      : t('ui.xr.intro', 'Tham quan VR\n\nNgắm điểm tương tác và bóp cò để chọn hiện vật. Ngắm sàn trống và bóp cò để dịch chuyển (tối đa 8 m, đường thẳng không bị bệ chắn). Cần điều khiển bên phải: xoay từng bước 30°.\n\nKhông có controller: nhìn giữ 1,5 giây để chọn hoặc dùng thao tác chọn của thiết bị. Nhìn giữ không tự dịch chuyển.');
     const lines: string[] = [];
     for (const paragraph of copy.split('\n')) {
       let line = '';
@@ -34,11 +36,11 @@ export function XrDetailsPanel({ display, page, onPageCount }: { display?: Museu
     context.fillStyle = '#253a36'; context.textBaseline = 'top';
     const current = Math.min(page, count - 1);
     lines.slice(current * 16, (current + 1) * 16).forEach((line, index) => context.fillText(line, 52, 35 + index * 37));
-    context.font = 'bold 30px sans-serif'; context.fillText('‹ Trước', 60, 680); context.fillText(`${current + 1}/${count}`, 360, 680);
-    context.fillText('Sau ›', 500, 680); context.fillText('Exit VR', 800, 680);
+    context.font = 'bold 30px sans-serif'; context.fillText(t('ui.xr.previous', '‹ Trước'), 60, 680); context.fillText(`${current + 1}/${count}`, 360, 680);
+    context.fillText(t('ui.xr.next', 'Sau ›'), 500, 680); context.fillText('Exit VR', 800, 680);
     const next = new CanvasTexture(canvas); next.colorSpace = SRGBColorSpace; setTexture(next); invalidate();
     return () => next.dispose();
-  }, [display, page, invalidate, onPageCount]);
+  }, [display, page, invalidate, onPageCount, t]);
   useLayoutEffect(() => { needsPlacement.current = true; }, [display?.id]);
   useFrame((_, __, frame) => {
     const space = gl.xr.getReferenceSpace();

@@ -2,11 +2,13 @@ import { useEffect, useLayoutEffect, type ReactNode, type RefObject } from 'reac
 import { createPortal } from 'react-dom';
 import { Button, FocusTrap } from '@mantine/core';
 import classes from './ImmersiveTour.module.css';
+import { usePublicT } from '@/core/i18n/public-locale';
 
 export function ImmersiveTour({ containerRef, roomName, onClose, onEscape, hasModal, children }: {
   containerRef: RefObject<HTMLDivElement>; roomName: string; onClose: () => void;
   onEscape: () => void; hasModal: boolean; children: ReactNode;
 }) {
+  const t = usePublicT();
   useEffect(() => {
     // Removing a focused canvas/XR button can temporarily leave focus on body.
     // Keep Escape owned by the active tour even during loading and recovery.
@@ -40,10 +42,10 @@ export function ImmersiveTour({ containerRef, roomName, onClose, onEscape, hasMo
   return createPortal(
     <FocusTrap active={!hasModal} innerRef={containerRef}>
       <div className={classes.immersive} data-immersive-tour="true" role="dialog" aria-modal="true"
-        aria-label="Tham quan bảo tàng" tabIndex={-1}>
+        aria-label={t('ui.immersive.aria', 'Tham quan bảo tàng')} tabIndex={-1}>
         <header className={classes.header}>
-          <div className={classes.identity}><span>AURA MUSEUM / KHÔNG GIAN DI SẢN</span><h2>{roomName}</h2></div>
-          <Button variant="default" onClick={onClose} aria-label="Thoát tham quan">Thoát tham quan <span aria-hidden="true"> ×</span></Button>
+          <div className={classes.identity}><span>{t('ui.immersive.eyebrow', 'AURA MUSEUM / KHÔNG GIAN DI SẢN')}</span><h2>{roomName}</h2></div>
+          <Button variant="default" onClick={onClose} aria-label={t('ui.immersive.exit', 'Thoát tham quan')}>{t('ui.immersive.exit', 'Thoát tham quan')} <span aria-hidden="true"> ×</span></Button>
         </header>
         {children}
       </div>

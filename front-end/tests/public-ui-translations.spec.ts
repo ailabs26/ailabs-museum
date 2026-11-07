@@ -102,3 +102,17 @@ test.describe('Bộ sưu tập và chi tiết theo ngôn ngữ', () => {
   });
 });
 
+test('ko: trang tour dịch phần giới thiệu, nút mở 3D và danh mục', async ({ page }) => {
+  const value = (key: string) => PUBLIC_UI_STRINGS.find((item) => item.namespace === key)!.values.ko;
+  await installMuseumApi(page);
+  await installStrings(page);
+  await page.addInitScript(() => localStorage.setItem('aura:visitor:locale:v1', '{"version":1,"value":"ko"}'));
+  await page.goto('/tour?room=sculpture');
+  await expect(page.getByText(value('ui.tour.eyebrow'))).toBeVisible();
+  await expect(page.getByText(value('ui.tour.lead'))).toBeVisible();
+  await expect(page.getByRole('button', { name: value('ui.tour.open') })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: value('ui.catalogue.title') })).toBeVisible();
+  await expect(page.getByText(value('ui.tour.summary-shapes').replace('{count}', '5'))).toBeVisible();
+  await expect(page.getByText('Mở phòng 3D')).toHaveCount(0);
+});
+

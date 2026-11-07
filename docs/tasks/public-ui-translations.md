@@ -27,3 +27,11 @@ Nội dung hiện vật đã có 6 ngôn ngữ, nhưng chữ giao diện trang C
 - Lỗi từ service viết bằng tiếng Việt: `usePublicErrorText()` giữ câu chi tiết khi xem tiếng Việt, ngôn ngữ khác hiện câu chung đã dịch.
 - `MediaPreview` chỉ dùng ở admin nên không dịch.
 
+## Tour 3D (`feat/public-ui-i18n-tour`)
+
+- Dịch `MuseumPage`, `MuseumScene` và các panel tour, gồm cả chữ vẽ trên canvas trong cảnh 3D (bảng tên hiện vật, bảng VR). react-three-fiber 8 tự truyền context vào `<Canvas>` nên `usePublicT()` dùng được bên trong.
+- Thông báo VR sinh ở `xrSession` (không có React): giữ nguyên, tra bảng `key`/`label` lúc hiển thị.
+- Dịch thêm khung ảnh thay thế (`ExhibitPreview`) và màn hình lỗi chung (`ErrorBoundary`).
+- Không dịch: `MuseumAuditPanel` (công cụ đo cho dev), nút "Enter VR"/"Exit VR" (vốn là tiếng Anh ở mọi ngôn ngữ).
+- Đổi ngôn ngữ khi đã chọn hiện vật: hiện vật đang chọn và mô hình giữ nguyên (theo id và checksum); nếu người dùng chưa di chuyển, camera có thể lấy nét lại đúng hiện vật đó. Khi tour mở toàn màn hình thì không đổi được ngôn ngữ.
+

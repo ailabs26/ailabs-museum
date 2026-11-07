@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { useThree } from '@react-three/fiber';
 import type { ArtifactHotspot as Hotspot } from '@/helpers/artifactHotspots';
 import { ArtifactCaption } from './ArtifactCaption';
+import { usePublicT } from '@/core/i18n/public-locale';
 
 export function ArtifactHotspot({ hotspot, artifactTitle, isSelected, isXrHovered = false, onSelect }: {
   isXrHovered?: boolean;
   hotspot: Hotspot; artifactTitle: string; isSelected: boolean; onSelect: (id: string) => void;
 }) {
+  const t = usePublicT();
   const [isPointerHovered, setIsHovered] = useState(false);
   const isHovered = isPointerHovered || isXrHovered;
   const canvas = useThree(state => state.gl.domElement);
@@ -20,6 +22,6 @@ export function ArtifactHotspot({ hotspot, artifactTitle, isSelected, isXrHovere
     <mesh scale={isHovered ? 1.2 : 1}>
       <sphereGeometry args={[0.12, 12, 8]} /><meshBasicMaterial color={isSelected ? '#25645c' : isHovered ? '#b69761' : '#f7f3ea'} />
     </mesh>
-    {isHovered && <ArtifactCaption title={artifactTitle} subtitle={hotspot.label === artifactTitle ? 'Chọn để khám phá' : hotspot.label} position={[0, 0.4, 0]} />}
+    {isHovered && <ArtifactCaption title={artifactTitle} subtitle={hotspot.label === artifactTitle ? t('ui.artifact.select-to-explore', 'Chọn để khám phá') : hotspot.label} position={[0, 0.4, 0]} />}
   </group>;
 }

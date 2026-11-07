@@ -28,7 +28,8 @@ function usedStrings(): Map<string, string> {
   for (const file of sourceFiles(FRONT_END_SRC)) {
     const code = readFileSync(file, 'utf8');
     for (const pattern of patterns) {
-      for (const match of code.matchAll(pattern)) used.set(match[1], match[2] ?? match[3]);
+      // Chuỗi trong code viết `\\n` cho xuống dòng; seed lưu ký tự xuống dòng thật.
+      for (const match of code.matchAll(pattern)) used.set(match[1], (match[2] ?? match[3]).replace(/\\n/g, '\n'));
     }
   }
   return used;
