@@ -22,6 +22,7 @@ function createMockRoomResponse(overrides?: Partial<RoomResponse>): RoomResponse
     id: overrides?.id ?? 'e4b50c18-971c-4b68-b39f-f5cf171a8123',
     slug: overrides?.slug ?? 'phong-kham-pha',
     name: overrides?.name ?? 'Phòng Khám Phá',
+    translations: overrides?.translations ?? {},
     description: overrides && 'description' in overrides ? (overrides.description ?? null) : 'Mô tả phòng',
     status: overrides?.status ?? RoomStatus.ACTIVE,
     exhibitsCount: overrides?.exhibitsCount ?? 0,
@@ -307,11 +308,11 @@ describe('Task 6.4 — Controllers Layer Unit Test Suite (Admin & Public)', () =
   // SUITE 3: PublicRoomsController Execution & Delegation
   // =========================================================================
   describe('Suite 3: PublicRoomsController Execution & Delegation', () => {
-    it('TC-C025: getPublicList() gọi RoomsService.getPublicList() đúng 1 lần', async () => {
+    it('TC-C025: getPublicList() gọi RoomsService.getPublicList({}) đúng 1 lần', async () => {
       const mockService = new MockRoomsService();
       const controller = new PublicRoomsController(mockService as unknown as RoomsService);
 
-      await controller.getPublicList();
+      await controller.getPublicList({});
       assert.strictEqual(mockService.getPublicListCallsCount, 1);
     });
 
@@ -320,17 +321,17 @@ describe('Task 6.4 — Controllers Layer Unit Test Suite (Admin & Public)', () =
       mockService.getPublicListResult = [createMockRoomResponse({ name: 'Phòng 3D' })];
       const controller = new PublicRoomsController(mockService as unknown as RoomsService);
 
-      const res = await controller.getPublicList();
+      const res = await controller.getPublicList({});
       assert.strictEqual(res.length, 1);
       assert.strictEqual(res[0].name, 'Phòng 3D');
     });
 
-    it('TC-C027: getPublicBySlug() chuyển tiếp đúng slug sang RoomsService.getPublicBySlug()', async () => {
+    it('TC-C027: getPublicBySlug() chuyển tiếp đúng slug sang RoomsService.getPublicBySlug(, {})', async () => {
       const mockService = new MockRoomsService();
       const controller = new PublicRoomsController(mockService as unknown as RoomsService);
       const slug = 'phong-co-vat-thoi-ly';
 
-      await controller.getPublicBySlug(slug);
+      await controller.getPublicBySlug(slug, {});
       assert.strictEqual(mockService.getPublicBySlugCalls.length, 1);
       assert.strictEqual(mockService.getPublicBySlugCalls[0], slug);
     });
@@ -340,7 +341,7 @@ describe('Task 6.4 — Controllers Layer Unit Test Suite (Admin & Public)', () =
       mockService.getPublicBySlugResult = createMockRoomResponse({ slug: 'vr-space' });
       const controller = new PublicRoomsController(mockService as unknown as RoomsService);
 
-      const res = await controller.getPublicBySlug('vr-space');
+      const res = await controller.getPublicBySlug('vr-space', {});
       assert.strictEqual(res.slug, 'vr-space');
     });
 
@@ -349,7 +350,7 @@ describe('Task 6.4 — Controllers Layer Unit Test Suite (Admin & Public)', () =
       mockService.getPublicBySlugError = new Error('Not found public room');
       const controller = new PublicRoomsController(mockService as unknown as RoomsService);
 
-      await assert.rejects(async () => controller.getPublicBySlug('missing'), (err: Error) => {
+      await assert.rejects(async () => controller.getPublicBySlug('missing', {}), (err: Error) => {
         assert.strictEqual(err.message, 'Not found public room');
         return true;
       });
@@ -360,7 +361,7 @@ describe('Task 6.4 — Controllers Layer Unit Test Suite (Admin & Public)', () =
       mockService.getPublicListError = new Error('Database down');
       const controller = new PublicRoomsController(mockService as unknown as RoomsService);
 
-      await assert.rejects(async () => controller.getPublicList(), (err: Error) => {
+      await assert.rejects(async () => controller.getPublicList({}), (err: Error) => {
         assert.strictEqual(err.message, 'Database down');
         return true;
       });

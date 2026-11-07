@@ -6,6 +6,8 @@ import { Paginated } from '../../../common/types/paginated.type';
 import { CreateRoomDto } from '../dto/create-room.dto';
 import { ListRoomsQueryDto } from '../dto/list-rooms-query.dto';
 import { RoomResponse, toRoomResponse } from '../dto/room-response.dto';
+import { PublicRoomText, sanitizeRoomTranslations, toPublicRoomText } from '../utils/room-translations';
+import type { SupportedLocale } from '../../translations/constants/locales';
 import { UpdateRoomDto } from '../dto/update-room.dto';
 import { Room } from '../entities/room.entity';
 import { RoomsRepository } from '../repositories/rooms.repository';
@@ -36,18 +38,18 @@ export class RoomsService {
   }
 
   /** Lấy danh sách phòng công khai (status: active, isDeleted: false) cho khách tham quan. */
-  async getPublicList(): Promise<RoomResponse[]> {
+  async getPublicList(lang?: SupportedLocale): Promise<(RoomResponse & PublicRoomText)[]> {
     const rooms = await this.roomsRepo.findPublicRooms();
-    return rooms.map((room) => toRoomResponse(room));
+    return rooms.map((room) => ({ ...toRoomResponse(room), ...toPublicRoomText(room, lang) }));
   }
 
   /** Lấy chi tiết phòng công khai theo slug cho khách tham quan 3D. */
-  async getPublicBySlug(slug: string): Promise<RoomResponse> {
+  async getPublicBySlug(slug: string, lang?: SupportedLocale): Promise<RoomResponse & PublicRoomText> {
     const room = await this.roomsRepo.findActiveBySlug(slug);
     if (!room) {
       throw new NotFoundException('Không tìm thấy phòng trưng bày');
     }
-    return toRoomResponse(room);
+    return { ...toRoomResponse(room), ...toPublicRoomText(room, lang) };
   }
 
   /** Tạo phòng trưng bày mới, kiểm tra tính duy nhất của slug (unique toàn bảng, kể cả phòng đã xóa). */
@@ -66,6 +68,7 @@ export class RoomsService {
       slug: dto.slug,
       name: dto.name,
       description: dto.description ?? null,
+      translations: sanitizeRoomTranslations(dto.translations),
     });
 
     const saved = (await this.roomsRepo.save(room)) as Room;
@@ -84,6 +87,9 @@ export class RoomsService {
     }
     if (dto.description !== undefined) {
       room.description = dto.description ?? null;
+    }
+    if (dto.translations !== undefined) {
+      room.translations = sanitizeRoomTranslations(dto.translations);
     }
     if (dto.status !== undefined) {
       room.status = dto.status;

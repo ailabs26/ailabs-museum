@@ -72,4 +72,11 @@ describe('Tìm hiện vật theo bản dịch (PostgreSQL thật)', { skip }, ()
     assert.deepEqual(await ids(`花瓶${tag}`), [published]);
     assert.deepEqual(await ids(`비밀${tag}`), []);
   });
+
+  it('tìm được theo bản dịch tên phòng', async () => {
+    const published = await createExhibit({ vi: 'Tượng' }, RevisionState.APPROVED, true);
+    await db.getRepository(Room).update(roomId, { translations: { name: { ko: `전시실${tag}` } } });
+    const { items } = await repo.searchPublicExhibits({ q: `전시실${tag}`, roomId });
+    assert.ok(items.some((item) => item.id === published));
+  });
 });

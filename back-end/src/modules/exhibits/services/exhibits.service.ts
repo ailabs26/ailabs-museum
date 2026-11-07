@@ -1,3 +1,4 @@
+import { PublicRoomText, toPublicRoomText } from '../../rooms/utils/room-translations';
 import type { SupportedLocale } from '../../translations/constants/locales';
 import {
   ConflictException,
@@ -48,11 +49,9 @@ import {
 import { RevisionPublishGate } from './revision-publish.gate';
 
 /** Phòng công khai kèm hiện vật đã xuất bản (FR-68). */
-export interface PublicRoomResponse {
+export interface PublicRoomResponse extends PublicRoomText {
   id: string;
   slug: string;
-  name: string;
-  description: string | null;
   exhibits: PublicExhibitDto[];
 }
 
@@ -77,9 +76,9 @@ export class ExhibitsService {
   /**
    * Danh sách phòng trưng bày công khai đang hoạt động (active).
    */
-  async roomsList() {
+  async roomsList(lang?: SupportedLocale) {
     const rooms = await this.roomsRepo.findPublicRooms();
-    return rooms.map(({ id, slug, name, description }) => ({ id, slug, name, description }));
+    return rooms.map((room) => ({ id: room.id, slug: room.slug, ...toPublicRoomText(room, lang) }));
   }
 
   /**
@@ -108,8 +107,7 @@ export class ExhibitsService {
     return {
       id: room.id,
       slug: room.slug,
-      name: room.name,
-      description: room.description,
+      ...toPublicRoomText(room, lang),
       exhibits,
     };
   }

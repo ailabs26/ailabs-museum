@@ -1,6 +1,7 @@
-import { Transform } from 'class-transformer';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
 import { RoomStatus } from '../entities/room.entity';
+import { RoomTranslationsDto } from './room-translations.dto';
 
 export class UpdateRoomDto {
   @IsOptional()
@@ -18,6 +19,11 @@ export class UpdateRoomDto {
     typeof value === 'string' ? value.trim() : value,
   )
   description?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => RoomTranslationsDto)
+  translations?: RoomTranslationsDto;
 
   @IsOptional()
   @IsEnum(RoomStatus, { message: 'Trạng thái phòng phải là active hoặc archived' })
