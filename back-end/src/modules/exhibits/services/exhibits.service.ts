@@ -1,3 +1,4 @@
+import type { SupportedLocale } from '../../translations/constants/locales';
 import {
   ConflictException,
   Injectable,
@@ -85,7 +86,7 @@ export class ExhibitsService {
    * Chi tiết phòng kèm danh sách hiện vật đã xuất bản (cho khách tham quan).
    * Chỉ revision Published hiện hành và media của chính revision đó (FR-68, AC-36).
    */
-  async roomWithExhibits(slug: string): Promise<PublicRoomResponse> {
+  async roomWithExhibits(slug: string, lang?: SupportedLocale): Promise<PublicRoomResponse> {
     const room = await this.roomsRepo.findBySlug(slug);
 
     if (!room || room.status !== RoomStatus.ACTIVE || room.isDeleted) {
@@ -100,6 +101,7 @@ export class ExhibitsService {
           (exhibitId, mediaId, reason) =>
             this.logger.warn(`Bỏ qua media ${mediaId} của hiện vật ${exhibitId}: ${reason}`),
           room.slug,
+          lang,
         ) ?? [],
     );
 
@@ -130,6 +132,7 @@ export class ExhibitsService {
           (exhibitId, mediaId, reason) =>
             this.logger.warn(`Bỏ qua media ${mediaId} của hiện vật ${exhibitId}: ${reason}`),
           exhibit.room?.slug ?? '',
+          query.lang,
         ) ?? [],
     );
     return { items, total: result.total, page: result.page, pageSize: result.pageSize };

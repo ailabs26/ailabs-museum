@@ -1107,3 +1107,28 @@ describe('Task 7.1 — Exhibits DTOs & Validation Comprehensive Test Suite (130 
     });
   });
 });
+
+describe('Bản dịch không bắt buộc (fr, zh, ko, ja)', () => {
+  it('DTO giữ khóa mới, trim, và chặn quá độ dài', async () => {
+    const { instance, errors } = await transformAndValidate(BilingualNameDto, { vi: 'Bình', fr: ' Vase ', zh: '花瓶', ko: '꽃병', ja: '花瓶' });
+    assert.deepEqual(errors, []);
+    assert.equal(instance.fr, 'Vase');
+    assert.equal(instance.ko, '꽃병');
+    assert.deepEqual(await validateDto(BilingualNameDto, { ko: 'x'.repeat(201) }), ['ko']);
+    assert.deepEqual(await validateDto(BilingualDescriptionDto, { ja: 'x'.repeat(10001) }), ['ja']);
+    assert.deepEqual(await validateDto(BilingualNameDto, { fr: 1 }), ['fr']);
+  });
+
+  it('gửi duyệt: thiếu bản dịch mới vẫn được, thiếu tiếng Anh vẫn bị chặn; hotspot dài quá thì báo đúng ngôn ngữ', () => {
+    const base = { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: { x: 1, y: 1, z: 1 } };
+    const valid = validateForPublish({ ...base, name: { vi: 'Bình', en: 'Vase' }, description: { vi: 'Mô tả', en: 'Text' } });
+    assert.deepEqual(valid.errors, []);
+    const noEn = validateForPublish({ ...base, name: { vi: 'Bình' }, description: { vi: 'Mô tả', en: 'Text' } });
+    assert.ok(noEn.errors.some((error) => error.startsWith('name.en:')));
+    const longHotspot = validateForPublish({
+      ...base, name: { vi: 'Bình', en: 'Vase' }, description: { vi: 'Mô tả', en: 'Text' },
+      hotspots: [{ label: { vi: 'A', en: 'B', ko: 'x'.repeat(201) }, body: { vi: 'A', en: 'B', ja: 'x'.repeat(5001) }, positionX: 0, positionY: 0, positionZ: 0 }],
+    });
+    assert.deepEqual(longHotspot.errors.map((error) => error.split(':')[0]), ['hotspots[0].label.ko', 'hotspots[0].body.ja']);
+  });
+});

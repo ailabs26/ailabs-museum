@@ -33,6 +33,8 @@ function samplePublicExhibit(): PublicExhibitDto {
     i18n: {
       vi: { name: 'Trống đồng Đông Sơn', description: 'Hiện vật tiêu biểu', transcript: null },
       en: { name: 'Dong Son drum', description: 'Highlight', transcript: null },
+      fr: { name: null, description: null, transcript: null }, zh: { name: null, description: null, transcript: null },
+      ko: { name: null, description: null, transcript: null }, ja: { name: null, description: null, transcript: null },
     },
     rotation: { x: 0, y: 0, z: 0 },
     scale: { x: 1, y: 1, z: 1 },

@@ -1,3 +1,4 @@
+import { SUPPORTED_LOCALES, SupportedLocale } from '../../translations/constants/locales';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, EntityManager, In, IsNull, Not, Repository, SelectQueryBuilder } from 'typeorm';
@@ -20,8 +21,8 @@ const LIKE_ESCAPE = "ESCAPE '\\'";
 // chữ thường → không khớp alias `"publishedRevision"`. Viết tường minh để resolve đúng cột JSONB.
 const REV_CONTENT = `"publishedRevision"."content"`;
 
-/** Giá trị văn bản của một ngôn ngữ khi `content.<field>` là object song ngữ `{vi,en}`. */
-const jsonText = (field: 'name' | 'description', lang: 'vi' | 'en'): string =>
+/** Giá trị văn bản của một ngôn ngữ khi `content.<field>` là object đa ngôn ngữ. */
+const jsonText = (field: 'name' | 'description', lang: SupportedLocale): string =>
   `${REV_CONTENT}->'${field}'->>'${lang}'`;
 
 /** Giá trị văn bản khi `content.<field>` là chuỗi thường (seed/dữ liệu cũ) — bỏ qua nếu là object. */
@@ -318,15 +319,16 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
       const search = `%${escaped}%`;
       qb.andWhere(
         new Brackets((sub) => {
-          // Chỉ tìm trong các trường HIỂN THỊ công khai (tên phòng + tên/mô tả song ngữ của hiện vật).
+          // Chỉ tìm trong các trường HIỂN THỊ công khai (tên phòng + tên/mô tả đa ngôn ngữ của hiện vật).
           // KHÔNG cast cả JSONB `content` sang text: tránh khớp nhầm khóa JSON ("name", "position", "en")
           // và các trường nội bộ (màu, tọa độ...). Hỗ trợ cả hai dạng dữ liệu: object {vi,en} và chuỗi thường.
+          sub.where(`room.name ILIKE :search ${LIKE_ESCAPE}`);
+          for (const field of ['name', 'description'] as const) {
+            for (const lang of SUPPORTED_LOCALES) {
+              sub.orWhere(`${jsonText(field, lang)} ILIKE :search ${LIKE_ESCAPE}`);
+            }
+          }
           sub
-            .where(`room.name ILIKE :search ${LIKE_ESCAPE}`)
-            .orWhere(`${jsonText('name', 'vi')} ILIKE :search ${LIKE_ESCAPE}`)
-            .orWhere(`${jsonText('name', 'en')} ILIKE :search ${LIKE_ESCAPE}`)
-            .orWhere(`${jsonText('description', 'vi')} ILIKE :search ${LIKE_ESCAPE}`)
-            .orWhere(`${jsonText('description', 'en')} ILIKE :search ${LIKE_ESCAPE}`)
             .orWhere(`${jsonPlain('name')} ILIKE :search ${LIKE_ESCAPE}`)
             .orWhere(`${jsonPlain('description')} ILIKE :search ${LIKE_ESCAPE}`);
         }),

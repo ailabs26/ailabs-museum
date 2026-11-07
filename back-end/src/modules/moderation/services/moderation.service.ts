@@ -25,14 +25,21 @@ import {
 } from '../dto/revision-response.dto';
 import { ModerationRepository } from '../repositories/moderation.repository';
 import { REVISION_MEDIA_SLOTS } from '../../exhibits/constants/revision-media-slots';
+import { resolveBilingual } from '../../exhibits/utils/bilingual';
+import { LOCALE_LABELS, SUPPORTED_LOCALES } from '../../translations/constants/locales';
 import { RevisionPublishGate } from '../../exhibits/services/revision-publish.gate';
 import { NotificationsService } from '../../notifications/services/notifications.service';
 
-/** Các field nội dung được so sánh khi diff cũ/mới. */
-const DIFF_FIELDS: { field: string; label: string }[] = [
+/** Field đa ngôn ngữ: diff tách theo từng ngôn ngữ. */
+const LOCALIZED_DIFF_FIELDS: { field: string; label: string }[] = [
   { field: 'name', label: 'Tên hiện vật' },
   { field: 'description', label: 'Mô tả' },
   { field: 'transcript', label: 'Thuyết minh' },
+  { field: 'altText', label: 'Alt text ảnh' },
+];
+
+/** Các field còn lại được so sánh khi diff cũ/mới. */
+const DIFF_FIELDS: { field: string; label: string }[] = [
   { field: 'position', label: 'Vị trí (x, y, z)' },
   { field: 'placeholderShape', label: 'Hình khối placeholder' },
   { field: 'placeholderColor', label: 'Màu placeholder' },
@@ -79,11 +86,13 @@ export class ModerationService {
     const oldContent = published?.content ?? null;
     const newContent = revision.content;
 
-    const fields: DiffFieldDto[] = DIFF_FIELDS.map(({ field, label }) => {
+    const fields: DiffFieldDto[] = LOCALIZED_DIFF_FIELDS.flatMap(({ field, label }) =>
+      this.diffLocalized(oldContent, newContent, field, label));
+    for (const { field, label } of DIFF_FIELDS) {
       const oldValue = this.pickField(oldContent, field);
       const newValue = this.pickField(newContent, field);
-      return { field, label, oldValue, newValue, changed: oldValue !== newValue };
-    });
+      fields.push({ field, label, oldValue, newValue, changed: oldValue !== newValue });
+    }
     // Media là cột của revision (không nằm trong content): so sánh theo id media từng slot.
     for (const slot of REVISION_MEDIA_SLOTS) {
       const oldValue = published ? (published[slot.column] ?? null) : null;
@@ -215,6 +224,31 @@ export class ModerationService {
 
     const updated = await this.repo.findExhibit(exhibitId);
     return this.toExhibitBrief(updated)!;
+  }
+
+  /** Một dòng diff cho mỗi ngôn ngữ có nội dung ở bản cũ hoặc bản mới. */
+  private diffLocalized(
+    oldContent: ExhibitRevisionContent | null,
+    newContent: ExhibitRevisionContent | null,
+    field: string,
+    label: string,
+  ): DiffFieldDto[] {
+    const read = (content: ExhibitRevisionContent | null) =>
+      resolveBilingual((content as unknown as Record<string, unknown> | null)?.[field]);
+    const oldText = read(oldContent);
+    const newText = read(newContent);
+    return SUPPORTED_LOCALES.flatMap((locale) => {
+      const oldValue = oldText[locale];
+      const newValue = newText[locale];
+      if (oldValue === null && newValue === null) return [];
+      return [{
+        field: `${field}.${locale}`,
+        label: `${label} (${LOCALE_LABELS[locale]})`,
+        oldValue,
+        newValue,
+        changed: oldValue !== newValue,
+      }];
+    });
   }
 
   /** Lấy giá trị 1 field dưới dạng chuỗi để so sánh/hiển thị. */

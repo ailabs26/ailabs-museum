@@ -2,6 +2,7 @@ import { Controller, Get, Header, Param, Query, Res, StreamableFile, UseGuards }
 import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { Public } from '../../../common/decorators/public.decorator';
+import { PublicLangQueryDto } from '../../exhibits/dto/public-lang-query.dto';
 import { ExhibitsService } from '../../exhibits/services/exhibits.service';
 import { PublicModelsService } from '../../exhibits/services/public-models.service';
 import { PartnerScope } from '../decorators/partner-scopes.decorator';
@@ -32,16 +33,16 @@ export class PartnerApiController {
   @PartnerScope('exhibits:read')
   @Header('Cache-Control', 'no-cache')
   @ApiOperation({ summary: 'Phòng và hiện vật đã xuất bản (kèm URL media công khai)' })
-  getRoom(@Param('slug') slug: string) {
-    return this.exhibits.roomWithExhibits(slug);
+  getRoom(@Param('slug') slug: string, @Query() query: PublicLangQueryDto) {
+    return this.exhibits.roomWithExhibits(slug, query.lang);
   }
 
   @Get('rooms/:slug/tour')
   @PartnerScope('tour:embed')
   @Header('Cache-Control', 'no-cache')
   @ApiOperation({ summary: 'Thứ tự tham quan của phòng để nhúng tour (gọn, theo displayOrder)' })
-  async getTour(@Param('slug') slug: string) {
-    const room = await this.exhibits.roomWithExhibits(slug);
+  async getTour(@Param('slug') slug: string, @Query() query: PublicLangQueryDto) {
+    const room = await this.exhibits.roomWithExhibits(slug, query.lang);
     return {
       room: { id: room.id, slug: room.slug, name: room.name },
       stops: [...room.exhibits]

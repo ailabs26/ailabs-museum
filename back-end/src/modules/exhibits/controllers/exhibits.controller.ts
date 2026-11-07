@@ -4,6 +4,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../../common/decorators/public.decorator';
 import { ExhibitsService } from '../services/exhibits.service';
 import { PublicModelsService } from '../services/public-models.service';
+import { PublicLangQueryDto } from '../dto/public-lang-query.dto';
 import { PublicSearchQueryDto } from '../dto/public-search-query.dto';
 
 /**
@@ -41,8 +42,8 @@ export class ExhibitsController {
   @Get(':slug')
   @Header('Cache-Control', PUBLIC_CACHE_CONTROL)
   @ApiOperation({ summary: 'Phòng và hiện vật công khai (revision Published hiện hành + media) theo slug' })
-  getRoom(@Param('slug') slug: string) {
-    return this.service.roomWithExhibits(slug);
+  getRoom(@Param('slug') slug: string, @Query() query: PublicLangQueryDto) {
+    return this.service.roomWithExhibits(slug, query.lang);
   }
 
   @Get(':slug/exhibits/:exhibitId/model')
