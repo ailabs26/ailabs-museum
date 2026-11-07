@@ -1,8 +1,10 @@
 import { ARTIFACT_BASE_Y } from '@/helpers/artifactHotspots';
 import { ArtifactCaption } from './ArtifactCaption';
+import { usePublicT } from '@/core/i18n/public-locale';
 
 /** Uses only owned declarative resources, anchored on the existing exhibit pedestal. */
 export function ArtifactFallback3D({ artifactId, isLoading = false }: { artifactId: string; isLoading?: boolean }) {
+  const t = usePublicT();
   const color = isLoading ? '#85745b' : '#a45b28';
   return <group position={[0, ARTIFACT_BASE_Y, 0]} userData={{ artifactId, artifactFallback: true, isLoading }}>
     <mesh position={[0, 0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -14,6 +16,7 @@ export function ArtifactFallback3D({ artifactId, isLoading = false }: { artifact
     <mesh position={[0, 0.5, 0]}>
       <octahedronGeometry args={[0.4, 0]} /><meshBasicMaterial color={color} wireframe />
     </mesh>
-    <ArtifactCaption title={isLoading ? 'Đang tải mô hình 3D' : 'Mô hình 3D không khả dụng'} subtitle="Chọn để đọc thông tin hiện vật" position={[0, 1, 0]} width={1.5} />
+    <ArtifactCaption title={isLoading ? t('ui.artifact.loading-model', 'Đang tải mô hình 3D') : t('ui.artifact.model-unavailable', 'Mô hình 3D không khả dụng')}
+      subtitle={t('ui.artifact.select-to-read', 'Chọn để đọc thông tin hiện vật')} position={[0, 1, 0]} width={1.5} />
   </group>;
 }

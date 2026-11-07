@@ -1,6 +1,7 @@
 import { MUSEUM_ROOM_SIZE } from '@/interfaces/museumScene';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import classes from './SpatialMinimap.module.css';
+import { usePublicT } from '@/core/i18n/public-locale';
 
 const PAD = 6;
 const VB_W = 100;
@@ -23,20 +24,21 @@ function toPlan(x: number, z: number) {
 export function SpatialMinimap({ displays, selectedId, onSelect }: {
   displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void;
 }) {
+  const t = usePublicT();
   const inRoom = displays.filter((d) => !d.isOutsideRoom);
   if (inRoom.length === 0) return null;
 
   return (
-    <div className={classes.map} role="group" aria-label="Sơ đồ mặt bằng phòng trưng bày">
-      <p className={classes.caption}>Sơ đồ phòng</p>
-      <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className={classes.svg} aria-label={`Sơ đồ ${inRoom.length} hiện vật trong phòng`}>
+    <div className={classes.map} role="group" aria-label={t('ui.minimap.aria', 'Sơ đồ mặt bằng phòng trưng bày')}>
+      <p className={classes.caption}>{t('ui.minimap.caption', 'Sơ đồ phòng')}</p>
+      <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className={classes.svg} aria-label={t('ui.minimap.svg-aria', 'Sơ đồ {count} hiện vật trong phòng', { count: inRoom.length })}>
         <rect x="2" y="2" width={VB_W - 4} height={VB_H - 4} rx="6" className={classes.room} />
         {inRoom.map((d) => {
           const { cx, cy } = toPlan(d.position[0], d.position[2]);
           const active = d.id === selectedId;
           return (
             <g key={d.id} className={active ? classes.dotActive : classes.dot} onClick={() => onSelect(d.id)}
-              role="button" tabIndex={0} aria-label={`Đi tới ${d.title}`} aria-pressed={active}
+              role="button" tabIndex={0} aria-label={t('ui.minimap.go-to', 'Đi tới {name}', { name: d.title })} aria-pressed={active}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(d.id); } }}>
               <circle cx={cx} cy={cy} r="12" className={classes.hitArea} />
               {active && <circle cx={cx} cy={cy} r="7" className={classes.halo} />}

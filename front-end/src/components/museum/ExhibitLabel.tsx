@@ -3,9 +3,11 @@ import { useThree } from '@react-three/fiber';
 import { CanvasTexture, SRGBColorSpace } from 'three';
 import { EXHIBIT_LABEL_SIZE } from '@/interfaces/museumScene';
 import { fitLabelTitle } from '@/helpers/fitLabelTitle';
+import { usePublicT } from '@/core/i18n/public-locale';
 
 /** System-font plaque: no font download, DOM overlay or external texture. */
 export function ExhibitLabel({ title, isSelected, isCenterpiece }: { title: string; isSelected: boolean; isCenterpiece: boolean }) {
+  const t = usePublicT();
   const [texture, setTexture] = useState<CanvasTexture | null>(null);
   const invalidate = useThree((state) => state.invalidate);
   // Allocate only for a committed mount; StrictMode cleanup owns this instance.
@@ -35,11 +37,11 @@ export function ExhibitLabel({ title, isSelected, isCenterpiece }: { title: stri
       context.fillText(line, 260, 52);
       context.font = '18px sans-serif';
       context.fillStyle = '#5e6258';
-      context.fillText(isSelected ? 'ĐANG XEM' : 'CHỌN ĐỂ KHÁM PHÁ', 260, 92);
+      context.fillText(isSelected ? t('ui.label.viewing', 'ĐANG XEM') : t('ui.label.select', 'CHỌN ĐỂ KHÁM PHÁ'), 260, 92);
     }
     texture.needsUpdate = true;
     invalidate();
-  }, [texture, title, isSelected, invalidate]);
+  }, [texture, title, isSelected, invalidate, t]);
   return <sprite renderOrder={1} userData={{ museumLabel: true }} position={[0, 0.78, isCenterpiece ? EXHIBIT_LABEL_SIZE.centerpieceDepth : EXHIBIT_LABEL_SIZE.depth]} scale={[EXHIBIT_LABEL_SIZE.width, EXHIBIT_LABEL_SIZE.height, 1]}>
     {/* Billboard annotations stay legible when the view crosses the plinth. */}
     <spriteMaterial map={texture} toneMapped={false} depthTest={false} depthWrite={false} />
