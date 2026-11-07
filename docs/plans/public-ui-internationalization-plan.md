@@ -1,11 +1,11 @@
 # Public UI Internationalization — Implementation Plan
 
-> **Trạng thái:** LOCAL IMPLEMENTATION COMPLETE — catalog đã nạp vào DB remote theo xác nhận của người dùng; lượt chạy thứ hai không thêm dòng. DB không cô lập và chứng chỉ TLS chưa được xác thực theo CA. Không push, không tạo PR, không merge theo yêu cầu.
+> **Trạng thái:** PR #161 đang mở trên nhánh `feat/public-ui-internationalization`; đã push, chưa merge. Catalog đã nạp vào DB remote theo xác nhận của người dùng; DB không cô lập và chứng chỉ TLS chưa được xác thực theo CA.
 > **Task / Acceptance:** [public-ui-internationalization.md](../tasks/public-ui-internationalization.md)
 
 **Repository:** `ailabs26/ailabs-museum`
 **Baseline đã kiểm tra:** nhánh `dev` tại `91f40e35a1cb17db7d72a841f8601df7a032d46b` (05/11/2026). Luôn `git fetch origin` và chốt SHA mới trước khi triển khai.
-**Branch đề xuất:** `feat/public-ui-internationalization` từ `origin/dev` mới nhất → **một PR** vào `dev`; không push/PR/merge khi chưa được yêu cầu.
+**Branch:** `feat/public-ui-internationalization` từ `origin/dev`; PR #161 vào `dev` đã mở theo yêu cầu.
 **Stack:** React 18, TypeScript, Mantine 7, TanStack Query, NestJS/TypeORM seed hiện có, Vitest, Playwright. Không bổ sung thư viện i18n khác.
 **Goal:** Hoàn thiện **dịch chuỗi giao diện khách tham quan**, tận dụng dịch vụ CMS và Language Selector đã có, đảm bảo các trang công khai chính dùng đúng bản dịch, có fallback an toàn, không làm thay đổi nội dung hiện vật/audio ngoài phạm vi.
 

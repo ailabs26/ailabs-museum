@@ -196,7 +196,7 @@ describe('seedRoles — bảo toàn quyền RBAC tùy chỉnh (#112)', () => {
 });
 
 describe('PUBLIC_UI_STRINGS', () => {
-  it('includes dynamic public report and media credit keys', () => {
+  it('includes dynamic public report, media credit, and tour model failure keys', () => {
     const seededNamespaces = new Set(PUBLIC_UI_STRINGS.map(([namespace]) => namespace));
     const requiredNamespaces = [
       'ui.report.category.wrong_info',
@@ -215,6 +215,8 @@ describe('PUBLIC_UI_STRINGS', () => {
       'ui.media.type.narration.en',
       'ui.media.type.subtitle.vi',
       'ui.media.type.subtitle.en',
+      'ui.tour.model.failure.download',
+      'ui.tour.model.failure.format',
     ];
 
     assert.deepEqual(requiredNamespaces.filter((namespace) => !seededNamespaces.has(namespace)), []);

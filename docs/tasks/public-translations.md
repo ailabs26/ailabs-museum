@@ -32,7 +32,7 @@ Giới hạn còn lại:
 
 ## Vận hành
 
-Cần seed catalog để CMS/API có 347 khóa; catalog hiện đã được nạp vào DB remote được người dùng phê duyệt. `npm run seed` còn tạo dữ liệu RBAC/admin/API key mẫu, nên chỉ chạy trong môi trường đã xác định và được phép. Muốn thêm bản dịch, Admin cập nhật các chuỗi `ui.*` trong CMS.
+Cần seed catalog để CMS/API có 349 khóa; catalog hiện đã được nạp vào DB remote được người dùng phê duyệt. `npm run seed` còn tạo dữ liệu RBAC/admin/API key mẫu, nên chỉ chạy trong môi trường đã xác định và được phép. Muốn thêm bản dịch, Admin cập nhật các chuỗi `ui.*` trong CMS. Review follow-up PR #161 bổ sung hai khóa lỗi tải model; DB có 351 hàng `ui` vì còn hai hàng ngoài catalog.
 
 ## Kiểm chứng lịch sử — 04/11/2026
 

@@ -1,6 +1,7 @@
 import { exitMuseumIfOpen, openMuseumTools } from './fixtures/museumUi';
 import { expect, test } from '@playwright/test';
 import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
+import { roomA } from './fixtures/museumContent';
 import { installRendererProbe } from './fixtures/museumProbe';
 
 const EN_TOUR_STRINGS = {
@@ -86,6 +87,8 @@ const EN_TOUR_STRINGS = {
   'ui.tour.model.error': 'Could not load model: {name}. {error}',
   'ui.tour.model.render-error': 'Model rendering error.',
   'ui.tour.model.retry': 'Retry {name}',
+  'ui.tour.model.failure.download': 'The 3D model could not be downloaded. Please try again.',
+  'ui.tour.model.failure.format': 'The 3D model file is corrupted or uses an unsupported format.',
   'ui.tour.model.exhausted': 'No retries left. Reopen 3D or contact an administrator.',
   'ui.tour.model.cooldown': 'Wait before trying again.',
   'ui.tour.model.retries': '{count} attempts left.',
@@ -325,6 +328,45 @@ test('tour locale updates inside 3D without replacing the scene renderer', async
   expect(await page.evaluate((renderer) => window.museumProbe.at(-1)!.renderer.deref() === renderer, originalRenderer)).toBe(true);
   await originalCanvas?.dispose();
   await originalRenderer.dispose();
+});
+
+test('English tour localizes model download and format failures', async ({ page }) => {
+  test.setTimeout(60_000);
+  const models = roomA.exhibits.slice(0, 2).map((exhibit, index) => {
+    const checksum = String(index + 1).padStart(64, '0');
+    return {
+      ...exhibit,
+      model: {
+        id: `30000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+        storageKey: `fixture/model-${index}.glb`, sizeBytes: 3, checksumSha256: checksum,
+        url: `/rooms/sculpture/exhibits/${exhibit.id}/model?version=${checksum}`,
+      },
+    };
+  });
+  const roomWithModels = { ...roomA, exhibits: [...models, ...roomA.exhibits.slice(2)] };
+  await page.route('**/api/public/translations**', route => {
+    const locale = new URL(route.request().url()).searchParams.get('locale');
+    return fulfillMuseum(route, { success: true, data: locale === 'en' ? EN_TOUR_STRINGS : {}, message: null });
+  });
+  await page.route(url => new URL(url).pathname === '/api/rooms/sculpture', route =>
+    fulfillMuseum(route, { success: true, data: roomWithModels, message: null }));
+  await page.route(url => new URL(url).pathname.endsWith('/model'), route => {
+    const pathname = new URL(route.request().url()).pathname;
+    return pathname.includes(roomA.exhibits[0].id)
+      ? route.fulfill({ status: 503, body: 'Unavailable' })
+      : route.fulfill({ status: 200, contentType: 'model/gltf-binary', body: Buffer.from('bad') });
+  });
+
+  await page.goto('/tour');
+  await page.getByRole('combobox', { name: 'Ngôn ngữ' }).selectOption('en');
+  await expect(page.getByRole('heading', { name: 'Step into the gallery' })).toBeVisible();
+  await page.getByRole('button', { name: 'Open 3D gallery' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Museum tour' });
+  await expect(dialog.getByText('The 3D model could not be downloaded. Please try again.')).toBeVisible();
+  await expect(dialog.getByText('The 3D model file is corrupted or uses an unsupported format.')).toBeVisible();
+  await expect(dialog.getByText('Không tải được mô hình. Vui lòng thử lại.')).toHaveCount(0);
+  await expect(dialog.getByText('Tệp mô hình bị hỏng hoặc có định dạng chưa hỗ trợ.')).toHaveCount(0);
 });
 
 test('scene starts on demand and releases canvas when stopped', async ({ page }) => {

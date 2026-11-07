@@ -1,9 +1,9 @@
 # Public UI Internationalization — Task Breakdown & Acceptance
 
-> **Trạng thái:** LOCAL IMPLEMENTATION COMPLETE — branch `feat/public-ui-internationalization`; catalog đã nạp vào DB remote theo xác nhận của người dùng. DB không cô lập; TLS được mã hóa nhưng chứng chỉ chưa được xác thực theo CA. Không push/PR/merge theo yêu cầu.
+> **Trạng thái:** PR #161 đang mở trên branch `feat/public-ui-internationalization`; đã push, chưa merge. Catalog đã nạp vào DB remote theo xác nhận của người dùng. DB không cô lập; TLS được mã hóa nhưng chứng chỉ chưa được xác thực theo CA.
 > **PLAN:** [public-ui-internationalization-plan.md](../plans/public-ui-internationalization-plan.md)
 > **Repository:** `ailabs26/ailabs-museum`; source audit `dev` `91f40e35a1cb17db7d72a841f8601df7a032d46b` (05/11/2026); trước khi code bắt buộc fetch lại.
-> **Branch:** đề xuất `feat/public-ui-internationalization` → PR vào `dev` (không push/PR/merge tự động).
+> **Branch:** `feat/public-ui-internationalization` → PR #161 vào `dev`.
 
 ## 1. User story và outcome
 
@@ -62,7 +62,7 @@ Là khách tham quan, tôi muốn chọn ngôn ngữ trên giao diện công kha
 | AC-06 | PASS | Controlled slow response + API 500; fallback giữ nguyên khi chờ/lỗi. |
 | AC-07 | PASS | `public-locale.spec.ts` kiểm reload, multi-tab và ranh giới Admin. |
 | AC-08 | PASS | 320px/Drawer, keyboard, focus và `public-report-modal.spec.ts` 3/3. |
-| AC-09 | PARTIAL | DB remote `postgres` được người dùng xác nhận quyền cập nhật. Parameterized catalog insert (không chạy seed runner) thêm 347 khóa ở lượt đầu và 0 ở lượt hai; API trả 348 khóa `ui` (có 1 khóa cũ ngoài catalog). Không có hàng cũ trùng namespace catalog để kiểm tra giá trị Admin đã sửa; DB không cô lập. TLS mã hóa, chứng chỉ không được xác thực theo CA. |
+| AC-09 | PARTIAL | DB remote `postgres` được người dùng xác nhận quyền cập nhật. Catalog seed hiện có 349 khóa; DB có 351 hàng `ui`, gồm 2 hàng ngoài catalog. Review follow-up thêm 2 hàng (lần ghi lại 0); API chưa được kiểm tra trực tiếp ở lượt này. Không có hàng cũ trùng namespace catalog để kiểm tra giá trị Admin đã sửa; DB không cô lập. TLS mã hóa, chứng chỉ không được xác thực theo CA. |
 | AC-10 | PASS | Frontend/backend gates và suites liên quan PASS; diff/review được ghi ở Task 8. |
 
 ## 5. Task execution checklist (TDD + commit nhỏ)
@@ -279,11 +279,11 @@ npm run build
 | Frontend unit | All relevant PASS | PASS | `npm.cmd run test:unit`, 45 files / 255 tests |
 | Frontend build | exit 0 | PASS | `npm.cmd run build`, exit 0; Vite chunk >500 kB warning |
 | Playwright locale + language | All PASS | PASS | Full earlier run: `public-language.spec.ts` 11/11, `public-locale.spec.ts` 7/7. Post-review: journey, media-credit and Collection `$&` cases PASS; mocked API. |
-| Playwright affected public/tour/media | All PASS | PASS | Earlier suites: collection/detail/audio 40/40; report 3/3; museum-tour 13/13; fullscreen 8/8. Post-review canvas locale case 1/1 PASS. Playwright reported PASS, then required interruption during harness teardown. |
+| Playwright affected public/tour/media | All PASS | PASS | Earlier suites: collection/detail/audio 40/40; report 3/3; fullscreen 8/8. `museum-tour.spec.ts` now 14/14, including English model download/format failures; API fixtures mocked. |
 | Backend typecheck/lint/build | 0 errors | PASS | From `back-end/`: `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build`, all exit 0 |
 | Backend translation/seed unit tests | Relevant PASS | PASS | From `back-end/`: `npm.cmd run test:translations` 11/11; `npm.cmd run test:seed` 11/11 |
-| Public UI catalog DB write | Insert twice; inspect API | PASS WITH LIMITS | Configured remote DB `postgres`, user-approved; targeted parameterized SQL insert (not seed runner) added 347 on pass 1, 0 on pass 2; API returns 348 keys including 1 legacy key. No matching old catalog rows; edited Admin-value preservation not exercised. No migration/full seed. TLS encrypted; certificate validation unavailable. |
-| Diff/review scope | No unintended changes | PASS | `git diff --check` sạch; reviewer findings đã sửa, frontend lint và targeted regressions PASS; không push/PR/merge |
+| Public UI catalog DB write | Insert twice; inspect API | PASS WITH LIMITS | Configured remote DB `postgres`, user-approved; targeted parameterized SQL added 347 initially and 2 in review follow-up; repeat added 0. DB has 351 `ui` rows (2 outside seed catalog). Local API was not running for this follow-up, so endpoint was not rechecked. No matching old catalog rows; edited Admin-value preservation not exercised. No migration/full seed. TLS encrypted; certificate validation unavailable. |
+| Diff/review scope | No unintended changes | PASS | `git diff --check` sạch; review P2 về lỗi tải model đã sửa; PR #161 được cập nhật, chưa merge |
 
 **Nguyên tắc:** không ghi số lượng test dự đoán, không tuyên bố `PASS` dựa trên ledger lịch sử của các PR đã merge. Khi dùng Playwright fixture, ghi rõ API/mock; không thay bằng kiểm thử live DB.
 
@@ -302,7 +302,8 @@ npm run build
 | 6 | `feat(i18n): seed remaining public UI strings` | `733f6fa322b7bcedb0a1068baad108b5dcf0af9b` | 331 static + 16 report/media-credit keys; backend gates PASS; configured remote DB: 347 added, second pass 0; API returns 348 `ui` keys; no old catalog rows matched | DONE WITH LIMITS |
 | 7 | `test(i18n): cover public language switching journeys` | `818c64d6d634004cdbabaf84f955cb0b0122c5cd` | Earlier suites pass; post-review browser regressions 4/4; API mocked | DONE |
 | Review follow-up | `fix(i18n): complete missing public UI translations` | `a2ef105` | Seed keys and media/ARIA fallbacks; front-end and back-end gates PASS; focused browser regressions 4/4 | DONE |
-| 8 | `docs(i18n): record UI localization verification` | local docs commit; see git history | AC-01..08, AC-10 PASS; AC-09 PARTIAL; no PR/push/merge | DONE |
+| 8 | `docs(i18n): record UI localization verification` | local docs commit; see git history | AC-01..08, AC-10 PASS; AC-09 PARTIAL | DONE |
+| Review follow-up | `fix(i18n): localize model load failures` | see git history | `museum-tour.spec.ts` 14/14; frontend/backend gates and seed/translation suites PASS; PR #161 updated | DONE |
 
 ## 8. Definition of Done và bàn giao
 
@@ -311,9 +312,9 @@ npm run build
 - [x] Shared components không yêu cầu Public Provider khi render trong Admin/fixture.
 - [x] Không đổi nguồn audio, track phụ đề, transcript, Guided Tour, published data hay migration.
 - [x] API công khai chỉ trả category `ui`; endpoint tests xác nhận `exhibit/room` không lộ.
-- [x] Idempotency của parameterized catalog insert đã xác minh trên DB remote được người dùng cho phép: 347 hàng thêm, lượt hai 0. Seed runner không chạy; không có namespace cũ trùng catalog để kiểm tra Admin edits.
+- [x] Idempotency của parameterized catalog insert đã xác minh trên DB remote được người dùng cho phép: 347 hàng ban đầu; review follow-up thêm 2, chạy lại thêm 0. Seed runner không chạy; không có namespace cũ trùng catalog để kiểm tra Admin edits.
 - [x] Browser/Unit/Typecheck/Lint/Build có kết quả thực; smoke check thật xác nhận English UI sau khi nạp DB.
-- [x] Commit theo task; PR title và known limitations đã ghi; chưa tạo PR theo yêu cầu.
+- [x] Commit theo task; PR #161 đã cập nhật theo yêu cầu và chưa merge.
 
 **PR title đề xuất khi hoàn thành:** `feat(i18n): hoàn thiện bản dịch giao diện khách tham quan`
 

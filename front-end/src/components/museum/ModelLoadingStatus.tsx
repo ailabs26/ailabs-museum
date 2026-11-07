@@ -33,7 +33,12 @@ export function ModelLoadingStatus({ displays, models, onRetry, renderStates = {
       if (state?.status !== 'error' && !failedRender(display)) return null;
       const retriesRemaining = state?.status === 'error' ? state.retriesRemaining : 3 - renderState.attempts;
       const isCoolingDown = state?.status === 'error' && state.retryAt > Math.max(now, Date.now());
-      const errorMessage = state?.status === 'error' ? state.message : translate('ui.tour.model.render-error', 'Lỗi hiển thị mô hình.');
+      const isFormatFailure = state?.status === 'error' && (state.category === 'format' || state.category === 'mesh');
+      const errorMessage = state?.status === 'error'
+        ? isFormatFailure
+          ? translate('ui.tour.model.failure.format', 'Tệp mô hình bị hỏng hoặc có định dạng chưa hỗ trợ.')
+          : translate('ui.tour.model.failure.download', 'Không tải được mô hình. Vui lòng thử lại.')
+        : translate('ui.tour.model.render-error', 'Lỗi hiển thị mô hình.');
       return <Group key={display.id} gap="sm"><Text size="sm" c="red.8">{translate('ui.tour.model.error', 'Không tải được mô hình: {name}. {error}')
         .replace('{name}', () => display.title).replace('{error}', () => errorMessage)}</Text>
         <Button size="xs" variant="light" disabled={retriesRemaining === 0 || isCoolingDown}
