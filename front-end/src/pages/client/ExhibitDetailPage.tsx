@@ -1,6 +1,6 @@
 import { Button, Container, Title } from '@mantine/core';
 import { usePublicLocale } from '@/core/i18n/public-locale';
-import { localizeExhibit } from '@/helpers/localizeExhibit';
+import { hasTranslation, localizedAltText, localizedTranscript, localizeExhibit } from '@/helpers/localizeExhibit';
 import { IconCube } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
@@ -21,7 +21,7 @@ import { VisitorNotes } from './visitor/VisitorNotes';
 import classes from './ExhibitDetailPage.module.css';
 
 export function ExhibitDetailPage() {
-  const { locale } = usePublicLocale();
+  const { locale, t } = usePublicLocale();
   const [isReportOpen, setIsReportOpen] = useState(false);
   const favorites = useVisitorStore(favoritesStore);
   const reading = useVisitorStore(readingStore);
@@ -44,7 +44,7 @@ export function ExhibitDetailPage() {
   }, [canRecordView, validRoomId, validExhibitId]);
   const credits = exhibit ? collectMediaCredits(exhibit) : [];
   const audio = exhibit?.audio?.vi;
-  const transcript = audio?.transcript ?? (exhibit?.i18n ? exhibit.i18n.vi.transcript : exhibit?.transcript);
+  const transcript = exhibit ? localizedTranscript(exhibit, locale) : null;
 
   let statusTitle: string | undefined;
   let statusMessage: string | undefined;
@@ -105,9 +105,12 @@ export function ExhibitDetailPage() {
           <VisitorStorageStatus error={favorites.error} />
         </header>
         <ReadingControls />
+        {!hasTranslation(exhibit, locale) && (
+          <p role="note" className={classes.body}>{t('ui.exhibit.translationMissing', 'Chưa có bản dịch, đang hiển thị tiếng Việt.')}</p>
+        )}
         <div className={`${classes.content} ${reading.value.enabled ? classes.reading : ''}`}
           style={{ '--reading-scale': reading.value.fontScale } as CSSProperties}>
-          <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } : null}
+          <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: localizedAltText(exhibit.image.altText, locale, exhibit.name) } : null}
             shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
           <div className={classes.sections}>
             <div className={classes.audioDock}>

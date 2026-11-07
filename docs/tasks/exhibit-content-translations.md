@@ -19,6 +19,12 @@ Nội dung hiện vật chỉ có `vi`, `en`. Module `translations` chỉ phục
 - Tìm kiếm công khai quét đủ 6 ngôn ngữ.
 - Sửa lỗi diff kiểm duyệt: `name`, `description` dạng object hiện `[object Object]` và không bao giờ báo thay đổi. Diff giờ tách theo ngôn ngữ, thêm alt text.
 
+## Thay đổi front-end
+
+- CMS: tab "Bản dịch" trong form hiện vật (`components/cms/ExhibitTranslationsPanel.tsx`), dịch từng ngôn ngữ, hiện số ô đã dịch; form luôn gửi đủ bản dịch.
+- Thêm `ko` vào `LOCALES`, nên `TranslationsPage` và ô chọn ngôn ngữ của khách có tiếng Hàn. Chuỗi giao diện `ko` chưa có thì dùng tiếng Việt.
+- Khách: tên, mô tả, thuyết minh, alt text, hotspot theo ngôn ngữ ở trang chi tiết, bộ sưu tập, kết quả tìm kiếm và tour 3D. Dùng `i18n` đã tải, không gọi lại API. Trang chi tiết báo khi chưa có bản dịch.
+
 ## Giới hạn
 
 - Tên và mô tả phòng chưa đa ngôn ngữ.

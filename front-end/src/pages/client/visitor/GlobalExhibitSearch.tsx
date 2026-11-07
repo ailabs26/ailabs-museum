@@ -3,6 +3,7 @@ import { useDebouncedValue } from '@mantine/hooks';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { usePublicLocale } from '@/core/i18n/public-locale';
+import { localizeExhibit } from '@/helpers/localizeExhibit';
 import { museumService } from '@/services/museum.service';
 import type { RoomSummary } from '@/validations/roomSchema';
 import classes from '../CollectionPage.module.css';
@@ -18,7 +19,7 @@ export function GlobalExhibitSearch({ query, currentRoomId, rooms }: {
   currentRoomId: string | undefined;
   rooms: RoomSummary[];
 }) {
-  const { t } = usePublicLocale();
+  const { locale, t } = usePublicLocale();
   const [debounced] = useDebouncedValue(query.trim(), 300);
   const enabled = debounced.length >= MIN_QUERY_LENGTH;
   const search = useInfiniteQuery({
@@ -56,7 +57,7 @@ export function GlobalExhibitSearch({ query, currentRoomId, rooms }: {
                 <li key={item.id}>
                   <Link className={classes.globalResult}
                     to={`/collection/${encodeURIComponent(room.slug)}/exhibits/${encodeURIComponent(item.id)}`}>
-                    <strong>{item.name}</strong>
+                    <strong>{localizeExhibit(item, locale).name}</strong>
                     <span className={classes.count}>{room.name}</span>
                     <span className={classes.globalResultText}>{item.description}</span>
                   </Link>
