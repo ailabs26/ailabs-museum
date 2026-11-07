@@ -187,6 +187,31 @@ describe('ModerationService.diff — media', () => {
     });
   });
 
+  it('nội dung đa ngôn ngữ dạng object: so sánh từng ngôn ngữ, không còn [object Object]', async () => {
+    const position = { x: 0, y: 0, z: 0 };
+    const published = sampleRevision({
+      id: 'p', revisionNo: 1, state: RevisionState.APPROVED,
+      content: { name: { vi: 'Bình', en: 'Vase' }, description: 'Mô tả', position } as never,
+    });
+    const exhibit = sampleExhibit({ publishedRevisionId: 'p' });
+    exhibit.publishedRevision = published;
+    const target = sampleRevision({
+      exhibit,
+      content: { name: { vi: 'Bình gốm', en: 'Vase', ko: '꽃병' }, description: 'Mô tả', altText: { ja: '写真' }, position } as never,
+    });
+    const repo = { findForDiff: () => Promise.resolve(target) } as unknown as ModerationRepository;
+    const diff = await new ModerationService(repo, fakeTx([]), passGate, notificationsStub()).diff('d');
+    const rows = Object.fromEntries(diff.fields.map((f) => [f.field, [f.oldValue, f.newValue, f.changed]]));
+    assert.deepEqual(rows['name.vi'], ['Bình', 'Bình gốm', true]);
+    assert.deepEqual(rows['name.en'], ['Vase', 'Vase', false]);
+    assert.deepEqual(rows['name.ko'], [null, '꽃병', true]);
+    assert.deepEqual(rows['altText.ja'], [null, '写真', true]);
+    assert.deepEqual(rows['description.vi'], ['Mô tả', 'Mô tả', false]);
+    assert.equal(rows['name.fr'], undefined, 'ngôn ngữ trống ở cả hai bản thì không hiện');
+    assert.equal(diff.fields.find((f) => f.field === 'name.ko')?.label, 'Tên hiện vật (Tiếng Hàn)');
+    assert.ok(!JSON.stringify(diff).includes('[object Object]'));
+  });
+
   it('hiện vật chưa từng xuất bản → oldValue null cho mọi slot', async () => {
     const target = Object.assign(sampleRevision(), { imageMediaId: 'i1' });
     const repo = { findForDiff: () => Promise.resolve(target) } as unknown as ModerationRepository;
