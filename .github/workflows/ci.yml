@@ -98,7 +98,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       # Dev server, không dùng preview: một số spec import thẳng module /src.
       - run: >-
-          npx playwright test cms- admin- exhibit-deletion-policy exhibit-edit-persistence exhibit-hide-policy exhibit-translations room-translations
+          npx playwright test cms- admin- exhibit-deletion-policy exhibit-edit-persistence exhibit-hide-policy exhibit-translations room-translations public-ui-translations
           modal-responsive-focus moderation-queue readonly-drawer-focus
       - uses: actions/upload-artifact@v4
         if: failure()

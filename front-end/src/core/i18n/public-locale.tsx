@@ -5,8 +5,15 @@ import { SOURCE_LOCALE } from '@/services/translations.service';
 import { PublicLocaleProvider as StoredLocaleProvider } from '@/contexts/PublicLocaleContext';
 import { usePublicLocale as useStoredLocale } from '@/hooks/usePublicLocale';
 
-type Translator = (key: string, fallback: string) => string;
-const PublicTranslationsContext = createContext<Translator>((_key, fallback) => fallback);
+type TranslationParams = Record<string, string | number>;
+export type Translator = (key: string, fallback: string, params?: TranslationParams) => string;
+
+/** Thay `{name}` bằng giá trị tương ứng; tham số không có thì giữ nguyên để dễ thấy. */
+export function fillParams(text: string, params?: TranslationParams): string {
+  return params ? text.replace(/\{(\w+)\}/g, (match, name: string) => String(params[name] ?? match)) : text;
+}
+
+const PublicTranslationsContext = createContext<Translator>((_key, fallback, params) => fillParams(fallback, params));
 
 /** Ngôn ngữ của phần công khai: lưu trên trình duyệt, đồng bộ `<html lang>`, chuỗi lấy từ CMS (loại `ui`). */
 export function PublicLocaleProvider({ children }: { children: ReactNode }) {
@@ -18,7 +25,8 @@ function PublicTranslationsProvider({ children }: { children: ReactNode }) {
   const strings = useQuery({
     queryKey: ['public-translations', locale],
     queryFn: () => http.get<Record<string, string>>('/public/translations', { params: { locale } }),
-    enabled: locale !== SOURCE_LOCALE,
+    meta: { public: true },
+    retry: false,
     staleTime: 5 * 60_000,
   });
 
@@ -27,10 +35,8 @@ function PublicTranslationsProvider({ children }: { children: ReactNode }) {
     return () => { document.documentElement.lang = SOURCE_LOCALE; };
   }, [locale]);
 
-  const t = useMemo<Translator>(() => {
-    const map = locale === SOURCE_LOCALE ? undefined : strings.data;
-    return (key, fallback) => map?.[key] || fallback;
-  }, [locale, strings.data]);
+  // Cả tiếng Việt cũng đọc từ CMS để sửa được không cần deploy; chưa tải xong hoặc lỗi thì dùng chữ dự phòng.
+  const t = useMemo<Translator>(() => (key, fallback, params) => fillParams(strings.data?.[key] || fallback, params), [strings.data]);
 
   return <PublicTranslationsContext.Provider value={t}>{children}</PublicTranslationsContext.Provider>;
 }

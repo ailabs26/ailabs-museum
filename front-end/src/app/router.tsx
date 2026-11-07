@@ -24,6 +24,7 @@ import { ApiKeysPage } from '@/pages/admin/ApiKeysPage';
 import { SettingsPage } from '@/pages/admin/SettingsPage';
 import { RequirePermission } from '@/core/auth/RequirePermission';
 import { PERMISSIONS } from '@/core/auth/permissions';
+import { PublicLocaleProvider } from '@/core/i18n/public-locale';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { MuseumPage } from '@/pages/MuseumPage';
 
@@ -175,7 +176,7 @@ export function AppRouter() {
         </Route>
       </Route>
 
-      <Route path="*" element={<NotFoundPage />} />
+      <Route path="*" element={<PublicLocaleProvider><NotFoundPage /></PublicLocaleProvider>} />
     </Routes>
   );
 }
