@@ -15,7 +15,8 @@ type StartAction = {
 
 export type MuseumAction = StartAction | { type: 'PAUSE' } | { type: 'RESUME' } | { type: 'EXIT' }
   | { type: 'NEXT' } | { type: 'PREVIOUS' } | { type: 'GO_TO'; exhibitId: string }
-  | { type: 'RECONCILE_ROOM'; roomId: string; roomSlug: string; steps: readonly GuidedTourStep[] };
+  | { type: 'RECONCILE_ROOM'; roomId: string; roomSlug: string; steps: readonly GuidedTourStep[] }
+  | { type: 'INVALIDATE_ROOM'; roomId: string };
 
 export function museumReducer(
   state: GuidedTourState = INITIAL_GUIDED_TOUR_STATE,
@@ -46,6 +47,9 @@ export function museumReducer(
       status: state.status === 'completed' ? 'paused' : state.status,
       session: { ...state.session, currentIndex },
     };
+  }
+  if (action.type === 'INVALIDATE_ROOM') {
+    return state.session?.roomId === action.roomId ? INITIAL_GUIDED_TOUR_STATE : state;
   }
   if (action.type === 'RECONCILE_ROOM') {
     const session = state.session;

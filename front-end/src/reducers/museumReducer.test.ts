@@ -194,3 +194,14 @@ describe('museumReducer RECONCILE_ROOM removed exhibits', () => {
     expect(empty).toBe(INITIAL_GUIDED_TOUR_STATE);
   });
 });
+
+describe('museumReducer INVALIDATE_ROOM', () => {
+  it('clears only the active room and is idempotent', () => {
+    const running = museumReducer(INITIAL_GUIDED_TOUR_STATE, start());
+    const invalidated = museumReducer(running, { type: 'INVALIDATE_ROOM', roomId });
+
+    expect(invalidated).toBe(INITIAL_GUIDED_TOUR_STATE);
+    expect(museumReducer(invalidated, { type: 'INVALIDATE_ROOM', roomId })).toBe(invalidated);
+    expect(museumReducer(running, { type: 'INVALIDATE_ROOM', roomId: 'other-room' })).toBe(running);
+  });
+});
