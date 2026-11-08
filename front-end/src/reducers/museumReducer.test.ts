@@ -125,3 +125,24 @@ describe('museumReducer PREVIOUS', () => {
     expect(museumReducer(INITIAL_GUIDED_TOUR_STATE, { type: 'PREVIOUS' })).toBe(INITIAL_GUIDED_TOUR_STATE);
   });
 });
+
+describe('museumReducer GO_TO', () => {
+  it('jumps by exhibit ID and ignores unknown, current, or idle targets', () => {
+    const running = museumReducer(INITIAL_GUIDED_TOUR_STATE, start());
+
+    expect(museumReducer(running, { type: 'GO_TO', exhibitId: 'exhibit-b' }))
+      .toMatchObject({ status: 'running', session: { currentIndex: 1 } });
+    expect(museumReducer(running, { type: 'GO_TO', exhibitId: 'exhibit-a' })).toBe(running);
+    expect(museumReducer(running, { type: 'GO_TO', exhibitId: 'unknown' })).toBe(running);
+    expect(museumReducer(INITIAL_GUIDED_TOUR_STATE, { type: 'GO_TO', exhibitId: 'exhibit-a' }))
+      .toBe(INITIAL_GUIDED_TOUR_STATE);
+  });
+
+  it('moves a completed session back to paused on a valid target', () => {
+    const running = museumReducer(INITIAL_GUIDED_TOUR_STATE, start());
+    const completed = museumReducer(museumReducer(running, { type: 'NEXT' }), { type: 'NEXT' });
+
+    expect(museumReducer(completed, { type: 'GO_TO', exhibitId: 'exhibit-a' }))
+      .toMatchObject({ status: 'paused', session: { currentIndex: 0 } });
+  });
+});
