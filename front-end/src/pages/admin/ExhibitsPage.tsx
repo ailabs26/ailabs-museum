@@ -36,6 +36,7 @@ import {
   IconCube,
   IconEdit,
   IconEye,
+  IconQrcode,
   IconEyeOff,
   IconInfoCircle,
   IconLayoutGrid,
@@ -85,6 +86,7 @@ import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { confirmAction, notify } from '@/shared/components/feedback';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { ExhibitTranslationsPanel } from '@/components/cms/ExhibitTranslationsPanel';
+import { ExhibitQrModal, type ExhibitQrTarget } from '@/components/cms/ExhibitQrModal';
 import { toExhibitTranslations, translatedField, type ExhibitTranslations } from '@/helpers/exhibitTranslations';
 import { MediaPreview } from '@/shared/components/media/MediaPreview';
 import { MediaSlotSelect } from '@/shared/components/media/MediaSlotSelect';
@@ -306,6 +308,12 @@ export function ExhibitsPage() {
 
   const [tourOrderOpened, tourOrder] = useDisclosure(false);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [qrTarget, setQrTarget] = useState<ExhibitQrTarget | null>(null);
+  const openQr = (exhibit: ExhibitRow) => setQrTarget({
+    id: exhibit.id,
+    name: getDisplayText(exhibit.content.name, 'vi'),
+    isPublic: exhibit.status === 'published' && exhibit.visibility === 'visible',
+  });
   const [detailOpened, detailDrawer] = useDisclosure(false);
 
   const canCreate = hasPermission(PERMISSIONS.EXHIBIT_CREATE);
@@ -1005,6 +1013,12 @@ export function ExhibitsPage() {
                 </ActionIcon>
               </Tooltip>
             )}
+            <Tooltip label="Mã QR dán cạnh hiện vật">
+              <ActionIcon variant="subtle" color="dark" aria-label={`Mã QR hiện vật ${getDisplayText(r.content.name) || 'chưa đặt tên'}`}
+                onClick={() => openQr(r)}>
+                <IconQrcode size={18} />
+              </ActionIcon>
+            </Tooltip>
           </Group>
         );
       },
@@ -1032,6 +1046,8 @@ export function ExhibitsPage() {
           </Group>
         }
       />
+
+      <ExhibitQrModal target={qrTarget} onClose={() => setQrTarget(null)} />
 
       <TourOrderModal
         opened={tourOrderOpened}
@@ -1175,6 +1191,7 @@ export function ExhibitsPage() {
                         <ActionIcon variant="subtle" color={deleteReason ? 'gray' : 'red'} disabled={!!deleteReason || isActionBusy} onClick={() => handleDelete(r)}><IconTrash size={18} /></ActionIcon>
                       </Tooltip>
                     )}
+                    <Tooltip label="Mã QR"><ActionIcon variant="subtle" color="dark" aria-label={`Mã QR hiện vật ${getDisplayText(r.content.name) || 'chưa đặt tên'}`} onClick={() => openQr(r)}><IconQrcode size={18} /></ActionIcon></Tooltip>
                   </Group>
                   )}
                 </Card>

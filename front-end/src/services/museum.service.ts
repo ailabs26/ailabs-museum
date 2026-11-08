@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 import { http } from '@/core/api/http-client';
 import { ApiException } from '@/core/api/api-error';
+import { z as zod } from 'zod';
 import { exhibitSearchResponseSchema, roomDetailSchema, roomListSchema, roomResponseSchema } from '@/validations/roomSchema';
 import type { PublicModel, RoomSummary } from '@/validations/roomSchema';
 
@@ -13,6 +14,8 @@ async function readPublicContent<Schema extends z.ZodTypeAny>(url: string, schem
 }
 
 const SEARCH_PAGE_SIZE = 12;
+
+const exhibitLocationSchema = zod.object({ exhibitId: zod.string().uuid(), roomSlug: zod.string().min(1) });
 
 export const museumService = {
   async getModelBinary(model: PublicModel, signal: AbortSignal, onProgress: (ratio: number) => void) {
@@ -31,6 +34,10 @@ export const museumService = {
     const parsed = exhibitSearchResponseSchema.safeParse(response.data);
     if (!parsed.success) throw new ApiException('Dữ liệu tìm kiếm không hợp lệ từ máy chủ.', 502);
     return { items: parsed.data.data, ...parsed.data.meta };
+  },
+  /** Phòng chứa hiện vật công khai, cho liên kết cố định `/e/<id>` của mã QR. Không công khai thì 404. */
+  exhibitLocation(exhibitId: string, signal?: AbortSignal) {
+    return readPublicContent(`/public/exhibits/${encodeURIComponent(exhibitId)}/location`, exhibitLocationSchema, signal);
   },
   listRooms(signal?: AbortSignal) {
     return readPublicContent('/rooms', roomListSchema, signal);

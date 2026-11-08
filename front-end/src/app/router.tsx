@@ -26,6 +26,8 @@ import { RequirePermission } from '@/core/auth/RequirePermission';
 import { PERMISSIONS } from '@/core/auth/permissions';
 import { PublicLocaleProvider } from '@/core/i18n/public-locale';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { ExhibitShortLinkPage } from '@/pages/client/ExhibitShortLinkPage';
+import { RoomQrPrintPage } from '@/pages/admin/RoomQrPrintPage';
 import { MuseumPage } from '@/pages/MuseumPage';
 
 /** Hiển thị khi tài khoản đăng nhập nhưng thiếu quyền xem màn hình quản trị. */
@@ -49,6 +51,7 @@ export function AppRouter() {
         <Route index element={<HomePage />} />
         <Route path="collection" element={<CollectionPage />} />
         <Route path="collection/:roomSlug/exhibits/:exhibitId" element={<ExhibitDetailPage />} />
+        <Route path="e/:exhibitId" element={<ExhibitShortLinkPage />} />
         <Route path="tour" element={<MuseumPage />} />
         <Route path="tour.html" element={<MuseumPage />} />
       </Route>
@@ -65,6 +68,14 @@ export function AppRouter() {
             element={
               <RequirePermission anyOf={[PERMISSIONS.ROOM_READ]} fallback={<NoAccess />}>
                 <RoomsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="rooms/:id/qr"
+            element={
+              <RequirePermission allOf={[PERMISSIONS.ROOM_READ, PERMISSIONS.EXHIBIT_READ]} fallback={<NoAccess />}>
+                <RoomQrPrintPage />
               </RequirePermission>
             }
           />

@@ -136,6 +136,13 @@ export class ExhibitsService {
     return { items, total: result.total, page: result.page, pageSize: result.pageSize };
   }
 
+  /** Phòng chứa hiện vật công khai, để liên kết cố định của mã QR chuyển tới đúng trang chi tiết. */
+  async publicLocation(id: string): Promise<{ exhibitId: string; roomSlug: string }> {
+    const location = await this.exhibits.findPublicLocation(id);
+    if (!location) throw new NotFoundException('Không tìm thấy hiện vật');
+    return location;
+  }
+
   // =========================================================================
   // 2. ADMIN CMS QUERY METHODS (Tìm kiếm & Chi tiết hiện vật)
   // =========================================================================

@@ -4,6 +4,8 @@ import {
   DEFAULT_PUBLIC_LOCALE,
   PUBLIC_LOCALE_STORAGE_KEY,
   publicLocaleSchema,
+  detectPublicLocale,
+  hasSavedPublicLocale,
 } from './publicLocale';
 import { LOCALES } from '@/services/translations.service';
 
@@ -76,3 +78,22 @@ describe('public locale persistence', () => {
     expect(store.getSnapshot()).toEqual({ value: 'en', error: 'unavailable' });
   });
 });
+
+describe('ngôn ngữ khi vào qua mã QR', () => {
+  it('lấy ngôn ngữ đầu tiên của máy mà trang hỗ trợ; không có thì tiếng Việt', () => {
+    expect(detectPublicLocale(['ko-KR', 'en-US'])).toBe('ko');
+    expect(detectPublicLocale(['zh-Hans-CN'])).toBe('zh');
+    expect(detectPublicLocale(['de-DE', 'ja'])).toBe('ja');
+    expect(detectPublicLocale(['de-DE'])).toBe('vi');
+    expect(detectPublicLocale([])).toBe('vi');
+  });
+
+  it('đã từng chọn (kể cả khóa cũ) thì không tự đổi; bộ nhớ lỗi thì coi như đã chọn', () => {
+    const storage = (values: Record<string, string>) => ({ getItem: (key: string) => values[key] ?? null });
+    expect(hasSavedPublicLocale(storage({}))).toBe(false);
+    expect(hasSavedPublicLocale(storage({ [PUBLIC_LOCALE_STORAGE_KEY]: '{"version":1,"value":"vi"}' }))).toBe(true);
+    expect(hasSavedPublicLocale(storage({ 'aura:public-locale': 'en' }))).toBe(true);
+    expect(hasSavedPublicLocale({ getItem: () => { throw new Error('blocked'); } })).toBe(true);
+  });
+});
+

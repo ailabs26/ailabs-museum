@@ -3993,4 +3993,40 @@ export const PUBLIC_UI_STRINGS: PublicUiString[] = [
       ja: "エラー",
     },
   },
+  {
+    namespace: "ui.short-link.loading",
+    context: "Trang mở từ mã QR, đang tải",
+    values: {
+      vi: "Đang mở hiện vật…",
+      en: "Opening the exhibit…",
+      fr: "Ouverture de l’objet…",
+      zh: "正在打开展品…",
+      ko: "전시품 여는 중…",
+      ja: "展示品を開いています…",
+    },
+  },
+  {
+    namespace: "ui.short-link.not-found",
+    context: "Trang mở từ mã QR, không tìm thấy",
+    values: {
+      vi: "Không tìm thấy hiện vật",
+      en: "Exhibit not found",
+      fr: "Objet introuvable",
+      zh: "未找到展品",
+      ko: "전시품을 찾을 수 없습니다",
+      ja: "展示品が見つかりません",
+    },
+  },
+  {
+    namespace: "ui.short-link.not-found-detail",
+    context: "Trang mở từ mã QR, không tìm thấy",
+    values: {
+      vi: "Hiện vật này chưa được công khai hoặc đã được gỡ khỏi bộ sưu tập.",
+      en: "This exhibit is not public yet or has been removed from the collection.",
+      fr: "Cet objet n’est pas encore public ou a été retiré de la collection.",
+      zh: "该展品尚未公开或已从馆藏中移除。",
+      ko: "이 전시품은 아직 공개되지 않았거나 컬렉션에서 제외되었습니다.",
+      ja: "この展示品はまだ公開されていないか、コレクションから外されました。",
+    },
+  },
 ];

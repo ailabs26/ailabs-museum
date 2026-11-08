@@ -300,6 +300,7 @@ GET    /health/ready    # readiness: SELECT 1 (timeout 2s) → 200 { status: "ok
 GET    /rooms                             # danh sách phòng công khai (active)
 GET    /rooms/search                      # tìm kiếm hiện vật công khai (?q=&roomId=&lang=&page=&pageSize=)
 GET    /rooms/:slug                       # phòng + danh sách hiện vật published (?lang=)
+GET    /public/exhibits/:id/location      # { exhibitId, roomSlug } cho liên kết cố định /e/<id> của mã QR; không công khai → 404
 GET    /rooms/:slug/exhibits/:id/model    # tệp GLB công khai của hiện vật
 POST   /public/reports                    # gửi báo cáo nội dung sai (rate limit)
 ```
