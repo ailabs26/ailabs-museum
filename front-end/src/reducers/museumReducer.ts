@@ -14,7 +14,8 @@ type StartAction = {
 };
 
 export type MuseumAction = StartAction | { type: 'PAUSE' } | { type: 'RESUME' } | { type: 'EXIT' }
-  | { type: 'NEXT' } | { type: 'PREVIOUS' } | { type: 'GO_TO'; exhibitId: string };
+  | { type: 'NEXT' } | { type: 'PREVIOUS' } | { type: 'GO_TO'; exhibitId: string }
+  | { type: 'RECONCILE_ROOM'; roomId: string; roomSlug: string; steps: readonly GuidedTourStep[] };
 
 export function museumReducer(
   state: GuidedTourState = INITIAL_GUIDED_TOUR_STATE,
@@ -44,6 +45,26 @@ export function museumReducer(
       ...state,
       status: state.status === 'completed' ? 'paused' : state.status,
       session: { ...state.session, currentIndex },
+    };
+  }
+  if (action.type === 'RECONCILE_ROOM') {
+    const session = state.session;
+    if (!session || action.roomId !== session.roomId
+      || action.steps.some((step) => step.roomId !== action.roomId)
+      || new Set(action.steps.map((step) => step.exhibitId)).size !== action.steps.length) return state;
+    if (!action.steps.length) return INITIAL_GUIDED_TOUR_STATE;
+
+    const sameOrder = action.steps.length === session.steps.length
+      && action.steps.every((step, index) => step.exhibitId === session.steps[index].exhibitId);
+    if (sameOrder && action.roomSlug === session.roomSlug) return state;
+
+    const currentExhibitId = session.steps[session.currentIndex].exhibitId;
+    const currentIndex = action.steps.findIndex((step) => step.exhibitId === currentExhibitId);
+    if (currentIndex < 0) return INITIAL_GUIDED_TOUR_STATE;
+
+    return {
+      status: state.status,
+      session: { roomId: session.roomId, roomSlug: action.roomSlug, steps: action.steps, currentIndex },
     };
   }
   if (!action.steps.length
