@@ -13,12 +13,13 @@ type StartAction = {
   initialExhibitId?: string;
 };
 
-export type MuseumAction = StartAction | { type: 'PAUSE' } | { type: 'RESUME' };
+export type MuseumAction = StartAction | { type: 'PAUSE' } | { type: 'RESUME' } | { type: 'EXIT' };
 
 export function museumReducer(
   state: GuidedTourState = INITIAL_GUIDED_TOUR_STATE,
   action: MuseumAction,
 ): GuidedTourState {
+  if (action.type === 'EXIT') return INITIAL_GUIDED_TOUR_STATE;
   if (action.type === 'PAUSE') return state.status === 'running' ? { ...state, status: 'paused' } : state;
   if (action.type === 'RESUME') return state.status === 'paused' ? { ...state, status: 'running' } : state;
   if (!action.steps.length

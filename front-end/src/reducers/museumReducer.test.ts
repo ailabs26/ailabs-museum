@@ -65,3 +65,17 @@ describe('museumReducer PAUSE and RESUME', () => {
     expect(museumReducer(running, { type: 'RESUME' })).toBe(running);
   });
 });
+
+describe('museumReducer EXIT', () => {
+  it('clears any session idempotently and allows a fresh start', () => {
+    const running = museumReducer(INITIAL_GUIDED_TOUR_STATE, start());
+    const paused = museumReducer(running, { type: 'PAUSE' });
+    const exited = museumReducer(paused, { type: 'EXIT' });
+
+    expect(exited).toBe(INITIAL_GUIDED_TOUR_STATE);
+    expect(museumReducer(exited, { type: 'EXIT' })).toBe(exited);
+    expect(museumReducer(exited, start(steps, 'exhibit-b'))).toMatchObject({
+      status: 'running', session: { currentIndex: 1, steps },
+    });
+  });
+});
