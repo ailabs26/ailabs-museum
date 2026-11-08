@@ -8,6 +8,7 @@ import { ExhibitRevision } from './entities/exhibit-revision.entity';
 import { Hotspot } from './entities/hotspot.entity';
 import { AdminExhibitsController } from './controllers/admin-exhibits.controller';
 import { ExhibitsController } from './controllers/exhibits.controller';
+import { PublicExhibitsController } from './controllers/public-exhibits.controller';
 import { ExhibitsService } from './services/exhibits.service';
 import { RevisionPublishGate } from './services/revision-publish.gate';
 import { ExhibitsRepository } from './repositories/exhibits.repository';
@@ -21,7 +22,7 @@ import { ModelStorageService } from '../media/services/model-storage.service';
     MediaModule,
     NotificationsModule,
   ],
-  controllers: [ExhibitsController, AdminExhibitsController],
+  controllers: [ExhibitsController, PublicExhibitsController, AdminExhibitsController],
   providers: [ExhibitsService, ExhibitsRepository, RevisionPublishGate, PublicModelsService, ModelStorageService],
   exports: [ExhibitsService, ExhibitsRepository, RevisionPublishGate, PublicModelsService],
 })

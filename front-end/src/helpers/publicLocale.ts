@@ -29,3 +29,25 @@ export function createPublicLocaleStore(getStorage?: () => Pick<Storage, 'getIte
 }
 
 export const publicLocaleStore = createPublicLocaleStore();
+
+/**
+ * Ngôn ngữ đầu tiên của máy khách mà trang hỗ trợ (`ko-KR` → `ko`, `zh-Hans-CN` → `zh`); không khớp thì tiếng Việt.
+ * Dùng khi khách vào qua mã QR mà chưa từng chọn ngôn ngữ.
+ */
+export function detectPublicLocale(languages: readonly string[]): PublicLocale {
+  for (const language of languages) {
+    const code = language.toLowerCase().split('-')[0];
+    if (LOCALES.some((locale) => locale.code === code)) return code;
+  }
+  return DEFAULT_PUBLIC_LOCALE;
+}
+
+/** Khách đã từng chọn ngôn ngữ trên máy này chưa (kể cả khóa lưu cũ). Không đọc được bộ nhớ thì coi như đã chọn. */
+export function hasSavedPublicLocale(storage: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): boolean {
+  try {
+    return !storage || storage.getItem(PUBLIC_LOCALE_STORAGE_KEY) !== null || storage.getItem(LEGACY_PUBLIC_LOCALE_STORAGE_KEY) !== null;
+  } catch {
+    return true;
+  }
+}
+

@@ -349,6 +349,18 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
   }
 
   /**
+   * Phòng chứa một hiện vật công khai, cho liên kết cố định của mã QR (`/e/<id>`). Cùng điều kiện với tìm kiếm
+   * công khai, nên bản nháp, hiện vật đã ẩn/xóa hoặc thuộc phòng lưu trữ đều trả `null`.
+   */
+  async findPublicLocation(id: string): Promise<{ exhibitId: string; roomSlug: string } | null> {
+    const exhibit = await this.buildPublicSearchIdQuery()
+      .addSelect('room.slug')
+      .andWhere('exhibit.id = :id', { id })
+      .getOne();
+    return exhibit?.room ? { exhibitId: exhibit.id, roomSlug: exhibit.room.slug } : null;
+  }
+
+  /**
    * Tìm kiếm hiện vật CÔNG KHAI: chỉ bản đã xuất bản (APPROVED) + đang hiển thị, chưa xóa/lưu trữ,
    * thuộc phòng ACTIVE. Lọc theo `roomId` và từ khóa `q` (ILIKE trên tên phòng + tên/mô tả hiện vật).
    * Sắp xếp ỔN ĐỊNH `roomId, displayOrder, id` (tiebreaker duy nhất `id`) — union các trang

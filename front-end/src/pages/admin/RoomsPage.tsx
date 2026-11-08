@@ -23,7 +23,8 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertCircle, IconEdit, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react';
+import { IconAlertCircle, IconEdit, IconPlus, IconPrinter, IconSearch, IconTrash } from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiException } from '@/core/api/api-error';
 import { useAuth } from '@/core/auth/use-auth';
@@ -91,6 +92,7 @@ export function RoomsPage() {
   const canCreate = hasPermission(PERMISSIONS.ROOM_CREATE);
   const canUpdate = hasPermission(PERMISSIONS.ROOM_UPDATE);
   const canDelete = hasPermission(PERMISSIONS.ROOM_DELETE);
+  const canPrintQr = hasPermission(PERMISSIONS.EXHIBIT_READ);
 
   const queryStatus = statusFilter !== 'all' ? (statusFilter as RoomStatus) : undefined;
 
@@ -331,6 +333,13 @@ export function RoomsPage() {
         </Group>
       ) : (
         <Group gap={6} justify="flex-end" wrap="nowrap">
+          {canPrintQr && (
+            <Tooltip label="In mã QR các hiện vật của phòng">
+              <ActionIcon variant="subtle" color="dark" component={Link} to={`/admin/rooms/${r.id}/qr`} aria-label={`In mã QR phòng ${r.name}`}>
+                <IconPrinter size={18} />
+              </ActionIcon>
+            </Tooltip>
+          )}
           {canUpdate && (
             <Tooltip label="Chỉnh sửa thông tin phòng">
               <ActionIcon
@@ -511,6 +520,11 @@ export function RoomsPage() {
                     onClick={() => restore.confirmRestore([room.id])} />
                 ) : (
                 <Group gap={6} wrap="nowrap">
+                  {canPrintQr && (
+                    <ActionIcon variant="subtle" color="dark" component={Link} to={`/admin/rooms/${room.id}/qr`} aria-label={`In mã QR phòng ${room.name}`}>
+                      <IconPrinter size={18} />
+                    </ActionIcon>
+                  )}
                   {canUpdate && (
                     <ActionIcon
                       variant="subtle"

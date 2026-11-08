@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { after, before, describe, it } from 'node:test';
 import { DataSource } from 'typeorm';
 import { dataSource as appDataSource } from '../../../config/data-source';
-import { Room } from '../../rooms/entities/room.entity';
+import { Room, RoomStatus } from '../../rooms/entities/room.entity';
 import { User } from '../../users/entities/user.entity';
 import { ExhibitRevision, RevisionState } from '../entities/exhibit-revision.entity';
 import { Exhibit, ExhibitVisibility } from '../entities/exhibit.entity';
@@ -71,6 +71,22 @@ describe('Tìm hiện vật theo bản dịch (PostgreSQL thật)', { skip }, ()
     assert.deepEqual(await ids(`꽃병${tag}`), [published]);
     assert.deepEqual(await ids(`花瓶${tag}`), [published]);
     assert.deepEqual(await ids(`비밀${tag}`), []);
+  });
+
+  it('vị trí công khai cho mã QR: chỉ hiện vật đã xuất bản, đang hiển thị, thuộc phòng active', async () => {
+    const published = await createExhibit({ vi: 'Công khai' }, RevisionState.APPROVED, true);
+    const draft = await createExhibit({ vi: 'Nháp' }, RevisionState.DRAFT, false);
+    const hidden = await createExhibit({ vi: 'Đã ẩn' }, RevisionState.APPROVED, true);
+    await db.getRepository(Exhibit).update(hidden, { visibility: ExhibitVisibility.HIDDEN });
+
+    assert.deepEqual(await repo.findPublicLocation(published), { exhibitId: published, roomSlug: `i18n-${tag}` });
+    assert.equal(await repo.findPublicLocation(draft), null);
+    assert.equal(await repo.findPublicLocation(hidden), null);
+    assert.equal(await repo.findPublicLocation(randomUUID()), null);
+
+    await db.getRepository(Room).update(roomId, { status: RoomStatus.ARCHIVED });
+    assert.equal(await repo.findPublicLocation(published), null, 'phòng lưu trữ thì không công khai');
+    await db.getRepository(Room).update(roomId, { status: RoomStatus.ACTIVE });
   });
 
   it('tìm được theo bản dịch tên phòng', async () => {
