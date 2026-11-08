@@ -41,3 +41,27 @@ describe('museumReducer START', () => {
     expect(next).toMatchObject({ status: 'running', session: { roomId: nextRoomId, roomSlug: 'ceramics', currentIndex: 0 } });
   });
 });
+
+describe('museumReducer PAUSE and RESUME', () => {
+  it('pauses and resumes without changing the selected step or step order', () => {
+    const running = museumReducer(INITIAL_GUIDED_TOUR_STATE, start(steps, 'exhibit-b'));
+    const paused = museumReducer(running, { type: 'PAUSE' });
+    const resumed = museumReducer(paused, { type: 'RESUME' });
+
+    expect(paused).toEqual({ ...running, status: 'paused' });
+    expect(resumed).toEqual(running);
+  });
+
+  it('keeps the same state for repeated or invalid pause/resume commands', () => {
+    const idlePause = museumReducer(INITIAL_GUIDED_TOUR_STATE, { type: 'PAUSE' });
+    const idleResume = museumReducer(INITIAL_GUIDED_TOUR_STATE, { type: 'RESUME' });
+    const running = museumReducer(INITIAL_GUIDED_TOUR_STATE, start());
+    const paused = museumReducer(running, { type: 'PAUSE' });
+
+    expect(idlePause).toBe(INITIAL_GUIDED_TOUR_STATE);
+    expect(idleResume).toBe(INITIAL_GUIDED_TOUR_STATE);
+    expect(museumReducer(running, { type: 'PAUSE' })).toMatchObject({ status: 'paused' });
+    expect(museumReducer(paused, { type: 'PAUSE' })).toBe(paused);
+    expect(museumReducer(running, { type: 'RESUME' })).toBe(running);
+  });
+});
