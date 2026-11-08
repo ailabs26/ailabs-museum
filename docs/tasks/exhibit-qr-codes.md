@@ -17,3 +17,18 @@ Khách ở bảo tàng thật chưa có cách nhanh để mở nội dung số c
 ## Cấu hình
 
 `VITE_PUBLIC_SITE_URL` (front-end): địa chỉ trang khách in trên mã. Để trống thì dùng địa chỉ đang mở CMS; nên đặt khi in mã từ máy không phải production.
+
+## Checklist khi deploy production
+
+Làm đủ trước khi in mã hàng loạt. Thiếu một mục thì khách quét mã sẽ không mở được trang.
+
+- [ ] **`VITE_PUBLIC_SITE_URL`** (front-end) đặt bằng domain production, ví dụ `https://museum.example.com`. Nếu để trống thì mã lấy địa chỉ đang mở CMS: in từ máy dev sẽ ra mã trỏ tới `localhost` hoặc IP LAN.
+- [ ] **SPA fallback** ở nơi host front-end: mọi đường dẫn không phải tệp tĩnh đều trả về `index.html`. Thiếu cấu hình này thì quét mã mở thẳng `/e/<id>` bị 404 từ server, dù bấm trong app vẫn chạy.
+- [ ] **`FRONTEND_ORIGIN`** (back-end) bằng domain production, nếu không trang khách gọi API bị chặn CORS. Back-end chỉ nhận một origin.
+- [ ] **`npm run seed:translations`** đã chạy trên DB production, để trang quét mã có chuỗi `ui.short-link.*` đủ 6 ngôn ngữ.
+- [ ] **Quét thử bằng điện thoại thật** một hiện vật đã xuất bản trên bản production:
+  - Mở đúng trang chi tiết, có ảnh và audio.
+  - Điện thoại cài ngôn ngữ khác tiếng Việt (Anh, Pháp, Trung, Hàn, Nhật) thì trang tự hiện ngôn ngữ đó.
+  - Hiện vật chưa xuất bản thì hiện "Không tìm thấy hiện vật".
+- [ ] **In thử một trang** từ "In mã QR" của một phòng và quét mã trên giấy ở khoảng 30–50 cm. Máy in mờ thì dùng "Tải SVG" để in.
+- [ ] **Chỉ in hàng loạt** sau khi các bước trên đều đạt.
