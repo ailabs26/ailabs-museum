@@ -1,13 +1,13 @@
 # Guided Tour Core — Implementation Plan
 
-> **Trạng thái:** IN PROGRESS — baseline hoàn tất; triển khai trên `feat/guided-tour-core`.
+> **Trạng thái:** IMPLEMENTED — 18 task commit trên `feat/guided-tour-core`; đã kiểm chứng, chưa push/mở PR.
 >
 > **Task / Acceptance:** [guided-tour-core.md](../tasks/guided-tour-core.md)
 
-**Repository:** `ailabs26/ailabs-museum`  
-**Source audit:** GitHub `dev` tại `6e40d356bdb8411d2acfd3f431fb3ce2e9f22add` (08/11/2026; commit HEAD có ngày 07/11/2026). Khi thực thi bắt buộc `git fetch origin`, đối chiếu `origin/dev` và điều chỉnh nếu code đổi.  
-**Đề xuất branch:** `feat/guided-tour-core` từ `origin/dev` mới nhất → **01 PR vào `dev`**, không sửa trực tiếp `dev`.  
-**Stack:** React 18 + TypeScript + React Router 6 + Zod + TanStack Query + Vitest (Node) + Playwright. Không thêm state-management dependency.  
+**Repository:** `ailabs26/ailabs-museum`<br>
+**Source audit:** Đã fetch `origin`; `origin/dev` không đổi và vẫn ở `6e40d356bdb8411d2acfd3f431fb3ce2e9f22add` (08/11/2026).<br>
+**Branch:** `feat/guided-tour-core`, tạo từ `origin/dev`; chưa push/mở PR theo phạm vi yêu cầu hiện tại.<br>
+**Stack:** React 18 + TypeScript + React Router 6 + Zod + TanStack Query + Vitest (Node) + Playwright. Không thêm state-management dependency.
 **Nguồn quy ước:** `AGENTS.md`, `docs/architecture/fe/coding-conventions.md`, `docs/architecture/fe/museum-experience.md`.
 
 ## 1. Mục tiêu và giá trị sau khi hoàn thành
@@ -188,13 +188,13 @@ Không thay `front-end/src/app/router.tsx` nếu `PublicLayout` đã là boundar
 
 ## 10. Definition of Done
 
-- [ ] Reducer + builder typed và unit-tested; không side effect.
-- [ ] Provider/hook có API ổn định cho F06–F08; mount đúng PublicLayout; Admin ngoài scope.
-- [ ] Mọi status/action/no-op và reconciliation đã được kiểm thử.
-- [ ] `next` tại biên hoàn tất, `previous` không wrap, room rỗng không tạo tour.
-- [ ] Order theo `displayOrder, id`, không giữ nội dung chưa public.
-- [ ] Không đổi URL/selection, audio, WebGL, backend/DB, giao diện production.
-- [ ] Frontend typecheck, lint, unit, build, affected regression được chạy, ghi số thật.
-- [ ] 18 task/18 commit có ý nghĩa, mỗi task chứa test/checkpoint phù hợp; một branch và một PR vào `dev` sau review.
+- [x] Reducer + builder typed và unit-tested; không side effect.
+- [x] Provider/hook có API ổn định cho F06–F08; mount đúng PublicLayout; Admin ngoài scope.
+- [x] Mọi status/action/no-op và reconciliation đã được kiểm thử.
+- [x] `next` tại biên hoàn tất, `previous` không wrap, room rỗng không tạo tour.
+- [x] Order theo `displayOrder, id`, không giữ nội dung chưa public.
+- [x] Không đổi URL/selection, audio, WebGL, backend/DB, giao diện production.
+- [x] Frontend typecheck, lint, unit, build, affected regression được chạy; kết quả ghi trong task ledger.
+- [x] 18 task/18 commit có ý nghĩa, mỗi task chứa test/checkpoint phù hợp; một branch local sẵn sàng mở PR vào `dev` khi được yêu cầu.
 
 **Không đánh dấu checklist DONE trước khi có implementation và verification thực.**
