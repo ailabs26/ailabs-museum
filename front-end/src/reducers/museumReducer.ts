@@ -59,11 +59,19 @@ export function museumReducer(
     if (sameOrder && action.roomSlug === session.roomSlug) return state;
 
     const currentExhibitId = session.steps[session.currentIndex].exhibitId;
-    const currentIndex = action.steps.findIndex((step) => step.exhibitId === currentExhibitId);
-    if (currentIndex < 0) return INITIAL_GUIDED_TOUR_STATE;
+    let currentIndex = action.steps.findIndex((step) => step.exhibitId === currentExhibitId);
+    let status = state.status;
+    if (currentIndex < 0) {
+      const newIds = new Set(action.steps.map((step) => step.exhibitId));
+      const fallbackId = session.steps.slice(session.currentIndex + 1).find((step) => newIds.has(step.exhibitId))?.exhibitId
+        ?? session.steps.slice(0, session.currentIndex).reverse().find((step) => newIds.has(step.exhibitId))?.exhibitId;
+      if (!fallbackId) return INITIAL_GUIDED_TOUR_STATE;
+      currentIndex = action.steps.findIndex((step) => step.exhibitId === fallbackId);
+      status = 'paused';
+    }
 
     return {
-      status: state.status,
+      status,
       session: { roomId: session.roomId, roomSlug: action.roomSlug, steps: action.steps, currentIndex },
     };
   }

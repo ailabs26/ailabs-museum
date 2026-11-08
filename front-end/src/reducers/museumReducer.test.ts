@@ -168,3 +168,29 @@ describe('museumReducer RECONCILE_ROOM reorder', () => {
     })).toBe(running);
   });
 });
+
+describe('museumReducer RECONCILE_ROOM removed exhibits', () => {
+  const threeSteps = [...steps, { roomId, exhibitId: 'exhibit-c' }];
+
+  it('selects the next still-public step from the old order and pauses', () => {
+    const running = museumReducer(INITIAL_GUIDED_TOUR_STATE, start(threeSteps, 'exhibit-b'));
+    const reconciled = museumReducer(running, {
+      type: 'RECONCILE_ROOM', roomId, roomSlug: 'sculpture', steps: [threeSteps[0], threeSteps[2]],
+    });
+
+    expect(reconciled).toMatchObject({
+      status: 'paused', session: { steps: [threeSteps[0], threeSteps[2]], currentIndex: 1 },
+    });
+  });
+
+  it('falls back to the previous public step when no later step remains, or idles when empty', () => {
+    const running = museumReducer(INITIAL_GUIDED_TOUR_STATE, start(threeSteps, 'exhibit-c'));
+    const previous = museumReducer(running, {
+      type: 'RECONCILE_ROOM', roomId, roomSlug: 'sculpture', steps: steps,
+    });
+    const empty = museumReducer(running, { type: 'RECONCILE_ROOM', roomId, roomSlug: 'sculpture', steps: [] });
+
+    expect(previous).toMatchObject({ status: 'paused', session: { currentIndex: 1 } });
+    expect(empty).toBe(INITIAL_GUIDED_TOUR_STATE);
+  });
+});
