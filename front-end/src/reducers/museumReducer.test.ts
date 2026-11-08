@@ -79,3 +79,26 @@ describe('museumReducer EXIT', () => {
     });
   });
 });
+
+describe('museumReducer NEXT', () => {
+  it('advances one step and preserves running or paused status before the end', () => {
+    const running = museumReducer(INITIAL_GUIDED_TOUR_STATE, start());
+    const runningNext = museumReducer(running, { type: 'NEXT' });
+    const paused = museumReducer(running, { type: 'PAUSE' });
+    const pausedNext = museumReducer(paused, { type: 'NEXT' });
+
+    expect(runningNext).toMatchObject({ status: 'running', session: { currentIndex: 1 } });
+    expect(pausedNext).toMatchObject({ status: 'paused', session: { currentIndex: 1 } });
+  });
+
+  it('completes at the last step without wrapping and ignores further next commands', () => {
+    const running = museumReducer(INITIAL_GUIDED_TOUR_STATE, start(steps, 'exhibit-b'));
+    const completed = museumReducer(running, { type: 'NEXT' });
+    const single = museumReducer(INITIAL_GUIDED_TOUR_STATE, start([steps[0]]) );
+
+    expect(completed).toMatchObject({ status: 'completed', session: { currentIndex: 1, steps } });
+    expect(museumReducer(completed, { type: 'NEXT' })).toBe(completed);
+    expect(museumReducer(single, { type: 'NEXT' }).status).toBe('completed');
+    expect(museumReducer(INITIAL_GUIDED_TOUR_STATE, { type: 'NEXT' })).toBe(INITIAL_GUIDED_TOUR_STATE);
+  });
+});
