@@ -57,7 +57,7 @@ for (const record of [
   test(`${record.route} delete restores a stable page target after the invoker disappears`, async ({ page }) => {
     await installOverlayApi(page);
     await page.goto(`/admin/${record.route}`);
-    const trigger = record.trigger ? page.getByRole('button', { name: record.trigger, exact: true }) : page.getByRole('row').filter({ hasText: 'Hiện vật mẫu' }).getByRole('button').last();
+    const trigger = record.trigger ? page.getByRole('button', { name: record.trigger, exact: true }) : page.getByRole('button', { name: 'Xóa hiện vật Hiện vật mẫu', exact: true });
     await trigger.press('Enter');
     await page.getByRole('dialog').getByRole('button', { name: record.confirm, exact: true }).press('Enter');
     await expect(page.getByRole('dialog')).toHaveCount(0);
