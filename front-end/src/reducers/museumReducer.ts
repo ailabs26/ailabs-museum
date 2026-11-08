@@ -13,7 +13,8 @@ type StartAction = {
   initialExhibitId?: string;
 };
 
-export type MuseumAction = StartAction | { type: 'PAUSE' } | { type: 'RESUME' } | { type: 'EXIT' } | { type: 'NEXT' };
+export type MuseumAction = StartAction | { type: 'PAUSE' } | { type: 'RESUME' } | { type: 'EXIT' }
+  | { type: 'NEXT' } | { type: 'PREVIOUS' };
 
 export function museumReducer(
   state: GuidedTourState = INITIAL_GUIDED_TOUR_STATE,
@@ -26,6 +27,14 @@ export function museumReducer(
     if ((state.status !== 'running' && state.status !== 'paused') || !state.session) return state;
     if (state.session.currentIndex === state.session.steps.length - 1) return { ...state, status: 'completed' };
     return { ...state, session: { ...state.session, currentIndex: state.session.currentIndex + 1 } };
+  }
+  if (action.type === 'PREVIOUS') {
+    if (!state.session || state.session.currentIndex === 0) return state;
+    return {
+      ...state,
+      status: state.status === 'completed' ? 'paused' : state.status,
+      session: { ...state.session, currentIndex: state.session.currentIndex - 1 },
+    };
   }
   if (!action.steps.length
     || action.steps.some((step) => step.roomId !== action.roomId)

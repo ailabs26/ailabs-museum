@@ -102,3 +102,26 @@ describe('museumReducer NEXT', () => {
     expect(museumReducer(INITIAL_GUIDED_TOUR_STATE, { type: 'NEXT' })).toBe(INITIAL_GUIDED_TOUR_STATE);
   });
 });
+
+describe('museumReducer PREVIOUS', () => {
+  it('moves back without wrapping and preserves running or paused status', () => {
+    const running = museumReducer(INITIAL_GUIDED_TOUR_STATE, start(steps, 'exhibit-b'));
+    const paused = museumReducer(running, { type: 'PAUSE' });
+
+    expect(museumReducer(running, { type: 'PREVIOUS' })).toMatchObject({ status: 'running', session: { currentIndex: 0 } });
+    expect(museumReducer(paused, { type: 'PREVIOUS' })).toMatchObject({ status: 'paused', session: { currentIndex: 0 } });
+    expect(museumReducer(museumReducer(running, { type: 'PREVIOUS' }), { type: 'PREVIOUS' }))
+      .toMatchObject({ status: 'running', session: { currentIndex: 0 } });
+  });
+
+  it('returns from completed to paused at the prior step and keeps idle/first-step no-ops', () => {
+    const single = museumReducer(INITIAL_GUIDED_TOUR_STATE, start([steps[0]]));
+    const completedSingle = museumReducer(single, { type: 'NEXT' });
+    const atLast = museumReducer(INITIAL_GUIDED_TOUR_STATE, start(steps));
+    const completed = museumReducer(museumReducer(atLast, { type: 'NEXT' }), { type: 'NEXT' });
+
+    expect(museumReducer(completed, { type: 'PREVIOUS' })).toMatchObject({ status: 'paused', session: { currentIndex: 0 } });
+    expect(museumReducer(completedSingle, { type: 'PREVIOUS' })).toBe(completedSingle);
+    expect(museumReducer(INITIAL_GUIDED_TOUR_STATE, { type: 'PREVIOUS' })).toBe(INITIAL_GUIDED_TOUR_STATE);
+  });
+});
