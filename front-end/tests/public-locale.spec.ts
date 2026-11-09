@@ -39,8 +39,17 @@ test('PublicLayout owns one locale provider across route changes', async ({ page
   await expect(page.getByTestId('layout-locale-first')).toHaveText('en');
 });
 
-test('public routes retain locale while Vietnamese content and admin stay unchanged', async ({ page }) => {
+test('public routes retain locale while fallback content and admin stay unchanged', async ({ page }) => {
   await installMuseumApi(page);
+  await page.route('**/api/public/translations**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ success: true, data: {}, message: null }),
+    headers: {
+      'Access-Control-Allow-Origin': route.request().headers().origin ?? 'http://127.0.0.1:4173',
+      'Access-Control-Allow-Credentials': 'true',
+    },
+  }));
   await page.goto('/tests/fixtures/public-locale.html');
   await page.getByRole('button', { name: 'Set locale to English' }).click();
 
@@ -48,7 +57,7 @@ test('public routes retain locale while Vietnamese content and admin stay unchan
     const response = await page.goto(path);
     expect(response?.ok()).toBe(true);
     await expect(page.getByRole('banner')).toBeVisible();
-    await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('aura:visitor:locale:v1')!).value)).toBe('en');
   }
 
