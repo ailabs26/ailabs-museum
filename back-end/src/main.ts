@@ -58,6 +58,9 @@ async function bootstrap() {
     .build();
   SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swagger));
 
+  // Nhận SIGTERM/SIGINT khi deploy hoặc restart: dừng cron, đóng kết nối DB rồi mới thoát.
+  app.enableShutdownHooks();
+
   await app.listen(config.getOrThrow<number>('app.port'));
 }
 
