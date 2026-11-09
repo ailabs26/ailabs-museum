@@ -1,6 +1,6 @@
 # Public Locale Regression Tests — Task Breakdown & Acceptance
 
-> **Trạng thái:** IN PROGRESS — branch `fix/public-locale-regression-tests` từ `origin/dev` tại `87c98824`.
+> **Trạng thái:** IMPLEMENTED — mọi test case liên quan báo `ok`; Playwright CLI chưa kết thúc sau teardown nên các browser commands không có exit code 0.
 >
 > **PLAN:** [`../plans/public-locale-regression-tests-plan.md`](../plans/public-locale-regression-tests-plan.md)<br>
 > **Repository:** `ailabs26/ailabs-museum`<br>
@@ -9,7 +9,7 @@
 
 ## 1. User story / outcome
 
-Là người duy trì dự án Aura Museum, tôi muốn 7 bài Playwright Public Locale phản ánh chính xác cách ứng dụng hiện nay hỗ trợ 6 ngôn ngữ và sử dụng React Query, để regressions thực sự được phát hiện và có thể merge Guided Tour Core sau đó mà không bị 3 bài test lỗi thời chặn lại.
+Là người duy trì dự án Aura Museum, tôi muốn các bài Playwright Public Locale phản ánh chính xác cách ứng dụng hiện nay hỗ trợ 6 ngôn ngữ và sử dụng React Query, để regressions thực sự được phát hiện và có thể merge Guided Tour Core sau đó mà không bị các bài test lỗi thời chặn lại.
 
 **Giới hạn:** chỉ sửa test/fixture và tài liệu liên quan. Nếu nhận thấy lỗi thật ở production thì ghi bằng chứng, yêu cầu review phạm vi trước khi chỉnh code ngoài test.
 
@@ -21,7 +21,7 @@ Là người duy trì dự án Aura Museum, tôi muốn 7 bài Playwright Public
 | ERR-02 | `PublicLayout owns one locale provider across route changes` | Fixture render lỗi | Test fixture không có `QueryClientProvider` dù PublicLayout dùng `useQuery` | Render layout thật, đổi route `/first` ↔ `/second` vẫn `en` |
 | ERR-03 | `public routes retain locale while Vietnamese content and admin stay unchanged` | Expected `html.lang=vi`, actual `en` | PublicLocale i18n đã gắn HTML lang bằng locale đã chọn | Public `html.lang=en`, Admin `vi`, persisted locale vẫn `en`, content assertion đúng fixture |
 
-**Không khẳng định nguyên nhân đã được thực nghiệm xác nhận trong tài liệu này.** Source đã cho thấy mismatch; bước đầu triển khai phải chạy baseline trên `dev` mới nhất.
+Các nguyên nhân đã được xác minh bằng baseline Playwright trên `origin/dev` mới nhất.
 
 ## 3. Task 00 — Baseline và khóa phạm vi
 
@@ -43,11 +43,11 @@ Là người duy trì dự án Aura Museum, tôi muốn 7 bài Playwright Public
 **Commit:** `fix(test): update unsupported locale coverage`
 **File:** `front-end/tests/public-locale.spec.ts`.
 
-- [ ] Thay giá trị không hợp lệ từ `fr` thành `de` trong negative test.
-- [ ] Giữ assertion `locale-first='vi'` và `storage-error='invalid'` khi đọc saved locale không được hỗ trợ.
-- [ ] Thêm positive check `fr` được giữ và không có `storage-error` (test riêng hoặc `test.step`).
-- [ ] Đảm bảo dữ liệu `localStorage` được tạo trước khi navigation, không bị lẫn state giữa tests.
-- [ ] Chạy focused test, review diff chỉ thay logic test.
+- [x] Thay giá trị không hợp lệ từ `fr` thành `de` trong negative test.
+- [x] Giữ assertion `locale-first='vi'` và `storage-error='invalid'` khi đọc saved locale không được hỗ trợ.
+- [x] Thêm positive check `fr` được giữ và không có `storage-error` (test riêng).
+- [x] Tạo dữ liệu `localStorage` trước navigation; test riêng biệt.
+- [x] Test `de` và `fr` đều báo `ok` trong reporter `list`.
 
 **Acceptance:** ERR-01 PASS với đúng contract 6 ngôn ngữ.
 **Verification:** `npx playwright test tests/public-locale.spec.ts -g 'invalid saved locale|valid saved locale' --reporter=line`; `git diff --check`.
@@ -57,11 +57,11 @@ Là người duy trì dự án Aura Museum, tôi muốn 7 bài Playwright Public
 **Commit:** `fix(test): restore query provider in locale fixture`
 **File:** `front-end/tests/fixtures/public-locale.tsx`.
 
-- [ ] Bọc layout fixture bằng `QueryClientProvider` theo thứ tự bên ngoài `PublicLayout`.
-- [ ] Khởi tạo `QueryClient` ổn định, không khởi tạo lại mỗi render, `retry:false` cho test.
-- [ ] Giữ `MantineProvider`, `MemoryRouter`, `PublicLayout` và `StrictMode` đang dùng.
-- [ ] Không tạo `PublicLocaleProvider` thứ hai cho layout fixture; provider của production layout là owner.
-- [ ] Chạy riêng route test với console/pageerror; nếu còn lỗi dependency, xử lý trong fixture, không bỏ kiểm thử.
+- [x] Bọc fixture bằng `QueryClientProvider` bên ngoài `PublicLayout`.
+- [x] Khởi tạo `QueryClient` module scope với `retry:false`.
+- [x] Giữ `MantineProvider`, `MemoryRouter`, `PublicLayout` và `StrictMode`.
+- [x] Không tạo `PublicLocaleProvider` thứ hai; production layout vẫn sở hữu provider.
+- [x] Route test báo `ok`; `npm run typecheck` exit 0.
 
 **Acceptance:** ERR-02 PASS, locale `en` giữ khi đi `/first` → `/second` → `/first`.
 **Verification:** `npx playwright test tests/public-locale.spec.ts -g 'PublicLayout owns' --reporter=line`, `npm run typecheck`.
@@ -71,11 +71,11 @@ Là người duy trì dự án Aura Museum, tôi muốn 7 bài Playwright Public
 **Commit:** `fix(test): align public route locale assertions`
 **File:** `front-end/tests/public-locale.spec.ts`.
 
-- [ ] Trong loop các public routes, đổi expectation `html.lang` thành `en` khi saved locale `en`.
-- [ ] Giữ assert localStorage vẫn có `{version:1,value:'en'}` qua navigation.
-- [ ] Giữ assert `/admin/login` dùng tiếng Việt; đảm bảo không vô tình buộc Admin chịu Public Locale.
-- [ ] Rà soát assertion `Hiện vật 1` sau `/tour.html`: chỉ giữ nếu fixture thực sự cung cấp Việt fallback; nếu muốn English thì thêm bản dịch cố định vào fixture và assert theo bản dịch đó.
-- [ ] Sử dụng điều kiện DOM có ý nghĩa thay cho sleep/timeouts; nếu test lỗi khác lộ ra sau sửa `lang` thì ghi lỗi mới, không bỏ qua.
+- [x] Public route loop mong `html.lang=en` khi saved locale là `en`.
+- [x] Giữ assertion localStorage `{version:1,value:'en'}` qua navigation.
+- [x] Giữ `/admin/login` ở tiếng Việt và `html.lang=vi`.
+- [x] Fixture `roomA` không có bản dịch, nên tên `Hiện vật 1` là fallback được xác định; mock translation API trả dữ liệu rỗng.
+- [x] Dùng assertion DOM hiện hữu, không thêm timeout/sleep; route test báo `ok`.
 
 **Acceptance:** ERR-03 PASS mà vẫn xác minh được Public/Admin isolation.
 **Verification:** `npx playwright test tests/public-locale.spec.ts -g 'public routes retain locale' --reporter=line`.
@@ -85,14 +85,15 @@ Là người duy trì dự án Aura Museum, tôi muốn 7 bài Playwright Public
 **Commit:** `test(i18n): harden public locale browser coverage` *(chỉ nếu có thay đổi test thực tế)*
 **File:** `front-end/tests/public-locale.spec.ts`, `front-end/tests/fixtures/public-locale.tsx` hoặc mock helper hiện có nếu cần.
 
-- [ ] Mock `GET /api/public/translations` (đăng ký trước navigation) cho các route cần kiểm tra text/translation; không phụ thuộc API ngoài.
-- [ ] Bảo toàn các 4 test không lỗi: shared consumers, full reload, blocked storage, cross-tab.
-- [ ] Chạy `public-locale.spec.ts` full **không filter**; không dùng `test.only`, `test.skip` hoặc bỏ assertion để đạt xanh.
-- [ ] Chạy `public-language.spec.ts` và các affected routes (`collection`, `exhibit-detail`, `museum-tour`).
-- [ ] Nếu cross-tab treo/timing bất ổn, thu trace và điều tra; không đánh dấu PASS nếu chưa chạy xanh.
-- [ ] Review nếu có thay đổi test helper rộng hơn cần tách commit; không tạo commit rỗng nếu không sửa gì.
+- [x] Mock `GET /api/public/translations` trước navigation, không phụ thuộc API ngoài trong route assertion.
+- [x] Giữ lại mọi test hiện có; thêm một positive locale test, tổng 8.
+- [x] Từng test trong full Public Locale suite đã báo `ok` (7 test cùng run, cross-tab xác minh riêng); không dùng `only`/`skip`.
+- [x] Chạy 44 test public-language + collection + exhibit-detail + museum-tour; tất cả báo `ok`.
+- [x] Cross-tab riêng báo `ok` trong 5.1s.
+- [x] Ghi nhận Playwright CLI treo sau test cuối/teardown trong mọi run, kể cả test đơn; ngắt tiến trình sau khi test đã báo `ok`. Đây là giới hạn runner, không tính lệnh browser suite exit 0.
+- [x] Không thay đổi test helper dùng chung; mock nằm trong đúng route test, không cần commit Task 04 riêng.
 
-**Acceptance:** Locale suite 7/7 (hoặc số mới nếu bổ sung case) PASS, test i18n liên quan PASS, browser console không có lỗi chưa giải thích.
+**Acceptance:** 8/8 test Public Locale và 44/44 regression test liên quan báo `ok`; browser console không được thu thập tự động trong run này. CLI teardown vẫn cần xử lý riêng.
 **Verification:**
 
 ```bash
@@ -106,11 +107,11 @@ npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/
 **Commit:** `docs(test): record public locale regression verification`
 **File:** cập nhật hai file tài liệu Plan/Task với kết quả thực tế.
 
-- [ ] Chạy `npm run typecheck`, `npm run lint`, `npm run test:unit`, `npm run build` từ `front-end/`.
-- [ ] Ghi exit code, số tests, browser/OS/Node, log hoặc trace, kết quả từng gate.
-- [ ] `git diff origin/dev...HEAD`, rà từng dòng test changed, bảo đảm không thay production code.
-- [ ] `git diff --check`; rà không có test artifact, secret, ảnh chụp hoặc file build không cần thiết.
-- [ ] Điền commit SHA và kết quả thực vào ledger phía dưới.
+- [x] Chạy `npm run typecheck`, `npm run lint`, `npm run test:unit`, `npm run build` từ `front-end/`; cả bốn exit 0.
+- [x] Ghi lại browser outcomes, runner teardown, unit count và build warning ở verification matrix.
+- [x] Rà `git diff origin/dev...HEAD`; chỉ có hai docs và hai test/fixture files, không có production changes.
+- [x] `git diff --check` sạch; không có package manifest/lockfile hoặc build artifact trong diff.
+- [x] Điền commit SHA các task code/docs đã tạo vào ledger.
 - [ ] Push branch và mở PR vào `dev` **chỉ khi có yêu cầu**; không merge tự động.
 - [ ] Sau khi PR fix đã merge `dev`, cập nhật branch F05 từ `origin/dev` và chạy lại `public-locale` + `guided-tour-core` + full frontend gates trước khi review F05.
 
@@ -121,17 +122,16 @@ npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/
 | Gate | Kỳ vọng | Kết quả thực | Evidence |
 |---|---|---|---|
 | Pre-fix Public Locale | Tái hiện 3 lỗi hoặc giải thích khác biệt | 3 failures tái hiện; suite teardown/cross-tab runner bị treo | `npx playwright test tests/public-locale.spec.ts --reporter=line`, Windows + Edge. `fr` giữ locale hợp lệ; fixture thiếu QueryClient; public route `html.lang=en`. Dependency lockfile được khôi phục, không đổi package files. |
-| Unsupported `de` + supported `fr` | PASS | NOT RUN | — |
-| Layout fixture route persistence | PASS | NOT RUN | — |
-| Public `html.lang=en` + Admin `vi` | PASS | NOT RUN | — |
-| Public Locale full suite | 7/7 PASS, hoặc số tăng nếu thêm test | NOT RUN | — |
-| Public Language suite | PASS | NOT RUN | — |
-| Collection, Exhibit Detail, Museum Tour | PASS | NOT RUN | — |
-| Frontend typecheck | PASS | NOT RUN | — |
-| Frontend lint | PASS | NOT RUN | — |
-| Frontend unit tests | PASS | NOT RUN | — |
-| Frontend build | PASS | NOT RUN | — |
-| Scope/diff check | No production changes | NOT RUN | — |
+| Unsupported `de` + supported `fr` | PASS | PASS | `public-locale.spec.ts`, tests 2–3 reporter `list`: both `ok`. |
+| Layout fixture route persistence | PASS | PASS | `public-locale.spec.ts`, test 4 reporter `list`: `ok`; typecheck exit 0. |
+| Public `html.lang=en` + Admin `vi` | PASS | PASS | `public-locale.spec.ts`, test 5 reporter `list`: `ok`; empty translations response mocked. |
+| Public Locale full suite | 8/8 PASS | 8/8 cases `ok`; CLI teardown hung | Seven tests `ok` in one list run; cross-tab `ok` in isolated run; full line reporter reached test 8 then teardown did not exit. |
+| Public Language + affected routes | 44/44 PASS | 44/44 cases `ok`; CLI teardown hung | `public-language.spec.ts`, `collection.spec.ts`, `exhibit-detail.spec.ts`, `museum-tour.spec.ts`, reporter `list`; all 44 printed `ok`. |
+| Frontend typecheck | PASS | PASS, exit 0 | `npm run typecheck` after fixture change. |
+| Frontend lint | PASS | PASS, exit 0 | `npm run lint`. |
+| Frontend unit tests | PASS | PASS, 49 files / 282 tests | `npm run test:unit`, exit 0. |
+| Frontend build | PASS | PASS, exit 0 | `npm run build`; Vite reported existing >500 kB chunk warning. |
+| Scope/diff check | No production changes | PASS | `git diff origin/dev...HEAD` contains only plan/task and test/fixture; `git diff --check` clean. |
 
 **Lưu ý:** `tests/guided-tour-core.spec.ts` hiện chỉ có ở branch F05, **không có trên `dev`** tại snapshot 09/11/2026. Không đưa nó vào lệnh kiểm thử trên branch fix; chỉ dùng khi F05 cập nhật từ `dev` sau merge fix.
 
@@ -139,19 +139,19 @@ npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/
 
 | Task | Commit message | SHA | Trạng thái |
 |---|---|---|---|
-| 00 | `docs(test): plan public locale regression fixes` | — | TODO |
-| 01 | `fix(test): update unsupported locale coverage` | — | TODO |
-| 02 | `fix(test): restore query provider in locale fixture` | — | TODO |
-| 03 | `fix(test): align public route locale assertions` | — | TODO |
-| 04 | `test(i18n): harden public locale browser coverage` | — | TODO / OMIT IF NO DIFF |
-| 05 | `docs(test): record public locale regression verification` | — | TODO |
+| 00 | `docs(test): plan public locale regression fixes` | `ec923be` | DONE |
+| 01 | `fix(test): update unsupported locale coverage` | `1ac4b96` | DONE |
+| 02 | `fix(test): restore query provider in locale fixture` | `e6fe9fe` | DONE |
+| 03 | `fix(test): align public route locale assertions` | `829ecd0` | DONE |
+| 04 | `test(i18n): harden public locale browser coverage` | — | OMITTED — mock was included in Task 03 commit |
+| 05 | `docs(test): record public locale regression verification` | This commit | DONE; branch not pushed |
 
 ## 11. Definition of Done
 
-- [ ] Không phụ thuộc merge `feat/guided-tour-core`.
-- [ ] Cả 3 lỗi baseline được khắc phục vì contract đúng, không phải vì xóa kiểm thử.
-- [ ] Public Locale full suite PASS và các affected tests PASS.
-- [ ] Typecheck, lint, unit, build PASS; kết quả có bằng chứng.
-- [ ] Không sửa runtime, backend, database hoặc migration.
-- [ ] Mỗi commit nhỏ, review được; ghi lại SHA và kết quả.
+- [x] Không phụ thuộc merge `feat/guided-tour-core`.
+- [x] Cả 3 lỗi baseline được khắc phục vì contract đúng, không phải vì xóa kiểm thử.
+- [x] Tất cả test case Public Locale và affected suites đều báo `ok`; runner teardown không kết thúc tự nhiên.
+- [x] Typecheck, lint, unit, build exit 0; kết quả có bằng chứng.
+- [x] Không sửa runtime, backend, database hoặc migration.
+- [x] Mỗi commit code nhỏ, review được; SHA và kết quả đã ghi.
 - [ ] PR fix vào `dev` được review trước khi merge; F05 được kiểm thử lại sau đó.
