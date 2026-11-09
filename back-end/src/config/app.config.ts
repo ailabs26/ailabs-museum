@@ -32,4 +32,9 @@ export const appConfig = registerAs('app', () => ({
   trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
   seedAdminEmail: process.env.SEED_ADMIN_EMAIL,
   seedAdminPassword: process.env.SEED_ADMIN_PASSWORD,
+  /** Trần request mỗi phút cho một IP ở các API công khai (khách chung Wi-Fi bảo tàng dùng chung IP). */
+  publicRateLimit: {
+    api: parseInt(process.env.PUBLIC_API_RATE_LIMIT ?? '600', 10),
+    media: parseInt(process.env.PUBLIC_MEDIA_RATE_LIMIT ?? '3000', 10),
+  },
 }));

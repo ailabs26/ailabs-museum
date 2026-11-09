@@ -1,7 +1,8 @@
-import { Controller, Get, Header, Param, Query, Res, StreamableFile } from '@nestjs/common';
+import { Controller, Get, Header, Param, Query, Res, StreamableFile, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../../common/decorators/public.decorator';
+import { PublicRateBucketOf, PublicRateLimitGuard } from '../../../common/rate-limit/public-rate-limit.guard';
 import { ExhibitsService } from '../services/exhibits.service';
 import { PublicModelsService } from '../services/public-models.service';
 import { PublicLangQueryDto } from '../dto/public-lang-query.dto';
@@ -15,6 +16,7 @@ const PUBLIC_CACHE_CONTROL = 'no-cache';
 
 @ApiTags('Public museum content')
 @Public()
+@UseGuards(PublicRateLimitGuard)
 @Controller('rooms')
 export class ExhibitsController {
   constructor(private readonly service: ExhibitsService, private readonly models: PublicModelsService) {}
@@ -47,6 +49,7 @@ export class ExhibitsController {
   }
 
   @Get(':slug/exhibits/:exhibitId/model')
+  @PublicRateBucketOf('media')
   @Header('Cache-Control', 'private, no-store')
   @Header('X-Content-Type-Options', 'nosniff')
   @ApiOperation({ summary: 'GLB của hiện vật đã xuất bản; truy cập Storage qua máy chủ' })

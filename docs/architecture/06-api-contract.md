@@ -305,6 +305,7 @@ GET    /public/sitemap.xml                # sitemap XML (không bọc ApiRespons
 GET    /rooms/:slug/exhibits/:id/model    # tệp GLB công khai của hiện vật
 POST   /public/reports                    # gửi báo cáo nội dung sai (rate limit)
 ```
+Mọi route GET ở trên và tệp media công khai có rate limit theo IP (mặc định 600 request/phút cho API, 3000 cho media/GLB); vượt → 429 + `Retry-After`. Chi tiết: [05 — Bảo mật](05-security-rbac.md).
 
 > Public cache TTL ≤ 60s; không bao giờ trả revision `draft/pending`.
 > `GET /api/rooms/search`: chỉ trả hiện vật `APPROVED` + `visible` thuộc phòng `ACTIVE`; sắp xếp cố định `roomId, displayOrder, id` (`sort` bị bỏ qua); chi tiết xem [be/public-exhibit-search.md](be/public-exhibit-search.md).

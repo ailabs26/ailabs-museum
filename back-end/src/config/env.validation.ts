@@ -117,6 +117,18 @@ class Environment {
   @Max(100)
   PUBLIC_REPORT_RATE_LIMIT: number = 5;
 
+  /** Request mỗi phút cho một IP ở API nội dung công khai (phòng, tìm kiếm, bản dịch, sitemap...). */
+  @IsInt()
+  @Min(1)
+  @Max(100000)
+  PUBLIC_API_RATE_LIMIT: number = 600;
+
+  /** Request mỗi phút cho một IP khi tải media/GLB công khai (ảnh, audio tua, mô hình 3D). */
+  @IsInt()
+  @Min(1)
+  @Max(100000)
+  PUBLIC_MEDIA_RATE_LIMIT: number = 3000;
+
   /** Cost factor hash bcrypt. */
   @IsInt()
   @Min(10)

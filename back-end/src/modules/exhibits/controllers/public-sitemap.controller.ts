@@ -1,12 +1,14 @@
-import { Controller, Get, Header, StreamableFile } from '@nestjs/common';
+import { Controller, Get, Header, StreamableFile, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiProduces, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../../common/decorators/public.decorator';
+import { PublicRateLimitGuard } from '../../../common/rate-limit/public-rate-limit.guard';
 import { ExhibitsService } from '../services/exhibits.service';
 
 /** Sitemap cho công cụ tìm kiếm; URL trỏ về trang khách (`FRONTEND_ORIGIN`). */
 @ApiTags('Public museum content')
 @Public()
+@UseGuards(PublicRateLimitGuard)
 @Controller('public')
 export class PublicSitemapController {
   constructor(private readonly service: ExhibitsService, private readonly config: ConfigService) {}
