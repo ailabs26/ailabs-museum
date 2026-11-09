@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { buildGuidedPath, getGuidedView, sampleGuidedPath, advanceGuidedTime, getGuidedDuration, GUIDED_MOTION } from './guidedCameraPath';
-import { findNavigationPath, isNavigationPositionSafe, isNavigationSegmentSafe, type NavigationCollider } from './museumNavigation';
+import { findNavigationPath, getDisplayColliders, isNavigationPositionSafe, isNavigationSegmentSafe, type NavigationCollider } from './museumNavigation';
 import { MUSEUM_ROOM_SIZE as room, type MuseumDisplay } from '@/interfaces/museumScene';
+import { roomA } from '../../tests/fixtures/museumContent';
+import { mapRoomDisplays } from './mapRoomDisplays';
+import { roomDetailSchema } from '@/validations/roomSchema';
 
 const obstacle = { minX: -1.5, maxX: 1.5, minZ: -1.5, maxZ: 1.5 };
 const display: MuseumDisplay = { id: 'one', title: 'One', description: '', position: [0, 0, 0], shape: 'sphere', color: '#fff' };
@@ -81,6 +84,15 @@ describe('guided collision-safe arc-length motion', () => {
     expect(Number.isFinite(path.duration)).toBe(true);
     expect(path.duration).toBeGreaterThan(0);
     expect(sampleGuidedPath(path, path.duration)).toMatchObject({ x: 0.01, y: 3 });
+  });
+
+  it('builds a finite resumed route from a real interrupted museum pose', () => {
+    const displays = mapRoomDisplays(roomDetailSchema.parse(roomA));
+    const view = getGuidedView(displays[1], displays)!;
+    const path = buildGuidedPath({ x: -0.003955212238692456, y: 5.78644986942391 }, { x: view.position[0], y: view.position[2] }, room,
+      getDisplayColliders(displays))!;
+    expect(Number.isFinite(path.duration)).toBe(true);
+    expect(path.duration).toBeLessThan(20);
   });
 
   it('limits resultant 3D speed when horizontal travel and vertical reframing coincide', () => {

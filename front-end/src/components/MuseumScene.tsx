@@ -31,6 +31,7 @@ import type { WebglStatus } from '@/helpers/webglRecovery';
 import { GallerySurfaces } from '@/components/museum/GallerySurfaces';
 import { useMuseumQuality } from '@/hooks/useMuseumQuality';
 import { usePublicT, type Translator } from '@/core/i18n/public-locale';
+import type { GuidedCameraBinding } from '@/hooks/useGuidedCameraTour';
 
 // Labels render over solid geometry. Picking follows that same visual order;
 // intersecting labels still use nearest-first ordering within their layer.
@@ -52,11 +53,12 @@ function xrMessage(message: string, t: Translator): string {
   return known ? t(known.key, known.label) : message;
 }
 
-export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback, immersive = false, onXrChange }: {
+export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback, immersive = false, onXrChange, guided }: {
   displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void; onClear: () => void;
   fallback: ReactNode;
   immersive?: boolean;
   onXrChange?: (snapshot: XrSnapshot, owner: XrSessionController | null) => void;
+  guided?: GuidedCameraBinding;
 }) {
   const t = usePublicT();
   const quality = useMuseumQuality();
@@ -102,6 +104,18 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
   const selectedAsset = selectedModel?.status === 'ready' && !(selectedRenderState?.checksum === selectedDisplay?.model?.checksumSha256 && selectedRenderState?.failed) ? selectedModel.asset : undefined;
   const focusBounds = useMemo(() => selectedDisplay?.model ? getArtifactFocusBounds(selectedDisplay, selectedAsset?.normalization)
     : undefined, [selectedDisplay, selectedAsset]);
+  const guidedDisplay = displays.find(display => display.id === guided?.request?.exhibitId);
+  const guidedModel = guidedDisplay?.model ? models[guidedDisplay.model.checksumSha256] : undefined;
+  const guidedBounds = useMemo(() => guidedDisplay?.model ? getArtifactFocusBounds(guidedDisplay,
+    guidedModel?.status === 'ready' ? guidedModel.asset.normalization : undefined) : undefined, [guidedDisplay, guidedModel]);
+  const onGuidedReady = guided?.onReady;
+  const guidedRenderState = renderStates[guidedDisplay?.id ?? ''];
+  const guidedModelFailed = guidedModel?.status === 'error'
+    || !!(guidedDisplay?.model && guidedRenderState?.checksum === guidedDisplay.model.checksumSha256 && guidedRenderState.failed);
+  useEffect(() => {
+    onGuidedReady?.(isWebInputEnabled);
+    return () => onGuidedReady?.(false);
+  }, [onGuidedReady, isWebInputEnabled]);
   const handleWebglStatus = useCallback((status: WebglStatus) => setWebglStatus(status), []);
   const handleRenderError = (display: MuseumDisplay) => {
     const previous = renderStates[display.id];
@@ -131,7 +145,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
   };
   if (webglStatus === 'failed') return fallback;
   return (
-    <div className={`${classes.scene} ${immersive ? classes.immersive : ''}`} data-quality-tier={quality.tier} data-webgl-status={webglStatus} data-xr-phase={xrStatus.phase}>
+    <div className={`${classes.scene} ${immersive ? classes.immersive : ''}`} data-guided-session={guided?.hasSession || undefined} data-quality-tier={quality.tier} data-webgl-status={webglStatus} data-xr-phase={xrStatus.phase}>
     <div className={classes.canvasFrame}
       onPointerDownCapture={event => { gestures.start(event.pointerId, event.clientX, event.clientY); if (event.pointerType === 'touch') setHasTouch(true); }}
       onPointerMoveCapture={event => gestures.move(event.pointerId, event.clientX, event.clientY)}
@@ -163,7 +177,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
         onController={setXrOwner} onStatus={setXrStatus} onHover={setXrHoveredId} onRendererReset={handleRendererReset} />
       <PhotoCapture bind={(fn) => { captureRef.current = fn; }} />
       <MuseumControls enabled={isWebInputEnabled} command={command} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
-        displays={displays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} />
+        displays={displays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} guided={guided} guidedBounds={guidedBounds} guidedModelFailed={guidedModelFailed} />
       <GallerySurfaces anisotropy={quality.anisotropy}>
       <MuseumRoom />
       {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={handleSceneSelect}
@@ -196,6 +210,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
         </div>
       </details>
       {xrStatus.capability === 'ready' && xrStatus.phase === 'idle' && <Button disabled={webglStatus !== 'ready' || !xrOwner} onClick={() => {
+        guided?.onManual(); input.stop();
         onXrChange?.({ ...xrStatus, phase: 'requesting' }, xrOwner); void xrOwner?.enter();
       }}>Enter VR</Button>}
       {xrStatus.phase === 'requesting' && <Button disabled>{t('ui.tour.xr.entering', 'Đang vào VR…')}</Button>}

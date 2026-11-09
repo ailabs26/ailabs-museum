@@ -1,0 +1,13 @@
+.bar { position: absolute; z-index: 6; top: 300px; left: 24px; width: min(270px, calc(100% - 48px)); padding: 10px; border: 1px solid #bdab8d; border-radius: 8px; background: #f7f3ea; color: #30392f; }
+.bar button { min-width: 44px; min-height: 44px; padding-inline: 10px; height: auto; }
+.bar :global(.mantine-Button-label) { white-space: normal; }
+.status { display: grid; gap: 4px; margin-bottom: 8px; font-size: 12px; }
+.status strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.actions { display: flex; gap: 6px; }
+@media (max-width: 600px) {
+  .bar { top: 252px; left: 12px; width: 240px; padding: 8px; }
+  .bar[data-status='idle'] { top: 140px; right: 12px; left: auto; width: 192px; }
+}
+@media (max-height: 600px) {
+  .bar { top: auto; bottom: 92px; left: 12px; width: 240px; max-height: 140px; overflow: auto; }
+}

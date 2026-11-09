@@ -17,6 +17,8 @@ import { useImmersiveTour } from '@/hooks/useImmersiveTour';
 import type { XrSessionController, XrSnapshot } from '@/helpers/xrSession';
 import classes from './MuseumPage.module.css';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useGuidedCameraTour } from '@/hooks/useGuidedCameraTour';
+import { GuidedTourBar } from '@/components/museum/GuidedTourBar';
 
 const LazyMuseumScene = lazy(() => import('@/components/MuseumScene').then((module) => ({ default: module.MuseumScene })));
 const LazyMuseumAuditPanel = lazy(() => import('@/components/museum/MuseumAuditPanel').then(module => ({ default: module.MuseumAuditPanel })));
@@ -59,6 +61,15 @@ export function MuseumPage() {
   const selectedDisplay = detail && isRequestedExhibitValid
     ? displays.find((display) => display.id === requestedExhibitId)
     : undefined;
+  const selectGuidedDisplay = (id: string) => {
+    if (requestedExhibitId === id) return;
+    const next = new URLSearchParams(searchParams); next.set('exhibit', id);
+    setSearchParams(next, { replace: true });
+  };
+  const guided = useGuidedCameraTour(detail, isSceneOpen, selectGuidedDisplay);
+  useEffect(() => {
+    if (rooms.isSuccess && !selectedRoom && guided.tour.currentStep) guided.tour.invalidateRoom(guided.tour.currentStep.roomId);
+  }, [rooms.isSuccess, selectedRoom, guided.tour]);
   const exhibitLinkMessage = detail && requestedExhibitId !== null && !selectedDisplay
     ? isRequestedExhibitValid
       ? t('ui.tour.exhibit-not-in-room', 'Không tìm thấy hiện vật trong phòng này.')
@@ -72,6 +83,7 @@ export function MuseumPage() {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const handleSelectDisplay = (id: string) => {
     if (!detail || !displays.some((display) => display.id === id)) return;
+    guided.tour.exit();
     const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     selectionTriggerRef.current = active?.closest('details[data-catalogue]')?.querySelector('summary') ?? active;
     containerRef.current?.querySelector('details[data-catalogue]')?.removeAttribute('open');
@@ -80,6 +92,7 @@ export function MuseumPage() {
     setSearchParams(next, { replace: true });
   };
   const handleCloseDetail = () => {
+    guided.tour.pause();
     const next = new URLSearchParams(searchParams);
     next.delete('exhibit');
     setSearchParams(next, { replace: true });
@@ -100,6 +113,7 @@ export function MuseumPage() {
     wasSceneOpenRef.current = isSceneOpen;
   }, [isSceneOpen, failedRoomId, currentRoomId]);
   const handleSelectRoom = (slug: string) => {
+    guided.tour.exit();
     const next = new URLSearchParams(searchParams);
     next.set('room', slug);
     next.delete('exhibit');
@@ -180,7 +194,7 @@ export function MuseumPage() {
         {detail ? <ErrorBoundary key={`${detail.id}:${sceneAttempt}`} fallback={sceneFallback}>
           <Suspense fallback={<MuseumLoading text={t('ui.tour.opening', 'Đang mở phòng 3D…')} />}>
             <LazyMuseumScene displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay}
-              onClear={handleCloseDetail} fallback={sceneFallback} immersive onXrChange={handleXrChange} />
+              onClear={handleCloseDetail} fallback={sceneFallback} immersive onXrChange={handleXrChange} guided={guided.camera} />
           </Suspense>
         </ErrorBoundary> : <div className={classes.immersiveLoading}>
           {rooms.isSuccess && !selectedRoom ? <Alert color="orange" title={t('ui.collection.room-unavailable', 'Phòng không khả dụng')}>
@@ -193,7 +207,8 @@ export function MuseumPage() {
           <NativeSelect aria-label={t('ui.tour.room-select', 'Chọn phòng trưng bày')} value={selectedSlug ?? ''}
             onChange={event => handleSelectRoom(event.currentTarget.value)} data={rooms.data?.map(item => ({ value: item.slug, label: item.name })) ?? []} />
         </div>
-        <div className={classes.immersiveDetail}>{detailPanel}</div>
+        <div className={`${classes.immersiveDetail} ${guided.camera.hasSession ? classes.guidedDetail : ''}`}>{detailPanel}</div>
+        {detail && <GuidedTourBar controller={guided} title={displays.find(display => display.id === guided.tour.currentStep?.exhibitId)?.title} />}
         {detail && <details data-catalogue className={classes.immersiveCatalogue} open={displays.length === 0 ? true : undefined}><summary>{t('ui.tour.catalogue-summary', 'Danh mục hiện vật')}</summary>
           <Button m="sm" variant="default" disabled={rooms.isFetching || room.isFetching} onClick={() => void refresh()}>{t('ui.collection.refresh', 'Làm mới')}</Button>{catalogue}
         </details>}
