@@ -20,3 +20,15 @@ Before each commit review diff, run focused checks, inspect staged file list and
 | 933ff66 | Synchronous manual commands, selection ordering and responsive controls with regressions |
 | f7a9c7c | Vector acceleration budget and finer curve chords, verified at 30/60/120 FPS |
 | HEAD at handoff | Final verification, screenshots and completed plan, SHA reported in the final response |
+
+## PR #175 review follow-up commits
+
+The later user requests authorize pushing updates to the existing PR into dev. The initial local-only handoff above is historical.
+
+| SHA | Boundary |
+| --- | --- |
+| b6550ab | Merge latest dev at ac6a481 into the existing task branch |
+| f10bb62 | Immediate arrival for zero-duration Resume with normal-motion regression |
+| 31206b8 | Six-locale Guided Tour defaults, CMS precedence and locale-stable navigation with regressions |
+| c8b62c5 | Synchronous Pause cancellation and deterministic RAF test setup |
+| HEAD at review handoff | Review follow-up verification and integration notes, SHA reported in the final response |

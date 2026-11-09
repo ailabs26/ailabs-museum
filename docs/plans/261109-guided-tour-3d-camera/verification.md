@@ -102,3 +102,37 @@ The local public API probe at localhost:3001/api/rooms timed out after three sec
 ## Handoff
 
 Branch feat/guided-tour-3d-camera remains local, based on origin/dev at 521423bd7e5fd20164ed88ad633102356bafc34c. All runtime changes, tests and this package are committed. No remote push, PR creation or merge was requested. If a PR is later opened, its base is dev. Commit ledger is in commit-plan.md, with the final documentation SHA included in the handoff response.
+
+## PR #175 review follow-up
+
+The user subsequently requested a PR, then requested fixes for dinhtienn's three findings on head 76c71fc. This section supersedes the initial local-only handoff. The existing feature branch and PR into dev are retained. Latest dev at ac6a481 was merged without conflicts before the review fixes.
+
+### Findings and regression evidence
+
+- Missing CMS keys now use bundled Guided Tour defaults for all six supported locales. CMS keys retain precedence. Browser cases cover all six control flows, CMS override and translation-request failure.
+- Locale changes now retain stable navigation data and guided bounds. The regression reproduced a velocity drop from approximately 8.7 cm to 0.24 cm over a 100 ms interval before the fix. It checks continued movement and translated exhibit copy after changing locale.
+- Zero-duration Resume now reaches viewing on its first frame when already aligned. The normal-motion regression failed the original one-second denominator fallback and passed after treating duration zero as progress 1.
+- An intermediate broader run passed 27/28 and exposed one additional guided frame after DOM Pause. Synchronous coordinator cancellation and a live validity check in the camera owner now preserve the exact paused pose. The original equality assertion remains intact.
+
+### Browser reruns and test timing
+
+The subsequent production run passed 19/22. Two failures were software-renderer timing limits. Its attached normal-travel trace contained only 142 samples over more than 90 seconds while frame delta was capped at 50 ms. The normal travel and reset regressions now select the existing low tier at 640 by 480 with four reported CPU cores. All collision, orientation, exact-pose and movement assertions remain intact.
+
+The third failure occurred before changing locale. Installing the fake clock after R3F had already scheduled native RAF left the renderer stationary during virtual time. The unchanged focused rerun reproduced it. Installing the clock before renderer creation fixed the test. Both new virtual-time motion cases use that ordering.
+
+The final focused production run passed 4/4 in 2.9 minutes, covering normal collision detour/Pause/Next/manual takeover, synchronous reset, first-frame zero-duration Resume and locale continuity. Together with the other 19 passing cases, all 22 affected Guided Tour camera/locale scenarios passed on the pause-cancellation implementation. Logs are retained under ignored front-end/tmp as pr175-review-final.log, pr175-review-motion-rerun.log and pr175-review-motion-final.log. Earlier focused review regressions passed 10/10 before the additional Pause fix.
+
+Dev/React StrictMode public locale and Guided Tour Core regressions passed 10/10 in 37.2 seconds. The log is pr175-review-dev.log. Final browser commands ran sequentially from front-end so each server completed teardown before the next run.
+
+After the final runtime and test changes, npm run typecheck, npm run lint, npm run test:unit and npm run build all exited 0. Unit results were 325/325 across 53 files. Production build retained the existing large-chunk warning, with main at 1,096.02 kB and MuseumScene at 84.65 kB. The complete review-follow-up diff was reviewed and git diff --check passed before commits.
+
+```powershell
+$env:CI = '1'
+$env:PLAYWRIGHT_PREVIEW = '1'
+node node_modules/@playwright/test/cli.js test guided-tour-camera.spec.ts guided-tour-locale.spec.ts --reporter=line --output=tmp/pr175-review-final
+node node_modules/@playwright/test/cli.js test guided-tour-camera.spec.ts guided-tour-locale.spec.ts -g 'normal travel detours|reset command finishes|locale-only updates|resume at an arrived' --reporter=line --output=tmp/pr175-review-motion-final
+Remove-Item Env:PLAYWRIGHT_PREVIEW
+node node_modules/@playwright/test/cli.js test public-locale.spec.ts guided-tour-core.spec.ts --reporter=line --output=tmp/pr175-review-dev
+```
+
+Real-device FPS, physical headset comfort and mobile GPU behavior remain unmeasured. Browser evidence uses Edge/SwiftShader and simulated XR. Existing build chunk warnings remain.
