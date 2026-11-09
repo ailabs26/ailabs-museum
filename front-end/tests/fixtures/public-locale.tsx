@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { QueryClientProvider } from '@tanstack/react-query';
 import '@mantine/core/styles.css';
 import { Button, MantineProvider, Stack, Text } from '@mantine/core';
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -88,17 +89,15 @@ function GuidedTourRoute({ next }: { next: string }) {
 
 function PublicGuidedTourFixture() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/first']}>
-        <Routes>
-          <Route element={<PublicLayout />}>
-            <Route path="/first" element={<GuidedTourRoute next="/second" />} />
-            <Route path="/second" element={<GuidedTourRoute next="/admin" />} />
-          </Route>
-          <Route path="/admin" element={<Stack p="md"><Text data-testid="admin-fixture">Admin fixture</Text><Link to="/first">Return to public route</Link></Stack>} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>
+    <MemoryRouter initialEntries={['/first']}>
+      <Routes>
+        <Route element={<PublicLayout />}>
+          <Route path="/first" element={<GuidedTourRoute next="/second" />} />
+          <Route path="/second" element={<GuidedTourRoute next="/admin" />} />
+        </Route>
+        <Route path="/admin" element={<Stack p="md"><Text data-testid="admin-fixture">Admin fixture</Text><Link to="/first">Return to public route</Link></Stack>} />
+      </Routes>
+    </MemoryRouter>
   );
 }
 
@@ -109,11 +108,13 @@ function GuidedTourOutsideProviderFixture() {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MantineProvider theme={theme}>
-      {new URLSearchParams(location.search).has('guided-tour')
-        ? <PublicGuidedTourFixture />
-        : new URLSearchParams(location.search).has('guided-tour-outside') ? <GuidedTourOutsideProviderFixture />
-        : new URLSearchParams(location.search).has('layout') ? <PublicLayoutFixture /> : <PublicLocaleFixture />}
-    </MantineProvider>
+    <QueryClientProvider client={queryClient}>
+      <MantineProvider theme={theme}>
+        {new URLSearchParams(location.search).has('guided-tour')
+          ? <PublicGuidedTourFixture />
+          : new URLSearchParams(location.search).has('guided-tour-outside') ? <GuidedTourOutsideProviderFixture />
+          : new URLSearchParams(location.search).has('layout') ? <PublicLayoutFixture /> : <PublicLocaleFixture />}
+      </MantineProvider>
+    </QueryClientProvider>
   </StrictMode>,
 );
