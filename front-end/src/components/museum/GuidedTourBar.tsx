@@ -29,7 +29,7 @@ export function GuidedTourBar({ controller, title }: { controller: ReturnType<ty
       <div className={classes.actions}>
         <Button variant="default" aria-label={t('ui.guided.previous', messages.previous)} disabled={!tour.canPrevious} onClick={tour.previous}><IconPlayerSkipBack size={18} /></Button>
         {tour.status !== 'completed' && <Button color="teal.9" aria-label={tour.status === 'running' ? t('ui.guided.pause', messages.pause) : t('ui.guided.resume', messages.resume)}
-          disabled={tour.status === 'paused' && !ready} onClick={tour.status === 'running' ? tour.pause : tour.resume}>
+          disabled={tour.status === 'paused' && !ready} onClick={tour.status === 'running' ? controller.pause : tour.resume}>
           {tour.status === 'running' ? <IconPlayerPause size={18} /> : <IconPlayerPlay size={18} />}
         </Button>}
         <Button variant="default" aria-label={t('ui.guided.next', messages.next)} disabled={!tour.canNext} onClick={tour.next}><IconPlayerSkipForward size={18} /></Button>

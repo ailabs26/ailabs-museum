@@ -96,7 +96,7 @@ export function MuseumPage() {
     setSearchParams(next, { replace: true });
   };
   const handleCloseDetail = () => {
-    guided.tour.pause();
+    guided.pause();
     const next = new URLSearchParams(searchParams);
     next.delete('exhibit');
     setSearchParams(next, { replace: true });

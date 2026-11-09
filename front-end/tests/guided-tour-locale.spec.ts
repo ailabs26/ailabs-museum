@@ -87,11 +87,12 @@ test('guided locale fallback remains available when CMS translations fail', asyn
 test('locale-only updates preserve in-flight camera velocity and update exhibit copy', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 480 });
   await page.addInitScript(() => Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 4 }));
-  await openRoom(page, 'vi', { reduced: false });
-  await waitForRendererIdle(page);
+  // Install before the renderer schedules RAF so every frame uses the same clock.
   const clockStart = new Date('2026-11-09T00:00:00Z');
   await page.clock.install({ time: clockStart });
-  await page.clock.pauseAt(clockStart);
+  await openRoom(page, 'vi', { reduced: false });
+  await waitForRendererIdle(page);
+  await page.clock.pauseAt(new Date('2026-11-09T00:01:00Z'));
   await controls(page).getByRole('button', { name: 'Bắt đầu tham quan có hướng dẫn', exact: true }).evaluate(button => button.click());
   await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'focusing');
   await page.clock.runFor(1500);

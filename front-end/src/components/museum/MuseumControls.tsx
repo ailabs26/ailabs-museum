@@ -221,6 +221,11 @@ export function MuseumControls({ enabled = true, commandHandler, selectionIssued
   useFrame((_, rawDelta) => {
     if (!enabled || gl.xr.isPresenting) return;
     const motion = guidedMotion.current;
+    // DOM pause can cancel the request before R3F receives the next props.
+    if (motion && !guidedRef.current?.isCurrent(motion.request)) {
+      guidedMotion.current = null;
+      return;
+    }
     if (motion && motion.request === guidedRef.current?.request) {
       motion.elapsed = advanceGuidedTime(motion.elapsed, rawDelta, true);
       const progress = reducedRef.current || motion.duration === 0 ? 1 : Math.min(1, motion.elapsed / motion.duration);

@@ -57,6 +57,9 @@ test('arrival selects in CMS order, dwell pauses with time remaining, completes 
 });
 
 test('normal travel detours colliders, pauses at actual pose, replans on Next and yields to WASD', async ({ page }, info) => {
+  // Keep software-rendered travel within the timeout while retaining real RAF motion.
+  await page.setViewportSize({ width: 640, height: 480 });
+  await page.addInitScript(() => Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 4 }));
   await open(page, false);
   await waitForRendererIdle(page);
   await page.getByRole('button', { name: 'Bắt đầu tham quan có hướng dẫn', exact: true }).click();
@@ -274,6 +277,8 @@ test('Exit keeps the arrived pose and cancels automatic selection refocus', asyn
 });
 
 test('a reset command finishes in its DOM action before subsequent manual movement', async ({ page }) => {
+  await page.setViewportSize({ width: 640, height: 480 });
+  await page.addInitScript(() => Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 4 }));
   await open(page);
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true });
   await canvas.focus();
@@ -330,11 +335,11 @@ test('a replacement GLB clears an obsolete render failure for the same exhibit',
 test('resume at an arrived pose completes on the first frame with reduced motion off', async ({ page }) => {
   await page.setViewportSize({ width: 640, height: 480 });
   await page.addInitScript(() => Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 4 }));
-  await open(page, false);
-  await waitForRendererIdle(page);
   const clockStart = new Date('2026-11-09T00:00:00Z');
   await page.clock.install({ time: clockStart });
-  await page.clock.pauseAt(clockStart);
+  await open(page, false);
+  await waitForRendererIdle(page);
+  await page.clock.pauseAt(new Date('2026-11-09T00:01:00Z'));
   await page.getByRole('button', { name: 'Bắt đầu tham quan có hướng dẫn', exact: true }).evaluate(button => button.click());
   await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'focusing');
   await page.clock.runFor(6000);
