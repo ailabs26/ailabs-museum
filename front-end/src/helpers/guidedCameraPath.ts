@@ -50,23 +50,13 @@ export function getGuidedView(display: MuseumDisplay, displays: readonly MuseumD
   return position ? { target, position } : null;
 }
 
-/** The validated sampled polyline is also the rendered curve, avoiding spline overshoot. */
-export function buildGuidedPath(start: NavigationVector, end: NavigationVector, room: NavigationRoom, colliders: readonly NavigationCollider[]): GuidedPath | null {
-  if (![start.x, start.y, end.x, end.y].every(Number.isFinite)) return null;
-  const expanded = colliders.map(box => ({ minX: box.minX - 0.22, maxX: box.maxX + 0.22, minZ: box.minZ - 0.22, maxZ: box.maxZ + 0.22 }));
-  const route = findNavigationPath(start, end, room, expanded) ?? findNavigationPath(start, end, room, colliders);
-  if (!route) return null;
+/** Bounded corner rounding keeps the original turn when every curve is obstructed. */
+export function roundGuidedPathCorners(route: readonly NavigationVector[], room: NavigationRoom, colliders: readonly NavigationCollider[]): NavigationVector[] {
+  if (route.length < 2) return [...route];
   const clear = (a: NavigationVector, b: NavigationVector) => isNavigationSegmentSafe(a, b, room, colliders);
-  const routingBoxes = route.every(p => isNavigationPositionSafe(p.x, p.y, room, expanded)) ? expanded : colliders;
-  const pruned = [route[0]];
-  for (let i = 0; i < route.length - 1;) {
-    let next = route.length - 1;
-    while (next > i + 1 && !isNavigationSegmentSafe(route[i], route[next], room, routingBoxes)) next--;
-    pruned.push(route[next]); i = next;
-  }
-  const rounded = [start];
-  for (let i = 1; i < pruned.length - 1; i++) {
-    const before = pruned[i - 1], corner = pruned[i], after = pruned[i + 1];
+  const rounded = [route[0]];
+  for (let i = 1; i < route.length - 1; i++) {
+    const before = route[i - 1], corner = route[i], after = route[i + 1];
     let radius = Math.min(0.55, distance(before, corner) * 0.4, distance(corner, after) * 0.4);
     let curve: NavigationVector[] = [corner];
     for (let attempt = 0; attempt < 8 && radius > 0.002; attempt++, radius /= 2) {
@@ -81,7 +71,25 @@ export function buildGuidedPath(start: NavigationVector, end: NavigationVector, 
     }
     rounded.push(...curve);
   }
-  rounded.push(end);
+  rounded.push(route.at(-1)!);
+  return rounded;
+}
+
+/** The validated sampled polyline is also the rendered curve, avoiding spline overshoot. */
+export function buildGuidedPath(start: NavigationVector, end: NavigationVector, room: NavigationRoom, colliders: readonly NavigationCollider[]): GuidedPath | null {
+  if (![start.x, start.y, end.x, end.y].every(Number.isFinite)) return null;
+  const expanded = colliders.map(box => ({ minX: box.minX - 0.22, maxX: box.maxX + 0.22, minZ: box.minZ - 0.22, maxZ: box.maxZ + 0.22 }));
+  const route = findNavigationPath(start, end, room, expanded) ?? findNavigationPath(start, end, room, colliders);
+  if (!route) return null;
+  const clear = (a: NavigationVector, b: NavigationVector) => isNavigationSegmentSafe(a, b, room, colliders);
+  const routingBoxes = route.every(p => isNavigationPositionSafe(p.x, p.y, room, expanded)) ? expanded : colliders;
+  const pruned = [route[0]];
+  for (let i = 0; i < route.length - 1;) {
+    let next = route.length - 1;
+    while (next > i + 1 && !isNavigationSegmentSafe(route[i], route[next], room, routingBoxes)) next--;
+    pruned.push(route[next]); i = next;
+  }
+  const rounded = roundGuidedPathCorners(pruned, room, colliders);
   const points = [start], distances = [0];
   for (let i = 1; i < rounded.length; i++) {
     const from = rounded[i - 1], to = rounded[i], length = distance(from, to);

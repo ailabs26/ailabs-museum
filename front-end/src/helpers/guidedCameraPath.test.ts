@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildGuidedPath, getGuidedView, sampleGuidedPath, advanceGuidedTime, getGuidedDuration, GUIDED_MOTION } from './guidedCameraPath';
+import { buildGuidedPath, getGuidedView, sampleGuidedPath, advanceGuidedTime, getGuidedDuration, roundGuidedPathCorners, GUIDED_MOTION } from './guidedCameraPath';
 import { findNavigationPath, getDisplayColliders, isNavigationPositionSafe, isNavigationSegmentSafe, type NavigationCollider } from './museumNavigation';
 import { MUSEUM_ROOM_SIZE as room, type MuseumDisplay } from '@/interfaces/museumScene';
 import { roomA } from '../../tests/fixtures/museumContent';
@@ -49,9 +49,18 @@ describe('guided collision-safe arc-length motion', () => {
   });
 
   it('shrinks rounding in a narrow passage and falls back safely', () => {
-    const colliders = [obstacle, { minX: -6.55, maxX: 6.55, minZ: -7.55, maxZ: -1.54 }];
+    const colliders = [{ ...obstacle, maxZ: 7.55 }, { minX: -6.55, maxX: 6.55, minZ: -7.55, maxZ: -1.54 }];
     const path = buildGuidedPath({ x: -4, y: 0 }, { x: 4, y: 0 }, room, colliders)!;
     assertSafe(path, colliders);
+    expect(path.points.some(point => point.y > -1.54 && point.y < -1.5)).toBe(true);
+  });
+
+  it('retains the collision-free polyline when every positive rounding radius cuts a collider', () => {
+    const route = [{ x: -3, y: -1 }, { x: 1, y: -1 }, { x: 1, y: 3 }];
+    const colliders = [{ minX: -1, maxX: 1, minZ: -1, maxZ: 1 }];
+    const rounded = roundGuidedPathCorners(route, room, colliders);
+    expect(rounded).toEqual(route);
+    for (let i = 1; i < rounded.length; i++) expect(isNavigationSegmentSafe(rounded[i - 1], rounded[i], room, colliders)).toBe(true);
   });
 
   it('handles walls, coincident endpoints and rejects invalid or unreachable endpoints', () => {
