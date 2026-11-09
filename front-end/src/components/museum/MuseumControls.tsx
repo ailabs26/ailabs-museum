@@ -1,6 +1,6 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Euler, PerspectiveCamera, Vector3 } from 'three';
+import { Euler, Matrix4, Quaternion, PerspectiveCamera, Vector3 } from 'three';
 import { useReducedMotion } from '@mantine/hooks';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { MUSEUM_ROOM_SIZE } from '@/interfaces/museumScene';
@@ -11,23 +11,27 @@ import type { NavigationGestures } from '@/helpers/navigationGestures';
 import type { NavigationMode } from './NavigationHud';
 import { cinematicPosition, getCinematicEntrance, type Vec3 } from '@/helpers/cinematicIntro';
 import { usePublicT } from '@/core/i18n/public-locale';
+import type { GuidedCameraBinding, GuidedCameraRequest } from '@/hooks/useGuidedCameraTour';
+import { advanceGuidedTime, buildGuidedPath, getGuidedView, getGuidedDuration, GUIDED_MOTION, sampleGuidedDistance, sampleGuidedPath, type GuidedPath } from '@/helpers/guidedCameraPath';
 
 export type CameraAction = NavigationAction;
-export interface CameraCommand { action: CameraAction; sequence: number }
 interface FocusTransition {
   fromPosition: Vector3; fromTarget: Vector3; toPosition: Vector3; toTarget: Vector3; startedAt: number;
   path: NavigationVector[]; lengths: number[]; totalLength: number;
 }
 
 /** Sole transform owner: exploration and focus share one demand-frame pipeline. */
-export function MuseumControls({ enabled = true, command, selectedDisplay, focusBounds, displays, input, gestures, onModeChange, onActiveChange }: {
+export function MuseumControls({ enabled = true, commandHandler, selectionIssuedAt, selectedDisplay, focusBounds, displays, input, gestures, onModeChange, onActiveChange, guided, guidedBounds, guidedModelFailed }: {
   enabled?: boolean;
-  command: CameraCommand | null; selectedDisplay?: MuseumDisplay; focusBounds?: ModelFocusBounds;
+  selectedDisplay?: MuseumDisplay; focusBounds?: ModelFocusBounds; selectionIssuedAt: number;
+  commandHandler: MutableRefObject<((action: CameraAction) => void) | null>;
   displays: readonly MuseumDisplay[]; input: NavigationInput; gestures: NavigationGestures;
   onModeChange: (mode: NavigationMode) => void; onActiveChange: (isActive: boolean) => void;
+  guided?: GuidedCameraBinding; guidedBounds?: ModelFocusBounds; guidedModelFailed?: boolean;
 }) {
   const t = usePublicT();
   const canvasLabel = t('ui.tour.canvas-aria', 'Phòng trưng bày 3D');
+  const labelRef = useRef(canvasLabel); labelRef.current = canvasLabel;
   const { camera, gl, invalidate, size } = useThree();
   const prefersReducedMotion = useReducedMotion(false, { getInitialValueInEffect: false });
   const reducedRef = useRef(prefersReducedMotion); reducedRef.current = prefersReducedMotion;
@@ -37,17 +41,22 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
   const boundsRef = useRef(focusBounds); boundsRef.current = focusBounds;
   const aspectRef = useRef(1); aspectRef.current = size.width / size.height;
   const autoFocusRef = useRef({ id: selectedDisplay?.id, allowed: true });
+  const manualInputAt = useRef(-Infinity);
   const transitionRef = useRef<FocusTransition | null>(null);
   const introAttemptedRef = useRef(false);
   const introRef = useRef<{ from: Vec3; to: Vec3; startedAt: number } | null>(null);
   const actionRef = useRef<((action: CameraAction) => void) | null>(null);
   const modeRef = useRef<NavigationMode>('explore');
+  const guidedRef = useRef(guided); guidedRef.current = guided;
+  const guidedMotion = useRef<{ request: GuidedCameraRequest; path: GuidedPath; elapsed: number; duration: number; fromY: number; toY: number; target: Vector3 } | null>(null);
   const runtime = useMemo(() => ({
     velocity: new Vector3(), euler: new Euler(0, 0, 0, 'YXZ'),
     look: { yaw: 0, pitch: 0 }, goal: { yaw: 0, pitch: 0 }, movement: { x: 0, y: 0 },
     desired: new Vector3(), target: new Vector3(), direction: new Vector3(), isWalking: false,
+    matrix: new Matrix4(), rotation: new Quaternion(), desiredEuler: new Euler(0, 0, 0, 'YXZ'),
   }), []);
   const callbacks = useRef({ onModeChange, onActiveChange }); callbacks.current = { onModeChange, onActiveChange };
+  useEffect(() => { gl.domElement.setAttribute('aria-label', canvasLabel); }, [gl, canvasLabel]);
 
   useLayoutEffect(() => {
     if (!enabled || !(camera instanceof PerspectiveCamera)) return;
@@ -71,14 +80,19 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
       runtime.velocity.set(0, 0, 0); runtime.isWalking = false; syncLook();
     };
     const explore = () => {
+      manualInputAt.current = performance.now();
+      guidedMotion.current = null;
+      if (guidedRef.current?.hasSession) guidedRef.current.onManual();
       if (introRef.current) { introRef.current = null; syncLook(); }
-      transitionRef.current = null; autoFocusRef.current.allowed = false;
+      transitionRef.current = null; autoFocusRef.current = { id: selectedRef.current?.id, allowed: false };
       if (modeRef.current !== 'explore') { syncLook(); setMode('explore'); }
     };
     input.stop = stop; input.invalidate = invalidate;
     input.wake = () => { explore(); callbacks.current.onActiveChange(true); invalidate(); };
     syncLook();
     const action = (action: CameraAction) => {
+      guidedMotion.current = null;
+      if (guidedRef.current?.hasSession) guidedRef.current.onManual();
       introRef.current = null;
       stop(); transitionRef.current = null; autoFocusRef.current.allowed = action === 'focus';
       if (action === 'focus') {
@@ -135,12 +149,19 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
       invalidate();
     };
     actionRef.current = action;
-    const detach = attachNavigationInput(gl.domElement, input, gestures, action, active => callbacks.current.onActiveChange(active), canvasLabel);
+    const manualAction = (command: CameraAction) => {
+      manualInputAt.current = performance.now();
+      action(command);
+    };
+    // DOM commands finish in the user action before later keyboard/touch input.
+    commandHandler.current = manualAction;
+    const detach = attachNavigationInput(gl.domElement, input, gestures, manualAction, active => callbacks.current.onActiveChange(active), labelRef.current);
     return () => {
-      detach(); transitionRef.current = null; actionRef.current = null;
+      detach(); transitionRef.current = null; guidedMotion.current = null; actionRef.current = null;
+      commandHandler.current = null;
       input.wake = input.invalidate = input.stop = () => {};
     };
-  }, [enabled, camera, gl, invalidate, input, gestures, runtime, canvasLabel]);
+  }, [enabled, camera, gl, invalidate, input, gestures, runtime, commandHandler]);
 
   useEffect(() => {
     if (introAttemptedRef.current || !enabled) return;
@@ -162,8 +183,9 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
   }, [enabled, camera, colliders, invalidate]);
 
   useEffect(() => {
+    if (guided?.hasSession) { autoFocusRef.current = { id: selectedDisplay?.id, allowed: false }; return; }
     if (!enabled) { autoFocusRef.current = { id: selectedDisplay?.id, allowed: false }; return; }
-    if (autoFocusRef.current.id !== selectedDisplay?.id) autoFocusRef.current = { id: selectedDisplay?.id, allowed: true };
+    if (autoFocusRef.current.id !== selectedDisplay?.id) autoFocusRef.current = { id: selectedDisplay?.id, allowed: selectionIssuedAt > manualInputAt.current };
     if (selectedDisplay && autoFocusRef.current.allowed) actionRef.current?.('focus');
     else if (!selectedDisplay) {
       transitionRef.current = null;
@@ -171,11 +193,66 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
       runtime.look.yaw = runtime.goal.yaw = runtime.euler.y; runtime.look.pitch = runtime.goal.pitch = runtime.euler.x;
       modeRef.current = 'explore'; callbacks.current.onModeChange('explore');
     }
-  }, [enabled, selectedDisplay, focusBounds, size.width, size.height, camera, runtime]);
-  useEffect(() => { if (command) actionRef.current?.(command.action); }, [command]);
+  }, [enabled, selectedDisplay, focusBounds, size.width, size.height, camera, runtime, guided?.hasSession, selectionIssuedAt]);
+
+  const guidedRequest = guided?.request;
+  useEffect(() => {
+    guidedMotion.current = null;
+    if (guidedRef.current?.hasSession) {
+      transitionRef.current = null; introRef.current = null;
+    }
+    if (!enabled || gl.xr.isPresenting || !guidedRequest) return;
+    input.stop();
+    guidedRef.current?.onMoving(guidedRequest);
+    const display = displays.find(item => item.id === guidedRequest.exhibitId);
+    const view = display && getGuidedView(display, displays, guidedBounds, size.width / size.height, camera instanceof PerspectiveCamera ? camera.fov : 60);
+    const path = view && buildGuidedPath({ x: camera.position.x, y: camera.position.z }, { x: view.position[0], y: view.position[2] }, MUSEUM_ROOM_SIZE, colliders);
+    if (!view || !path || guidedModelFailed) { guidedRef.current?.onResult(guidedRequest, 'blocked'); return; }
+    guidedMotion.current = {
+      request: guidedRequest, path, elapsed: 0,
+      duration: getGuidedDuration(path.duration, view.position[1] - camera.position.y),
+      fromY: camera.position.y, toY: view.position[1], target: new Vector3(...view.target),
+    };
+    modeRef.current = 'focusing'; callbacks.current.onModeChange('focusing'); invalidate();
+    return () => { guidedMotion.current = null; };
+  }, [guidedRequest, guided?.hasSession, enabled, displays, guidedBounds, guidedModelFailed, size.width, size.height, camera, gl, input, colliders, invalidate]);
+  useEffect(() => { if (guidedMotion.current) invalidate(); }, [prefersReducedMotion, invalidate]);
 
   useFrame((_, rawDelta) => {
-    if (!enabled) return;
+    if (!enabled || gl.xr.isPresenting) return;
+    const motion = guidedMotion.current;
+    // DOM pause can cancel the request before R3F receives the next props.
+    if (motion && !guidedRef.current?.isCurrent(motion.request)) {
+      guidedMotion.current = null;
+      return;
+    }
+    if (motion && motion.request === guidedRef.current?.request) {
+      motion.elapsed = advanceGuidedTime(motion.elapsed, rawDelta, true);
+      const progress = reducedRef.current || motion.duration === 0 ? 1 : Math.min(1, motion.elapsed / motion.duration);
+      const sample = sampleGuidedPath(motion.path, motion.path.duration * progress);
+      const height = progress * progress * (3 - 2 * progress);
+      camera.position.set(sample.x, motion.fromY + (motion.toY - motion.fromY) * height, sample.y);
+      const ahead = sampleGuidedDistance(motion.path, sample.distance + 0.7);
+      runtime.target.set(ahead.x, camera.position.y, ahead.y);
+      const blend = Math.max(0, Math.min(1, 1 - (motion.path.length - sample.distance) / 2));
+      runtime.target.lerp(motion.target, blend * blend * (3 - 2 * blend));
+      if (progress === 1) runtime.target.copy(motion.target);
+      runtime.rotation.setFromRotationMatrix(runtime.matrix.lookAt(camera.position, runtime.target, camera.up));
+      runtime.desiredEuler.setFromQuaternion(runtime.rotation, 'YXZ');
+      runtime.euler.setFromQuaternion(camera.quaternion, 'YXZ');
+      const yaw = Math.atan2(Math.sin(runtime.desiredEuler.y - runtime.euler.y), Math.cos(runtime.desiredEuler.y - runtime.euler.y));
+      const pitch = runtime.desiredEuler.x - runtime.euler.x;
+      const angle = Math.hypot(yaw, pitch);
+      const fraction = reducedRef.current ? 1 : Math.min(1, GUIDED_MOTION.turnSpeed * Math.min(NAVIGATION.maxDelta, rawDelta) / (angle || 1));
+      runtime.euler.set(runtime.euler.x + pitch * fraction, runtime.euler.y + yaw * fraction, 0, 'YXZ');
+      camera.quaternion.setFromEuler(runtime.euler);
+      runtime.look.yaw = runtime.goal.yaw = runtime.euler.y; runtime.look.pitch = runtime.goal.pitch = runtime.euler.x;
+      if (progress === 1 && (reducedRef.current || angle < 0.001)) {
+        guidedMotion.current = null; modeRef.current = 'inspect'; callbacks.current.onModeChange('inspect');
+        guidedRef.current?.onResult(motion.request, 'arrived');
+      } else invalidate();
+      return;
+    }
     const intro = introRef.current;
     if (intro && !prefersReducedMotion) {
       const next = cinematicPosition(intro.from, intro.to, performance.now() - intro.startedAt);
