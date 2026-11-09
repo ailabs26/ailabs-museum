@@ -11,6 +11,12 @@ export interface GuidedPath {
   length: number;
   duration: number;
 }
+export function getGuidedDuration(horizontalDuration: number, verticalDistance: number): number {
+  const height = Math.abs(verticalDistance);
+  // Triangle bounds include simultaneous vertical easing and horizontal travel.
+  return Math.max(horizontalDuration + height * 1.5 / GUIDED_MOTION.speed,
+    Math.sqrt(horizontalDuration ** 2 + 6 * height / GUIDED_MOTION.acceleration));
+}
 const distance = (a: NavigationVector, b: NavigationVector) => Math.hypot(b.x - a.x, b.y - a.y);
 const mix = (a: NavigationVector, b: NavigationVector, t: number): NavigationVector => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
 
@@ -79,9 +85,10 @@ export function buildGuidedPath(start: NavigationVector, end: NavigationVector, 
   const points = [start], distances = [0];
   for (let i = 1; i < rounded.length; i++) {
     const from = rounded[i - 1], to = rounded[i], length = distance(from, to);
-    const count = Math.ceil(length / 0.04);
+    // Even a centimetre-long trip needs an interior acceleration/deceleration sample.
+    const count = length ? Math.max(2, Math.ceil(length / 0.04)) : 0;
     for (let j = 1; j <= count; j++) {
-      const point = mix(from, to, j / count), previous = points.at(-1)!;
+      const point = j === count ? to : mix(from, to, j / count), previous = points.at(-1)!;
       if (!clear(previous, point)) return null;
       distances.push(distances.at(-1)! + distance(previous, point)); points.push(point);
     }

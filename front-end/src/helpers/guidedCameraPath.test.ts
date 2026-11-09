@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildGuidedPath, getGuidedView, sampleGuidedPath, advanceGuidedTime, GUIDED_MOTION } from './guidedCameraPath';
+import { buildGuidedPath, getGuidedView, sampleGuidedPath, advanceGuidedTime, getGuidedDuration, GUIDED_MOTION } from './guidedCameraPath';
 import { findNavigationPath, isNavigationPositionSafe, isNavigationSegmentSafe, type NavigationCollider } from './museumNavigation';
 import { MUSEUM_ROOM_SIZE as room, type MuseumDisplay } from '@/interfaces/museumScene';
 
@@ -74,6 +74,26 @@ describe('guided collision-safe arc-length motion', () => {
     expect(advanceGuidedTime(2, 40, true)).toBe(2.05);
     expect(advanceGuidedTime(2, -1, true)).toBe(2);
     expect(advanceGuidedTime(2, Infinity, true)).toBe(2);
+  });
+
+  it('finishes sub-sample travel with a finite acceleration profile', () => {
+    const path = buildGuidedPath({ x: 0, y: 3 }, { x: 0.01, y: 3 }, room, [])!;
+    expect(Number.isFinite(path.duration)).toBe(true);
+    expect(path.duration).toBeGreaterThan(0);
+    expect(sampleGuidedPath(path, path.duration)).toMatchObject({ x: 0.01, y: 3 });
+  });
+
+  it('limits resultant 3D speed when horizontal travel and vertical reframing coincide', () => {
+    const path = buildGuidedPath({ x: 0, y: 4 }, { x: 0, y: 1 }, room, [])!;
+    const duration = getGuidedDuration(path.duration, 2);
+    let previous = [0, 0, 4];
+    const dt = 1 / 120;
+    for (let elapsed = dt; elapsed <= duration; elapsed += dt) {
+      const p = elapsed / duration, sample = sampleGuidedPath(path, path.duration * p);
+      const current = [sample.x, 2 * p * p * (3 - 2 * p), sample.y];
+      expect(Math.hypot(...current.map((value, i) => value - previous[i])) / dt).toBeLessThanOrEqual(GUIDED_MOTION.speed + 1e-6);
+      previous = current;
+    }
   });
 });
 
