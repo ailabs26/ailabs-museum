@@ -1,15 +1,15 @@
 # Public Locale Regression Tests — Task Breakdown & Acceptance
 
-> **Trạng thái:** IMPLEMENTED — 52/52 browser tests PASS và Playwright CLI thoát bình thường sau fix teardown `3ecd441`.
+> **Trạng thái:** IMPLEMENTED — rebase lên `origin/dev` `521423bd`, resolve conflict fixture; Locale + Guided Tour 10/10 PASS.
 >
 > **PLAN:** [`../plans/public-locale-regression-tests-plan.md`](../plans/public-locale-regression-tests-plan.md)<br>
 > **Repository:** `ailabs26/ailabs-museum`<br>
-> **Source audit:** Đã fetch `origin`; `origin/dev` = `87c98824e074c910d8bdc1cad9c7f1f34ddfee85`, kiểm tra ngày 09/11/2026.<br>
-> **Branch:** `fix/public-locale-regression-tests` từ `origin/dev`; không phụ thuộc việc merge F05.
+> **Source audit:** Baseline ban đầu là `87c98824e074c910d8bdc1cad9c7f1f34ddfee85`; cập nhật branch lên `origin/dev` `521423bd` sau PR #171.<br>
+> **Branch:** `fix/public-locale-regression-tests`, rebased trên `origin/dev` `521423bd`; không cherry-pick nhánh F05.
 
 ## 1. User story / outcome
 
-Là người duy trì dự án Aura Museum, tôi muốn các bài Playwright Public Locale phản ánh chính xác cách ứng dụng hiện nay hỗ trợ 6 ngôn ngữ và sử dụng React Query, để regressions thực sự được phát hiện và có thể merge Guided Tour Core sau đó mà không bị các bài test lỗi thời chặn lại.
+Là người duy trì dự án Aura Museum, tôi muốn các bài Playwright Public Locale phản ánh chính xác cách ứng dụng hiện nay hỗ trợ 6 ngôn ngữ và sử dụng React Query, để regressions thực sự được phát hiện mà không bị các bài test lỗi thời chặn lại.
 
 **Giới hạn:** chỉ sửa test/fixture và tài liệu liên quan. Nếu nhận thấy lỗi thật ở production thì ghi bằng chứng, yêu cầu review phạm vi trước khi chỉnh code ngoài test.
 
@@ -58,7 +58,7 @@ Các nguyên nhân đã được xác minh bằng baseline Playwright trên `ori
 **File:** `front-end/tests/fixtures/public-locale.tsx`.
 
 - [x] Bọc fixture bằng `QueryClientProvider` bên ngoài `PublicLayout`.
-- [x] Khởi tạo `QueryClient` module scope với `retry:false`.
+- [x] Dùng `queryClient` dùng chung đã có ở app; public translations query có `retry:false`.
 - [x] Giữ `MantineProvider`, `MemoryRouter`, `PublicLayout` và `StrictMode`.
 - [x] Không tạo `PublicLocaleProvider` thứ hai; production layout vẫn sở hữu provider.
 - [x] Route test báo `ok`; `npm run typecheck` exit 0.
@@ -113,9 +113,9 @@ npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/
 - [x] `git diff --check` sạch; không có package manifest/lockfile hoặc build artifact trong diff.
 - [x] Điền commit SHA các task code/docs đã tạo vào ledger.
 - [ ] Push branch và mở PR vào `dev` **chỉ khi có yêu cầu**; không merge tự động.
-- [ ] Sau khi PR fix đã merge `dev`, cập nhật branch F05 từ `origin/dev` và chạy lại `public-locale` + `guided-tour-core` + full frontend gates trước khi review F05.
+- [x] Sau khi PR #171 đưa Guided Tour vào `dev`, rebase branch lên `521423bd` và chạy `public-locale` + `guided-tour-core` + typecheck/lint/build.
 
-**Acceptance:** Đầy đủ bằng chứng, diff nhỏ, PR có thể review độc lập; không nhầm yêu cầu PR fix với việc merge F05.
+**Acceptance:** Đầy đủ bằng chứng, diff nhỏ, PR có thể review độc lập; không tạo PR hoặc merge theo yêu cầu hiện tại.
 
 ## 9. Verification matrix (điền khi triển khai)
 
@@ -126,14 +126,16 @@ npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/
 | Layout fixture route persistence | PASS | PASS | `public-locale.spec.ts`, test 4 reporter `list`: `ok`; typecheck exit 0. |
 | Public `html.lang=en` + Admin `vi` | PASS | PASS | `public-locale.spec.ts`, test 5 reporter `list`: `ok`; empty translations response mocked. |
 | Public Locale + Public Language + affected routes | 52/52 PASS | PASS, exit 0 | `npx playwright test ... --reporter=list`, 8 locale + 44 language/route tests; `52 passed (4.2m)`. |
+| Post-rebase Locale + Guided Tour | 10/10 PASS | PASS, exit 0 | `npx playwright test tests/public-locale.spec.ts tests/guided-tour-core.spec.ts --reporter=list`; `10 passed (32.5s)`. |
+| Post-rebase frontend gates | PASS | typecheck/lint/build exit 0 | Rerun after rebasing onto `origin/dev` `521423bd`. |
 | Playwright runner teardown | CLI exits after tests | PASS, exit 0 | `globalSetup` starts Vite in-process and returns teardown using Vite close API. Before fix, `DEBUG=pw:webserver` stopped at `Terminating the WebServer`; Playwright's Windows `taskkill /T /F` returned `Access denied`. |
 | Frontend typecheck | PASS | PASS, exit 0 | `npm run typecheck` after fixture change. |
 | Frontend lint | PASS | PASS, exit 0 | `npm run lint`. |
 | Frontend unit tests | PASS | PASS, 49 files / 282 tests | `npm run test:unit`, exit 0. |
 | Frontend build | PASS | PASS, exit 0 | `npm run build`; Vite reported existing >500 kB chunk warning. |
-| Scope/diff check | No production changes | PASS | Diff contains plan/task and test-only setup/config; no app/backend/DB changes. `git diff --check` clean. |
+| Scope/diff check | No production changes | PASS | Conflict resolution limited to shared test fixture and docs; no app/backend/DB changes. `git diff --check` clean. |
 
-**Lưu ý:** `tests/guided-tour-core.spec.ts` hiện chỉ có ở branch F05, **không có trên `dev`** tại snapshot 09/11/2026. Không đưa nó vào lệnh kiểm thử trên branch fix; chỉ dùng khi F05 cập nhật từ `dev` sau merge fix.
+**Cập nhật conflict:** PR #171 đã đưa Guided Tour Core và `tests/guided-tour-core.spec.ts` vào `dev`. Rebase branch lên `521423bd` gặp một conflict trong fixture; đã giữ Guided Tour routes/tests của dev và đặt `QueryClientProvider` dùng chung ở root.
 
 `PLAYWRIGHT_PREVIEW=1` được kiểm tra bằng route test và teardown thoát `0`. Public Locale tests dựa vào `tests/fixtures/public-locale.html`, file không có trong `dist`, nên không chạy suite fixture ở chế độ preview.
 
@@ -141,21 +143,22 @@ npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/
 
 | Task | Commit message | SHA | Trạng thái |
 |---|---|---|---|
-| 00 | `docs(test): plan public locale regression fixes` | `ec923be` | DONE |
-| 01 | `fix(test): update unsupported locale coverage` | `1ac4b96` | DONE |
-| 02 | `fix(test): restore query provider in locale fixture` | `e6fe9fe` | DONE |
-| 03 | `fix(test): align public route locale assertions` | `829ecd0` | DONE |
+| 00 | `docs(test): plan public locale regression fixes` | `f84ecc09` | DONE |
+| 01 | `fix(test): update unsupported locale coverage` | `e88eb170` | DONE |
+| 02 | `fix(test): restore query provider in locale fixture` | `aab111a3` | DONE; conflict resolved with Guided Tour fixture from dev |
+| 03 | `fix(test): align public route locale assertions` | `503c2d2a` | DONE |
 | 04 | `test(i18n): harden public locale browser coverage` | — | OMITTED — mock was included in Task 03 commit |
-| 05 | `docs(test): record public locale regression verification` | `4eb4ff3` | DONE |
-| 06 | `fix(test): close vite in playwright process` | `3ecd441` | DONE; 52 browser tests PASS, CLI exits 0 |
-| 07 | Update verification evidence after teardown fix | This commit | DONE; branch push pending |
+| 05 | `docs(test): record public locale regression verification` | `d1115a3f` | DONE |
+| 06 | `fix(test): close vite in playwright process` | `44f773f7` | DONE; 52 browser tests PASS, CLI exits 0 |
+| 07 | Rebase and resolve dev fixture conflict | `aab111a3` | DONE; 10 locale/guided-tour tests PASS |
+| 08 | Update verification evidence after conflict fix | This commit | DONE; push pending |
 
 ## 11. Definition of Done
 
-- [x] Không phụ thuộc merge `feat/guided-tour-core`.
+- [x] Rebased on dev after PR #171; no F05 branch cherry-pick.
 - [x] Cả 3 lỗi baseline được khắc phục vì contract đúng, không phải vì xóa kiểm thử.
-- [x] Tất cả 52 test Public Locale và affected suites PASS; runner teardown thoát bình thường.
+- [x] 52 locale/route tests passed before rebase; 10 Locale/Guided Tour tests passed after rebase.
 - [x] Typecheck, lint, unit, build exit 0; kết quả có bằng chứng.
 - [x] Không sửa runtime, backend, database hoặc migration.
 - [x] Mỗi commit code nhỏ, review được; SHA và kết quả đã ghi.
-- [ ] PR fix vào `dev` được review trước khi merge; F05 được kiểm thử lại sau đó.
+- [ ] PR fix vào `dev` được review trước khi merge; chưa mở theo yêu cầu hiện tại.

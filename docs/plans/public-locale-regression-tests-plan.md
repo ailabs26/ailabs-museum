@@ -1,12 +1,12 @@
 # Public Locale Regression Tests — Implementation Plan
 
-> **Trạng thái:** IMPLEMENTED — branch `fix/public-locale-regression-tests` từ `origin/dev` tại `87c98824`; 52/52 browser tests PASS và Playwright CLI thoát bình thường sau khi chuyển Vite sang global setup in-process.
+> **Trạng thái:** IMPLEMENTED — branch ban đầu từ `origin/dev` tại `87c98824`, sau đó rebase lên `origin/dev` `521423bd` và resolve fixture conflict; Locale + Guided Tour sau rebase 10/10 PASS.
 >
 > **Task & Acceptance:** [`../tasks/public-locale-regression-tests.md`](../tasks/public-locale-regression-tests.md)
 
 **Repository:** `ailabs26/ailabs-museum`<br>
-**Source audit:** Đã fetch `origin`; `origin/dev` hiện ở `87c98824e074c910d8bdc1cad9c7f1f34ddfee85` (09/11/2026).<br>
-**Branch:** `fix/public-locale-regression-tests`, tạo trực tiếp từ SHA trên; F05 không được đưa vào branch.<br>
+**Source audit:** Baseline ban đầu `origin/dev` là `87c98824e074c910d8bdc1cad9c7f1f34ddfee85`; conflict fix cập nhật branch lên `521423bd` (PR #171 đã vào dev).<br>
+**Branch:** `fix/public-locale-regression-tests`, rebased lên `origin/dev` `521423bd`; không cherry-pick F05, giữ fixture/tests Guided Tour đã có trong dev.<br>
 **Stack:** React 18, TypeScript, React Router 6, TanStack Query, Zod, Vitest, Playwright.
 **Quy ước:** `AGENTS.md`, `docs/architecture/fe/coding-conventions.md`, `front-end/playwright.config.ts`.
 
@@ -41,7 +41,7 @@ Khắc phục **ba Playwright regressions của `front-end/tests/public-locale.s
 ### Out of scope
 
 - Không đổi `publicLocaleSchema`, `PublicLocaleProvider`, `PublicLayout` production hay CMS translations để làm test PASS.
-- Không sửa F05 `MuseumProvider`/Guided Tour; không merge/cherry-pick F05 trong branch fix.
+- Không sửa production `MuseumProvider`/Guided Tour. Nếu `dev` đã nhận PR #171, giữ fixture/tests Guided Tour upstream khi resolve conflict; không cherry-pick nhánh F05.
 - Không sửa backend/API/DB/migration, không seed, không đổi nghiệp vụ audio, tour, WebGL, UX.
 - Không cải tổ tổng thể framework test hoặc xử lý các lỗi Playwright **khác** không liên quan; nếu phát hiện lỗi production thật thì báo và mở phạm vi qua review riêng.
 
@@ -55,7 +55,7 @@ Không thay `DEFAULT_PUBLIC_LOCALE` hoặc enum production.
 
 ### 4.2. Fixture Provider
 
-`PublicLayoutFixture` đang mount `PublicLayout` thật. Trong app thật, `AppProviders` bọc `QueryClientProvider` bên ngoài Router, còn fixture không có. Thêm provider vào **test fixture**, khởi tạo `QueryClient` dùng riêng cho fixture (tạo ở module scope hoặc memoize một lần, không tạo mới trên mỗi render), với `retry:false` để test ổn định. Vị trí bọc ưu tiên ở outer fixture để áp dụng cho nhánh `?layout`, bảo toàn kiểm thử `PublicLocaleFixture` thuần.
+`PublicLayoutFixture` đang mount `PublicLayout` thật. Trong app thật, `AppProviders` bọc `QueryClientProvider` bên ngoài Router, còn fixture không có. Bọc outer fixture bằng `QueryClientProvider` và dùng query client chung theo convention app. Public translations query đã khai báo `retry:false`; tránh tạo provider lồng nhau.
 
 Nếu `PublicLayout` cần những dependency khác của app sau khi bọc, chỉ bổ sung dependency thực sự cần thiết vào fixture; không mock toàn bộ layout. Đánh giá React `StrictMode` và console/pageerror trong test.
 
@@ -83,6 +83,7 @@ Không đơn thuần đổi assertion nếu test vô tình phụ thuộc vào b�
 | 04 | Tính quyết định của API mock và focused regression | `test(i18n): harden public locale browser coverage` |
 | 05 | Full gates, evidence, diff review, PR handoff | `docs(test): record public locale regression verification` |
 | 06 | Fix Playwright teardown trên Windows bằng global setup quản lý Vite in-process | `fix(test): close vite in playwright process` |
+| 07 | Rebase lên dev mới và resolve conflict chung giữa Locale/Guided Tour fixture | `fix(test): restore query provider in locale fixture` |
 
 **Nguyên tắc:** Một task = một commit khi có thay đổi có nghĩa. Test của một hành vi nằm cùng commit sửa hành vi. Task 04 chỉ tạo commit khi có thay đổi test/fixture thực tế; không tạo commit rỗng để đủ số lượng.
 
@@ -92,7 +93,7 @@ Chạy từ `front-end/` (PowerShell hoặc shell tương đương), dùng Playw
 
 **Lệnh thực tế trên branch fix tạo từ `dev`:**
 
-`tests/guided-tour-core.spec.ts` thuộc nhánh F05 chưa merge, nên **không chạy file đó ở branch fix**. Chỉ chạy Guided Tour test sau khi cập nhật F05 từ `dev` đã merge bản fix.
+Sau khi `origin/dev` nhận PR #171, rebase branch fix lên `521423bd`; chạy lại `public-locale.spec.ts` cùng `guided-tour-core.spec.ts` để xác nhận hai fixture cùng giữ QueryClient context.
 
 
 ```bash
@@ -101,7 +102,7 @@ npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/
 npm run typecheck && npm run lint && npm run test:unit && npm run build
 ```
 
-Ghi lại: command, base/head SHA, OS/Node/browser, PASS/FAIL/SKIP, thời gian, console/pageerrors, giới hạn (mock API, không dùng DB thật). Root cause runner hang là `webServer` teardown gọi `taskkill /T /F` trên Windows; lệnh bị `Access denied`, làm Playwright chờ Vite child process. Vite nay chạy trong global setup và đóng bằng API, không tạo child process.
+Ghi lại: command, base/head SHA, OS/Node/browser, PASS/FAIL/SKIP, thời gian, console/pageerrors, giới hạn (mock API, không dùng DB thật). Root cause runner hang là `webServer` teardown gọi `taskkill /T /F` trên Windows; lệnh bị `Access denied`, làm Playwright chờ Vite child process. Vite nay chạy trong global setup và đóng bằng API, không tạo child process. Khi dev nhận PR #171, rebase từ `87c98824` lên `521423bd` tạo một conflict trong fixture; giữ Guided Tour fixture của dev và một QueryClientProvider dùng chung ở root. `public-locale` + `guided-tour-core`: 10/10 PASS; typecheck/lint/build PASS.
 
 ## 7. Acceptance & Definition of Done
 
@@ -110,9 +111,9 @@ Ghi lại: command, base/head SHA, OS/Node/browser, PASS/FAIL/SKIP, thời gian,
 - [x] Layout fixture mount React Query và chuyển `/first` ↔ `/second` mà locale vẫn giữ.
 - [x] Public routes `html.lang=en` sau khi chọn English; Admin trả `vi`.
 - [x] Nội dung fallback được xác định bởi fixture và translations response mock rỗng.
-- [x] Cả 8 test Public Locale báo `ok` (7 test cùng run và test cross-tab riêng); không skip/only.
+- [x] Sau rebase lên `521423bd`, 10 test Public Locale + Guided Tour PASS; không skip/only.
 - [x] 52 Public Locale + public-language/affected route tests PASS, CLI exit 0; typecheck/lint/unit/build exit 0.
-- [x] Diff chỉ chứa tài liệu và test/fixture; không sửa production, backend hay F05.
+- [x] Conflict chỉ thay test fixture; không sửa production/backend. Guided Tour changes được lấy từ `origin/dev`.
 - [ ] Có PR độc lập `fix/public-locale-regression-tests` → `dev` và reviewer xác nhận trước khi merge; không tự merge.
 
 ## 8. Rủi ro, ranh giới bàn giao
@@ -123,6 +124,6 @@ Ghi lại: command, base/head SHA, OS/Node/browser, PASS/FAIL/SKIP, thời gian,
 | Fixture render sâu hơn app, cần provider khác | Bổ sung dependency tối thiểu; không sửa production và không mock hook cốt lõi |
 | UI text phụ thuộc translation API | Chặn API trong test/fixture, assert fallback hoặc bản dịch đã khai báo |
 | Cross-tab Playwright không ổn định | Tái hiện và ghi trace; không ghi PASS khi chưa chứng minh |
-| Nhánh F05 đang chờ merge | Merge PR fix vào `dev` trước, sau đó cập nhật F05 và chạy lại regression |
+| Guided Tour fixture đổi trên dev | Rebase lên `origin/dev` mới nhất, giữ cả Guided Tour và Locale paths, chạy hai suite liên quan |
 
-**Handoff:** Sau khi PR fix merge `dev`, cập nhật `feat/guided-tour-core` bằng `git fetch origin` + `git merge origin/dev` (hoặc rebase theo quy trình nhóm), chạy `public-locale`, `guided-tour-core`, typecheck/lint/unit/build, rồi mới review/merge PR F05.
+**Handoff:** PR #171 đã đưa Guided Tour vào `dev`; conflict đã resolve và regression đã chạy lại sau rebase. Chưa tạo PR cho nhánh fix.

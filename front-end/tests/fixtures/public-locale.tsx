@@ -4,7 +4,6 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import '@mantine/core/styles.css';
 import { Button, MantineProvider, Stack, Text } from '@mantine/core';
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
-import { QueryClientProvider } from '@tanstack/react-query';
 import { theme } from '@/app/theme';
 import { queryClient } from '@/core/api/query-client';
 import { PublicLocaleProvider } from '@/contexts/PublicLocaleContext';
