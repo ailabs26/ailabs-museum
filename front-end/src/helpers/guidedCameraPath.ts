@@ -62,7 +62,8 @@ export function roundGuidedPathCorners(route: readonly NavigationVector[], room:
     for (let attempt = 0; attempt < 8 && radius > 0.002; attempt++, radius /= 2) {
       const a = mix(corner, before, radius / distance(before, corner));
       const b = mix(corner, after, radius / distance(after, corner));
-      const count = Math.max(4, Math.ceil(radius * 2 / 0.025));
+      // Short chords bound direction changes even when sampled at 120 Hz.
+      const count = Math.max(4, Math.ceil(radius * 2 / 0.005));
       const samples = Array.from({ length: count + 1 }, (_, index) => {
         const t = index / count;
         return mix(mix(a, corner, t), mix(corner, b, t), t);
@@ -102,16 +103,19 @@ export function buildGuidedPath(start: NavigationVector, end: NavigationVector, 
     }
   }
   const speeds: number[] = points.map(() => GUIDED_MOTION.speed);
+  // Reserve part of the vector acceleration budget for turning while speeding up.
+  const tangentialAcceleration = GUIDED_MOTION.acceleration * 0.6;
+  const lateralAcceleration = GUIDED_MOTION.acceleration * 0.4;
   speeds[0] = speeds[speeds.length - 1] = 0;
   for (let i = 1; i < points.length - 1; i++) {
     const a = points[i - 1], b = points[i], c = points[i + 1];
     const turn = Math.abs(Math.atan2((b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x),
       (b.x - a.x) * (c.x - b.x) + (b.y - a.y) * (c.y - b.y)));
     const curvature = turn / Math.max(1e-6, (distance(a, b) + distance(b, c)) / 2);
-    speeds[i] = turn > 0.35 ? 0 : Math.min(GUIDED_MOTION.speed, Math.sqrt(0.65 / Math.max(curvature, 1e-6)));
+    speeds[i] = turn > 0.35 ? 0 : Math.min(GUIDED_MOTION.speed, Math.sqrt(lateralAcceleration / Math.max(curvature, 1e-6)));
   }
-  for (let i = 1; i < points.length; i++) speeds[i] = Math.min(speeds[i], Math.sqrt(speeds[i - 1] ** 2 + 2 * GUIDED_MOTION.acceleration * (distances[i] - distances[i - 1])));
-  for (let i = points.length - 2; i >= 0; i--) speeds[i] = Math.min(speeds[i], Math.sqrt(speeds[i + 1] ** 2 + 2 * GUIDED_MOTION.acceleration * (distances[i + 1] - distances[i])));
+  for (let i = 1; i < points.length; i++) speeds[i] = Math.min(speeds[i], Math.sqrt(speeds[i - 1] ** 2 + 2 * tangentialAcceleration * (distances[i] - distances[i - 1])));
+  for (let i = points.length - 2; i >= 0; i--) speeds[i] = Math.min(speeds[i], Math.sqrt(speeds[i + 1] ** 2 + 2 * tangentialAcceleration * (distances[i + 1] - distances[i])));
   const times = [0];
   for (let i = 1; i < points.length; i++) times.push(times[i - 1] + 2 * (distances[i] - distances[i - 1]) / (speeds[i - 1] + speeds[i]));
   return { points, distances, speeds, times, length: distances.at(-1)!, duration: times.at(-1)! };

@@ -116,6 +116,21 @@ describe('guided collision-safe arc-length motion', () => {
       previous = current;
     }
   });
+
+  it.each([0, 1].flatMap(height => [30, 60, 120].map(fps => ({ height, fps }))))('bounds vector acceleration at $fps FPS with $height m vertical travel', ({ fps, height }) => {
+    const path = buildGuidedPath({ x: -4, y: 0 }, { x: 4, y: 0 }, room, [obstacle])!;
+    const duration = getGuidedDuration(path.duration, height);
+    const dt = 1 / fps;
+    let previous = [-4, 0, 0], velocity = [0, 0, 0];
+    for (let elapsed = dt; elapsed <= duration + dt; elapsed += dt) {
+      const progress = Math.min(1, elapsed / duration);
+      const sample = sampleGuidedPath(path, path.duration * progress);
+      const point = [sample.x, height * progress * progress * (3 - 2 * progress), sample.y];
+      const nextVelocity = point.map((v, axis) => (v - previous[axis]) / dt);
+      expect(Math.hypot(...nextVelocity.map((v, axis) => v - velocity[axis])) / dt).toBeLessThanOrEqual(1.000001);
+      velocity = nextVelocity; previous = point;
+    }
+  });
 });
 
 describe('guided exhibit framing', () => {
