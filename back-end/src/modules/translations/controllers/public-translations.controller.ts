@@ -1,10 +1,12 @@
-import { Controller, Get, Header, Query } from '@nestjs/common';
+import { Controller, Get, Header, Query, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../../common/decorators/public.decorator';
+import { PublicRateLimitGuard } from '../../../common/rate-limit/public-rate-limit.guard';
 import { PublicTranslationsQueryDto } from '../dto/public-translations-query.dto';
 import { TranslationsService } from '../services/translations.service';
 
 @ApiTags('Public · Translations')
+@UseGuards(PublicRateLimitGuard)
 @Controller('public/translations')
 export class PublicTranslationsController {
   constructor(private readonly translations: TranslationsService) {}

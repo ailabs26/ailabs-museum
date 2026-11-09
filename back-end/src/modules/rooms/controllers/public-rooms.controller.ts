@@ -1,11 +1,13 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../../common/decorators/public.decorator';
+import { PublicRateLimitGuard } from '../../../common/rate-limit/public-rate-limit.guard';
 import { PublicLangQueryDto } from '../../exhibits/dto/public-lang-query.dto';
 import { RoomsService } from '../services/rooms.service';
 
 @ApiTags('Public museum content')
 @Public()
+@UseGuards(PublicRateLimitGuard)
 @Controller('public/rooms')
 export class PublicRoomsController {
   constructor(private readonly roomsService: RoomsService) {}
