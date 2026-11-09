@@ -1,6 +1,6 @@
 # Public Locale Regression Tests — Task Breakdown & Acceptance
 
-> **Trạng thái:** IMPLEMENTED — mọi test case liên quan báo `ok`; Playwright CLI chưa kết thúc sau teardown nên các browser commands không có exit code 0.
+> **Trạng thái:** IMPLEMENTED — 52/52 browser tests PASS và Playwright CLI thoát bình thường sau fix teardown `3ecd441`.
 >
 > **PLAN:** [`../plans/public-locale-regression-tests-plan.md`](../plans/public-locale-regression-tests-plan.md)<br>
 > **Repository:** `ailabs26/ailabs-museum`<br>
@@ -87,13 +87,13 @@ Các nguyên nhân đã được xác minh bằng baseline Playwright trên `ori
 
 - [x] Mock `GET /api/public/translations` trước navigation, không phụ thuộc API ngoài trong route assertion.
 - [x] Giữ lại mọi test hiện có; thêm một positive locale test, tổng 8.
-- [x] Từng test trong full Public Locale suite đã báo `ok` (7 test cùng run, cross-tab xác minh riêng); không dùng `only`/`skip`.
+- [x] Full Public Locale suite PASS (8 test); không dùng `only`/`skip`.
 - [x] Chạy 44 test public-language + collection + exhibit-detail + museum-tour; tất cả báo `ok`.
 - [x] Cross-tab riêng báo `ok` trong 5.1s.
-- [x] Ghi nhận Playwright CLI treo sau test cuối/teardown trong mọi run, kể cả test đơn; ngắt tiến trình sau khi test đã báo `ok`. Đây là giới hạn runner, không tính lệnh browser suite exit 0.
+- [x] Combined browser run: `52 passed (4.2m)`, exit 0.
 - [x] Không thay đổi test helper dùng chung; mock nằm trong đúng route test, không cần commit Task 04 riêng.
 
-**Acceptance:** 8/8 test Public Locale và 44/44 regression test liên quan báo `ok`; browser console không được thu thập tự động trong run này. CLI teardown vẫn cần xử lý riêng.
+**Acceptance:** 8/8 test Public Locale và 44/44 regression test liên quan PASS; CLI teardown đã được sửa. Browser console không được thu thập tự động trong run này.
 **Verification:**
 
 ```bash
@@ -109,7 +109,7 @@ npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/
 
 - [x] Chạy `npm run typecheck`, `npm run lint`, `npm run test:unit`, `npm run build` từ `front-end/`; cả bốn exit 0.
 - [x] Ghi lại browser outcomes, runner teardown, unit count và build warning ở verification matrix.
-- [x] Rà `git diff origin/dev...HEAD`; chỉ có hai docs và hai test/fixture files, không có production changes.
+- [x] Rà diff; chỉ có hai docs và bốn test/config files, không có production changes.
 - [x] `git diff --check` sạch; không có package manifest/lockfile hoặc build artifact trong diff.
 - [x] Điền commit SHA các task code/docs đã tạo vào ledger.
 - [ ] Push branch và mở PR vào `dev` **chỉ khi có yêu cầu**; không merge tự động.
@@ -125,15 +125,17 @@ npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/
 | Unsupported `de` + supported `fr` | PASS | PASS | `public-locale.spec.ts`, tests 2–3 reporter `list`: both `ok`. |
 | Layout fixture route persistence | PASS | PASS | `public-locale.spec.ts`, test 4 reporter `list`: `ok`; typecheck exit 0. |
 | Public `html.lang=en` + Admin `vi` | PASS | PASS | `public-locale.spec.ts`, test 5 reporter `list`: `ok`; empty translations response mocked. |
-| Public Locale full suite | 8/8 PASS | 8/8 cases `ok`; CLI teardown hung | Seven tests `ok` in one list run; cross-tab `ok` in isolated run; full line reporter reached test 8 then teardown did not exit. |
-| Public Language + affected routes | 44/44 PASS | 44/44 cases `ok`; CLI teardown hung | `public-language.spec.ts`, `collection.spec.ts`, `exhibit-detail.spec.ts`, `museum-tour.spec.ts`, reporter `list`; all 44 printed `ok`. |
+| Public Locale + Public Language + affected routes | 52/52 PASS | PASS, exit 0 | `npx playwright test ... --reporter=list`, 8 locale + 44 language/route tests; `52 passed (4.2m)`. |
+| Playwright runner teardown | CLI exits after tests | PASS, exit 0 | `globalSetup` starts Vite in-process and returns teardown using Vite close API. Before fix, `DEBUG=pw:webserver` stopped at `Terminating the WebServer`; Playwright's Windows `taskkill /T /F` returned `Access denied`. |
 | Frontend typecheck | PASS | PASS, exit 0 | `npm run typecheck` after fixture change. |
 | Frontend lint | PASS | PASS, exit 0 | `npm run lint`. |
 | Frontend unit tests | PASS | PASS, 49 files / 282 tests | `npm run test:unit`, exit 0. |
 | Frontend build | PASS | PASS, exit 0 | `npm run build`; Vite reported existing >500 kB chunk warning. |
-| Scope/diff check | No production changes | PASS | `git diff origin/dev...HEAD` contains only plan/task and test/fixture; `git diff --check` clean. |
+| Scope/diff check | No production changes | PASS | Diff contains plan/task and test-only setup/config; no app/backend/DB changes. `git diff --check` clean. |
 
 **Lưu ý:** `tests/guided-tour-core.spec.ts` hiện chỉ có ở branch F05, **không có trên `dev`** tại snapshot 09/11/2026. Không đưa nó vào lệnh kiểm thử trên branch fix; chỉ dùng khi F05 cập nhật từ `dev` sau merge fix.
+
+`PLAYWRIGHT_PREVIEW=1` được kiểm tra bằng route test và teardown thoát `0`. Public Locale tests dựa vào `tests/fixtures/public-locale.html`, file không có trong `dist`, nên không chạy suite fixture ở chế độ preview.
 
 ## 10. Commit ledger
 
@@ -144,13 +146,15 @@ npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/
 | 02 | `fix(test): restore query provider in locale fixture` | `e6fe9fe` | DONE |
 | 03 | `fix(test): align public route locale assertions` | `829ecd0` | DONE |
 | 04 | `test(i18n): harden public locale browser coverage` | — | OMITTED — mock was included in Task 03 commit |
-| 05 | `docs(test): record public locale regression verification` | This commit | DONE; branch not pushed |
+| 05 | `docs(test): record public locale regression verification` | `4eb4ff3` | DONE |
+| 06 | `fix(test): close vite in playwright process` | `3ecd441` | DONE; 52 browser tests PASS, CLI exits 0 |
+| 07 | Update verification evidence after teardown fix | This commit | DONE; branch push pending |
 
 ## 11. Definition of Done
 
 - [x] Không phụ thuộc merge `feat/guided-tour-core`.
 - [x] Cả 3 lỗi baseline được khắc phục vì contract đúng, không phải vì xóa kiểm thử.
-- [x] Tất cả test case Public Locale và affected suites đều báo `ok`; runner teardown không kết thúc tự nhiên.
+- [x] Tất cả 52 test Public Locale và affected suites PASS; runner teardown thoát bình thường.
 - [x] Typecheck, lint, unit, build exit 0; kết quả có bằng chứng.
 - [x] Không sửa runtime, backend, database hoặc migration.
 - [x] Mỗi commit code nhỏ, review được; SHA và kết quả đã ghi.

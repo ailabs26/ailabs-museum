@@ -1,6 +1,6 @@
 # Public Locale Regression Tests — Implementation Plan
 
-> **Trạng thái:** IMPLEMENTED — branch `fix/public-locale-regression-tests` từ `origin/dev` tại `87c98824`; 8/8 test Public Locale và 44/44 regression tests có trạng thái `ok`, nhưng Playwright runner treo khi teardown.
+> **Trạng thái:** IMPLEMENTED — branch `fix/public-locale-regression-tests` từ `origin/dev` tại `87c98824`; 52/52 browser tests PASS và Playwright CLI thoát bình thường sau khi chuyển Vite sang global setup in-process.
 >
 > **Task & Acceptance:** [`../tasks/public-locale-regression-tests.md`](../tasks/public-locale-regression-tests.md)
 
@@ -14,7 +14,7 @@
 
 Khắc phục **ba Playwright regressions của `front-end/tests/public-locale.spec.ts`** xuất phát từ kỳ vọng cũ sau khi Public Locale được tích hợp với hệ thống đa ngôn ngữ hiện tại. Mục tiêu là làm các bài test phản ánh **contract production đã được chấp nhận**, không sửa hành vi sản phẩm để làm xanh bài test lỗi thời.
 
-**Outcome:** 8 test Public Locale và 44 test đa ngôn ngữ/route liên quan đều báo `ok`; frontend typecheck/lint/unit/build PASS. Các lệnh Playwright không tự thoát sau test cuối nên bị ngắt ở teardown và không có exit code 0.
+**Outcome:** 8 test Public Locale và 44 test đa ngôn ngữ/route liên quan PASS trong một run `52 passed`; Playwright CLI thoát với exit code 0. Frontend typecheck/lint/unit/build PASS.
 
 ## 2. Bằng chứng trên `dev` (09/11/2026)
 
@@ -82,6 +82,7 @@ Không đơn thuần đổi assertion nếu test vô tình phụ thuộc vào b�
 | 03 | Public route `html.lang`, Admin boundary, exhibit assertion | `fix(test): align public route locale assertions` |
 | 04 | Tính quyết định của API mock và focused regression | `test(i18n): harden public locale browser coverage` |
 | 05 | Full gates, evidence, diff review, PR handoff | `docs(test): record public locale regression verification` |
+| 06 | Fix Playwright teardown trên Windows bằng global setup quản lý Vite in-process | `fix(test): close vite in playwright process` |
 
 **Nguyên tắc:** Một task = một commit khi có thay đổi có nghĩa. Test của một hành vi nằm cùng commit sửa hành vi. Task 04 chỉ tạo commit khi có thay đổi test/fixture thực tế; không tạo commit rỗng để đủ số lượng.
 
@@ -100,7 +101,7 @@ npx playwright test tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/
 npm run typecheck && npm run lint && npm run test:unit && npm run build
 ```
 
-Ghi lại: command, base/head SHA, OS/Node/browser, PASS/FAIL/SKIP, thời gian, console/pageerrors, giới hạn (mock API, không dùng DB thật). Các 8 test Public Locale và 44 regression tests đã báo `ok`; Playwright CLI bị treo sau test cuối nên không có exit code 0. Console/pageerrors không được capture tự động.
+Ghi lại: command, base/head SHA, OS/Node/browser, PASS/FAIL/SKIP, thời gian, console/pageerrors, giới hạn (mock API, không dùng DB thật). Root cause runner hang là `webServer` teardown gọi `taskkill /T /F` trên Windows; lệnh bị `Access denied`, làm Playwright chờ Vite child process. Vite nay chạy trong global setup và đóng bằng API, không tạo child process.
 
 ## 7. Acceptance & Definition of Done
 
@@ -110,7 +111,7 @@ Ghi lại: command, base/head SHA, OS/Node/browser, PASS/FAIL/SKIP, thời gian,
 - [x] Public routes `html.lang=en` sau khi chọn English; Admin trả `vi`.
 - [x] Nội dung fallback được xác định bởi fixture và translations response mock rỗng.
 - [x] Cả 8 test Public Locale báo `ok` (7 test cùng run và test cross-tab riêng); không skip/only.
-- [x] 44 public-language/affected route tests báo `ok`; typecheck, lint, unit, build exit 0. Playwright CLI teardown không thoát tự nhiên.
+- [x] 52 Public Locale + public-language/affected route tests PASS, CLI exit 0; typecheck/lint/unit/build exit 0.
 - [x] Diff chỉ chứa tài liệu và test/fixture; không sửa production, backend hay F05.
 - [ ] Có PR độc lập `fix/public-locale-regression-tests` → `dev` và reviewer xác nhận trước khi merge; không tự merge.
 
