@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { INITIAL_GUIDED_TOUR_STATE, type GuidedTourState, type GuidedTourStep } from '@/interfaces/guidedTour';
+import { museumReducer } from '@/reducers/museumReducer';
 import { selectGuidedTour } from './guidedTourSelectors';
 
 const roomId = '00000000-0000-4000-8000-000000000001';
@@ -34,5 +35,24 @@ describe('selectGuidedTour', () => {
 
   it('marks completed progress as full and disables next', () => {
     expect(selectGuidedTour(state('completed', 1))).toMatchObject({ progress: 1, canNext: false, canPrevious: true });
+  });
+
+  it('keeps completed progress at 1 after reorder or adding steps', () => {
+    const started = museumReducer(INITIAL_GUIDED_TOUR_STATE, {
+      type: 'START', roomId, roomSlug: 'sculpture', steps, initialExhibitId: 'exhibit-b',
+    });
+    const completed = museumReducer(started, { type: 'NEXT' });
+
+    for (const updatedSteps of [
+      [steps[1], steps[0]],
+      [steps[1], steps[0], { roomId, exhibitId: 'exhibit-c' }],
+    ]) {
+      const reconciled = museumReducer(completed, {
+        type: 'RECONCILE_ROOM', roomId, roomSlug: 'sculpture', steps: updatedSteps,
+      });
+
+      expect(reconciled).toMatchObject({ status: 'completed', session: { currentIndex: 0 } });
+      expect(selectGuidedTour(reconciled)).toMatchObject({ progress: 1, canNext: false });
+    }
   });
 });

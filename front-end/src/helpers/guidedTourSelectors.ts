@@ -12,7 +12,7 @@ export function selectGuidedTour(state: GuidedTourState) {
     currentStep: session ? steps[currentIndex] : null,
     currentIndex,
     total,
-    progress: total ? (currentIndex + 1) / total : 0,
+    progress: status === 'completed' ? 1 : total ? (currentIndex + 1) / total : 0,
     canNext: status === 'running' || status === 'paused',
     canPrevious: !!session && currentIndex > 0,
   };
