@@ -66,8 +66,12 @@ test('normal travel detours colliders, pauses at actual pose, replans on Next an
     const record = window.museumProbe.at(-1)!;
     const renderer = record.renderer.deref()!, render = renderer.render;
     Reflect.set(window, 'guidedSamples', []);
+    Reflect.set(window, 'guidedRotations', []);
+    Reflect.set(window, 'guidedRolls', []);
     renderer.render = function(scene, camera) {
       (Reflect.get(window, 'guidedSamples') as number[][]).push(camera.position.toArray());
+      (Reflect.get(window, 'guidedRotations') as number[][]).push(camera.quaternion.toArray());
+      (Reflect.get(window, 'guidedRolls') as number[]).push(camera.rotation.clone().reorder('YXZ').z);
       return render.call(this, scene, camera);
     };
   });
@@ -82,7 +86,7 @@ test('normal travel detours colliders, pauses at actual pose, replans on Next an
     await expect(bar(page)).toHaveAttribute('data-phase', 'viewing', { timeout: 90_000 });
   } finally {
     await info.attach('guided-camera-samples.json', { contentType: 'application/json', body: JSON.stringify(await page.evaluate(() => ({
-      samples: Reflect.get(window, 'guidedSamples'), frames: window.museumProbe.at(-1)!.frames,
+      samples: Reflect.get(window, 'guidedSamples'), rotations: Reflect.get(window, 'guidedRotations'), frames: window.museumProbe.at(-1)!.frames,
       position: window.museumProbe.at(-1)!.camera!.deref()!.position.toArray(),
       quaternion: window.museumProbe.at(-1)!.camera!.deref()!.quaternion.toArray(), hidden: document.hidden,
     }))) });
@@ -95,6 +99,12 @@ test('normal travel detours colliders, pauses at actual pose, replans on Next an
     expect(Math.abs(z)).toBeLessThanOrEqual(7.55);
     expect(Math.abs(x) < 1.47 && Math.abs(z) < 1.47).toBe(false);
   }
+  const orientation = await page.evaluate(() => ({ rotations: Reflect.get(window, 'guidedRotations') as number[][], rolls: Reflect.get(window, 'guidedRolls') as number[] }));
+  for (let i = 1; i < orientation.rotations.length; i++) {
+    const dot = orientation.rotations[i].reduce((sum, v, axis) => sum + v * orientation.rotations[i - 1][axis], 0);
+    expect(2 * Math.acos(Math.min(1, Math.abs(dot)))).toBeLessThanOrEqual(0.06501);
+  }
+  expect(Math.max(...orientation.rolls.map(Math.abs))).toBeLessThan(0.00001);
   await page.screenshot({ path: info.outputPath('guided-desktop.png') });
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true });
   await canvas.focus();
@@ -205,6 +215,11 @@ test.describe('mobile guided controls', () => {
     await page.getByRole('button', { name: 'Hiện vật tiếp theo', exact: true }).tap();
     await expect(bar(page)).toHaveAttribute('data-phase', 'viewing');
     await expect(bar(page)).toHaveAttribute('data-exhibit', roomA.exhibits[1].id);
+    await page.getByRole('button', { name: 'Hiện vật trước', exact: true }).tap();
+    await expect(bar(page)).toHaveAttribute('data-phase', 'viewing');
+    await expect(bar(page)).toHaveAttribute('data-exhibit', roomA.exhibits[0].id);
+    await page.getByRole('button', { name: 'Hiện vật tiếp theo', exact: true }).tap();
+    await expect(bar(page)).toHaveAttribute('data-phase', 'viewing');
     await page.screenshot({ path: info.outputPath('guided-mobile.png') });
     const controls = await bar(page).boundingBox(), exit = await page.getByRole('button', { name: 'Thoát tham quan', exact: true }).boundingBox();
     expect(controls!.y).toBeGreaterThan(exit!.y + exit!.height);
@@ -256,6 +271,25 @@ test('Exit keeps the arrived pose and cancels automatic selection refocus', asyn
   await waitForRendererIdle(page);
   expect(await position(page)).toEqual(arrived);
   expect(await page.evaluate(() => window.museumProbe.at(-1)!.camera!.deref()!.quaternion.toArray())).toEqual(orientation);
+});
+
+test('a reset command finishes in its DOM action before subsequent manual movement', async ({ page }) => {
+  await open(page);
+  const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true });
+  await canvas.focus();
+  await page.keyboard.down('d');
+  await expect.poll(async () => (await position(page))[0]).toBeGreaterThan(0.3);
+  await page.keyboard.up('d');
+  await waitForRendererIdle(page);
+  const reset = await page.getByRole('button', { name: 'Góc nhìn ban đầu', exact: true }).evaluate(button => {
+    button.click();
+    return window.museumProbe.at(-1)!.camera!.deref()!.position.toArray();
+  });
+  expect(reset).toEqual([0, 2.6, 5.8]);
+  await canvas.focus();
+  await page.keyboard.down('Shift'); await page.keyboard.down('d');
+  await expect.poll(async () => (await position(page))[0]).toBeGreaterThan(0.3);
+  await page.keyboard.up('d'); await page.keyboard.up('Shift');
 });
 
 test('a replacement GLB clears an obsolete render failure for the same exhibit', async ({ page }) => {

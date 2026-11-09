@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Euler, Matrix4, Quaternion, PerspectiveCamera, Vector3 } from 'three';
 import { useReducedMotion } from '@mantine/hooks';
@@ -15,16 +15,16 @@ import type { GuidedCameraBinding, GuidedCameraRequest } from '@/hooks/useGuided
 import { advanceGuidedTime, buildGuidedPath, getGuidedView, getGuidedDuration, GUIDED_MOTION, sampleGuidedDistance, sampleGuidedPath, type GuidedPath } from '@/helpers/guidedCameraPath';
 
 export type CameraAction = NavigationAction;
-export interface CameraCommand { action: CameraAction; sequence: number }
 interface FocusTransition {
   fromPosition: Vector3; fromTarget: Vector3; toPosition: Vector3; toTarget: Vector3; startedAt: number;
   path: NavigationVector[]; lengths: number[]; totalLength: number;
 }
 
 /** Sole transform owner: exploration and focus share one demand-frame pipeline. */
-export function MuseumControls({ enabled = true, command, selectedDisplay, focusBounds, displays, input, gestures, onModeChange, onActiveChange, guided, guidedBounds, guidedModelFailed }: {
+export function MuseumControls({ enabled = true, commandHandler, selectionIssuedAt, selectedDisplay, focusBounds, displays, input, gestures, onModeChange, onActiveChange, guided, guidedBounds, guidedModelFailed }: {
   enabled?: boolean;
-  command: CameraCommand | null; selectedDisplay?: MuseumDisplay; focusBounds?: ModelFocusBounds;
+  selectedDisplay?: MuseumDisplay; focusBounds?: ModelFocusBounds; selectionIssuedAt: number;
+  commandHandler: MutableRefObject<((action: CameraAction) => void) | null>;
   displays: readonly MuseumDisplay[]; input: NavigationInput; gestures: NavigationGestures;
   onModeChange: (mode: NavigationMode) => void; onActiveChange: (isActive: boolean) => void;
   guided?: GuidedCameraBinding; guidedBounds?: ModelFocusBounds; guidedModelFailed?: boolean;
@@ -41,6 +41,7 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
   const boundsRef = useRef(focusBounds); boundsRef.current = focusBounds;
   const aspectRef = useRef(1); aspectRef.current = size.width / size.height;
   const autoFocusRef = useRef({ id: selectedDisplay?.id, allowed: true });
+  const manualInputAt = useRef(-Infinity);
   const transitionRef = useRef<FocusTransition | null>(null);
   const introAttemptedRef = useRef(false);
   const introRef = useRef<{ from: Vec3; to: Vec3; startedAt: number } | null>(null);
@@ -79,10 +80,11 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
       runtime.velocity.set(0, 0, 0); runtime.isWalking = false; syncLook();
     };
     const explore = () => {
+      manualInputAt.current = performance.now();
       guidedMotion.current = null;
       if (guidedRef.current?.hasSession) guidedRef.current.onManual();
       if (introRef.current) { introRef.current = null; syncLook(); }
-      transitionRef.current = null; autoFocusRef.current.allowed = false;
+      transitionRef.current = null; autoFocusRef.current = { id: selectedRef.current?.id, allowed: false };
       if (modeRef.current !== 'explore') { syncLook(); setMode('explore'); }
     };
     input.stop = stop; input.invalidate = invalidate;
@@ -147,12 +149,19 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
       invalidate();
     };
     actionRef.current = action;
-    const detach = attachNavigationInput(gl.domElement, input, gestures, action, active => callbacks.current.onActiveChange(active), labelRef.current);
+    const manualAction = (command: CameraAction) => {
+      manualInputAt.current = performance.now();
+      action(command);
+    };
+    // DOM commands finish in the user action before later keyboard/touch input.
+    commandHandler.current = manualAction;
+    const detach = attachNavigationInput(gl.domElement, input, gestures, manualAction, active => callbacks.current.onActiveChange(active), labelRef.current);
     return () => {
       detach(); transitionRef.current = null; guidedMotion.current = null; actionRef.current = null;
+      commandHandler.current = null;
       input.wake = input.invalidate = input.stop = () => {};
     };
-  }, [enabled, camera, gl, invalidate, input, gestures, runtime]);
+  }, [enabled, camera, gl, invalidate, input, gestures, runtime, commandHandler]);
 
   useEffect(() => {
     if (introAttemptedRef.current || !enabled) return;
@@ -176,7 +185,7 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
   useEffect(() => {
     if (guided?.hasSession) { autoFocusRef.current = { id: selectedDisplay?.id, allowed: false }; return; }
     if (!enabled) { autoFocusRef.current = { id: selectedDisplay?.id, allowed: false }; return; }
-    if (autoFocusRef.current.id !== selectedDisplay?.id) autoFocusRef.current = { id: selectedDisplay?.id, allowed: true };
+    if (autoFocusRef.current.id !== selectedDisplay?.id) autoFocusRef.current = { id: selectedDisplay?.id, allowed: selectionIssuedAt > manualInputAt.current };
     if (selectedDisplay && autoFocusRef.current.allowed) actionRef.current?.('focus');
     else if (!selectedDisplay) {
       transitionRef.current = null;
@@ -184,8 +193,7 @@ export function MuseumControls({ enabled = true, command, selectedDisplay, focus
       runtime.look.yaw = runtime.goal.yaw = runtime.euler.y; runtime.look.pitch = runtime.goal.pitch = runtime.euler.x;
       modeRef.current = 'explore'; callbacks.current.onModeChange('explore');
     }
-  }, [enabled, selectedDisplay, focusBounds, size.width, size.height, camera, runtime, guided?.hasSession]);
-  useEffect(() => { if (command) actionRef.current?.(command.action); }, [command]);
+  }, [enabled, selectedDisplay, focusBounds, size.width, size.height, camera, runtime, guided?.hasSession, selectionIssuedAt]);
 
   const guidedRequest = guided?.request;
   useEffect(() => {

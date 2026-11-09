@@ -5,7 +5,7 @@ import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from 'three';
 import { MuseumRoom } from '@/components/museum/MuseumRoom';
 import { ExhibitionDisplay } from '@/components/museum/ExhibitionDisplay';
 import { MuseumLighting } from '@/components/museum/MuseumLighting';
-import { MuseumControls, type CameraAction, type CameraCommand } from '@/components/museum/MuseumControls';
+import { MuseumControls, type CameraAction } from '@/components/museum/MuseumControls';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { SceneLifecycle } from '@/components/museum/SceneLifecycle';
 import { INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET } from '@/helpers/museumCamera';
@@ -62,7 +62,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
 }) {
   const t = usePublicT();
   const quality = useMuseumQuality();
-  const [command, setCommand] = useState<CameraCommand | null>(null);
+  const commandHandler = useRef<((action: CameraAction) => void) | null>(null);
   const [webglStatus, setWebglStatus] = useState<WebglStatus>('ready');
   const [xrOwner, setXrOwner] = useState<XrSessionController | null>(null);
   const [xrStatus, setXrStatus] = useState<XrSnapshot>({ capability: 'checking', phase: 'idle', message: '' });
@@ -99,6 +99,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
   const handleSceneSelect = (id: string) => { if (gestures.canSelect) onSelect(id); };
   const { models, retry } = useRoomModels(displays);
   const selectedDisplay = displays.find((display) => display.id === selectedId);
+  const selection = useMemo(() => ({ id: selectedId, issuedAt: performance.now() }), [selectedId]);
   const selectedModel = selectedDisplay?.model ? models[selectedDisplay.model.checksumSha256] : undefined;
   const selectedRenderState = renderStates[selectedDisplay?.id ?? ''];
   const selectedAsset = selectedModel?.status === 'ready' && !(selectedRenderState?.checksum === selectedDisplay?.model?.checksumSha256 && selectedRenderState?.failed) ? selectedModel.asset : undefined;
@@ -127,7 +128,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
     const state = states[id];
     return !state || !state.failed || state.attempts >= 3 ? states : { ...states, [id]: { ...state, failed: false, attempts: state.attempts + 1 } };
   });
-  const handleCommand = (action: CameraAction) => setCommand((previous) => ({ action, sequence: (previous?.sequence ?? 0) + 1 }));
+  const handleCommand = (action: CameraAction) => commandHandler.current?.(action);
   const captureRef = useRef<(() => string | null) | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const handlePhoto = async () => {
@@ -176,7 +177,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
       <MuseumXr available={webglStatus === 'ready'} displays={displays} selectedId={selectedId} onSelect={onSelect}
         onController={setXrOwner} onStatus={setXrStatus} onHover={setXrHoveredId} onRendererReset={handleRendererReset} />
       <PhotoCapture bind={(fn) => { captureRef.current = fn; }} />
-      <MuseumControls enabled={isWebInputEnabled} command={command} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
+      <MuseumControls enabled={isWebInputEnabled} commandHandler={commandHandler} selectionIssuedAt={selection.issuedAt} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
         displays={displays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} guided={guided} guidedBounds={guidedBounds} guidedModelFailed={guidedModelFailed} />
       <GallerySurfaces anisotropy={quality.anisotropy}>
       <MuseumRoom />

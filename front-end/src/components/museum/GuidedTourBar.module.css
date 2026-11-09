@@ -6,8 +6,8 @@
 .actions { display: flex; gap: 6px; }
 @media (max-width: 600px) {
   .bar { top: 252px; left: 12px; width: 240px; padding: 8px; }
-  .bar[data-status='idle'] { top: 140px; right: 12px; left: auto; width: 192px; }
+  .bar[data-status='idle'] { top: 140px; bottom: auto; right: 12px; left: auto; width: 192px; }
 }
-@media (max-height: 600px) {
+@media (max-height: 500px) {
   .bar { top: auto; bottom: 92px; left: 12px; width: 240px; max-height: 140px; overflow: auto; }
 }
