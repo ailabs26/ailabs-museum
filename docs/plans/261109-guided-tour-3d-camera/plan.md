@@ -25,10 +25,14 @@ Source audit covers the core provider/reducer/selectors/builders, MuseumControls
 
 ## Tasks
 
-- [ ] Write path/framing/motion tests and observe RED. Implement safe framing, rounded route, cumulative-distance/time profiles and bounded orientation. Verify and commit together.
-- [ ] Write browser acceptance tests and observe missing Start behavior. Implement coordinator, camera-owner integration, localized controls, pause/takeover and scene lifecycle. Verify and commit together.
-- [ ] Extend browser coverage for lifecycle, CMS updates, empty/single rooms, reduced motion, XR and mobile. Run frontend gates and affected suites, inspect desktop/mobile images, review complete diff.
-- [ ] Record evidence, limitations and commit ledger, commit handoff.
+- [x] Write path/framing/motion tests and observe RED. Implement safe framing, rounded route, cumulative-distance/time profiles and bounded orientation. Verify and commit together.
+- [x] Write browser acceptance tests and observe missing Start behavior. Implement coordinator, camera-owner integration, localized controls, pause/takeover and scene lifecycle. Verify and commit together.
+- [x] Extend browser coverage for lifecycle, CMS updates, empty/single rooms, reduced motion, XR and mobile. Run frontend gates and affected suites, inspect desktop/mobile images, review complete diff.
+- [x] Record evidence, limitations and commit ledger, commit handoff.
+
+## Delivery
+
+Implementation and verification are complete for the fixture-backed browser scope. See verification.md for 325 unit tests, 75 production regressions, 12 final-profile Guided Tour cases, 7 dev/StrictMode cases and the limits of screenshot-based visual QA. Keep the task branch local for review as explicitly requested. Hardware comfort/FPS and a manual live-API walkthrough remain unverified.
 
 ## Review focus
 
