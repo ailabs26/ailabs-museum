@@ -89,6 +89,18 @@ describe('Tìm hiện vật theo bản dịch (PostgreSQL thật)', { skip }, ()
     await db.getRepository(Room).update(roomId, { status: RoomStatus.ACTIVE });
   });
 
+  it('sitemap: chỉ hiện vật công khai, kèm phòng và thời điểm duyệt', async () => {
+    const published = await createExhibit({ vi: 'Lên sitemap' }, RevisionState.APPROVED, true);
+    const draft = await createExhibit({ vi: 'Không lên sitemap' }, RevisionState.DRAFT, false);
+    const reviewedAt = new Date('2026-11-01T08:00:00Z');
+    await db.query('UPDATE exhibit_revisions SET reviewed_at = $2 WHERE exhibit_id = $1', [published, reviewedAt]);
+
+    const entries = await repo.findPublicSitemapEntries(50_000);
+    const mine = entries.find((entry) => entry.exhibitId === published);
+    assert.deepEqual(mine, { exhibitId: published, roomSlug: `i18n-${tag}`, publishedAt: reviewedAt });
+    assert.equal(entries.some((entry) => entry.exhibitId === draft), false);
+  });
+
   it('tìm được theo bản dịch tên phòng', async () => {
     const published = await createExhibit({ vi: 'Tượng' }, RevisionState.APPROVED, true);
     await db.getRepository(Room).update(roomId, { translations: { name: { ko: `전시실${tag}` } } });

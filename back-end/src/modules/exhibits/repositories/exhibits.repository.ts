@@ -360,6 +360,20 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
     return exhibit?.room ? { exhibitId: exhibit.id, roomSlug: exhibit.room.slug } : null;
   }
 
+  /** Hiện vật công khai cho sitemap: phòng chứa và thời điểm bản đang xuất bản được duyệt. */
+  async findPublicSitemapEntries(limit: number): Promise<{ exhibitId: string; roomSlug: string; publishedAt: Date }[]> {
+    const exhibits = await this.buildPublicSearchIdQuery()
+      .addSelect(['room.slug', 'exhibit.updatedAt', 'publishedRevision.reviewedAt'])
+      .take(limit)
+      .getMany();
+    return exhibits.map((exhibit) => ({
+      exhibitId: exhibit.id,
+      roomSlug: exhibit.room.slug,
+      // Bản cũ có thể thiếu `reviewedAt`: dùng lần sửa gần nhất của hiện vật.
+      publishedAt: exhibit.publishedRevision?.reviewedAt ?? exhibit.updatedAt,
+    }));
+  }
+
   /**
    * Tìm kiếm hiện vật CÔNG KHAI: chỉ bản đã xuất bản (APPROVED) + đang hiển thị, chưa xóa/lưu trữ,
    * thuộc phòng ACTIVE. Lọc theo `roomId` và từ khóa `q` (ILIKE trên tên phòng + tên/mô tả hiện vật).
