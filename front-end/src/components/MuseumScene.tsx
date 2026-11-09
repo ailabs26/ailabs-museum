@@ -53,8 +53,9 @@ function xrMessage(message: string, t: Translator): string {
   return known ? t(known.key, known.label) : message;
 }
 
-export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback, immersive = false, onXrChange, guided }: {
+export function MuseumScene({ displays, navigationDisplays = displays, selectedId, onSelect, onClear, fallback, immersive = false, onXrChange, guided }: {
   displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void; onClear: () => void;
+  navigationDisplays?: readonly MuseumDisplay[];
   fallback: ReactNode;
   immersive?: boolean;
   onXrChange?: (snapshot: XrSnapshot, owner: XrSessionController | null) => void;
@@ -105,7 +106,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
   const selectedAsset = selectedModel?.status === 'ready' && !(selectedRenderState?.checksum === selectedDisplay?.model?.checksumSha256 && selectedRenderState?.failed) ? selectedModel.asset : undefined;
   const focusBounds = useMemo(() => selectedDisplay?.model ? getArtifactFocusBounds(selectedDisplay, selectedAsset?.normalization)
     : undefined, [selectedDisplay, selectedAsset]);
-  const guidedDisplay = displays.find(display => display.id === guided?.request?.exhibitId);
+  const guidedDisplay = navigationDisplays.find(display => display.id === guided?.request?.exhibitId);
   const guidedModel = guidedDisplay?.model ? models[guidedDisplay.model.checksumSha256] : undefined;
   const guidedBounds = useMemo(() => guidedDisplay?.model ? getArtifactFocusBounds(guidedDisplay,
     guidedModel?.status === 'ready' ? guidedModel.asset.normalization : undefined) : undefined, [guidedDisplay, guidedModel]);
@@ -178,7 +179,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
         onController={setXrOwner} onStatus={setXrStatus} onHover={setXrHoveredId} onRendererReset={handleRendererReset} />
       <PhotoCapture bind={(fn) => { captureRef.current = fn; }} />
       <MuseumControls enabled={isWebInputEnabled} commandHandler={commandHandler} selectionIssuedAt={selection.issuedAt} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
-        displays={displays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} guided={guided} guidedBounds={guidedBounds} guidedModelFailed={guidedModelFailed} />
+        displays={navigationDisplays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} guided={guided} guidedBounds={guidedBounds} guidedModelFailed={guidedModelFailed} />
       <GallerySurfaces anisotropy={quality.anisotropy}>
       <MuseumRoom />
       {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={handleSceneSelect}

@@ -33,6 +33,11 @@ export function MuseumPage() {
   const errorText = usePublicErrorText();
   usePageTitle(detail?.name ?? t('ui.tour.title', 'Tham quan bảo tàng'));
   const displays = useMemo(() => detail ? mapRoomDisplays(detail, locale) : [], [detail, locale]);
+  const currentRoomId = detail?.id;
+  const roomExhibits = detail?.exhibits;
+  // Keep camera inputs stable while the localized display copy changes.
+  const navigationDisplays = useMemo(() => currentRoomId && roomExhibits
+    ? mapRoomDisplays({ id: currentRoomId, exhibits: roomExhibits }) : [], [currentRoomId, roomExhibits]);
   const requestedExhibitId = searchParams.get('exhibit');
   const isRequestedExhibitValid = requestedExhibitId !== null && exhibitIdSchema.safeParse(requestedExhibitId).success;
   const { isOpen: isSceneOpen, containerRef, isXrPresentingRef, open: openScene, close: closeScene } = useImmersiveTour();
@@ -53,7 +58,6 @@ export function MuseumPage() {
     if (sceneAttempt >= 2) return;
     setSceneAttempt(attempt => attempt + 1); setFailedRoomId(null); handleOpenScene();
   };
-  const currentRoomId = detail?.id;
   const handleUnavailable = useCallback(() => {
     if (currentRoomId) setFailedRoomId(currentRoomId);
     closeScene();
@@ -193,7 +197,7 @@ export function MuseumPage() {
         }}>
         {detail ? <ErrorBoundary key={`${detail.id}:${sceneAttempt}`} fallback={sceneFallback}>
           <Suspense fallback={<MuseumLoading text={t('ui.tour.opening', 'Đang mở phòng 3D…')} />}>
-            <LazyMuseumScene displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay}
+            <LazyMuseumScene displays={displays} navigationDisplays={navigationDisplays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay}
               onClear={handleCloseDetail} fallback={sceneFallback} immersive onXrChange={handleXrChange} guided={guided.camera} />
           </Suspense>
         </ErrorBoundary> : <div className={classes.immersiveLoading}>

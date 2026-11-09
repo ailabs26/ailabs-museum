@@ -5,7 +5,7 @@ import { localizedAltText, localizedTranscript, localizeExhibit } from './locali
 import { collectMediaCredits } from './mediaCredits';
 
 /** Backend coordinates anchor the existing display group, in metres / Y up. */
-export function mapRoomDisplays(room: RoomDetail, locale = 'vi'): MuseumDisplay[] {
+export function mapRoomDisplays<Room extends Pick<RoomDetail, 'id' | 'exhibits'>>(room: Room, locale = 'vi'): MuseumDisplay[] {
   const exhibits = [...room.exhibits].sort((left, right) =>
     left.displayOrder - right.displayOrder || (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
   const hasModels = exhibits.some(exhibit => exhibit.model);
