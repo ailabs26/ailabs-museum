@@ -326,3 +326,25 @@ test('a replacement GLB clears an obsolete render failure for the same exhibit',
   await expect(bar(page)).toHaveAttribute('data-phase', 'viewing');
   await expect(bar(page)).toHaveAttribute('data-exhibit', exhibits[1].id);
 });
+
+test('resume at an arrived pose completes on the first frame with reduced motion off', async ({ page }) => {
+  await page.setViewportSize({ width: 640, height: 480 });
+  await page.addInitScript(() => Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 4 }));
+  await open(page, false);
+  await waitForRendererIdle(page);
+  const clockStart = new Date('2026-11-09T00:00:00Z');
+  await page.clock.install({ time: clockStart });
+  await page.clock.pauseAt(clockStart);
+  await page.getByRole('button', { name: 'Bắt đầu tham quan có hướng dẫn', exact: true }).evaluate(button => button.click());
+  await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'focusing');
+  await page.clock.runFor(6000);
+  await expect(bar(page)).toHaveAttribute('data-phase', 'viewing');
+  const arrived = await position(page);
+  await page.getByRole('button', { name: 'Tạm dừng', exact: true }).evaluate(button => button.click());
+  await expect(bar(page)).toHaveAttribute('data-phase', 'paused');
+  await page.getByRole('button', { name: 'Tiếp tục', exact: true }).evaluate(button => button.click());
+  await expect(page.locator('[data-navigation-mode]')).toHaveAttribute('data-navigation-mode', 'focusing');
+  await page.clock.runFor(16);
+  await expect(bar(page)).toHaveAttribute('data-phase', 'viewing');
+  expect(await position(page)).toEqual(arrived);
+});

@@ -223,7 +223,7 @@ export function MuseumControls({ enabled = true, commandHandler, selectionIssued
     const motion = guidedMotion.current;
     if (motion && motion.request === guidedRef.current?.request) {
       motion.elapsed = advanceGuidedTime(motion.elapsed, rawDelta, true);
-      const progress = reducedRef.current ? 1 : Math.min(1, motion.elapsed / (motion.duration || 1));
+      const progress = reducedRef.current || motion.duration === 0 ? 1 : Math.min(1, motion.elapsed / motion.duration);
       const sample = sampleGuidedPath(motion.path, motion.path.duration * progress);
       const height = progress * progress * (3 - 2 * progress);
       camera.position.set(sample.x, motion.fromY + (motion.toY - motion.fromY) * height, sample.y);
