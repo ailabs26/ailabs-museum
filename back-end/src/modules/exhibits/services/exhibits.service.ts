@@ -1,3 +1,4 @@
+import { buildSitemapXml, SITEMAP_MAX_URLS, type SitemapEntry } from '../utils/sitemap-xml';
 import { PublicRoomText, toPublicRoomText } from '../../rooms/utils/room-translations';
 import type { SupportedLocale } from '../../translations/constants/locales';
 import {
@@ -141,6 +142,19 @@ export class ExhibitsService {
     const location = await this.exhibits.findPublicLocation(id);
     if (!location) throw new NotFoundException('Không tìm thấy hiện vật');
     return location;
+  }
+
+  /** Sitemap các trang khách: trang chính, từng phòng active và từng hiện vật đã xuất bản. */
+  async sitemapXml(siteUrl: string): Promise<string> {
+    const rooms = await this.roomsRepo.findPublicRooms();
+    const staticPages: SitemapEntry[] = [{ path: '/' }, { path: '/collection' }, { path: '/tour' }];
+    const roomPages = rooms.map((room) => ({ path: `/collection?room=${encodeURIComponent(room.slug)}`, lastmod: room.updatedAt }));
+    const exhibits = await this.exhibits.findPublicSitemapEntries(SITEMAP_MAX_URLS - staticPages.length - roomPages.length);
+    const exhibitPages = exhibits.map(({ roomSlug, exhibitId, publishedAt }) => ({
+      path: `/collection/${encodeURIComponent(roomSlug)}/exhibits/${encodeURIComponent(exhibitId)}`,
+      lastmod: publishedAt,
+    }));
+    return buildSitemapXml(siteUrl, [...staticPages, ...roomPages, ...exhibitPages]);
   }
 
   // =========================================================================
