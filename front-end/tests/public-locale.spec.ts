@@ -14,11 +14,19 @@ test('two public consumers share locale updates', async ({ page }) => {
 });
 
 test('invalid saved locale falls back to vi without crashing', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('aura:visitor:locale:v1', '{"version":1,"value":"fr"}'));
+  await page.addInitScript(() => localStorage.setItem('aura:visitor:locale:v1', '{"version":1,"value":"de"}'));
   await page.goto('/tests/fixtures/public-locale.html');
 
   await expect(page.getByTestId('locale-first')).toHaveText('vi');
   await expect(page.getByTestId('storage-error')).toHaveText('invalid');
+});
+
+test('valid saved locale is preserved', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('aura:visitor:locale:v1', '{"version":1,"value":"fr"}'));
+  await page.goto('/tests/fixtures/public-locale.html');
+
+  await expect(page.getByTestId('locale-first')).toHaveText('fr');
+  await expect(page.getByTestId('storage-error')).toHaveText('none');
 });
 
 test('PublicLayout owns one locale provider across route changes', async ({ page }) => {
