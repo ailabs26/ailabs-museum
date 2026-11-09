@@ -209,6 +209,7 @@ flowchart LR
     `password_common`, `password_personal`. FE (`helpers/passwordPolicy.ts` + `PasswordStrength`) báo ngay khi gõ, trừ
     danh sách mật khẩu phổ biến (phần này chỉ kiểm ở BE).
 - Rate limit: login/refresh/đổi mật khẩu qua `AuthRateLimiter` (mục 5.1.2); báo cáo public qua `@nestjs/throttler` (5 lần/phút).
+- Rate limit API công khai (khách tham quan): `PublicRateLimitGuard` + `PublicRateLimiter` (`common/rate-limit`), đếm theo IP trong cửa sổ cố định 1 phút, 2 nhóm: **api** (`/rooms*`, `/public/rooms*`, `/public/exhibits/:id/location`, `/public/translations`, `/public/sitemap.xml`; `PUBLIC_API_RATE_LIMIT`, mặc định 600) và **media** (tệp media công khai, GLB `/rooms/:slug/exhibits/:id/model`; `PUBLIC_MEDIA_RATE_LIMIT`, mặc định 3000). Ngưỡng rộng vì cả đoàn khách chung một IP Wi-Fi bảo tàng; mục tiêu là chặn bot cào/dội request. Vượt → **429** + `Retry-After`; mọi response có `X-RateLimit-Limit`, `X-RateLimit-Remaining`. `/health` không giới hạn. Bộ nhớ trong tiến trình — nhiều instance cần store chung (Redis).
 - CORS giới hạn `FRONTEND_ORIGIN`; Helmet headers.
 - Validate mọi input bằng `class-validator`; chống SQLi nhờ TypeORM parameterized.
 - Secret qua env, không commit `.env` (đã trong `.gitignore`). Khi `NODE_ENV=production`, `validateEnvironment`
