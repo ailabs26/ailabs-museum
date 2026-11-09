@@ -4,6 +4,7 @@ import { IconCube, IconShieldLock } from '@tabler/icons-react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import auraMark from '@/assets/aura-mark.svg';
 import { PublicLocaleProvider, usePublicLocale } from '@/core/i18n/public-locale';
+import { MuseumProvider } from '@/contexts/MuseumContext';
 import { useScrolled } from '@/hooks/useScrolled';
 import { LOCALES } from '@/services/translations.service';
 import { ThemeToggle } from '@/shared/components/layout/ThemeToggle';
@@ -28,7 +29,7 @@ function LanguageSelect(props: Pick<NativeSelectProps, 'visibleFrom'>) {
 
 /** Khung trang cho phần client công khai (trang chủ, collection, chi tiết, tour). */
 export function PublicLayout() {
-  return <PublicLocaleProvider><PublicLayoutContent /></PublicLocaleProvider>;
+  return <PublicLocaleProvider><MuseumProvider><PublicLayoutContent /></MuseumProvider></PublicLocaleProvider>;
 }
 
 function PublicLayoutContent() {

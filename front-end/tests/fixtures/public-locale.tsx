@@ -3,10 +3,17 @@ import { createRoot } from 'react-dom/client';
 import '@mantine/core/styles.css';
 import { Button, MantineProvider, Stack, Text } from '@mantine/core';
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { theme } from '@/app/theme';
+import { queryClient } from '@/core/api/query-client';
 import { PublicLocaleProvider } from '@/contexts/PublicLocaleContext';
 import { usePublicLocale } from '@/hooks/usePublicLocale';
 import { PublicLayout } from '@/layouts/PublicLayout';
+import { useGuidedTour } from '@/hooks/useGuidedTour';
+import { roomDetailSchema } from '@/validations/roomSchema';
+import { roomA } from './museumContent';
+
+const guidedTourRoom = roomDetailSchema.parse(roomA);
 
 function LocaleConsumer({ name }: { name: string }) {
   const { locale } = usePublicLocale();
@@ -62,10 +69,51 @@ function PublicLayoutFixture() {
   );
 }
 
+function GuidedTourRoute({ next }: { next: string }) {
+  const tour = useGuidedTour();
+  return (
+    <Stack p="md">
+      <Text data-testid="guided-status">{tour.status}</Text>
+      <Text data-testid="guided-current">{tour.currentStep?.exhibitId ?? 'none'}</Text>
+      <Text data-testid="guided-index">{tour.total ? `${tour.currentIndex}/${tour.total}` : '0/0'}</Text>
+      <Button onClick={() => tour.start(guidedTourRoom)}>Start tour</Button>
+      <Button onClick={tour.next}>Next step</Button>
+      <Button onClick={tour.pause}>Pause tour</Button>
+      <Button onClick={tour.resume}>Resume tour</Button>
+      <Button onClick={tour.exit}>Exit tour</Button>
+      <Link to={next}>{next === '/second' ? 'Go to second public route' : 'Go to admin fixture'}</Link>
+    </Stack>
+  );
+}
+
+function PublicGuidedTourFixture() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/first']}>
+        <Routes>
+          <Route element={<PublicLayout />}>
+            <Route path="/first" element={<GuidedTourRoute next="/second" />} />
+            <Route path="/second" element={<GuidedTourRoute next="/admin" />} />
+          </Route>
+          <Route path="/admin" element={<Stack p="md"><Text data-testid="admin-fixture">Admin fixture</Text><Link to="/first">Return to public route</Link></Stack>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
+  );
+}
+
+function GuidedTourOutsideProviderFixture() {
+  useGuidedTour();
+  return null;
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MantineProvider theme={theme}>
-      {new URLSearchParams(location.search).has('layout') ? <PublicLayoutFixture /> : <PublicLocaleFixture />}
+      {new URLSearchParams(location.search).has('guided-tour')
+        ? <PublicGuidedTourFixture />
+        : new URLSearchParams(location.search).has('guided-tour-outside') ? <GuidedTourOutsideProviderFixture />
+        : new URLSearchParams(location.search).has('layout') ? <PublicLayoutFixture /> : <PublicLocaleFixture />}
     </MantineProvider>
   </StrictMode>,
 );
