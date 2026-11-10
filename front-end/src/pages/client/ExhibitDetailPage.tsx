@@ -7,8 +7,12 @@ import type { CSSProperties } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { z } from 'zod';
 import { MediaCreditList } from '@/components/museum/MediaCreditList';
+import { GuidedTour2DControls } from '@/components/museum/GuidedTour2DControls';
 import { collectMediaCredits } from '@/helpers/mediaCredits';
+import { GUIDED_TOUR_2D_MESSAGES } from '@/helpers/guidedTour2dMessages';
+import { GUIDED_TOUR_MESSAGES } from '@/helpers/guidedTourMessages';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
+import { useGuidedTour2D } from '@/hooks/useGuidedTour2D';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
 import { PublicReportModal } from '@/shared/components/feedback/PublicReportModal';
@@ -23,6 +27,9 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 
 export function ExhibitDetailPage() {
   const { locale, t } = usePublicLocale();
+  const tourMessages = GUIDED_TOUR_2D_MESSAGES[locale as keyof typeof GUIDED_TOUR_2D_MESSAGES]
+    ?? GUIDED_TOUR_2D_MESSAGES.vi;
+  const guidedMessages = GUIDED_TOUR_MESSAGES[locale] ?? GUIDED_TOUR_MESSAGES.vi;
   const errorText = usePublicErrorText();
   const [isReportOpen, setIsReportOpen] = useState(false);
   const favorites = useVisitorStore(favoritesStore);
@@ -33,6 +40,26 @@ export function ExhibitDetailPage() {
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const found = detail && isValidId ? detail.exhibits.find((item) => item.id === exhibitId) : undefined;
   const exhibit = found ? localizeExhibit(found, locale) : undefined;
+  const tour2d = useGuidedTour2D({
+    room: detail && !room.isError ? detail : undefined,
+    publicRooms: rooms.isSuccess && !rooms.isError && !rooms.isFetching ? rooms.data : undefined,
+    route: selectedRoom ? { roomId: selectedRoom.id, exhibitId: exhibitId ?? null } : undefined,
+  });
+  const tourStepExhibit = detail?.exhibits.find((item) => item.id === tour2d.currentStep?.exhibitId);
+  const tourStepExhibitName = tourStepExhibit ? localizeExhibit(tourStepExhibit, locale).name : undefined;
+  const recovery = tour2d.isSameRoom && !tour2d.isCurrentRoute && tour2d.currentStep ? (
+    <section className={classes.tourRecovery} aria-label={t('ui.guided2d.recovery-label', tourMessages.recoveryLabel)}>
+      <p role="status">{t('ui.guided2d.route-drift', tourMessages.routeDrift, {
+        exhibit: tourStepExhibitName ?? tour2d.currentStep.exhibitId,
+      })}</p>
+      <div className={classes.headerActions}>
+        <Button color="teal.9" onClick={() => tour2d.continueToCurrent(detail)}>
+          {t('ui.guided2d.return', tourMessages.returnToStep)}
+        </Button>
+        <Button variant="default" onClick={tour2d.exit}>{t('ui.guided.exit', guidedMessages.exit)}</Button>
+      </div>
+    </section>
+  ) : null;
   usePageTitle(exhibit?.name ?? t('ui.exhibit.page-title', 'Chi tiết hiện vật'));
   const viewedRef = useRef<string | null>(null);
   const validRoomId = exhibit?.roomId;
@@ -91,6 +118,7 @@ export function ExhibitDetailPage() {
         <Title ref={titleRef} tabIndex={-1} order={1} className={classes.title}>{statusTitle}</Title>
         <p role={isError ? 'alert' : isLoading ? 'status' : undefined} className={classes.body}>{statusMessage}</p>
         {isError && <Button mt="md" onClick={() => void (rooms.isError ? rooms.refetch() : room.refetch())}>{t('ui.common.retry', 'Thử lại')}</Button>}
+        {recovery}
         {!isLoading && <p><Link to="/collection">{t('ui.exhibit.back-to-collection', 'Về bộ sưu tập')}</Link></p>}
       </> : detail && exhibit ? <article aria-labelledby="exhibit-title">
         <Link className={classes.backLink} to={`/collection?${new URLSearchParams({ room: detail.slug })}`}>{t('ui.exhibit.back-to-room', 'Quay lại bộ sưu tập của phòng này')}</Link>
@@ -107,6 +135,15 @@ export function ExhibitDetailPage() {
           </div>
           <VisitorStorageStatus error={favorites.error} />
         </header>
+        {tour2d.isCurrentRoute && tour2d.status !== 'idle' && <GuidedTour2DControls
+          roomName={detail.name} exhibitName={exhibit.name} status={tour2d.status}
+          currentIndex={tour2d.currentIndex} total={tour2d.total} canPrevious={tour2d.canPrevious}
+          onPrevious={tour2d.previous} onPause={tour2d.pause} onResume={tour2d.resume}
+          onNext={tour2d.next} onExit={tour2d.exit} onRestart={() => tour2d.restart(detail)} />}
+        {!tour2d.isSameRoom && <Button color="teal.9" mt="md" onClick={() => tour2d.startFromExhibit(detail, exhibit.id)}>
+          {t('ui.guided2d.start-from-exhibit', tourMessages.startFromExhibit)}
+        </Button>}
+        {recovery}
         <ReadingControls />
         {!hasTranslation(exhibit, locale) && (
           <p role="note" className={classes.body}>{t('ui.exhibit.translationMissing', 'Chưa có bản dịch, đang hiển thị tiếng Việt.')}</p>
