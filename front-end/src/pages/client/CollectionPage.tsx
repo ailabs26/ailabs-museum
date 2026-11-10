@@ -20,11 +20,13 @@ import classes from './CollectionPage.module.css';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useGuidedTour2D } from '@/hooks/useGuidedTour2D';
 import { GUIDED_TOUR_2D_MESSAGES } from '@/helpers/guidedTour2dMessages';
+import { GUIDED_TOUR_MESSAGES } from '@/helpers/guidedTourMessages';
 
 export function CollectionPage() {
   const { locale, t } = usePublicLocale();
   const tourMessages = GUIDED_TOUR_2D_MESSAGES[locale as keyof typeof GUIDED_TOUR_2D_MESSAGES]
     ?? GUIDED_TOUR_2D_MESSAGES.vi;
+  const guidedMessages = GUIDED_TOUR_MESSAGES[locale] ?? GUIDED_TOUR_MESSAGES.vi;
   const errorText = usePublicErrorText();
   usePageTitle(t('ui.collection.title', 'Bộ sưu tập'));
   const [reportTarget, setReportTarget] = useState<{ exhibitId: string; reportedRevisionId: string } | null>(null);
@@ -151,7 +153,7 @@ export function CollectionPage() {
                 <Button color="teal.9" onClick={() => tour2d.continueToCurrent(detail)}>
                   {t('ui.guided2d.continue', tourMessages.continue)}
                 </Button>
-                <Button variant="default" onClick={tour2d.exit}>{t('ui.guided.exit', 'Thoát hướng dẫn')}</Button>
+                <Button variant="default" onClick={tour2d.exit}>{t('ui.guided.exit', guidedMessages.exit)}</Button>
               </> : <Button color="teal.9" disabled={detail.exhibits.length === 0}
                 aria-describedby={detail.exhibits.length === 0 ? 'guided-tour-empty-room' : undefined}
                 onClick={() => tour2d.startFromRoom(detail)}>

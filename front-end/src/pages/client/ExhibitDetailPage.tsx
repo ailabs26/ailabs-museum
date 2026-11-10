@@ -10,6 +10,7 @@ import { MediaCreditList } from '@/components/museum/MediaCreditList';
 import { GuidedTour2DControls } from '@/components/museum/GuidedTour2DControls';
 import { collectMediaCredits } from '@/helpers/mediaCredits';
 import { GUIDED_TOUR_2D_MESSAGES } from '@/helpers/guidedTour2dMessages';
+import { GUIDED_TOUR_MESSAGES } from '@/helpers/guidedTourMessages';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { useGuidedTour2D } from '@/hooks/useGuidedTour2D';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
@@ -28,6 +29,7 @@ export function ExhibitDetailPage() {
   const { locale, t } = usePublicLocale();
   const tourMessages = GUIDED_TOUR_2D_MESSAGES[locale as keyof typeof GUIDED_TOUR_2D_MESSAGES]
     ?? GUIDED_TOUR_2D_MESSAGES.vi;
+  const guidedMessages = GUIDED_TOUR_MESSAGES[locale] ?? GUIDED_TOUR_MESSAGES.vi;
   const errorText = usePublicErrorText();
   const [isReportOpen, setIsReportOpen] = useState(false);
   const favorites = useVisitorStore(favoritesStore);
@@ -44,16 +46,17 @@ export function ExhibitDetailPage() {
     route: selectedRoom ? { roomId: selectedRoom.id, exhibitId: exhibitId ?? null } : undefined,
   });
   const tourStepExhibit = detail?.exhibits.find((item) => item.id === tour2d.currentStep?.exhibitId);
+  const tourStepExhibitName = tourStepExhibit ? localizeExhibit(tourStepExhibit, locale).name : undefined;
   const recovery = tour2d.isSameRoom && !tour2d.isCurrentRoute && tour2d.currentStep ? (
     <section className={classes.tourRecovery} aria-label={t('ui.guided2d.recovery-label', tourMessages.recoveryLabel)}>
       <p role="status">{t('ui.guided2d.route-drift', tourMessages.routeDrift, {
-        exhibit: tourStepExhibit?.name ?? tour2d.currentStep.exhibitId,
+        exhibit: tourStepExhibitName ?? tour2d.currentStep.exhibitId,
       })}</p>
       <div className={classes.headerActions}>
         <Button color="teal.9" onClick={() => tour2d.continueToCurrent(detail)}>
           {t('ui.guided2d.return', tourMessages.returnToStep)}
         </Button>
-        <Button variant="default" onClick={tour2d.exit}>{t('ui.guided.exit', 'Thoát hướng dẫn')}</Button>
+        <Button variant="default" onClick={tour2d.exit}>{t('ui.guided.exit', guidedMessages.exit)}</Button>
       </div>
     </section>
   ) : null;

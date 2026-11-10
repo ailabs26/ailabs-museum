@@ -131,6 +131,37 @@ test('tour state and controls remain stable across all six locales', async ({ pa
   }
 });
 
+test('page-level Exit and the route-drift notice follow the active locale and localized exhibit name', async ({ page }) => {
+  const localized = {
+    ...roomA,
+    exhibits: roomA.exhibits.map((item, index) => index === 1
+      ? { ...item, i18n: {
+          vi: { name: 'Hiện vật 2', description: 'Mô tả hiện vật 2', transcript: null },
+          en: { name: 'English exhibit 2', description: 'English description 2', transcript: null },
+        } }
+      : item),
+  };
+  await page.route('**/api/rooms/sculpture', route => fulfillMuseum(route, envelope(localized)));
+  await page.goto('/collection?room=sculpture');
+  await page.getByRole('combobox', { name: 'Ngôn ngữ' }).selectOption('en');
+  await page.getByRole('button', { name: 'Start 2D tour', exact: true }).click();
+  await page.getByRole('button', { name: 'Next exhibit', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`${roomA.exhibits[1].id}$`));
+
+  // Back drifts off the active step: the recovery notice must use the localized exhibit name,
+  // and its Exit button must fall back to the English label, not the Vietnamese default.
+  await page.goBack();
+  const recovery = page.getByRole('region', { name: 'Tour step recovery' });
+  await expect(recovery.getByRole('status')).toContainText('The tour is at English exhibit 2');
+  await expect(recovery.getByRole('status')).not.toContainText('Hiện vật 2');
+  await expect(recovery.getByRole('button', { name: 'Exit guided tour', exact: true })).toBeVisible();
+
+  // The same-room Collection controls localize Exit as well.
+  await page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này' }).click();
+  await expect(page.getByRole('button', { name: 'Continue tour', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Exit guided tour', exact: true })).toBeVisible();
+});
+
 test('controls stay in the viewport and support keyboard navigation on a narrow screen', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto(`/collection/sculpture/exhibits/${roomA.exhibits[0].id}`);
