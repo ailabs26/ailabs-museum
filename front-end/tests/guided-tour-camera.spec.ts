@@ -24,6 +24,7 @@ async function open(page: Page, reduced = true, slug = 'sculpture', setup?: () =
 
 test('arrival selects in CMS order, dwell pauses with time remaining, completes once without wrapping', async ({ page }) => {
   await open(page);
+  await waitForRendererIdle(page);
   const clockStart = new Date('2026-11-09T00:00:00Z');
   await page.clock.install({ time: clockStart });
   await page.clock.pauseAt(clockStart);
