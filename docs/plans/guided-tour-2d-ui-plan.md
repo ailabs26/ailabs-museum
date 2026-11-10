@@ -1,6 +1,6 @@
 # F06 — Guided Tour 2D UI — Implementation Plan
 
-> **Trạng thái:** IMPLEMENTED — F06 acceptance đã được kiểm chứng; nhánh đã push lên `origin/feat/guided-tour-2d-ui`. PR chưa mở; người dùng sẽ tự tạo.
+> **Trạng thái:** IMPLEMENTED — F06 acceptance đã được kiểm chứng; affected regression đạt 63/63 trên `origin/feat/guided-tour-2d-ui`. PR chưa mở; người dùng sẽ tự tạo.
 >
 > **Tasks & Acceptance:** [`../tasks/guided-tour-2d-ui.md`](../tasks/guided-tour-2d-ui.md)
 
@@ -178,6 +178,7 @@ Sau khi code xong, điền evidence, review diff rồi mới push/tạo PR theo 
 ### Post-push regression follow-up — 10/11/2026
 
 - Trace cho thấy camera reset test hỏng ở bước WASD tạo tư thế trước reset; keydown được nhận nhưng Chromium/SwiftShader đôi lúc chỉ chạy vài frame trong 5 giây. Thay setup đó bằng nút “Lùi xa” đồng bộ; giữ nguyên kiểm tra reset hoàn tất trong DOM click và kiểm tra WASD sau reset.
-- Verification: reset test 5/5 lần lặp; toàn file `guided-tour-camera.spec.ts` 13/13; `npm run typecheck`, `npm run lint`, `npm run build` đều exit 0. Build vẫn báo bundle chunk >500 kB.
-- Chưa chạy lại đúng bộ affected 63 test sau follow-up. Lệnh mặc định phát hiện 492 test; đã dừng sau 4 test để tránh chạy toàn repo.
-- Commit `0d67937` đã push lên `origin/feat/guided-tour-2d-ui`. PR chưa mở; người dùng sẽ tự tạo. Chưa merge.
+- Lần chạy affected 63 test đầu sau sửa reset còn 62/63 do test clock camera đầu tiên vẫn ở trạng thái `moving`; test đó pass 3/3 khi chạy riêng. Thêm `waitForRendererIdle(page)` trước khi cài fake clock để chờ frame khởi tạo kết thúc.
+- Verification cuối: affected command 63/63; camera file 13/13; reset test 5/5 lần lặp; test clock 3/3 lần lặp. `npm run typecheck`, `npm run lint`, `npm run build` đều exit 0; build vẫn báo bundle chunk >500 kB.
+- Toàn bộ mặc định 492 test chưa chạy; lệnh đó đã dừng sau 4 test.
+- Commits `0d67937` và `312d2b5` đã push lên `origin/feat/guided-tour-2d-ui`. PR chưa mở; người dùng sẽ tự tạo. Chưa merge.

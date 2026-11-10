@@ -1,6 +1,6 @@
 # F06 — Guided Tour 2D UI — Task Breakdown & Acceptance
 
-> **Trạng thái:** IMPLEMENTED — F06 đã push trên `origin/feat/guided-tour-2d-ui`; test camera reset được ổn định trong follow-up. PR chưa mở; người dùng sẽ tự tạo.
+> **Trạng thái:** IMPLEMENTED — F06 đã push trên `origin/feat/guided-tour-2d-ui`; affected regression hiện đạt 63/63. PR chưa mở; người dùng sẽ tự tạo.
 >
 > **PLAN:** [`../plans/guided-tour-2d-ui-plan.md`](../plans/guided-tour-2d-ui-plan.md)
 > **Repository:** `ailabs26/ailabs-museum`
@@ -151,7 +151,7 @@ Mỗi task là commit riêng khi có thay đổi độc lập đáng review; kh�
 - [x] Kiểm tra desktop/mobile screenshot và keyboard/focus; ghi rõ giới hạn đối với thiết bị thật/NVDA/VoiceOver.
 - [x] Rà `git diff origin/dev...HEAD`, `git diff --check` và staged files; không backend/DB/3D camera/out-of-scope.
 - [x] Cập nhật Plan/Task/commit ledger theo bằng chứng; chỉ đánh DONE khi kiểm chứng thực.
-- [x] Push nhánh sau khi người dùng yêu cầu; `origin/feat/guided-tour-2d-ui` hiện ở `0d67937`.
+- [x] Push nhánh sau khi người dùng yêu cầu; nhánh gồm follow-up commits `0d67937` và `312d2b5`.
 - [ ] Mở PR vào `dev`; người dùng sẽ tự tạo. Không tự merge.
 - [x] Ghi chú phần F08 còn lại: chuyển mode chưa đồng bộ toàn bộ trạng thái/timer/selection.
 
@@ -168,7 +168,7 @@ Mỗi task là commit riêng khi có thay đổi độc lập đáng review; kh�
 | CMS order/history/room recovery | PASS | Các case CMS, Back/Forward, transient error/removal trong F06 suite |
 | Locale + keyboard/mobile | PASS | 6 locale; 320×568, 390×844, 1440×900; zoom 200%; screenshot đã xem |
 | Collection/Detail | PASS | Affected suite: toàn bộ 28 test Collection/Detail passed |
-| Core + 3D regression | PARTIAL | Camera file 13/13 sau follow-up; reset test 5/5 lần lặp. Bộ affected 63 test chưa chạy lại sau follow-up |
+| Core + 3D regression | PASS | Bộ affected 63/63 sau follow-up; camera file 13/13; reset test 5/5 lần lặp |
 | Public Locale + Visitor Journey | PASS | Toàn bộ 9 test trong affected suite passed |
 | Typecheck | PASS | `npm run typecheck` exit 0 sau cập nhật code |
 | Lint | PASS | `npm run lint` exit 0 |
@@ -188,9 +188,10 @@ Mỗi task là commit riêng khi có thay đổi độc lập đáng review; kh�
 
 - Failure tại `guided-tour-camera.spec.ts:279` xảy ra trong bước WASD tạo tư thế trước reset, trước khi reset được gọi. Chromium/SwiftShader có lúc chỉ cấp vài frame trong cửa sổ poll; test thấy camera mới dịch khoảng 0,095 m dù keydown được nhận. Đây là ngưỡng setup của test, không phải reset command.
 - Test dùng nút accessible “Lùi xa” để tạo tư thế khác, xác nhận reset đồng bộ ngay trong DOM click, rồi vẫn xác nhận WASD di chuyển sau reset.
-- Verification sau follow-up: reset test lặp 5/5; `guided-tour-camera.spec.ts` 13/13; typecheck, lint và build exit 0. Build giữ cảnh báo bundle chunk >500 kB.
-- Bộ affected 63 test chưa được chạy lại sau follow-up; lệnh Playwright mặc định liệt kê 492 test và đã dừng sau 4 test.
-- Commit `0d67937` đã push lên `origin/feat/guided-tour-2d-ui`. PR chưa mở; người dùng sẽ tự tạo. Chưa merge.
+- Lần chạy affected 63 test đầu sau sửa reset còn 62/63 vì test clock đầu tiên của camera ở trạng thái `moving`; test đó pass 3/3 khi chạy riêng. Thêm `waitForRendererIdle(page)` trước khi cài fake clock để tách frame khởi tạo khỏi clock giả.
+- Verification cuối: affected command 63/63; camera file 13/13; reset test 5/5 lần lặp; test clock 3/3 lần lặp. Typecheck, lint và build exit 0; build giữ cảnh báo bundle chunk >500 kB.
+- Toàn bộ mặc định 492 test chưa chạy; lệnh đó đã dừng sau 4 test.
+- Commits `0d67937` và `312d2b5` đã push lên `origin/feat/guided-tour-2d-ui`. PR chưa mở; người dùng sẽ tự tạo. Chưa merge.
 
 ## 13. Commit ledger
 
@@ -206,5 +207,6 @@ Mỗi task là commit riêng khi có thay đổi độc lập đáng review; kh�
 | 07 | `test(tour): cover guided 2d visitor journey` | `f46cb1c` | COMMITTED |
 | 08 | `docs(tour): record guided 2d verification` | `40f2dbe` | COMMITTED |
 | Follow-up | `fix(tests): stabilize camera reset regression` | `0d67937` | PUSHED to `origin/feat/guided-tour-2d-ui`; PR pending user |
+| Follow-up | `fix(tests): wait for camera renderer before fake clock` | `312d2b5` | PUSHED to `origin/feat/guided-tour-2d-ui`; PR pending user |
 
 **Định nghĩa DONE:** Guided Tour 2D dùng đúng Core, thứ tự public CMS, hoạt động đầy đủ trên Collection/Detail và có E2E chứng minh. Không đồng nghĩa đã hoàn tất F08 chuyển 2D↔3D hoặc F04 audio đa ngôn ngữ.
