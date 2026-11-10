@@ -1,0 +1,4021 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "summary": "Đăng nhập, trả access token + set cookie refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Access token và user trong ApiResponse; refresh token qua cookie HttpOnly."
+          },
+          "401": {
+            "description": "Sai thông tin đăng nhập hoặc tài khoản bị khóa."
+          },
+          "429": {
+            "description": "Quá nhiều lần thử theo IP hoặc email; xem Retry-After."
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/login/2fa": {
+      "post": {
+        "operationId": "AuthController_loginTwoFactor",
+        "summary": "Bước 2 đăng nhập khi bật 2FA: mfaToken + mã 6 số (hoặc mã khôi phục)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginTwoFactorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Như /auth/login thành công: access token + user; refresh token qua cookie HttpOnly."
+          },
+          "401": {
+            "description": "Mã sai, token hết hạn (5 phút) hoặc tài khoản bị khóa."
+          },
+          "429": {
+            "description": "Sai mã quá 5 lần / 15 phút / tài khoản, hoặc quá nhiều request theo IP."
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "summary": "Làm mới access token bằng refresh cookie (xoay vòng)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Access token mới trong ApiResponse và refresh cookie đã xoay vòng."
+          },
+          "401": {
+            "description": "Cookie bị xóa khi phiên không hợp lệ, hết hạn hoặc bị tái sử dụng."
+          },
+          "429": {
+            "description": "Quá nhiều lần làm mới theo phiên, theo IP, hoặc với cookie sai; xem Retry-After."
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "summary": "Đăng xuất: thu hồi refresh session và xóa cookie",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Không cần access token còn hạn. Thu hồi refresh session nếu có và xóa cookie; có thể gọi lại.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "example": null
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true,
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "AuthController_me",
+        "summary": "Thông tin phiên hiện tại (roles + permissions)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User hiện tại trong ApiResponse."
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AuthController_updateProfile",
+        "summary": "Tự sửa hồ sơ (tên hiển thị) của tài khoản đang đăng nhập",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AuthUser sau khi cập nhật."
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/change-password": {
+      "post": {
+        "operationId": "AuthController_changePassword",
+        "summary": "Tự đổi mật khẩu; đăng xuất mọi thiết bị khác, giữ thiết bị hiện tại",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`id` là người dùng vừa đổi mật khẩu (dùng cho audit)."
+          },
+          "429": {
+            "description": "Nhập sai mật khẩu hiện tại quá nhiều lần; xem Retry-After."
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/2fa": {
+      "get": {
+        "operationId": "AuthController_twoFactorStatus",
+        "summary": "Trạng thái 2FA của tôi (đang bật, số mã khôi phục còn lại)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/2fa/setup": {
+      "post": {
+        "operationId": "AuthController_twoFactorSetup",
+        "summary": "Bắt đầu bật 2FA: secret mới + QR cho app Authenticator (chưa có hiệu lực tới khi xác nhận)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/2fa/enable": {
+      "post": {
+        "operationId": "AuthController_twoFactorEnable",
+        "summary": "Xác nhận mã đầu tiên → bật 2FA; trả 10 mã khôi phục (chỉ hiện một lần); đăng xuất thiết bị khác",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/2fa/disable": {
+      "post": {
+        "operationId": "AuthController_twoFactorDisable",
+        "summary": "Tắt 2FA: mật khẩu hiện tại + mã 6 số hoặc mã khôi phục; đăng xuất thiết bị khác",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisableTwoFactorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "429": {
+            "description": "Nhập sai mật khẩu hiện tại quá nhiều lần; xem Retry-After."
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/2fa/recovery-codes": {
+      "post": {
+        "operationId": "AuthController_twoFactorRecoveryCodes",
+        "summary": "Tạo 10 mã khôi phục mới (bộ cũ hết hiệu lực); cần mã 6 số hiện tại",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/sessions": {
+      "get": {
+        "operationId": "AuthController_listSessions",
+        "summary": "Các thiết bị đang đăng nhập của chính mình",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SessionResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/sessions/{id}": {
+      "delete": {
+        "operationId": "AuthController_revokeSession",
+        "summary": "Đăng xuất một thiết bị của chính mình (có hiệu lực ngay)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Không có phiên này trong các phiên của bạn."
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/sessions/revoke-others": {
+      "post": {
+        "operationId": "AuthController_revokeOtherSessions",
+        "summary": "Đăng xuất mọi thiết bị khác, giữ thiết bị hiện tại",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "`id` là người dùng vừa bị đăng xuất các thiết bị khác (dùng cho audit)."
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/logout-all": {
+      "post": {
+        "operationId": "AuthController_logoutAll",
+        "summary": "Đăng xuất khỏi tất cả thiết bị, kể cả thiết bị hiện tại",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "`id` là người dùng vừa bị đăng xuất (dùng cho audit). Cookie refresh bị xóa."
+          }
+        },
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/{id}/2fa/reset": {
+      "post": {
+        "operationId": "UserTwoFactorController_reset",
+        "summary": "Tắt 2FA của một tài khoản (xóa secret + mã khôi phục) và đăng xuất mọi thiết bị của tài khoản đó",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "409": {
+            "description": "Tài khoản chưa bật 2FA."
+          }
+        },
+        "tags": [
+          "Admin · Users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users": {
+      "get": {
+        "operationId": "UsersController_list",
+        "summary": "Danh sách người dùng (phân trang, lọc; deleted=true → thùng rác)",
+        "parameters": [
+          {
+            "name": "deleted",
+            "required": false,
+            "in": "query",
+            "description": "true: chỉ bản ghi đã xóa mềm (thùng rác)",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "UsersController_create",
+        "summary": "Tạo người dùng mới",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "operationId": "UsersController_getById",
+        "summary": "Chi tiết người dùng",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "UsersController_update",
+        "summary": "Cập nhật người dùng",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "UsersController_remove",
+        "summary": "Xóa mềm người dùng (khóa dùng PATCH status)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/bulk-delete": {
+      "post": {
+        "operationId": "UsersController_removeMany",
+        "summary": "Xóa mềm nhiều tài khoản (tất cả hoặc không; chặn tài khoản Admin, 409 kèm lý do từng ID)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkIdsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/bulk-restore": {
+      "post": {
+        "operationId": "UsersController_restoreMany",
+        "summary": "Khôi phục tài khoản đã xóa mềm (tất cả hoặc không; 409 kèm lý do từng ID)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkIdsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/{id}/roles": {
+      "post": {
+        "operationId": "UsersController_assignRoles",
+        "summary": "Gán vai trò cho người dùng",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignRolesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "UsersController_setRoles",
+        "summary": "Thay toàn bộ vai trò; [] để bỏ hết (bảo vệ Admin cuối cùng)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetUserRolesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/{id}/roles/{roleId}": {
+      "delete": {
+        "operationId": "UsersController_removeRole",
+        "summary": "Bỏ một vai trò khỏi người dùng",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "roleId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/audit": {
+      "get": {
+        "operationId": "AuditController_list",
+        "summary": "Nhật ký hệ thống (lọc actor/action/resource/thời gian)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Audit"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/audit/export": {
+      "get": {
+        "operationId": "AuditController_export",
+        "summary": "Xuất nhật ký ra CSV (UTF-8 có BOM), cùng bộ lọc với danh sách; tối đa 10.000 dòng",
+        "parameters": [],
+        "responses": {
+          "400": {
+            "description": "Quá 10.000 bản ghi khớp bộ lọc."
+          }
+        },
+        "tags": [
+          "Admin · Audit"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/audit/{id}": {
+      "get": {
+        "operationId": "AuditController_getById",
+        "summary": "Chi tiết một bản ghi nhật ký",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Audit"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/roles": {
+      "get": {
+        "operationId": "RolesController_list",
+        "summary": "Danh sách vai trò kèm quyền (deleted=true → thùng rác)",
+        "parameters": [
+          {
+            "name": "deleted",
+            "required": false,
+            "in": "query",
+            "description": "true: chỉ bản ghi đã xóa mềm (thùng rác)",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Roles"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "RolesController_create",
+        "summary": "Tạo vai trò",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Roles"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/roles/permission-matrix": {
+      "put": {
+        "operationId": "RolesController_setPermissionMatrix",
+        "summary": "Cập nhật nhiều vai trò trong ma trận quyền theo một transaction",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPermissionMatrixDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Roles"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/roles/{id}/permissions": {
+      "get": {
+        "operationId": "RolesController_getPermissions",
+        "summary": "Danh sách quyền của vai trò",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Roles"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "RolesController_setPermissions",
+        "summary": "Đặt lại toàn bộ ma trận quyền của vai trò",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPermissionsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Roles"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/roles/{id}": {
+      "patch": {
+        "operationId": "RolesController_update",
+        "summary": "Đổi tên vai trò",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Roles"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "RolesController_remove",
+        "summary": "Xóa mềm vai trò (chặn Admin / đang gán cho người dùng)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Roles"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/roles/bulk-delete": {
+      "post": {
+        "operationId": "RolesController_removeMany",
+        "summary": "Xóa mềm nhiều vai trò (tất cả hoặc không; chặn Admin / đang gán, 409 kèm lý do từng ID)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkIdsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Roles"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/roles/bulk-restore": {
+      "post": {
+        "operationId": "RolesController_restoreMany",
+        "summary": "Khôi phục vai trò đã xóa mềm (tất cả hoặc không; chặn trùng mã, 409 kèm lý do từng ID)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkIdsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Roles"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/permissions": {
+      "get": {
+        "operationId": "PermissionsController_listAll",
+        "summary": "Danh mục toàn bộ quyền hệ thống",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Permissions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/rooms": {
+      "get": {
+        "operationId": "AdminRoomsController_list",
+        "summary": "Danh sách phòng trưng bày (phân trang, lọc, tìm kiếm; deleted=true → thùng rác)",
+        "parameters": [
+          {
+            "name": "deleted",
+            "required": false,
+            "in": "query",
+            "description": "true: chỉ bản ghi đã xóa mềm (thùng rác)",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Rooms"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminRoomsController_create",
+        "summary": "Tạo phòng trưng bày mới",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoomDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Rooms"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/rooms/{id}": {
+      "get": {
+        "operationId": "AdminRoomsController_getById",
+        "summary": "Chi tiết phòng trưng bày theo UUID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Rooms"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminRoomsController_update",
+        "summary": "Cập nhật phòng trưng bày (bất biến slug)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoomDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Rooms"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "AdminRoomsController_remove",
+        "summary": "Xóa mềm phòng trưng bày (quy tắc BR-20)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Rooms"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/rooms/bulk-delete": {
+      "post": {
+        "operationId": "AdminRoomsController_removeMany",
+        "summary": "Xóa mềm nhiều phòng (tất cả hoặc không; BR-20, 409 kèm lý do từng ID)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkIdsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Rooms"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/rooms/bulk-restore": {
+      "post": {
+        "operationId": "AdminRoomsController_restoreMany",
+        "summary": "Khôi phục phòng đã xóa mềm (tất cả hoặc không; 409 kèm lý do từng ID)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkIdsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Rooms"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/public/rooms": {
+      "get": {
+        "operationId": "PublicRoomsController_getPublicList",
+        "summary": "Danh sách phòng công khai cho khách tham quan",
+        "parameters": [
+          {
+            "name": "lang",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "ko",
+              "enum": [
+                "vi",
+                "en",
+                "fr",
+                "zh",
+                "ko",
+                "ja"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Public museum content"
+        ]
+      }
+    },
+    "/public/rooms/{slug}": {
+      "get": {
+        "operationId": "PublicRoomsController_getPublicBySlug",
+        "summary": "Chi tiết phòng công khai theo slug cho khách tham quan 3D",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "ko",
+              "enum": [
+                "vi",
+                "en",
+                "fr",
+                "zh",
+                "ko",
+                "ja"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Public museum content"
+        ]
+      }
+    },
+    "/rooms": {
+      "get": {
+        "operationId": "ExhibitsController_listRooms",
+        "summary": "Danh sách phòng công khai",
+        "parameters": [
+          {
+            "name": "lang",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "ko",
+              "enum": [
+                "vi",
+                "en",
+                "fr",
+                "zh",
+                "ko",
+                "ja"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Public museum content"
+        ]
+      }
+    },
+    "/rooms/search": {
+      "get": {
+        "operationId": "ExhibitsController_searchExhibits",
+        "summary": "Tìm kiếm hiện vật công khai: lọc + phân trang + thứ tự ổn định (VT-077)",
+        "description": "Thứ tự cố định `roomId, displayOrder, id` (ổn định, không trùng/sót giữa các trang). Tham số `sort` bị bỏ qua. Chỉ trả hiện vật APPROVED + visible thuộc phòng ACTIVE.",
+        "parameters": [
+          {
+            "name": "lang",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "ko",
+              "enum": [
+                "vi",
+                "en",
+                "fr",
+                "zh",
+                "ko",
+                "ja"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Public museum content"
+        ]
+      }
+    },
+    "/rooms/{slug}": {
+      "get": {
+        "operationId": "ExhibitsController_getRoom",
+        "summary": "Phòng và hiện vật công khai (revision Published hiện hành + media) theo slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "ko",
+              "enum": [
+                "vi",
+                "en",
+                "fr",
+                "zh",
+                "ko",
+                "ja"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Public museum content"
+        ]
+      }
+    },
+    "/rooms/{slug}/exhibits/{exhibitId}/model": {
+      "get": {
+        "operationId": "ExhibitsController_getModel",
+        "summary": "GLB của hiện vật đã xuất bản; truy cập Storage qua máy chủ",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "exhibitId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Public museum content"
+        ]
+      }
+    },
+    "/public/exhibits/{id}/location": {
+      "get": {
+        "operationId": "PublicExhibitsController_location",
+        "summary": "Phòng chứa hiện vật đã xuất bản (cho liên kết /e/<id> của mã QR); không công khai thì 404",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Public museum content"
+        ]
+      }
+    },
+    "/public/sitemap.xml": {
+      "get": {
+        "operationId": "PublicSitemapController_sitemap",
+        "summary": "Sitemap các trang khách: trang chính, phòng active, hiện vật đã xuất bản",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Public museum content"
+        ]
+      }
+    },
+    "/admin/exhibits": {
+      "get": {
+        "operationId": "AdminExhibitsController_list",
+        "summary": "Danh sách hiện vật (phân trang, lọc theo phòng, trạng thái, tìm kiếm; deleted=true → thùng rác)",
+        "parameters": [
+          {
+            "name": "deleted",
+            "required": false,
+            "in": "query",
+            "description": "true: chỉ bản ghi đã xóa mềm (thùng rác)",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "AdminExhibitsController_create",
+        "summary": "Tạo bản nháp hiện vật mới (Revision #1, trạng thái DRAFT)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExhibitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/exhibits/{id}": {
+      "get": {
+        "operationId": "AdminExhibitsController_getById",
+        "summary": "Chi tiết quản trị một hiện vật theo UUID (kèm phòng, hotspots, lịch sử revisions)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminExhibitsController_update",
+        "summary": "Cập nhật bản nháp hiện vật (SRS BR-21: tự động fork revision mới nếu đã xuất bản)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateExhibitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "AdminExhibitsController_deleteDraft",
+        "summary": "Xóa mềm bản nháp hiện vật (SRS BR-20: chặn xóa nếu đã xuất bản/chờ duyệt/có báo cáo; giữ revisions)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/exhibits/{id}/preview": {
+      "get": {
+        "operationId": "AdminExhibitsController_getPreview",
+        "summary": "Xem trước (preview) bản nháp hiện vật kèm 3D transform và hotspots (SRS FR-69)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/exhibits/{id}/revisions": {
+      "get": {
+        "operationId": "AdminExhibitsController_getRevisionsHistory",
+        "summary": "Lịch sử các phiên bản revision của một hiện vật",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/exhibits/{id}/revisions/{revId}": {
+      "get": {
+        "operationId": "AdminExhibitsController_getRevisionDetail",
+        "summary": "Chi tiết một phiên bản revision theo ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "revId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "AdminExhibitsController_deleteDraftRevision",
+        "summary": "Xóa một bản revision nháp cụ thể của hiện vật",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "revId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/exhibits/{id}/submit-review": {
+      "post": {
+        "operationId": "AdminExhibitsController_submitReview",
+        "summary": "Gửi bản nháp hiện vật đi kiểm duyệt (chuyển sang IN_REVIEW)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/exhibits/bulk-delete": {
+      "post": {
+        "operationId": "AdminExhibitsController_removeMany",
+        "summary": "Xóa mềm nhiều hiện vật nháp (tất cả hoặc không; BR-20, 409 kèm lý do từng ID)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkIdsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/exhibits/bulk-restore": {
+      "post": {
+        "operationId": "AdminExhibitsController_restoreMany",
+        "summary": "Khôi phục hiện vật đã xóa mềm (tất cả hoặc không; chặn khi phòng đã xóa, 409 kèm lý do từng ID)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkIdsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/exhibits/rooms/{roomId}/reorder": {
+      "put": {
+        "operationId": "AdminExhibitsController_reorder",
+        "summary": "Sắp xếp lại thứ tự hiển thị hiện vật trong phòng",
+        "parameters": [
+          {
+            "name": "roomId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderExhibitsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/media": {
+      "get": {
+        "operationId": "AdminMediaController_list",
+        "summary": "Thư viện media (phân trang, lọc kind/state, tìm theo tên & metadata; deleted=true → thùng rác)",
+        "parameters": [
+          {
+            "name": "deleted",
+            "required": false,
+            "in": "query",
+            "description": "true: chỉ bản ghi đã xóa mềm (thùng rác)",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Media"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/media/{id}": {
+      "get": {
+        "operationId": "AdminMediaController_getById",
+        "summary": "Chi tiết media theo UUID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Media"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "AdminMediaController_update",
+        "summary": "Cập nhật metadata (nguồn, tác giả, giấy phép, alt text) — không thay file",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Media"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "AdminMediaController_remove",
+        "summary": "Xóa mềm media, giữ file (409 nếu exhibit đã xuất bản đang dùng — BR-21)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Media"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/media/{id}/content": {
+      "get": {
+        "operationId": "AdminMediaController_content",
+        "summary": "Nội dung file media (cần đăng nhập) — cho công cụ CMS đọc file, kể cả file seed",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Media"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/media/upload": {
+      "post": {
+        "operationId": "AdminMediaController_upload",
+        "summary": "Upload media — kiểm tra định dạng thực tế, dung lượng và cấu trúc file",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "GLB ≤ 10 MB, JPEG/PNG/WebP ≤ 2 MB, MP3 ≤ 10 MB, WebVTT ≤ 1 MB"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "model",
+                      "image",
+                      "audio",
+                      "subtitle"
+                    ]
+                  },
+                  "altText": {
+                    "type": "string",
+                    "maxLength": 240
+                  },
+                  "source": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "author": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "license": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Media"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/media/bulk-delete": {
+      "post": {
+        "operationId": "AdminMediaController_removeMany",
+        "summary": "Xóa mềm nhiều media (tất cả hoặc không; BR-21, 409 kèm lý do từng ID; giữ file)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkIdsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Media"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/media/bulk-restore": {
+      "post": {
+        "operationId": "AdminMediaController_restoreMany",
+        "summary": "Khôi phục media đã xóa mềm (tất cả hoặc không; 409 kèm lý do từng ID)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkIdsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Media"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/media/upload-jobs": {
+      "post": {
+        "operationId": "AdminUploadJobsController_create",
+        "summary": "Tạo job upload media (202); retry cùng Idempotency-Key trả lại job cũ (200)",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "1–128 ký tự [A-Za-z0-9_-]; gửi lại cùng key → nhận lại job cũ",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Media"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/media/upload-jobs/{id}": {
+      "get": {
+        "operationId": "AdminUploadJobsController_get",
+        "summary": "Trạng thái và tiến trình của job upload (chỉ người tạo xem được)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Media"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list",
+        "summary": "Thông báo của tôi, mới nhất trước (phân trang)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Notifications"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/notifications/unread-count": {
+      "get": {
+        "operationId": "NotificationsController_unreadCount",
+        "summary": "Số thông báo chưa đọc (badge chuông)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Notifications"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/notifications/read-all": {
+      "post": {
+        "operationId": "NotificationsController_markAllRead",
+        "summary": "Đánh dấu tất cả đã đọc",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Notifications"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/notifications/{id}/read": {
+      "patch": {
+        "operationId": "NotificationsController_markRead",
+        "summary": "Đánh dấu một thông báo đã đọc",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Không tồn tại hoặc không phải thông báo của tôi."
+          }
+        },
+        "tags": [
+          "Admin · Notifications"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/notifications/{id}": {
+      "delete": {
+        "operationId": "NotificationsController_remove",
+        "summary": "Xóa một thông báo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Không tồn tại hoặc không phải thông báo của tôi."
+          }
+        },
+        "tags": [
+          "Admin · Notifications"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/moderation/queue": {
+      "get": {
+        "operationId": "ModerationController_queue",
+        "summary": "Hàng chờ kiểm duyệt (revision in_review)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Moderation"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/moderation/revisions/{id}": {
+      "get": {
+        "operationId": "ModerationController_getRevision",
+        "summary": "Chi tiết một phiên bản nội dung",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Moderation"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/moderation/revisions/{id}/diff": {
+      "get": {
+        "operationId": "ModerationController_diff",
+        "summary": "So sánh phiên bản này với bản đang xuất bản",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Moderation"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/exhibits/{id}/revisions": {
+      "get": {
+        "operationId": "ExhibitRevisionsController_history",
+        "summary": "Lịch sử phiên bản của một hiện vật",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Moderation"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/exhibits/{id}/hide": {
+      "post": {
+        "operationId": "ExhibitRevisionsController_hide",
+        "summary": "Tạm ẩn hiện vật khỏi public",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HideExhibitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Moderation"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/exhibits/{id}/unhide": {
+      "post": {
+        "operationId": "ExhibitRevisionsController_unhide",
+        "summary": "Hiện lại hiện vật",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HideExhibitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Moderation"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/revisions/{id}/publish": {
+      "post": {
+        "operationId": "RevisionsController_publish",
+        "summary": "Xuất bản revision (in_review → approved)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishRevisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Moderation"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/revisions/{id}/reject": {
+      "post": {
+        "operationId": "RevisionsController_reject",
+        "summary": "Từ chối revision kèm lý do (in_review → rejected)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectRevisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Moderation"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/reports": {
+      "get": {
+        "operationId": "ReportsController_list",
+        "summary": "Danh sách báo cáo vi phạm (lọc theo trạng thái)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Reports"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/reports/assignees": {
+      "get": {
+        "operationId": "ReportsController_assignees",
+        "summary": "Người có thể được giao báo cáo (user active có quyền report:resolve)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Reports"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/reports/{id}": {
+      "get": {
+        "operationId": "ReportsController_get",
+        "summary": "Chi tiết báo cáo + phiên bản bị báo cáo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Reports"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/reports/{id}/assign": {
+      "post": {
+        "operationId": "ReportsController_assign",
+        "summary": "Tiếp nhận (bỏ trống assigneeId) hoặc giao báo cáo cho người khác (open/in_progress → in_progress)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Reports"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/reports/{id}/resolve": {
+      "post": {
+        "operationId": "ReportsController_resolve",
+        "summary": "Xử lý xong báo cáo (→ resolved)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Reports"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/reports/{id}/dismiss": {
+      "post": {
+        "operationId": "ReportsController_dismiss",
+        "summary": "Đóng/bác báo cáo (→ dismissed)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Reports"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/public/reports": {
+      "post": {
+        "operationId": "PublicReportsController_create",
+        "summary": "Client gửi báo cáo nội dung sai (giới hạn cấu hình theo phút)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Public · Reports"
+        ]
+      }
+    },
+    "/admin/stats/overview": {
+      "get": {
+        "operationId": "StatsController_overview",
+        "summary": "Số liệu tổng quan Dashboard (phòng/hiện vật/chờ duyệt/báo cáo + hệ thống)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Stats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/stats/charts": {
+      "get": {
+        "operationId": "StatsController_charts",
+        "summary": "Dữ liệu biểu đồ Dashboard (báo cáo/hiện vật/revision + hoạt động 14 ngày)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Stats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/stats/storage": {
+      "get": {
+        "operationId": "StatsController_storage",
+        "summary": "Dung lượng lưu trữ media theo từng loại tệp",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Stats"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/translations": {
+      "get": {
+        "operationId": "TranslationsController_list",
+        "summary": "Danh sách chuỗi dịch đa ngôn ngữ",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Translations"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "TranslationsController_create",
+        "summary": "Thêm chuỗi dịch",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTranslationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Translations"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/translations/{id}": {
+      "patch": {
+        "operationId": "TranslationsController_updateValues",
+        "summary": "Cập nhật bản dịch của một chuỗi",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTranslationValuesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Translations"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "TranslationsController_remove",
+        "summary": "Xóa chuỗi dịch",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Translations"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/public/translations": {
+      "get": {
+        "operationId": "PublicTranslationsController_list",
+        "summary": "Chuỗi giao diện công khai của một ngôn ngữ: { namespace: text }, chỉ loại ui",
+        "parameters": [
+          {
+            "name": "locale",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "en",
+              "enum": [
+                "vi",
+                "en",
+                "fr",
+                "zh",
+                "ko",
+                "ja"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Public · Translations"
+        ]
+      }
+    },
+    "/partner-api-keys": {
+      "get": {
+        "operationId": "PartnerApiKeysController_list",
+        "summary": "Danh sách API key đối tác",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Partner API Keys"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "PartnerApiKeysController_create",
+        "summary": "Tạo API key (trả về khóa thô một lần duy nhất)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePartnerApiKeyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Partner API Keys"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/partner-api-keys/{id}/revoke": {
+      "post": {
+        "operationId": "PartnerApiKeysController_revoke",
+        "summary": "Thu hồi API key",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Partner API Keys"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/partner-api-keys/{id}": {
+      "delete": {
+        "operationId": "PartnerApiKeysController_remove",
+        "summary": "Xóa mềm API key (thu hồi nếu đang hoạt động, ẩn khỏi danh sách)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Partner API Keys"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/partner/v1/rooms": {
+      "get": {
+        "operationId": "PartnerApiController_listRooms",
+        "summary": "Danh sách phòng công khai",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "description": "Khóa API do Admin cấp (ak_live_…)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "ko",
+              "enum": [
+                "vi",
+                "en",
+                "fr",
+                "zh",
+                "ko",
+                "ja"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Partner API v1"
+        ]
+      }
+    },
+    "/partner/v1/rooms/{slug}": {
+      "get": {
+        "operationId": "PartnerApiController_getRoom",
+        "summary": "Phòng và hiện vật đã xuất bản (kèm URL media công khai)",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "description": "Khóa API do Admin cấp (ak_live_…)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "ko",
+              "enum": [
+                "vi",
+                "en",
+                "fr",
+                "zh",
+                "ko",
+                "ja"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Partner API v1"
+        ]
+      }
+    },
+    "/partner/v1/rooms/{slug}/tour": {
+      "get": {
+        "operationId": "PartnerApiController_getTour",
+        "summary": "Thứ tự tham quan của phòng để nhúng tour (gọn, theo displayOrder)",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "description": "Khóa API do Admin cấp (ak_live_…)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "ko",
+              "enum": [
+                "vi",
+                "en",
+                "fr",
+                "zh",
+                "ko",
+                "ja"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Partner API v1"
+        ]
+      }
+    },
+    "/partner/v1/rooms/{slug}/exhibits/{exhibitId}/model": {
+      "get": {
+        "operationId": "PartnerApiController_getModel",
+        "summary": "Tệp GLB của hiện vật đã xuất bản",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "description": "Khóa API do Admin cấp (ak_live_…)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "exhibitId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Partner API v1"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "HealthController_getHealth",
+        "summary": "Liveness — process còn chạy",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "HealthController_getReadiness",
+        "summary": "Readiness — kiểm tra kết nối database",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Aura Museum API",
+    "description": "API cho bảo tàng WebXR 3D-WEB-03 — gồm nhóm public read (Visitor) và Admin CMS (RBAC).\n\nXác thực: Admin dùng JWT access token (nhấn **Authorize**, nhập `Bearer <access_token>`).\nĐối tác dùng partner API key qua header riêng (xem nhóm `partner`).",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "admin@example.com",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "writeOnly": true,
+            "format": "password"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "LoginTwoFactorDto": {
+        "type": "object",
+        "properties": {
+          "mfaToken": {
+            "type": "string",
+            "description": "`mfaToken` nhận được từ POST /auth/login"
+          },
+          "code": {
+            "type": "string",
+            "example": "123456"
+          },
+          "recoveryCode": {
+            "type": "string",
+            "example": "abcde-fghij",
+            "description": "Mã khôi phục dùng một lần (thay cho mã 6 số)"
+          }
+        },
+        "required": [
+          "mfaToken"
+        ]
+      },
+      "UpdateProfileDto": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160,
+            "example": "Nguyễn Văn A"
+          }
+        },
+        "required": [
+          "displayName"
+        ]
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "writeOnly": true,
+            "format": "password"
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 72,
+            "writeOnly": true,
+            "format": "password"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "TwoFactorCodeDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "123456"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "DisableTwoFactorDto": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "writeOnly": true,
+            "format": "password"
+          },
+          "code": {
+            "type": "string",
+            "example": "123456"
+          },
+          "recoveryCode": {
+            "type": "string",
+            "example": "abcde-fghij"
+          }
+        },
+        "required": [
+          "password"
+        ]
+      },
+      "SessionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "familyId của phiên (dùng cho DELETE /auth/sessions/:id)"
+          },
+          "userAgent": {
+            "type": "string",
+            "nullable": true
+          },
+          "ip": {
+            "type": "string",
+            "nullable": true
+          },
+          "signedInAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastActiveAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Lần xoay vòng refresh gần nhất"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "current": {
+            "type": "boolean",
+            "description": "Là phiên đang gọi API"
+          }
+        },
+        "required": [
+          "id",
+          "userAgent",
+          "ip",
+          "signedInAt",
+          "lastActiveAt",
+          "expiresAt",
+          "current"
+        ]
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "BulkIdsDto": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "ids"
+        ]
+      },
+      "AssignRolesDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SetUserRolesDto": {
+        "type": "object",
+        "properties": {
+          "roleIds": {
+            "description": "Toàn bộ roleId; [] để bỏ mọi vai trò.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "roleIds"
+        ]
+      },
+      "CreateRoleDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SetPermissionMatrixDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SetPermissionsDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateRoleDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateRoomDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateRoomDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateExhibitDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateExhibitDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ReorderExhibitsDto": {
+        "type": "object",
+        "properties": {
+          "exhibitIds": {
+            "description": "Danh sách UUID của các hiện vật theo thứ tự hiển thị mới",
+            "example": [
+              "123e4567-e89b-12d3-a456-426614174000",
+              "223e4567-e89b-12d3-a456-426614174001"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "exhibitIds"
+        ]
+      },
+      "UpdateMediaDto": {
+        "type": "object",
+        "properties": {
+          "altText": {
+            "type": "object",
+            "maxLength": 240,
+            "nullable": true,
+            "description": "Văn bản thay thế cho hình ảnh"
+          },
+          "source": {
+            "type": "object",
+            "maxLength": 500,
+            "nullable": true,
+            "description": "Nguồn gốc tư liệu"
+          },
+          "author": {
+            "type": "object",
+            "maxLength": 200,
+            "nullable": true,
+            "description": "Tác giả / chủ sở hữu"
+          },
+          "license": {
+            "type": "object",
+            "maxLength": 1000,
+            "nullable": true,
+            "description": "Giấy phép sử dụng"
+          }
+        }
+      },
+      "UploadMediaDto": {
+        "type": "object",
+        "properties": {
+          "altText": {
+            "type": "object",
+            "maxLength": 240,
+            "nullable": true,
+            "description": "Văn bản thay thế cho hình ảnh"
+          },
+          "source": {
+            "type": "object",
+            "maxLength": 500,
+            "nullable": true,
+            "description": "Nguồn gốc tư liệu"
+          },
+          "author": {
+            "type": "object",
+            "maxLength": 200,
+            "nullable": true,
+            "description": "Tác giả / chủ sở hữu"
+          },
+          "license": {
+            "type": "object",
+            "maxLength": 1000,
+            "nullable": true,
+            "description": "Giấy phép sử dụng"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "model",
+              "image",
+              "audio",
+              "subtitle"
+            ],
+            "description": "Loại media mong đợi. Nếu gửi, nội dung file thực tế phải khớp, ngược lại trả 422."
+          }
+        }
+      },
+      "HideExhibitDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "example": 3,
+            "description": "Phiên bản hiện vật phía client đang xem"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Tạm ẩn để bảo dưỡng thông tin hiện vật",
+            "description": "Lý do tạm ẩn hoặc mở lại hiện vật (ghi vào nhật ký hệ thống)"
+          }
+        },
+        "required": [
+          "version"
+        ]
+      },
+      "PublishRevisionDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "example": 3,
+            "description": "Phiên bản hiện vật phía client đang xem"
+          }
+        },
+        "required": [
+          "version"
+        ]
+      },
+      "RejectRevisionDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "example": 3
+          },
+          "reason": {
+            "type": "string",
+            "example": "Mô tả chưa đúng niên đại hiện vật"
+          }
+        },
+        "required": [
+          "version",
+          "reason"
+        ]
+      },
+      "AssignReportDto": {
+        "type": "object",
+        "properties": {
+          "assigneeId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Người được giao; bỏ trống để tự tiếp nhận"
+          }
+        }
+      },
+      "ResolveReportDto": {
+        "type": "object",
+        "properties": {
+          "resolution": {
+            "type": "string",
+            "example": "Đã sửa thông tin niên đại và xuất bản lại"
+          }
+        },
+        "required": [
+          "resolution"
+        ]
+      },
+      "CreateReportDto": {
+        "type": "object",
+        "properties": {
+          "exhibitId": {
+            "type": "string",
+            "example": "e1111111-1111-4111-1111-111111111111"
+          },
+          "reportedRevisionId": {
+            "type": "string",
+            "description": "Phiên bản đang xem bị báo cáo"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "wrong_info",
+              "typo",
+              "inappropriate_content",
+              "other"
+            ],
+            "description": "Danh mục báo cáo cố định"
+          },
+          "message": {
+            "type": "string",
+            "example": "Niên đại hiện vật bị ghi sai"
+          }
+        },
+        "required": [
+          "exhibitId",
+          "category",
+          "message"
+        ]
+      },
+      "CreateTranslationDto": {
+        "type": "object",
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "example": "exhibit.trong-dong.name"
+          },
+          "context": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "exhibit",
+              "room",
+              "ui",
+              "audio"
+            ]
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "namespace",
+          "category",
+          "values"
+        ]
+      },
+      "UpdateTranslationValuesDto": {
+        "type": "object",
+        "properties": {
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "values"
+        ]
+      },
+      "CreatePartnerApiKeyDto": {
+        "type": "object",
+        "properties": {
+          "partnerName": {
+            "type": "string",
+            "example": "VietnamPlus"
+          },
+          "label": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "public:read",
+                "exhibits:read",
+                "rooms:read",
+                "media:read",
+                "tour:embed",
+                "analytics:read"
+              ]
+            }
+          },
+          "expiresInDays": {
+            "type": "object",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 3650
+          },
+          "rateLimitPerMinute": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10000,
+            "default": 60,
+            "description": "Số request tối đa mỗi phút"
+          }
+        },
+        "required": [
+          "partnerName",
+          "scopes"
+        ]
+      }
+    }
+  }
+}
