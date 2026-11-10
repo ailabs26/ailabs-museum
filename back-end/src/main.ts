@@ -3,7 +3,7 @@ import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
@@ -13,6 +13,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { SECURITY_HEADERS } from './common/security/security-headers';
 import { MEDIA_DELIVERY_ROUTE } from './modules/media/controllers/media-delivery.controller';
+import { OPENAPI_DOCS_PATH, buildOpenApiConfig } from './config/swagger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -49,14 +50,9 @@ async function bootstrap() {
   // Nest xét filter từ cuối: lỗi RBAC phải được audit trước filter lỗi tổng quát.
   app.useGlobalFilters(new AllExceptionsFilter(), app.get(PermissionDeniedFilter));
 
-  // Swagger tại /api/docs, có ô nhập Bearer token (dùng từ PR #D)
-  const swagger = new DocumentBuilder()
-    .setTitle('Aura Museum API')
-    .setDescription('API cho bảo tàng WebXR 3D-WEB-03 (public read + Admin CMS).')
-    .setVersion('0.1.0')
-    .addBearerAuth()
-    .build();
-  SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swagger));
+  // Swagger tại /api/docs, có ô nhập Bearer token. Cấu hình dùng chung với
+  // script xuất spec tĩnh (xem src/config/swagger.config.ts).
+  SwaggerModule.setup(OPENAPI_DOCS_PATH, app, SwaggerModule.createDocument(app, buildOpenApiConfig()));
 
   // Nhận SIGTERM/SIGINT khi deploy hoặc restart: dừng cron, đóng kết nối DB rồi mới thoát.
   app.enableShutdownHooks();
