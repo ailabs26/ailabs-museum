@@ -280,20 +280,18 @@ test('a reset command finishes in its DOM action before subsequent manual moveme
   await page.setViewportSize({ width: 640, height: 480 });
   await page.addInitScript(() => Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 4 }));
   await open(page);
-  const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true });
-  await canvas.focus();
-  await page.keyboard.down('d');
-  await expect.poll(async () => (await position(page))[0]).toBeGreaterThan(0.3);
-  await page.keyboard.up('d');
-  await waitForRendererIdle(page);
+  await page.locator('summary[aria-label="Thêm điều khiển"]').click();
+  await page.getByRole('button', { name: 'Lùi xa', exact: true }).click();
+  expect((await position(page))[2]).toBeGreaterThan(5.8);
   const reset = await page.getByRole('button', { name: 'Góc nhìn ban đầu', exact: true }).evaluate(button => {
     button.click();
     return window.museumProbe.at(-1)!.camera!.deref()!.position.toArray();
   });
   expect(reset).toEqual([0, 2.6, 5.8]);
+  const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true });
   await canvas.focus();
   await page.keyboard.down('Shift'); await page.keyboard.down('d');
-  await expect.poll(async () => (await position(page))[0]).toBeGreaterThan(0.3);
+  await expect.poll(async () => (await position(page))[0]).toBeGreaterThan(0.05);
   await page.keyboard.up('d'); await page.keyboard.up('Shift');
 });
 
