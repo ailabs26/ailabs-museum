@@ -1,13 +1,13 @@
 # F06 — Guided Tour 2D UI — Implementation Plan
 
-> **Trạng thái:** PROPOSED / NOT IMPLEMENTED. Đây là kế hoạch; chưa sửa code, tạo branch/commit hoặc chạy test.
+> **Trạng thái:** IMPLEMENTED — F06 2D acceptance đã được kiểm chứng; regression tổng có một test camera 3D chập chờn, xem execution record bên dưới.
 >
 > **Tasks & Acceptance:** [`../tasks/guided-tour-2d-ui.md`](../tasks/guided-tour-2d-ui.md)
 
-**Repository:** `ailabs26/ailabs-museum`  
-**Source audit:** `origin/dev` tại `7cd44365b0b3801f31d2517edc5fbd4a734731b8`, kiểm tra 10/11/2026; cần fetch lại khi thực thi.  
-**Branch đề xuất:** `feat/guided-tour-2d-ui` từ `origin/dev` mới nhất; PR vào `dev`.  
-**Stack:** React 18, TypeScript, React Router 6, Mantine, TanStack Query, Vitest, Playwright.  
+**Repository:** `ailabs26/ailabs-museum`
+**Source audit:** `origin/dev` tại `7cd44365b0b3801f31d2517edc5fbd4a734731b8`, fetch ngày 10/11/2026.
+**Branch:** `feat/guided-tour-2d-ui` từ `origin/dev`; PR target `dev` khi được yêu cầu.
+**Stack:** React 18, TypeScript, React Router 6, Mantine, TanStack Query, Vitest, Playwright.
 **Quy ước:** `AGENTS.md`, `docs/architecture/fe/coding-conventions.md`, `docs/architecture/fe/museum-experience.md`.
 
 ## 1. Mục tiêu
@@ -164,3 +164,13 @@ Các browser test mặc định dùng fixture/API mock. Chỉ bật `PLAYWRIGHT_
 Task chia thành **9 checkpoint (00–08)**, mỗi task lý tưởng một commit có nghĩa; test hành vi nằm cùng commit khi phù hợp. Không tạo commit rỗng cho đủ số lượng. Xem chi tiết [`guided-tour-2d-ui.md`](../tasks/guided-tour-2d-ui.md).
 
 Sau khi code xong, điền evidence, review diff rồi mới push/tạo PR theo yêu cầu; không tự merge. Các trường hợp chuyển 2D↔3D chưa đồng bộ được ghi thành đầu việc **F08**, không kéo vào scope F06.
+
+## 9. Execution record — 10/11/2026
+
+- Branch `feat/guided-tour-2d-ui` được tạo từ `origin/dev` tại `7cd44365b0b3801f31d2517edc5fbd4a734731b8`; không có commit mới hơn khi fetch.
+- F06 2D hoàn tất trên Collection/Detail, vẫn dùng Museum Core và chỉ public data; không có sửa backend, DB, camera 3D hay WebXR.
+- `npm run typecheck`, `npm run lint`, `npm run test:unit` (55 files / 327 tests) và `npm run build` đều exit 0. Build giữ cảnh báo hiện hữu về bundle chunk >500 kB.
+- `npx playwright test tests/guided-tour-2d.spec.ts --reporter=line`: 11/11 passed. Có kiểm chứng CMS order/filter, deep link, rapid click, completed/restart, route drift, refresh/removal, 6 locale, keyboard, 320/390/desktop và zoom 200%.
+- Affected browser command `npx playwright test tests/guided-tour-2d.spec.ts tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/guided-tour-core.spec.ts tests/public-locale.spec.ts tests/public-visitor-journey.spec.ts tests/guided-tour-camera.spec.ts --reporter=line` chạy 63 test: 62 passed, 1 failed tại `guided-tour-camera.spec.ts:279` (manual movement sau reset đạt x=0.112, assertion đòi >0.3). Không có file 3D trong thay đổi. Test riêng trên checkout `dev` sạch pass một lần; lần baseline trước đó và hai lần trên nhánh feature tái hiện failure, nên kết quả là timing-sensitive và không thể khẳng định full regression green.
+- Screenshot 320×568, 390×844 và 1440×900 được xem trực tiếp; bố cục controls trong normal flow, không tràn hoặc chồng audio. Zoom 200% được assert trong browser test. Không kiểm thử screen reader/thiết bị thật.
+- Chưa push, mở PR hay merge.
