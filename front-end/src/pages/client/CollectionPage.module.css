@@ -26,6 +26,8 @@
 .roomTitle { font-family: var(--aura-font-display); font-weight: 800; font-size: 28px; line-height: 1.25; overflow-wrap: anywhere; color: var(--aura-ink); }
 .roomDescription { margin: 12px 0; }
 .count { color: var(--aura-muted); font-size: 14px; margin: 12px 0 0; }
+.roomActions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; max-width: 100%; }
+.emptyTour { flex-basis: 100%; margin: 0; color: var(--aura-muted); font-size: 13px; text-align: right; }
 .tourLink { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 12px; font-size: 14px; font-weight: 600; color: var(--aura-emerald); background: color-mix(in srgb, var(--aura-accent) 10%, transparent); border: 1px solid var(--aura-glass-border); transition: gap 0.25s var(--aura-ease-spring); }
 .tourLink:hover { gap: 12px; }
 .empty { color: var(--aura-muted); border: 1px dashed var(--aura-glass-border); border-radius: 16px; padding: 32px; line-height: 1.75; background: var(--aura-glass-bg); }

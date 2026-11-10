@@ -18,9 +18,13 @@ import { useExhibitComparison } from '@/hooks/useExhibitComparison';
 import { ExhibitComparison } from './visitor/ExhibitComparison';
 import classes from './CollectionPage.module.css';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useGuidedTour2D } from '@/hooks/useGuidedTour2D';
+import { GUIDED_TOUR_2D_MESSAGES } from '@/helpers/guidedTour2dMessages';
 
 export function CollectionPage() {
   const { locale, t } = usePublicLocale();
+  const tourMessages = GUIDED_TOUR_2D_MESSAGES[locale as keyof typeof GUIDED_TOUR_2D_MESSAGES]
+    ?? GUIDED_TOUR_2D_MESSAGES.vi;
   const errorText = usePublicErrorText();
   usePageTitle(t('ui.collection.title', 'Bộ sưu tập'));
   const [reportTarget, setReportTarget] = useState<{ exhibitId: string; reportedRevisionId: string } | null>(null);
@@ -43,6 +47,10 @@ export function CollectionPage() {
     setLoadingAnnouncement(loadingMessage);
   }, [loadingMessage]);
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
+  const tour2d = useGuidedTour2D({
+    room: detail && !room.isError ? detail : undefined,
+    publicRooms: rooms.isSuccess && !rooms.isError && !rooms.isFetching ? rooms.data : undefined,
+  });
   const exhibits = useMemo(() => detail ? [...detail.exhibits].sort((left, right) =>
     left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
     .map((exhibit) => localizeExhibit(exhibit, locale)) : [], [detail, locale]);
@@ -138,9 +146,24 @@ export function CollectionPage() {
                   : t('ui.collection.count', '{total} hiện vật đã xuất bản', { total: exhibits.length })}
               </p>
             </div>
-            <Link to={`/tour?${new URLSearchParams({ room: detail.slug })}`} className={classes.tourLink}>
-              {t('ui.collection.tour-link', 'Tham quan phòng này trong 3D')} <IconArrowRight size={18} aria-hidden="true" />
-            </Link>
+            <div className={classes.roomActions}>
+              {tour2d.isSameRoom ? <>
+                <Button color="teal.9" onClick={() => tour2d.continueToCurrent(detail)}>
+                  {t('ui.guided2d.continue', tourMessages.continue)}
+                </Button>
+                <Button variant="default" onClick={tour2d.exit}>{t('ui.guided.exit', 'Thoát hướng dẫn')}</Button>
+              </> : <Button color="teal.9" disabled={detail.exhibits.length === 0}
+                aria-describedby={detail.exhibits.length === 0 ? 'guided-tour-empty-room' : undefined}
+                onClick={() => tour2d.startFromRoom(detail)}>
+                {t('ui.guided2d.start', tourMessages.start)}
+              </Button>}
+              {detail.exhibits.length === 0 && <p id="guided-tour-empty-room" className={classes.emptyTour}>
+                {t('ui.guided2d.empty', tourMessages.empty)}
+              </p>}
+              <Link to={`/tour?${new URLSearchParams({ room: detail.slug })}`} className={classes.tourLink}>
+                {t('ui.collection.tour-link', 'Tham quan phòng này trong 3D')} <IconArrowRight size={18} aria-hidden="true" />
+              </Link>
+            </div>
           </div>
           {room.isFetching && <p role="status">{t('ui.collection.updating', 'Đang cập nhật hiện vật…')}</p>}
           {exhibits.length === 0 ? <p role="status" className={classes.empty}>{t('ui.rooms.no-exhibits', 'Phòng này chưa có hiện vật được xuất bản.')}</p>
