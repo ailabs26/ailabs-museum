@@ -1,6 +1,6 @@
 # F06 — Guided Tour 2D UI — Implementation Plan
 
-> **Trạng thái:** IMPLEMENTED — F06 2D acceptance đã được kiểm chứng; regression tổng có một test camera 3D chập chờn, xem execution record bên dưới.
+> **Trạng thái:** IMPLEMENTED — F06 acceptance đã được kiểm chứng; nhánh đã push lên `origin/feat/guided-tour-2d-ui`. PR chưa mở; người dùng sẽ tự tạo.
 >
 > **Tasks & Acceptance:** [`../tasks/guided-tour-2d-ui.md`](../tasks/guided-tour-2d-ui.md)
 
@@ -171,6 +171,13 @@ Sau khi code xong, điền evidence, review diff rồi mới push/tạo PR theo 
 - F06 2D hoàn tất trên Collection/Detail, vẫn dùng Museum Core và chỉ public data; không có sửa backend, DB, camera 3D hay WebXR.
 - `npm run typecheck`, `npm run lint`, `npm run test:unit` (55 files / 327 tests) và `npm run build` đều exit 0. Build giữ cảnh báo hiện hữu về bundle chunk >500 kB.
 - `npx playwright test tests/guided-tour-2d.spec.ts --reporter=line`: 11/11 passed. Có kiểm chứng CMS order/filter, deep link, rapid click, completed/restart, route drift, refresh/removal, 6 locale, keyboard, 320/390/desktop và zoom 200%.
-- Affected browser command `npx playwright test tests/guided-tour-2d.spec.ts tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/guided-tour-core.spec.ts tests/public-locale.spec.ts tests/public-visitor-journey.spec.ts tests/guided-tour-camera.spec.ts --reporter=line` chạy 63 test: 62 passed, 1 failed tại `guided-tour-camera.spec.ts:279` (manual movement sau reset đạt x=0.112, assertion đòi >0.3). Không có file 3D trong thay đổi. Test riêng trên checkout `dev` sạch pass một lần; lần baseline trước đó và hai lần trên nhánh feature tái hiện failure, nên kết quả là timing-sensitive và không thể khẳng định full regression green.
+- Affected browser command `npx playwright test tests/guided-tour-2d.spec.ts tests/collection.spec.ts tests/exhibit-detail.spec.ts tests/guided-tour-core.spec.ts tests/public-locale.spec.ts tests/public-visitor-journey.spec.ts tests/guided-tour-camera.spec.ts --reporter=line` ban đầu chạy 63 test: 62 passed, 1 failed tại setup WASD trước reset. Xem follow-up bên dưới để biết cách xử lý và kết quả mới nhất.
 - Screenshot 320×568, 390×844 và 1440×900 được xem trực tiếp; bố cục controls trong normal flow, không tràn hoặc chồng audio. Zoom 200% được assert trong browser test. Không kiểm thử screen reader/thiết bị thật.
-- Chưa push, mở PR hay merge.
+- Tại thời điểm ghi record này, nhánh chưa push, mở PR hay merge; trạng thái mới nhất ở follow-up bên dưới.
+
+### Post-push regression follow-up — 10/11/2026
+
+- Trace cho thấy camera reset test hỏng ở bước WASD tạo tư thế trước reset; keydown được nhận nhưng Chromium/SwiftShader đôi lúc chỉ chạy vài frame trong 5 giây. Thay setup đó bằng nút “Lùi xa” đồng bộ; giữ nguyên kiểm tra reset hoàn tất trong DOM click và kiểm tra WASD sau reset.
+- Verification: reset test 5/5 lần lặp; toàn file `guided-tour-camera.spec.ts` 13/13; `npm run typecheck`, `npm run lint`, `npm run build` đều exit 0. Build vẫn báo bundle chunk >500 kB.
+- Chưa chạy lại đúng bộ affected 63 test sau follow-up. Lệnh mặc định phát hiện 492 test; đã dừng sau 4 test để tránh chạy toàn repo.
+- Commit `0d67937` đã push lên `origin/feat/guided-tour-2d-ui`. PR chưa mở; người dùng sẽ tự tạo. Chưa merge.
