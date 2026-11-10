@@ -6,6 +6,9 @@
 .title:focus-visible { outline: 2px solid var(--aura-accent); outline-offset: 4px; }
 
 .headerActions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 20px; }
+.tourRecovery { display: grid; gap: 8px; padding: 14px; margin-block: 16px 24px; border: 1px solid var(--aura-glass-border); border-radius: 14px; background: var(--aura-glass-bg); }
+.tourRecovery p { margin: 0; color: var(--aura-ink-soft); line-height: 1.6; }
+.tourRecovery .headerActions { margin-top: 0; }
 .jump3d {
   display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 12px;
   font-weight: 700; font-size: 14px; color: var(--aura-on-accent);
