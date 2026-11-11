@@ -1,10 +1,12 @@
 import { Burger, Container, Drawer, NativeSelect, type NativeSelectProps, Stack } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconCube, IconShieldLock } from '@tabler/icons-react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import auraMark from '@/assets/aura-mark.svg';
 import { PublicLocaleProvider, usePublicLocale } from '@/core/i18n/public-locale';
 import { MuseumProvider } from '@/contexts/MuseumContext';
+import { useGuidedTour } from '@/hooks/useGuidedTour';
+import { guidedTour3dPath } from '@/helpers/guidedTour2dNavigation';
 import { useScrolled } from '@/hooks/useScrolled';
 import { LOCALES } from '@/services/translations.service';
 import { ThemeToggle } from '@/shared/components/layout/ThemeToggle';
@@ -34,6 +36,15 @@ export function PublicLayout() {
 
 function PublicLayoutContent() {
   const { t } = usePublicLocale();
+  const guided = useGuidedTour();
+  const location = useLocation();
+  const is3dRoute = location.pathname === '/tour' || location.pathname === '/tour.html';
+  const tour3dHref = !is3dRoute && guided.status !== 'idle' && guided.currentStep && guided.roomSlug
+    ? guidedTour3dPath(guided.roomSlug, guided.currentStep.exhibitId)
+    : '/tour';
+  const handleEnter3d = () => {
+    if (!is3dRoute && guided.status !== 'idle' && guided.currentStep && guided.roomSlug) guided.pause();
+  };
   usePageDescription();
   const scrolled = useScrolled();
   const [drawer, { open, close }] = useDisclosure(false);
@@ -50,7 +61,8 @@ function PublicLayoutContent() {
 
           <nav aria-label={t('ui.nav.main-aria', 'Điều hướng chính')} className={classes.navigation}>
             {NAV.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.end} className={classes.navLink}>{t(item.key, item.label)}</NavLink>
+              <NavLink key={item.to} to={item.to === '/tour' ? tour3dHref : item.to} end={item.end}
+                onClick={item.to === '/tour' ? handleEnter3d : undefined} className={classes.navLink}>{t(item.key, item.label)}</NavLink>
             ))}
           </nav>
 
@@ -58,7 +70,7 @@ function PublicLayoutContent() {
             {/* Điện thoại: nằm trong Drawer để header không tràn ngang ở 320px. */}
             <LanguageSelect visibleFrom="sm" />
             <ThemeToggle />
-            <Link to="/tour" className={classes.vrButton}>
+            <Link to={tour3dHref} onClick={handleEnter3d} className={classes.vrButton}>
               <IconCube size={18} aria-hidden="true" />
               <span>{t('ui.cta.enter-3d', 'Vào không gian 3D')}</span>
             </Link>

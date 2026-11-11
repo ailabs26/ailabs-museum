@@ -18,6 +18,7 @@ export function GuidedTour2DControls({
   onNext,
   onExit,
   onRestart,
+  onContinue3D,
 }: {
   roomName: string;
   exhibitName: string;
@@ -31,6 +32,7 @@ export function GuidedTour2DControls({
   onNext: () => void;
   onExit: () => void;
   onRestart: () => void;
+  onContinue3D: () => void;
 }) {
   const { locale, t } = usePublicLocale();
   const messages = GUIDED_TOUR_MESSAGES[locale] ?? GUIDED_TOUR_MESSAGES.vi;
@@ -61,6 +63,9 @@ export function GuidedTour2DControls({
         {status === 'completed' && <Button color="teal.9" onClick={onRestart}>
           {t('ui.guided2d.restart', tourMessages.restart)}
         </Button>}
+        <Button variant="default" onClick={onContinue3D}>
+          {t('ui.guided2d.continue-3d', tourMessages.continue3d)}
+        </Button>
         <Button variant="default" onClick={onExit}>{t('ui.guided.exit', messages.exit)}</Button>
       </Group>
     </section>
