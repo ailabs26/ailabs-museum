@@ -106,3 +106,51 @@ Hai lựa chọn, chọn **A** cho giai đoạn đầu (đơn giản, ít rủi 
 **Tính năng mobile-native bổ sung (cân nhắc):** quét **QR bằng camera** (`expo-camera`),
 chia sẻ hiện vật (share sheet), thông báo đẩy (push) cho sự kiện/triển lãm — đưa vào
 roadmap, không bắt buộc cho bản đầu.
+
+## 5. Các giai đoạn (phases)
+
+> Chi tiết task từng phase ở [`tasks.md`](tasks.md). Mỗi phase là một mốc độc lập, commit
+> nhỏ và có kiểm thử đi kèm.
+
+| # | Phase | Mục tiêu | Phụ thuộc | Ưu tiên |
+|---|---|---|---|---|
+| 0 | Khởi tạo & quyết định | Dựng app Expo, TypeScript, EAS, env, lint/test, CI build | — | P1 |
+| 1 | Nền tảng chia sẻ | Port tầng API client (RN), types/zod, i18n, lớp storage trừu tượng | 0 | P1 |
+| 2 | Khung điều hướng & theme | Expo Router, tab/stack, theme sáng/tối, chọn ngôn ngữ | 1 | P1 |
+| 3 | Duyệt public | Home/featured, Collection, Exhibit detail, deep link/short link, search | 1,2 | P1 |
+| 4 | Tiện ích khách | Favorites, recently viewed, notes, reading controls, comparison, báo nội dung (offline storage) | 3 | P2 |
+| 5 | Phòng 3D | r3f/native + expo-gl + expo-three, tải GLB, camera, hiệu năng/LOD | 1,2 | P1 (rủi ro) |
+| 6 | Guided Tour 2D↔3D | Port reducer + dwell clock + đồng bộ mode (PR #180) cho mobile | 3,5 | P1 |
+| 7 | i18n, accessibility, hiệu năng | Đủ 6 locale, nhãn/aria, giảm chuyển động, tối ưu GLB/ảnh trên máy yếu | 3–6 | P2 |
+| 8 | Kiểm thử & CI | Unit (Vitest/Jest), E2E (Maestro/Detox), EAS build pipeline | 3–7 | P1 |
+| 9 | Phát hành | Store assets, chính sách, nộp App Store/CH Play, OTA update | 8 | P1 |
+
+Phase 3, 4, 5 có thể chạy song song một phần sau khi 1–2 xong. Phase 5 (3D) rủi ro cao
+nhất → làm **spike kỹ thuật sớm** (ngay sau Phase 1) để chốt khả thi/hiệu năng.
+
+## 6. Rủi ro chính
+
+| Rủi ro | Giảm thiểu |
+|---|---|
+| **Hiệu năng 3D/GLB trên máy yếu** | Spike sớm; nén Draco/giảm LOD; giới hạn kích thước; fallback 2D khi thiết bị yếu (tái dùng tư duy `SceneFallback`) |
+| Trùng lặp code với web (phương án A) | Code chia sẻ viết thuần, review đồng bộ; roadmap tách `packages/shared` |
+| Deep link/QR không mở đúng app | Cấu hình Universal/App Links kỹ, test thiết bị thật iOS/Android |
+| Quy trình nộp store (chứng chỉ, review Apple) | Chuẩn bị sớm tài khoản Apple/Google, chính sách riêng tư, EAS Submit |
+| Khác biệt render Three.js web vs native | Dùng `expo-three` loader; test GLB thật; tránh API web-only |
+| Lưu trữ cục bộ khác web | Lớp storage trừu tượng; test migration/giới hạn dung lượng |
+| Đa ngôn ngữ thiếu key trên mobile | Tái dùng nguồn locale của web; kiểm tra đủ 6 locale |
+
+## 7. Ngoài phạm vi & tiêu chí thành công
+
+**Ngoài phạm vi:**
+- Phân hệ quản trị/CMS (giữ trên web).
+- Backend/API mới, đổi schema DB, migration (dùng chung API hiện có).
+- Thanh toán, tài khoản mạng xã hội, tính năng ngoài trải nghiệm tham quan.
+- Audio auto-tour / phụ đề nâng cao ngoài những gì API đã cung cấp.
+
+**Tiêu chí thành công (bản đầu):**
+- App iOS + Android chạy được các tính năng P1 (duyệt, chi tiết, search, deep link, 3D,
+  guided tour, 6 ngôn ngữ) trên thiết bị thật.
+- Dùng chung API/CDN với web, không tạo backend riêng.
+- Có pipeline EAS build + kiểm thử tự động tối thiểu.
+- Tài liệu hóa phần chia sẻ code để bảo trì song song với web.
