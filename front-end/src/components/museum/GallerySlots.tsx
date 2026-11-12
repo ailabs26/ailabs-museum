@@ -7,7 +7,7 @@ export function GallerySlots({ slots, getExhibitProps }: {
   slots: readonly ResolvedGallerySlot[]; getExhibitProps: (display: MuseumDisplay) => ExhibitRenderProps;
 }) {
   return <group name="Gallery slots">
-    {slots.map(({ slot, exhibit }) => <GallerySlotView key={slot.id} slotId={slot.id} position={slot.position} pedestal={slot.plinthKind}
+    {slots.map(({ slot, exhibit }) => <GallerySlotView key={slot.id} slotId={slot.id} position={slot.position} pedestal={slot.plinthKind} hasTrim
       exhibit={exhibit} {...(exhibit ? getExhibitProps(exhibit) : EMPTY_SLOT)} />)}
   </group>;
 }
