@@ -25,9 +25,12 @@ function robotsSitemap(apiBaseUrl: string | undefined): Plugin {
 export default defineConfig(({ mode }) => ({
   plugins: [react(), robotsSitemap(loadEnv(mode, process.cwd(), 'VITE_').VITE_API_BASE_URL)],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  server: { port: 5173 },
+  server: {
+    port: 5173,
+    watch: { ignored: ['**/tmp/**', '**/temp/**', '**/test-results/**', '**/playwright-report/**'] },
+  },
   // Discover lazy scene dependencies before first interaction; avoid a dev reload.
-  optimizeDeps: { include: ['@react-three/fiber', 'three'] },
+  optimizeDeps: { include: ['@react-three/fiber', 'three', 'three/examples/jsm/loaders/DRACOLoader.js'] },
   build: {
     rollupOptions: {
       input: {

@@ -38,6 +38,13 @@ it('classifies parser and corrupt-buffer failures without raw error messages', a
   await expect(loadMuseumModel(model, new AbortController().signal, () => {})).rejects.toMatchObject({ stage: 'validate', category: 'format' });
 });
 
+it('verifies the checksum before invoking any parser or decoder', async () => {
+  const parse = vi.spyOn(GLTFLoader.prototype, 'parseAsync');
+  await expect(loadMuseumModel({ ...model, checksumSha256: '0'.repeat(64) }, new AbortController().signal, () => {}))
+    .rejects.toMatchObject({ stage: 'validate', category: 'format' });
+  expect(parse).not.toHaveBeenCalled();
+});
+
 it('disposes a parsed model when cancellation arrives during parse', async () => {
   const scene = new Group(); const mesh = new Mesh(new BoxGeometry(), new MeshStandardMaterial()); scene.add(mesh);
   const dispose = vi.spyOn(mesh.geometry, 'dispose'); const controller = new AbortController();
