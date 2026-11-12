@@ -5,7 +5,8 @@ import { useReducedMotion } from '@mantine/hooks';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { MUSEUM_ROOM_SIZE } from '@/interfaces/museumScene';
 import { getExhibitView, getMuseumFov, INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET, type ModelFocusBounds } from '@/helpers/museumCamera';
-import { applyLook, findNavigationPath, findSafeNavigationPoint, getDisplayColliders, isNavigationPositionSafe, moveWithCollisions, NAVIGATION, stepMovement, type NavigationInput, type NavigationVector } from '@/helpers/museumNavigation';
+import { applyLook, findNavigationPath, findSafeNavigationPoint, isNavigationPositionSafe, moveWithCollisions, NAVIGATION, stepMovement, type NavigationInput, type NavigationVector } from '@/helpers/museumNavigation';
+import { getGalleryColliders } from '@/helpers/gallerySlots';
 import { attachNavigationInput, type NavigationAction } from '@/helpers/attachNavigationInput';
 import type { NavigationGestures } from '@/helpers/navigationGestures';
 import type { NavigationMode } from './NavigationHud';
@@ -35,7 +36,7 @@ export function MuseumControls({ enabled = true, commandHandler, selectionIssued
   const { camera, gl, invalidate, size } = useThree();
   const prefersReducedMotion = useReducedMotion(false, { getInitialValueInEffect: false });
   const reducedRef = useRef(prefersReducedMotion); reducedRef.current = prefersReducedMotion;
-  const colliders = useMemo(() => getDisplayColliders(displays), [displays]);
+  const colliders = useMemo(() => getGalleryColliders(displays), [displays]);
   const collidersRef = useRef(colliders); collidersRef.current = colliders;
   const selectedRef = useRef(selectedDisplay); selectedRef.current = selectedDisplay;
   const boundsRef = useRef(focusBounds); boundsRef.current = focusBounds;

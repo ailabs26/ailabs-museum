@@ -1,6 +1,7 @@
 import { MUSEUM_ROOM_SIZE, type MuseumDisplay } from '@/interfaces/museumScene';
 import { INITIAL_CAMERA_POSITION } from './museumCamera';
-import { findNavigationPath, getDisplayColliders } from './museumNavigation';
+import { getGalleryColliders } from './gallerySlots';
+import { findNavigationPath } from './museumNavigation';
 
 export type Vec3 = [number, number, number];
 
@@ -13,7 +14,7 @@ export const CINEMATIC_START_POSITION: Vec3 = [0, 2.8, 6.6];
 /** Skip entrance when published placement obstructs either endpoint or the segment. */
 export function getCinematicEntrance(displays: readonly MuseumDisplay[]): { from: Vec3; to: Vec3 } | null {
   const from = CINEMATIC_START_POSITION, to = INITIAL_CAMERA_POSITION;
-  const path = findNavigationPath({ x: from[0], y: from[2] }, { x: to[0], y: to[2] }, MUSEUM_ROOM_SIZE, getDisplayColliders(displays));
+  const path = findNavigationPath({ x: from[0], y: from[2] }, { x: to[0], y: to[2] }, MUSEUM_ROOM_SIZE, getGalleryColliders(displays));
   return path?.length === 2 ? { from, to } : null;
 }
 

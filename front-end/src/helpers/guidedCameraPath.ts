@@ -1,6 +1,7 @@
 import { MUSEUM_ROOM_SIZE, type MuseumDisplay } from '@/interfaces/museumScene';
 import { getExhibitView, type ModelFocusBounds, type MuseumCameraView } from './museumCamera';
-import { findNavigationPath, findSafeNavigationPoint, getDisplayColliders, isNavigationPositionSafe, isNavigationSegmentSafe, NAVIGATION, type NavigationCollider, type NavigationRoom, type NavigationVector } from './museumNavigation';
+import { getGalleryColliders } from './gallerySlots';
+import { findNavigationPath, findSafeNavigationPoint, isNavigationPositionSafe, isNavigationSegmentSafe, NAVIGATION, type NavigationCollider, type NavigationRoom, type NavigationVector } from './museumNavigation';
 
 export const GUIDED_MOTION = { speed: 1.25, acceleration: 1, turnSpeed: 1.3 } as const;
 export interface GuidedPath {
@@ -29,8 +30,9 @@ export function getGuidedView(display: MuseumDisplay, displays: readonly MuseumD
   const target: MuseumCameraView['target'] = bounds?.center ?? [display.position[0], view.target[1], display.position[2]];
   const halfFov = Math.min(fov * Math.PI / 360, Math.atan(Math.tan(fov * Math.PI / 360) * aspect));
   const minimumDistance = (bounds?.radius ?? (display.shape === 'torus' ? 1.15 : 0.85)) * 1.15 / Math.sin(halfFov);
-  const colliders = getDisplayColliders(displays);
-  const otherColliders = getDisplayColliders(displays.filter(item => item.id !== display.id));
+  // Bục trống cũng che tầm nhìn/chắn chỗ đứng; chỉ bỏ vật cản của chính hiện vật đang ngắm.
+  const colliders = getGalleryColliders(displays);
+  const otherColliders = getGalleryColliders(displays, display.id);
   const safe = (position: MuseumCameraView['position']) => position.every(Number.isFinite)
     && position[1] >= NAVIGATION.wallMargin && position[1] <= MUSEUM_ROOM_SIZE.height - NAVIGATION.wallMargin
     && Math.hypot(...position.map((value, i) => value - target[i])) >= minimumDistance - 1e-6
