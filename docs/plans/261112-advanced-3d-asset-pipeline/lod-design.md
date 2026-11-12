@@ -22,6 +22,8 @@ Mỗi family có thresholds pixel đã được reviewer duyệt. Hysteresis dù
 
 Cache ban đầu giữ tối đa một inactive variant mỗi family và bốn inactive toàn room. Eviction chỉ tác động asset ready đã hết consumers, sau React detach. Shared checksum dùng bởi nhiều display có usage accounting, tránh dispose geometry đang gắn scene. Đóng room abort queued/in-flight và dispose resources một lần, late parse success cũng cleanup.
 
+Sau tích hợp Gallery Slots từ `dev` tại `446bba7`, `GallerySlotView` là owner của frame-based LOD selection và truyền retain callback vào `ArtifactModel`. `ExhibitionDisplay` dùng wrapper legacy hiện có. `MuseumScene.getExhibitProps()` cấp cùng LOD/focus/retain props cho cả hai layout. Slot giữ identity khi occupant thay đổi, vì vậy hook signature bao gồm display consumer IDs và mỗi frame gửi demand hiện hành. `RoomModelLods.select()` bỏ qua demand trùng để giữ snapshot ổn định. Browser regression kiểm occupied slot nâng LOD mà đủ năm bục vẫn tồn tại.
+
 ## Kiểm chứng behavior
 
 Browser fixture phải hiển thị GLB sinh thật qua scene hiện có, đếm request từng URL, đổi camera/selection để chứng minh độc lập levels. So sánh normalization, hotspot coordinates, selected picking, focus camera và resource counters trước/sau nhiều lượt switching. Kiểm tra model load failure, room exit giữa parse, StrictMode, context restore và XR simulation. GPU/heap leak-free và headset thật cần evidence tương ứng trước nghiệm thu.

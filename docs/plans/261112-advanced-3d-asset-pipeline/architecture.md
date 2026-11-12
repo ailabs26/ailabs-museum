@@ -73,6 +73,12 @@ Shared parser cấu hình Draco self-hosted và vẫn chỉ cho GLB tải tài n
 
 LOD runtime nhận `ModelLodSet` tùy chọn từ fixture tin cậy gồm source checksum, normalization master, thresholds pixel đã duyệt và các `PublicModel` descriptors. Production room DTO giữ contract hiện có trong giai đoạn này. `RoomModelLods` điều phối owner hiện có qua request/evict, giữ asset hiện tại trong lúc tải và thống nhất normalization giữa levels. Selection/focus ưu tiên LOD0. Giới hạn cache ban đầu tối đa một variant inactive mỗi family và bốn inactive toàn owner, eviction sau consumer detach.
 
+## Tích hợp dev trong quá trình bàn giao
+
+Merge `4388274` nhận Gallery Slots/Rotunda/CMS slot picker từ `dev` tại `446bba7`. LOD selection và mounted-model retain đi qua `GallerySlotView`, shared owner của legacy và slotted layout. `MuseumScene.getExhibitProps()` truyền cùng model state, focus và callbacks. Hook signature có consumer IDs để thay occupant sẽ tạo owner phù hợp, demand mỗi frame được owner dedupe. Dev asset browser đạt 7/7, production selected regression đạt 24/26 với hai lỗi Gallery Slots tái hiện trên stock dev. Chi tiết ở `verification.md`.
+
+Merge `12155b1` tiếp tục nhận backend gallery-slot publish guard từ `dev` tại `2a245d0`. Backend publish guard thuộc upstream PR #185. Các backend test counts trước đó thuộc baseline trước PR #185.
+
 ## Contract cần duyệt cho production variants
 
 Đề xuất additive optional `variants` sau khi backend có quan hệ source/derived đáng tin. Client chỉ gửi level enum hoặc variant identity do backend phát. Backend tìm variant từ original của revision Published hiện hành, kiểm source checksum, trạng thái QA/ready/chưa xóa và bytes/checksum riêng. Route trả qua NestJS, kiểm quyền trước 304/stream, revoke khi original bị ẩn/unpublish/xóa. Đề xuất này ở trạng thái chờ review. Hiện tại chưa có migration, DTO hoặc storage authorization triển khai cho derived variants.

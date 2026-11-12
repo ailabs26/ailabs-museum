@@ -1,0 +1,34 @@
+
+> aura-museum-web@0.1.0 build
+> tsc -b && vite build
+
+vite v6.4.4 building for production...
+transforming...
+✓ 7615 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/assets/aura-mark-DDYHOked.svg                 0.25 kB │ gzip:   0.20 kB
+dist/tour.html                                     0.59 kB │ gzip:   0.40 kB
+dist/index.html                                    1.08 kB │ gzip:   0.60 kB
+dist/assets/draco_wasm_wrapper-fZCQGLGb.js        58.46 kB
+dist/assets/draco_decoder-Z1_iN-Ht.wasm          192.42 kB │ gzip:  63.46 kB
+dist/assets/draco_decoder-B2VYTIrf.js            512.47 kB
+dist/assets/MuseumScene-CXOCzSlW.css               9.48 kB │ gzip:   2.65 kB
+dist/assets/main-Bm5dMR3J.css                    258.20 kB │ gzip:  40.12 kB
+dist/assets/ModelPreview-BO9GENT3.js               2.50 kB │ gzip:   1.34 kB
+dist/assets/HeroCanvas-c00G6cVv.js                 2.52 kB │ gzip:   1.14 kB
+dist/assets/MuseumAuditPanel-COVCGlf-.js           3.69 kB │ gzip:   1.80 kB
+dist/assets/museumAuditBrowser-BdCmqjHl.js         9.70 kB │ gzip:   3.83 kB
+dist/assets/ModelHotspotPicker-BUFJiXle.js        10.37 kB │ gzip:   4.20 kB
+dist/assets/browser-BjcGmAWY.js                   25.71 kB │ gzip:  10.09 kB
+dist/assets/sanitizeModel-Dsy0gn0S.js             62.79 kB │ gzip:  19.55 kB
+dist/assets/MuseumScene-DIE3XR0y.js              101.73 kB │ gzip:  34.77 kB
+dist/assets/react-apexcharts.min-mFnGU_tc.js     543.94 kB │ gzip: 143.80 kB
+dist/assets/react-three-fiber.esm-gZ3ljgqb.js    820.71 kB │ gzip: 220.56 kB
+dist/assets/main-DjEomk6P.js                   1,114.21 kB │ gzip: 338.44 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1m 4s

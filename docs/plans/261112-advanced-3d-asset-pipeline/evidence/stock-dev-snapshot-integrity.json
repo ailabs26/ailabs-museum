@@ -1,0 +1,8 @@
+{
+  "revision": "446bba752ef4dc1005dfcee77f95f1193f5dd863",
+  "snapshot": "front-end/tmp/asset-pipeline-dev-baseline",
+  "exactFiles": 8,
+  "crlfNormalizedFiles": 475,
+  "mismatches": [],
+  "method": "Compare every tracked frontend file with the Git blob SHA-1 from stock dev revision. For text files, accept CRLF-to-LF normalization to account for Windows archive line endings. Binary files must match exactly. Generated build/test outputs are outside the tracked tree."
+}

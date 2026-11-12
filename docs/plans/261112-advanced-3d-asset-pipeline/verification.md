@@ -1,8 +1,38 @@
 # Kiểm chứng
 
-Ngày 12/11/2026, base `dcbb814141bef3ed547f0893edb701c4d9407771`. Các số dưới đây đến từ source của nhánh nhiệm vụ. Logs lưu trong `evidence/`.
+Ngày 12/11/2026, base ban đầu `dcbb814141bef3ed547f0893edb701c4d9407771`. Đã tích hợp Gallery Slots từ `dev` tại `446bba7` bằng merge `4388274`, sau đó đồng bộ backend publish guard tại `2a245d0` bằng merge `12155b1`. Lần đồng bộ sau chỉ đổi backend và tài liệu, frontend giống `4388274`. Logs lưu trong `evidence/`.
 
-## Automated gates
+## Gates sau tích hợp dev
+
+| CWD | Lệnh hoặc phạm vi | Kết quả | Evidence |
+| --- | --- | --- | --- |
+| `front-end` | `npm.cmd run typecheck` | Exit 0 | `asset-pipeline-sync-typecheck.log` |
+| `front-end` | `npm.cmd run lint` | Exit 0 | `asset-pipeline-sync-lint.log` |
+| `front-end` | `npm.cmd run test:unit` | 383/383, 61 files, exit 0 | `asset-pipeline-sync-unit.log` |
+| `front-end` | `npm.cmd run build` | Exit 0 | `asset-pipeline-sync-build.log` |
+| `front-end` | Asset Playwright dev fixture | 7/7, exit 0 | `asset-pipeline-sync-browser.log` |
+| `front-end` | Production Public Draco, Gallery Slots, CMS slot picker, GLB cancellation và XR/context recovery | 24/26, exit 1 | `asset-pipeline-sync-production.log` |
+| `front-end` | Chạy lại riêng hai ca Gallery Slots lỗi | 0/2, exit 1 | `asset-pipeline-sync-gallery-retry.log` |
+| Snapshot `dev` tại `446bba7` | Hai ca Gallery Slots, build production gốc | 0/2, exit 1 | `asset-pipeline-stock-gallery-check.log` |
+
+Lần kiểm tra bàn giao trên merge `12155b1` chạy lại optimizer 17/17, frontend typecheck/lint/build exit 0 và 383/383 units. Logs tương ứng là `optimizer-handoff-tests.log`, `asset-pipeline-handoff-typecheck.log`, `asset-pipeline-handoff-lint.log`, `asset-pipeline-handoff-build.log` và `asset-pipeline-handoff-test-unit.log`. Build có cảnh báo chunk lớn hơn 500 kB.
+
+Browser bàn giao chạy lại đạt 7/7 dev và 2/2 Public production, logs `asset-pipeline-handoff-browser.log` và `asset-pipeline-handoff-public.log`. Lần đầu sandbox remap đường dẫn browser cache, sau đó Chromium thoát khi launch với mã access denied `3221225506`. Đã trỏ `PLAYWRIGHT_BROWSERS_PATH` vào Chromium đã cài và chạy browser checks ngoài sandbox để thu kết quả trên.
+
+Hai lỗi đang mở trong `tests/museum-gallery-slots.spec.ts` được tái hiện cả trên task và snapshot archive sạch của `dev` tại `446bba7`.
+
+Đối chiếu snapshot với Git blob của `446bba7` xác nhận đủ 483 tracked frontend files, gồm 8 file khớp bytes và 475 file văn bản khớp sau chuẩn hóa CRLF → LF. Kết quả nằm trong `stock-dev-snapshot-integrity.json`.
+
+- Ca dòng 40 giữ W trong 4,5 giây, kỳ vọng camera Z < 5. Task quan sát khoảng 5,698 và stock dev khoảng 5,701.
+- Ca dòng 155 kiểm reopening/idle. Có lần texture count đổi từ 9 sang 17, có lần idle frames đổi từ 36 sang 37. Stock dev tái hiện texture mismatch 9 → 17.
+
+Thử nghiệm thêm một renderer warmup frame vào probe đã được gỡ hoàn toàn sau khi không giải quyết được lỗi. Hai assertions gốc tiếp tục áp dụng. Nghiệm thu production giữ `REVIEW_REQUIRED` và PR giữ draft để con người review các lỗi này. Phạm vi asset mới gồm 7 ca dev và 2 ca Public production đều đạt, tổng cộng 9 ca riêng biệt.
+
+`GallerySlotView` hiện sở hữu frame-based LOD selection và truyền retain callback cho `ArtifactModel`, dùng chung cho legacy display và Gallery Slots. Ca browser mới chứng minh occupied slot nâng LOD trong khi đủ năm plinths vẫn hiện. Các PNG fixed-camera sau tích hợp có SHA-256 giống từng byte với bộ capture trong `evidence/renders/`, nên comparison đã lưu tiếp tục khớp.
+
+## Gates trước tích hợp Gallery Slots
+
+Các kết quả dưới đây là lịch sử kiểm chứng trước merge `4388274`. Backend tests thuộc baseline trước publish guard của PR #185. Bảng sau tích hợp phía trên là kết quả production hiện hành.
 
 | CWD | Lệnh | Kết quả | Evidence |
 | --- | --- | --- | --- |
@@ -37,6 +67,7 @@ npm.cmd run build
 $env:PLAYWRIGHT_PREVIEW = '1'
 npm.cmd test -- asset-pipeline.spec.ts --grep 'generated Draco loads' --output=tmp/asset-pipeline-public --reporter=line
 npm.cmd test -- museum-glb.spec.ts museum-hotspots.spec.ts guided-tour-camera.spec.ts museum-xr.spec.ts --output=tmp/asset-pipeline-regression --reporter=line
+npm.cmd test -- asset-pipeline.spec.ts museum-gallery-slots.spec.ts cms-gallery-slot-picker.spec.ts museum-glb.spec.ts museum-xr.spec.ts guided-tour-camera.spec.ts --grep 'generated Draco loads|museum-gallery-slots|cms-gallery-slot-picker|actual context|native renderer binding failure|replacement GLB|finishing a real GLB|switching rooms while two GLBs|persistent WebGL failure' --output=tmp/asset-pipeline-sync-production --reporter=line
 ```
 
 Hai lệnh asset tests chạy tuần tự, cùng port 4173. Fixture HTML phục vụ trong dev. Production Public Museum dùng build thật và API mock chỉ cung cấp descriptors/binary có SHA-256 thật. Network interception giữ dữ liệu kiểm thử độc lập với storage và production DB.
@@ -60,6 +91,7 @@ node tools/asset-pipeline/test/compare-renders.mjs front-end/tmp/asset-pipeline-
 | Embedded WebP browser support | GLB Draco + EXT_texture_webp render trong CMS Preview | Đã kiểm chứng Chromium |
 | Geometry fidelity | Bounds/surface/normal/UV/material/scene gates | Đã kiểm chứng fixture |
 | Render comparison | 4 PNGs, contact sheet, RGB metrics cùng camera | Đã capture và xem |
+| Production Gallery Slots movement và resource/idle gates | Hai failures tái hiện trên stock dev `446bba7` | REVIEW_REQUIRED |
 | Curator museum visual QA | Dataset được cấp quyền, detail/silhouette/material review nhiều góc | REVIEW_REQUIRED |
 | Live upload/storage/Published optimized model | Workflow CMS với credentials và nội dung được duyệt | Chưa xác minh live |
 | Production multi-variant authorization | Source/derived relation và backend/database approval | Chờ review contract |

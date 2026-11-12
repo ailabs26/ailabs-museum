@@ -1,0 +1,75 @@
+
+> aura-museum-web@0.1.0 test:unit
+> vitest run
+
+
+ RUN  v2.1.8 D:/CNPM/ailabs-museum/front-end
+
+ ✓ src/helpers/draftAutosave.test.ts (9 tests) 12ms
+ ✓ src/reducers/museumReducer.test.ts (17 tests) 9ms
+ ✓ src/helpers/xrSession.test.ts (14 tests) 190ms
+ ✓ src/helpers/museumNavigation.test.ts (9 tests) 16ms
+ ✓ src/helpers/visitorPersistence.test.ts (9 tests) 14ms
+ ✓ src/helpers/gallerySlots.test.ts (21 tests) 24ms
+ ✓ src/helpers/glbAsset.test.ts (5 tests) 16ms
+ ✓ src/helpers/museumAuditMetrics.test.ts (22 tests) 122ms
+ ✓ src/helpers/sanitizeModel.test.ts (16 tests) 45ms
+ ✓ src/helpers/parseSelfContainedGlb.test.ts (13 tests) 57ms
+ ✓ src/helpers/exhibitFormErrors.test.ts (7 tests) 10ms
+ ✓ src/helpers/localizeExhibit.test.ts (7 tests) 8ms
+ ✓ src/helpers/xrRendererBinding.test.ts (7 tests) 197ms
+ ✓ src/helpers/attachNavigationInput.test.ts (5 tests) 10ms
+ ✓ src/helpers/visitorState.test.ts (6 tests) 16ms
+ ✓ src/helpers/artifactHotspots.test.ts (5 tests) 12ms
+ ✓ src/helpers/loadMuseumModel.test.ts (4 tests) 20ms
+ ✓ src/helpers/guidedCameraPath.test.ts (19 tests) 653ms
+ ✓ src/helpers/roomModelLods.test.ts (7 tests) 885ms
+ ✓ src/helpers/roomModelAssets.test.ts (8 tests) 942ms
+ ✓ src/helpers/xrInteraction.test.ts (5 tests) 12ms
+ ✓ src/helpers/webglRecovery.test.ts (4 tests) 11ms
+ ✓ src/helpers/cinematicIntro.test.ts (7 tests) 12ms
+ ✓ src/helpers/museumAuditBrowser.test.ts (2 tests) 18ms
+ ✓ src/helpers/modelCamera.test.ts (3 tests) 18ms
+ ✓ src/helpers/mediaCredits.test.ts (3 tests) 6ms
+ ✓ src/helpers/guidedTourSelectors.test.ts (4 tests) 7ms
+ ✓ src/helpers/modelNormalization.test.ts (3 tests) 14ms
+ ✓ src/layouts/adminNav.permissions.test.ts (3 tests) 7ms
+ ✓ src/helpers/modelLod.test.ts (4 tests) 8ms
+ ✓ src/shared/components/media/previewModel.test.ts (2 tests) 12ms
+ ✓ src/helpers/buildGuidedTourSteps.test.ts (3 tests) 5ms
+ ✓ src/helpers/museumAuditAnalysis.test.ts (1 test) 796ms
+   ✓ re-analyzes raw JSON on native-TS Node and separates workloads rather than pooling device FPS 795ms
+ ✓ src/helpers/passwordPolicy.test.ts (3 tests) 10ms
+ ✓ src/helpers/bulkDelete.test.ts (4 tests) 69ms
+ ✓ src/helpers/galleryLighting.test.ts (3 tests) 7ms
+ ✓ src/helpers/userAgent.test.ts (8 tests) 6ms
+ ✓ src/core/api/cms-error-message.test.ts (7 tests) 5ms
+ ✓ src/helpers/navigationGestures.test.ts (3 tests) 4ms
+ ✓ src/helpers/webglRenderGuard.test.ts (2 tests) 6ms
+ ✓ src/helpers/tourOrder.test.ts (4 tests) 4ms
+ ✓ src/helpers/modelDiagnostics.test.ts (2 tests) 3ms
+ ✓ src/helpers/notificationDisplay.test.ts (2 tests) 16ms
+ ✓ src/helpers/mediaLibrary.test.ts (3 tests) 3ms
+ ✓ src/helpers/fitLabelTitle.test.ts (4 tests) 3ms
+ ✓ src/core/auth/clearSessionCache.test.ts (3 tests) 13ms
+ ✓ src/helpers/audioTime.test.ts (19 tests) 3ms
+ ✓ src/helpers/guidedTour2dMessages.test.ts (1 test) 3ms
+ ✓ src/helpers/museumQuality.test.ts (3 tests) 3ms
+ ✓ src/helpers/mapRoomDisplays.test.ts (1 test) 5ms
+ ✓ src/helpers/museumAuditRoute.test.ts (1 test) 3ms
+ ✓ src/helpers/guidedTour2dNavigation.test.ts (1 test) 2ms
+ ✓ src/helpers/roomTranslations.test.ts (2 tests) 3ms
+ ✓ src/helpers/publicLocale.test.ts (12 tests) 15ms
+ ✓ src/helpers/exhibitHotspots.test.ts (7 tests) 51ms
+ ✓ src/helpers/draftPreviewDisplay.test.ts (10 tests) 20ms
+ ✓ src/helpers/exhibitTranslations.test.ts (5 tests) 8ms
+ ✓ src/services/audit.service.test.ts (3 tests) 12ms
+ ✓ src/core/api/http-client.test.ts (11 tests) 72ms
+ ✓ src/core/i18n/public-locale.test.ts (1 test) 2ms
+ ✓ src/helpers/exhibitQr.test.ts (4 tests) 1919ms
+   ✓ ảnh mã QR > sinh SVG và đóng gói được làm src của <img> 1913ms
+
+ Test Files  61 passed (61)
+      Tests  383 passed (383)
+   Start at  23:09:55
+   Duration  7.30s (transform 6.35s, setup 0ms, collect 43.10s, tests 6.46s, environment 16ms, prepare 24.85s)

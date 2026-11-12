@@ -1,6 +1,6 @@
 # Báo cáo Advanced 3D Asset Pipeline
 
-Ngày 12/11/2026. Base `dcbb814141bef3ed547f0893edb701c4d9407771`, nhánh `feat/advanced-3d-asset-pipeline`.
+Ngày 12/11/2026. Base ban đầu `dcbb814141bef3ed547f0893edb701c4d9407771`, nhánh `feat/advanced-3d-asset-pipeline`. Đã tích hợp `dev` tại `446bba7` qua merge `4388274`, sau đó tại `2a245d0` qua merge `12155b1`.
 
 ## 1. Executive summary
 
@@ -91,15 +91,19 @@ Draco giảm transfer bytes và tăng CPU decode trên fixture đã đo. WebP v�
 
 Browser là Headless Chromium 156, ANGLE/Vulkan SwiftShader, viewport 1280×720, DPR 1. Các mẫu fetch đi qua Playwright interception trên loopback, chưa có network throttling chuẩn. Mỗi parse bổ sung giải phóng scenes ngay, decoder cohort mới bao gồm worker initialization. Resource counters chứng minh workload đã chạy. Public production DOM model-ready quan sát sau navigation là 982 ms với WASM và 5.947 ms với JS fallback, một sample mỗi case, bao gồm application startup và automation. Raw samples ở [browser-fixed-camera.json](evidence/browser-fixed-camera.json), [public-wasm.json](evidence/public-wasm.json) và [public-js.json](evidence/public-js.json).
 
-Tám ca browser asset mới đã qua, gồm hai production Public Museum WASM/JS, năm fixture CMS/LOD/fallback/visual và một corrupt Draco payload qua native decoder với checksum hợp lệ. Ready-state identity được giữ trong lúc upgrade để Guided Tour tiếp tục camera motion. Kết quả regression bổ sung nằm trong verification.
+Sau tích hợp Gallery Slots, chín ca browser asset đã qua, gồm hai production Public Museum WASM/JS và bảy fixture CMS/legacy LOD/slotted LOD/fallback/visual/native corrupt Draco. Frontend typecheck/lint/build đạt, unit tests đạt 383/383 trên 61 files. Ready-state identity được giữ trong lúc upgrade để Guided Tour tiếp tục camera motion. Bốn PNG fixed-camera sau tích hợp có checksum giống bộ capture đã lưu.
 
-Production regression GLB/hotspots/Guided Tour/WebXR đạt 51/51, bao gồm hai ca đọc GLB local hiện có, actual context loss/restore và stereo XR mô phỏng. CMS Preview chạy bổ sung GLB có embedded WebP cùng legacy/Draco đạt 1/1. Inspector backend nhận đủ bảy generated candidates và kiểm SHA, bytes, upload limit, format/structure. Live storage/publication cần workflow riêng.
+Trước tích hợp Gallery Slots, production regression GLB/hotspots/Guided Tour/WebXR đạt 51/51. Sau tích hợp, selected production suite đạt 24/26, gồm Public Draco, CMS slot picker, late GLB/cancellation và XR/context recovery. Hai ca Gallery Slots đang lỗi về movement và resource/idle, đã tái hiện trên snapshot stock dev `446bba7` và khi chạy riêng trên task. Stock quan sát camera Z khoảng 5,701 với kỳ vọng < 5 và texture count 9 → 17. PR giữ draft với các lỗi này đang mở. Logs nằm trong `evidence/`.
+
+CMS Preview đã kiểm legacy/Draco/embedded WebP. Inspector backend nhận đủ bảy generated candidates và kiểm SHA, bytes, upload limit, format/structure. Backend media 592/592 và public models 10/10 là kết quả trước backend publish guard PR #185. Live storage/publication cần workflow riêng.
 
 ## 10. Compatibility và fallback validation
 
 Legacy GLB dùng shared parser mà không khởi tạo Draco. Public download giữ byte count, SHA-256 và AbortSignal. Decoder self-hosted JS/WASM có allowlist riêng, tối đa hai workers/cohort, timeout và cleanup kết quả đến muộn. Missing decoder trả model fallback.
 
 LOD fixture giữ normalization master, selection, hotspots và picking. Shared checksum lấy yêu cầu chi tiết cao nhất giữa các instance. Upgrade lỗi giữ model đang thấy và thử original cho close inspection. Pool giữ hai download, một inactive variant mỗi family và tối đa bốn inactive toàn phòng. Mounted primitives có refcount để bảo vệ GPU resource qua commit riêng của R3F. Actual coverage nằm trong verification.
+
+Sau đồng bộ Gallery Slots, `GallerySlotView` thực hiện LOD selection và truyền retain callback cho cả legacy/slotted layouts. Demand được gửi mỗi frame và owner dedupe, consumer IDs nằm trong hook signature để occupant thay đổi đăng ký đúng owner. Một ca browser riêng chứng minh đủ năm bục và model upgrade theo selection.
 
 ## 11. Security considerations
 
@@ -119,6 +123,7 @@ PR draft #186 có base `dev`, đang chờ human review trust-boundary validation
 - Backend/database duyệt quan hệ original/derived, additive DTO/routes, revocation, retention và migration nếu cần.
 - Cần Android/iOS/GPU/headset thật và ba runs cùng workload/network controls để nghiệm thu FPS/VRAM/heap.
 - Approved single GLB qua live CMS/storage/Published room chưa được xác minh. Offline và fixture có evidence riêng.
+- Hai Gallery Slots regression tests còn lỗi trên cả task và stock dev. Movement dùng fixed-duration input và resource/idle assertions cần được owner Gallery Slots xử lý trước nghiệm thu production.
 
 ## 14. Final acceptance status
 

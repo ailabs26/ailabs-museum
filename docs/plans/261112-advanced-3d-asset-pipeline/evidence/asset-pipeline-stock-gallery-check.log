@@ -1,0 +1,82 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test museum-gallery-slots.spec.ts --grep a room without exhibits|reopening a template room --output=tmp/stock-gallery-check --reporter=line
+
+
+Running 2 tests using 1 worker
+
+
+
+(node:28520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[1/2] tests\museum-gallery-slots.spec.ts:40:1 › a room without exhibits still opens in 3D with exactly five empty plinths
+  1) tests\museum-gallery-slots.spec.ts:40:1 › a room without exhibits still opens in 3D with exactly five empty plinths
+
+    Error: expect(received).toBeLessThan(expected)
+
+    Expected: < 5
+    Received:   5.701410451835495
+
+      49 |   await page.keyboard.down('w'); await page.waitForTimeout(4500); await page.keyboard.up('w');
+      50 |   expect(await cameraZ(page)).toBeGreaterThan(-0.54);
+    > 51 |   expect(await cameraZ(page)).toBeLessThan(5);
+         |                               ^
+      52 |   // Bấm vào bục trống không mở chi tiết nào.
+      53 |   await page.getByRole('button', { name: 'Góc nhìn ban đầu', exact: true }).click();
+      54 |   const box = (await canvas.boundingBox())!;
+        at D:\CNPM\ailabs-museum\front-end\tmp\asset-pipeline-dev-baseline\front-end\tests\museum-gallery-slots.spec.ts:51:31
+
+    Error Context: tmp\stock-gallery-check\museum-gallery-slots-a-roo-95522--exactly-five-empty-plinths\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\stock-gallery-check\museum-gallery-slots-a-roo-95522--exactly-five-empty-plinths\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\stock-gallery-check\museum-gallery-slots-a-roo-95522--exactly-five-empty-plinths\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+(node:36796) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[2/2] tests\museum-gallery-slots.spec.ts:155:1 › reopening a template room releases its GPU resources and sleeps when idle
+  2) tests\museum-gallery-slots.spec.ts:155:1 › reopening a template room releases its GPU resources and sleeps when idle
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+        "geometries": 69,
+        "materials": 28,
+        "objects": 108,
+    -   "textures": 9,
+    +   "textures": 17,
+      }
+
+      166 |     await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+      167 |     await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible({ timeout: 30_000 });
+    > 168 |     expect(await usage()).toEqual(first);
+          |                           ^
+      169 |   }
+      170 |   const frames = (await readRendererProbe(page)).at(-1)!.frames;
+      171 |   await page.waitForTimeout(600);
+        at D:\CNPM\ailabs-museum\front-end\tmp\asset-pipeline-dev-baseline\front-end\tests\museum-gallery-slots.spec.ts:168:27
+
+    Error Context: tmp\stock-gallery-check\museum-gallery-slots-reope-6b0dd-ources-and-sleeps-when-idle\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\stock-gallery-check\museum-gallery-slots-reope-6b0dd-ources-and-sleeps-when-idle\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\stock-gallery-check\museum-gallery-slots-reope-6b0dd-ources-and-sleeps-when-idle\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2 failed
+    tests\museum-gallery-slots.spec.ts:40:1 › a room without exhibits still opens in 3D with exactly five empty plinths
+    tests\museum-gallery-slots.spec.ts:155:1 › reopening a template room releases its GPU resources and sleeps when idle
