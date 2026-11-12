@@ -464,6 +464,8 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
     const rows = await this.scoped(manager).find({
       select: { id: true },
       where: { roomId, isDeleted: false },
+      // Thứ tự khóa cố định: các transaction cùng khóa một phòng chờ nhau thay vì khóa chéo (deadlock).
+      order: { id: 'ASC' },
       lock: { mode: 'pessimistic_write' },
     });
     return rows.map((row) => row.id);
