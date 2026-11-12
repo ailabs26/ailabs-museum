@@ -160,3 +160,42 @@ với máy standby. Có thể siết chặt hơn (WAL archiving) khi hệ thốn
 - **Giám sát tối thiểu:** `docker stats` + uptime check ngoài + cảnh báo dung lượng đĩa;
   nâng lên Prometheus/Grafana khi cần (YAGNI ở giai đoạn đầu).
 - **Nhật ký:** audit log của hệ thống đã có sẵn ở tầng ứng dụng (module `audit`).
+
+## 8. Danh mục đề nghị cấp phát (BOM)
+
+### 8.1. Phần cứng (CapEx — xin cấp/mua)
+
+- [ ] **01 × Server ứng dụng chính** — spec mục 3.1 (khuyến nghị) hoặc 3.3 (tối thiểu)
+- [ ] **01 × Server backup/standby** — spec mục 3.2 *(bỏ nếu chọn phương án tối thiểu, nhưng vẫn cần đích backup ngoài)*
+- [ ] (On-prem) Vị trí đặt máy: tủ rack, điện, làm mát, **UPS** chống mất điện
+- [ ] (On-prem) Switch/đi dây mạng, cổng uplink đủ băng thông
+
+### 8.2. Dịch vụ kèm (OPEX — nhỏ, định kỳ)
+
+- [ ] **Tên miền** chính thức (gia hạn hằng năm)
+- [ ] **CDN** cho media + tĩnh (bật ở cao điểm; gói co giãn theo lưu lượng)
+- [ ] (Tùy chọn) **Object storage ngoài** (Cloudflare R2 / Backblaze B2) làm đích backup thứ 3
+- [ ] TLS: **miễn phí** (Let's Encrypt)
+
+### 8.3. Không cần (giải trình để không bị tính dư)
+
+- ❌ **GPU** — render 3D chạy ở thiết bị khách, server không dựng hình.
+- ❌ **Cụm nhiều DB / Kubernetes** — một máy mạnh + Docker Compose đủ cho giai đoạn này.
+- ❌ **Redis / message queue** — chưa có nhu cầu (YAGNI); thêm sau nếu phát sinh.
+- ❌ **Thuê VPS theo tháng** — chủ trương sở hữu phần cứng (chính là mục đích tài liệu này).
+
+## 9. Nội dung cần cấp trên / hạ tầng quyết định
+
+1. **Hình thức đặt máy:** đặt tại phòng máy đơn vị (on-prem) hay thuê chỗ đặt (colocation)
+   tại trung tâm dữ liệu? → ảnh hưởng điện/mạng/UPS và đường truyền.
+2. **Ngân sách:** chọn cấu hình **khuyến nghị** (có standby) hay **tối thiểu** (1 máy)?
+3. **Đường truyền Internet thực tế** tại nơi đặt máy (băng thông lên/xuống, IP tĩnh)?
+4. **Tên miền chính thức** đã có chưa (cần cho TLS/CDN)?
+5. **Đích backup ngoài:** dùng máy backup nội bộ là đủ hay cần thêm object storage ngoài?
+6. **Mốc thời gian go-live / sự kiện cao điểm đầu tiên** để chốt tiến độ mua sắm & load test.
+
+---
+
+> **Bước tiếp theo sau khi được duyệt:** triển khai theo plan container hóa đã có
+> (`docs/plans/261017-0119-docker-vps-minio-deployment/`) trên phần cứng được cấp, chạy
+> **load test** mô phỏng cao điểm để xác nhận cấu hình trước khi mở cho công chúng.
