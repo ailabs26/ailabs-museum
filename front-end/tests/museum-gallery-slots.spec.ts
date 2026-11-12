@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
 import { envelope, exhibit, ROOM_C_ID, roomC } from './fixtures/museumContent';
-import { installRendererProbe, waitForGallerySurfaces } from './fixtures/museumProbe';
+import { installRendererProbe, readRendererProbe, waitForGallerySurfaces, waitForRendererIdle } from './fixtures/museumProbe';
 import { museumExhibitButton, selectMuseumExhibit } from './fixtures/museumUi';
 
 test.setTimeout(60_000);
@@ -113,4 +113,61 @@ test('existing free-placement fixture rooms keep the legacy layout', async ({ pa
   await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('[data-gallery-layout]')).toHaveAttribute('data-gallery-layout', 'legacy');
   await expect(museumExhibitButton(page, 'Xem chi tiết Bình gốm')).toBeAttached();
+});
+
+test('template rooms use the Rotunda shell, a single shadow caster and stay within the render budget', async ({ page }) => {
+  await openRoom(page, onSlots(5));
+  await waitForRendererIdle(page);
+  const scene = await page.evaluate(() => {
+    const record = window.museumProbe.at(-1)!, root = record.scene!.deref()!;
+    const names = new Set<string>(), materials = new Set<string>(), lights: Record<string, number> = {};
+    let instanced = 0, shadowCasters = 0;
+    root.traverse(object => {
+      if (object.name) names.add(object.name);
+      if ('isInstancedMesh' in object) instanced++;
+      if ('isLight' in object) {
+        lights[object.type] = (lights[object.type] ?? 0) + 1;
+        if (object.castShadow) shadowCasters++;
+      }
+      const value = (object as import('three').Mesh).material;
+      for (const material of !value ? [] : Array.isArray(value) ? value : [value]) if (material.name) materials.add(material.name);
+    });
+    const { render, memory } = record.renderer.deref()!.info;
+    return { names: [...names], materials: [...materials], lights, instanced, shadowCasters,
+      calls: render.calls, triangles: render.triangles, geometries: memory.geometries, textures: memory.textures };
+  });
+  expect(scene.names).toEqual(expect.arrayContaining(['Rotunda architecture', 'Ceiling oculus', 'Wall bays', 'Gallery friezes', 'Gallery slots']));
+  expect(scene.names).not.toContain('Gallery architecture');
+  expect(scene.materials).toEqual(expect.arrayContaining(['Gallery honed floor', 'Gallery lime plaster', 'Gallery walnut', 'Gallery brushed bronze', 'Gallery amber cove']));
+  expect(scene.instanced).toBeGreaterThanOrEqual(12);
+  expect(scene.shadowCasters).toBeLessThanOrEqual(1);
+  const tier = await page.locator('[data-quality-tier]').getAttribute('data-quality-tier');
+  // Đèn cố định theo tier, không tăng theo số hiện vật: 5 đèn bục + 2 hắt màu (balanced) hoặc 3 đèn (low).
+  expect(scene.lights.SpotLight).toBe(tier === 'low' ? 3 : 5);
+  expect(scene.lights.PointLight ?? 0).toBe(tier === 'low' ? 0 : 2);
+  expect(scene.lights.DirectionalLight).toBe(1);
+  expect(scene.calls).toBeLessThanOrEqual(95);
+  expect(scene.triangles).toBeLessThanOrEqual(25_000);
+  expect(scene.geometries).toBeLessThanOrEqual(90);
+  expect(scene.textures).toBeLessThanOrEqual(22);
+});
+
+test('reopening a template room releases its GPU resources and sleeps when idle', async ({ page }) => {
+  await openRoom(page, onSlots(2));
+  const usage = async () => {
+    await waitForGallerySurfaces(page); await waitForRendererIdle(page);
+    const { geometries, textures, materials, objects } = (await readRendererProbe(page)).at(-1)!;
+    return { geometries, textures, materials, objects };
+  };
+  const first = await usage();
+  for (let round = 0; round < 3; round++) {
+    await page.getByRole('button', { name: 'Thoát tham quan' }).click();
+    await expect.poll(async () => (await readRendererProbe(page)).filter(item => item.live).length).toBe(0);
+    await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+    await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible({ timeout: 30_000 });
+    expect(await usage()).toEqual(first);
+  }
+  const frames = (await readRendererProbe(page)).at(-1)!.frames;
+  await page.waitForTimeout(600);
+  expect((await readRendererProbe(page)).at(-1)!.frames).toBe(frames);
 });

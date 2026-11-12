@@ -197,7 +197,7 @@ export function MuseumPage() {
         }}>
         {detail ? <ErrorBoundary key={`${detail.id}:${sceneAttempt}`} fallback={sceneFallback}>
           <Suspense fallback={<MuseumLoading text={t('ui.tour.opening', 'Đang mở phòng 3D…')} />}>
-            <LazyMuseumScene displays={displays} navigationDisplays={navigationDisplays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay}
+            <LazyMuseumScene displays={displays} navigationDisplays={navigationDisplays} roomName={detail.name} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay}
               onClear={handleCloseDetail} fallback={sceneFallback} immersive onXrChange={handleXrChange} guided={guided.camera} />
           </Suspense>
         </ErrorBoundary> : <div className={classes.immersiveLoading}>

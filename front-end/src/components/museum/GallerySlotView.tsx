@@ -40,8 +40,8 @@ function ExhibitContent({ display, isCenterpiece, isHovered, isSelected, isXrHov
  * Một vị trí trưng bày: bục luôn có; hiện vật (nếu có) mới nhận hover/chọn theo exhibit id.
  * Bục trống vẫn chắn tia chọn để không bấm xuyên qua bục vào hiện vật phía sau, nhưng không mở chi tiết nào.
  */
-export function GallerySlotView({ position, pedestal, exhibit, slotId, ...content }: ExhibitRenderProps & {
-  position: readonly [number, number, number]; pedestal: PedestalKind; exhibit: MuseumDisplay | null; slotId?: string;
+export function GallerySlotView({ position, pedestal, exhibit, slotId, hasTrim, ...content }: ExhibitRenderProps & {
+  position: readonly [number, number, number]; pedestal: PedestalKind; exhibit: MuseumDisplay | null; slotId?: string; hasTrim?: boolean;
 }) {
   const [isPointerHovered, setIsHovered] = useState(false);
   const isHovered = !!exhibit && (isPointerHovered || !!content.isXrHovered);
@@ -58,7 +58,7 @@ export function GallerySlotView({ position, pedestal, exhibit, slotId, ...conten
       onPointerOver={(event) => { event.stopPropagation(); if (exhibit) setIsHovered(true); }}
       onPointerOut={() => setIsHovered(false)}
       onClick={(event) => { if (event.delta > 5) return; event.stopPropagation(); if (exhibit) content.onSelect(exhibit.id); }}>
-      <GalleryPedestal kind={pedestal} />
+      <GalleryPedestal kind={pedestal} hasTrim={hasTrim} />
       {exhibit && <ExhibitContent display={exhibit} isCenterpiece={pedestal === 'hero'} isHovered={isHovered} {...content} />}
     </group>
   );

@@ -8,8 +8,8 @@ export type PedestalKind = 'hero' | 'standard' | 'square';
  * Bục vật lý, độc lập với nội dung hiện vật: phòng theo template luôn dựng đủ bục kể cả khi trống.
  * Mặt bục ở y = 1.14 (`ARTIFACT_BASE_Y`) cho mọi loại — model, hotspot và camera focus dùng chung mốc này.
  */
-export function GalleryPedestal({ kind }: { kind: PedestalKind }) {
-  const { stone, walnut, bronze, charcoal, contact } = useGallerySurfaces();
+export function GalleryPedestal({ kind, hasTrim = false }: { kind: PedestalKind; hasTrim?: boolean }) {
+  const { stone, walnut, bronze, charcoal, contact, glow } = useGallerySurfaces();
   const isHero = kind === 'hero', isRound = kind !== 'square';
   const footprint = isHero ? EXHIBIT_PLINTH_SIZE.centerpieceRadius : EXHIBIT_PLINTH_SIZE.roundRadius;
   return <>
@@ -27,5 +27,9 @@ export function GalleryPedestal({ kind }: { kind: PedestalKind }) {
     <mesh position={[0, 1.12, 0]} material={bronze} castShadow receiveShadow>
       {isRound ? <cylinderGeometry args={[isHero ? 1.13 : 0.7, isHero ? 1.13 : 0.7, 0.04, 32]} /> : <boxGeometry args={[1.09, 0.04, 1.09]} />}
     </mesh>
+    {/* Viền sáng chân bục của Gallery Template: emissive tĩnh, không thêm đèn. */}
+    {hasTrim && isRound && <mesh position={[0, 0.1, 0]} material={glow} raycast={() => {}}>
+      <cylinderGeometry args={[isHero ? 1.168 : 0.708, isHero ? 1.168 : 0.708, 0.03, 48, 1, true]} />
+    </mesh>}
   </>;
 }

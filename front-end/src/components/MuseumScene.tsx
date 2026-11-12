@@ -56,9 +56,11 @@ function xrMessage(message: string, t: Translator): string {
   return known ? t(known.key, known.label) : message;
 }
 
-export function MuseumScene({ displays, navigationDisplays = displays, selectedId, onSelect, onClear, fallback, immersive = false, onXrChange, guided }: {
+export function MuseumScene({ displays, navigationDisplays = displays, roomName, selectedId, onSelect, onClear, fallback, immersive = false, onXrChange, guided }: {
   displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void; onClear: () => void;
   navigationDisplays?: readonly MuseumDisplay[];
+  /** Tên phòng (đã theo ngôn ngữ của khách) cho biển trên vách trung tâm của Gallery Template. */
+  roomName?: string;
   fallback: ReactNode;
   immersive?: boolean;
   onXrChange?: (snapshot: XrSnapshot, owner: XrSessionController | null) => void;
@@ -177,7 +179,7 @@ export function MuseumScene({ displays, navigationDisplays = displays, selectedI
       onCreated={({ camera }) => camera.lookAt(...INITIAL_CAMERA_TARGET)}
     >
       <color attach="background" args={['#eee9df']} />
-      <MuseumLighting shadowSize={quality.shadowSize} isRecovering={webglStatus === 'recovering'} />
+      <MuseumLighting shadowSize={quality.shadowSize} isRecovering={webglStatus === 'recovering'} variant={layout.mode === 'slotted' ? 'rotunda' : 'legacy'} tier={quality.tier} />
       <SceneLifecycle onStatus={handleWebglStatus} auditWorkload={new URLSearchParams(window.location.search).get('museumAudit') === '1' ? { roomId: displays[0]?.roomId ?? 'empty', exhibits: displays.length,
         visibleExhibits: displays.filter(display => !display.isOutsideRoom).length,
         expectedGlb: displays.filter(display => display.model && !display.isOutsideRoom).length,
@@ -192,7 +194,7 @@ export function MuseumScene({ displays, navigationDisplays = displays, selectedI
       <MuseumControls enabled={isWebInputEnabled} commandHandler={commandHandler} selectionIssuedAt={selection.issuedAt} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
         displays={navigationDisplays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} guided={guided} guidedBounds={guidedBounds} guidedModelFailed={guidedModelFailed} />
       <GallerySurfaces anisotropy={quality.anisotropy}>
-      <MuseumRoom />
+      <MuseumRoom variant={layout.mode === 'slotted' ? 'rotunda' : 'legacy'} roomName={roomName} />
       {layout.mode === 'slotted' ? <GallerySlots slots={layout.slots} getExhibitProps={getExhibitProps} />
         : displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} {...getExhibitProps(display)} />)}
       </GallerySurfaces>
