@@ -171,6 +171,12 @@ class FakePublishGate {
     this.calls.push(revision);
     if (this.error) throw this.error;
   }
+  slotChecks: { exhibitId: string; roomId: string; position: unknown }[] = [];
+  slotError?: Error;
+  async assertSlotFree(target: { exhibitId: string; roomId: string; position: unknown }): Promise<void> {
+    this.slotChecks.push(target);
+    if (this.slotError) throw this.slotError;
+  }
 }
 
 class MockTransactionManager {
@@ -933,6 +939,43 @@ describe('Task 7.3 — ExhibitsService Comprehensive Test Suite (120 Test Cases)
       dto.roomId = ROOM_ID_2;
       await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
       assert.equal(mockExhibits.savedExhibits[0].roomId, ROOM_ID_2);
+    });
+
+    it('TC-S050b: chuyển phòng hiện vật đang công khai → kiểm tra bục của bản đang xuất bản ở phòng mới', async () => {
+      setup();
+      const published = createSampleRevision({ state: RevisionState.APPROVED });
+      published.content = { ...published.content, position: { x: 0, y: 0, z: -2 } };
+      mockExhibits.findAdminDetailResult = createSampleExhibit({ roomId: ROOM_ID_1, visibility: ExhibitVisibility.VISIBLE, publishedRevision: published });
+      mockRooms.roomById = createSampleRoom({ id: ROOM_ID_2, isDeleted: false });
+      mockExhibits.activeRevisionResult = published;
+      const dto = draftDto();
+      dto.roomId = ROOM_ID_2;
+      await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
+      assert.deepEqual(gate.slotChecks, [{ exhibitId: EXHIBIT_ID_1, roomId: ROOM_ID_2, position: { x: 0, y: 0, z: -2 } }]);
+    });
+
+    it('TC-S050c: bục ở phòng mới đã có hiện vật công khai → 422, không chuyển phòng', async () => {
+      setup();
+      const published = createSampleRevision({ state: RevisionState.APPROVED });
+      mockExhibits.findAdminDetailResult = createSampleExhibit({ roomId: ROOM_ID_1, visibility: ExhibitVisibility.VISIBLE, publishedRevision: published });
+      mockRooms.roomById = createSampleRoom({ id: ROOM_ID_2, isDeleted: false });
+      mockExhibits.activeRevisionResult = published;
+      gate.slotError = new UnprocessableEntityException({ message: 'x', errors: [] });
+      const dto = draftDto();
+      dto.roomId = ROOM_ID_2;
+      await assert.rejects(() => service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 }), UnprocessableEntityException);
+      assert.equal(mockExhibits.savedExhibits.length, 0);
+    });
+
+    it('TC-S050d: hiện vật chưa công khai hoặc không đổi phòng → không kiểm tra bục', async () => {
+      setup();
+      mockExhibits.findAdminDetailResult = createSampleExhibit({ roomId: ROOM_ID_1 });
+      mockRooms.roomById = createSampleRoom({ id: ROOM_ID_2, isDeleted: false });
+      mockExhibits.activeRevisionResult = createSampleRevision({ state: RevisionState.DRAFT });
+      const dto = draftDto();
+      dto.roomId = ROOM_ID_2;
+      await service.updateExhibitDraft(EXHIBIT_ID_1, dto, { id: USER_ID_1 });
+      assert.deepEqual(gate.slotChecks, []);
     });
 
     it('TC-S051: updateExhibitDraft throws NotFoundException when no active revision exists', async () => {

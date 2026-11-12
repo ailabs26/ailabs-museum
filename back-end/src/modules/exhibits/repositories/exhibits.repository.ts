@@ -470,6 +470,30 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
   }
 
   /**
+   * Vị trí (theo bản đang xuất bản) của các hiện vật đang công khai trong phòng, sau khi đã khóa
+   * FOR UPDATE mọi hiện vật chưa xóa của phòng: hai lần xuất bản/hiện lại/chuyển phòng đồng thời
+   * vào cùng một phòng phải chạy tuần tự, nên không thể cùng lọt qua kiểm tra trùng bục.
+   */
+  async lockPublicPlacements(
+    roomId: string,
+    manager: EntityManager,
+  ): Promise<{ exhibitId: string; position: unknown }[]> {
+    await this.findIdsByRoomForUpdate(roomId, manager);
+    const rows = await this.scoped(manager).find({
+      where: {
+        roomId,
+        visibility: ExhibitVisibility.VISIBLE,
+        isDeleted: false,
+        archivedAt: IsNull(),
+        publishedRevisionId: Not(IsNull()),
+        publishedRevision: { state: RevisionState.APPROVED },
+      },
+      relations: { publishedRevision: true },
+    });
+    return rows.map((row) => ({ exhibitId: row.id, position: row.publishedRevision?.content?.position }));
+  }
+
+  /**
    * Cập nhật thứ tự hiển thị display_order của hiện vật — chỉ khi hiện vật thuộc đúng phòng.
    * VT-079: thứ tự thực sự đổi thì tăng `version`, để autosave đang mang thứ tự cũ nhận 409
    * thay vì ghi đè. Hiện vật giữ nguyên vị trí không bị tăng version (tránh xung đột giả).
