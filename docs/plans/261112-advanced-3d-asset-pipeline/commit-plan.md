@@ -1,15 +1,16 @@
-# Kế hoạch atomic commits
+# Atomic commit ledger
 
-Mỗi commit chứa code và regression tests tương ứng đã chạy. SHA sẽ được integrator điền sau khi review toàn diff. Dùng một nhánh `feat/advanced-3d-asset-pipeline` và một PR vào `dev`.
+Base `origin/dev` được fetch trước triển khai tại `dcbb814141bef3ed547f0893edb701c4d9407771`. Nhánh `feat/advanced-3d-asset-pipeline`.
 
-| Thứ tự đề xuất | Nội dung | Focused verification | SHA |
-| --- | --- | --- | --- |
-| 1 | `docs(assets): document optimization architecture and gates` | Audit contract và file inventory | Pending |
-| 2 | `feat(assets): add offline Draco LOD and WebP processing` | Package integration, source immutability, decode và metadata | Pending |
-| 3 | `feat(museum): decode self-hosted Draco in shared GLB loader` | Legacy/Draco/Preview/public, decoder failures, abort/integrity | Pending |
-| 4 | `feat(museum): integrate bounded screen-space LOD assets` | Selector, owner lifecycle, fallback, fixture browser | Pending |
-| 5 | `docs(assets): record visual and benchmark evidence` | Actual results, missing coverage, source/build SHA | Pending |
+| SHA | Commit | Verification |
+| --- | --- | --- |
+| `6b23a47` | `docs(assets): plan conservative 3D asset pipeline` | Source audit, architecture và contracts |
+| `6c289c1` | `feat(assets): generate validated Draco LOD and WebP candidates` | Package 17/17, native roundtrip, APNG/quality/immutability/concurrency |
+| `2e854a9` | `feat(museum): share validated self-hosted Draco decoding` | Unit, Public WASM/JS, CMS, integrity/abort/decoder failures |
+| `0b1fcf8` | `feat(museum): select and retain bounded screen-space LOD assets` | Screen selection, cache/refcount, original fallback, browser picking/hotspots |
+| `0cb26d3` | `test(assets): exercise browser decoding LOD and visual comparisons` | Asset cases, CMS WebP bổ sung, 51 production regressions, lint |
+| `ed8f0e1` | `test(museum): exercise native corrupt Draco failure` | Native malformed stream từ chối an toàn qua browser, checksum hợp lệ |
 
-Có thể gộp/tách khi diff thực có phụ thuộc hợp lý. Mọi commit cần thể hiện thay đổi thực và giữ trạng thái dùng được. Commit ledger cuối chỉ chứa SHA đã tồn tại.
+Commit bàn giao report/evidence có message `docs(assets): deliver measured pipeline evidence and review checkpoints`. SHA cuối được hiển thị ở PR head và phản hồi bàn giao. Dùng `git log dcbb814..HEAD --oneline` để đọc toàn bộ ledger Git hiện hành.
 
-PR hiện pending. Base phải là `dev`. Do shared loader liên quan validation untrusted assets và production derived publication cần review boundary, bàn giao tại PR cho người phụ trách review trước merge theo AGENTS.
+PR draft #186 có base `dev`, head `feat/advanced-3d-asset-pipeline`. Trạng thái tích hợp đang chờ human review. Các checkpoint gồm curator fidelity trên dataset có quyền, backend/database contract original/derived và hardware performance theo audit 261104. [Pull request #186](https://github.com/ailabs26/ailabs-museum/pull/186)

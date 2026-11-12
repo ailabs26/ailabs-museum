@@ -31,7 +31,7 @@ Mất chữ/hoa văn nhận diện, silhouette biến dạng, rách mesh, lệch
 
 | Dataset | Automated capture | Human visual review | Trạng thái |
 | --- | --- | --- | --- |
-| Fixture tổng hợp của task | Pending | Pending | REVIEW_REQUIRED |
+| Fixture tổng hợp của task | `evidence/renders/contact-sheet.png`, bốn fixed-camera PNGs và RGB metrics | Đã xem so sánh kỹ thuật, curator review còn mở | REVIEW_REQUIRED |
 | Dataset hiện vật được cấp quyền | Chưa xác nhận sẵn có | Pending curator | REVIEW_REQUIRED |
 
-Integrator cập nhật ledger bằng tên evidence thực tế trước bàn giao. Người chạy automation không tự đại diện curator cho những chi tiết di sản chưa được xem.
+Master fixture SHA-256 là `693c93c57dfda49a63d632bfd3da8b4f6acd2466ba55999aa6cbd33c123786b7`. Config/tool versions và artifact checksums nằm trong `evidence/offline-benchmark.json`. Curator review cần dataset và những chi tiết di sản thực tế.

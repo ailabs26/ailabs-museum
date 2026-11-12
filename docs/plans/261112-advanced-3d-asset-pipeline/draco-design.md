@@ -2,7 +2,7 @@
 
 ## Encoder offline
 
-glTF Transform đọc/ghi GLB với extension registry được giới hạn, draco3dgltf encode và decode roundtrip. Pin package versions và config trong manifest. LOD0 dùng geometry master với compression conservative, simplification dành cho mức LOD thấp hơn. Profile aggressive chỉ dùng thí nghiệm khi người vận hành chọn rõ.
+glTF Transform đọc/ghi GLB với extension registry được giới hạn, draco3dgltf encode và decode roundtrip. Pin package versions và config trong manifest. LOD0 dùng geometry master với compression conservative, simplification dành cho mức LOD thấp hơn. Bản 1 cung cấp profile conservative cố định. Profile balanced/aggressive cần benchmark và quality review riêng trước triển khai.
 
 Quantization positions/normals/UV/color phải có cấu hình rõ và bounds-error gate. Bit depth cao giảm sai số tọa độ nhưng kết quả cần đo trên từng asset. Ghi vertices/triangles, scene hierarchy, transforms, material/PBR, texture role và bounds trước/sau decode. Từ chối features thiếu bảo đảm như skinning/morph/animation nếu pipeline chưa có test chứng minh bảo toàn. Candidate failed/unsupported giữ master và reason.
 

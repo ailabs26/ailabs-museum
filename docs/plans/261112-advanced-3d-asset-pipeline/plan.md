@@ -1,6 +1,6 @@
 # Kế hoạch Advanced 3D Asset Pipeline
 
-Ngày 12/11/2026. Base `origin/dev` tại `dcbb814141bef3ed547f0893edb701c4d9407771`, nhánh `feat/advanced-3d-asset-pipeline`. Trạng thái ban đầu là đang triển khai. Kết quả cuối được cập nhật trong `verification.md` và `performance-report.md`.
+Ngày 12/11/2026. Base `origin/dev` tại `dcbb814141bef3ed547f0893edb701c4d9407771`, nhánh `feat/advanced-3d-asset-pipeline`. Phạm vi offline/fixture đã được triển khai và kiểm chứng. Nghiệm thu tổng thể REVIEW_REQUIRED tại PR draft #186. Kết quả và các checkpoint nằm trong `verification.md` và `performance-report.md`.
 
 ## Phạm vi thực hiện
 

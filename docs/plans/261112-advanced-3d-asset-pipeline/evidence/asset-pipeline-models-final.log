@@ -1,0 +1,22 @@
+
+> aura-museum-api@0.1.0 test:models
+> node -r reflect-metadata -r ts-node/register --test src/modules/exhibits/tests/public-models.spec.ts src/database/seeds/seed-storage-models.spec.ts
+
+✔ adds five distinct media/exhibit/revision mappings and preserves edits on rerun (2.1418ms)
+✔ rolls back all new content on a path collision and refuses a missing admin (0.876ms)
+✔ only publishes ready undeleted GLB media with safe stable keys (3.2682ms)
+✔ rechecks published room metadata before giving a private model to storage (3.0851ms)
+✔ signs private objects server-side and streams bytes without exposing credentials (142.4817ms)
+✔ creates a fresh signed request on retry after an expired Storage authorization (48.3347ms)
+✔ fails closed when Storage is unconfigured or a key is unsafe (1.3919ms)
+✔ passes binary models through the response interceptor while preserving JSON envelopes (7.2281ms)
+✔ rejects archived rooms and unapproved revisions using the actual publication service (4.9715ms)
+✔ redacts permission/not-found errors and rejects unexpected signed download paths (38.0511ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5575.8302

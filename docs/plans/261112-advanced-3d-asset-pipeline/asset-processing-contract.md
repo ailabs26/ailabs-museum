@@ -1,6 +1,6 @@
 # Hợp đồng xử lý asset
 
-Trạng thái thiết kế ngày 12/11/2026. Schema JSON và CLI thực tế sẽ được đối chiếu với package và integration evidence trước bàn giao.
+Contract schema 1 ngày 12/11/2026, đã đối chiếu với CLI, deterministic manifests và integration evidence trong `verification.md`.
 
 ## Input và tính bất biến
 
@@ -14,16 +14,16 @@ npm.cmd run optimize -- --source D:\assets\master.glb --output D:\assets\candida
 npm.cmd run optimize -- --source D:\assets\photo.jpg --output D:\assets\photo-run-01 --image-policy photo
 ```
 
-`--config <JSON-file>` cung cấp cấu hình riêng. `--image-policy` có `photo`, `detail`, `data`. Cú pháp và ca chạy thực cần được đối chiếu với README/package khi hoàn tất integration. Chỉ chọn thư mục output chưa tồn tại và thuộc vùng được phép ghi.
+`--config <JSON-file>` cung cấp cấu hình riêng. `--image-policy` có `photo`, `detail`, `data`, `--embedded-webp` bật chuyển texture lossless. CLI help/invalid arguments/normal entry point đã được kiểm thử. Chọn thư mục output mới với parent đã tồn tại.
 
-Manifest dự kiến schema version 1 có `status`, `visualQa`, `publicationEligible`, `source`, `config`, tool versions, `artifacts`, `limitations` và unsupported reasons. `source` ghi basename, `sha256`, `bytes`, `metrics`. Artifact ghi `file`, `lod`, `sha256`, `bytes`, `metrics`, `quality`. Mặc định `visualQa` là `REVIEW_REQUIRED`, `publicationEligible` là false. Định dạng JSON chính xác thuộc package implementation và test schema.
+Manifest schema version 1 có `status`, `visualQa`, `publicationEligible`, `source`, `config`, `configurationSha256`, tool versions, `artifacts`, `limitations` và unsupported reasons. `source` ghi basename, `sha256`, `bytes`, `metrics` và validation results. Artifact ghi `file`, `lod`, `sha256`, `bytes`, `metrics`, `quality`. `visualQa` là `REVIEW_REQUIRED`, `publicationEligible` là false. Exact examples nằm trong `evidence/offline-benchmark.json`.
 
 ## Dữ liệu cần ghi
 
 | Nhóm | Nội dung |
 | --- | --- |
 | Phiên bản | Schema version, pipeline version, Node/runtime và phiên bản dependency pin từ lockfile |
-| Nguồn | Tên local an toàn, SHA-256, size bytes, loại nội dung, quyền sử dụng do operator cung cấp |
+| Nguồn | Basename, SHA-256, bytes và metrics. Metadata quyền nằm trong master/media record, được operator đối chiếu khi publication |
 | Cấu hình | Draco quantization/profile, simplification ratio/error và texture role/policy |
 | Geometry | Node/mesh/material count, vertices/triangles, bounds, transforms và extensions |
 | Variant | LOD index, relative filename, artifact SHA-256/size, geometry và texture metrics, source checksum |

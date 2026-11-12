@@ -1,0 +1,379 @@
+{
+  "environment": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+    "viewport": [
+      1280,
+      720
+    ],
+    "dpr": 1,
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "scope": "Synthetic fixture, Edge/Chromium software WebGL regression. No physical-device FPS or VRAM claim."
+  },
+  "source": {
+    "checksum": "693c93c57dfda49a63d632bfd3da8b4f6acd2466ba55999aa6cbd33c123786b7",
+    "bytes": 94692
+  },
+  "artifacts": [
+    {
+      "file": "lod0.glb",
+      "lod": 0,
+      "status": "REVIEW_REQUIRED",
+      "sha256": "43ee551f7e64f38c59416869e5e9f7040c19be74e64a49be7664452ff33537ba",
+      "bytes": 23088,
+      "metrics": {
+        "nodes": 1,
+        "meshes": 1,
+        "materials": 1,
+        "primitives": 1,
+        "vertices": 2143,
+        "triangles": 3968,
+        "bounds": [
+          {
+            "min": [
+              1,
+              -1,
+              -4
+            ],
+            "max": [
+              3,
+              1,
+              -2
+            ]
+          }
+        ],
+        "transforms": [
+          {
+            "name": "Artifact",
+            "matrix": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              2,
+              0,
+              -3,
+              1
+            ]
+          }
+        ],
+        "textures": [
+          {
+            "name": "Synthetic inscription grid",
+            "mimeType": "image/png",
+            "bytes": 953,
+            "size": [
+              128,
+              128
+            ]
+          }
+        ]
+      },
+      "quality": {
+        "visual": "REVIEW_REQUIRED",
+        "relativeBoundsDelta": 0,
+        "relativeSurfaceError": 3.9709551440499574e-7,
+        "maxNormalAngleDegrees": 0.0034436281350968836,
+        "maxUvError": 0.00000762939453125,
+        "maxColorError": 0,
+        "maxTangentError": 0,
+        "attributePolicy": "All retained vertices checked against source position and matching normals, UV, color and tangent. LOD0 checked both directions.",
+        "surfaceMethod": "bidirectional deterministic vertex and triangle-centroid samples to full triangle surface, up to 512 samples per primitive per direction",
+        "boundsTolerance": 0.00001,
+        "surfaceTolerance": 0.00001,
+        "sceneIdentityPreserved": true
+      },
+      "specification": {
+        "numErrors": 0,
+        "numWarnings": 0,
+        "numInfos": 2,
+        "numHints": 0,
+        "messages": [
+          {
+            "code": "UNSUPPORTED_EXTENSION",
+            "message": "Cannot validate an extension as it is not supported by the validator: 'KHR_draco_mesh_compression'.",
+            "severity": 2,
+            "pointer": "/extensionsUsed/0"
+          },
+          {
+            "code": "UNUSED_OBJECT",
+            "message": "This object may be unused.",
+            "severity": 2,
+            "pointer": "/bufferViews/1"
+          }
+        ],
+        "truncated": false
+      },
+      "textureConversion": []
+    },
+    {
+      "file": "lod1.glb",
+      "lod": 1,
+      "status": "REVIEW_REQUIRED",
+      "sha256": "72b624c372fec7cf9c929df3a8619526d8d7b5633d120f27ae6169256b6cf23a",
+      "bytes": 22388,
+      "metrics": {
+        "nodes": 1,
+        "meshes": 1,
+        "materials": 1,
+        "primitives": 1,
+        "vertices": 1930,
+        "triangles": 3542,
+        "bounds": [
+          {
+            "min": [
+              1,
+              -1,
+              -4
+            ],
+            "max": [
+              3,
+              1,
+              -2
+            ]
+          }
+        ],
+        "transforms": [
+          {
+            "name": "Artifact",
+            "matrix": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              2,
+              0,
+              -3,
+              1
+            ]
+          }
+        ],
+        "textures": [
+          {
+            "name": "Synthetic inscription grid",
+            "mimeType": "image/png",
+            "bytes": 953,
+            "size": [
+              128,
+              128
+            ]
+          }
+        ]
+      },
+      "quality": {
+        "visual": "REVIEW_REQUIRED",
+        "relativeBoundsDelta": 0,
+        "relativeSurfaceError": 0.00041373384357357233,
+        "maxNormalAngleDegrees": 0.0034436281350968836,
+        "maxUvError": 0.00000762939453125,
+        "maxColorError": 0,
+        "maxTangentError": 0,
+        "attributePolicy": "All retained vertices checked against source position and matching normals, UV, color and tangent. LOD0 checked both directions.",
+        "surfaceMethod": "bidirectional deterministic vertex and triangle-centroid samples to full triangle surface, up to 512 samples per primitive per direction",
+        "boundsTolerance": 0.005,
+        "surfaceTolerance": 0.005,
+        "sceneIdentityPreserved": true
+      },
+      "specification": {
+        "numErrors": 0,
+        "numWarnings": 0,
+        "numInfos": 2,
+        "numHints": 0,
+        "messages": [
+          {
+            "code": "UNSUPPORTED_EXTENSION",
+            "message": "Cannot validate an extension as it is not supported by the validator: 'KHR_draco_mesh_compression'.",
+            "severity": 2,
+            "pointer": "/extensionsUsed/0"
+          },
+          {
+            "code": "UNUSED_OBJECT",
+            "message": "This object may be unused.",
+            "severity": 2,
+            "pointer": "/bufferViews/1"
+          }
+        ],
+        "truncated": false
+      },
+      "textureConversion": []
+    },
+    {
+      "file": "lod2.glb",
+      "lod": 2,
+      "status": "REVIEW_REQUIRED",
+      "sha256": "bb8ac4684cf6531a33aba77a9b14dc833b71ab8b8ca78b2a5979b0ef12acbb2a",
+      "bytes": 21276,
+      "metrics": {
+        "nodes": 1,
+        "meshes": 1,
+        "materials": 1,
+        "primitives": 1,
+        "vertices": 1801,
+        "triangles": 3284,
+        "bounds": [
+          {
+            "min": [
+              1,
+              -1,
+              -4
+            ],
+            "max": [
+              3,
+              1,
+              -2
+            ]
+          }
+        ],
+        "transforms": [
+          {
+            "name": "Artifact",
+            "matrix": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              2,
+              0,
+              -3,
+              1
+            ]
+          }
+        ],
+        "textures": [
+          {
+            "name": "Synthetic inscription grid",
+            "mimeType": "image/png",
+            "bytes": 953,
+            "size": [
+              128,
+              128
+            ]
+          }
+        ]
+      },
+      "quality": {
+        "visual": "REVIEW_REQUIRED",
+        "relativeBoundsDelta": 0,
+        "relativeSurfaceError": 0.0007780527421013605,
+        "maxNormalAngleDegrees": 0.0034436281350968836,
+        "maxUvError": 0.00000762939453125,
+        "maxColorError": 0,
+        "maxTangentError": 0,
+        "attributePolicy": "All retained vertices checked against source position and matching normals, UV, color and tangent. LOD0 checked both directions.",
+        "surfaceMethod": "bidirectional deterministic vertex and triangle-centroid samples to full triangle surface, up to 512 samples per primitive per direction",
+        "boundsTolerance": 0.005,
+        "surfaceTolerance": 0.005,
+        "sceneIdentityPreserved": true
+      },
+      "specification": {
+        "numErrors": 0,
+        "numWarnings": 0,
+        "numInfos": 2,
+        "numHints": 0,
+        "messages": [
+          {
+            "code": "UNSUPPORTED_EXTENSION",
+            "message": "Cannot validate an extension as it is not supported by the validator: 'KHR_draco_mesh_compression'.",
+            "severity": 2,
+            "pointer": "/extensionsUsed/0"
+          },
+          {
+            "code": "UNUSED_OBJECT",
+            "message": "This object may be unused.",
+            "severity": 2,
+            "pointer": "/bufferViews/1"
+          }
+        ],
+        "truncated": false
+      },
+      "textureConversion": []
+    }
+  ],
+  "renderer": [
+    {
+      "live": true,
+      "frames": 38,
+      "times": [
+        1403.8999999761581,
+        1432.6000000238419,
+        1432.7000000476837,
+        1433.3999999761581,
+        1433.3999999761581,
+        1433.7000000476837,
+        1433.7000000476837,
+        1433.8000000715256,
+        1433.8000000715256,
+        1433.8999999761581,
+        1434,
+        1434.1000000238419,
+        1438.8999999761581,
+        1439.1000000238419,
+        1439.3000000715256,
+        1439.3999999761581,
+        1439.5,
+        1439.5,
+        1439.6000000238419,
+        1439.6000000238419,
+        1439.6000000238419,
+        1439.7000000476837,
+        1439.8000000715256,
+        1439.8000000715256,
+        1440.3999999761581,
+        1440.5,
+        1440.6000000238419,
+        1440.6000000238419,
+        1440.6000000238419,
+        1440.6000000238419,
+        1440.7000000476837,
+        1440.7000000476837,
+        1440.8000000715256,
+        1440.8000000715256,
+        1754.5,
+        1767.2000000476837,
+        4010.600000023842,
+        4021
+      ],
+      "calls": 41,
+      "triangles": 6984,
+      "geometries": 41,
+      "textures": 13,
+      "materials": 15,
+      "objects": 69,
+      "labels": {
+        "2c2208b2-e6e3-4209-9b2a-be6de0786d59": 19
+      }
+    }
+  ],
+  "measurements": {
+    "readyUpperBoundMs": 982,
+    "timingScope": "navigation through DOM model-ready indication, includes application and automation",
+    "decoderResponses": [
+      "http://127.0.0.1:4173/assets/draco_decoder-Z1_iN-Ht.wasm",
+      "http://127.0.0.1:4173/assets/draco_wasm_wrapper-fZCQGLGb.js"
+    ]
+  },
+  "visualQa": "REVIEW_REQUIRED"
+}

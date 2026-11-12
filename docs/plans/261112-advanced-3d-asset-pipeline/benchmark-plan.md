@@ -28,4 +28,4 @@ GPU execution time, VRAM và presented FPS yêu cầu phép đo chuyên biệt. 
 
 ## Trạng thái
 
-Số liệu và thiết bị đang pending. Software/browser fixture có thể xác minh chức năng và proxy thời gian, mục tiêu desktop 60 FPS/mobile 30 FPS cần thiết bị thật và ba run đúng protocol. Mobile emulation và XR simulation ghi coverage riêng.
+Số liệu offline và Chromium/SwiftShader fixture đã được thu trong `performance-report.md` và raw JSON evidence. Mục tiêu desktop 60 FPS/mobile 30 FPS cần thiết bị thật và ba run đúng protocol. Mobile emulation và XR simulation có coverage riêng trong regression logs. Physical GPU/VRAM/heap retention và live controlled-network benchmark còn chờ thiết bị/dataset.

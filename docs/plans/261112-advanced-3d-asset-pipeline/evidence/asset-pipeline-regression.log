@@ -1,0 +1,66 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test museum-glb.spec.ts museum-hotspots.spec.ts guided-tour-camera.spec.ts museum-xr.spec.ts --output=tmp/asset-pipeline-regression --reporter=line
+
+
+Running 51 tests using 1 worker
+
+
+
+(node:7356) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[1/51] tests\guided-tour-camera.spec.ts:25:1 › arrival selects in CMS order, dwell pauses with time remaining, completes once without wrapping
+[2/51] tests\guided-tour-camera.spec.ts:60:1 › normal travel detours colliders, pauses at actual pose, replans on Next and yields to WASD
+[3/51] tests\guided-tour-camera.spec.ts:130:1 › XR and actual context loss pause without auto-resume or replacing the Canvas
+[4/51] tests\guided-tour-camera.spec.ts:160:1 › CMS order wins over geometry and an unsafe step retains DOM details with Skip
+[5/51] tests\guided-tour-camera.spec.ts:179:1 › empty room disables Start, one exhibit finishes, close/reopen requires explicit resume
+[6/51] tests\guided-tour-camera.spec.ts:197:1 › CMS reorder keeps stable ID and removed current exhibit pauses on a valid successor
+[7/51] tests\guided-tour-camera.spec.ts:215:3 › mobile guided controls › reduced motion and touch takeover retain usable controls and readable details
+[8/51] tests\guided-tour-camera.spec.ts:235:1 › late translated canvas label never strands a moving request
+[9/51] tests\guided-tour-camera.spec.ts:251:1 › native fullscreen close and immediate reopen preserve explicit tour ownership
+[10/51] tests\guided-tour-camera.spec.ts:266:1 › Exit keeps the arrived pose and cancels automatic selection refocus
+[11/51] tests\guided-tour-camera.spec.ts:280:1 › a reset command finishes in its DOM action before subsequent manual movement
+[12/51] tests\guided-tour-camera.spec.ts:299:1 › a replacement GLB clears an obsolete render failure for the same exhibit
+[13/51] tests\guided-tour-camera.spec.ts:334:1 › resume at an arrived pose completes on the first frame with reduced motion off
+[14/51] tests\museum-glb.spec.ts:13:1 › permission failures and corrupt GLBs stay isolated and can be retried without crashing the room
+[15/51] tests\museum-glb.spec.ts:41:1 › switching rooms while two GLBs are loading cancels the queue and keeps the next room usable
+[16/51] tests\museum-glb.spec.ts:66:1 › background clicks clear selection but dragging the background does not
+[17/51] tests\museum-glb.spec.ts:82:41 › finishing a real GLB download respects an earlier camera reset
+[18/51] tests\museum-glb.spec.ts:82:41 › finishing a real GLB download respects an earlier camera drag
+[19/51] tests\museum-hotspots.spec.ts:28:1 › 3D hotspot mouse picking shares selection, hover tooltip and drag rejection
+[20/51] tests\museum-hotspots.spec.ts:54:1 › a camera drag away from a hotspot and back to its starting point never selects it
+[21/51] tests\museum-hotspots.spec.ts:68:3 › touch hotspot controls › touch selects a failed artifact marker and keyboard Space selects another artifact
+[22/51] tests\museum-hotspots.spec.ts:84:1 › metadata refresh updates annotations without downloading healthy GLBs again
+[23/51] tests\museum-hotspots.spec.ts:95:1 › multiple published annotations preserve coordinates and bind their labels to one artifact
+[24/51] tests\museum-hotspots.spec.ts:116:1 › a genuine GLTFLoader parser rejection falls back per artifact after header and checksum validation
+[25/51] tests\museum-hotspots.spec.ts:126:1 › per-artifact retry cooldown unlocks the button and stops after three retries
+[26/51] tests\museum-hotspots.spec.ts:141:1 › hover tooltips release their textures and mounted hotspots preserve demand rendering
+[27/51] tests\museum-hotspots.spec.ts:161:1 › five parsed models expose identity-bound 3D and keyboard hotspots with one selection state
+[28/51] tests\museum-hotspots.spec.ts:181:1 › invalid optional mesh keeps its valid sibling and all five artifacts render
+[29/51] tests\museum-hotspots.spec.ts:196:1 › a model clone/render exception is contained per artifact and retries without refetching healthy assets
+[30/51] tests\museum-hotspots.spec.ts:222:117 › one 401 GLB preserves four healthy models, interactive placeholder and isolated retry
+[31/51] tests\museum-hotspots.spec.ts:222:117 › one 403 GLB preserves four healthy models, interactive placeholder and isolated retry
+[32/51] tests\museum-hotspots.spec.ts:222:117 › one 404 GLB preserves four healthy models, interactive placeholder and isolated retry
+[33/51] tests\museum-hotspots.spec.ts:222:117 › one 500 GLB preserves four healthy models, interactive placeholder and isolated retry
+[34/51] tests\museum-hotspots.spec.ts:222:117 › one 502 GLB preserves four healthy models, interactive placeholder and isolated retry
+[35/51] tests\museum-hotspots.spec.ts:222:117 › one network GLB preserves four healthy models, interactive placeholder and isolated retry
+[36/51] tests\museum-hotspots.spec.ts:222:117 › one timeout GLB preserves four healthy models, interactive placeholder and isolated retry
+[37/51] tests\museum-hotspots.spec.ts:222:117 › one corrupt GLB preserves four healthy models, interactive placeholder and isolated retry
+[38/51] tests\museum-hotspots.spec.ts:222:117 › one checksum GLB preserves four healthy models, interactive placeholder and isolated retry
+[39/51] tests\museum-hotspots.spec.ts:222:117 › one truncated GLB preserves four healthy models, interactive placeholder and isolated retry
+[40/51] tests\museum-xr.spec.ts:14:1 › decorative floor joints do not block teleport along the central aisle
+[41/51] tests\museum-xr.spec.ts:30:1 › 2D catalogue renders published images and permits deliberate 3D retry without refetch or selection loss
+[42/51] tests\museum-xr.spec.ts:59:1 › unsupported XR keeps the existing 3D scene and web navigation
+[43/51] tests\museum-xr.spec.ts:68:1 › a supported but refused VR request preserves canvas, selection and permits retry
+[44/51] tests\museum-xr.spec.ts:84:1 › actual context restores the same canvas and keeps logical selection
+[45/51] tests\museum-xr.spec.ts:118:1 › simulated native XR renders stereo, selects once, teleports, snap-turns and restores web camera without reloading GLBs
+[46/51] tests\museum-xr.spec.ts:179:1 › repeated actual context losses exhaust recovery into stable readable 2D
+[47/51] tests\museum-xr.spec.ts:201:1 › native session end during initialization never resurrects XR or throws a renderer event error
+[48/51] tests\museum-xr.spec.ts:211:1 › native renderer binding failure recreates only Canvas and retains cached GLBs and selection
+[49/51] tests\museum-xr.spec.ts:226:1 › actual context loss during XR ends the session and restores normal 3D without automatic re-entry
+[50/51] tests\museum-xr.spec.ts:251:1 › a controller-free session can gaze at the in-world Exit without moving the origin
+[51/51] tests\museum-xr.spec.ts:276:1 › persistent WebGL failure exhausts only two deliberate retries and leaves readable 2D
+  Slow test file: tests\museum-hotspots.spec.ts (6.8m)
+  Slow test file: tests\guided-tour-camera.spec.ts (5.0m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  51 passed (16.8m)
