@@ -64,3 +64,41 @@ kiến trúc đó, chỉ nâng cấu hình phần cứng cho quy mô lớn và b
 4. **Render phía client:** dựng cảnh 3D chạy trên thiết bị người dùng (trình duyệt/điện
    thoại) → **server không cần GPU**; chi phí dồn vào CPU (API), RAM (DB), đĩa + băng
    thông (media).
+
+## 3. Cấu hình server đề xuất (để cấp phát)
+
+### 3.1. Máy chủ ứng dụng chính — *Khuyến nghị*
+
+| Thành phần | Thông số khuyến nghị | Lý do |
+|---|---|---|
+| CPU | **8–16 nhân vật lý** (x86-64, ví dụ Xeon Silver/Gold hoặc EPYC) | NestJS API + stream media + Postgres cùng máy; headroom cho cao điểm |
+| RAM | **32–64 GB ECC** | Postgres cache + MinIO + API; 64 GB nếu dữ liệu/đồng thời lớn |
+| Đĩa hệ thống + dữ liệu | **2× NVMe SSD 1–2 TB, RAID1** | IO nhanh cho DB & media; RAID1 chống hỏng 1 ổ |
+| (Tùy chọn) đĩa media riêng | +2–4 TB SSD/HDD cho bucket MinIO | Tách media khỏi DB khi dung lượng tăng |
+| Mạng | **1 Gbps** (ưu tiên 1 IPv4 public tĩnh) | Băng thông tải GLB/ảnh ở cao điểm |
+| Nguồn | **PSU dự phòng (redundant)** | Giảm downtime do hỏng nguồn |
+| OS | Ubuntu Server 24.04 LTS | Khớp plan Docker hiện có |
+
+### 3.2. Máy chủ backup / standby — *Khuyến nghị*
+
+| Thành phần | Thông số | Lý do |
+|---|---|---|
+| CPU | 4–8 nhân | Chỉ chạy backup + sẵn sàng thay thế tạm |
+| RAM | 16–32 GB | Đủ chạy stack ở chế độ dự phòng khi máy chính sự cố |
+| Đĩa | **2–4 TB** (ưu tiên dung lượng) | Lưu nhiều kỳ `pg_dump` + bản mirror media |
+| Mạng | 1 Gbps | Đồng bộ backup nhanh |
+
+> Đặt máy backup ở **vị trí/tủ rack khác** (hoặc tối thiểu khác nguồn điện/switch) để
+> không mất cả hai khi sự cố cục bộ.
+
+### 3.3. Cấu hình tối thiểu — *nếu ngân sách hạn chế (giai đoạn đầu)*
+
+| Thành phần | Tối thiểu |
+|---|---|
+| Số máy | 1 máy (chấp nhận rủi ro không có standby nóng) |
+| CPU / RAM | 8 nhân / 32 GB |
+| Đĩa | 2× NVMe 1 TB RAID1 |
+| Backup | Bắt buộc có **đích backup ngoài máy** (NAS/máy khác/cloud object rẻ) |
+
+**Rủi ro cấu hình tối thiểu:** không có máy dự phòng → khi máy chính hỏng, thời gian phục
+hồi phụ thuộc mua/sửa phần cứng. Chỉ nên chọn nếu chấp nhận gián đoạn vài giờ–vài ngày.
