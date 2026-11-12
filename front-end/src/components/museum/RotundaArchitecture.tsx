@@ -22,7 +22,7 @@ const SLATS: Placement[] = Array.from({ length: 64 }, (_, index) => {
 });
 const WALL_SLATS: Placement[] = [-1, 1].flatMap(side => Array.from({ length: 16 }, (_, index): Placement => ({ position: [side * 6.93, 2.45, 4.25 + index * .2] })));
 const PILASTERS: Placement[] = [-1, 1].map(side => ({ position: [side * 3.5, 2.5, -7.93] }));
-const PILASTER_TRIMS: Placement[] = [-1, 1].flatMap(side => [-1, 1].map((edge): Placement => ({ position: [side * 3.5 + edge * .72, 2.5, -7.84] })));
+const PILASTER_TRIMS: Placement[] = [-1, 1].flatMap(side => [-1, 1].map((edge): Placement => ({ position: [side * 3.5 + edge * .72, 2.5, -7.885] })));
 const SIDE_SKIRTING: Placement[] = [-1, 1].map(side => ({ position: [side * 6.94, .15, 0] }));
 const END_SKIRTING: Placement[] = [-1, 1].map(side => ({ position: [0, .15, side * 7.94] }));
 const SIDE_COVES: Placement[] = [-1, 1].flatMap(side => [.33, 4.52].map((y): Placement => ({ position: [side * 6.93, y, 0] })));
@@ -145,10 +145,10 @@ function GalleryFriezes({ frieze, amberWash, sign }: { frieze: Material; amberWa
 
 /**
  * Aura Heritage Rotunda — Rectangular Shell: giữ vỏ đi lại 14 × 16 × 5 m, tạo cảm giác không gian tròn bằng
- * vòng trần, hốc vòm, ánh sáng viền và hoạ tiết sàn đồng tâm. Chỉ dùng cho phòng theo Gallery Template.
- * Trang trí không có collider nên chỉ bám tường (≤ 0,2 m), sát sàn hoặc trên 4,6 m.
+ * vòng trần, hốc vòm, ánh sáng viền và hoạ tiết sàn đồng tâm. Dùng cho mọi phòng, kể cả phòng tọa độ tự do.
+ * Trang trí không có collider nên phải nằm ngoài `ROTUNDA_CLEARANCE` (`helpers/rotundaClearance.ts`).
  */
-export function RotundaArchitecture({ roomName }: { roomName?: string }) {
+export function RotundaArchitecture({ roomName, hasHeroHalo = true }: { roomName?: string; hasHeroHalo?: boolean }) {
   const { plaster, bronze, charcoal, grout, glow } = useGallerySurfaces();
   const resources = useRotundaResources(roomName);
   if (!resources) return null;
@@ -164,7 +164,8 @@ export function RotundaArchitecture({ roomName }: { roomName?: string }) {
     <Instances placements={SIDE_COVES} material={glow}><boxGeometry args={[.03, .035, 15.9]} /></Instances>
     <Instances placements={END_COVES} material={glow}><boxGeometry args={[13.9, .035, .03]} /></Instances>
     <group name="Floor inlay" position={[CX, 0, CZ]} userData={{ xrIgnore: true }}>
-      <mesh position={[0, .004, 0]} rotation={[-HALF_PI, 0, 0]} material={resources.halo} raycast={() => {}}><planeGeometry args={[5.6, 5.6]} /></mesh>
+      {/* Quầng sáng chỉ có nghĩa khi bục trung tâm có mặt; phòng legacy có thể để trống chỗ này. */}
+      {hasHeroHalo && <mesh position={[0, .004, 0]} rotation={[-HALF_PI, 0, 0]} material={resources.halo} raycast={() => {}}><planeGeometry args={[5.6, 5.6]} /></mesh>}
       <mesh position={[0, .003, 0]} rotation={[-HALF_PI, 0, 0]} material={grout} raycast={() => {}}><ringGeometry args={[2.46, 2.74, 72]} /></mesh>
       <mesh position={[0, .005, 0]} rotation={[-HALF_PI, 0, 0]} material={bronze} raycast={() => {}}><ringGeometry args={[1.66, 1.71, 72]} /></mesh>
       <mesh position={[0, .005, 0]} rotation={[-HALF_PI, 0, 0]} material={bronze} raycast={() => {}}><ringGeometry args={[3.86, 3.91, 96]} /></mesh>

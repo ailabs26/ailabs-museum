@@ -14,6 +14,7 @@ Nguyên tắc: *kiến trúc thuộc về scene, nội dung thuộc về CMS.*
 | 3 | `feat/gallery-rotunda-architecture` | Kiến trúc «Aura Heritage Rotunda» + light rig nhiều tầng cho phòng theo template |
 | 4 | `feat/cms-gallery-slot-picker` | Chọn bục trong form hiện vật của CMS, XYZ chuyển vào phần nâng cao |
 | 5 | `feat/gallery-slot-publish-guard` | Back-end chặn trùng bục khi xuất bản/hiện lại/chuyển phòng; seed 5 model GLB lên 5 bục |
+| 6 | `feat/rotunda-for-all-rooms` | Vỏ Rotunda + light rig cho mọi phòng, kể cả phòng tọa độ tự do; bỏ kiến trúc cũ |
 
 ## Contract bục (`front-end/src/helpers/gallerySlots.ts`)
 
@@ -31,7 +32,7 @@ Nguyên tắc: *kiến trúc thuộc về scene, nội dung thuộc về CMS.*
   không dùng `displayOrder` để suy ra bục.
 - `resolveGalleryLayout(displays)`:
   - phòng rỗng, hoặc mọi hiện vật khớp duy nhất một bục → `slotted`: luôn đủ 5 bục, hiện vật chỉ ở bục được gán;
-  - còn lại → `legacy` kèm lý do `unmatched-position` / `duplicate-slot` / `too-many-exhibits`: giữ nguyên vị trí, kiến trúc, đèn và collider cũ.
+  - còn lại → `legacy` kèm lý do `unmatched-position` / `duplicate-slot` / `too-many-exhibits`: giữ nguyên vị trí, bục kiểu cũ và collider cũ (vỏ phòng vẫn là Rotunda, xem PR 6).
     Không ẩn, không cắt, không tự di dời hiện vật.
 - `getGalleryColliders`: phòng `slotted` lấy vật cản từ 5 bục (bục trống vẫn chắn đường); phòng `legacy` trả đúng collider cũ.
 - Mặt bục của mọi loại ở `y = 1.14` (`ARTIFACT_BASE_Y`): model, hotspot và camera focus dùng chung mốc này, không cộng chồng offset.
@@ -40,16 +41,22 @@ Nguyên tắc: *kiến trúc thuộc về scene, nội dung thuộc về CMS.*
 
 ```text
 MuseumScene                      // một Canvas, frameloop="demand"; resolveGalleryLayout(displays)
-  ├─ MuseumLighting              // variant legacy | rotunda, theo quality tier
+  ├─ MuseumLighting              // một light rig; đèn chiếu theo bục (slotted) hoặc vị trí hiện vật (legacy)
   └─ GallerySurfaces
-      ├─ MuseumRoom              // vỏ 14×16×5; GalleryArchitecture (legacy) | RotundaArchitecture
+      ├─ MuseumRoom              // vỏ 14×16×5 + RotundaArchitecture cho mọi phòng
       └─ GallerySlots            // slotted: đúng 5 GallerySlotView
           └─ GallerySlotView
               ├─ GalleryPedestal // luôn có
               └─ ExhibitContent  // chỉ khi bục có hiện vật: model | placeholder, nhãn, hotspot
 ```
 
-- Phòng `legacy` vẫn đi qua `ExhibitionDisplay` (bọc `GallerySlotView` với tọa độ tự do) nên hình ảnh và hành vi không đổi.
+- Phòng `legacy` vẫn đi qua `ExhibitionDisplay` (bọc `GallerySlotView` với tọa độ tự do): vị trí, kiểu bục và collider không đổi.
+  Từ PR 6, phòng legacy cũng dùng vỏ Rotunda; đèn chiếu nhắm vào vị trí hiện vật thật (tối đa 5, nhiều hơn thì dùng 3 đèn rộng),
+  đèn hắt màu nào đứng cách hiện vật dưới 1,8 m thì tắt, và không vẽ quầng sáng sàn ở tâm bục trung tâm.
+- Trang trí Rotunda không có collider nên phải nằm ngoài `ROTUNDA_CLEARANCE` (`helpers/rotundaClearance.ts`): dưới 4,5 m chỉ bám tường
+  (|x| ≥ 6,88, |z| ≥ 7,86), phào trần từ 4,5 m, vòng trần từ 4,71 m. `rotundaClearance.test.ts` duyệt lưới 10 cm mọi tọa độ hợp lệ
+  (7 loại hiện vật, y = 0 / 0,5 / 1 m) và chứng minh bục + mô hình nằm trọn trong vùng trống; e2e đo hộp bao thật của từng chi tiết
+  trang trí và từng hiện vật để chứng minh hình học khớp hằng số và không có va chạm.
 - Chọn/hover/deep link/audio/hotspot vẫn theo exhibit id. Bục trống chắn tia chọn nhưng không mở chi tiết nào, không có trong
   danh mục, minimap (chỉ là vòng mốc) hay Guided Tour.
 - GLB lỗi hoặc đang tải: giữ bục và fallback hiện có.
@@ -80,7 +87,9 @@ Trùng → `422` với `code: gallery_slot_occupied`. Tọa độ tự do không
 
 - Chưa có cột `slotId`: bục được suy từ tọa độ. Đổi tọa độ bục trong tương lai cần migration riêng cho dữ liệu đã lưu.
 - Hằng số bục có hai bản (front-end và back-end) phải giữ khớp tay; mỗi bên có test khóa giá trị.
-- Phòng đang công khai với tọa độ tự do vẫn ở `legacy` cho tới khi biên tập viên chuyển từng hiện vật lên bục và xuất bản lại.
+- Phòng đang công khai với tọa độ tự do có vỏ Rotunda nhưng vẫn giữ bục kiểu cũ ở vị trí cũ; muốn có 5 bục mới thì chuyển từng hiện vật lên bục và xuất bản lại.
+- Hiện vật nâng cao trên sàn (GLB với y > ~1,37 m — hệ thống cho tới 1,66 m) chạm vòng trần; kiến trúc cũ (sườn trần 4,77 m) cũng chạm trong trường hợp này.
+- Hoạ tiết sàn và giếng trời canh tâm bục trung tâm (0, −2): ở phòng legacy chỗ này có thể là sàn trống.
   Seed chỉ đặt 5 model GLB lên bục ở môi trường mới; seed không ghi đè dữ liệu đã có.
 - Bục cạnh rộng 1,4 m, model chuẩn hóa tối đa 1,8 m: model rất rộng có thể nhô khỏi mặt bục (vật cản vẫn bao trọn). Chưa có cảnh báo trong CMS.
 - Guard server chỉ xét hiện vật đang công khai. Hai bản nháp cùng chọn một bục vẫn lưu được; bản xuất bản sau sẽ bị từ chối.
