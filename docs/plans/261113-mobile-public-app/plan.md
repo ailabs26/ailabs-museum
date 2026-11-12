@@ -81,3 +81,28 @@ Hai lựa chọn, chọn **A** cho giai đoạn đầu (đơn giản, ít rủi 
   hiện vật trực tiếp vào app.
 - **Media/CDN:** app tải GLB/ảnh/audio qua cùng domain/CDN với web; cân nhắc cache đĩa.
 - **3D:** render qua GL context của thiết bị (xem [`3d-on-mobile.md`](3d-on-mobile.md)).
+
+## 4. Ma trận phạm vi (tính năng public → mobile)
+
+| Tính năng public (web) | Nguồn | Mobile | Ưu tiên |
+|---|---|---|---|
+| Trang chủ + hiện vật nổi bật | `HomePage`, `HomeFeaturedExhibits` | ✅ | P1 |
+| Danh sách phòng / bộ sưu tập | `CollectionPage` | ✅ | P1 |
+| Chi tiết hiện vật (ảnh/mô tả/media/phụ đề) | `ExhibitDetailPage` | ✅ | P1 |
+| Short link / QR hiện vật (deep link) | `ExhibitShortLinkPage` | ✅ (deep link) | P1 |
+| Tìm kiếm hiện vật toàn hệ thống | `GlobalExhibitSearch` | ✅ | P1 |
+| Đa ngôn ngữ 6 locale | `core/i18n/public-locale` | ✅ | P1 |
+| Yêu thích | `FavoriteButton` | ✅ (AsyncStorage) | P2 |
+| Xem gần đây | `RecentlyViewed` | ✅ (AsyncStorage) | P2 |
+| Ghi chú khách | `VisitorNotes` | ✅ (AsyncStorage) | P2 |
+| Điều khiển đọc (cỡ chữ…) | `ReadingControls` | ✅ | P2 |
+| So sánh hiện vật | `ExhibitComparison` | ✅ | P3 |
+| Trạng thái lưu trữ cục bộ | `VisitorStorageStatus` | ✅ (điều chỉnh) | P3 |
+| Báo nội dung | `reports.service` + modal | ✅ | P2 |
+| **Phòng 3D immersive** | `MuseumPage` + `MuseumScene` (r3f) | ✅ (r3f/native) | P1 (rủi ro cao) |
+| **Guided Tour 2D ↔ 3D** | hooks + reducer + PR #180 | ✅ | P1 |
+| Phân hệ quản trị (CMS) | admin pages | ❌ ngoài phạm vi | — |
+
+**Tính năng mobile-native bổ sung (cân nhắc):** quét **QR bằng camera** (`expo-camera`),
+chia sẻ hiện vật (share sheet), thông báo đẩy (push) cho sự kiện/triển lãm — đưa vào
+roadmap, không bắt buộc cho bản đầu.
