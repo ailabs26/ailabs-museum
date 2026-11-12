@@ -33,4 +33,34 @@ chi phí thuê theo dung lượng/băng thông về lâu dài cao hơn và khó 
 hiện vật là tài sản số của đơn vị nên giữ trên hạ tầng sở hữu giúp chủ động sao lưu,
 bảo mật và tuân thủ.
 
-<!-- Các mục chi tiết được bổ sung ở các phần dưới. -->
+## 2. Hệ thống cần triển khai & đặc thù tải
+
+### 2.1. Thành phần phần mềm
+
+| Thành phần | Công nghệ | Vai trò | Đặc tính tài nguyên |
+|---|---|---|---|
+| Back-end API | NestJS 10 + Node.js (TypeScript) | REST API, auth JWT, RBAC, kiểm duyệt, stream media | CPU + RAM theo số request đồng thời |
+| Cơ sở dữ liệu | PostgreSQL 16 | Hiện vật, phòng, người dùng, audit, báo cáo | RAM cho cache, IO đĩa (NVMe) |
+| Object storage | MinIO (S3-compatible) | Lưu GLB (mô hình 3D), ảnh, audio, phụ đề | **Dung lượng đĩa lớn**, băng thông đọc cao |
+| Front-end web | React 18 + Vite (SPA tĩnh) | Giao diện khách + CMS quản trị | Nhẹ (phục vụ file tĩnh qua Nginx) |
+| App mobile | **Expo / React Native (iOS + Android)** | Phân hệ public, gồm cả phòng 3D | Dùng chung API/CDN với web |
+| Reverse proxy | Nginx + TLS (Let's Encrypt) | Điểm vào duy nhất, TLS, nén, cache | Nhẹ |
+| Sao lưu | pg_dump + mirror MinIO (cron) | Backup DB + media ra ngoài máy chính | IO + dung lượng máy backup |
+
+Toàn bộ chạy **container Docker** trên một stack `docker-compose` (đã có plan container
+hóa tại `docs/plans/261017-0119-docker-vps-minio-deployment/`). Tài liệu này kế thừa
+kiến trúc đó, chỉ nâng cấu hình phần cứng cho quy mô lớn và bổ sung tải từ app mobile.
+
+### 2.2. Vì sao tải "nặng" hơn web thông thường
+
+1. **Media 3D dung lượng lớn:** mỗi hiện vật có mô hình GLB (tối đa ~20 MB) + ảnh độ
+   phân giải cao + audio thuyết minh + phụ đề đa ngôn ngữ. Lượt xem phòng 3D kéo nhiều
+   MB dữ liệu → **băng thông đọc và IO đĩa** là điểm chịu tải chính.
+2. **Lưu trữ tăng dần:** dung lượng tỉ lệ với *số hiện vật × số revision giữ lại*; cần
+   headroom đĩa để không phải nâng cấp gấp.
+3. **Hai kênh client:** web **và** app mobile cùng gọi API và tải media → tổng đồng thời
+   cao hơn, đặc biệt khi có **sự kiện/triển lãm cao điểm** (nhiều khách quét QR vào xem
+   cùng lúc).
+4. **Render phía client:** dựng cảnh 3D chạy trên thiết bị người dùng (trình duyệt/điện
+   thoại) → **server không cần GPU**; chi phí dồn vào CPU (API), RAM (DB), đĩa + băng
+   thông (media).
