@@ -102,3 +102,35 @@ kiến trúc đó, chỉ nâng cấu hình phần cứng cho quy mô lớn và b
 
 **Rủi ro cấu hình tối thiểu:** không có máy dự phòng → khi máy chính hỏng, thời gian phục
 hồi phụ thuộc mua/sửa phần cứng. Chỉ nên chọn nếu chấp nhận gián đoạn vài giờ–vài ngày.
+
+## 4. Cơ sở ước tính (gắn cấu hình với tải)
+
+> Số liệu dưới đây là **ước tính kỹ thuật** để biện giải cấu hình, không phải cam kết
+> benchmark. Cần đo tải thật (load test) trước go-live để tinh chỉnh.
+
+| Yếu tố | Ước tính | Hệ quả cấu hình |
+|---|---|---|
+| Khách đồng thời mục tiêu | **500+** (cao điểm sự kiện) | CPU nhiều nhân cho API; CDN gánh media |
+| Dung lượng 1 lượt xem phòng 3D | ~5–30 MB (GLB + ảnh + audio) | Băng thông đọc là nút cổ chai → cần CDN khi đông |
+| Media mỗi hiện vật | GLB ≤ 20 MB + ảnh/audio/phụ đề | ~30–60 MB/hiện vật × revision → đĩa TB |
+| Tăng trưởng lưu trữ | Theo số hiện vật × revision giữ lại | Chừa headroom đĩa 2–3× hiện tại |
+| DB | Chủ yếu đọc (catalog), ghi vừa (audit/report) | RAM cache + NVMe là đủ, chưa cần cụm DB |
+
+**Nguyên tắc:** CPU/RAM/đĩa của **một máy mạnh** đủ cho tải thường ngày; **cao điểm sự
+kiện** được hấp thụ bằng **CDN đứng trước media + file tĩnh** (xem mục 5), tránh phải mua
+dư phần cứng chỉ để phục vụ vài đợt cao điểm.
+
+## 5. Mạng, tên miền & CDN cho cao điểm
+
+| Hạng mục | Nhu cầu | Ghi chú |
+|---|---|---|
+| Tên miền | 1 tên miền chính thức | Dùng chung: `/` web, `/api` API, `/media` file; app mobile gọi cùng domain |
+| IP public tĩnh | 1 IPv4 | Cho TLS + CDN origin |
+| TLS | Let's Encrypt (miễn phí, tự gia hạn) | Đã có trong plan Nginx |
+| **CDN** | **Khuyến nghị bật ở cao điểm** cho `/media` + tĩnh | Cloudflare/tương đương; giảm mạnh tải băng thông & bảo vệ DDoS |
+| Băng thông Internet | ≥ 1 Gbps hoặc đủ gánh origin sau CDN | Nếu đặt on-prem, kiểm tra đường truyền thực tế của đơn vị |
+| Cổng mở | 22 (SSH hạn chế IP), 80, 443 | MinIO/DB **không** mở ra ngoài |
+
+> **CDN là đòn bẩy chi phí chính:** thay vì mua server rất mạnh chỉ để chịu băng thông
+> media lúc cao điểm, CDN cache GLB/ảnh (file bất biến theo hash) ở biên, server chỉ phục
+> vụ lần đầu. Đây là khoản OPEX nhỏ, co giãn theo lưu lượng.
