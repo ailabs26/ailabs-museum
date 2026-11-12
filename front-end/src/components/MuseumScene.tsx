@@ -7,6 +7,7 @@ import { ExhibitionDisplay } from '@/components/museum/ExhibitionDisplay';
 import { GallerySlots } from '@/components/museum/GallerySlots';
 import type { ExhibitRenderProps } from '@/components/museum/GallerySlotView';
 import { resolveGalleryLayout } from '@/helpers/gallerySlots';
+import { GALLERY_SLOT_TARGETS } from '@/helpers/galleryLighting';
 import { MuseumLighting } from '@/components/museum/MuseumLighting';
 import { MuseumControls, type CameraAction } from '@/components/museum/MuseumControls';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
@@ -106,6 +107,10 @@ export function MuseumScene({ displays, navigationDisplays = displays, roomName,
   const { models, retry } = useRoomModels(displays);
   // Phòng rỗng/khớp đủ bục dùng Gallery Template; phòng tọa độ tự do giữ nguyên cách dựng cũ.
   const layout = useMemo(() => resolveGalleryLayout(displays), [displays]);
+  // Phòng legacy: đèn chiếu vào vị trí hiện vật thật thay vì 5 bục của template.
+  const lightTargets = useMemo(() => layout.mode === 'slotted' ? GALLERY_SLOT_TARGETS
+    : displays.filter(display => !display.isOutsideRoom).map(display => ({ id: display.id, position: display.position,
+      isHero: !!display.model || display.shape === 'torus' })), [layout, displays]);
   const selectedDisplay = displays.find((display) => display.id === selectedId);
   const selection = useMemo(() => ({ id: selectedId, issuedAt: performance.now() }), [selectedId]);
   const selectedModel = selectedDisplay?.model ? models[selectedDisplay.model.checksumSha256] : undefined;
@@ -179,7 +184,7 @@ export function MuseumScene({ displays, navigationDisplays = displays, roomName,
       onCreated={({ camera }) => camera.lookAt(...INITIAL_CAMERA_TARGET)}
     >
       <color attach="background" args={['#eee9df']} />
-      <MuseumLighting shadowSize={quality.shadowSize} isRecovering={webglStatus === 'recovering'} variant={layout.mode === 'slotted' ? 'rotunda' : 'legacy'} tier={quality.tier} />
+      <MuseumLighting shadowSize={quality.shadowSize} isRecovering={webglStatus === 'recovering'} tier={quality.tier} targets={lightTargets} />
       <SceneLifecycle onStatus={handleWebglStatus} auditWorkload={new URLSearchParams(window.location.search).get('museumAudit') === '1' ? { roomId: displays[0]?.roomId ?? 'empty', exhibits: displays.length,
         visibleExhibits: displays.filter(display => !display.isOutsideRoom).length,
         expectedGlb: displays.filter(display => display.model && !display.isOutsideRoom).length,
@@ -194,7 +199,7 @@ export function MuseumScene({ displays, navigationDisplays = displays, roomName,
       <MuseumControls enabled={isWebInputEnabled} commandHandler={commandHandler} selectionIssuedAt={selection.issuedAt} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
         displays={navigationDisplays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} guided={guided} guidedBounds={guidedBounds} guidedModelFailed={guidedModelFailed} />
       <GallerySurfaces anisotropy={quality.anisotropy}>
-      <MuseumRoom variant={layout.mode === 'slotted' ? 'rotunda' : 'legacy'} roomName={roomName} />
+      <MuseumRoom roomName={roomName} hasHeroHalo={layout.mode === 'slotted'} />
       {layout.mode === 'slotted' ? <GallerySlots slots={layout.slots} getExhibitProps={getExhibitProps} />
         : displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} {...getExhibitProps(display)} />)}
       </GallerySurfaces>
