@@ -90,6 +90,7 @@ import { ExhibitQrModal, type ExhibitQrTarget } from '@/components/cms/ExhibitQr
 import { toExhibitTranslations, translatedField, type ExhibitTranslations } from '@/helpers/exhibitTranslations';
 import { MediaPreview } from '@/shared/components/media/MediaPreview';
 import { MediaSlotSelect } from '@/shared/components/media/MediaSlotSelect';
+import { GallerySlotPicker } from '@/components/cms/GallerySlotPicker';
 
 interface ExhibitFormValues {
   roomId: string;
@@ -1283,7 +1284,7 @@ export function ExhibitsPage() {
             <Tabs value={formTab} onChange={(value) => value && setFormTab(value as ExhibitFormTab)}>
               <Tabs.List mb="md">
                 <Tabs.Tab value="basic">Thông tin cơ bản</Tabs.Tab>
-                <Tabs.Tab value="transform">Tọa độ 3D & Khối tạm</Tabs.Tab>
+                <Tabs.Tab value="transform">Vị trí 3D & Khối tạm</Tabs.Tab>
                 <Tabs.Tab value="media" leftSection={<IconPhoto size={14} />}>
                   Media & thuyết minh
                 </Tabs.Tab>
@@ -1347,39 +1348,54 @@ export function ExhibitsPage() {
                 </Stack>
               </Tabs.Panel>
 
-              {/* Tab 2: Tọa độ 3D & Khối tạm */}
+              {/* Tab 2: Vị trí 3D & Khối tạm */}
               <Tabs.Panel value="transform">
                 <Stack gap="md">
                   <Card withBorder p="sm" radius="xs" bg="gray.0">
                     <Text fw={600} size="sm" mb="xs">
-                      1. Vị trí 3D (Position — mét, Y hướng lên)
+                      1. Vị trí trưng bày (bục trong phòng 3D)
                     </Text>
-                    <Grid gutter="xs">
-                      <Grid.Col span={4}>
-                        <NumberInput
-                          label="X"
-                          step={0.1}
-                          decimalScale={2}
-                          {...form.getInputProps('positionX')}
-                        />
-                      </Grid.Col>
-                      <Grid.Col span={4}>
-                        <NumberInput
-                          label="Y"
-                          step={0.1}
-                          decimalScale={2}
-                          {...form.getInputProps('positionY')}
-                        />
-                      </Grid.Col>
-                      <Grid.Col span={4}>
-                        <NumberInput
-                          label="Z"
-                          step={0.1}
-                          decimalScale={2}
-                          {...form.getInputProps('positionZ')}
-                        />
-                      </Grid.Col>
-                    </Grid>
+                    <GallerySlotPicker
+                      roomId={form.values.roomId}
+                      exhibitId={editing?.id}
+                      position={{ x: form.values.positionX, y: form.values.positionY, z: form.values.positionZ }}
+                      autoAssign={!editing || editing.roomId !== form.values.roomId}
+                      isActive={formTab === 'transform'}
+                      onSelect={(position) => form.setValues({ positionX: position.x, positionY: position.y, positionZ: position.z })}
+                    />
+                    {/* Phòng legacy/dữ liệu cũ vẫn sửa được tọa độ tự do; không xóa các trường này. */}
+                    <details data-advanced-position style={{ marginTop: 12 }}>
+                      <summary style={{ cursor: 'pointer', fontSize: 13 }}>Tọa độ nâng cao (legacy — mét, Y hướng lên)</summary>
+                      <Text size="xs" c="dimmed" my="xs">
+                        Nhập tọa độ tự do sẽ đưa hiện vật ra khỏi bục; phòng có hiện vật như vậy hiển thị theo bố cục cũ.
+                      </Text>
+                        <Grid gutter="xs">
+                          <Grid.Col span={4}>
+                            <NumberInput
+                              label="X"
+                              step={0.1}
+                              decimalScale={2}
+                              {...form.getInputProps('positionX')}
+                            />
+                          </Grid.Col>
+                          <Grid.Col span={4}>
+                            <NumberInput
+                              label="Y"
+                              step={0.1}
+                              decimalScale={2}
+                              {...form.getInputProps('positionY')}
+                            />
+                          </Grid.Col>
+                          <Grid.Col span={4}>
+                            <NumberInput
+                              label="Z"
+                              step={0.1}
+                              decimalScale={2}
+                              {...form.getInputProps('positionZ')}
+                            />
+                          </Grid.Col>
+                        </Grid>
+                    </details>
                   </Card>
 
                   <Card withBorder p="sm" radius="xs" bg="gray.0">
