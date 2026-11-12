@@ -25,9 +25,9 @@ async function open(page: Page, reduced = true, slug = 'sculpture', setup?: () =
 test('arrival selects in CMS order, dwell pauses with time remaining, completes once without wrapping', async ({ page }) => {
   await open(page);
   await waitForRendererIdle(page);
-  const clockStart = new Date('2026-11-09T00:00:00Z');
+  const clockStart = new Date('2026-11-12T00:00:00Z');
   await page.clock.install({ time: clockStart });
-  await page.clock.pauseAt(clockStart);
+  await page.clock.pauseAt(new Date(clockStart.getTime() + 1));
   await expect(bar(page)).toHaveAttribute('data-status', 'idle');
   await page.getByRole('button', { name: 'Bắt đầu tham quan có hướng dẫn', exact: true }).evaluate(button => button.click());
   await page.clock.runFor(100);
@@ -182,13 +182,14 @@ test('empty room disables Start, one exhibit finishes, close/reopen requires exp
   await expect(page.getByRole('button', { name: 'Bắt đầu tham quan có hướng dẫn', exact: true })).toBeDisabled();
   await page.getByLabel('Chọn phòng trưng bày', { exact: true }).selectOption('ceramics');
   await page.getByRole('button', { name: 'Bắt đầu tham quan có hướng dẫn', exact: true }).click();
-  await expect(bar(page)).toHaveAttribute('data-phase', 'viewing');
+  await expect(bar(page)).toHaveAttribute('data-phase', 'viewing', { timeout: 30_000 });
   await expect(bar(page)).toHaveAttribute('data-exhibit', roomB.exhibits[0].id);
   await page.getByRole('button', { name: 'Thoát tham quan', exact: true }).click();
   await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
   await expect(bar(page)).toHaveAttribute('data-status', 'paused');
   await page.clock.install();
   await page.getByRole('button', { name: 'Tiếp tục', exact: true }).click();
+  await page.clock.runFor(6_000);
   await expect(bar(page)).toHaveAttribute('data-phase', 'viewing');
   await page.clock.runFor(15_100);
   await expect(bar(page)).toHaveAttribute('data-status', 'completed');

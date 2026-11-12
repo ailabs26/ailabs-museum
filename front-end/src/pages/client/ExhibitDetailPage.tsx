@@ -11,6 +11,7 @@ import { GuidedTour2DControls } from '@/components/museum/GuidedTour2DControls';
 import { collectMediaCredits } from '@/helpers/mediaCredits';
 import { GUIDED_TOUR_2D_MESSAGES } from '@/helpers/guidedTour2dMessages';
 import { GUIDED_TOUR_MESSAGES } from '@/helpers/guidedTourMessages';
+import { guidedTour3dPath } from '@/helpers/guidedTour2dNavigation';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { useGuidedTour2D } from '@/hooks/useGuidedTour2D';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
@@ -126,10 +127,15 @@ export function ExhibitDetailPage() {
           <p className={classes.roomName}>{detail.name}</p>
           <Title ref={titleRef} tabIndex={-1} order={1} id="exhibit-title" className={classes.title}>{exhibit.name}</Title>
           <div className={classes.headerActions}>
-            <Link className={classes.jump3d}
-              to={`/tour?${new URLSearchParams({ room: detail.slug, exhibit: exhibit.id })}`}>
-              <IconCube size={18} aria-hidden="true" /> {t('ui.exhibit.view-3d', 'Xem trong không gian 3D')}
-            </Link>
+            {(!tour2d.isSameRoom || !tour2d.isCurrentRoute) && <Link className={classes.jump3d}
+              to={tour2d.isSameRoom && tour2d.currentStep
+                ? guidedTour3dPath(detail.slug, tour2d.currentStep.exhibitId)
+                : guidedTour3dPath(detail.slug, exhibit.id)}
+              onClick={tour2d.isSameRoom ? tour2d.pause : undefined}>
+              <IconCube size={18} aria-hidden="true" /> {tour2d.isSameRoom
+                ? t('ui.guided2d.continue-3d', tourMessages.continue3d)
+                : t('ui.exhibit.view-3d', 'Xem trong không gian 3D')}
+            </Link>}
             <Button variant="default" onClick={() => setIsReportOpen(true)}>{t('ui.common.report-content', 'Báo nội dung')}</Button>
             <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name} />
           </div>
@@ -139,7 +145,8 @@ export function ExhibitDetailPage() {
           roomName={detail.name} exhibitName={exhibit.name} status={tour2d.status}
           currentIndex={tour2d.currentIndex} total={tour2d.total} canPrevious={tour2d.canPrevious}
           onPrevious={tour2d.previous} onPause={tour2d.pause} onResume={tour2d.resume}
-          onNext={tour2d.next} onExit={tour2d.exit} onRestart={() => tour2d.restart(detail)} />}
+          onNext={tour2d.next} onExit={tour2d.exit} onRestart={() => tour2d.restart(detail)}
+          onContinue3D={() => tour2d.continueIn3D(detail)} />}
         {!tour2d.isSameRoom && <Button color="teal.9" mt="md" onClick={() => tour2d.startFromExhibit(detail, exhibit.id)}>
           {t('ui.guided2d.start-from-exhibit', tourMessages.startFromExhibit)}
         </Button>}

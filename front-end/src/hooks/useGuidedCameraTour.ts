@@ -16,6 +16,7 @@ export interface GuidedCameraBinding {
 /** Side effects for the existing core. Request identity rejects stale camera callbacks. */
 export function useGuidedCameraTour(room: RoomDetail | undefined, isOpen: boolean, onSelect: (id: string) => void) {
   const tour = useGuidedTour();
+  const { currentStep, startDwell, pauseDwell } = tour;
   const latest = useRef({ tour, onSelect }); latest.current = { tour, onSelect };
   const [ready, setReady] = useState(false);
   const [result, setResult] = useState<{ request: GuidedCameraRequest; outcome: 'arrived' | 'blocked' } | null>(null);
@@ -23,8 +24,6 @@ export function useGuidedCameraTour(room: RoomDetail | undefined, isOpen: boolea
   const running = tour.status === 'running' && isOpen && ready && !!stepId;
   const request = useMemo<GuidedCameraRequest | null>(() => running && stepId ? { exhibitId: stepId } : null, [running, stepId]);
   const requestRef = useRef(request); requestRef.current = request;
-  const dwell = useRef({ stepId, remaining: 15_000 });
-  if (dwell.current.stepId !== stepId) dwell.current = { stepId, remaining: 15_000 };
   const onManual = useCallback(() => {
     requestRef.current = null;
     latest.current.tour.pause();
@@ -58,18 +57,15 @@ export function useGuidedCameraTour(room: RoomDetail | undefined, isOpen: boolea
 
   useEffect(() => {
     if (!running || !request || result?.request !== request || result.outcome !== 'arrived') return;
-    const current = dwell.current;
-    const deadline = performance.now() + current.remaining;
-    const timer = window.setTimeout(() => {
+    const step = currentStep;
+    if (!step) return;
+    startDwell(step, () => {
       if (requestRef.current !== request || latest.current.tour.status !== 'running') return;
-      current.remaining = 15_000;
+      if (document.hidden) { latest.current.tour.pause(); return; }
       latest.current.tour.next();
-    }, current.remaining);
-    return () => {
-      window.clearTimeout(timer);
-      current.remaining = Math.max(0, deadline - performance.now());
-    };
-  }, [running, request, result]);
+    });
+    return pauseDwell;
+  }, [running, request, result, currentStep, startDwell, pauseDwell]);
 
   const phase: 'completed' | 'paused' | 'viewing' | 'blocked' | 'moving' | 'idle' = tour.status === 'completed' ? 'completed' : tour.status === 'paused' ? 'paused'
     : result?.request === request && result ? result.outcome === 'arrived' ? 'viewing' : 'blocked'

@@ -21,6 +21,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useGuidedTour2D } from '@/hooks/useGuidedTour2D';
 import { GUIDED_TOUR_2D_MESSAGES } from '@/helpers/guidedTour2dMessages';
 import { GUIDED_TOUR_MESSAGES } from '@/helpers/guidedTourMessages';
+import { guidedTour3dPath } from '@/helpers/guidedTour2dNavigation';
 
 export function CollectionPage() {
   const { locale, t } = usePublicLocale();
@@ -150,7 +151,7 @@ export function CollectionPage() {
             </div>
             <div className={classes.roomActions}>
               {tour2d.isSameRoom ? <>
-                <Button color="teal.9" onClick={() => tour2d.continueToCurrent(detail)}>
+                <Button color="teal.9" onClick={tour2d.resume}>
                   {t('ui.guided2d.continue', tourMessages.continue)}
                 </Button>
                 <Button variant="default" onClick={tour2d.exit}>{t('ui.guided.exit', guidedMessages.exit)}</Button>
@@ -162,8 +163,12 @@ export function CollectionPage() {
               {detail.exhibits.length === 0 && <p id="guided-tour-empty-room" className={classes.emptyTour}>
                 {t('ui.guided2d.empty', tourMessages.empty)}
               </p>}
-              <Link to={`/tour?${new URLSearchParams({ room: detail.slug })}`} className={classes.tourLink}>
-                {t('ui.collection.tour-link', 'Tham quan phòng này trong 3D')} <IconArrowRight size={18} aria-hidden="true" />
+              <Link to={tour2d.isSameRoom && tour2d.currentStep
+                ? guidedTour3dPath(detail.slug, tour2d.currentStep.exhibitId)
+                : `/tour?${new URLSearchParams({ room: detail.slug })}`}
+                onClick={tour2d.isSameRoom ? tour2d.pause : undefined} className={classes.tourLink}>
+                {tour2d.isSameRoom ? t('ui.guided2d.continue-3d', tourMessages.continue3d)
+                  : t('ui.collection.tour-link', 'Tham quan phòng này trong 3D')} <IconArrowRight size={18} aria-hidden="true" />
               </Link>
             </div>
           </div>

@@ -3,7 +3,7 @@
 .bar :global(.mantine-Button-label) { white-space: normal; }
 .status { display: grid; gap: 4px; margin-bottom: 8px; font-size: 12px; }
 .status strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
-.actions { display: flex; gap: 6px; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; }
 @media (max-width: 600px) {
   .bar { top: 252px; left: 12px; width: 240px; padding: 8px; }
   .bar[data-status='idle'] { top: 140px; bottom: auto; right: 12px; left: auto; width: 192px; }

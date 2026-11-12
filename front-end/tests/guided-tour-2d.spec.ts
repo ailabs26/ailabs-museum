@@ -97,7 +97,7 @@ test('collection can continue or exit the same room tour and starts another room
   await expect(page).toHaveURL(new RegExp(`${first.id}$`));
   await page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này' }).click();
   await expect(page.getByRole('button', { name: 'Tiếp tục tham quan', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Tham quan phòng này trong 3D', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Tiếp tục trong 3D', exact: true })).toBeVisible();
   await page.getByRole('button', { name: roomB.name, exact: true }).click();
   await expect(page.getByRole('button', { name: 'Bắt đầu tham quan 2D', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Tiếp tục tham quan', exact: true })).toHaveCount(0);
@@ -109,22 +109,37 @@ test('collection can continue or exit the same room tour and starts another room
   await expect(page.getByRole('button', { name: 'Bắt đầu tham quan 2D', exact: true })).toBeVisible();
 });
 
+test('the collection Continue action explicitly resumes a paused tour on the same step', async ({ page }) => {
+  const first = roomA.exhibits[0];
+  await page.goto(`/collection/sculpture/exhibits/${first.id}`);
+  await page.getByRole('button', { name: 'Bắt đầu từ hiện vật này', exact: true }).click();
+  await page.getByRole('button', { name: 'Tạm dừng', exact: true }).click();
+  await page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này' }).click();
+  await page.getByRole('button', { name: 'Tiếp tục tham quan', exact: true }).click();
+
+  await expect(page).toHaveURL(new RegExp(`${first.id}$`));
+  const controls = page.getByRole('region', { name: 'Điều khiển tham quan 2D', exact: true });
+  await expect(controls).toContainText('1/5');
+  await expect(controls).toContainText('Đang tham quan');
+});
+
 test('tour state and controls remain stable across all six locales', async ({ page }) => {
   await page.goto(`/collection/sculpture/exhibits/${roomA.exhibits[0].id}`);
   await page.getByRole('button', { name: 'Bắt đầu từ hiện vật này', exact: true }).click();
   const select = page.getByRole('combobox', { name: 'Ngôn ngữ' });
   const names = [
-    ['vi', 'Hiện vật tiếp theo', 'Điều khiển tham quan 2D', 'Tiến độ tham quan'],
-    ['en', 'Next exhibit', '2D guided tour controls', 'Tour progress'],
-    ['fr', 'Objet suivant', 'Commandes de visite guidée 2D', 'Progression de la visite'],
-    ['zh', '下一件展品', '2D 导览控制', '导览进度'],
-    ['ko', '다음 전시물', '2D 가이드 투어 컨트롤', '투어 진행률'],
-    ['ja', '次の展示物', '2D ガイドツアー操作', 'ツアーの進行状況'],
+    ['vi', 'Hiện vật tiếp theo', 'Điều khiển tham quan 2D', 'Tiến độ tham quan', 'Tiếp tục trong 3D'],
+    ['en', 'Next exhibit', '2D guided tour controls', 'Tour progress', 'Continue in 3D'],
+    ['fr', 'Objet suivant', 'Commandes de visite guidée 2D', 'Progression de la visite', 'Continuer en 3D'],
+    ['zh', '下一件展品', '2D 导览控制', '导览进度', '继续使用 3D'],
+    ['ko', '다음 전시물', '2D 가이드 투어 컨트롤', '투어 진행률', '3D로 계속하기'],
+    ['ja', '次の展示物', '2D ガイドツアー操作', 'ツアーの進行状況', '3Dで続ける'],
   ];
-  for (const [locale, nextLabel, regionLabel, progressLabel] of names) {
+  for (const [locale, nextLabel, regionLabel, progressLabel, continue3dLabel] of names) {
     await select.selectOption(locale);
     await expect(page).toHaveURL(new RegExp(`${roomA.exhibits[0].id}$`));
     await expect(page.getByRole('button', { name: nextLabel, exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: continue3dLabel, exact: true })).toBeVisible();
     const controls = page.getByRole('region', { name: regionLabel, exact: true });
     await expect(controls).toBeVisible();
     await expect(controls.getByRole('progressbar', { name: progressLabel })).toBeVisible();
@@ -209,7 +224,7 @@ test('reconciliation keeps a current public ID through reorder and offers a paus
   await page.getByRole('button', { name: 'Quay lại bước đang tham quan', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${roomA.exhibits[1].id}$`));
   await expect(page.getByRole('region', { name: 'Điều khiển tham quan 2D' })).toContainText('4/4');
-  await expect(page.getByRole('region', { name: 'Điều khiển tham quan 2D' })).toContainText('Đang tham quan');
+  await expect(page.getByRole('region', { name: 'Điều khiển tham quan 2D' })).toContainText('Đã tạm dừng');
 });
 
 test('transient room-list errors keep the session, while a successful removal invalidates it', async ({ page }) => {
