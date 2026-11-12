@@ -3,7 +3,8 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Euler, Group, Matrix4, MeshBasicMaterial, PerspectiveCamera, Quaternion, Raycaster, Vector3, type Mesh } from 'three';
 import { XrSessionController, type XrSnapshot } from '@/helpers/xrSession';
 import { canTeleport, getSnapAxis, resolveXrIntersection, snapTurnOrigin, teleportOrigin, type XrTarget } from '@/helpers/xrInteraction';
-import { getDisplayColliders, NAVIGATION } from '@/helpers/museumNavigation';
+import { NAVIGATION } from '@/helpers/museumNavigation';
+import { getGalleryColliders } from '@/helpers/gallerySlots';
 import { MUSEUM_ROOM_SIZE, type MuseumDisplay } from '@/interfaces/museumScene';
 import { XrDetailsPanel } from './XrDetailsPanel';
 import { bindXrRenderer } from '@/helpers/xrRendererBinding';
@@ -17,7 +18,7 @@ export function MuseumXr({ available, displays, selectedId, onSelect, onControll
   const origin = useMemo(() => new Group(), []);
   const ownerRef = useRef<XrSessionController | null>(null);
   const props = useRef({ displays, selectedId, onSelect, onHover, available }); props.current = { displays, selectedId, onSelect, onHover, available };
-  const colliders = useMemo(() => getDisplayColliders(displays), [displays]);
+  const colliders = useMemo(() => getGalleryColliders(displays), [displays]);
   const collidersRef = useRef(colliders); collidersRef.current = colliders;
   const [session, setSession] = useState<XRSession | null>(null);
   const [page, setPage] = useState(0), [pageCount, setPageCount] = useState(1);

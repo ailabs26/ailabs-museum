@@ -4,6 +4,9 @@ import { Button, Group, Text } from '@mantine/core';
 import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from 'three';
 import { MuseumRoom } from '@/components/museum/MuseumRoom';
 import { ExhibitionDisplay } from '@/components/museum/ExhibitionDisplay';
+import { GallerySlots } from '@/components/museum/GallerySlots';
+import type { ExhibitRenderProps } from '@/components/museum/GallerySlotView';
+import { resolveGalleryLayout } from '@/helpers/gallerySlots';
 import { MuseumLighting } from '@/components/museum/MuseumLighting';
 import { MuseumControls, type CameraAction } from '@/components/museum/MuseumControls';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
@@ -99,6 +102,8 @@ export function MuseumScene({ displays, navigationDisplays = displays, selectedI
   useEffect(() => { setHasTouch(navigator.maxTouchPoints > 0 || matchMedia('(any-pointer: coarse)').matches); }, []);
   const handleSceneSelect = (id: string) => { if (gestures.canSelect) onSelect(id); };
   const { models, retry } = useRoomModels(displays);
+  // Phòng rỗng/khớp đủ bục dùng Gallery Template; phòng tọa độ tự do giữ nguyên cách dựng cũ.
+  const layout = useMemo(() => resolveGalleryLayout(displays), [displays]);
   const selectedDisplay = displays.find((display) => display.id === selectedId);
   const selection = useMemo(() => ({ id: selectedId, issuedAt: performance.now() }), [selectedId]);
   const selectedModel = selectedDisplay?.model ? models[selectedDisplay.model.checksumSha256] : undefined;
@@ -129,6 +134,12 @@ export function MuseumScene({ displays, navigationDisplays = displays, selectedI
     const state = states[id];
     return !state || !state.failed || state.attempts >= 3 ? states : { ...states, [id]: { ...state, failed: false, attempts: state.attempts + 1 } };
   });
+  const getExhibitProps = (display: MuseumDisplay): ExhibitRenderProps => ({
+    isSelected: display.id === selectedId, onSelect: handleSceneSelect,
+    modelState: display.model ? models[display.model.checksumSha256] : undefined, renderAttempt: renderStates[display.id]?.attempts,
+    hasRenderError: renderStates[display.id]?.checksum === display.model?.checksumSha256 && renderStates[display.id]?.failed,
+    isXrHovered: xrHoveredId === display.id, onRenderError: () => handleRenderError(display),
+  });
   const handleCommand = (action: CameraAction) => commandHandler.current?.(action);
   const captureRef = useRef<(() => string | null) | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -147,7 +158,7 @@ export function MuseumScene({ displays, navigationDisplays = displays, selectedI
   };
   if (webglStatus === 'failed') return fallback;
   return (
-    <div className={`${classes.scene} ${immersive ? classes.immersive : ''}`} data-guided-session={guided?.hasSession || undefined} data-quality-tier={quality.tier} data-webgl-status={webglStatus} data-xr-phase={xrStatus.phase}>
+    <div className={`${classes.scene} ${immersive ? classes.immersive : ''}`} data-guided-session={guided?.hasSession || undefined} data-gallery-layout={layout.mode} data-quality-tier={quality.tier} data-webgl-status={webglStatus} data-xr-phase={xrStatus.phase}>
     <div className={classes.canvasFrame}
       onPointerDownCapture={event => { gestures.start(event.pointerId, event.clientX, event.clientY); if (event.pointerType === 'touch') setHasTouch(true); }}
       onPointerMoveCapture={event => gestures.move(event.pointerId, event.clientX, event.clientY)}
@@ -182,10 +193,8 @@ export function MuseumScene({ displays, navigationDisplays = displays, selectedI
         displays={navigationDisplays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} guided={guided} guidedBounds={guidedBounds} guidedModelFailed={guidedModelFailed} />
       <GallerySurfaces anisotropy={quality.anisotropy}>
       <MuseumRoom />
-      {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={handleSceneSelect}
-        modelState={display.model ? models[display.model.checksumSha256] : undefined} renderAttempt={renderStates[display.id]?.attempts}
-        hasRenderError={renderStates[display.id]?.checksum === display.model?.checksumSha256 && renderStates[display.id]?.failed}
-        isXrHovered={xrHoveredId === display.id} onRenderError={() => handleRenderError(display)} />)}
+      {layout.mode === 'slotted' ? <GallerySlots slots={layout.slots} getExhibitProps={getExhibitProps} />
+        : displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} {...getExhibitProps(display)} />)}
       </GallerySurfaces>
     </Canvas>}
     {isRendererRestarting && <div className={classes.recovering} role="status">{t('ui.tour.xr.restarting', 'Đang khởi tạo lại phần hiển thị sau lỗi VR.')}</div>}

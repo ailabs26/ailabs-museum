@@ -22,6 +22,7 @@
 .dot circle { fill: #696957; }
 .dotActive circle { fill: #987439; }
 .hitArea { fill: transparent !important; }
+.emptySlot { fill: none; stroke: #8e887a; stroke-width: 0.8; stroke-dasharray: 1.6 1.2; }
 .halo { fill: #bf9c5950 !important; animation: none; }
 @media (max-width: 600px), (pointer: coarse) { .map { left: auto; right: 12px; bottom: 234px; width: 100px; padding: 6px; } }
 @media (max-height: 500px) { .map { left: auto; right: 12px; bottom: 100px; width: 90px; } }

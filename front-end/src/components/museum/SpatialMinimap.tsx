@@ -2,6 +2,7 @@ import { MUSEUM_ROOM_SIZE } from '@/interfaces/museumScene';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import classes from './SpatialMinimap.module.css';
 import { usePublicT } from '@/core/i18n/public-locale';
+import { resolveGalleryLayout } from '@/helpers/gallerySlots';
 
 const PAD = 6;
 const VB_W = 100;
@@ -26,13 +27,20 @@ export function SpatialMinimap({ displays, selectedId, onSelect }: {
 }) {
   const t = usePublicT();
   const inRoom = displays.filter((d) => !d.isOutsideRoom);
-  if (inRoom.length === 0) return null;
+  const layout = resolveGalleryLayout(displays);
+  // Bục trống chỉ là mốc không gian: không có tên, không bấm được, không tính vào số hiện vật.
+  const emptySlots = layout.mode === 'slotted' ? layout.slots.filter((item) => !item.exhibit).map((item) => item.slot) : [];
+  if (inRoom.length === 0 && emptySlots.length === 0) return null;
 
   return (
     <div className={classes.map} role="group" aria-label={t('ui.minimap.aria', 'Sơ đồ mặt bằng phòng trưng bày')}>
       <p className={classes.caption}>{t('ui.minimap.caption', 'Sơ đồ phòng')}</p>
       <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className={classes.svg} aria-label={t('ui.minimap.svg-aria', 'Sơ đồ {count} hiện vật trong phòng', { count: inRoom.length })}>
         <rect x="2" y="2" width={VB_W - 4} height={VB_H - 4} rx="6" className={classes.room} />
+        {emptySlots.map((slot) => {
+          const { cx, cy } = toPlan(slot.position[0], slot.position[2]);
+          return <circle key={slot.id} cx={cx} cy={cy} r={slot.plinthKind === 'hero' ? 3.4 : 2.4} className={classes.emptySlot} aria-hidden="true" />;
+        })}
         {inRoom.map((d) => {
           const { cx, cy } = toPlan(d.position[0], d.position[2]);
           const active = d.id === selectedId;
