@@ -32,6 +32,7 @@ import { GallerySurfaces } from '@/components/museum/GallerySurfaces';
 import { useMuseumQuality } from '@/hooks/useMuseumQuality';
 import { usePublicT, type Translator } from '@/core/i18n/public-locale';
 import type { GuidedCameraBinding } from '@/hooks/useGuidedCameraTour';
+import type { ModelLodSet } from '@/helpers/modelLod';
 
 // Labels render over solid geometry. Picking follows that same visual order;
 // intersecting labels still use nearest-first ordering within their layer.
@@ -53,13 +54,15 @@ function xrMessage(message: string, t: Translator): string {
   return known ? t(known.key, known.label) : message;
 }
 
-export function MuseumScene({ displays, navigationDisplays = displays, selectedId, onSelect, onClear, fallback, immersive = false, onXrChange, guided }: {
+export function MuseumScene({ displays, navigationDisplays = displays, selectedId, onSelect, onClear, fallback, immersive = false, onXrChange, guided, modelLodSets = [] }: {
   displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void; onClear: () => void;
   navigationDisplays?: readonly MuseumDisplay[];
   fallback: ReactNode;
   immersive?: boolean;
   onXrChange?: (snapshot: XrSnapshot, owner: XrSessionController | null) => void;
   guided?: GuidedCameraBinding;
+  /** Test adapter until the reviewed backend source/variant publication relation exists. */
+  modelLodSets?: readonly ModelLodSet[];
 }) {
   const t = usePublicT();
   const quality = useMuseumQuality();
@@ -98,7 +101,7 @@ export function MuseumScene({ displays, navigationDisplays = displays, selectedI
   const [hasTouch, setHasTouch] = useState(false);
   useEffect(() => { setHasTouch(navigator.maxTouchPoints > 0 || matchMedia('(any-pointer: coarse)').matches); }, []);
   const handleSceneSelect = (id: string) => { if (gestures.canSelect) onSelect(id); };
-  const { models, retry } = useRoomModels(displays);
+  const { models, retry, selectLod, retainModel } = useRoomModels(displays, modelLodSets);
   const selectedDisplay = displays.find((display) => display.id === selectedId);
   const selection = useMemo(() => ({ id: selectedId, issuedAt: performance.now() }), [selectedId]);
   const selectedModel = selectedDisplay?.model ? models[selectedDisplay.model.checksumSha256] : undefined;
@@ -183,6 +186,8 @@ export function MuseumScene({ displays, navigationDisplays = displays, selectedI
       <GallerySurfaces anisotropy={quality.anisotropy}>
       <MuseumRoom />
       {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={handleSceneSelect}
+        lodSet={modelLodSets.find(set => set.sourceChecksumSha256 === display.model?.checksumSha256)}
+        isFocused={display.id === guided?.request?.exhibitId} onLodChange={selectLod} onRetainModel={retainModel}
         modelState={display.model ? models[display.model.checksumSha256] : undefined} renderAttempt={renderStates[display.id]?.attempts}
         hasRenderError={renderStates[display.id]?.checksum === display.model?.checksumSha256 && renderStates[display.id]?.failed}
         isXrHovered={xrHoveredId === display.id} onRenderError={() => handleRenderError(display)} />)}

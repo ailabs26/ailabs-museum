@@ -1,10 +1,14 @@
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { EXHIBIT_PLINTH_SIZE } from '@/interfaces/museumScene';
-import { useEffect, useState } from 'react';
-import { useThree } from '@react-three/fiber';
+import { useEffect, useRef, useState } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
+import { Vector3 } from 'three';
+import type { Group, PerspectiveCamera } from 'three';
+import { projectedModelPixels, selectModelLod } from '@/helpers/modelLod';
+import type { ModelLodLevel, ModelLodSet } from '@/helpers/modelLod';
 import { ExhibitLabel } from './ExhibitLabel';
 import { ArtifactModel } from './ArtifactModel';
-import type { ModelLoadState } from '@/helpers/roomModelAssets';
+import type { LoadedModel, ModelLoadState } from '@/helpers/roomModelAssets';
 import { getArtifactHotspots } from '@/helpers/artifactHotspots';
 import { ArtifactHotspot } from './ArtifactHotspot';
 import { ArtifactFallback3D } from './ArtifactFallback3D';
@@ -12,11 +16,32 @@ import { ArtifactModelBoundary } from './ArtifactModelBoundary';
 import { useGallerySurfaces } from './GallerySurfaces';
 import { ExhibitPlaceholder } from './ExhibitPlaceholder';
 
-export function ExhibitionDisplay({ display, isSelected, isXrHovered = false, onSelect, modelState, renderAttempt = 0, hasRenderError = false, onRenderError }: {
+export function ExhibitionDisplay({ display, isSelected, isXrHovered = false, onSelect, modelState, renderAttempt = 0, hasRenderError = false, onRenderError,
+  lodSet, isFocused = false, onLodChange, onRetainModel }: {
   isXrHovered?: boolean;
   display: MuseumDisplay; isSelected: boolean; onSelect: (id: string) => void; modelState?: ModelLoadState;
   renderAttempt?: number; hasRenderError?: boolean; onRenderError: () => void;
+  lodSet?: ModelLodSet; isFocused?: boolean; onLodChange?: (checksum: string, level: ModelLodLevel, consumerId: string) => void;
+  onRetainModel?: (asset: LoadedModel) => (() => void) | undefined;
 }) {
+  const groupRef = useRef<Group>(null);
+  const lodLevel = useRef<ModelLodLevel>();
+  const worldCenter = useRef(new Vector3());
+  useEffect(() => { lodLevel.current = undefined; }, [display.model?.checksumSha256]);
+  useFrame(({ camera, gl, size }) => {
+    if (!lodSet || !display.model || !groupRef.current) return;
+    const { center, radius } = lodSet.normalization;
+    groupRef.current.localToWorld(worldCenter.current.set(center[0], center[1] + 1.14, center[2]));
+    const perspective = camera as PerspectiveCamera;
+    // Native XR cameras have per-eye projections. Full detail is the conservative test policy there.
+    const pixels = perspective.isPerspectiveCamera ? projectedModelPixels(radius, camera.position.distanceTo(worldCenter.current),
+      perspective.getEffectiveFOV(), size.height, gl.getPixelRatio()) : Infinity;
+    const level = selectModelLod(pixels, lodLevel.current ?? 2, isSelected || isFocused || gl.xr.isPresenting, lodSet.thresholds);
+    if (level !== lodLevel.current) {
+      lodLevel.current = level;
+      onLodChange?.(display.model.checksumSha256, level, display.id);
+    }
+  });
   const [isPointerHovered, setIsHovered] = useState(false);
   const { stone, walnut, bronze, charcoal, contact } = useGallerySurfaces();
   const isHovered = isPointerHovered || isXrHovered;
@@ -29,7 +54,7 @@ export function ExhibitionDisplay({ display, isSelected, isXrHovered = false, on
   const isCenterpiece = !!display.model || display.shape === 'torus';
   const isRoundPlinth = isCenterpiece || display.shape === 'sphere' || display.shape === 'cylinder';
   return (
-    <group position={display.position} userData={{ artifactId: display.id }}
+    <group ref={groupRef} position={display.position} userData={{ artifactId: display.id }}
       onPointerOver={(event) => { event.stopPropagation(); setIsHovered(true); }}
       onPointerOut={() => setIsHovered(false)}
       onClick={(event) => { if (event.delta > 5) return; event.stopPropagation(); onSelect(display.id); }}>
@@ -53,7 +78,7 @@ export function ExhibitionDisplay({ display, isSelected, isXrHovered = false, on
       </mesh>
       {display.model ? modelState?.status === 'ready' ?
         <ArtifactModelBoundary key={`${display.model.checksumSha256}:${renderAttempt}`} onError={onRenderError} fallback={<ArtifactFallback3D artifactId={display.id} />}>
-          <ArtifactModel asset={modelState.asset} artifactId={display.id} />
+          <ArtifactModel asset={modelState.asset} artifactId={display.id} onRetain={onRetainModel} />
         </ArtifactModelBoundary> :
         <ArtifactFallback3D artifactId={display.id} isLoading={modelState?.status !== 'error'} />
         : <ExhibitPlaceholder shape={display.shape} color={display.color} isSelected={isSelected} isHovered={isHovered} />}
