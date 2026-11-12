@@ -134,3 +134,29 @@ dư phần cứng chỉ để phục vụ vài đợt cao điểm.
 > **CDN là đòn bẩy chi phí chính:** thay vì mua server rất mạnh chỉ để chịu băng thông
 > media lúc cao điểm, CDN cache GLB/ảnh (file bất biến theo hash) ở biên, server chỉ phục
 > vụ lần đầu. Đây là khoản OPEX nhỏ, co giãn theo lưu lượng.
+
+## 6. Sao lưu & phục hồi (bắt buộc trước go-live)
+
+| Hạng mục | Phương án | Mục tiêu |
+|---|---|---|
+| Backup DB | `pg_dump` hằng đêm, xoay vòng 7 ngày / 4 tuần | Khôi phục điểm gần nhất |
+| Backup media | `mc mirror` bucket MinIO → máy backup/đích ngoài | Không mất GLB/ảnh |
+| Đích backup | **Máy backup riêng** (mục 3.2) + tùy chọn object storage rẻ (R2/B2) | Quy tắc 3-2-1: ≥1 bản ngoài máy chính |
+| Kiểm thử phục hồi | **Thử restore** DB + media trước khi go-live và định kỳ | Backup không restore được = không có backup |
+| Snapshot | Nếu nhà cung cấp/ảo hóa hỗ trợ snapshot định kỳ | Phục hồi nhanh toàn máy |
+
+**RPO/RTO đề xuất giai đoạn đầu:** RPO ≤ 24 giờ (mất tối đa 1 ngày dữ liệu), RTO vài giờ
+với máy standby. Có thể siết chặt hơn (WAL archiving) khi hệ thống quan trọng hơn.
+
+## 7. Bảo mật & vận hành
+
+- **Bề mặt tấn công tối thiểu:** chỉ mở 80/443 ra ngoài; SSH giới hạn IP; DB và MinIO
+  console chỉ nghe nội bộ (`127.0.0.1`), truy cập qua SSH tunnel.
+- **Phân quyền storage:** app dùng user MinIO riêng, policy chỉ trên bucket của app;
+  không dùng root key cho ứng dụng.
+- **Swagger/API docs:** tắt ở production.
+- **`trust proxy`:** bật 1 hop để log/rate-limit đúng IP khách sau Nginx/CDN.
+- **Cập nhật:** vá OS/Docker image định kỳ; dùng image gắn tag cố định, không `latest`.
+- **Giám sát tối thiểu:** `docker stats` + uptime check ngoài + cảnh báo dung lượng đĩa;
+  nâng lên Prometheus/Grafana khi cần (YAGNI ở giai đoạn đầu).
+- **Nhật ký:** audit log của hệ thống đã có sẵn ở tầng ứng dụng (module `audit`).
