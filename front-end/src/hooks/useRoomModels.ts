@@ -10,7 +10,8 @@ import { loadMuseumModel } from '@/helpers/loadMuseumModel';
 import { reportModelFailure } from '@/helpers/modelDiagnostics';
 
 export function useRoomModels(displays: readonly MuseumDisplay[], lodSets: readonly ModelLodSet[] = []) {
-  const signature = JSON.stringify({ models: displays.flatMap(display => display.model && !display.isOutsideRoom ? [display.model] : []), lodSets });
+  const signature = JSON.stringify({ models: displays.flatMap(display => display.model && !display.isOutsideRoom ? [display.model] : []),
+    consumers: displays.flatMap(display => display.model && !display.isOutsideRoom ? [display.id] : []), lodSets });
   const ownerRef = useRef<RoomModelLods | null>(null);
   const displaysRef = useRef(displays); displaysRef.current = displays;
   const [state, setState] = useState<{ signature: string; models: LodSnapshot }>({ signature: '', models: {} });

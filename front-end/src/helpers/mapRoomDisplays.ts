@@ -3,6 +3,7 @@ import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { isDisplayOutsideRoom } from './isDisplayOutsideRoom';
 import { localizedAltText, localizedTranscript, localizeExhibit } from './localizeExhibit';
 import { collectMediaCredits } from './mediaCredits';
+import { snapDisplaysToSlots } from './gallerySlots';
 
 /** Backend coordinates anchor the existing display group, in metres / Y up. */
 export function mapRoomDisplays<Room extends Pick<RoomDetail, 'id' | 'exhibits'>>(room: Room, locale = 'vi'): MuseumDisplay[] {
@@ -11,7 +12,8 @@ export function mapRoomDisplays<Room extends Pick<RoomDetail, 'id' | 'exhibits'>
   const hasModels = exhibits.some(exhibit => exhibit.model);
   const columns = hasModels ? Math.min(4, Math.ceil(Math.sqrt(exhibits.length))) : Math.ceil(Math.sqrt(exhibits.length));
   const rows = Math.ceil(exhibits.length / columns);
-  return exhibits.map((source, index) => {
+  // Tọa độ khớp bục (lệch ≤ 5 cm) được đưa về đúng tâm bục; phòng legacy giữ nguyên.
+  return snapDisplaysToSlots(exhibits.map((source, index) => {
     const exhibit = localizeExhibit(source, locale);
     const display: MuseumDisplay = {
       id: exhibit.id,
@@ -36,5 +38,5 @@ export function mapRoomDisplays<Room extends Pick<RoomDetail, 'id' | 'exhibits'>
       credits: collectMediaCredits(exhibit),
     };
     return { ...display, isOutsideRoom: isDisplayOutsideRoom(display) };
-  });
+  }));
 }

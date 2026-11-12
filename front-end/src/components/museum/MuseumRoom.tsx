@@ -1,14 +1,16 @@
 import { GalleryArchitecture } from './GalleryArchitecture';
+import { RotundaArchitecture } from './RotundaArchitecture';
 import { MUSEUM_ROOM_SIZE } from '@/interfaces/museumScene';
 import { useGallerySurfaces } from './GallerySurfaces';
 
 /** Preserve API placement bounds: x ±7, z ±8, floor 0, ceiling 5 metres. */
-export function MuseumRoom() {
-  const { stone, plaster } = useGallerySurfaces();
+export function MuseumRoom({ variant = 'legacy', roomName }: { variant?: 'legacy' | 'rotunda'; roomName?: string }) {
+  const { stone, plaster, floor } = useGallerySurfaces();
   return (
     <group>
-      <GalleryArchitecture />
-      <mesh position={[0, -0.12, 0]} userData={{ museumFloor: true }} material={stone} receiveShadow>
+      {/* Phòng legacy giữ kiến trúc đã kiểm chứng với tọa độ tự do; Rotunda chỉ đi cùng 5 bục cố định. */}
+      {variant === 'rotunda' ? <RotundaArchitecture roomName={roomName} /> : <GalleryArchitecture />}
+      <mesh position={[0, -0.12, 0]} userData={{ museumFloor: true }} material={variant === 'rotunda' ? floor : stone} receiveShadow>
         <boxGeometry args={[MUSEUM_ROOM_SIZE.width + 0.4, 0.24, MUSEUM_ROOM_SIZE.depth + 0.4]} />
       </mesh>
       {[-1, 1].map((side) => (

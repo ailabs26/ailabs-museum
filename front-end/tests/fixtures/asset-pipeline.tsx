@@ -6,6 +6,9 @@ import { ACESFilmicToneMapping, SRGBColorSpace } from 'three';
 import { z } from 'zod';
 import '@mantine/core/styles.css';
 import { ExhibitionDisplay } from '@/components/museum/ExhibitionDisplay';
+import { GallerySlots } from '@/components/museum/GallerySlots';
+import type { ExhibitRenderProps } from '@/components/museum/GallerySlotView';
+import { resolveGalleryLayout } from '@/helpers/gallerySlots';
 import { GallerySurfaces } from '@/components/museum/GallerySurfaces';
 import { useRoomModels } from '@/hooks/useRoomModels';
 import { modelLodSetSchema } from '@/helpers/modelLod';
@@ -31,21 +34,25 @@ function CameraPose({ distance, center }: { distance: number; center: readonly n
 }
 
 /** Uses the production owner, renderer and picking path with test-owned descriptors. */
-function AssetScene({ config, distance, selected, onSelect }: {
-  config: FixtureData; distance: number; selected: boolean; onSelect: () => void;
+function AssetScene({ config, distance, selected, onSelect, slotted }: {
+  config: FixtureData; distance: number; selected: boolean; onSelect: () => void; slotted: boolean;
 }) {
   const displays = useMemo<readonly MuseumDisplay[]>(() => [{
     id: config.source.id, roomId: '00000000-0000-4000-8000-000000000001',
     title: 'Synthetic ceramic', description: 'Generated curved mesh for pipeline verification',
-    position: [0, 0, 0], shape: 'sphere', color: '#a66a3c', model: config.source,
+    position: slotted ? [0, 0, -2] : [0, 0, 0], shape: 'sphere', color: '#a66a3c', model: config.source,
     hotspots: [{ id: 'pipeline-hotspot', label: 'Synthetic detail', body: 'Test annotation', position: [2, 1, -3] }],
-  }], [config.source]);
+  }], [config.source, slotted]);
   const sets = useMemo(() => config.lodSet ? [config.lodSet] : [], [config.lodSet]);
   const { models, selectLod, retainModel } = useRoomModels(displays, sets);
   const state = models[config.source.checksumSha256];
   const [renderError, setRenderError] = useState(false);
   const center = config.lodSet?.normalization.center ?? [0, 0.9, 0];
-  const target = [center[0], center[1] + 1.14, center[2]];
+  const target = [center[0] + displays[0].position[0], center[1] + 1.14 + displays[0].position[1], center[2] + displays[0].position[2]];
+  const layout = resolveGalleryLayout(displays);
+  const exhibitProps: ExhibitRenderProps = { isSelected: selected, onSelect, modelState: state,
+    lodSet: config.lodSet, isFocused: selected, onLodChange: selectLod, onRetainModel: retainModel,
+    hasRenderError: renderError, onRenderError: () => setRenderError(true) };
   return <>
     <output data-testid="asset-status" data-level={state?.status === 'ready' ? state.level ?? 0 : ''}>
       {renderError ? 'render-error' : state?.status ?? 'queued'}
@@ -60,10 +67,9 @@ function AssetScene({ config, distance, selected, onSelect }: {
         <directionalLight position={[3, 5, 4]} intensity={2} />
         <CameraPose distance={distance} center={target} />
         <GallerySurfaces anisotropy={2}>
-          <ExhibitionDisplay display={displays[0]} isSelected={selected} onSelect={onSelect}
-            modelState={state} lodSet={config.lodSet} isFocused={selected} onLodChange={selectLod}
-            onRetainModel={retainModel}
-            hasRenderError={renderError} onRenderError={() => setRenderError(true)} />
+          {slotted && layout.mode === 'slotted'
+            ? <GallerySlots slots={layout.slots} getExhibitProps={() => exhibitProps} />
+            : <ExhibitionDisplay display={displays[0]} {...exhibitProps} />}
         </GallerySurfaces>
       </Canvas>
     </div>
@@ -80,6 +86,7 @@ function Fixture() {
   const [measuring, setMeasuring] = useState(false);
   const measurementController = useRef<AbortController | null>(null);
   const preview = new URLSearchParams(location.search).has('preview');
+  const slotted = new URLSearchParams(location.search).has('slotted');
   useEffect(() => {
     const controller = new AbortController();
     void fetch('/tests/fixtures/asset-pipeline-data.json', { signal: controller.signal })
@@ -129,7 +136,7 @@ function Fixture() {
     {error && <p role="alert">{error}</p>}
     {!mounted ? <output data-testid="unmounted">unmounted</output> : config && (preview
       ? <ModelPreview url={config.source.url} height={600} />
-      : <AssetScene config={config} distance={distance} selected={selected} onSelect={() => setSelected(true)} />)}
+      : <AssetScene config={config} distance={distance} selected={selected} onSelect={() => setSelected(true)} slotted={slotted} />)}
   </Stack></MantineProvider>;
 }
 

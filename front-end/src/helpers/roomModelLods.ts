@@ -47,6 +47,7 @@ export class RoomModelLods {
   select(sourceKey: string, level: ModelLodLevel, consumerId = sourceKey) {
     const family = this.families.get(sourceKey);
     if (this.closed || !family?.set) return;
+    if (family.demands.get(consumerId) === level) return;
     family.demands.set(consumerId, level);
     level = Math.min(...family.demands.values()) as ModelLodLevel;
     // A missing level falls back toward full detail, preserving approved viewing limits.

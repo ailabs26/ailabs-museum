@@ -273,6 +273,29 @@ test('screen-space LOD requests independent files, retains a delayed upgrade and
   await saveBrowserEvidence(page, testInfo, { requests, initial, final: await artifactState(page) });
 });
 
+test('slotted gallery preserves all five plinths while the occupied slot upgrades LOD', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const requests = await installHarness(page, { source, lodSet });
+  await page.goto('/tests/fixtures/asset-pipeline.html?slotted=1');
+  await readyLevel(page, 2);
+  await expect.poll(() => page.evaluate(() => {
+    const slots: string[] = [];
+    window.museumProbe.at(-1)?.scene?.deref()?.traverse(object => {
+      if (typeof object.userData.gallerySlot === 'string') slots.push(object.userData.gallerySlot);
+    });
+    return slots.sort();
+  })).toEqual(['S01', 'S02', 'S03', 'S04', 'S05']);
+  const initial = await artifactState(page);
+  await page.getByRole('button', { name: 'Medium', exact: true }).click();
+  await readyLevel(page, 1);
+  await page.getByRole('button', { name: 'Near', exact: true }).click();
+  await readyLevel(page, 0);
+  expect(await artifactState(page)).toEqual(initial);
+  expect(new Set(requests).size).toBe(3);
+  expect(errors).toEqual([]);
+});
+
 test('LOD upgrade network failure keeps visible geometry and room teardown disposes owned resources', async ({ page }, testInfo) => {
   test.setTimeout(90_000);
   const errors: string[] = [];

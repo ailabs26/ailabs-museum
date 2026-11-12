@@ -39,17 +39,20 @@ it('starts light, retains the visible scene during upgrade, deduplicates and pin
 });
 
 it('falls back to original on initial failure, keeps a usable scene on upgrade failure and bounds retries', async () => {
+  const onChange = vi.fn();
   const load = vi.fn(async (model: typeof source) => {
     if (model.id !== 'source') throw new Error('network');
     return loaded();
   });
-  const owner = new RoomModelLods(load, () => {}, undefined, [set]);
+  const owner = new RoomModelLods(load, onChange, undefined, [set]);
   owner.start([source]);
   await vi.waitFor(() => expect(owner.snapshot[source.checksumSha256].status).toBe('ready'));
   owner.select(source.checksumSha256, 0);
   await vi.waitFor(() => expect(load).toHaveBeenCalledTimes(3));
+  const changes = onChange.mock.calls.length;
   for (let count = 0; count < 10; count++) owner.select(source.checksumSha256, 0);
   expect(load).toHaveBeenCalledTimes(3);
+  expect(onChange).toHaveBeenCalledTimes(changes);
   expect(owner.snapshot[source.checksumSha256].status).toBe('ready');
   owner.dispose();
 });
