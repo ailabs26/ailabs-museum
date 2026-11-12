@@ -43,4 +43,41 @@ không tạo backend riêng. Tái dùng tối đa TypeScript types, zod schema v
 > Đã cân nhắc Flutter (phải viết lại tầng API/validation bằng Dart) và PWA (không lên được
 > App Store/CH Play, hạn chế 3D/hiệu năng) — không chọn cho mục tiêu app native có 3D.
 
-<!-- Các mục kiến trúc, tái dùng code, phạm vi, phases được bổ sung ở dưới. -->
+## 3. Kiến trúc & chiến lược tái dùng code
+
+### 3.1. Tổ chức mã nguồn
+
+Hai lựa chọn, chọn **A** cho giai đoạn đầu (đơn giản, ít rủi ro):
+
+| Phương án | Mô tả | Đánh giá |
+|---|---|---|
+| **A. App riêng, chia sẻ bằng copy có kiểm soát** | Tạo app Expo mới (ví dụ `mobile/` trong monorepo hoặc repo riêng); port các module thuần logic (types, zod, service API) sang, giữ đồng bộ thủ công/review. | **Chọn.** Nhanh ra mắt, không phải refactor web. |
+| B. Tách package dùng chung (`packages/shared`) | Đưa types/zod/service vào package dùng chung cho cả web và mobile (pnpm/npm workspaces). | Sạch hơn lâu dài nhưng cần refactor web + dựng monorepo tooling → để roadmap sau. |
+
+> Khuyến nghị: bắt đầu bằng A, nhưng **viết code chia sẻ ở dạng thuần (không phụ thuộc
+> DOM/Mantine)** để sau này tách sang B dễ dàng.
+
+### 3.2. Lớp tái dùng được (không phụ thuộc trình duyệt)
+
+| Lớp web hiện có | Tái dùng trên mobile | Ghi chú |
+|---|---|---|
+| `src/validations/*` (zod: room, exhibit…) | **Dùng gần như nguyên** | Thuần zod, không DOM |
+| `src/core/api/api-response.ts`, `api-error.ts`, `cms-error*` | **Dùng lại logic** | Chuẩn hóa response/lỗi |
+| `src/services/*` (museum, rooms, exhibits, media, reports, translations) | **Port, đổi HTTP client** | Giữ chữ ký hàm, thay axios instance |
+| `src/core/api/http-client.ts` | **Viết lại cho RN** | Base URL qua env; token/cookie xử lý khác web |
+| `src/core/i18n/public-locale` | **Port** | Giữ 6 locale + cơ chế `t()` + fallback |
+| Logic guided tour (reducer, dwell clock, selectors) | **Port** | Thuần TS, tái dùng được — gồm cả PR #180 |
+| Mantine components, CSS modules, react-router-dom | **KHÔNG** | Thay bằng RN UI + Expo Router |
+| `@react-three/fiber` + `three` | Khái niệm tái dùng | Đổi sang `@react-three/fiber/native` + `expo-gl` + `expo-three` |
+
+### 3.3. Khác biệt kỹ thuật cần xử lý
+
+- **Điều hướng:** `react-router-dom` → **Expo Router** (file-based) hoặc React Navigation.
+- **HTTP/Auth:** web dùng cookie httpOnly cho refresh token; public phần lớn **ẩn danh**
+  nên nhu cầu auth thấp. Nếu cần token, dùng `expo-secure-store`, không dùng cookie.
+- **Lưu trữ cục bộ:** web dùng `localStorage` (favorites, notes, recently viewed) →
+  mobile dùng `AsyncStorage`/`expo-secure-store`/SQLite. Cần lớp storage trừu tượng.
+- **Deep link / QR:** cấu hình `scheme://` + Universal Links/App Links để mở short link
+  hiện vật trực tiếp vào app.
+- **Media/CDN:** app tải GLB/ảnh/audio qua cùng domain/CDN với web; cân nhắc cache đĩa.
+- **3D:** render qua GL context của thiết bị (xem [`3d-on-mobile.md`](3d-on-mobile.md)).
