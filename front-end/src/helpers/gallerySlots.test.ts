@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MUSEUM_ROOM_SIZE, type MuseumDisplay } from '@/interfaces/museumScene';
-import { GALLERY_SLOTS, getGalleryColliders, getGallerySlotColliders, matchGallerySlot, resolveGalleryLayout, snapDisplaysToSlots } from './gallerySlots';
+import { GALLERY_SLOTS, getGalleryColliders, getGallerySlotColliders, getSlotOccupancy, matchGallerySlot, pickFreeSlot, resolveGalleryLayout, snapDisplaysToSlots } from './gallerySlots';
 import { CINEMATIC_START_POSITION, getCinematicEntrance } from './cinematicIntro';
 import { INITIAL_CAMERA_POSITION } from './museumCamera';
 import { isDisplayOutsideRoom } from './isDisplayOutsideRoom';
@@ -121,5 +121,36 @@ describe('getGalleryColliders', () => {
     expect(findNavigationPath({ x: CINEMATIC_START_POSITION[0], y: CINEMATIC_START_POSITION[2] },
       { x: INITIAL_CAMERA_POSITION[0], y: INITIAL_CAMERA_POSITION[2] }, MUSEUM_ROOM_SIZE, getGalleryColliders([]))).toHaveLength(2);
     expect(getCinematicEntrance([])).not.toBeNull();
+  });
+});
+
+describe('CMS slot occupancy', () => {
+  const slot = (index: number) => ({ x: GALLERY_SLOTS[index].position[0], y: 0, z: GALLERY_SLOTS[index].position[2] });
+
+  it('offers all five slots for a new room, in S01 → S05 order', () => {
+    const { bySlot, legacyCount } = getSlotOccupancy([]);
+    expect(bySlot.size).toBe(0); expect(legacyCount).toBe(0);
+    expect(pickFreeSlot(bySlot)?.id).toBe('S01');
+  });
+
+  it('marks occupied slots by exhibit and picks the next free one', () => {
+    const { bySlot, legacyCount } = getSlotOccupancy([{ id: 'a', name: 'A', position: slot(0) }, { id: 'b', name: 'B', position: { x: -4.28, y: 0, z: -4.21 } }]);
+    expect([...bySlot]).toEqual([['S01', { id: 'a', name: 'A' }], ['S02', { id: 'b', name: 'B' }]]);
+    expect(legacyCount).toBe(0);
+    expect(pickFreeSlot(bySlot)?.id).toBe('S03');
+  });
+
+  it('counts free coordinates, missing positions and duplicates as legacy without taking a slot twice', () => {
+    const { bySlot, legacyCount } = getSlotOccupancy([
+      { id: 'a', name: 'A', position: slot(0) }, { id: 'dup', name: 'Dup', position: slot(0) },
+      { id: 'free', name: 'Free', position: { x: 1, y: 0, z: 1 } }, { id: 'none', name: 'None' },
+    ]);
+    expect(bySlot.get('S01')).toEqual({ id: 'a', name: 'A' });
+    expect(legacyCount).toBe(3);
+  });
+
+  it('reports no free slot when all five are taken', () => {
+    const { bySlot } = getSlotOccupancy(GALLERY_SLOTS.map((_, index) => ({ id: `e${index}`, name: '', position: slot(index) })));
+    expect(pickFreeSlot(bySlot)).toBeNull();
   });
 });

@@ -91,3 +91,29 @@ export function getGalleryColliders(displays: readonly MuseumDisplay[], exceptId
   if (layout.mode === 'legacy') return getDisplayColliders(exceptId ? displays.filter(display => display.id !== exceptId) : displays);
   return getGallerySlotColliders(layout.slots.filter(({ exhibit }) => !exceptId || exhibit?.id !== exceptId).map(({ slot }) => slot));
 }
+
+/** Vị trí theo dạng payload của CMS/API. */
+export interface SlotPosition { x: number; y: number; z: number }
+export interface SlotOccupant { id: string; name: string }
+
+/**
+ * Bục nào của phòng đã có hiện vật (CMS). `legacyCount` đếm hiện vật ở tọa độ tự do hoặc trùng bục —
+ * còn hiện vật như vậy thì phòng vẫn hiển thị theo bố cục legacy.
+ */
+export function getSlotOccupancy(exhibits: readonly (SlotOccupant & { position?: SlotPosition | null })[]): {
+  bySlot: Map<GallerySlotId, SlotOccupant>; legacyCount: number;
+} {
+  const bySlot = new Map<GallerySlotId, SlotOccupant>();
+  let legacyCount = 0;
+  for (const { id, name, position } of exhibits) {
+    const slot = position ? matchGallerySlot([Number(position.x), Number(position.y), Number(position.z)]) : null;
+    if (!slot || bySlot.has(slot.id)) legacyCount++;
+    else bySlot.set(slot.id, { id, name });
+  }
+  return { bySlot, legacyCount };
+}
+
+/** Bục trống đầu tiên theo thứ tự S01 → S05, hoặc `null` khi cả 5 bục đã có hiện vật. */
+export function pickFreeSlot(occupied: ReadonlyMap<GallerySlotId, unknown>): GallerySlotDefinition | null {
+  return GALLERY_SLOTS.find(slot => !occupied.has(slot.id)) ?? null;
+}
