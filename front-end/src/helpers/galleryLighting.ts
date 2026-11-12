@@ -1,5 +1,5 @@
 import type { MuseumQuality } from './museumQuality';
-import { GALLERY_SLOTS, type GallerySlotId } from './gallerySlots';
+import { GALLERY_SLOTS } from './gallerySlots';
 
 type Point = [number, number, number];
 export interface GallerySpot { id: string; position: Point; target: Point; color: string; intensity: number; angle: number; penumbra: number; distance: number }
@@ -26,20 +26,41 @@ export const GALLERY_LIGHTING_PRESET = {
 } as const;
 
 const SPOT_HEIGHT = 4.7;
-function slotSpot(id: GallerySlotId, kind: 'hero' | 'slot'): GallerySpot {
-  const [x, , z] = GALLERY_SLOTS.find(slot => slot.id === id)!.position;
+/** Đèn chiếu treo trong trần, không sát tường trước/sau. */
+const SPOT_Z_LIMIT = 7.4;
+/** Điểm cần chiếu sáng: tâm bục (phòng theo template) hoặc vị trí thật của hiện vật (phòng legacy). */
+export interface GalleryLightTarget { id: string; position: readonly [number, number, number]; isHero: boolean }
+
+/** Bục của Gallery Template là điểm chiếu mặc định. */
+export const GALLERY_SLOT_TARGETS: readonly GalleryLightTarget[] = GALLERY_SLOTS.map(slot =>
+  ({ id: slot.id, position: slot.position, isHero: slot.plinthKind === 'hero' }));
+
+function aimAt({ id, position: [x, y, z], isHero }: GalleryLightTarget): GallerySpot {
   // Đèn đặt lệch về phía lối vào và tâm phòng: mặt hiện vật hướng ra khách được chiếu, không ngược sáng.
-  return { id, position: [x * .78, SPOT_HEIGHT, z + 1.7], target: [x, 1.5, z], ...GALLERY_LIGHTING_PRESET[kind] };
+  const spotZ = Math.max(-SPOT_Z_LIMIT, Math.min(SPOT_Z_LIMIT, z + 1.7));
+  return { id, position: [x * .78, SPOT_HEIGHT, spotZ], target: [x, y + 1.5, z], ...GALLERY_LIGHTING_PRESET[isHero ? 'hero' : 'slot'] };
 }
 
-/** Đèn chiếu hiện vật theo tier; số đèn cố định, không phụ thuộc số hiện vật của CMS. */
-export function getGallerySpots(tier: MuseumQuality['tier']): GallerySpot[] {
-  if (tier === 'low') return [slotSpot('S01', 'hero'),
+/** Tier thấp hoặc quá nhiều hiện vật: một đèn trung tâm + hai đèn rộng cho hai dãy bên, không tăng theo số hiện vật. */
+function broadSpots(): GallerySpot[] {
+  return [aimAt(GALLERY_SLOT_TARGETS[0]),
     ...[-1, 1].map((side): GallerySpot => ({ id: side < 0 ? 'left' : 'right', position: [side * 2.6, SPOT_HEIGHT, -1.05], target: [side * 4.3, 1.2, -1.05], ...GALLERY_LIGHTING_PRESET.side }))];
-  return GALLERY_SLOTS.map(slot => slotSpot(slot.id, slot.plinthKind === 'hero' ? 'hero' : 'slot'));
 }
 
-/** Wall-wash màu là lớp phụ: bỏ ở tier thấp (tường vẫn có dải emissive tĩnh). */
-export function getGalleryAccents(tier: MuseumQuality['tier']): readonly GalleryAccent[] {
-  return tier === 'low' ? [] : GALLERY_LIGHTING_PRESET.accents;
+/**
+ * Đèn chiếu hiện vật theo tier: tối đa 5 đèn, không phụ thuộc số hiện vật của CMS.
+ * Phòng legacy truyền vị trí hiện vật thật; trên 5 điểm thì dùng bộ đèn rộng.
+ */
+export function getGallerySpots(tier: MuseumQuality['tier'], targets: readonly GalleryLightTarget[] = GALLERY_SLOT_TARGETS): GallerySpot[] {
+  return tier === 'low' || targets.length > GALLERY_SLOTS.length ? broadSpots() : targets.map(aimAt);
+}
+
+/** Khoảng cách tối thiểu từ đèn hắt màu tới hiện vật: màu chỉ nhuộm tường, không nhuộm hiện vật. */
+export const ACCENT_CLEARANCE = 1.8;
+
+/** Wall-wash màu là lớp phụ: bỏ ở tier thấp và bỏ đèn nào đứng gần hiện vật (tường vẫn có dải nhuộm tĩnh). */
+export function getGalleryAccents(tier: MuseumQuality['tier'], targets: readonly GalleryLightTarget[] = GALLERY_SLOT_TARGETS): readonly GalleryAccent[] {
+  if (tier === 'low') return [];
+  return GALLERY_LIGHTING_PRESET.accents.filter(accent => targets.every(({ position: [x, , z] }) =>
+    Math.hypot(accent.position[0] - x, accent.position[2] - z) >= ACCENT_CLEARANCE));
 }
