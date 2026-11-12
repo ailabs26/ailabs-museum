@@ -146,7 +146,7 @@ describe('Task 9 — media gắn revision (PostgreSQL thật)', { skip }, () => 
       new RoomsRepository(db.getRepository(Room)),
       tx,
       references,
-      new RevisionPublishGate(references),
+      new RevisionPublishGate(references, exhibitsRepo),
       testMediaUrlService(),
       notificationsStub(),
     );

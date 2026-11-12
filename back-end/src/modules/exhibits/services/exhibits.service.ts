@@ -376,6 +376,20 @@ export class ExhibitsService {
         throw new ConflictException('Trạng thái hiện vật vừa thay đổi. Vui lòng tải lại và thử lại.');
       }
 
+      // Chuyển phòng có hiệu lực ngay với hiện vật đang công khai (không qua duyệt): bục của bản đang
+      // xuất bản không được trùng hiện vật công khai khác ở phòng mới.
+      if (
+        dto.roomId &&
+        dto.roomId !== currentExhibit.roomId &&
+        currentExhibit.visibility === ExhibitVisibility.VISIBLE &&
+        exhibit.publishedRevision
+      ) {
+        await this.publishGate.assertSlotFree(
+          { exhibitId: id, roomId: dto.roomId, position: exhibit.publishedRevision.content?.position },
+          manager,
+        );
+      }
+
       // 1. Cập nhật thông tin Exhibit nếu có thay đổi
       currentExhibit.version = (currentExhibit.version ?? 0) + 1;
       if (dto.roomId) currentExhibit.roomId = dto.roomId;

@@ -128,6 +128,11 @@ export class ModerationService {
       // §5.1/5.2: kiểm lại toàn bộ nội dung + media trước khi công khai. Media được khóa
       // FOR SHARE tới hết transaction → không thể bị xóa giữa lúc kiểm tra và lúc publish.
       await this.publishGate.assertPublishable(revision, m);
+      // Mỗi bục của phòng chỉ có một hiện vật công khai: kiểm tra khi đang giữ khóa các hiện vật của phòng.
+      await this.publishGate.assertSlotFree(
+        { exhibitId: revision.exhibitId, roomId: revision.exhibit.roomId, position: revision.content?.position },
+        m,
+      );
 
       const res = await m.update(
         Exhibit,
@@ -209,8 +214,20 @@ export class ModerationService {
     const exhibit = await this.repo.findExhibit(exhibitId);
     if (!exhibit) throw new NotFoundException('Không tìm thấy hiện vật');
 
-    const res = await this.tx.run((m) =>
-      m.update(
+    // Hiện lại là đưa bản đã xuất bản trở lại phòng: bục của nó có thể đã được giao cho hiện vật khác.
+    const published =
+      visibility === ExhibitVisibility.VISIBLE && exhibit.publishedRevisionId
+        ? await this.repo.findDetail(exhibit.publishedRevisionId)
+        : null;
+
+    const res = await this.tx.run(async (m) => {
+      if (published) {
+        await this.publishGate.assertSlotFree(
+          { exhibitId, roomId: exhibit.roomId, position: published.content?.position },
+          m,
+        );
+      }
+      return m.update(
         Exhibit,
         { id: exhibitId, version, isDeleted: false },
         {
@@ -218,8 +235,8 @@ export class ModerationService {
           archivedAt: visibility === ExhibitVisibility.HIDDEN ? new Date() : null,
           version: () => '"version" + 1',
         },
-      ),
-    );
+      );
+    });
     if (!res.affected) throw new ConflictException(VERSION_CONFLICT);
 
     const updated = await this.repo.findExhibit(exhibitId);
