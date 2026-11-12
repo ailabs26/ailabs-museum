@@ -208,6 +208,30 @@ test('missing decoder produces an isolated model fallback with no unhandled reje
   expect(errors).toEqual([]);
 });
 
+test('corrupt Draco payload fails through the native decoder without crashing the scene', async ({ page }) => {
+  const bytes = Buffer.from(binaries.get(lodSet.levels[0].model.checksumSha256)!);
+  const jsonLength = bytes.readUInt32LE(12);
+  const document = JSON.parse(bytes.subarray(20, 20 + jsonLength).toString());
+  const compressedView = document.bufferViews[document.meshes[0].primitives[0].extensions.KHR_draco_mesh_compression.bufferView];
+  const start = 28 + jsonLength + (compressedView.byteOffset ?? 0);
+  bytes.fill(0, start, start + compressedView.byteLength);
+  const damaged = descriptor(bytes, 'corrupt-draco-payload');
+  binaries.set(damaged.checksumSha256, bytes);
+  const errors: string[] = [];
+  let loadedDecoder = false;
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('response', response => {
+    if (/draco_decoder.*\.wasm/.test(response.url()) && response.ok()) loadedDecoder = true;
+  });
+  await installHarness(page, { source: damaged });
+  await page.goto('/tests/fixtures/asset-pipeline.html');
+  await expect(page.getByTestId('asset-status')).toHaveText('error', { timeout: 60_000 });
+  expect(loadedDecoder).toBe(true);
+  expect((await artifactState(page)).loaded).toBe(0);
+  await expect(page.getByLabel('Asset fixture canvas')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('screen-space LOD requests independent files, retains a delayed upgrade and preserves picking and hotspots', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   const errors: string[] = [];
