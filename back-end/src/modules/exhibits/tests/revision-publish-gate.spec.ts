@@ -8,6 +8,8 @@ import { Media, MediaKind, MediaProcessingState } from '../../media/entities/med
 import { MediaReference, MediaReferenceValidator, checkMediaReferences } from '../../media/services/media-reference.validator';
 import { ExhibitRevision, ExhibitRevisionContent } from '../entities/exhibit-revision.entity';
 import { Hotspot } from '../entities/hotspot.entity';
+import { ExhibitsRepository } from '../repositories/exhibits.repository';
+import { GALLERY_SLOTS, matchGallerySlot } from '../constants/gallery-slots';
 import {
   RevisionPublishGate,
   TRANSCRIPT_MAX_LENGTH,
@@ -189,7 +191,7 @@ describe('RevisionPublishGate', () => {
   }
 
   const gateWith = (validator: FakeValidator) =>
-    new RevisionPublishGate(validator as unknown as MediaReferenceValidator);
+    new RevisionPublishGate(validator as unknown as MediaReferenceValidator, {} as ExhibitsRepository);
 
   it('revision hợp lệ → không ném lỗi, kiểm đủ 6 tham chiếu trong transaction', async () => {
     const validator = new FakeValidator();
@@ -223,5 +225,60 @@ describe('RevisionPublishGate', () => {
       assert.deepEqual(codes(body.errors), ['imageId:media_not_ready']);
       return true;
     });
+  });
+});
+
+describe('Gallery Template — mỗi bục một hiện vật công khai', () => {
+  const ROOM = 'r0000000-0000-4000-8000-000000000001';
+  const at = (index: number) => ({ x: GALLERY_SLOTS[index].x, y: 0, z: GALLERY_SLOTS[index].z });
+
+  /** Repo giả: ghi lại phòng bị khóa và trả các hiện vật đang công khai của phòng. */
+  function gateFor(placements: { exhibitId: string; position: unknown }[]) {
+    const locked: string[] = [];
+    const exhibits = {
+      lockPublicPlacements: (roomId: string, manager: EntityManager) => {
+        assert.equal(manager, MANAGER);
+        locked.push(roomId);
+        return Promise.resolve(placements);
+      },
+    } as unknown as ExhibitsRepository;
+    return { gate: new RevisionPublishGate({} as MediaReferenceValidator, exhibits), locked };
+  }
+
+  it('khớp bục trong sai số 5 cm, bỏ qua tọa độ tự do hoặc thiếu', () => {
+    assert.equal(matchGallerySlot({ x: 0, y: 0, z: -2 })?.id, 'S01');
+    assert.equal(matchGallerySlot({ x: -4.26, y: 0.04, z: -4.24 })?.id, 'S02');
+    assert.equal(matchGallerySlot({ x: '4.3', y: '0', z: '2.1' })?.id, 'S05');
+    for (const position of [{ x: 0, y: 0, z: 0 }, { x: 4.3, y: 0, z: 2.16 }, { x: 0, y: 0.2, z: -2 }, { x: 0, z: -2 }, { x: null, y: 0, z: -2 }, null, undefined, 'S01']) {
+      assert.equal(matchGallerySlot(position), null);
+    }
+  });
+
+  it('bục trống hoặc chỉ có chính hiện vật đó → cho qua, có khóa phòng', async () => {
+    const { gate, locked } = gateFor([{ exhibitId: 'self', position: at(0) }, { exhibitId: 'other', position: at(1) }]);
+    await gate.assertSlotFree({ exhibitId: 'self', roomId: ROOM, position: at(0) }, MANAGER);
+    await gate.assertSlotFree({ exhibitId: 'self', roomId: ROOM, position: at(4) }, MANAGER);
+    assert.deepEqual(locked, [ROOM, ROOM]);
+  });
+
+  it('bục đã có hiện vật công khai khác → 422 gallery_slot_occupied', async () => {
+    const { gate } = gateFor([{ exhibitId: 'other', position: { x: -4.28, y: 0, z: -4.21 } }]);
+    await assert.rejects(
+      () => gate.assertSlotFree({ exhibitId: 'self', roomId: ROOM, position: at(1) }, MANAGER),
+      (error: unknown) => {
+        assert.ok(error instanceof UnprocessableEntityException);
+        const { errors } = error.getResponse() as { errors: ApiError[] };
+        assert.deepEqual(errors.map(({ field, code }) => ({ field, code })), [{ field: 'position', code: 'gallery_slot_occupied' }]);
+        assert.match(errors[0].message, /Bục 02/);
+        return true;
+      },
+    );
+  });
+
+  it('tọa độ tự do (phòng legacy) không bị ràng buộc và không khóa phòng', async () => {
+    const { gate, locked } = gateFor([{ exhibitId: 'other', position: { x: 1, y: 0, z: 1 } }]);
+    await gate.assertSlotFree({ exhibitId: 'self', roomId: ROOM, position: { x: 1, y: 0, z: 1 } }, MANAGER);
+    await gate.assertSlotFree({ exhibitId: 'self', roomId: ROOM, position: undefined }, MANAGER);
+    assert.deepEqual(locked, []);
   });
 });
