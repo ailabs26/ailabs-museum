@@ -1,0 +1,60 @@
+// TẠM — E2E live Task 38 trên API thật (3104) + Vite (5174) + Postgres local. Không commit.
+import { readFileSync } from 'node:fs';
+import { expect, test } from '@playwright/test';
+
+const APP = 'http://localhost:5174';
+const CSV = [
+  'roomSlug,name_vi,name_en,description_vi,positionX,placeholderColor',
+  'phong-gom,"Bình gốm, men lam",Blue jar,"Mô tả có ""nháy"" và\nxuống dòng",-3.5,#112233',
+  'phong-khong-co,Sai phòng,,,0,',
+  'phong-dong,Chuông đồng,Bronze bell,,1,mau-sai',
+  'phong-dong,Trống đồng,Bronze drum,=HYPERLINK("x"),2,',
+].join('\n');
+
+test('Task 38 live: đăng nhập → nhập (kiểm tra + nhập) → xuất → nhập lại file vừa xuất', async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
+  await page.goto(`${APP}/admin/login`);
+  await page.getByLabel('Email').fill(process.env.LIVE_ADMIN_EMAIL ?? '');
+  await page.getByLabel('Mật khẩu').fill(process.env.LIVE_ADMIN_PASSWORD ?? '');
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
+  await page.waitForURL(/\/admin(?!\/login)/);
+  await page.goto(`${APP}/admin/exhibits`);
+  await expect(page.getByRole('heading', { name: 'Hiện vật' })).toBeVisible();
+
+  // 1. Nhập CSV: kiểm tra → 2 hợp lệ, 2 lỗi → nhập.
+  await page.getByRole('button', { name: 'Nhập', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Nhập hiện vật từ CSV/JSON' });
+  await dialog.locator('input[type="file"]').setInputFiles({ name: 'dot-1.csv', mimeType: 'text/csv', buffer: Buffer.from(CSV) });
+  await dialog.getByRole('button', { name: 'Kiểm tra' }).click();
+  await expect(dialog.getByText('2/4 dòng hợp lệ, 2 dòng lỗi (sẽ bị bỏ qua khi nhập).')).toBeVisible();
+  const errorTable = dialog.getByRole('table', { name: 'Các dòng lỗi' });
+  await expect(errorTable).toContainText('Không tìm thấy phòng có slug "phong-khong-co"');
+  await expect(errorTable).toContainText('placeholderColor');
+  await page.screenshot({ path: testInfo.outputPath('01-kiem-tra.png') });
+  await dialog.getByRole('button', { name: 'Nhập 2 dòng hợp lệ' }).click();
+  await expect(dialog.getByText('Đã tạo 2 bản nháp; 2 dòng lỗi chưa được nhập.')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('02-ket-qua-nhap.png') });
+  await dialog.getByRole('button', { name: 'Đóng' }).click();
+
+  // Danh sách tự làm mới, thấy 2 hiện vật mới.
+  await expect(page.getByRole('table').getByText('Bình gốm, men lam')).toBeVisible();
+  await expect(page.getByRole('table').getByText('Trống đồng')).toBeVisible();
+
+  // 2. Xuất CSV rồi nhập lại chính file đó (dry run) → mọi dòng hợp lệ.
+  await page.getByRole('button', { name: 'Xuất' }).click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('menuitem', { name: 'CSV (mở bằng Excel)' }).click();
+  const download = await downloadPromise;
+  const exportedPath = testInfo.outputPath(download.suggestedFilename());
+  await download.saveAs(exportedPath);
+  const exported = readFileSync(exportedPath, 'utf8');
+  expect(exported.startsWith('﻿')).toBe(true);
+  expect(exported).toContain(`"'=HYPERLINK(""x"")"`);
+  expect(exported).toContain('"-3.5"');
+
+  await page.getByRole('button', { name: 'Nhập', exact: true }).click();
+  await dialog.locator('input[type="file"]').setInputFiles(exportedPath);
+  await dialog.getByRole('button', { name: 'Kiểm tra' }).click();
+  await expect(dialog.getByText('Cả 2 dòng đều hợp lệ.')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('03-nhap-lai-file-xuat.png') });
+});
