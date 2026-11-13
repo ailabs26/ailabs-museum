@@ -184,6 +184,8 @@ POST   /revisions/:id/reject              # kèm lý do
 POST   /exhibits/:id/hide  |  /unhide
 POST   /media   (multipart)               GET /media/:id       DELETE /media/:id
 POST   /exhibits/:id/attach-media         # (thực tế Task 9: gắn qua PATCH /admin/exhibits/:id — modelId, imageId, audioViId, audioEnId, subtitleViId, subtitleEnId)
+GET    /admin/exhibits/export?format=csv|json&roomId&status&visibility&q   # Task 38: exhibit:read, tối đa 5.000, CSV UTF-8 có BOM
+POST   /admin/exhibits/import?dryRun=true|false (multipart field "file") # Task 38: exhibit:create, ≤ 2 MB/500 dòng, mỗi dòng → bản nháp mới, kết quả theo dòng
 ```
 
 ### Kiểm duyệt & báo cáo

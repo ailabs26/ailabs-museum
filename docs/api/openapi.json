@@ -1618,6 +1618,90 @@
         ]
       }
     },
+    "/admin/exhibits/export": {
+      "get": {
+        "operationId": "AdminExhibitTransferController_export",
+        "summary": "Xuất hiện vật (revision mới nhất) ra CSV (UTF-8 có BOM) hoặc JSON, cùng bộ lọc với danh sách; tối đa 5.000",
+        "parameters": [
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "csv",
+              "enum": [
+                "csv",
+                "json"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/admin/exhibits/import": {
+      "post": {
+        "operationId": "AdminExhibitTransferController_import",
+        "summary": "Nhập hiện vật từ CSV/JSON (≤ 2 MB, ≤ 500 dòng): mỗi dòng hợp lệ tạo một bản nháp mới; trả kết quả theo từng dòng",
+        "parameters": [
+          {
+            "name": "dryRun",
+            "required": false,
+            "in": "query",
+            "description": "true: chỉ kiểm tra từng dòng, không tạo hiện vật",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Admin · Exhibits"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/admin/exhibits": {
       "get": {
         "operationId": "AdminExhibitsController_list",
