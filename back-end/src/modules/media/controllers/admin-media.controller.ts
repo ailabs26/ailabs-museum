@@ -16,7 +16,6 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { Audit } from '../../audit/decorators/audit.decorator';
@@ -28,21 +27,11 @@ import { ListMediaQueryDto } from '../dto/list-media-query.dto';
 import { MEDIA_TEXT_LIMITS, UpdateMediaDto } from '../dto/update-media.dto';
 import { UploadMediaDto } from '../dto/upload-media.dto';
 import { MediaKind } from '../entities/media.entity';
-import { MAX_UPLOAD_BYTES } from '../inspection/media-formats';
+import { MediaFileInterceptor } from '../interceptors/media-file.interceptor';
 import { MediaService, UploadedMediaFile } from '../services/media.service';
 
-/**
- * Giới hạn tầng nhận file → multer trả 413 khi vượt. Busboy coi file dài ĐÚNG bằng
- * `fileSize` là vượt giới hạn, nên cộng 1 byte để file đúng 10 MB (SRS: "≤ 10 MB") vẫn
- * qua được; giới hạn chính xác theo định dạng thực tế do MediaService kiểm tra.
- */
-export const MEDIA_UPLOAD_LIMITS = {
-  fileSize: MAX_UPLOAD_BYTES + 1,
-  files: 1,
-  fields: 10,
-  fieldSize: 16 * 1024,
-  parts: 12,
-};
+// Giới hạn multer nằm cùng MediaFileInterceptor; giữ export cũ cho nơi đang import từ controller.
+export { MEDIA_UPLOAD_LIMITS } from '../interceptors/media-file.interceptor';
 
 const UPLOAD_BODY_SCHEMA = {
   type: 'object',
@@ -110,7 +99,7 @@ export class AdminMediaController {
   @Post('upload')
   @Permissions(PERMISSIONS.MEDIA_UPLOAD)
   @Audit('media.upload', 'media')
-  @UseInterceptors(FileInterceptor('file', { limits: MEDIA_UPLOAD_LIMITS }))
+  @UseInterceptors(MediaFileInterceptor())
   @ApiConsumes('multipart/form-data')
   @ApiBody({ schema: UPLOAD_BODY_SCHEMA })
   @ApiOperation({ summary: 'Upload media — kiểm tra định dạng thực tế, dung lượng và cấu trúc file' })
