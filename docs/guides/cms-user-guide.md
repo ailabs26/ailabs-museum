@@ -118,6 +118,12 @@ cáo mở…) và lối tắt tới các khu vực. Mọi tài khoản đăng nh
 - **Xem trước** (`/admin/exhibits/:id/preview`): xem hiện vật như Visitor thấy trước khi
   gửi duyệt.
 - Sau khi sửa, **gửi duyệt** (submit revision) để chuyển cho kiểm duyệt viên.
+- **Xuất** (CSV mở bằng Excel, hoặc JSON): tải danh sách hiện vật theo bộ lọc đang xem — nội dung
+  revision mới nhất, mỗi ngôn ngữ/trục tọa độ một cột. Dùng file xuất làm **file mẫu** đúng tên cột.
+- **Nhập** (cần `exhibit:create`): chọn file CSV/JSON (≤ 2 MB, ≤ 500 dòng) → **Kiểm tra** để xem
+  dòng nào lỗi (không ghi gì) → **Nhập N dòng hợp lệ**. Mỗi dòng tạo một **bản nháp mới** (không ghi
+  đè, không tự xuất bản — vẫn phải gửi duyệt); dòng lỗi được bỏ qua và liệt kê lại để sửa rồi nhập lần
+  sau. Cần cột `roomSlug` hoặc `roomId`; cột `id/status/visibility/revisionState` trong file xuất bị bỏ qua.
 
 ### 4.4. Media — Thư viện media (`/admin/media`) · cần `media:upload`
 - Upload ảnh/audio/model; theo dõi **upload job** (hàng đợi xử lý bất đồng bộ).
