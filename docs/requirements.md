@@ -1186,7 +1186,7 @@ Tổng transfer size với cache rỗng từ tải trang public đến khi scene
 
 ### 7.1.1 Measurement and Evidence
 
-Chi tiết thiết bị, network throttling, số lượt đo, kịch bản FPS 3D, percentile, load test và bằng chứng sẽ được chốt trong Test/Performance Plan trước nghiệm thu. [`plans/performance-audit.md`](../plans/performance-audit.md) và [`plans/device-matrix.md`](../plans/device-matrix.md) được giữ nguyên làm tham khảo, chưa phải profile nghiệm thu cho baseline v0.2. SRS quy định mức chất lượng cần đạt; Test/Performance Plan quy định cách chứng minh. Hiệu năng immersive VR thuộc giai đoạn sau MVP.
+Chi tiết thiết bị, network throttling, số lượt đo, kịch bản FPS 3D, percentile, load test và bằng chứng sẽ được chốt trong Test/Performance Plan trước nghiệm thu. [`plans/performance-audit.md`](plans/performance-audit.md) và [`plans/device-matrix.md`](plans/device-matrix.md) được giữ nguyên làm tham khảo, chưa phải profile nghiệm thu cho baseline v0.2. SRS quy định mức chất lượng cần đạt; Test/Performance Plan quy định cách chứng minh. Hiệu năng immersive VR thuộc giai đoạn sau MVP.
 
 Không được tuyên bố đạt hiệu năng cho một nhóm thiết bị khi chưa có model/version và bằng chứng đo tương ứng.
 

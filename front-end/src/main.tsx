@@ -6,6 +6,7 @@ import '@mantine/dates/styles.css';
 import App from '@/App';
 import { AppProviders } from '@/AppProviders';
 import '@/index.css';
+import '@/styles/aura.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

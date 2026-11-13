@@ -5,9 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "preview": "vite preview",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "playwright test",
+    "test:unit": "vitest run",
+    "test:e2e:cms": "node scripts/e2e-cms-workflow.mjs"
   },
   "dependencies": {
     "@mantine/core": "^7.15.2",
@@ -19,9 +23,12 @@
     "@react-three/fiber": "^8.17.10",
     "@tabler/icons-react": "^3.26.0",
     "@tanstack/react-query": "^5.62.11",
+    "apexcharts": "^3.54.1",
     "axios": "^1.7.9",
     "dayjs": "^1.11.13",
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
+    "react-apexcharts": "^1.4.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.1",
     "three": "^0.170.0",
@@ -29,7 +36,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.64.0",
     "@types/node": "^22.10.5",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@types/three": "^0.170.0",
@@ -43,6 +52,7 @@
     "postcss-simple-vars": "^7.0.1",
     "typescript": "~5.7.3",
     "typescript-eslint": "^8.18.0",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
   }
 }

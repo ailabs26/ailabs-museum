@@ -1,0 +1,47 @@
+.page { padding-block: 48px 72px; }
+.intro { max-width: 680px; margin-bottom: 32px; }
+.eyebrow { color: var(--aura-emerald); font-size: 12px; letter-spacing: 0.14em; font-weight: 700; text-transform: uppercase; margin: 0 0 14px; }
+.title { font-family: var(--aura-font-display); font-weight: 800; font-size: clamp(2.4rem, 5vw, 3.6rem); line-height: 1.12; letter-spacing: -0.03em; color: var(--aura-ink); }
+.title:focus-visible { outline: 2px solid var(--aura-accent); outline-offset: 4px; }
+.description, .roomDescription { color: var(--aura-muted); line-height: 1.75; }
+.description { margin: 18px 0 0; font-size: 16px; }
+
+/* Toolbar: filter pills + live search */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 28px; margin-bottom: 32px; border-bottom: 1px solid var(--aura-glass-border); }
+.pills { display: flex; flex-wrap: wrap; gap: 10px; min-width: 0; }
+.pill {
+  padding: 9px 18px; border-radius: 999px; font-size: 14px; font-weight: 600; cursor: pointer;
+  color: var(--aura-ink-soft); background: var(--aura-glass-bg); border: 1px solid var(--aura-glass-border);
+  transition: transform 0.2s var(--aura-ease-spring), color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.pill:hover { transform: translateY(-1px); color: var(--aura-ink); border-color: color-mix(in srgb, var(--aura-accent) 45%, transparent); }
+.pill:focus-visible { outline: 2px solid var(--aura-accent); outline-offset: 2px; }
+.pillActive { color: var(--aura-on-accent); background: var(--aura-gradient-accent); border-color: transparent; box-shadow: var(--aura-glow-emerald); }
+
+.toolbarRight { display: flex; align-items: center; gap: 12px; flex: 1; justify-content: flex-end; min-width: min(100%, 280px); }
+.search { flex: 1; max-width: 320px; }
+
+.roomHeader { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; }
+.roomHeader > div { flex: 1; min-width: min(100%, 280px); }
+.roomTitle { font-family: var(--aura-font-display); font-weight: 800; font-size: 28px; line-height: 1.25; overflow-wrap: anywhere; color: var(--aura-ink); }
+.roomDescription { margin: 12px 0; }
+.count { color: var(--aura-muted); font-size: 14px; margin: 12px 0 0; }
+.roomActions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; max-width: 100%; }
+.emptyTour { flex-basis: 100%; margin: 0; color: var(--aura-muted); font-size: 13px; text-align: right; }
+.tourLink { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 12px; font-size: 14px; font-weight: 600; color: var(--aura-emerald); background: color-mix(in srgb, var(--aura-accent) 10%, transparent); border: 1px solid var(--aura-glass-border); transition: gap 0.25s var(--aura-ease-spring); }
+.tourLink:hover { gap: 12px; }
+.empty { color: var(--aura-muted); border: 1px dashed var(--aura-glass-border); border-radius: 16px; padding: 32px; line-height: 1.75; background: var(--aura-glass-bg); }
+
+@media (max-width: 48em) {
+  .page { padding-block: 32px 48px; }
+  .intro { margin-bottom: 24px; }
+  .toolbarRight { justify-content: stretch; }
+  .search { max-width: none; }
+  .roomTitle { font-size: 24px; }
+}
+
+.globalSearch { margin-top: 32px; }
+.globalResults { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.globalResult { display: flex; flex-direction: column; gap: 4px; height: 100%; padding: 14px 16px; border: 1px solid var(--aura-glass-border); border-radius: 12px; background: var(--aura-glass-bg); color: inherit; text-decoration: none; }
+.globalResult:hover { border-color: var(--aura-accent); }
+.globalResultText { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--aura-muted); font-size: 14px; }

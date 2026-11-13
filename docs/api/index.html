@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aura Museum API — Tài liệu</title>
+    <meta
+      name="description"
+      content="Tài liệu OpenAPI của Aura Museum API (WebXR 3D-WEB-03): public read + Admin CMS."
+    />
+    <style>
+      body { margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    </style>
+  </head>
+  <body>
+    <!--
+      Trang xem tài liệu API tĩnh, đọc trực tiếp ./openapi.json (cùng thư mục).
+      Mở bằng một web server tĩnh để tránh chặn CORS khi nạp file JSON, ví dụ:
+        cd docs/api && npx http-server .     (rồi mở http://localhost:8080)
+      hoặc dùng Live Server của VS Code. Mở trực tiếp file:// có thể bị trình
+      duyệt chặn fetch JSON.
+      Spec được sinh bằng: (trong back-end/) npm run openapi:export
+    -->
+    <redoc spec-url="./openapi.json"></redoc>
+    <script src="https://cdn.jsdelivr.net/npm/redoc@2.1.5/bundles/redoc.standalone.js"></script>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+
+ RUN  v2.1.8 ailabs-museum/front-end
+
+ ✓ src/helpers/draftAutosave.test.ts (7 tests) 42ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  12:41:25
+   Duration  632ms (transform 79ms, setup 0ms, collect 57ms, tests 42ms, environment 0ms, prepare 125ms)

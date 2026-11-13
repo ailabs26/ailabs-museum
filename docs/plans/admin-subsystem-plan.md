@@ -2,7 +2,7 @@
 
 > Plan chi tiết để hiện thực hóa kiến trúc ở [`../architecture/07-admin-subsystem.md`](../architecture/07-admin-subsystem.md).
 > Dùng làm **codebase mẫu** cho cả nhóm: mỗi module đi theo đúng `core/` + quy ước ở
-> [`../../back-end/docs/coding-conventions.md`](../../back-end/docs/coding-conventions.md).
+> [`../architecture/be/coding-conventions.md`](../architecture/be/coding-conventions.md).
 > Ánh xạ PR: tương ứng **#C (seed)** và **#D (auth-rbac)** trong [`../architecture/09-roadmap-and-branching.md`](../architecture/09-roadmap-and-branching.md).
 
 ## 1. Mục tiêu & phạm vi

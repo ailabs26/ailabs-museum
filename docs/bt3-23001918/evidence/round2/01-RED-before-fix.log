@@ -1,0 +1,202 @@
+TAP version 13
+# Subtest: VT-077 ExhibitsRepository.searchPublicExhibits
+    # Subtest: AC-4 (invariant): ORDER BY roomId, displayOrder, id ASC — khóa phụ duy nhất id ở CUỐI
+    not ok 1 - AC-4 (invariant): ORDER BY roomId, displayOrder, id ASC — khóa phụ duy nhất id ở CUỐI
+      ---
+      duration_ms: 9.048
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-repository.spec.ts:47:24'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly deep-equal:
+        + actual - expected ... Lines skipped
+        
+          [
+        -   [
+        -     'exhibit.roomId',
+        -     'ASC'
+        -   ],
+            [
+        ...
+              'ASC'
+            ]
+          ]
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+        0:
+          0: 'exhibit.roomId'
+          1: 'ASC'
+        1:
+          0: 'exhibit.displayOrder'
+          1: 'ASC'
+        2:
+          0: 'exhibit.id'
+          1: 'ASC'
+      actual:
+        0:
+          0: 'exhibit.displayOrder'
+          1: 'ASC'
+        1:
+          0: 'exhibit.id'
+          1: 'ASC'
+      operator: 'deepStrictEqual'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search-repository.spec.ts:67:12)
+        async Test.run (node:internal/test_runner/test:632:9)
+        async Promise.all (index 0)
+        async Suite.run (node:internal/test_runner/test:948:7)
+        async startSubtest (node:internal/test_runner/harness:214:3)
+      ...
+    # Subtest: AC-5/AC-1: chỉ lấy bản published + visible, chưa xóa/lưu trữ, phòng ACTIVE
+    not ok 2 - AC-5/AC-1: chỉ lấy bản published + visible, chưa xóa/lưu trữ, phòng ACTIVE
+      ---
+      duration_ms: 0.5294
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-repository.spec.ts:57:24'
+      failureType: 'testCodeFailure'
+      error: 'phải innerJoin room'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: '=='
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search-repository.spec.ts:85:12)
+        async Test.run (node:internal/test_runner/test:632:9)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+      ...
+    # Subtest: AC-3: phân trang skip=(page-1)*pageSize, take=pageSize; chặn pageSize>100
+    ok 3 - AC-3: phân trang skip=(page-1)*pageSize, take=pageSize; chặn pageSize>100
+      ---
+      duration_ms: 0.2414
+      ...
+    # Subtest: AC-2: lọc roomId + tìm q bằng ILIKE (param search = %kw%)
+    ok 4 - AC-2: lọc roomId + tìm q bằng ILIKE (param search = %kw%)
+      ---
+      duration_ms: 0.204
+      ...
+    # Subtest: AC-4: sắp lại kết quả find theo đúng thứ tự id của QueryBuilder (ổn định qua 2 bước)
+    ok 5 - AC-4: sắp lại kết quả find theo đúng thứ tự id của QueryBuilder (ổn định qua 2 bước)
+      ---
+      duration_ms: 0.5145
+      ...
+    1..5
+not ok 1 - VT-077 ExhibitsRepository.searchPublicExhibits
+  ---
+  duration_ms: 13.0528
+  type: 'suite'
+  location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-repository.spec.ts:46:26'
+  failureType: 'subtestsFailed'
+  error: '2 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: VT-077 searchPublicExhibits — SQL sinh ra (metadata thật, không DB)
+    # Subtest: 🔴\#1 invariant: MỌI cột trong ORDER BY của subquery phân trang đều được select ở truy vấn trong
+    not ok 1 - 🔴\#1 invariant: MỌI cột trong ORDER BY của subquery phân trang đều được select ở truy vấn trong
+      ---
+      duration_ms: 3444.775
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-sql.spec.ts:27:24'
+      failureType: 'testCodeFailure'
+      error: 'cột ORDER BY "exhibit_display_order" KHÔNG được select ở truy vấn trong ⇒ Postgres: column "distinctAlias.exhibit_display_order" does not exist (500). Inner select hiện có: exhibit_id'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: '=='
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search-sql.spec.ts:34:14)
+        async Test.run (node:internal/test_runner/test:632:9)
+        async Promise.all (index 0)
+        async Suite.run (node:internal/test_runner/test:948:7)
+        async startSubtest (node:internal/test_runner/harness:214:3)
+      ...
+    # Subtest: 🔴\#2 ranh giới phòng: innerJoin rooms + lọc room ACTIVE và chưa xóa
+    not ok 2 - 🔴\#2 ranh giới phòng: innerJoin rooms + lọc room ACTIVE và chưa xóa
+      ---
+      duration_ms: 1.2146
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-sql.spec.ts:41:24'
+      failureType: 'testCodeFailure'
+      error: 'phải innerJoin rooms (hiện vật bắt buộc thuộc 1 phòng công khai)'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: 'SELECT "exhibit"."id" AS "exhibit_id" FROM "exhibits" "exhibit" LEFT JOIN "rooms" "room" ON "room"."id"="exhibit"."room_id"  LEFT JOIN "exhibit_revisions" "publishedRevision" ON "publishedRevision"."id"="exhibit"."published_revision_id" WHERE "exhibit"."is_deleted" = :isDeleted AND "exhibit"."visibility" = :visibility AND "exhibit"."archived_at" IS NULL AND "exhibit"."published_revision_id" IS NOT NULL AND "publishedRevision"."state" = :state ORDER BY "exhibit"."display_order" ASC, "exhibit_id" ASC'
+      operator: 'match'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search-sql.spec.ts:50:12)
+        async Test.run (node:internal/test_runner/test:632:9)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+      ...
+    # Subtest: 🟡 ILIKE: chỉ trường hiển thị, KHÔNG cast cả content sang text, có ESCAPE
+    not ok 3 - 🟡 ILIKE: chỉ trường hiển thị, KHÔNG cast cả content sang text, có ESCAPE
+      ---
+      duration_ms: 0.968
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-sql.spec.ts:52:24'
+      failureType: 'testCodeFailure'
+      error: 'không được cast cả JSONB content sang text (khớp nhầm khóa JSON + trường nội bộ)'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: 'SELECT "exhibit"."id" AS "exhibit_id" FROM "exhibits" "exhibit" LEFT JOIN "rooms" "room" ON "room"."id"="exhibit"."room_id"  LEFT JOIN "exhibit_revisions" "publishedRevision" ON "publishedRevision"."id"="exhibit"."published_revision_id" WHERE "exhibit"."is_deleted" = :isDeleted AND "exhibit"."visibility" = :visibility AND "exhibit"."archived_at" IS NULL AND "exhibit"."published_revision_id" IS NOT NULL AND "publishedRevision"."state" = :state AND ("room"."name" ILIKE :search OR CAST("publishedRevision"."content" AS text) ILIKE :search) ORDER BY "exhibit"."display_order" ASC, "exhibit_id" ASC'
+      operator: 'doesNotMatch'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search-sql.spec.ts:61:12)
+        async Test.run (node:internal/test_runner/test:632:9)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+      ...
+    # Subtest: 🟡 escape wildcard: q='50%_off' được escape %/_ trong param
+    not ok 4 - 🟡 escape wildcard: q='50%_off' được escape %/_ trong param
+      ---
+      duration_ms: 0.6249
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-sql.spec.ts:64:24'
+      failureType: 'testCodeFailure'
+      error: 'phải escape cả % và _'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: '%50\\%\\_off%'
+      actual: '%50%_off%'
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search-sql.spec.ts:78:12)
+        async Test.run (node:internal/test_runner/test:632:9)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+      ...
+    # Subtest: AC-4 thứ tự ổn định: ORDER BY roomId, displayOrder, id (khớp index room_order_id)
+    not ok 5 - AC-4 thứ tự ổn định: ORDER BY roomId, displayOrder, id (khớp index room_order_id)
+      ---
+      duration_ms: 1.5952
+      location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-sql.spec.ts:69:24'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input did not match the regular expression /ORDER BY "exhibit_room_id" ASC, "exhibit_display_order" ASC, "exhibit_id" ASC/. Input:
+        
+        'SELECT "exhibit"."id" AS "exhibit_id" FROM "exhibits" "exhibit" LEFT JOIN "rooms" "room" ON "room"."id"="exhibit"."room_id"  LEFT JOIN "exhibit_revisions" "publishedRevision" ON "publishedRevision"."id"="exhibit"."published_revision_id" WHERE "exhibit"."is_deleted" = :isDeleted AND "exhibit"."visibility" = :visibility AND "exhibit"."archived_at" IS NULL AND "exhibit"."published_revision_id" IS NOT NULL AND "publishedRevision"."state" = :state ORDER BY "exhibit"."display_order" ASC, "exhibit_id" ASC'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: 'SELECT "exhibit"."id" AS "exhibit_id" FROM "exhibits" "exhibit" LEFT JOIN "rooms" "room" ON "room"."id"="exhibit"."room_id"  LEFT JOIN "exhibit_revisions" "publishedRevision" ON "publishedRevision"."id"="exhibit"."published_revision_id" WHERE "exhibit"."is_deleted" = :isDeleted AND "exhibit"."visibility" = :visibility AND "exhibit"."archived_at" IS NULL AND "exhibit"."published_revision_id" IS NOT NULL AND "publishedRevision"."state" = :state ORDER BY "exhibit"."display_order" ASC, "exhibit_id" ASC'
+      operator: 'match'
+      stack: |-
+        TestContext.<anonymous> (E:\Software Engineering\Project\ailabs-museum\back-end\src\modules\exhibits\tests\public-search-sql.spec.ts:85:12)
+        async Test.run (node:internal/test_runner/test:632:9)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:374:7)
+      ...
+    1..5
+not ok 2 - VT-077 searchPublicExhibits — SQL sinh ra (metadata thật, không DB)
+  ---
+  duration_ms: 3452.3505
+  type: 'suite'
+  location: 'E:\\Software Engineering\\Project\\ailabs-museum\\back-end\\src\\modules\\exhibits\\tests\\public-search-sql.spec.ts:26:26'
+  failureType: 'subtestsFailed'
+  error: '5 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..2
+# tests 10
+# suites 2
+# pass 3
+# fail 7
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7751.6522

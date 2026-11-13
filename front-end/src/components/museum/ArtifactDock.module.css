@@ -1,0 +1,11 @@
+.dockWrap { position: absolute; inset-inline: 12px; bottom: max(20px, env(safe-area-inset-bottom)); z-index: 3; display: flex; justify-content: center; pointer-events: none; }
+.dock { display: flex; gap: 4px; margin: 0; padding: 6px; list-style: none; max-width: min(820px, 100%); overflow-x: auto; scrollbar-width: thin; border: 1px solid #bdab8d70; border-radius: 12px; background: #f7f3eaf2; box-shadow: 0 8px 36px #0003; backdrop-filter: blur(12px); pointer-events: auto; }
+.item { flex-shrink: 0; }
+.btn { display: flex; gap: 10px; align-items: center; min-width: 76px; min-height: 48px; max-width: 180px; padding: 8px 14px; border: 1px solid transparent; border-radius: 7px; color: #3b4035; background: transparent; font: inherit; cursor: pointer; transition: background .15s; }
+.btn:hover { background: #e8dfcd; }
+.btn:focus-visible { outline: 2px solid #805e2c; outline-offset: -3px; }
+.btnActive { background: #313c34; color: #f4e8ce; border-color: #b9975c; }
+.num { font: 15px Georgia, serif; opacity: .8; }
+.name { font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.tip { display: none; }
+@media (max-width: 600px) { .dockWrap { bottom: max(12px, env(safe-area-inset-bottom)); } .dock { gap: 0; padding: 4px; } .btn { min-width: 60px; max-width: 100px; padding: 6px 8px; flex-direction: column; gap: 2px; } .name { max-width: 80px; font-size: 10px; } }

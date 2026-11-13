@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "cognee": {
+      "description": "Cognee Knowledge Engine & GraphRAG MCP Server. Ingest documents, extract entities and relationships, and query memory graphs with natural language.",
+      "command": "python",
+      "args": [
+        "-m",
+        "cognee.api.mcp"
+      ],
+      "env": {
+        "LLM_API_KEY": "<your-llm-api-key>",
+        "GRAPH_DATABASE_URL": "neo4j://localhost:7687"
+      }
+    }
+  }
+}

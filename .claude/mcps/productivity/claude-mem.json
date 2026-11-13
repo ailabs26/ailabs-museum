@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "claude-mem": {
+      "description": "Claude-Mem Persistent Memory & Context Compression MCP Server. Captures observations, retains context across agent sessions, and provides entity-level recall and timeline navigation.",
+      "command": "npx",
+      "args": ["-y", "claude-mem", "mcp"],
+      "env": {}
+    }
+  }
+}
+

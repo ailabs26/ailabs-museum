@@ -1,0 +1,20 @@
+
+Running 16 tests using 1 worker
+
+[1/16] tests/cms-exhibit-autosave.spec.ts:17:1 › autosave gửi expectedVersion, giữ drawer mở và dùng version mới cho lần sau
+[2/16] tests/cms-exhibit-autosave.spec.ts:36:1 › bản lưu từ tab khác mới hơn: autosave dừng, giữ nội dung đang gõ, không ghi đè
+[3/16] tests/cms-exhibit-autosave.spec.ts:59:1 › bấm Lưu ngay sau khi gõ, mạng chậm: autosave không đua với lưu tay (AI review #1)
+[4/16] tests/exhibit-edit-persistence.spec.ts:11:1 › loads the complete fresh detail before enabling editing, not the stale list row
+[5/16] tests/exhibit-edit-persistence.spec.ts:38:1 › detail errors block saving until retry succeeds
+[6/16] tests/exhibit-edit-persistence.spec.ts:50:1 › reopening the same ID always fetches again and ignores a previous pending session
+[7/16] tests/exhibit-edit-persistence.spec.ts:73:1 › closing a loading edit and creating a new exhibit ignores the old response
+[8/16] tests/exhibit-edit-persistence.spec.ts:86:1 › latest in-review detail cannot be saved even when the list row was editable
+[9/16] tests/exhibit-edit-persistence.spec.ts:95:1 › switching from a pending A edit to B ignores the late A detail
+[10/16] tests/exhibit-edit-persistence.spec.ts:112:1 › submit-review 422 hydrates fresh detail before marking the media tab
+[11/16] tests/exhibit-edit-persistence.spec.ts:126:1 › seeds the saved row while list refetch waits and a second save preserves the new values
+[12/16] tests/exhibit-edit-persistence.spec.ts:158:1 › saving empty slots retains null semantics when reopening after a failed list refresh
+[13/16] tests/exhibit-edit-persistence.spec.ts:183:1 › an obsolete submit-review error cannot reopen a different edit session
+[14/16] tests/exhibit-edit-persistence.spec.ts:207:1 › background detail refresh does not replace unsaved form input
+[15/16] tests/exhibit-edit-persistence.spec.ts:224:1 › saving updates only existing list entries and cancels a pre-save stale request
+[16/16] tests/exhibit-edit-persistence.spec.ts:263:1 › saves every field from one detail revision and preserves hotspots on a second save
+  16 passed (56.5s)

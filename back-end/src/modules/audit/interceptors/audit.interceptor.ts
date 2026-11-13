@@ -10,6 +10,7 @@ import type { Request } from 'express';
 import { Observable } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
 import { AuthUser } from '../../../common/types/auth-user.type';
+import { userAgentOf } from '../audit-request.util';
 import { AUDIT_KEY, AuditMeta } from '../decorators/audit.decorator';
 import { AuditService } from '../services/audit.service';
 
@@ -34,14 +35,19 @@ export class AuditInterceptor implements NestInterceptor {
     return next.handle().pipe(
       mergeMap(async (data) => {
         try {
-          const resourceId = this.resolveResourceId(request, data);
-          if (resourceId) {
+          const resourceIds = this.resolveResourceIds(request, data);
+          for (const resourceId of resourceIds) {
             await this.audit.record({
               actorId: request.user?.id ?? null,
               action: meta.action,
               resourceType: meta.resourceType,
               resourceId,
+              // Với hành động trên revision, lưu thêm FK revisionId để truy vết chéo.
+              revisionId: meta.resourceType === 'revision' ? resourceId : null,
+              reason: this.resolveReason(request),
               requestId: this.resolveRequestId(request),
+              ip: request.ip ?? null,
+              userAgent: userAgentOf(request),
             });
           }
         } catch {
@@ -52,14 +58,49 @@ export class AuditInterceptor implements NestInterceptor {
     );
   }
 
-  /** Ưu tiên id của tài nguyên trả về (tạo mới), sau đó tới param :id. */
-  private resolveResourceId(request: AuditRequest, data: unknown): string | null {
+  /**
+   * APP_INTERCEPTOR nằm ngoài ResponseInterceptor (đăng ký ở main.ts), nên kết quả nhận được
+   * có thể đã được bọc thành ApiResponse `{ success, data, message }` — lấy phần `data`.
+   */
+  private unwrapEnvelope(data: unknown): unknown {
+    if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
+      return (data as { data: unknown }).data;
+    }
+    return data;
+  }
+
+  /**
+   * Ưu tiên danh sách id (`roleIds` của ma trận quyền, `ids` của thao tác hàng loạt → 1 bản ghi/ID),
+   * rồi id trả về (tạo mới), sau đó tới param :id.
+   */
+  private resolveResourceIds(request: AuditRequest, result: unknown): string[] {
+    const data = this.unwrapEnvelope(result);
+    for (const key of ['roleIds', 'ids'] as const) {
+      if (data && typeof data === 'object' && key in data) {
+        const ids = (data as Record<string, unknown>)[key];
+        if (Array.isArray(ids)) {
+          return ids.filter((id): id is string => typeof id === 'string');
+        }
+      }
+    }
     if (data && typeof data === 'object' && 'id' in data) {
       const id = (data as { id?: unknown }).id;
-      if (typeof id === 'string') return id;
+      if (typeof id === 'string') return [id];
     }
     const paramId = (request.params as Record<string, string> | undefined)?.id;
-    return paramId ?? null;
+    return paramId ? [paramId] : [];
+  }
+
+  private resolveReason(request: AuditRequest): string | null {
+    const body = request.body as Record<string, unknown> | undefined;
+    if (!body || typeof body !== 'object') return null;
+    if (typeof body.reason === 'string' && body.reason.trim().length > 0) {
+      return body.reason.trim();
+    }
+    if (typeof body.resolution === 'string' && body.resolution.trim().length > 0) {
+      return body.resolution.trim();
+    }
+    return null;
   }
 
   private resolveRequestId(request: AuditRequest): string {

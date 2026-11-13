@@ -7,7 +7,7 @@
 
 | Module BE | Màn hình CMS (FE) | Người phụ trách (theo plan) |
 |---|---|---|
-| `auth` | `LoginPage` | Thắng (task #2) |
+| `auth` | `LoginPage`, `SettingsPage` (cài đặt cá nhân) | Thắng (task #2) |
 | `users` | `UsersPage` (accounts.html) | Thắng (task #3) |
 | `roles` + `permissions` | `RolesPage`, `PermissionsPage`, `PermissionMatrixPage` | Thắng (task #4) |
 | RBAC guard | (áp cho toàn bộ Admin API) | Thắng (task #5) |
@@ -107,15 +107,18 @@ sequenceDiagram
 |---|---|
 | **LoginPage** | `FormTextField` (email), password, `Button`; xử lý 401; focus-trap; a11y |
 | **DashboardPage** | `StatCard` ×4 (phòng, hiện vật, báo cáo mở, chờ duyệt), `@mantine/charts`, trạng thái hệ thống |
-| **UsersPage** | `DataTable` (list user, trạng thái, role), `ConfirmModal` khóa/xóa, drawer tạo/sửa + `FormSelect` role |
-| **RolesPage** | `DataTable` role + mô tả, tạo/sửa role |
+| **UsersPage** | `DataTable` (list user, trạng thái, role) có chọn nhiều + `BulkActionBar` xóa hàng loạt (tài khoản Admin không chọn được), `ConfirmModal` khóa/xóa, drawer tạo/sửa + `FormSelect` role |
+| **RolesPage** | `DataTable` role + mô tả có chọn nhiều + xóa hàng loạt (vai trò Admin không chọn được), tạo/sửa role |
+| **SettingsPage** (`/admin/settings/:tab`) | menu tài khoản → Cài đặt; `Tabs` theo URL: **Hồ sơ** (sửa tên hiển thị, xem email/vai trò/quyền), **Mật khẩu** (đổi mật khẩu), **Phiên đăng nhập** (thiết bị đang đăng nhập, đăng xuất từng thiết bị / các thiết bị khác / tất cả), **Giao diện** (Sáng/Tối/Theo hệ thống). Link cũ `/admin/change-password`, `/admin/sessions` chuyển tới tab tương ứng |
 | **PermissionMatrixPage** | `PermissionTree`/bảng checkbox role×permission, lưu `PUT /roles/:id/permissions` |
 | **AuditPage** | `DataTable` nhật ký + filter (actor/action/khoảng thời gian), xem chi tiết before/after |
 
 ## 7.6 AuditInterceptor (ghi vết tự động)
 
-- Bọc các route ghi/sửa của admin; sau khi service thành công → tạo `AuditLog`
-  (`actorId`, `action`, `entityType`, `entityId`, `before/after`, `ip`).
+- Bọc các route ghi/sửa của admin có `@Audit(action, resourceType)`; sau khi service thành công → tạo `AuditLog`
+  (`actorId`, `action`, `resourceType`, `resourceId`, `reason` lấy từ body `reason/resolution`, `requestId`, `ip`, `userAgent`).
+  Không lưu ảnh chụp dữ liệu trước/sau.
+- Sự kiện đăng nhập/đăng xuất ghi trực tiếp qua `AuditService.recordSafely` ở `AuthController` (xem [06 — API](06-api-contract.md)).
 - Append-only: chỉ INSERT. Không cho sửa/xóa bản ghi audit.
 - Các hành động nhạy cảm cũng ghi khi **thất bại quyền** (403) để truy vết truy cập trái phép.
 

@@ -40,6 +40,22 @@ export class User {
   @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt!: Date | null;
 
+  /** 2FA (TOTP) đang bật từ thời điểm này; null = chưa bật. Không bí mật nên được select mặc định. */
+  @Column({ name: 'totp_enabled_at', type: 'timestamptz', nullable: true })
+  totpEnabledAt!: Date | null;
+
+  /** Secret TOTP đang dùng, đã mã hóa (secret-box). Không select mặc định. */
+  @Column({ name: 'totp_secret_enc', type: 'text', nullable: true, select: false })
+  totpSecretEnc!: string | null;
+
+  /** Secret vừa tạo khi thiết lập, chờ xác nhận bằng mã đầu tiên. Không select mặc định. */
+  @Column({ name: 'totp_pending_enc', type: 'text', nullable: true, select: false })
+  totpPendingEnc!: string | null;
+
+  /** Bước thời gian (30 giây) của mã TOTP dùng gần nhất — chống dùng lại cùng một mã. Không select mặc định. */
+  @Column({ name: 'totp_last_step', type: 'bigint', nullable: true, select: false })
+  totpLastStep!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

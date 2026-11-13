@@ -1,0 +1,14 @@
+.stage { display: grid; gap: 16px; min-width: 0; }
+.stageDetails { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); }
+@media (max-width: 800px) {
+  .stageDetails { grid-template-columns: minmax(0, 1fr); }
+}
+
+.viewport {
+  min-height: clamp(420px, 68svh, 760px);
+  position: relative;
+  overflow: hidden;
+  background: #eee8dc;
+  border: 1px solid #cdc5b7;
+  border-radius: 8px;
+}

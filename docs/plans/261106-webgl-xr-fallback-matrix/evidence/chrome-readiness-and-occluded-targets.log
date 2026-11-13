@@ -1,0 +1,95 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test museum-xr-disconnect.spec.ts museum-hotspots.spec.ts museum-fullscreen.spec.ts --grep native mid-session|3D hotspot mouse|room loading preserves --reporter=list,json --output=tmp/chrome-focused-green
+
+[WebServer] (node:30440) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:2316) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:34116) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 tests\museum-fullscreen.spec.ts:132:1 › room loading preserves native fullscreen and its reachable exit (10.8s)
+  ok 2 tests\museum-hotspots.spec.ts:28:1 › 3D hotspot mouse picking shares selection, hover tooltip and drag rejection (39.7s)
+  x  3 tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, end-first (38.7s)
+(node:20224) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  4 tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, device-first (33.6s)
+
+
+  1) tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, end-first 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  locator('#museum-catalogue').getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true, includeHidden: true })
+    Expected: "true"
+    Received: "false"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveAttribute" locator('#museum-catalogue').getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true, includeHidden: true }) with timeout 5000ms
+      - waiting for locator('#museum-catalogue').getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true, includeHidden: true })
+        9 × locator resolved to <button type="button" data-variant="light" aria-pressed="false" aria-label="Xem chi tiết Hiện vật 3" class="mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root">…</button>
+          - unexpected value "false"
+
+
+      85 |       await aimXr(page, selection.point);
+      86 |       await page.evaluate(() => window.museumXrFixture.select());
+    > 87 |       await expect(museumExhibitButton(page, `Xem chi tiết ${selection.name}`)).toHaveAttribute('aria-pressed', 'true');
+         |                                                                                 ^
+      88 |       samples.push({ stage: `active-${cycle}`, requests: [...requests], renderers: await readRendererProbe(page) });
+      89 |       await page.evaluate(order => window.museumXrFixture.terminateHeadset(order), order);
+      90 |       await expect(phase(page, 'idle')).toBeVisible();
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-xr-disconnect.spec.ts:87:81
+
+    Error Context: tmp\chrome-focused-green\museum-xr-disconnect-F11-F-9854d-d-fresh-reconnect-end-first\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\chrome-focused-green\museum-xr-disconnect-F11-F-9854d-d-fresh-reconnect-end-first\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\chrome-focused-green\museum-xr-disconnect-F11-F-9854d-d-fresh-reconnect-end-first\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, device-first 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  locator('#museum-catalogue').getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true, includeHidden: true })
+    Expected: "true"
+    Received: "false"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveAttribute" locator('#museum-catalogue').getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true, includeHidden: true }) with timeout 5000ms
+      - waiting for locator('#museum-catalogue').getByRole('button', { name: 'Xem chi tiết Hiện vật 3', exact: true, includeHidden: true })
+        9 × locator resolved to <button type="button" data-variant="light" aria-pressed="false" aria-label="Xem chi tiết Hiện vật 3" class="mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root">…</button>
+          - unexpected value "false"
+
+
+      85 |       await aimXr(page, selection.point);
+      86 |       await page.evaluate(() => window.museumXrFixture.select());
+    > 87 |       await expect(museumExhibitButton(page, `Xem chi tiết ${selection.name}`)).toHaveAttribute('aria-pressed', 'true');
+         |                                                                                 ^
+      88 |       samples.push({ stage: `active-${cycle}`, requests: [...requests], renderers: await readRendererProbe(page) });
+      89 |       await page.evaluate(order => window.museumXrFixture.terminateHeadset(order), order);
+      90 |       await expect(phase(page, 'idle')).toBeVisible();
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-xr-disconnect.spec.ts:87:81
+
+    Error Context: tmp\chrome-focused-green\museum-xr-disconnect-F11-F-aedf4-resh-reconnect-device-first\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\chrome-focused-green\museum-xr-disconnect-F11-F-aedf4-resh-reconnect-device-first\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\chrome-focused-green\museum-xr-disconnect-F11-F-aedf4-resh-reconnect-device-first\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, end-first 
+    tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, device-first 
+  2 passed (2.1m)

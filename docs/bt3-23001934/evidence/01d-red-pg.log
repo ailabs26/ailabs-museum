@@ -1,0 +1,46 @@
+# RED — integration PG thật, sau khi sửa lỗi test (insert tái dùng object) — 2026-10-31T23:14:36+07:00
+▶ MediaUploadJobRepository (PostgreSQL thật)
+  ✖ 20 insert đồng thời cùng key → đúng 1 created, cả 20 nhận cùng job, bảng có 1 dòng (19.972125ms)
+  ✔ unique constraint tồn tại đúng tên; created_by NOT NULL (18.20889ms)
+  ✖ findOwned chỉ trả job của đúng người tạo; failInterrupted chỉ đổi job dang dở (7.210431ms)
+✖ MediaUploadJobRepository (PostgreSQL thật) (3832.800183ms)
+ℹ tests 3
+ℹ suites 1
+ℹ pass 1
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10003.816254
+
+✖ failing tests:
+
+test at src/modules/media/tests/upload-jobs-repository.integration.spec.ts:52:24
+✖ 20 insert đồng thời cùng key → đúng 1 created, cả 20 nhận cùng job, bảng có 1 dòng (19.972125ms)
+  NotImplementedException: BT3: insertOrFindExisting chưa hiện thực
+      at MediaUploadJobRepository.insertOrFindExisting (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/repositories/media-upload-job.repository.ts:18:11)
+      at /media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-repository.integration.spec.ts:57:14
+      at Array.from (<anonymous>)
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-repository.integration.spec.ts:56:13)
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1869:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    response: { message: 'BT3: insertOrFindExisting chưa hiện thực', error: 'Not Implemented', statusCode: 501 },
+    status: 501,
+    options: {}
+  }
+
+test at src/modules/media/tests/upload-jobs-repository.integration.spec.ts:75:24
+✖ findOwned chỉ trả job của đúng người tạo; failInterrupted chỉ đổi job dang dở (7.210431ms)
+  NotImplementedException: BT3: insertOrFindExisting chưa hiện thực
+      at MediaUploadJobRepository.insertOrFindExisting (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/repositories/media-upload-job.repository.ts:18:11)
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-repository.integration.spec.ts:90:41)
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    response: { message: 'BT3: insertOrFindExisting chưa hiện thực', error: 'Not Implemented', statusCode: 501 },
+    status: 501,
+    options: {}
+  }

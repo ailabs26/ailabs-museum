@@ -1,23 +1,69 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Header, Param, Query, Res, StreamableFile, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../../common/decorators/public.decorator';
+import { PublicRateBucketOf, PublicRateLimitGuard } from '../../../common/rate-limit/public-rate-limit.guard';
 import { ExhibitsService } from '../services/exhibits.service';
+import { PublicModelsService } from '../services/public-models.service';
+import { PublicLangQueryDto } from '../dto/public-lang-query.dto';
+import { PublicSearchQueryDto } from '../dto/public-search-query.dto';
+
+/**
+ * Nội dung công khai cho khách tham quan. `no-cache`: trình duyệt/CDN phải hỏi lại server
+ * mỗi request, nên Publish/Hide/xóa có hiệu lực ngay với request mới (BR-22, AC-51).
+ */
+const PUBLIC_CACHE_CONTROL = 'no-cache';
 
 @ApiTags('Public museum content')
 @Public()
+@UseGuards(PublicRateLimitGuard)
 @Controller('rooms')
 export class ExhibitsController {
-  constructor(private readonly service: ExhibitsService) {}
+  constructor(private readonly service: ExhibitsService, private readonly models: PublicModelsService) {}
 
   @Get()
+  @Header('Cache-Control', PUBLIC_CACHE_CONTROL)
   @ApiOperation({ summary: 'Danh sách phòng công khai' })
-  listRooms() {
-    return this.service.roomsList();
+  listRooms(@Query() query: PublicLangQueryDto) {
+    return this.service.roomsList(query.lang);
+  }
+
+  // PHẢI đặt TRƯỚC route ':slug' — nếu không '/rooms/search' sẽ bị khớp vào ':slug' (slug='search').
+  @Get('search')
+  @Header('Cache-Control', PUBLIC_CACHE_CONTROL)
+  @ApiOperation({
+    summary: 'Tìm kiếm hiện vật công khai: lọc + phân trang + thứ tự ổn định (VT-077)',
+    description:
+      'Thứ tự cố định `roomId, displayOrder, id` (ổn định, không trùng/sót giữa các trang). ' +
+      'Tham số `sort` bị bỏ qua. Chỉ trả hiện vật APPROVED + visible thuộc phòng ACTIVE.',
+  })
+  searchExhibits(@Query() query: PublicSearchQueryDto) {
+    return this.service.publicSearch(query);
   }
 
   @Get(':slug')
-  @ApiOperation({ summary: 'Phòng và hiện vật công khai theo slug' })
-  getRoom(@Param('slug') slug: string) {
-    return this.service.roomWithExhibits(slug);
+  @Header('Cache-Control', PUBLIC_CACHE_CONTROL)
+  @ApiOperation({ summary: 'Phòng và hiện vật công khai (revision Published hiện hành + media) theo slug' })
+  getRoom(@Param('slug') slug: string, @Query() query: PublicLangQueryDto) {
+    return this.service.roomWithExhibits(slug, query.lang);
+  }
+
+  @Get(':slug/exhibits/:exhibitId/model')
+  @PublicRateBucketOf('media')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('X-Content-Type-Options', 'nosniff')
+  @ApiOperation({ summary: 'GLB của hiện vật đã xuất bản; truy cập Storage qua máy chủ' })
+  async getModel(@Param('slug') slug: string, @Param('exhibitId') exhibitId: string,
+    @Query('version') version: string | undefined, @Res({ passthrough: true }) response: Response) {
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    response.once('close', abort);
+    try {
+      const asset = await this.models.open(slug, exhibitId, version, controller.signal);
+      asset.stream.once('close', () => response.off('close', abort));
+      const file = new StreamableFile(asset.stream, { type: 'model/gltf-binary', length: asset.sizeBytes });
+      file.setErrorLogger(() => undefined);
+      return file;
+    } catch (error) { response.off('close', abort); throw error; }
   }
 }

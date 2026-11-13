@@ -1,30 +1,34 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { Container, Text, Title, Stack } from '@mantine/core';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { RequireAuth } from '@/core/auth/RequireAuth';
 import { HomePage } from '@/pages/client/HomePage';
+import { CollectionPage } from '@/pages/client/CollectionPage';
+import { ExhibitDetailPage } from '@/pages/client/ExhibitDetailPage';
 import { LoginPage } from '@/pages/admin/LoginPage';
 import { DashboardPage } from '@/pages/admin/DashboardPage';
-import { PlaceholderPage } from '@/pages/admin/PlaceholderPage';
+import { RoomsPage } from '@/pages/admin/RoomsPage';
+import { ExhibitsPage } from '@/pages/admin/ExhibitsPage';
+import { ExhibitPreviewPage } from '@/pages/admin/ExhibitPreviewPage';
+import { MediaPage } from '@/pages/admin/MediaPage';
 import { UsersPage } from '@/pages/admin/UsersPage';
 import { RolesPage } from '@/pages/admin/RolesPage';
 import { PermissionMatrixPage } from '@/pages/admin/PermissionMatrixPage';
+import { PermissionsPage } from '@/pages/admin/PermissionsPage';
 import { AuditPage } from '@/pages/admin/AuditPage';
+import { ModerationPage } from '@/pages/admin/ModerationPage';
+import { ReportsPage } from '@/pages/admin/ReportsPage';
+import { TranslationsPage } from '@/pages/admin/TranslationsPage';
+import { ApiKeysPage } from '@/pages/admin/ApiKeysPage';
+import { SettingsPage } from '@/pages/admin/SettingsPage';
 import { RequirePermission } from '@/core/auth/RequirePermission';
 import { PERMISSIONS } from '@/core/auth/permissions';
+import { PublicLocaleProvider } from '@/core/i18n/public-locale';
 import { NotFoundPage } from '@/pages/NotFoundPage';
-
-function ClientComingSoon({ title }: { title: string }) {
-  return (
-    <Container size="md" py={80}>
-      <Stack align="center" ta="center">
-        <Title order={2}>{title}</Title>
-        <Text c="dimmed">Phần này sẽ được dựng ở các PR client (task 16–20).</Text>
-      </Stack>
-    </Container>
-  );
-}
+import { ExhibitShortLinkPage } from '@/pages/client/ExhibitShortLinkPage';
+import { RoomQrPrintPage } from '@/pages/admin/RoomQrPrintPage';
+import { MuseumPage } from '@/pages/MuseumPage';
 
 /** Hiển thị khi tài khoản đăng nhập nhưng thiếu quyền xem màn hình quản trị. */
 function NoAccess() {
@@ -45,8 +49,11 @@ export function AppRouter() {
       {/* Client công khai */}
       <Route element={<PublicLayout />}>
         <Route index element={<HomePage />} />
-        <Route path="collection" element={<ClientComingSoon title="Bộ sưu tập 2D" />} />
-        <Route path="tour" element={<ClientComingSoon title="Tham quan 3D / VR" />} />
+        <Route path="collection" element={<CollectionPage />} />
+        <Route path="collection/:roomSlug/exhibits/:exhibitId" element={<ExhibitDetailPage />} />
+        <Route path="e/:exhibitId" element={<ExhibitShortLinkPage />} />
+        <Route path="tour" element={<MuseumPage />} />
+        <Route path="tour.html" element={<MuseumPage />} />
       </Route>
 
       {/* Đăng nhập CMS (ngoài guard) */}
@@ -56,11 +63,84 @@ export function AppRouter() {
       <Route path="/admin" element={<RequireAuth />}>
         <Route element={<AdminLayout />}>
           <Route index element={<DashboardPage />} />
-          <Route path="rooms" element={<PlaceholderPage title="Phòng trưng bày" pr="PR CMS (task 6)" />} />
-          <Route path="exhibits" element={<PlaceholderPage title="Hiện vật" pr="PR CMS (task 7)" />} />
-          <Route path="media" element={<PlaceholderPage title="Media" pr="PR CMS (task 8)" />} />
-          <Route path="moderation" element={<PlaceholderPage title="Kiểm duyệt" pr="PR (task 22)" />} />
-          <Route path="reports" element={<PlaceholderPage title="Báo cáo vi phạm" pr="PR (task 23)" />} />
+          <Route
+            path="rooms"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.ROOM_READ]} fallback={<NoAccess />}>
+                <RoomsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="rooms/:id/qr"
+            element={
+              <RequirePermission allOf={[PERMISSIONS.ROOM_READ, PERMISSIONS.EXHIBIT_READ]} fallback={<NoAccess />}>
+                <RoomQrPrintPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="exhibits"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.EXHIBIT_READ]} fallback={<NoAccess />}>
+                <ExhibitsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="exhibits/:id/preview"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.EXHIBIT_READ]} fallback={<NoAccess />}>
+                <ExhibitPreviewPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="media"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.MEDIA_UPLOAD]} fallback={<NoAccess />}>
+                <MediaPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="translations"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.TRANSLATION_READ]} fallback={<NoAccess />}>
+                <TranslationsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="api-keys"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.APIKEY_READ]} fallback={<NoAccess />}>
+                <ApiKeysPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="moderation"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.REVISION_PUBLISH]} fallback={<NoAccess />}>
+                <ModerationPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="reports"
+            element={
+              <RequirePermission anyOf={[PERMISSIONS.REPORT_READ]} fallback={<NoAccess />}>
+                <ReportsPage />
+              </RequirePermission>
+            }
+          />
+          {/* Phiên của chính mình: mọi tài khoản đăng nhập đều xem được, không cần permission. */}
+          <Route path="settings" element={<Navigate to="/admin/settings/profile" replace />} />
+          <Route path="settings/:tab" element={<SettingsPage />} />
+          {/* Link cũ trước khi gom vào trang Cài đặt. */}
+          <Route path="sessions" element={<Navigate to="/admin/settings/sessions" replace />} />
+          <Route path="change-password" element={<Navigate to="/admin/settings/password" replace />} />
           <Route
             path="users"
             element={
@@ -81,6 +161,17 @@ export function AppRouter() {
             path="permissions"
             element={
               <RequirePermission anyOf={[PERMISSIONS.PERMISSION_READ]} fallback={<NoAccess />}>
+                <PermissionsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="permission-matrix"
+            element={
+              <RequirePermission
+                allOf={[PERMISSIONS.PERMISSION_READ, PERMISSIONS.ROLE_READ]}
+                fallback={<NoAccess />}
+              >
                 <PermissionMatrixPage />
               </RequirePermission>
             }
@@ -96,7 +187,7 @@ export function AppRouter() {
         </Route>
       </Route>
 
-      <Route path="*" element={<NotFoundPage />} />
+      <Route path="*" element={<PublicLocaleProvider><NotFoundPage /></PublicLocaleProvider>} />
     </Routes>
   );
 }

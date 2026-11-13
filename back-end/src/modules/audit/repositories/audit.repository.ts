@@ -1,18 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Paginated } from '../../../common/types/paginated.type';
 import { AuditLog } from '../entities/audit-log.entity';
 import { BaseRepository } from '../../../common/repository/base.repository';
 
-export interface ListAuditOptions {
-  page: number;
-  pageSize: number;
+/** Bộ lọc nhật ký dùng chung cho danh sách và xuất CSV. */
+export interface AuditFilter {
   actorId?: string;
   action?: string;
   resourceType?: string;
   from?: Date;
   to?: Date;
+}
+
+export interface ListAuditOptions extends AuditFilter {
+  page: number;
+  pageSize: number;
 }
 
 @Injectable()
@@ -25,6 +29,20 @@ export class AuditRepository extends BaseRepository<AuditLog> {
     const page = Math.max(1, options.page);
     const pageSize = Math.max(1, options.pageSize);
 
+    const [items, total] = await this.filtered(options)
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+
+    return { items, total, page, pageSize };
+  }
+
+  /** Tối đa `limit` bản ghi khớp bộ lọc, mới nhất trước (xuất CSV). */
+  listForExport(filter: AuditFilter, limit: number): Promise<AuditLog[]> {
+    return this.filtered(filter).take(limit).getMany();
+  }
+
+  private filtered(options: AuditFilter): SelectQueryBuilder<AuditLog> {
     const query = this.repo
       .createQueryBuilder('audit')
       .leftJoinAndSelect('audit.actor', 'actor');
@@ -37,13 +55,6 @@ export class AuditRepository extends BaseRepository<AuditLog> {
     if (options.from) query.andWhere('audit.occurredAt >= :from', { from: options.from });
     if (options.to) query.andWhere('audit.occurredAt <= :to', { to: options.to });
 
-    const [items, total] = await query
-      .orderBy('audit.occurredAt', 'DESC')
-      .addOrderBy('audit.id', 'DESC')
-      .skip((page - 1) * pageSize)
-      .take(pageSize)
-      .getManyAndCount();
-
-    return { items, total, page, pageSize };
+    return query.orderBy('audit.occurredAt', 'DESC').addOrderBy('audit.id', 'DESC');
   }
 }

@@ -1,8 +1,14 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, {
+  type AxiosRequestConfig,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from 'axios';
+import { z } from 'zod';
 import { env } from '../config/env';
 import { tokenStore } from '../auth/token-store';
+import { parseAuthResponse, refreshResultSchema } from '../auth/authSchema';
 import type { ApiResponse, Page } from './api-response';
-import { toApiException } from './api-error';
+import { ApiException, endsSession, toApiException } from './api-error';
 import { loadingStore } from './loading-store';
 
 /** Axios instance dùng chung: gắn token, gửi cookie refresh, tự refresh khi 401. */
@@ -12,26 +18,90 @@ const client = axios.create({
   timeout: 20000,
 });
 
-client.interceptors.request.use((config) => {
+type SessionRequestConfig = InternalAxiosRequestConfig & {
+  _retried?: boolean;
+  _sessionVersion?: number;
+  _accessToken?: string | null;
+};
+
+function skipsRefresh(url: string | undefined): boolean {
+  return /\/auth\/(login|refresh|logout)(?:[/?#]|$)/.test(url ?? '');
+}
+
+client.interceptors.request.use((config: SessionRequestConfig) => {
+  config._sessionVersion ??= tokenStore.getSessionVersion();
+  if (!skipsRefresh(config.url) && config._sessionVersion !== tokenStore.getSessionVersion()) {
+    throw new ApiException('Phiên đăng nhập đã thay đổi', 401);
+  }
   loadingStore.start();
   const token = tokenStore.get();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  config._accessToken = token;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    config.headers.delete('Authorization');
+  }
   return config;
 });
 
 // Refresh single-flight: nhiều request 401 cùng lúc chỉ gọi /auth/refresh một lần
-let refreshing: Promise<string | null> | null = null;
+let refreshing: Promise<string> | null = null;
 
-async function refreshAccessToken(): Promise<string | null> {
+/** Tên Web Lock dùng chung mọi tab cùng origin cho /auth/refresh. */
+export const REFRESH_LOCK_NAME = 'aura-auth-refresh';
+
+/**
+ * Refresh cookie dùng chung mọi tab, access token thì riêng từng tab. Hai tab refresh cùng lúc sẽ gửi
+ * cùng một token → request đến sau bị back-end coi là tái dùng và thu hồi cả phiên (issue #141).
+ * Khóa Web Lock xếp hàng các tab: tab sau chỉ gửi khi tab trước đã nhận cookie mới. Trình duyệt
+ * không có Web Locks thì chạy thẳng (back-end còn ân hạn ngắn cho token vừa xoay vòng).
+ */
+function withRefreshLock<T>(work: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator === 'undefined' ? undefined : navigator.locks;
+  return locks ? locks.request(REFRESH_LOCK_NAME, work) : work();
+}
+const refreshEnvelopeSchema = z.object({
+  success: z.literal(true),
+  data: refreshResultSchema,
+});
+
+/** Lỗi refresh cho UI; 429 kèm số giây chờ theo header Retry-After. */
+function refreshError(error: unknown): ApiException {
+  const apiError = toApiException(error);
+  if (apiError.status !== 429) return apiError;
+  const retryAfter = Number((error as { response?: { headers?: Record<string, unknown> } }).response?.headers?.['retry-after']);
+  const wait = Number.isFinite(retryAfter) && retryAfter > 0 ? ` sau ${Math.ceil(retryAfter)} giây` : ' sau ít phút';
+  return new ApiException(`Làm mới phiên quá nhiều lần trong thời gian ngắn. Vui lòng thử lại${wait}.`, 429);
+}
+
+async function refreshAccessToken(): Promise<string> {
   if (!refreshing) {
-    refreshing = axios
-      .post<ApiResponse<{ accessToken: string }>>(
-        `${env.apiBaseUrl}/auth/refresh`,
-        {},
-        { withCredentials: true },
-      )
-      .then((res) => res.data.data?.accessToken ?? null)
-      .catch(() => null)
+    const version = tokenStore.getVersion();
+
+    refreshing = withRefreshLock(() => axios.post<unknown>(
+      `${env.apiBaseUrl}/auth/refresh`,
+      {},
+      { withCredentials: true, timeout: 20000 },
+    ))
+      .then((res) => {
+        const { data } = parseAuthResponse(refreshEnvelopeSchema, res.data);
+
+        // Phiên đã bị xóa/đổi trong khi refresh đang chạy thì bỏ token trả về.
+        if (version !== tokenStore.getVersion()) {
+          throw new ApiException('Phiên đăng nhập đã thay đổi', 401);
+        }
+
+        tokenStore.replace(data.accessToken);
+        return data.accessToken;
+      })
+      .catch((error: unknown) => {
+        // Chỉ 401 mới là hết phiên; 429/5xx/mất mạng giữ phiên (refresh cookie còn) để lần sau thử lại.
+        if (endsSession(error) && version === tokenStore.getVersion()) {
+          tokenStore.clear();
+        }
+
+        throw refreshError(error);
+      })
       .finally(() => {
         refreshing = null;
       });
@@ -42,22 +112,46 @@ async function refreshAccessToken(): Promise<string | null> {
 client.interceptors.response.use(
   (response) => {
     loadingStore.done();
+    const config = response.config as SessionRequestConfig;
+    if (!skipsRefresh(config.url)
+      && config._sessionVersion !== tokenStore.getSessionVersion()
+      && (config._accessToken || config.url === '/auth/me')) {
+      throw new ApiException('Phiên đăng nhập đã thay đổi', 401);
+    }
     return response;
   },
   async (error) => {
     loadingStore.done();
-    const original = error.config as AxiosRequestConfig & { _retried?: boolean };
+    const original = error.config as SessionRequestConfig | undefined;
     const status = error.response?.status;
-    const isAuthEndpoint = original?.url?.includes('/auth/');
-    if (status === 401 && original && !original._retried && !isAuthEndpoint) {
-      original._retried = true;
-      const token = await refreshAccessToken();
-      if (token) {
-        tokenStore.set(token);
-        original.headers = { ...original.headers, Authorization: `Bearer ${token}` };
-        return client(original);
+    if (status === 401 && original && !skipsRefresh(original.url)
+      && original._sessionVersion === tokenStore.getSessionVersion()
+      && tokenStore.canRefresh()) {
+      if (!original._retried) {
+        original._retried = true;
+        // 401 đến muộn sau rotation: retry bằng token mới, không rotate thêm lần nữa.
+        const currentToken = tokenStore.get();
+        const token = currentToken && currentToken !== original._accessToken
+          ? currentToken
+          : await refreshAccessToken();
+
+        if (original._sessionVersion === tokenStore.getSessionVersion()) {
+          original.headers.Authorization = `Bearer ${token}`;
+          return client(original);
+        }
+      } else if (original._accessToken === tokenStore.get()) {
+        // Retry vẫn 401: kết thúc phiên, không lặp refresh vô hạn.
+        tokenStore.clear();
       }
-      tokenStore.clear();
+    }
+    // Request `responseType: 'blob'` (tải file) nhận lỗi JSON dưới dạng Blob → đọc lại để giữ message của back-end.
+    const body: unknown = error.response?.data;
+    if (body instanceof Blob && body.type.includes('json')) {
+      try {
+        error.response.data = JSON.parse(await body.text());
+      } catch {
+        // Không đọc được: giữ lỗi gốc của axios.
+      }
     }
     return Promise.reject(toApiException(error));
   },
@@ -92,6 +186,10 @@ export const http = {
   },
   async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
     return unwrap(await client.delete<ApiResponse<T>>(url, config));
+  },
+  async waitForRefresh(): Promise<void> {
+    // Logout vẫn phải chạy khi refresh đang chờ bị từ chối hoặc mất mạng.
+    await refreshing?.catch(() => undefined);
   },
   raw: client,
 };

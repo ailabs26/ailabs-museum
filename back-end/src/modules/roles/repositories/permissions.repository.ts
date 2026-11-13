@@ -18,9 +18,10 @@ export class PermissionsRepository {
     return this.permissions.find({ order: { code: 'ASC' } });
   }
 
-  async findMissingCodes(codes: string[]): Promise<string[]> {
+  async findMissingCodes(codes: string[], manager?: EntityManager): Promise<string[]> {
     if (codes.length === 0) return [];
-    const found = await this.permissions.find({ where: { code: In(codes) } });
+    const repo = manager?.getRepository(Permission) ?? this.permissions;
+    const found = await repo.find({ where: { code: In(codes) } });
     const foundCodes = new Set(found.map((permission) => permission.code));
     return codes.filter((code) => !foundCodes.has(code));
   }
@@ -41,5 +42,9 @@ export class PermissionsRepository {
       linkRepo.create({ roleId, permissionId: permission.id }),
     );
     await linkRepo.save(links);
+  }
+
+  async lockMatrix(manager: EntityManager): Promise<void> {
+    await manager.query("SELECT pg_advisory_xact_lock(hashtext('roles.permission_matrix'))");
   }
 }

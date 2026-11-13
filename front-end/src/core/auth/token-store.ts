@@ -4,14 +4,33 @@
  * Có listener để AuthContext đồng bộ trạng thái khi token đổi.
  */
 let accessToken: string | null = null;
+let version = 0;
+let sessionVersion = 0;
+let canRefresh = true;
 const listeners = new Set<(token: string | null) => void>();
 
 export const tokenStore = {
   get(): string | null {
     return accessToken;
   },
+  getVersion(): number {
+    return version;
+  },
+  getSessionVersion(): number {
+    return sessionVersion;
+  },
+  canRefresh(): boolean {
+    return canRefresh;
+  },
   set(token: string | null): void {
+    sessionVersion += 1;
+    this.replace(token);
+  },
+  /** Rotation đổi access token nhưng vẫn thuộc cùng phiên đăng nhập. */
+  replace(token: string | null): void {
     accessToken = token;
+    version += 1;
+    canRefresh = token !== null;
     listeners.forEach((fn) => fn(token));
   },
   clear(): void {

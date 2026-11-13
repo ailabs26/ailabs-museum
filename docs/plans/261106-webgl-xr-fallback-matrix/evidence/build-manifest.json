@@ -1,0 +1,77 @@
+{
+  "baseSha": "c10ffa9884f54e45203522e1b57d8bd01a1cf0f8",
+  "runtimeSourceSha": "875b3b72029e87c0a703d4fe405d196f92d6cb02",
+  "testedRevision": "ec3c090f84cb2008246bae6707b7ad32687d0147",
+  "branch": "chore/webgl-xr-fallback-matrix",
+  "runtimeChangesFromBase": [
+    "front-end/src/components/museum/MuseumXr.tsx"
+  ],
+  "sourceFiles": [
+    {
+      "Path": "D:\\CNPM\\ailabs-museum\\front-end\\src\\components\\museum\\MuseumXr.tsx",
+      "Hash": "B86DED246F6A543F0DFE57F13B6D28EA5A8D761C5E0731EDACE858E6AAEC5D47"
+    }
+  ],
+  "testFiles": [
+    {
+      "Path": "D:\\CNPM\\ailabs-museum\\front-end\\tests\\museum-xr-disconnect.spec.ts",
+      "Hash": "B2CC9F5685DEEFFD14972DDB41797013FC54099D59D296187BC86A15494109EE"
+    },
+    {
+      "Path": "D:\\CNPM\\ailabs-museum\\front-end\\tests\\museum-xr.spec.ts",
+      "Hash": "94E12DDC74E8880647E697BFBF8DA803C388C9D9AD239CAA2D427DE07E5CF213"
+    },
+    {
+      "Path": "D:\\CNPM\\ailabs-museum\\front-end\\tests\\museum-glb.spec.ts",
+      "Hash": "72DD3354F1DA4483F5C5B9EE908D5A373E469E0309ACABE86595514B82210598"
+    },
+    {
+      "Path": "D:\\CNPM\\ailabs-museum\\front-end\\tests\\museum-fullscreen.spec.ts",
+      "Hash": "156732C1D14191B19EABF359C7C9CB27373825CA428181ED5F0997A27FF253E9"
+    },
+    {
+      "Path": "D:\\CNPM\\ailabs-museum\\front-end\\tests\\museum-hotspots.spec.ts",
+      "Hash": "70A43C2ED463800A09734E9412776FA7A05F09F8F623A93790F5105A48F0A372"
+    },
+    {
+      "Path": "D:\\CNPM\\ailabs-museum\\front-end\\tests\\fixtures\\museumXr.ts",
+      "Hash": "10E45521025FFCCEB273A5BDDCBEB066184FE0E3D2496CCF0AA0ABE190BD48BF"
+    },
+    {
+      "Path": "D:\\CNPM\\ailabs-museum\\front-end\\tests\\fixtures\\museumGlb.ts",
+      "Hash": "DCF0AEC4340E5C3BBF2EA11FAD983C127B1080E62F1155A763CF851A3AE896B4"
+    },
+    {
+      "Path": "D:\\CNPM\\ailabs-museum\\front-end\\src\\helpers\\xrSession.test.ts",
+      "Hash": "8EE91760E7647AAD165A4CFF9B7AA170003DAF3DF58A9C42F31CE73AA2169623"
+    },
+    {
+      "Path": "D:\\CNPM\\ailabs-museum\\front-end\\src\\helpers\\xrRendererBinding.test.ts",
+      "Hash": "6E715FE79F29E1D6EAF6B6D70F0045CCD6A5FC84EB0AF07C78CCFD704ACCACCE"
+    },
+    {
+      "Path": "D:\\CNPM\\ailabs-museum\\front-end\\src\\helpers\\webglRecovery.test.ts",
+      "Hash": "36E5513A300CC0AA21B508ADE26A7F8516ECAEB6696D4EDCE2B36951B1DAA20E"
+    }
+  ],
+  "bundles": [
+    {
+      "Path": "D:\\CNPM\\ailabs-museum\\front-end\\dist\\assets\\MuseumScene-DuVJge0A.js",
+      "Hash": "4CA25F38A71C3F1E1A627F5C3C7CDFEAB17BF073D5DED4E92FE4234565DD0C61"
+    },
+    {
+      "Path": "D:\\CNPM\\ailabs-museum\\front-end\\dist\\assets\\main-D_wrqfYX.js",
+      "Hash": "D46E246149000505F3B0761D7A83B2032D4D675F6084F9D2C51C01DE8C50F76A"
+    }
+  ],
+  "previewCommand": "npm run preview -- --host 127.0.0.1 --port 4173 --strictPort",
+  "reuseExistingServer": false,
+  "workers": 1,
+  "primaryChannel": "msedge",
+  "primaryLaunchArgs": [
+    "--use-angle=swiftshader",
+    "--enable-unsafe-swiftshader"
+  ],
+  "hardwareMode": "MUSEUM_HARDWARE_AUDIT=1",
+  "hardwareExtraLaunchArgs": []
+}

@@ -21,6 +21,10 @@ export const theme = createTheme({
   defaultRadius: 'md',
   fontFamily:
     'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  headings: { fontWeight: '700' },
+  headings: {
+    fontWeight: '700',
+    fontFamily:
+      '"Plus Jakarta Sans", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  },
   cursorType: 'pointer',
 });

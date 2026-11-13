@@ -1,0 +1,9 @@
+# npm test (toàn bộ back-end, PostgreSQL local 127.0.0.1:5433) sau patch
+ℹ tests 2052
+ℹ suites 243
+ℹ pass 2052
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 88189.573852

@@ -1,0 +1,65 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test museum-xr-disconnect.spec.ts --reporter=list,json --output=tmp/fallback-focused
+
+[WebServer] (node:5592) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:28596) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 10 tests using 1 worker
+
+(node:32716) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 tests\museum-xr-disconnect.spec.ts:51:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, end-first (12.1s)
+  ok  2 tests\museum-xr-disconnect.spec.ts:51:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, device-first (12.1s)
+  ok  3 tests\museum-xr-disconnect.spec.ts:112:1 › F13 blurred visibility ignores select and snap-turn, hidden ends the session (6.1s)
+  ok  4 tests\museum-xr-disconnect.spec.ts:130:3 › F14 native end during pending compatibility cannot resurrect presentation (3.6s)
+  ok  5 tests\museum-xr-disconnect.spec.ts:130:3 › F14 native end during pending binding cannot resurrect presentation (3.6s)
+  x   6 tests\museum-xr-disconnect.spec.ts:150:3 › F17 close while native request is pending ends the late session without binding (9.4s)
+(node:15048) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  7 tests\museum-xr-disconnect.spec.ts:150:3 › F17 room while native request is pending ends the late session without binding (4.5s)
+  ok  8 tests\museum-xr-disconnect.spec.ts:170:3 › F15 real context loss with native termination, binding=false (5.4s)
+  ok  9 tests\museum-xr-disconnect.spec.ts:170:3 › F15 real context loss with native termination, binding=true (7.2s)
+  ok 10 tests\museum-xr-disconnect.spec.ts:188:1 › F04 F18 three partial binding failures exhaust the Canvas reset budget into readable 2D (12.5s)
+
+
+  1) tests\museum-xr-disconnect.spec.ts:150:3 › F17 close while native request is pending ends the late session without binding 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Array [
+    -   0,
+    +   8,
+      ]
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      22 |
+      23 | async function assertReleased(page: Page) {
+    > 24 |   await expect.poll(() => page.evaluate(() => window.museumXrFixture.listeners.map(counts =>
+         |                                                                     ^
+      25 |     Object.values(counts).reduce((sum, count) => sum + count, 0)))).toEqual(
+      26 |     await page.evaluate(() => window.museumXrFixture.sessions.map(() => 0)),
+      27 |   );
+        at assertReleased (D:\CNPM\ailabs-museum\front-end\tests\museum-xr-disconnect.spec.ts:24:69)
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-xr-disconnect.spec.ts:160:5
+
+    Error Context: tmp\fallback-focused\museum-xr-disconnect-F17-c-95d51-ate-session-without-binding\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\fallback-focused\museum-xr-disconnect-F17-c-95d51-ate-session-without-binding\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\fallback-focused\museum-xr-disconnect-F17-c-95d51-ate-session-without-binding\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests\museum-xr-disconnect.spec.ts:150:3 › F17 close while native request is pending ends the late session without binding 
+  9 passed (1.3m)

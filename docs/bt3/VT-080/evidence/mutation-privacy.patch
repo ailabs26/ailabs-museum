@@ -1,0 +1,6 @@
+diff --git a/back-end/src/modules/users/controllers/users.controller.ts b/back-end/src/modules/users/controllers/users.controller.ts
+index 398470e..a32dae6 100644
+--- a/back-end/src/modules/users/controllers/users.controller.ts
++++ b/back-end/src/modules/users/controllers/users.controller.ts
+@@ -43 +42,0 @@ export class UsersController {
+-  @Permissions(PERMISSIONS.USER_READ)

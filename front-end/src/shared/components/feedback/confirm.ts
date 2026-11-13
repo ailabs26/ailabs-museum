@@ -23,6 +23,7 @@ export function confirmAction({
     children: message,
     labels: { confirm: confirmLabel, cancel: cancelLabel },
     confirmProps: { color: danger ? 'red' : undefined },
+    cancelProps: danger ? { 'data-autofocus': 'true' } : undefined,
     onConfirm: () => void onConfirm(),
   });
 }

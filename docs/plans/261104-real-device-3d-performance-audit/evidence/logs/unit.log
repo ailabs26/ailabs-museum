@@ -1,0 +1,57 @@
+
+> aura-museum-web@0.1.0 test:unit
+> vitest run
+
+
+ RUN  v2.1.8 D:/CNPM/ailabs-museum/front-end
+
+ ✓ src/helpers/draftAutosave.test.ts (9 tests) 17ms
+ ✓ src/helpers/exhibitFormErrors.test.ts (6 tests) 7ms
+ ✓ src/helpers/visitorPersistence.test.ts (9 tests) 13ms
+ ✓ src/helpers/visitorState.test.ts (6 tests) 17ms
+ ✓ src/helpers/xrSession.test.ts (11 tests) 135ms
+ ✓ src/helpers/attachNavigationInput.test.ts (5 tests) 11ms
+ ✓ src/helpers/draftPreviewDisplay.test.ts (10 tests) 12ms
+ ✓ src/helpers/museumNavigation.test.ts (9 tests) 19ms
+ ✓ src/helpers/museumAuditMetrics.test.ts (22 tests) 213ms
+ ✓ src/helpers/xrInteraction.test.ts (5 tests) 13ms
+ ✓ src/helpers/sanitizeModel.test.ts (16 tests) 44ms
+ ✓ src/helpers/artifactHotspots.test.ts (5 tests) 11ms
+ ✓ src/helpers/loadMuseumModel.test.ts (3 tests) 17ms
+ ✓ src/helpers/exhibitHotspots.test.ts (7 tests) 30ms
+ ✓ src/helpers/xrRendererBinding.test.ts (5 tests) 78ms
+ ✓ src/helpers/mediaCredits.test.ts (3 tests) 7ms
+ ✓ src/helpers/cinematicIntro.test.ts (7 tests) 13ms
+ ✓ src/helpers/museumAuditBrowser.test.ts (2 tests) 19ms
+ ✓ src/helpers/modelCamera.test.ts (3 tests) 20ms
+ ✓ src/helpers/roomModelAssets.test.ts (6 tests) 745ms
+ ✓ src/helpers/webglRecovery.test.ts (3 tests) 10ms
+ ✓ src/helpers/modelNormalization.test.ts (3 tests) 15ms
+ ✓ src/helpers/glbAsset.test.ts (2 tests) 11ms
+ ✓ src/helpers/bulkDelete.test.ts (4 tests) 32ms
+ ✓ src/helpers/passwordPolicy.test.ts (3 tests) 11ms
+ ✓ src/core/api/cms-error-message.test.ts (7 tests) 5ms
+ ✓ src/helpers/navigationGestures.test.ts (3 tests) 5ms
+ ✓ src/helpers/museumAuditAnalysis.test.ts (1 test) 1047ms
+   ✓ re-analyzes raw JSON on native-TS Node and separates workloads rather than pooling device FPS 1045ms
+ ✓ src/helpers/userAgent.test.ts (8 tests) 5ms
+ ✓ src/layouts/adminNav.permissions.test.ts (3 tests) 70ms
+ ✓ src/helpers/webglRenderGuard.test.ts (2 tests) 4ms
+ ✓ src/helpers/modelDiagnostics.test.ts (2 tests) 4ms
+ ✓ src/helpers/tourOrder.test.ts (4 tests) 3ms
+ ✓ src/helpers/notificationDisplay.test.ts (2 tests) 17ms
+ ✓ src/helpers/mediaLibrary.test.ts (3 tests) 3ms
+ ✓ src/helpers/fitLabelTitle.test.ts (4 tests) 2ms
+ ✓ src/helpers/audioTime.test.ts (19 tests) 4ms
+ ✓ src/helpers/museumQuality.test.ts (3 tests) 3ms
+ ✓ src/helpers/mapRoomDisplays.test.ts (1 test) 5ms
+ ✓ src/helpers/museumAuditRoute.test.ts (1 test) 2ms
+ ✓ src/core/auth/clearSessionCache.test.ts (3 tests) 6ms
+ ✓ src/services/audit.service.test.ts (3 tests) 12ms
+ ✓ src/core/api/http-client.test.ts (11 tests) 62ms
+
+ Test Files  43 passed (43)
+      Tests  244 passed (244)
+   Start at  21:42:31
+   Duration  6.12s (transform 5.18s, setup 0ms, collect 23.84s, tests 2.78s, environment 11ms, prepare 12.63s)
+

@@ -1,0 +1,4 @@
+# Lặp TC07 30 lần mỗi cấu hình (repeat-tc07.sh) — đo tỷ lệ phát hiện mutation và rủi ro flaky concurrency
+M1 (bỏ guard): 30 lần chạy TC07 (2 + 10 request song song) → pass=27 fail=3
+Patch (có guard): 30 lần chạy TC07 (2 + 10 request song song) → pass=30 fail=0
+M2 (bỏ khóa dòng): 30 lần chạy TC07 (2 + 10 request song song) → pass=0 fail=30

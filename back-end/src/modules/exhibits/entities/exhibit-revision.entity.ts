@@ -34,6 +34,20 @@ export interface ExhibitRevisionContent {
 @Index('UQ_exhibit_revisions_exhibit_no', ['exhibitId', 'revisionNo'], {
   unique: true,
 })
+// Index một phần cho từng slot media: phục vụ BR-21 (countUsage) và kiểm tra
+// "media được revision public hiện hành tham chiếu" khi phân phối file.
+@Index('IDX_exhibit_revisions_model_media', ['modelMediaId'], { where: '"model_media_id" IS NOT NULL' })
+@Index('IDX_exhibit_revisions_image_media', ['imageMediaId'], { where: '"image_media_id" IS NOT NULL' })
+@Index('IDX_exhibit_revisions_audio_media', ['audioMediaId'], { where: '"audio_media_id" IS NOT NULL' })
+@Index('IDX_exhibit_revisions_audio_en_media', ['audioEnMediaId'], {
+  where: '"audio_en_media_id" IS NOT NULL',
+})
+@Index('IDX_exhibit_revisions_subtitle_vi_media', ['subtitleViMediaId'], {
+  where: '"subtitle_vi_media_id" IS NOT NULL',
+})
+@Index('IDX_exhibit_revisions_subtitle_en_media', ['subtitleEnMediaId'], {
+  where: '"subtitle_en_media_id" IS NOT NULL',
+})
 @Check('CHK_exhibit_revisions_no', '"revision_no" >= 1')
 @Check(
   'CHK_exhibit_revisions_state',
@@ -75,12 +89,37 @@ export class ExhibitRevision {
   @JoinColumn({ name: 'image_media_id' })
   imageMedia!: Media | null;
 
-  @Column({ name: 'audio_media_id', type: 'uuid', nullable: true })
+  /** Audio guide tiếng Việt (tên cột giữ nguyên từ trước khi có audio đa ngôn ngữ). */
+  @Column({ name: 'audio_media_id', type: 'uuid', nullable: true, comment: 'Audio guide tiếng Việt' })
   audioMediaId!: string | null;
 
   @ManyToOne(() => Media, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'audio_media_id' })
   audioMedia!: Media | null;
+
+  /** Audio guide tiếng Anh. */
+  @Column({ name: 'audio_en_media_id', type: 'uuid', nullable: true })
+  audioEnMediaId!: string | null;
+
+  @ManyToOne(() => Media, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'audio_en_media_id' })
+  audioEnMedia!: Media | null;
+
+  /** Phụ đề WebVTT tiếng Việt, đi kèm audio tiếng Việt. */
+  @Column({ name: 'subtitle_vi_media_id', type: 'uuid', nullable: true })
+  subtitleViMediaId!: string | null;
+
+  @ManyToOne(() => Media, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'subtitle_vi_media_id' })
+  subtitleViMedia!: Media | null;
+
+  /** Phụ đề WebVTT tiếng Anh, đi kèm audio tiếng Anh. */
+  @Column({ name: 'subtitle_en_media_id', type: 'uuid', nullable: true })
+  subtitleEnMediaId!: string | null;
+
+  @ManyToOne(() => Media, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'subtitle_en_media_id' })
+  subtitleEnMedia!: Media | null;
 
   @Column({ name: 'created_by', type: 'uuid' })
   createdById!: string;

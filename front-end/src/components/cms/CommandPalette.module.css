@@ -1,0 +1,17 @@
+.input { border-bottom: 1px solid var(--mantine-color-default-border); padding: 6px 12px; }
+.input input { font-size: 16px; }
+.list { padding: 6px; }
+.item {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border-radius: 8px;
+  color: var(--mantine-color-text);
+}
+.itemActive { background: var(--mantine-primary-color-light); }
+.itemLabel { font-weight: 600; font-size: 14px; }
+.itemPath { margin-left: auto; font-size: 12px; color: var(--mantine-color-dimmed); font-family: var(--mantine-font-family-monospace); }
+.itemGo { color: var(--mantine-color-dimmed); flex-shrink: 0; }
+.itemActive .itemGo { color: var(--mantine-primary-color-filled); }
+.footer {
+  display: flex; gap: 18px; padding: 10px 14px; border-top: 1px solid var(--mantine-color-default-border);
+  font-size: 12px; color: var(--mantine-color-dimmed);
+}
+.footer span { display: inline-flex; align-items: center; gap: 5px; }

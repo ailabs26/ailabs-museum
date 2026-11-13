@@ -61,3 +61,6 @@ temp/
 
 assignment/
 assignments/
+# Media do Admin upload (Task 8) — dữ liệu runtime, không commit
+public/media/uploads/
+/storage/

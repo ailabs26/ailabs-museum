@@ -1,0 +1,18 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test museum-xr.spec.ts museum-hotspots.spec.ts --grep actual context restores|supported but refused|one checksum GLB --reporter=list,json --output=tmp/fallback-hardware
+
+[WebServer] (node:33700) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:19640) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:29048) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 tests\museum-hotspots.spec.ts:222:117 › one checksum GLB preserves four healthy models, interactive placeholder and isolated retry (5.2s)
+  ok 2 tests\museum-xr.spec.ts:68:1 › a supported but refused VR request preserves canvas, selection and permits retry (1.1s)
+  ok 3 tests\museum-xr.spec.ts:84:1 › actual context restores the same canvas and keeps logical selection (2.3s)
+
+  3 passed (20.2s)

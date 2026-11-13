@@ -4,6 +4,7 @@ import { PermissionKey } from '../constants/permissions.constant';
 import { AuthUser } from '../types/auth-user.type';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
+import { PermissionDeniedException } from '../exceptions/permission-denied.exception';
 
 /**
  * RBAC guard: đối chiếu @Permissions(...) của route với quyền của user.
@@ -35,7 +36,7 @@ export class PermissionsGuard implements CanActivate {
     const granted = new Set(user.permissions ?? []);
     const missing = required.filter((perm) => !granted.has(perm));
     if (missing.length > 0) {
-      throw new ForbiddenException(`Thiếu quyền: ${missing.join(', ')}`);
+      throw new PermissionDeniedException(required, missing);
     }
     return true;
   }

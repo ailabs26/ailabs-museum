@@ -8,3 +8,15 @@
 .claude/.freeze-state
 .agent-kit/
 .codegraph/
+
+# Ảnh chụp và tệp thử của các script nghiệm thu UI
+plans/**/scripts/shots/
+plans/**/scripts/t10files/
+
+# Agent Kit - chỉ bỏ qua các công cụ CLI khác không cài trong dự án này
+# (.claude/ và CLAUDE.md VẪN được track vì dự án commit bộ kit vào git)
+.agents/
+.codex/
+.codex-kit/
+.opencode/
+codex/

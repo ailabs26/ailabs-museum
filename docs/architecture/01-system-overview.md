@@ -28,7 +28,7 @@ không gian trực tuyến. Mục tiêu MVP (đề tài 3D-WEB-03):
 | **Hiệu năng API** | Đọc public p95 ≤ 500ms, error rate < 1% (100–200 CCU) |
 | **Hiệu năng 3D** | Desktop ≥ 60 FPS, Mobile ≥ 30 FPS; scene load ≤ 8s; UI tương tác ≤ 3s |
 | **Khả dụng** | 2D hoạt động không cần WebGL; XR từ chối vẫn giữ nội dung; bắt context-loss |
-| **Bảo mật** | JWT access/refresh, RBAC theo action+scope, chống MIME spoof/SVG-XSS/GLB độc hại, rate-limit |
+| **Bảo mật** | JWT access/refresh (thu hồi phiên có hiệu lực ngay), RBAC theo permission `resource:action`, chống MIME spoof/SVG-XSS/GLB độc hại, rate-limit |
 | **Accessibility** | WCAG 2.2 AA: điều hướng 100% bàn phím, focus trap modal, screen reader (NVDA/VoiceOver) |
 | **Dữ liệu** | Draft/Published tách biệt, audit append-only, revision có lịch sử, backup RPO/RTO kiểm chứng |
 | **Media** | GLB ≤ 20MB, ảnh JPEG/PNG/WebP ≤ 5MB, audio MP3/OGG ≤ 20MB, quarantine trước khi publish |
@@ -58,7 +58,7 @@ graph TB
     end
 
     db[(PostgreSQL<br/>Supabase)]
-    storage[(Media Storage<br/>GLB / ảnh / audio)]
+    storage[(Supabase Storage<br/>bucket private<br/>GLB / ảnh / audio)]
 
     visitor -->|xem hiện vật 2D/3D/VR| web
     staff -->|quản trị nội dung| cms
@@ -66,8 +66,8 @@ graph TB
     web -->|đọc nội dung published| api
     cms -->|CRUD + duyệt| api
     api --> db
-    api --> storage
-    web -->|tải GLB/ảnh/audio| storage
+    api -->|đọc/ghi bằng khóa server| storage
+    web -->|tải GLB/ảnh/audio qua /media<br/>đã kiểm tra published / URL ký| api
 ```
 
 ## 1.6 Sơ đồ C4 — Mức 2: Container
@@ -114,7 +114,9 @@ graph TB
 | `DATABASE_URL` | BE | `postgres://...supabase...` |
 | `PORT` | BE | `3001` |
 | `FRONTEND_ORIGIN` | BE (CORS) | `http://localhost:5173` |
-| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | BE | (secret) |
+| `NODE_ENV` | BE | `production` (bật kiểm tra khóa bí mật) |
+| `JWT_ACCESS_SECRET` / `MEDIA_URL_SIGNING_SECRET` | BE | (secret, ≥32 ký tự khi production) |
+| `TRUST_PROXY` | BE | `1` khi có 1 reverse proxy; mặc định `false` |
 | `VITE_API_BASE_URL` | FE | `http://localhost:3001/api` |
 | `VITE_MEDIA_BASE_URL` | FE | `http://localhost:3001/media` |
 

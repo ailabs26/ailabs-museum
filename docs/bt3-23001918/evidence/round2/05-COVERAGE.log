@@ -1,0 +1,235 @@
+TAP version 13
+# Subtest: VT-077 ExhibitsRepository.searchPublicExhibits
+    # Subtest: AC-4 (invariant): ORDER BY roomId, displayOrder, id ASC — khóa phụ duy nhất id ở CUỐI
+    ok 1 - AC-4 (invariant): ORDER BY roomId, displayOrder, id ASC — khóa phụ duy nhất id ở CUỐI
+      ---
+      duration_ms: 3.4974
+      ...
+    # Subtest: AC-5/AC-1: chỉ lấy bản published + visible, chưa xóa/lưu trữ, phòng ACTIVE
+    ok 2 - AC-5/AC-1: chỉ lấy bản published + visible, chưa xóa/lưu trữ, phòng ACTIVE
+      ---
+      duration_ms: 1.2121
+      ...
+    # Subtest: AC-3: phân trang skip=(page-1)*pageSize, take=pageSize; chặn pageSize>100
+    ok 3 - AC-3: phân trang skip=(page-1)*pageSize, take=pageSize; chặn pageSize>100
+      ---
+      duration_ms: 0.3965
+      ...
+    # Subtest: AC-2: lọc roomId + tìm q bằng ILIKE (param search = %kw%)
+    ok 4 - AC-2: lọc roomId + tìm q bằng ILIKE (param search = %kw%)
+      ---
+      duration_ms: 0.6959
+      ...
+    # Subtest: AC-4: sắp lại kết quả find theo đúng thứ tự id của QueryBuilder (ổn định qua 2 bước)
+    ok 5 - AC-4: sắp lại kết quả find theo đúng thứ tự id của QueryBuilder (ổn định qua 2 bước)
+      ---
+      duration_ms: 0.7927
+      ...
+    1..5
+ok 1 - VT-077 ExhibitsRepository.searchPublicExhibits
+  ---
+  duration_ms: 10.7324
+  type: 'suite'
+  ...
+# Subtest: VT-077 ExhibitsService.publicSearch
+    # Subtest: TC-06/AC-3: trả meta (page/pageSize/total) đúng như repository
+    ok 1 - TC-06/AC-3: trả meta (page/pageSize/total) đúng như repository
+      ---
+      duration_ms: 1.5344
+      ...
+    # Subtest: TC-01/AC-1: ánh xạ sang DTO công khai, không lộ field nội bộ
+    ok 2 - TC-01/AC-1: ánh xạ sang DTO công khai, không lộ field nội bộ
+      ---
+      duration_ms: 0.6468
+      ...
+    # Subtest: TC-07/TC-08/AC-4: giữ NGUYÊN thứ tự repository trả (ổn định, không re-sort phá vỡ)
+    ok 3 - TC-07/TC-08/AC-4: giữ NGUYÊN thứ tự repository trả (ổn định, không re-sort phá vỡ)
+      ---
+      duration_ms: 1.5186
+      ...
+    # Subtest: AC-2: truyền q/roomId/page/pageSize xuống repository (không tự bịa filter)
+    ok 4 - AC-2: truyền q/roomId/page/pageSize xuống repository (không tự bịa filter)
+      ---
+      duration_ms: 0.3005
+      ...
+    # Subtest: AC-5: loại hiện vật chưa xuất bản (mapper trả null) khỏi kết quả
+    ok 5 - AC-5: loại hiện vật chưa xuất bản (mapper trả null) khỏi kết quả
+      ---
+      duration_ms: 0.8008
+      ...
+    # Subtest: TC-12/failure-path: repository ném lỗi → service KHÔNG nuốt lỗi, phải propagate
+    ok 6 - TC-12/failure-path: repository ném lỗi → service KHÔNG nuốt lỗi, phải propagate
+      ---
+      duration_ms: 1.457
+      ...
+    1..6
+ok 2 - VT-077 ExhibitsService.publicSearch
+  ---
+  duration_ms: 9.0584
+  type: 'suite'
+  ...
+# Subtest: VT-077 searchPublicExhibits — SQL sinh ra (metadata thật, không DB)
+    # Subtest: 🔴\#1 invariant: MỌI cột trong ORDER BY của subquery phân trang đều được select ở truy vấn trong
+    ok 1 - 🔴\#1 invariant: MỌI cột trong ORDER BY của subquery phân trang đều được select ở truy vấn trong
+      ---
+      duration_ms: 10359.5306
+      ...
+    # Subtest: 🔴\#2 ranh giới phòng: innerJoin rooms + lọc room ACTIVE và chưa xóa
+    ok 2 - 🔴\#2 ranh giới phòng: innerJoin rooms + lọc room ACTIVE và chưa xóa
+      ---
+      duration_ms: 0.8832
+      ...
+    # Subtest: 🟡 ILIKE: chỉ trường hiển thị, KHÔNG cast cả content sang text, có ESCAPE
+    ok 3 - 🟡 ILIKE: chỉ trường hiển thị, KHÔNG cast cả content sang text, có ESCAPE
+      ---
+      duration_ms: 0.7744
+      ...
+    # Subtest: 🟡 escape wildcard: q='50%_off' được escape %/_ trong param
+    ok 4 - 🟡 escape wildcard: q='50%_off' được escape %/_ trong param
+      ---
+      duration_ms: 0.2454
+      ...
+    # Subtest: AC-4 thứ tự ổn định: ORDER BY roomId, displayOrder, id (khớp index room_order_id)
+    ok 5 - AC-4 thứ tự ổn định: ORDER BY roomId, displayOrder, id (khớp index room_order_id)
+      ---
+      duration_ms: 0.3127
+      ...
+    1..5
+ok 3 - VT-077 searchPublicExhibits — SQL sinh ra (metadata thật, không DB)
+  ---
+  duration_ms: 10367.3307
+  type: 'suite'
+  ...
+# Subtest: VT-077 GET /rooms/search — contract
+    # Subtest: TC-09: response khớp envelope ApiResponse + meta
+    ok 1 - TC-09: response khớp envelope ApiResponse + meta
+      ---
+      duration_ms: 65.9165
+      ...
+    # Subtest: TC-10: item chỉ chứa field public, không rò rỉ entity nội bộ
+    ok 2 - TC-10: item chỉ chứa field public, không rò rỉ entity nội bộ
+      ---
+      duration_ms: 5.9883
+      ...
+    # Subtest: TC-05 (negative): pageSize=101 → 400, service không bị gọi
+    ok 3 - TC-05 (negative): pageSize=101 → 400, service không bị gọi
+      ---
+      duration_ms: 12.1512
+      ...
+    # Subtest: TC (negative): page=0 → 400
+    ok 4 - TC (negative): page=0 → 400
+      ---
+      duration_ms: 6.8945
+      ...
+    # Subtest: TC-04 (negative): roomId sai định dạng UUID → 400 (không 500)
+    ok 5 - TC-04 (negative): roomId sai định dạng UUID → 400 (không 500)
+      ---
+      duration_ms: 6.5594
+      ...
+    # Subtest: AC-5: route /rooms/search KHÔNG nuốt route cũ /rooms/:slug
+    ok 6 - AC-5: route /rooms/search KHÔNG nuốt route cũ /rooms/:slug
+      ---
+      duration_ms: 5.3404
+      ...
+    1..6
+ok 4 - VT-077 GET /rooms/search — contract
+  ---
+  duration_ms: 446.1693
+  type: 'suite'
+  ...
+# Subtest: VT-077 searchPublicExhibits — Postgres thật (read-only)
+ok 5 - VT-077 searchPublicExhibits — Postgres thật (read-only) # SKIP
+  ---
+  duration_ms: 3.3852
+  type: 'suite'
+  ...
+1..5
+# tests 22
+# suites 5
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 29436.4586
+# start of coverage report
+# file | line % | branch % | funcs % | uncovered lines
+# src\common\database\transaction.manager.ts | 78.26 | 60.00 | 100.00 | 11, 12, 14, 15, 16
+# src\common\decorators\public.decorator.ts | 100.00 | 100.00 | 100.00 | 
+# src\common\dto\api-response.ts | 81.82 | 66.67 | 50.00 | 10, 11, 12, 13, 14, 15
+# src\common\dto\deleted-filter.dto.ts | 85.71 | 55.56 | 100.00 | 5, 6, 9, 10, 11
+# src\common\dto\pagination-query.dto.ts | 62.50 | 60.00 | 100.00 | 5, 17, 18, 19, 20, 21, 22, 23, 24, 25, 28, 29
+# src\common\exceptions\deletion-blocked.ts | 71.05 | 100.00 | 0.00 | 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30
+# src\common\exceptions\validation.exception.ts | 66.67 | 100.00 | 0.00 | 7, 8, 9
+# src\common\filters\all-exceptions.filter.ts | 86.67 | 52.63 | 100.00 | 10, 11, 15, 16, 17, 18, 19, 49, 59, 60
+# src\common\interceptors\response.interceptor.ts | 93.94 | 63.64 | 100.00 | 10, 11
+# src\common\repository\base.repository.ts | 61.90 | 100.00 | 14.29 | 18, 21, 22, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 43, 46, 47, 48, 49, 51, 52, 53, 54, 56, 58, 59, 60
+# src\common\types\paginated.type.ts | 100.00 | 100.00 | 100.00 | 
+# src\config\data-source.ts | 85.71 | 50.00 | 100.00 | 40, 41, 42, 43, 44, 45, 46, 47
+# src\database\migrations\1791483209234-AlignMuseumMvpSchema.ts | 12.77 | 100.00 | 33.33 | 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90
+# src\database\migrations\1791948600000-ExtendMediaUploadPipeline.ts | 47.06 | 100.00 | 33.33 | 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27, 28, 29, 30, 31
+# src\database\migrations\1792073130413-AddRevisionLocalizedMedia.ts | 29.82 | 100.00 | 33.33 | 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54
+# src\database\migrations\1792150000000-WidenHotspotLabel.ts | 60.00 | 100.00 | 33.33 | 12, 14, 15, 16, 17, 18, 19, 20, 21, 22
+# src\database\migrations\1792943375524-AddRefreshSessionDeviceInfo.ts | 59.26 | 100.00 | 33.33 | 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24
+# src\database\migrations\1793033761577-SoftDeleteRoles.ts | 46.88 | 100.00 | 33.33 | 11, 12, 13, 14, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29
+# src\database\migrations\1793300000000-AddTranslationsAndPartnerApiKeys.ts | 60.00 | 100.00 | 33.33 | 12, 13, 14, 15, 16, 17, 18, 20, 21, 22
+# src\database\migrations\1793400000000-PartnerApiKeyRateLimitAndSoftDelete.ts | 56.00 | 100.00 | 33.33 | 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22
+# src\database\migrations\1793500000000-AuditNullableResourceAndClientInfo.ts | 58.62 | 100.00 | 33.33 | 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26
+# src\modules\audit\entities\audit-log.entity.ts | 88.52 | 75.00 | 100.00 | 17, 18, 19, 20, 21, 22, 25
+# src\modules\auth\entities\refresh-session.entity.ts | 90.63 | 76.92 | 100.00 | 12, 16, 17, 18, 19, 20
+# src\modules\content-reports\entities\content-report.entity.ts | 90.28 | 80.00 | 100.00 | 16, 17, 18, 19, 20, 21, 22
+# src\modules\exhibits\constants\revision-media-slots.ts | 89.19 | 100.00 | 50.00 | 28, 29, 30, 31
+# src\modules\exhibits\controllers\exhibits.controller.ts | 76.92 | 85.71 | 70.00 | 7, 8, 9, 44, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62
+# src\modules\exhibits\dto\exhibit-response.dto.ts | 49.11 | 50.00 | 0.00 | 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 93, 94, 95
+# src\modules\exhibits\dto\public-search-query.dto.ts | 90.48 | 50.00 | 100.00 | 8, 9
+# src\modules\exhibits\dto\publish-validation.dto.ts | 18.27 | 37.50 | 50.00 | 8, 9, 11, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208
+# src\modules\exhibits\entities\exhibit-revision.entity.ts | 95.30 | 86.96 | 100.00 | 18, 19, 20, 21, 22, 23, 26
+# src\modules\exhibits\entities\exhibit.entity.ts | 91.03 | 83.33 | 100.00 | 16, 17, 18, 19, 20, 21, 22
+# src\modules\exhibits\entities\hotspot.entity.ts | 80.00 | 75.00 | 100.00 | 10, 11, 18, 19, 20, 21, 22, 24, 25
+# src\modules\exhibits\mappers\admin-revision.mapper.ts | 46.88 | 100.00 | 0.00 | 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 34, 35, 44, 45, 46, 47, 48, 49, 50, 51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88
+# src\modules\exhibits\mappers\public-exhibit.mapper.ts | 84.32 | 45.10 | 66.67 | 23, 63, 64, 65, 66, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 105, 106, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 124
+# src\modules\exhibits\repositories\exhibits.repository.ts | 54.73 | 85.71 | 44.19 | 7, 61, 67, 69, 70, 71, 72, 74, 75, 76, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 170, 171, 172, 173, 174, 175, 176, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 217, 218, 219, 220, 221, 222, 223, 224, 225, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 433, 436, 437, 438, 439, 440, 441, 445, 446, 447, 448, 449, 450, 451, 452, 453, 455, 456, 459, 460, 464, 465, 466, 467, 470, 471, 472, 473, 474, 475, 478, 479, 480, 481, 482, 483, 487, 488, 489, 490, 491, 496, 497
+# src\modules\exhibits\services\exhibits.service.ts | 26.37 | 64.29 | 25.00 | 11, 80, 81, 82, 83, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 130, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 371, 372, 373, 374, 375, 376, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 387, 388, 389, 390, 391, 392, 393, 394, 395, 396, 397, 398, 399, 400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 440, 441, 442, 443, 444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 480, 481, 482, 483, 484, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517, 518, 519, 520, 521, 522, 523, 524, 525, 526, 527, 528, 529, 530, 531, 532, 533, 534, 535, 536, 537, 551, 552, 553, 554, 558, 560, 561, 562, 563, 564, 565, 566, 567, 568, 569, 570, 571, 572, 573, 574, 575, 576, 577, 578, 579, 580, 581, 582, 583, 584, 585, 586, 587, 588, 589, 601, 602, 603, 604, 605, 606, 607, 608, 609, 610, 611, 612, 613, 614, 615, 616, 617, 618, 619, 620, 621, 622, 623, 624, 625, 626, 627, 628, 629, 630, 631, 632, 633, 634, 635, 636, 637, 638, 639, 640, 641, 643, 644, 645, 646, 647, 648, 649, 650, 651, 652, 653, 654, 655, 656, 657, 660, 661, 662, 663, 664, 665, 666, 667, 668, 669, 670, 671, 672, 673, 674, 675, 676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 686, 687, 688, 689, 690, 691, 692, 693, 694, 695, 696, 697, 698, 699, 700, 701, 713, 714, 715, 716, 717, 718, 719, 720, 721, 722, 723, 724, 725, 726, 727, 728, 729, 730, 731, 732, 733, 734, 735, 738, 739, 740, 741, 742, 743, 744, 745, 746, 749, 750, 751, 752, 753, 754, 755, 756, 757, 777, 778, 779, 781, 782, 783, 784, 785, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 804
+# src\modules\exhibits\services\public-models.service.ts | 78.57 | 50.00 | 100.00 | 4, 5, 9
+# src\modules\exhibits\services\revision-publish.gate.ts | 31.25 | 37.50 | 28.57 | 7, 37, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 170, 171, 172, 173, 174, 175, 176
+# src\modules\exhibits\tests\metadata-datasource.ts | 95.83 | 100.00 | 66.67 | 8, 9
+# src\modules\exhibits\tests\public-search-repository.spec.ts | 97.41 | 90.32 | 96.00 | 14, 15, 16
+# src\modules\exhibits\tests\public-search-service.spec.ts | 100.00 | 95.00 | 100.00 | 
+# src\modules\exhibits\tests\public-search-sql.spec.ts | 100.00 | 81.25 | 100.00 | 
+# src\modules\exhibits\tests\public-search.contract.spec.ts | 100.00 | 83.33 | 100.00 | 
+# src\modules\exhibits\tests\public-search.integration.spec.ts | 46.88 | 50.00 | 50.00 | 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64
+# src\modules\exhibits\utils\bilingual.ts | 72.92 | 83.33 | 100.00 | 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38
+# src\modules\exhibits\utils\revision-media-patch.ts | 47.46 | 100.00 | 0.00 | 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 41, 42, 43, 44, 45, 46, 50, 51, 52, 53
+# src\modules\media\dto\public-model.dto.ts | 33.33 | 100.00 | 0.00 | 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24
+# src\modules\media\entities\media.entity.ts | 90.63 | 76.92 | 100.00 | 11, 12, 21, 22, 23, 24, 26, 27, 28
+# src\modules\media\inspection\crc32.ts | 76.19 | 100.00 | 0.00 | 17, 18, 19, 20, 21
+# src\modules\media\inspection\media-format.error.ts | 100.00 | 100.00 | 100.00 | 
+# src\modules\media\inspection\media-formats.ts | 100.00 | 100.00 | 100.00 | 
+# src\modules\media\inspection\media-signature.ts | 35.38 | 100.00 | 16.67 | 11, 12, 13, 14, 15, 16, 18, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62
+# src\modules\media\inspection\media-structure.ts | 100.00 | 100.00 | 100.00 | 
+# src\modules\media\inspection\validators\glb.validator.ts | 21.12 | 100.00 | 0.00 | 11, 12, 13, 16, 17, 18, 19, 20, 21, 26, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 96, 97, 98, 99, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161
+# src\modules\media\inspection\validators\jpeg.validator.ts | 22.11 | 100.00 | 0.00 | 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95
+# src\modules\media\inspection\validators\mp3.validator.ts | 38.04 | 100.00 | 0.00 | 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 63, 64, 65, 66, 67, 68, 69, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92
+# src\modules\media\inspection\validators\png.validator.ts | 24.38 | 100.00 | 0.00 | 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160
+# src\modules\media\inspection\validators\vtt.validator.ts | 20.83 | 100.00 | 0.00 | 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26, 27, 28, 29, 30, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96
+# src\modules\media\inspection\validators\webp.validator.ts | 25.00 | 100.00 | 0.00 | 9, 10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 48, 49, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92
+# src\modules\media\repositories\media.repository.ts | 41.14 | 55.56 | 26.67 | 7, 39, 40, 41, 42, 43, 44, 48, 51, 52, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 98, 99, 100, 101, 102, 103, 104, 105, 106, 108, 112, 113, 114, 115, 116, 117, 118, 119, 127, 128, 129, 130, 131, 132, 133, 134, 135, 139, 140, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 174, 175
+# src\modules\media\services\media-inspection.service.ts | 73.53 | 33.33 | 66.67 | 6, 7, 8, 9, 30, 31, 32, 33, 34
+# src\modules\media\services\media-reference.validator.ts | 48.31 | 37.50 | 50.00 | 7, 8, 9, 12, 13, 14, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89
+# src\modules\media\services\media-storage.service.ts | 75.76 | 50.00 | 83.33 | 9, 10, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66
+# src\modules\media\services\media-url.service.ts | 73.61 | 63.64 | 70.00 | 4, 10, 11, 12, 13, 14, 15, 54, 55, 56, 58, 59, 60, 61, 62, 63, 70, 71, 72
+# src\modules\media\services\model-storage.service.ts | 27.78 | 37.50 | 66.67 | 3, 9, 10, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54
+# src\modules\media\storage\local-storage.driver.ts | 27.87 | 50.00 | 0.00 | 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57
+# src\modules\media\storage\media-storage-driver.ts | 100.00 | 100.00 | 100.00 | 
+# src\modules\media\tests\media-test-doubles.ts | 42.15 | 37.50 | 28.57 | 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 72, 73, 74, 81, 82, 83, 84, 85, 86, 87, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 121
+# src\modules\partner-api-keys\entities\partner-api-key.entity.ts | 95.24 | 70.00 | 75.00 | 9, 10, 11
+# src\modules\roles\entities\permission.entity.ts | 76.47 | 83.33 | 100.00 | 6, 13, 14, 15
+# src\modules\roles\entities\role-permission.entity.ts | 70.83 | 78.57 | 100.00 | 6, 12, 13, 14, 15, 16, 17
+# src\modules\roles\entities\role.entity.ts | 86.67 | 78.57 | 100.00 | 4, 8, 9, 12
+# src\modules\rooms\entities\room.entity.ts | 90.00 | 76.92 | 100.00 | 11, 20, 21, 22, 23
+# src\modules\rooms\repositories\rooms.repository.ts | 47.37 | 55.56 | 30.00 | 7, 8, 9, 38, 39, 48, 49, 50, 51, 52, 53, 54, 55, 59, 60, 61, 62, 63, 64, 65, 67, 68, 69, 72, 73, 76, 77, 78, 79, 80, 81, 82, 83, 84, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 124, 125, 126, 131, 132, 140, 141, 144, 145, 146, 149, 150, 151, 152
+# src\modules\translations\entities\translation.entity.ts | 94.44 | 70.00 | 100.00 | 9, 10
+# src\modules\users\entities\user-role.entity.ts | 72.41 | 78.57 | 100.00 | 10, 11, 17, 18, 19, 20, 21, 22
+# src\modules\users\entities\user.entity.ts | 92.59 | 80.00 | 100.00 | 20, 21, 23, 24
+# all files | 56.94 | 71.89 | 62.40 |
+# end of coverage report

@@ -10,6 +10,9 @@
   `Exhibit.currentRevisionId` trỏ bản **đang xuất bản** → API public chỉ đọc bản này.
 - **Draft không lọt public:** query public luôn join theo `currentRevisionId` (published).
 - **Audit append-only:** `AuditLog` chỉ insert, không update/delete.
+- **Xóa mềm:** `users`, `roles`, `rooms`, `media`, `exhibits` có `is_deleted` + `deleted_at` (CHECK `is_deleted = (deleted_at IS NOT NULL)`);
+  không xóa dòng, mọi truy vấn lọc bản ghi chưa xóa. Unique nghiệp vụ (vd mã vai trò) chỉ áp cho bản ghi chưa xóa.
+  Media xóa mềm giữ file trên storage; hiện vật xóa mềm giữ revisions/hotspots.
 - **UUID** khóa chính; `createdAt/updatedAt` mọi bảng; JSONB cho metadata/translations mở rộng.
 
 ## 4.2 ERD
@@ -21,12 +24,14 @@ erDiagram
     EXHIBIT_REVISION }o--|| EXHIBIT : "current (published)"
     EXHIBIT_REVISION }o--o| MEDIA : "model (GLB)"
     EXHIBIT_REVISION }o--o| MEDIA : "image"
-    EXHIBIT_REVISION }o--o| MEDIA : "audio"
+    EXHIBIT_REVISION }o--o| MEDIA : "audio vi / audio en"
+    EXHIBIT_REVISION }o--o| MEDIA : "subtitle vi / subtitle en (WebVTT)"
     EXHIBIT_REVISION ||--o{ REPORT : "bị báo cáo"
     USER ||--o{ USER_ROLE : ""
     ROLE ||--o{ USER_ROLE : ""
     ROLE ||--o{ ROLE_PERMISSION : ""
     PERMISSION ||--o{ ROLE_PERMISSION : ""
+    USER ||--o{ REFRESH_SESSION : "phiên đăng nhập"
     USER ||--o{ AUDIT_LOG : "thực hiện"
     USER ||--o{ EXHIBIT_REVISION : "tạo/sửa"
     USER ||--o{ REPORT : "xử lý"
@@ -62,7 +67,10 @@ erDiagram
       text transcript
       uuid modelId FK "Media, nullable"
       uuid imageId FK "Media, nullable"
-      uuid audioId FK "Media, nullable"
+      uuid audioId FK "Media, nullable — audio tiếng Việt"
+      uuid audioEnId FK "Media, nullable (Task 9)"
+      uuid subtitleViId FK "Media, nullable (Task 9)"
+      uuid subtitleEnId FK "Media, nullable (Task 9)"
       jsonb translations "i18n phase 3"
       uuid createdBy FK
       uuid reviewedBy FK "nullable"
@@ -72,7 +80,7 @@ erDiagram
     }
     MEDIA {
       uuid id PK
-      string kind "model|image|audio"
+      string kind "model|image|audio|subtitle"
       text url
       string mimeType
       bigint sizeBytes
@@ -84,20 +92,35 @@ erDiagram
     }
     USER {
       uuid id PK
-      string email UK
+      citext email UK
       string passwordHash
       string displayName
-      boolean isActive
-      timestamptz lastLoginAt
+      string status "active|disabled"
+      boolean isDeleted
+      timestamptz deletedAt
       timestamptz createdAt
       timestamptz updatedAt
     }
     ROLE {
       uuid id PK
-      string key UK "admin|moderator|editor"
+      string code UK "chỉ trong vai trò chưa xóa; admin|moderator|editor có sẵn"
       string name
-      text description
-      boolean isSystem "không cho xóa"
+      boolean isDeleted "admin và vai trò đang gán không xóa được"
+      timestamptz deletedAt
+    }
+    REFRESH_SESSION {
+      uuid id PK
+      uuid userId FK
+      uuid familyId "= 1 phiên/thiết bị; claim sid của access token"
+      char tokenHash UK "SHA-256, không lưu raw"
+      uuid replacedById FK "token kế tiếp khi xoay vòng"
+      timestamptz usedAt
+      timestamptz revokedAt
+      timestamptz expiresAt
+      timestamptz signedInAt "giữ qua các lần xoay vòng"
+      string userAgent
+      string ip
+      timestamptz createdAt "hoạt động gần nhất của thiết bị"
     }
     PERMISSION {
       uuid id PK
@@ -128,14 +151,16 @@ erDiagram
     }
     AUDIT_LOG {
       uuid id PK
-      uuid actorId FK
-      string action "login|exhibit.publish|user.create..."
-      string entityType
-      uuid entityId
-      jsonb before "nullable"
-      jsonb after "nullable"
-      string ip
-      timestamptz createdAt
+      uuid actorId FK "null khi chưa đăng nhập / hệ thống"
+      string action "auth.login|exhibit.publish|user.create..."
+      string resourceType
+      uuid resourceId "null khi không gắn tài nguyên"
+      uuid revisionId FK "nullable"
+      text reason "nullable, JSON chi tiết"
+      string requestId
+      string ip "nullable"
+      string userAgent "nullable"
+      timestamptz occurredAt
     }
 ```
 
@@ -143,7 +168,7 @@ erDiagram
 
 | Bảng | Mục đích |
 |---|---|
-| `API_KEY` | key đối tác: `hashedKey`, `scopes[]`, `rateLimit`, `revokedAt` |
+| `API_KEY` → **đã có**: bảng `partner_api_keys` | `key_hash` (SHA-256), `scopes` (jsonb), `status`, `rate_limit_per_minute`, `expires_at`, `last_used_at`, `revoked_at`, xóa mềm `is_deleted`/`deleted_at` |
 | `TRANSLATION` | bản dịch hiện vật (en/zh/ko/ja) — hoặc dùng cột `translations` JSONB trong revision |
 | `ANALYTICS_EVENT` | sự kiện truy cập để báo cáo + scheduled cleanup |
 

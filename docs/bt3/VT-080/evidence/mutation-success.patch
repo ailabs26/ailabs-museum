@@ -1,0 +1,13 @@
+diff --git a/back-end/src/modules/users/services/users.service.ts b/back-end/src/modules/users/services/users.service.ts
+index a0f92f0..584fe2f 100644
+--- a/back-end/src/modules/users/services/users.service.ts
++++ b/back-end/src/modules/users/services/users.service.ts
+@@ -131,7 +131,7 @@ export class UsersService {
+         .map((id): BlockedDeletion => ({ id, reason: 'Không tìm thấy tài khoản trong mục đã xóa', notFound: true }));
+       assertNothingBlocked(blocked, false, 'restore');
+       const restored = await this.users.markRestored(ids, manager);
+-      if (restored !== ids.length) {
++      if (false && restored !== ids.length) {
+         throw new InternalServerErrorException('Không thể khôi phục toàn bộ tài khoản');
+       }
+       await this.userRoles.removeDeletedRoleLinks(ids, manager);

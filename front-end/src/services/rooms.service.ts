@@ -1,0 +1,86 @@
+import { http } from '@/core/api/http-client';
+import type { Page } from '@/core/api/api-response';
+
+export type RoomStatus = 'active' | 'archived';
+
+/** Bản dịch theo ngôn ngữ của tên và mô tả; tiếng Việt nằm ở `name`, `description`. */
+export interface RoomTranslationsInput {
+  name?: Partial<Record<string, string>>;
+  description?: Partial<Record<string, string>>;
+}
+
+export interface RoomRow {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  translations?: RoomTranslationsInput;
+  status: RoomStatus;
+  exhibitsCount: number;
+  createdAt: string;
+  updatedAt: string;
+  /** Chỉ có khi xem mục Đã xóa. */
+  deletedAt?: string | null;
+}
+
+export interface ListRoomsParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  status?: RoomStatus;
+  /** true: mục Đã xóa (thùng rác). */
+  deleted?: boolean;
+}
+
+export interface CreateRoomInput {
+  slug: string;
+  name: string;
+  description?: string;
+  translations?: RoomTranslationsInput;
+}
+
+export interface UpdateRoomInput {
+  name?: string;
+  description?: string;
+  translations?: RoomTranslationsInput;
+  status?: RoomStatus;
+}
+
+export const roomsService = {
+  list(params: ListRoomsParams): Promise<Page<RoomRow>> {
+    return http.getPage<RoomRow>('/admin/rooms', { params });
+  },
+
+  get(id: string): Promise<RoomRow> {
+    return http.get<RoomRow>(`/admin/rooms/${id}`);
+  },
+
+  create(input: CreateRoomInput): Promise<RoomRow> {
+    return http.post<RoomRow>('/admin/rooms', input);
+  },
+
+  update(id: string, input: UpdateRoomInput): Promise<RoomRow> {
+    return http.patch<RoomRow>(`/admin/rooms/${id}`, input);
+  },
+
+  remove(id: string): Promise<void> {
+    return http.delete<void>(`/admin/rooms/${id}`);
+  },
+  /** Xóa mềm nhiều phòng: tất cả hoặc không (409 kèm lý do từng ID). */
+  async removeMany(ids: string[]): Promise<void> {
+    await http.post<unknown>('/admin/rooms/bulk-delete', { ids });
+  },
+
+  /** Khôi phục phòng đã xóa: tất cả hoặc không (409 kèm lý do từng ID). */
+  async restoreMany(ids: string[]): Promise<void> {
+    await http.post<unknown>('/admin/rooms/bulk-restore', { ids });
+  },
+
+  getPublicList(): Promise<RoomRow[]> {
+    return http.get<RoomRow[]>('/public/rooms');
+  },
+
+  getPublicBySlug(slug: string): Promise<RoomRow> {
+    return http.get<RoomRow>(`/public/rooms/${slug}`);
+  },
+};

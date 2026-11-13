@@ -1,0 +1,211 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test museum-xr.spec.ts museum-xr-disconnect.spec.ts museum-glb.spec.ts museum-hotspots.spec.ts tour-2d-fallback.spec.ts museum-fullscreen.spec.ts museum-immersive-ui.spec.ts --reporter=list,json --output=tmp/fallback-final-reviewed
+
+[WebServer] (node:32200) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:31144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 75 tests using 1 worker
+
+(node:9444) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 tests\museum-fullscreen.spec.ts:19:1 › opening fills the viewport and detail selection never shrinks Canvas (4.2s)
+  ok  2 tests\museum-fullscreen.spec.ts:42:1 › three open/close cycles restore scroll, focus, background and release renderers (10.7s)
+  ok  3 tests\museum-fullscreen.spec.ts:72:1 › rejected native fullscreen keeps a usable overlay (3.0s)
+  ok  4 tests\museum-fullscreen.spec.ts:83:1 › a late native fullscreen grant after closing is released without reopening the tour (1.0s)
+  ok  5 tests\museum-fullscreen.spec.ts:111:1 › external native fullscreen exit reconciles tour state (3.5s)
+  ok  6 tests\museum-fullscreen.spec.ts:121:1 › closing preserves selected exhibit for the readable page (7.3s)
+  ok  7 tests\museum-fullscreen.spec.ts:132:1 › room loading preserves native fullscreen and its reachable exit (6.9s)
+  ok  8 tests\museum-fullscreen.spec.ts:148:1 › Escape can close the tour after an XR scene unmounts during room loading (4.6s)
+  ok  9 tests\museum-glb.spec.ts:13:1 › permission failures and corrupt GLBs stay isolated and can be retried without crashing the room (3.8s)
+  ok 10 tests\museum-glb.spec.ts:39:1 › switching rooms while two GLBs are loading cancels the queue and keeps the next room usable (5.0s)
+  ok 11 tests\museum-glb.spec.ts:64:1 › background clicks clear selection but dragging the background does not (7.5s)
+  ok 12 tests\museum-glb.spec.ts:80:41 › finishing a real GLB download respects an earlier camera reset (7.9s)
+  ok 13 tests\museum-glb.spec.ts:80:41 › finishing a real GLB download respects an earlier camera drag (12.6s)
+  ok 14 tests\museum-hotspots.spec.ts:28:1 › 3D hotspot mouse picking shares selection, hover tooltip and drag rejection (14.2s)
+  ok 15 tests\museum-hotspots.spec.ts:51:1 › a camera drag away from a hotspot and back to its starting point never selects it (10.8s)
+  ok 16 tests\museum-hotspots.spec.ts:65:3 › touch hotspot controls › touch selects a failed artifact marker and keyboard Space selects another artifact (5.2s)
+  ok 17 tests\museum-hotspots.spec.ts:81:1 › metadata refresh updates annotations without downloading healthy GLBs again (4.8s)
+  ok 18 tests\museum-hotspots.spec.ts:92:1 › multiple published annotations preserve coordinates and bind their labels to one artifact (4.4s)
+  ok 19 tests\museum-hotspots.spec.ts:113:1 › a genuine GLTFLoader parser rejection falls back per artifact after header and checksum validation (5.2s)
+  ok 20 tests\museum-hotspots.spec.ts:123:1 › per-artifact retry cooldown unlocks the button and stops after three retries (7.2s)
+  ok 21 tests\museum-hotspots.spec.ts:138:1 › hover tooltips release their textures and mounted hotspots preserve demand rendering (7.5s)
+  ok 22 tests\museum-hotspots.spec.ts:158:1 › five parsed models expose identity-bound 3D and keyboard hotspots with one selection state (5.2s)
+  ok 23 tests\museum-hotspots.spec.ts:178:1 › invalid optional mesh keeps its valid sibling and all five artifacts render (4.0s)
+  ok 24 tests\museum-hotspots.spec.ts:193:1 › a model clone/render exception is contained per artifact and retries without refetching healthy assets (6.2s)
+  ok 25 tests\museum-hotspots.spec.ts:219:117 › one 401 GLB preserves four healthy models, interactive placeholder and isolated retry (7.3s)
+  ok 26 tests\museum-hotspots.spec.ts:219:117 › one 403 GLB preserves four healthy models, interactive placeholder and isolated retry (6.9s)
+  ok 27 tests\museum-hotspots.spec.ts:219:117 › one 404 GLB preserves four healthy models, interactive placeholder and isolated retry (6.4s)
+  ok 28 tests\museum-hotspots.spec.ts:219:117 › one 500 GLB preserves four healthy models, interactive placeholder and isolated retry (6.7s)
+  ok 29 tests\museum-hotspots.spec.ts:219:117 › one 502 GLB preserves four healthy models, interactive placeholder and isolated retry (7.0s)
+  ok 30 tests\museum-hotspots.spec.ts:219:117 › one network GLB preserves four healthy models, interactive placeholder and isolated retry (6.6s)
+  ok 31 tests\museum-hotspots.spec.ts:219:117 › one timeout GLB preserves four healthy models, interactive placeholder and isolated retry (6.4s)
+  ok 32 tests\museum-hotspots.spec.ts:219:117 › one corrupt GLB preserves four healthy models, interactive placeholder and isolated retry (6.8s)
+  ok 33 tests\museum-hotspots.spec.ts:219:117 › one checksum GLB preserves four healthy models, interactive placeholder and isolated retry (9.0s)
+  ok 34 tests\museum-hotspots.spec.ts:219:117 › one truncated GLB preserves four healthy models, interactive placeholder and isolated retry (8.4s)
+  ok 35 tests\museum-immersive-ui.spec.ts:11:3 › immersive controls remain reachable at 1440x900 (6.0s)
+  ok 36 tests\museum-immersive-ui.spec.ts:11:3 › immersive controls remain reachable at 320x568 (3.9s)
+  ok 37 tests\museum-immersive-ui.spec.ts:11:3 › immersive controls remain reachable at 390x844 (4.0s)
+  ok 38 tests\museum-immersive-ui.spec.ts:11:3 › immersive controls remain reachable at 844x390 (3.8s)
+  ok 39 tests\museum-immersive-ui.spec.ts:47:1 › report modal owns Escape before exhibit and tour (2.6s)
+  x  40 tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, end-first (11.1s)
+(node:2464) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  41 tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, device-first (12.0s)
+(node:29084) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 42 tests\museum-xr-disconnect.spec.ts:126:1 › F13 blurred visibility ignores select and snap-turn, hidden ends the session (6.8s)
+  ok 43 tests\museum-xr-disconnect.spec.ts:143:1 › F14 native termination before a pending request is delivered never binds the ended session (4.7s)
+  ok 44 tests\museum-xr-disconnect.spec.ts:154:1 › F16 rapid disconnect and reconnect rechecks capability without automatic entry (5.1s)
+  ok 45 tests\museum-xr-disconnect.spec.ts:169:3 › F14 native end during pending compatibility cannot resurrect presentation (4.8s)
+  ok 46 tests\museum-xr-disconnect.spec.ts:169:3 › F14 native end during pending binding cannot resurrect presentation (9.6s)
+  x  47 tests\museum-xr-disconnect.spec.ts:189:3 › F17 close while native request is pending ends the late session without binding (11.7s)
+(node:12616) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 48 tests\museum-xr-disconnect.spec.ts:189:3 › F17 room while native request is pending ends the late session without binding (11.3s)
+  ok 49 tests\museum-xr-disconnect.spec.ts:213:3 › F15 real context loss with native termination, binding=false, native-first (18.9s)
+  ok 50 tests\museum-xr-disconnect.spec.ts:213:3 › F15 real context loss with native termination, binding=false, context-first (16.5s)
+  ok 51 tests\museum-xr-disconnect.spec.ts:213:3 › F15 real context loss with native termination, binding=true, native-first (18.1s)
+  ok 52 tests\museum-xr-disconnect.spec.ts:213:3 › F15 real context loss with native termination, binding=true, context-first (18.2s)
+  x  53 tests\museum-xr-disconnect.spec.ts:235:1 › F04 F18 three partial binding failures exhaust the Canvas reset budget into readable 2D (22.2s)
+(node:30012) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 54 tests\museum-xr.spec.ts:14:1 › decorative floor joints do not block teleport along the central aisle (7.2s)
+  ok 55 tests\museum-xr.spec.ts:30:1 › 2D catalogue renders published images and permits deliberate 3D retry without refetch or selection loss (4.3s)
+  ok 56 tests\museum-xr.spec.ts:59:1 › unsupported XR keeps the existing 3D scene and web navigation (10.4s)
+  ok 57 tests\museum-xr.spec.ts:68:1 › a supported but refused VR request preserves canvas, selection and permits retry (14.1s)
+  ok 58 tests\museum-xr.spec.ts:84:1 › actual context restores the same canvas and keeps logical selection (22.2s)
+  ok 59 tests\museum-xr.spec.ts:118:1 › simulated native XR renders stereo, selects once, teleports, snap-turns and restores web camera without reloading GLBs (22.9s)
+  ok 60 tests\museum-xr.spec.ts:179:1 › repeated actual context losses exhaust recovery into stable readable 2D (25.5s)
+  ok 61 tests\museum-xr.spec.ts:201:1 › native session end during initialization never resurrects XR or throws a renderer event error (6.6s)
+  ok 62 tests\museum-xr.spec.ts:211:1 › native renderer binding failure recreates only Canvas and retains cached GLBs and selection (22.2s)
+  ok 63 tests\museum-xr.spec.ts:226:1 › actual context loss during XR ends the session and restores normal 3D without automatic re-entry (20.7s)
+  ok 64 tests\museum-xr.spec.ts:251:1 › a controller-free session can gaze at the in-world Exit without moving the origin (14.4s)
+  ok 65 tests\museum-xr.spec.ts:276:1 › persistent WebGL failure exhausts only two deliberate retries and leaves readable 2D (7.2s)
+  ok 66 tests\tour-2d-fallback.spec.ts:8:1 › [F02] panel link follows selected exhibit and navigates to readable 2D detail (3.4s)
+  ok 67 tests\tour-2d-fallback.spec.ts:28:5 › [F03] webgl failure offers contextual 2D link with selection=false (4.2s)
+  ok 68 tests\tour-2d-fallback.spec.ts:28:5 › [F03] webgl failure offers contextual 2D link with selection=true (6.7s)
+  ok 69 tests\tour-2d-fallback.spec.ts:28:5 › [F03] context failure offers contextual 2D link with selection=false (15.2s)
+  ok 70 tests\tour-2d-fallback.spec.ts:28:5 › [F03] context failure offers contextual 2D link with selection=true (15.0s)
+  ok 71 tests\tour-2d-fallback.spec.ts:28:5 › [F03] chunk failure offers contextual 2D link with selection=false (2.5s)
+  ok 72 tests\tour-2d-fallback.spec.ts:28:5 › [F03] chunk failure offers contextual 2D link with selection=true (3.3s)
+  ok 73 tests\tour-2d-fallback.spec.ts:68:1 › [F04] missing WebGL cancels pending models and focuses collection after deliberate navigation (6.5s)
+  ok 74 tests\tour-2d-fallback.spec.ts:105:1 › [F04] unrecovered context retains selection and releases in-flight GLBs after the bounded recovery deadline (26.7s)
+  ok 75 tests\tour-2d-fallback.spec.ts:140:1 › [F04] fallback text and links reflow in light/dark and remain usable after API refresh failure (4.7s)
+
+
+  1) tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, end-first 
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Expected: > 50
+    Received:   50
+
+      91 |       await canvas.press('ArrowRight');
+      92 |       await expect.poll(() => page.evaluate(() => window.museumProbe.at(-1)!.camera!.deref()!.quaternion.toArray())).not.toEqual(saved.quaternion);
+    > 93 |       expect((await readRendererProbe(page)).at(-1)!.frames).toBeGreaterThan(beforeWebFrame);
+         |                                                              ^
+      94 |       await canvas.press('Home');
+      95 |       await waitForRendererIdle(page);
+      96 |       // Duplicate native signals from an old session must be inert.
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-xr-disconnect.spec.ts:93:62
+
+    Error Context: tmp\fallback-final-reviewed\museum-xr-disconnect-F11-F-9854d-d-fresh-reconnect-end-first\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\fallback-final-reviewed\museum-xr-disconnect-F11-F-9854d-d-fresh-reconnect-end-first\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\fallback-final-reviewed\museum-xr-disconnect-F11-F-9854d-d-fresh-reconnect-end-first\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, device-first 
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Expected: > 50
+    Received:   50
+
+      91 |       await canvas.press('ArrowRight');
+      92 |       await expect.poll(() => page.evaluate(() => window.museumProbe.at(-1)!.camera!.deref()!.quaternion.toArray())).not.toEqual(saved.quaternion);
+    > 93 |       expect((await readRendererProbe(page)).at(-1)!.frames).toBeGreaterThan(beforeWebFrame);
+         |                                                              ^
+      94 |       await canvas.press('Home');
+      95 |       await waitForRendererIdle(page);
+      96 |       // Duplicate native signals from an old session must be inert.
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-xr-disconnect.spec.ts:93:62
+
+    Error Context: tmp\fallback-final-reviewed\museum-xr-disconnect-F11-F-aedf4-resh-reconnect-device-first\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\fallback-final-reviewed\museum-xr-disconnect-F11-F-aedf4-resh-reconnect-device-first\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\fallback-final-reviewed\museum-xr-disconnect-F11-F-aedf4-resh-reconnect-device-first\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) tests\museum-xr-disconnect.spec.ts:189:3 › F17 close while native request is pending ends the late session without binding 
+
+    Error: expect(received).not.toContain(expected) // indexOf
+
+    Expected value: not "binding:start"
+    Received array:     ["request", "binding:start", "app:end", "native:end"]
+
+      200 |     const events = await page.evaluate(() => window.museumXrFixture.timeline.map(item => item.event));
+      201 |     expect(events.indexOf('app:end')).toBeLessThan(events.indexOf('native:end'));
+    > 202 |     expect(events).not.toContain('binding:start');
+          |                        ^
+      203 |     await assertReleased(page);
+      204 |     await expect.poll(async () => (await readRendererProbe(page)).filter(record => record.live).length).toBe(action === 'close' ? 0 : 1);
+      205 |     if (action === 'room') {
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-xr-disconnect.spec.ts:202:24
+
+    Error Context: tmp\fallback-final-reviewed\museum-xr-disconnect-F17-c-95d51-ate-session-without-binding\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\fallback-final-reviewed\museum-xr-disconnect-F17-c-95d51-ate-session-without-binding\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\fallback-final-reviewed\museum-xr-disconnect-F17-c-95d51-ate-session-without-binding\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) tests\museum-xr-disconnect.spec.ts:235:1 › F04 F18 three partial binding failures exhaust the Canvas reset budget into readable 2D 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 1
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      242 |     await expect.poll(() => page.evaluate(() => window.museumXrFixture.ends)).toBe(attempt);
+      243 |     if (attempt < 3) {
+    > 244 |       await expect.poll(() => page.evaluate(() => window.museumProbe.length)).toBe(attempt + 1);
+          |                                                                               ^
+      245 |       await expect(page.locator('[data-webgl-status="ready"][data-xr-phase="idle"]')).toBeVisible();
+      246 |       await expect.poll(async () => (await readRendererProbe(page)).filter(record => record.live).length).toBe(1);
+      247 |     }
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-xr-disconnect.spec.ts:244:79
+
+    Error Context: tmp\fallback-final-reviewed\museum-xr-disconnect-F04-F-a074b-set-budget-into-readable-2D\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\fallback-final-reviewed\museum-xr-disconnect-F04-F-a074b-set-budget-into-readable-2D\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\fallback-final-reviewed\museum-xr-disconnect-F04-F-a074b-set-budget-into-readable-2D\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4 failed
+    tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, end-first 
+    tests\museum-xr-disconnect.spec.ts:56:3 › F11 F16 F18 native mid-session headset disconnect and fresh reconnect, device-first 
+    tests\museum-xr-disconnect.spec.ts:189:3 › F17 close while native request is pending ends the late session without binding 
+    tests\museum-xr-disconnect.spec.ts:235:1 › F04 F18 three partial binding failures exhaust the Canvas reset budget into readable 2D 
+  71 passed (11.6m)

@@ -1,0 +1,171 @@
+{
+  "source": "desktop-lifecycle.json#footprintInventory",
+  "classification": "estimated",
+  "textureAssumptions": "RGBAFormat1023; UnsignedByte1009=4 bytes/texel; HalfFloat1016=8; full generated mip chains down to1x1; every referenced texture uploaded once.",
+  "referencedTextureTexelBytes": 26214424,
+  "textures": [
+    {
+      "name": "PMREM.cubeUv",
+      "format": 1023,
+      "type": 1016,
+      "generateMipmaps": false,
+      "width": 768,
+      "height": 1024,
+      "estimatedBytes": 6291456
+    },
+    {
+      "name": ".shadowMap",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": false,
+      "width": 1024,
+      "height": 1024,
+      "estimatedBytes": 4194304
+    },
+    {
+      "name": "plaster-color",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": true,
+      "width": 512,
+      "height": 512,
+      "estimatedBytes": 1398100
+    },
+    {
+      "name": "plaster-normal",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": true,
+      "width": 512,
+      "height": 512,
+      "estimatedBytes": 1398100
+    },
+    {
+      "name": "walnut-color",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": true,
+      "width": 512,
+      "height": 512,
+      "estimatedBytes": 1398100
+    },
+    {
+      "name": "walnut-normal",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": true,
+      "width": 512,
+      "height": 512,
+      "estimatedBytes": 1398100
+    },
+    {
+      "name": "limestone-color",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": true,
+      "width": 512,
+      "height": 512,
+      "estimatedBytes": 1398100
+    },
+    {
+      "name": "limestone-normal",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": true,
+      "width": 512,
+      "height": 512,
+      "estimatedBytes": 1398100
+    },
+    {
+      "name": "limestone-roughness",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": true,
+      "width": 512,
+      "height": 512,
+      "estimatedBytes": 1398100
+    },
+    {
+      "name": "",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": true,
+      "width": 1024,
+      "height": 512,
+      "estimatedBytes": 2796204
+    },
+    {
+      "name": "contact-shadow",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": true,
+      "width": 512,
+      "height": 512,
+      "estimatedBytes": 1398100
+    },
+    {
+      "name": "",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": true,
+      "width": 512,
+      "height": 128,
+      "estimatedBytes": 349532
+    },
+    {
+      "name": "",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": true,
+      "width": 512,
+      "height": 128,
+      "estimatedBytes": 349532
+    },
+    {
+      "name": "",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": true,
+      "width": 512,
+      "height": 128,
+      "estimatedBytes": 349532
+    },
+    {
+      "name": "",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": true,
+      "width": 512,
+      "height": 128,
+      "estimatedBytes": 349532
+    },
+    {
+      "name": "",
+      "format": 1023,
+      "type": 1009,
+      "generateMipmaps": true,
+      "width": 512,
+      "height": 128,
+      "estimatedBytes": 349532
+    }
+  ],
+  "geometryGpuBufferEquivalentBytes": 352416,
+  "shadowColorTexelBytes": 4194304,
+  "pmremColorTexelBytes": 6291456,
+  "framebuffer": {
+    "observed": {
+      "width": 1280,
+      "height": 720,
+      "samples": 4,
+      "antialias": true
+    },
+    "assumedRGBA8SingleSampleColorBytes": 3686400,
+    "assumedRGBA8FourSampleColorBytes": 14745600
+  },
+  "exclusions": [
+    "Texture texel sum describes all referenced textures, not actual resident allocation; reset counters14 vs16 referenced.",
+    "Shadow and PMREM depth attachments, driver padding, allocation granularity, browser resolve/swapchain buffers and actual framebuffer format remain unmeasured.",
+    "Attribute bytes are CPU arrays; GPU buffer-equivalent assumes upload and does not prove allocation.",
+    "No total GPU memory estimate is asserted; actual GPU memory usage remains unavailable."
+  ]
+}
