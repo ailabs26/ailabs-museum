@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Container, Group, NativeSelect, Stack, Text, Title } from '@mantine/core';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { PublicReportModal } from '@/shared/components/feedback/PublicReportModal';
 import { MuseumCatalogue } from '@/components/museum/MuseumCatalogue';
@@ -19,6 +19,7 @@ import classes from './MuseumPage.module.css';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useGuidedCameraTour } from '@/hooks/useGuidedCameraTour';
 import { GuidedTourBar } from '@/components/museum/GuidedTourBar';
+import { guidedTour2dDetailPath } from '@/helpers/guidedTour2dNavigation';
 
 const LazyMuseumScene = lazy(() => import('@/components/MuseumScene').then((module) => ({ default: module.MuseumScene })));
 const LazyMuseumAuditPanel = lazy(() => import('@/components/museum/MuseumAuditPanel').then(module => ({ default: module.MuseumAuditPanel })));
@@ -27,6 +28,7 @@ const exhibitIdSchema = z.string().uuid();
 export function MuseumPage() {
   const [reportTarget, setReportTarget] = useState<{ exhibitId: string; reportedRevisionId: string } | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { rooms, room, selectedRoom, selectedSlug, refresh } = useMuseumRooms(searchParams.get('room'));
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const { locale, t } = usePublicLocale();
@@ -74,6 +76,15 @@ export function MuseumPage() {
   useEffect(() => {
     if (rooms.isSuccess && !selectedRoom && guided.tour.currentStep) guided.tour.invalidateRoom(guided.tour.currentStep.roomId);
   }, [rooms.isSuccess, selectedRoom, guided.tour]);
+  const guidedStep = detail && guided.tour.status !== 'idle' && guided.tour.currentStep?.roomId === detail.id
+    ? detail.exhibits.find(exhibit => exhibit.id === guided.tour.currentStep?.exhibitId)
+    : undefined;
+  const guidedDetailHref = detail && guidedStep ? guidedTour2dDetailPath(detail.slug, guidedStep.id) : undefined;
+  const handleContinue2d = () => {
+    if (!detail || !guidedDetailHref || guided.tour.status === 'idle') return;
+    guided.pause();
+    navigate(guidedDetailHref);
+  };
   const exhibitLinkMessage = detail && requestedExhibitId !== null && !selectedDisplay
     ? isRequestedExhibitValid
       ? t('ui.tour.exhibit-not-in-room', 'Không tìm thấy hiện vật trong phòng này.')
@@ -123,12 +134,15 @@ export function MuseumPage() {
     next.delete('exhibit');
     setSearchParams(next);
   };
-  const read2dHref = detail ? selectedDisplay
+  const ordinaryRead2dHref = detail ? selectedDisplay
     ? `/collection/${encodeURIComponent(detail.slug)}/exhibits/${encodeURIComponent(selectedDisplay.id)}`
     : `/collection?${new URLSearchParams({ room: detail.slug })}` : '/collection';
-  const sceneFallback = <SceneFallback read2dHref={read2dHref} onUnavailable={handleUnavailable} onRetry={handleRetry3d} retriesRemaining={2 - sceneAttempt} />;
+  const read2dHref = guided.tour.status !== 'idle' ? guidedDetailHref ?? ordinaryRead2dHref : ordinaryRead2dHref;
+  const sceneFallback = <SceneFallback read2dHref={read2dHref} onUnavailable={handleUnavailable}
+    onRead2d={guided.tour.status !== 'idle' ? handleContinue2d : undefined} onRetry={handleRetry3d} retriesRemaining={2 - sceneAttempt} />;
   const detailPanel = selectedDisplay && detail && <ExhibitDetailPanel display={selectedDisplay} onClose={handleCloseDetail}
-    detail2dHref={`/collection/${encodeURIComponent(detail.slug)}/exhibits/${encodeURIComponent(selectedDisplay.id)}`}
+    detail2dHref={guided.tour.status !== 'idle' ? guidedDetailHref : guidedTour2dDetailPath(detail.slug, selectedDisplay.id)}
+    onRead2d={guided.tour.status !== 'idle' ? handleContinue2d : undefined}
     onReport={selectedReportTarget ? () => setReportTarget(selectedReportTarget) : undefined} />;
   const catalogue = <MuseumCatalogue displays={displays} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay} />;
   const reportModal = reportTarget && <PublicReportModal key={`${reportTarget.exhibitId}:${reportTarget.reportedRevisionId}`}
@@ -212,7 +226,8 @@ export function MuseumPage() {
             onChange={event => handleSelectRoom(event.currentTarget.value)} data={rooms.data?.map(item => ({ value: item.slug, label: item.name })) ?? []} />
         </div>
         <div className={`${classes.immersiveDetail} ${guided.camera.hasSession ? classes.guidedDetail : ''}`}>{detailPanel}</div>
-        {detail && <GuidedTourBar controller={guided} title={displays.find(display => display.id === guided.tour.currentStep?.exhibitId)?.title} />}
+        {detail && <GuidedTourBar controller={guided} title={displays.find(display => display.id === guided.tour.currentStep?.exhibitId)?.title}
+          onContinue2D={handleContinue2d} />}
         {detail && <details data-catalogue className={classes.immersiveCatalogue} open={displays.length === 0 ? true : undefined}><summary>{t('ui.tour.catalogue-summary', 'Danh mục hiện vật')}</summary>
           <Button m="sm" variant="default" disabled={rooms.isFetching || room.isFetching} onClick={() => void refresh()}>{t('ui.collection.refresh', 'Làm mới')}</Button>{catalogue}
         </details>}

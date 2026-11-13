@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import type { GuidedTourStep } from '@/interfaces/guidedTour';
 import type { RoomDetail, RoomSummary } from '@/validations/roomSchema';
 import { buildGuidedTourSteps } from '@/helpers/buildGuidedTourSteps';
-import { guidedTour2dDetailPath } from '@/helpers/guidedTour2dNavigation';
+import { guidedTour2dDetailPath, guidedTour3dPath } from '@/helpers/guidedTour2dNavigation';
 import { useGuidedTour } from './useGuidedTour';
 
 type GuidedTour2DRoute = { roomId: string | null; exhibitId: string | null };
@@ -79,15 +79,25 @@ export function useGuidedTour2D({
 
   const continueToCurrent = useCallback((detail?: RoomDetail) => {
     if (!currentStep) return;
-    if (status === 'paused') coreResume();
     navigateToStep(currentStep, detail);
-  }, [currentStep, navigateToStep, coreResume, status]);
+  }, [currentStep, navigateToStep]);
+
+  const continueIn3D = useCallback((detail?: RoomDetail) => {
+    if (!currentStep || status === 'idle') return;
+    const slug = slugFor(currentStep, detail);
+    if (!slug) return;
+    pause();
+    navigate(guidedTour3dPath(slug, currentStep.exhibitId));
+  }, [currentStep, navigate, pause, slugFor, status]);
 
   const resume = useCallback(() => {
     if (!currentStep) return;
-    if (!isCurrentRoute) continueToCurrent(room);
+    if (!isCurrentRoute) {
+      coreResume();
+      navigateToStep(currentStep, room);
+    }
     else coreResume();
-  }, [continueToCurrent, currentStep, isCurrentRoute, room, coreResume]);
+  }, [currentStep, isCurrentRoute, room, coreResume, navigateToStep]);
 
   const next = useCallback(() => {
     if (pendingExhibitId.current) return;
@@ -111,5 +121,5 @@ export function useGuidedTour2D({
     coreExit();
   }, [coreExit]);
 
-  return { ...tour, isSameRoom, isCurrentRoute, startFromRoom, startFromExhibit, continueToCurrent, resume, next, previous, restart, exit };
+  return { ...tour, isSameRoom, isCurrentRoute, startFromRoom, startFromExhibit, continueToCurrent, continueIn3D, resume, next, previous, restart, exit };
 }

@@ -3,6 +3,8 @@ import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
 import { envelope, exhibit, ROOM_C_ID, roomC } from './fixtures/museumContent';
 import { installRendererProbe, readRendererProbe, waitForGallerySurfaces, waitForRendererIdle } from './fixtures/museumProbe';
 import { museumExhibitButton, selectMuseumExhibit } from './fixtures/museumUi';
+import { installFiveModels } from './fixtures/museumGlb';
+import { ROTUNDA_CLEARANCE } from '../src/helpers/rotundaClearance';
 
 test.setTimeout(60_000);
 
@@ -137,7 +139,6 @@ test('template rooms use the Rotunda shell, a single shadow caster and stay with
       calls: render.calls, triangles: render.triangles, geometries: memory.geometries, textures: memory.textures };
   });
   expect(scene.names).toEqual(expect.arrayContaining(['Rotunda architecture', 'Ceiling oculus', 'Wall bays', 'Gallery friezes', 'Gallery slots']));
-  expect(scene.names).not.toContain('Gallery architecture');
   expect(scene.materials).toEqual(expect.arrayContaining(['Gallery honed floor', 'Gallery lime plaster', 'Gallery walnut', 'Gallery brushed bronze', 'Gallery amber cove']));
   expect(scene.instanced).toBeGreaterThanOrEqual(12);
   expect(scene.shadowCasters).toBeLessThanOrEqual(1);
@@ -170,4 +171,108 @@ test('reopening a template room releases its GPU resources and sleeps when idle'
   const frames = (await readRendererProbe(page)).at(-1)!.frames;
   await page.waitForTimeout(600);
   expect((await readRendererProbe(page)).at(-1)!.frames).toBe(frames);
+});
+
+/**
+ * Đo hình học thật: hộp bao từng chi tiết trang trí Rotunda (từng instance) và khối vật lý của từng hiện vật
+ * (bục + mô hình, bỏ nhãn/hotspot/decal sàn). Trả về chi tiết nằm trong vùng trống và các cặp chạm nhau.
+ */
+async function measureRotundaFit(page: Page) {
+  return page.evaluate((c) => {
+    type Box = import('three').Box3;
+    const root = window.museumProbe.at(-1)!.scene!.deref()!;
+    root.updateMatrixWorld(true);
+    let shell: import('three').Object3D | undefined;
+    root.traverse(object => { if (object.name === 'Rotunda architecture') shell = object; });
+    if (!shell) return null;
+    const boxOf = (mesh: import('three').Mesh, matrix?: import('three').Matrix4) => {
+      mesh.geometry.computeBoundingBox();
+      const box = mesh.geometry.boundingBox!.clone();
+      if (matrix) box.applyMatrix4(matrix);
+      return box.applyMatrix4(mesh.matrixWorld);
+    };
+    const decor: { name: string; box: Box }[] = [];
+    shell.traverse(object => {
+      const mesh = object as import('three').InstancedMesh;
+      if (!('isMesh' in mesh) || !mesh.visible) return;
+      if (mesh.isInstancedMesh) {
+        const matrix = mesh.matrixWorld.clone().identity();
+        for (let index = 0; index < mesh.count; index++) { mesh.getMatrixAt(index, matrix); decor.push({ name: `${mesh.parent?.name}#${index}`, box: boxOf(mesh, matrix) }); }
+      } else decor.push({ name: mesh.parent?.name ?? '', box: boxOf(mesh) });
+    });
+    const outsideClearance = ({ box }: { box: Box }) => box.max.y <= c.floorDecalTopY || box.min.y >= c.ceilingY
+      || (box.min.y >= c.wallTrimTopY && (box.min.x >= c.upperSideWallX || box.max.x <= -c.upperSideWallX || box.min.z >= c.upperEndWallZ || box.max.z <= -c.upperEndWallZ))
+      || box.min.x >= c.sideWallX || box.max.x <= -c.sideWallX || box.min.z >= c.endWallZ || box.max.z <= -c.endWallZ;
+    const intruders = decor.filter(item => !outsideClearance(item)).map(item => `${item.name} ${item.box.min.toArray().map(v => v.toFixed(2))}..${item.box.max.toArray().map(v => v.toFixed(2))}`);
+    const exhibits: { id: string; box: Box }[] = [];
+    root.traverse(object => {
+      if (typeof object.userData.artifactId !== 'string' || !('isMesh' in object) || object.userData.xrIgnore || object.userData.museumLabel) return;
+      for (let node: import('three').Object3D | null = object; node; node = node.parent) if (typeof node.userData.hotspotId === 'string') return;
+      const box = boxOf(object as import('three').Mesh);
+      if (box.max.y > c.floorDecalTopY) exhibits.push({ id: object.userData.artifactId, box });
+    });
+    // Khối nội dung (mô hình, khối tạm) mang userData của group cha; gom theo group gần nhất có artifactId.
+    root.traverse(object => {
+      if (!('isMesh' in object) || object.userData.artifactId || object.userData.museumLabel) return;
+      let owner: string | undefined, isHotspot = false, isDecal = false;
+      for (let node: import('three').Object3D | null = object; node; node = node.parent) {
+        if (typeof node.userData.hotspotId === 'string') isHotspot = true;
+        if (node.userData.xrIgnore) isDecal = true;
+        if (!owner && typeof node.userData.artifactId === 'string') owner = node.userData.artifactId;
+      }
+      if (!owner || isHotspot || isDecal || (object as import('three').Sprite).isSprite) return;
+      const box = boxOf(object as import('three').Mesh);
+      if (box.max.y > c.floorDecalTopY) exhibits.push({ id: owner, box });
+    });
+    const collisions: string[] = [];
+    for (const item of decor) if (item.box.max.y > c.floorDecalTopY) for (const exhibit of exhibits) {
+      if (item.box.intersectsBox(exhibit.box)) collisions.push(`${item.name} × ${exhibit.id}`);
+    }
+    return { decor: decor.length, exhibitParts: exhibits.length, exhibitIds: new Set(exhibits.map(item => item.id)).size, intruders, collisions };
+  }, ROTUNDA_CLEARANCE);
+}
+
+test('free-placement rooms also get the Rotunda shell without decoration touching any plinth or model', async ({ page }, info) => {
+  for (const room of ['sculpture', 'ceramics', 'empty']) {
+    await installMuseumApi(page); await installRendererProbe(page);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(`/tour?room=${room}`);
+    await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+    await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible({ timeout: 30_000 });
+    await waitForGallerySurfaces(page);
+    await expect(page.locator('[data-gallery-layout]')).toHaveAttribute('data-gallery-layout', room === 'empty' ? 'slotted' : 'legacy');
+    const fit = (await measureRotundaFit(page))!;
+    expect(fit, room).not.toBeNull();
+    expect(fit.decor).toBeGreaterThanOrEqual(140);
+    expect(fit.intruders, room).toEqual([]);
+    expect(fit.collisions, room).toEqual([]);
+    expect(fit.exhibitIds).toBe(room === 'sculpture' ? 5 : room === 'ceramics' ? 1 : 0);
+    if (room === 'sculpture') await page.screenshot({ path: info.outputPath('rotunda-legacy-sculpture.png') });
+    await page.unrouteAll({ behavior: 'ignoreErrors' });
+  }
+});
+
+test('legacy GLB room: Rotunda shell, spots aimed at the real exhibits, no collision with loaded models', async ({ page }, info) => {
+  await installFiveModels(page); await installRendererProbe(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/tour?room=sculpture');
+  await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('[data-gallery-layout]')).toHaveAttribute('data-gallery-layout', 'legacy');
+  const fit = (await measureRotundaFit(page))!;
+  expect(fit.intruders).toEqual([]);
+  expect(fit.collisions).toEqual([]);
+  expect(fit.exhibitIds).toBe(5);
+  const tier = await page.locator('[data-quality-tier]').getAttribute('data-quality-tier');
+  const spots = await page.evaluate(() => {
+    const targets: number[][] = [];
+    window.museumProbe.at(-1)!.scene!.deref()!.traverse(object => {
+      if ((object as import('three').SpotLight).isSpotLight) targets.push((object as import('three').SpotLight).target.position.toArray().map(v => +v.toFixed(2)));
+    });
+    return targets.map(([x, , z]) => [x, z]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  });
+  if (tier === 'low') expect(spots).toHaveLength(3);
+  else expect(spots).toEqual([[-3.6, -2], [-1.8, 2], [0, -2], [1.8, 2], [3.6, -2]]);
+  await page.screenshot({ path: info.outputPath('rotunda-legacy-glb.png') });
 });

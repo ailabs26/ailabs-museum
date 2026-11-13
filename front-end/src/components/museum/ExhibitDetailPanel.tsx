@@ -9,10 +9,11 @@ import classes from './ExhibitDetailPanel.module.css';
 import { usePublicT } from '@/core/i18n/public-locale';
 
 /** Nonmodal so the scene and room selector stay usable. CMS preview omits the 2D link (drafts have no public page). */
-export function ExhibitDetailPanel({ display, onClose, detail2dHref, onReport }: {
+export function ExhibitDetailPanel({ display, onClose, detail2dHref, onRead2d, onReport }: {
   display: MuseumDisplay;
   onClose: () => void;
   detail2dHref?: string;
+  onRead2d?: () => void;
   onReport?: () => void;
 }) {
   const t = usePublicT();
@@ -26,7 +27,7 @@ export function ExhibitDetailPanel({ display, onClose, detail2dHref, onReport }:
           <Button variant="subtle" color="dark" onClick={onClose} aria-label={t('ui.panel.close-aria', 'Đóng chi tiết hiện vật')}>{t('ui.panel.close', 'Đóng ×')}</Button>
         </div>
         <Title ref={titleRef} tabIndex={-1} order={2} size="h3" className={classes.title}>{display.title}</Title>
-        {detail2dHref && <Link to={detail2dHref}>{t('ui.panel.read-2d', 'Đọc chi tiết 2D')}</Link>}
+        {detail2dHref && <Link to={detail2dHref} onClick={onRead2d}>{t('ui.panel.read-2d', 'Đọc chi tiết 2D')}</Link>}
         {onReport && <Button variant="default" onClick={onReport}>{t('ui.common.report-content', 'Báo nội dung')}</Button>}
         <ExhibitImage image={display.image} shape={display.shape} color={display.color} className={classes.preview} />
         {display.model && <Text size="sm" c="teal.9">{t('ui.panel.model-hint', 'Khám phá mô hình hiện vật trong phòng 3D.')}</Text>}

@@ -3,11 +3,13 @@ import { IconPlayerPause, IconPlayerPlay, IconPlayerSkipBack, IconPlayerSkipForw
 import { usePublicLocale } from '@/core/i18n/public-locale';
 import type { useGuidedCameraTour } from '@/hooks/useGuidedCameraTour';
 import { GUIDED_TOUR_MESSAGES } from '@/helpers/guidedTourMessages';
+import { GUIDED_TOUR_2D_MESSAGES } from '@/helpers/guidedTour2dMessages';
 import classes from './GuidedTourBar.module.css';
 
-export function GuidedTourBar({ controller, title }: { controller: ReturnType<typeof useGuidedCameraTour>; title?: string }) {
+export function GuidedTourBar({ controller, title, onContinue2D }: { controller: ReturnType<typeof useGuidedCameraTour>; title?: string; onContinue2D: () => void }) {
   const { locale, t } = usePublicLocale();
   const messages = GUIDED_TOUR_MESSAGES[locale] ?? GUIDED_TOUR_MESSAGES.vi;
+  const modeMessages = GUIDED_TOUR_2D_MESSAGES[locale as keyof typeof GUIDED_TOUR_2D_MESSAGES] ?? GUIDED_TOUR_2D_MESSAGES.vi;
   const { tour, ready, start, phase } = controller;
   const labels = {
     idle: t('ui.guided.ready', messages.ready),
@@ -34,6 +36,7 @@ export function GuidedTourBar({ controller, title }: { controller: ReturnType<ty
         </Button>}
         <Button variant="default" aria-label={t('ui.guided.next', messages.next)} disabled={!tour.canNext} onClick={tour.next}><IconPlayerSkipForward size={18} /></Button>
         <Button variant="default" aria-label={t('ui.guided.exit', messages.exit)} onClick={tour.exit}><IconX size={18} /></Button>
+        <Button variant="default" onClick={onContinue2D}>{t('ui.guided2d.continue-2d', modeMessages.continue2d)}</Button>
       </div>
     </>}
   </section>;
