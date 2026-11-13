@@ -5,5 +5,6 @@ module.exports = {
   plugins: ['@typescript-eslint'],
   extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
   env: { node: true, es2022: true },
-  ignorePatterns: ['dist', 'node_modules', 'perf'],
+  // perf/ và load/ chạy ngoài Nest (harness, k6 runtime) nên không lint theo tsconfig.
+  ignorePatterns: ['dist', 'node_modules', 'perf', 'load'],
 };
