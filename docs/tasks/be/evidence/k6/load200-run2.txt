@@ -1,0 +1,18 @@
+
+k6 · profile=load200 · base=http://localhost:3101/api · VU tối đa=200
+Mục tiêu AC-49: p95 < 500 ms, lỗi < 1%
+Thông lượng: 138.4 req/s · checks đạt 100.00%
+Response lỗi: 429=0 · 5xx=0 · khác=0
+
+endpoint            requests  p50 ms  p95 ms  p99 ms  max ms  lỗi    kết luận
+------------------  --------  ------  ------  ------  ------  -----  --------
+exhibit_location    2728      2.6     9.1     15.7    75.9    0.00%  ĐẠT     
+public_room_detail  2307      3.6     12.2    23.3    60.8    0.00%  ĐẠT     
+public_rooms_list   2620      5.4     12.2    21.0    103.4   0.00%  ĐẠT     
+room_detail         8370      11.0    20.3    30.6    249.3   0.00%  ĐẠT     
+rooms_list          6739      5.2     12.2    20.4    76.9    0.00%  ĐẠT     
+search              6624      18.4    33.3    47.6    314.5   0.00%  ĐẠT     
+ui_translations     4089      5.3     12.1    20.9    247.9   0.00%  ĐẠT     
+TỔNG                33483     8.4     24.0    35.7    314.5   0.00%  ĐẠT     
+
+Mọi ngưỡng đều ĐẠT.
