@@ -12,6 +12,7 @@
 
 import http from 'k6/http';
 import { check, fail, sleep } from 'k6';
+import { Counter } from 'k6/metrics';
 import { BASE_URL, SUMMARY_TREND_STATS, stagesFor, thresholdsFor } from './lib/profiles.js';
 import { renderText } from './lib/summary.js';
 
@@ -33,6 +34,11 @@ const ACTIONS = [
   { weight: 8, endpoint: 'exhibit_location', run: (d) => get('exhibit_location', `/public/exhibits/${pick(d.exhibitIds)}/location`) },
 ];
 const TOTAL_WEIGHT = ACTIONS.reduce((sum, a) => sum + a.weight, 0);
+
+// Phân loại response lỗi để biết lỗi do rate limit (429), do server (5xx) hay khác (4xx, timeout).
+const status429 = new Counter('status_429');
+const status5xx = new Counter('status_5xx');
+const statusOther = new Counter('status_other_non_200');
 
 export const options = {
   scenarios: {
@@ -63,6 +69,9 @@ function searchPath() {
 
 function get(endpoint, path) {
   const res = http.get(`${BASE_URL}${path}`, { tags: { endpoint, name: endpoint } });
+  if (res.status === 429) status429.add(1, { endpoint });
+  else if (res.status >= 500) status5xx.add(1, { endpoint });
+  else if (res.status !== 200) statusOther.add(1, { endpoint, status: String(res.status) });
   check(res, {
     'status 200': (r) => r.status === 200,
     'envelope success': (r) => {

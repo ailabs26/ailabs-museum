@@ -7,6 +7,11 @@ function ms(value) {
   return value === undefined ? '-' : `${value.toFixed(1)}`;
 }
 
+/** Counter chưa từng được add thì không có trong summary → 0. */
+function count(metric) {
+  return metric ? String(metric.values.count) : '0';
+}
+
 function pct(value) {
   return value === undefined ? '-' : `${(value * 100).toFixed(2)}%`;
 }
@@ -65,6 +70,7 @@ export function renderText(data, meta) {
     `k6 · profile=${meta.profile} · base=${meta.baseUrl} · VU tối đa=${m.vus_max.values.max}`,
     `Mục tiêu AC-49: p95 < ${P95_TARGET_MS} ms, lỗi < ${MAX_ERROR_RATE * 100}%`,
     `Thông lượng: ${m.http_reqs.values.rate.toFixed(1)} req/s · checks đạt ${pct(m.checks.values.rate)}`,
+    `Response lỗi: 429=${count(m.status_429)} · 5xx=${count(m.status_5xx)} · khác=${count(m.status_other_non_200)}`,
     '',
     fmt(header),
     fmt(widths.map((w) => '-'.repeat(w))),

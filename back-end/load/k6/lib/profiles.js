@@ -36,6 +36,12 @@ const PROFILES = {
     { duration: __ENV.K6_HOLD || '2m', target: 200 },
     { duration: '15s', target: 0 },
   ],
+  // Vượt mục tiêu để biết còn bao nhiêu dư địa (K6_VUS, mặc định 500). Không phải tiêu chí AC-49.
+  stress: [
+    { duration: '1m', target: Number(__ENV.K6_VUS || 500) },
+    { duration: __ENV.K6_HOLD || '2m', target: Number(__ENV.K6_VUS || 500) },
+    { duration: '15s', target: 0 },
+  ],
 };
 
 export function stagesFor(name) {
