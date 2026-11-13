@@ -36,6 +36,7 @@ import { GallerySurfaces } from '@/components/museum/GallerySurfaces';
 import { useMuseumQuality } from '@/hooks/useMuseumQuality';
 import { usePublicT, type Translator } from '@/core/i18n/public-locale';
 import type { GuidedCameraBinding } from '@/hooks/useGuidedCameraTour';
+import type { ModelLodSet } from '@/helpers/modelLod';
 
 // Labels render over solid geometry. Picking follows that same visual order;
 // intersecting labels still use nearest-first ordering within their layer.
@@ -57,7 +58,7 @@ function xrMessage(message: string, t: Translator): string {
   return known ? t(known.key, known.label) : message;
 }
 
-export function MuseumScene({ displays, navigationDisplays = displays, roomName, selectedId, onSelect, onClear, fallback, immersive = false, onXrChange, guided }: {
+export function MuseumScene({ displays, navigationDisplays = displays, roomName, selectedId, onSelect, onClear, fallback, immersive = false, onXrChange, guided, modelLodSets = [] }: {
   displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void; onClear: () => void;
   navigationDisplays?: readonly MuseumDisplay[];
   /** Tên phòng (đã theo ngôn ngữ của khách) cho biển trên vách trung tâm của Gallery Template. */
@@ -66,6 +67,8 @@ export function MuseumScene({ displays, navigationDisplays = displays, roomName,
   immersive?: boolean;
   onXrChange?: (snapshot: XrSnapshot, owner: XrSessionController | null) => void;
   guided?: GuidedCameraBinding;
+  /** Test adapter until the reviewed backend source/variant publication relation exists. */
+  modelLodSets?: readonly ModelLodSet[];
 }) {
   const t = usePublicT();
   const quality = useMuseumQuality();
@@ -104,7 +107,7 @@ export function MuseumScene({ displays, navigationDisplays = displays, roomName,
   const [hasTouch, setHasTouch] = useState(false);
   useEffect(() => { setHasTouch(navigator.maxTouchPoints > 0 || matchMedia('(any-pointer: coarse)').matches); }, []);
   const handleSceneSelect = (id: string) => { if (gestures.canSelect) onSelect(id); };
-  const { models, retry } = useRoomModels(displays);
+  const { models, retry, selectLod, retainModel } = useRoomModels(displays, modelLodSets);
   // Phòng rỗng/khớp đủ bục dùng Gallery Template; phòng tọa độ tự do giữ nguyên cách dựng cũ.
   const layout = useMemo(() => resolveGalleryLayout(displays), [displays]);
   // Phòng legacy: đèn chiếu vào vị trí hiện vật thật thay vì 5 bục của template.
@@ -142,6 +145,8 @@ export function MuseumScene({ displays, navigationDisplays = displays, roomName,
     return !state || !state.failed || state.attempts >= 3 ? states : { ...states, [id]: { ...state, failed: false, attempts: state.attempts + 1 } };
   });
   const getExhibitProps = (display: MuseumDisplay): ExhibitRenderProps => ({
+    lodSet: modelLodSets.find(set => set.sourceChecksumSha256 === display.model?.checksumSha256),
+    isFocused: display.id === guided?.request?.exhibitId, onLodChange: selectLod, onRetainModel: retainModel,
     isSelected: display.id === selectedId, onSelect: handleSceneSelect,
     modelState: display.model ? models[display.model.checksumSha256] : undefined, renderAttempt: renderStates[display.id]?.attempts,
     hasRenderError: renderStates[display.id]?.checksum === display.model?.checksumSha256 && renderStates[display.id]?.failed,

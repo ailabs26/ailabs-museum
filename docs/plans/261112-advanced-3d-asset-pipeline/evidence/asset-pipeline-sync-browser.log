@@ -1,0 +1,19 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test asset-pipeline.spec.ts --grep-invert generated Draco loads --output=tmp/asset-pipeline-sync-browser --reporter=line
+
+
+Running 7 tests using 1 worker
+
+
+
+(node:18548) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[1/7] tests\asset-pipeline.spec.ts:173:1 › CMS Preview renders generated Draco and legacy GLB with shared validation
+[2/7] tests\asset-pipeline.spec.ts:191:1 › missing decoder produces an isolated model fallback with no unhandled rejection
+[3/7] tests\asset-pipeline.spec.ts:211:1 › corrupt Draco payload fails through the native decoder without crashing the scene
+[4/7] tests\asset-pipeline.spec.ts:235:1 › screen-space LOD requests independent files, retains a delayed upgrade and preserves picking and hotspots
+[5/7] tests\asset-pipeline.spec.ts:276:1 › slotted gallery preserves all five plinths while the occupied slot upgrades LOD
+[6/7] tests\asset-pipeline.spec.ts:299:1 › LOD upgrade network failure keeps visible geometry and room teardown disposes owned resources
+[7/7] tests\asset-pipeline.spec.ts:336:1 › fixed-camera synthetic original and LOD screenshots retain shared normalization
+  7 passed (41.5s)

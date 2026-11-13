@@ -1,0 +1,33 @@
+{
+  "width": 800,
+  "height": 601,
+  "metrics": [
+    {
+      "candidate": "lod0",
+      "mse": 0.0011986966167498614,
+      "psnrDb": 77.34371081308333,
+      "meanAbsoluteError": 0.0011986966167498614,
+      "maxChannelError": 1,
+      "changedPixelFraction": 0.003548252911813644
+    },
+    {
+      "candidate": "lod1",
+      "mse": 0.4259532723239046,
+      "psnrDb": 51.837184018707234,
+      "meanAbsoluteError": 0.010495701608430394,
+      "maxChannelError": 110,
+      "changedPixelFraction": 0.00427828618968386
+    },
+    {
+      "candidate": "lod2",
+      "mse": 1.2235718247365501,
+      "psnrDb": 47.254508929657995,
+      "meanAbsoluteError": 0.023833887964503604,
+      "maxChannelError": 112,
+      "changedPixelFraction": 0.005611480865224626
+    }
+  ],
+  "method": "Full-frame RGB errors at identical camera, lighting and resolution. Background contributes to aggregate scores.",
+  "visualQa": "REVIEW_REQUIRED",
+  "limitations": "Single synthetic front view. Curator review of silhouettes, inscriptions, materials and approved LOD viewing distances is required."
+}

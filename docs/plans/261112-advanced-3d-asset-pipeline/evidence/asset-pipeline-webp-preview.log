@@ -1,0 +1,13 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test asset-pipeline.spec.ts --grep CMS Preview renders --output=tmp/asset-pipeline-webp-preview --reporter=line
+
+
+Running 1 test using 1 worker
+
+
+
+(node:27868) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[1/1] tests\asset-pipeline.spec.ts:173:1 › CMS Preview renders generated Draco and legacy GLB with shared validation
+  1 passed (14.2s)

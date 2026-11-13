@@ -1,5 +1,3 @@
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { LoadingManager } from 'three';
 import type { Object3D } from 'three';
 import { museumService } from '@/services/museum.service';
 import type { PublicModel } from '@/validations/roomSchema';
@@ -9,6 +7,7 @@ import type { LoadedModel } from './roomModelAssets';
 import { sanitizeModel } from './sanitizeModel';
 import { ModelAssetError } from './modelDiagnostics';
 import type { ModelStage } from './modelDiagnostics';
+import { parseSelfContainedGlb } from './parseSelfContainedGlb';
 
 export async function loadMuseumModel(model: PublicModel, signal: AbortSignal, onProgress: (ratio: number) => void): Promise<LoadedModel> {
   const buffer = await museumService.getModelBinary(model, signal, onProgress);
@@ -19,15 +18,12 @@ export async function loadMuseumModel(model: PublicModel, signal: AbortSignal, o
     if ([...new Uint8Array(hash)].map(value => value.toString(16).padStart(2, '0')).join('') !== model.checksumSha256) throw new Error();
   } catch { throw new ModelAssetError('validate', 'format'); }
   signal.throwIfAborted();
-  const manager = new LoadingManager();
-  // Embedded images use blob URLs. No secondary network requests are allowed.
-  manager.setURLModifier(url => {
-    if (!url.startsWith('blob:')) throw new Error('Mô hình chứa tài nguyên ngoài tệp.');
-    return url;
-  });
   let gltf;
-  try { gltf = await new GLTFLoader(manager).parseAsync(buffer, ''); }
-  catch { throw new ModelAssetError('parse', 'format'); }
+  try { gltf = await parseSelfContainedGlb(buffer, signal); }
+  catch {
+    signal.throwIfAborted();
+    throw new ModelAssetError('parse', 'format');
+  }
   const ownedScenes: Object3D[] = [...gltf.scenes];
   let stage: ModelStage = 'mesh';
   try {

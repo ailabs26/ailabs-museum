@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react';
-import { useThree } from '@react-three/fiber';
+import { useEffect, useRef, useState } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
+import { Vector3 } from 'three';
+import type { Group, PerspectiveCamera } from 'three';
+import { projectedModelPixels, selectModelLod } from '@/helpers/modelLod';
+import type { ModelLodLevel, ModelLodSet } from '@/helpers/modelLod';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
-import type { ModelLoadState } from '@/helpers/roomModelAssets';
-import { getArtifactHotspots } from '@/helpers/artifactHotspots';
+import type { LoadedModel, ModelLoadState } from '@/helpers/roomModelAssets';
+import { ARTIFACT_BASE_Y, getArtifactHotspots } from '@/helpers/artifactHotspots';
 import { ArtifactFallback3D } from './ArtifactFallback3D';
 import { ArtifactHotspot } from './ArtifactHotspot';
 import { ArtifactModel } from './ArtifactModel';
@@ -14,10 +18,12 @@ import { GalleryPedestal, type PedestalKind } from './GalleryPedestal';
 export interface ExhibitRenderProps {
   isSelected: boolean; isXrHovered?: boolean; onSelect: (id: string) => void; modelState?: ModelLoadState;
   renderAttempt?: number; hasRenderError?: boolean; onRenderError: () => void;
+  lodSet?: ModelLodSet; isFocused?: boolean; onLodChange?: (checksum: string, level: ModelLodLevel, consumerId: string) => void;
+  onRetainModel?: (asset: LoadedModel) => (() => void) | undefined;
 }
 
 /** Nội dung hiện vật trên bục: chỉ mount khi vị trí này có hiện vật. Model lỗi/đang tải vẫn giữ bục. */
-function ExhibitContent({ display, isCenterpiece, isHovered, isSelected, isXrHovered = false, onSelect, modelState, renderAttempt = 0, hasRenderError = false, onRenderError }:
+function ExhibitContent({ display, isCenterpiece, isHovered, isSelected, isXrHovered = false, onSelect, modelState, renderAttempt = 0, hasRenderError = false, onRenderError, onRetainModel }:
   ExhibitRenderProps & { display: MuseumDisplay; isCenterpiece: boolean; isHovered: boolean }) {
   return <>
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.009, 0]}>
@@ -26,7 +32,7 @@ function ExhibitContent({ display, isCenterpiece, isHovered, isSelected, isXrHov
     </mesh>
     {display.model ? modelState?.status === 'ready' ?
       <ArtifactModelBoundary key={`${display.model.checksumSha256}:${renderAttempt}`} onError={onRenderError} fallback={<ArtifactFallback3D artifactId={display.id} />}>
-        <ArtifactModel asset={modelState.asset} artifactId={display.id} />
+        <ArtifactModel asset={modelState.asset} artifactId={display.id} onRetain={onRetainModel} />
       </ArtifactModelBoundary> :
       <ArtifactFallback3D artifactId={display.id} isLoading={modelState?.status !== 'error'} />
       : <ExhibitPlaceholder shape={display.shape} color={display.color} isSelected={isSelected} isHovered={isHovered} />}
@@ -43,6 +49,23 @@ function ExhibitContent({ display, isCenterpiece, isHovered, isSelected, isXrHov
 export function GallerySlotView({ position, pedestal, exhibit, slotId, hasTrim, ...content }: ExhibitRenderProps & {
   position: readonly [number, number, number]; pedestal: PedestalKind; exhibit: MuseumDisplay | null; slotId?: string; hasTrim?: boolean;
 }) {
+  const groupRef = useRef<Group>(null);
+  const lodLevel = useRef<ModelLodLevel>();
+  const worldCenter = useRef(new Vector3());
+  useEffect(() => { lodLevel.current = undefined; }, [exhibit?.id, exhibit?.model?.checksumSha256]);
+  useFrame(({ camera, gl, size }) => {
+    if (!content.lodSet || !exhibit?.model || !groupRef.current) return;
+    const { center, radius } = content.lodSet.normalization;
+    groupRef.current.localToWorld(worldCenter.current.set(center[0], center[1] + ARTIFACT_BASE_Y, center[2]));
+    const perspective = camera as PerspectiveCamera;
+    // Native XR cameras have per-eye projections. Full detail protects inspection there.
+    const pixels = perspective.isPerspectiveCamera ? projectedModelPixels(radius, camera.position.distanceTo(worldCenter.current),
+      perspective.getEffectiveFOV(), size.height, gl.getPixelRatio()) : Infinity;
+    const level = selectModelLod(pixels, lodLevel.current ?? 2, content.isSelected || !!content.isFocused || gl.xr.isPresenting, content.lodSet.thresholds);
+    lodLevel.current = level;
+    // The room owner deduplicates demand, including after owner replacement or a reused slot.
+    content.onLodChange?.(exhibit.model.checksumSha256, level, exhibit.id);
+  });
   const [isPointerHovered, setIsHovered] = useState(false);
   const isHovered = !!exhibit && (isPointerHovered || !!content.isXrHovered);
   const canvas = useThree((state) => state.gl.domElement);
@@ -54,7 +77,7 @@ export function GallerySlotView({ position, pedestal, exhibit, slotId, hasTrim, 
   const exhibitId = exhibit?.id;
   useEffect(() => { if (!exhibitId) setIsHovered(false); }, [exhibitId]);
   return (
-    <group position={[position[0], position[1], position[2]]} userData={exhibit ? { artifactId: exhibit.id, gallerySlot: slotId } : { gallerySlot: slotId }}
+    <group ref={groupRef} position={[position[0], position[1], position[2]]} userData={exhibit ? { artifactId: exhibit.id, gallerySlot: slotId } : { gallerySlot: slotId }}
       onPointerOver={(event) => { event.stopPropagation(); if (exhibit) setIsHovered(true); }}
       onPointerOut={() => setIsHovered(false)}
       onClick={(event) => { if (event.delta > 5) return; event.stopPropagation(); if (exhibit) content.onSelect(exhibit.id); }}>

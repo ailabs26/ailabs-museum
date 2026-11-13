@@ -1,0 +1,672 @@
+{
+  "environment": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+    "viewport": [
+      1280,
+      720
+    ],
+    "dpr": 1,
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "scope": "Synthetic fixture, Edge/Chromium software WebGL regression. No physical-device FPS or VRAM claim."
+  },
+  "source": {
+    "checksum": "693c93c57dfda49a63d632bfd3da8b4f6acd2466ba55999aa6cbd33c123786b7",
+    "bytes": 94692
+  },
+  "artifacts": [
+    {
+      "file": "lod0.glb",
+      "lod": 0,
+      "status": "REVIEW_REQUIRED",
+      "sha256": "43ee551f7e64f38c59416869e5e9f7040c19be74e64a49be7664452ff33537ba",
+      "bytes": 23088,
+      "metrics": {
+        "nodes": 1,
+        "meshes": 1,
+        "materials": 1,
+        "primitives": 1,
+        "vertices": 2143,
+        "triangles": 3968,
+        "bounds": [
+          {
+            "min": [
+              1,
+              -1,
+              -4
+            ],
+            "max": [
+              3,
+              1,
+              -2
+            ]
+          }
+        ],
+        "transforms": [
+          {
+            "name": "Artifact",
+            "matrix": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              2,
+              0,
+              -3,
+              1
+            ]
+          }
+        ],
+        "textures": [
+          {
+            "name": "Synthetic inscription grid",
+            "mimeType": "image/png",
+            "bytes": 953,
+            "size": [
+              128,
+              128
+            ]
+          }
+        ]
+      },
+      "quality": {
+        "visual": "REVIEW_REQUIRED",
+        "relativeBoundsDelta": 0,
+        "relativeSurfaceError": 3.9709551440499574e-7,
+        "maxNormalAngleDegrees": 0.0034436281350968836,
+        "maxUvError": 0.00000762939453125,
+        "maxColorError": 0,
+        "maxTangentError": 0,
+        "attributePolicy": "All retained vertices checked against source position and matching normals, UV, color and tangent. LOD0 checked both directions.",
+        "surfaceMethod": "bidirectional deterministic vertex and triangle-centroid samples to full triangle surface, up to 512 samples per primitive per direction",
+        "boundsTolerance": 0.00001,
+        "surfaceTolerance": 0.00001,
+        "sceneIdentityPreserved": true
+      },
+      "specification": {
+        "numErrors": 0,
+        "numWarnings": 0,
+        "numInfos": 2,
+        "numHints": 0,
+        "messages": [
+          {
+            "code": "UNSUPPORTED_EXTENSION",
+            "message": "Cannot validate an extension as it is not supported by the validator: 'KHR_draco_mesh_compression'.",
+            "severity": 2,
+            "pointer": "/extensionsUsed/0"
+          },
+          {
+            "code": "UNUSED_OBJECT",
+            "message": "This object may be unused.",
+            "severity": 2,
+            "pointer": "/bufferViews/1"
+          }
+        ],
+        "truncated": false
+      },
+      "textureConversion": []
+    },
+    {
+      "file": "lod1.glb",
+      "lod": 1,
+      "status": "REVIEW_REQUIRED",
+      "sha256": "72b624c372fec7cf9c929df3a8619526d8d7b5633d120f27ae6169256b6cf23a",
+      "bytes": 22388,
+      "metrics": {
+        "nodes": 1,
+        "meshes": 1,
+        "materials": 1,
+        "primitives": 1,
+        "vertices": 1930,
+        "triangles": 3542,
+        "bounds": [
+          {
+            "min": [
+              1,
+              -1,
+              -4
+            ],
+            "max": [
+              3,
+              1,
+              -2
+            ]
+          }
+        ],
+        "transforms": [
+          {
+            "name": "Artifact",
+            "matrix": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              2,
+              0,
+              -3,
+              1
+            ]
+          }
+        ],
+        "textures": [
+          {
+            "name": "Synthetic inscription grid",
+            "mimeType": "image/png",
+            "bytes": 953,
+            "size": [
+              128,
+              128
+            ]
+          }
+        ]
+      },
+      "quality": {
+        "visual": "REVIEW_REQUIRED",
+        "relativeBoundsDelta": 0,
+        "relativeSurfaceError": 0.00041373384357357233,
+        "maxNormalAngleDegrees": 0.0034436281350968836,
+        "maxUvError": 0.00000762939453125,
+        "maxColorError": 0,
+        "maxTangentError": 0,
+        "attributePolicy": "All retained vertices checked against source position and matching normals, UV, color and tangent. LOD0 checked both directions.",
+        "surfaceMethod": "bidirectional deterministic vertex and triangle-centroid samples to full triangle surface, up to 512 samples per primitive per direction",
+        "boundsTolerance": 0.005,
+        "surfaceTolerance": 0.005,
+        "sceneIdentityPreserved": true
+      },
+      "specification": {
+        "numErrors": 0,
+        "numWarnings": 0,
+        "numInfos": 2,
+        "numHints": 0,
+        "messages": [
+          {
+            "code": "UNSUPPORTED_EXTENSION",
+            "message": "Cannot validate an extension as it is not supported by the validator: 'KHR_draco_mesh_compression'.",
+            "severity": 2,
+            "pointer": "/extensionsUsed/0"
+          },
+          {
+            "code": "UNUSED_OBJECT",
+            "message": "This object may be unused.",
+            "severity": 2,
+            "pointer": "/bufferViews/1"
+          }
+        ],
+        "truncated": false
+      },
+      "textureConversion": []
+    },
+    {
+      "file": "lod2.glb",
+      "lod": 2,
+      "status": "REVIEW_REQUIRED",
+      "sha256": "bb8ac4684cf6531a33aba77a9b14dc833b71ab8b8ca78b2a5979b0ef12acbb2a",
+      "bytes": 21276,
+      "metrics": {
+        "nodes": 1,
+        "meshes": 1,
+        "materials": 1,
+        "primitives": 1,
+        "vertices": 1801,
+        "triangles": 3284,
+        "bounds": [
+          {
+            "min": [
+              1,
+              -1,
+              -4
+            ],
+            "max": [
+              3,
+              1,
+              -2
+            ]
+          }
+        ],
+        "transforms": [
+          {
+            "name": "Artifact",
+            "matrix": [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              2,
+              0,
+              -3,
+              1
+            ]
+          }
+        ],
+        "textures": [
+          {
+            "name": "Synthetic inscription grid",
+            "mimeType": "image/png",
+            "bytes": 953,
+            "size": [
+              128,
+              128
+            ]
+          }
+        ]
+      },
+      "quality": {
+        "visual": "REVIEW_REQUIRED",
+        "relativeBoundsDelta": 0,
+        "relativeSurfaceError": 0.0007780527421013605,
+        "maxNormalAngleDegrees": 0.0034436281350968836,
+        "maxUvError": 0.00000762939453125,
+        "maxColorError": 0,
+        "maxTangentError": 0,
+        "attributePolicy": "All retained vertices checked against source position and matching normals, UV, color and tangent. LOD0 checked both directions.",
+        "surfaceMethod": "bidirectional deterministic vertex and triangle-centroid samples to full triangle surface, up to 512 samples per primitive per direction",
+        "boundsTolerance": 0.005,
+        "surfaceTolerance": 0.005,
+        "sceneIdentityPreserved": true
+      },
+      "specification": {
+        "numErrors": 0,
+        "numWarnings": 0,
+        "numInfos": 2,
+        "numHints": 0,
+        "messages": [
+          {
+            "code": "UNSUPPORTED_EXTENSION",
+            "message": "Cannot validate an extension as it is not supported by the validator: 'KHR_draco_mesh_compression'.",
+            "severity": 2,
+            "pointer": "/extensionsUsed/0"
+          },
+          {
+            "code": "UNUSED_OBJECT",
+            "message": "This object may be unused.",
+            "severity": 2,
+            "pointer": "/bufferViews/1"
+          }
+        ],
+        "truncated": false
+      },
+      "textureConversion": []
+    }
+  ],
+  "renderer": [
+    {
+      "live": true,
+      "frames": 11,
+      "times": [
+        991.3000000715256,
+        1286.7000000476837,
+        1486,
+        1705.6000000238419,
+        1828.8000000715256,
+        1883.8000000715256,
+        2036,
+        2138.899999976158,
+        2273.100000023842,
+        2372.399999976158,
+        2531.100000023842
+      ],
+      "calls": 8,
+      "triangles": 3904,
+      "geometries": 8,
+      "textures": 6,
+      "materials": 8,
+      "objects": 17,
+      "labels": {
+        "0272b76f-b06e-4a2d-b72a-37bf54f4f2b6": 14
+      }
+    }
+  ],
+  "measurements": {
+    "snapshots": [
+      {
+        "name": "original",
+        "checksum": "693c93c57dfda49a63d632bfd3da8b4f6acd2466ba55999aa6cbd33c123786b7",
+        "state": {
+          "loaded": 1,
+          "hotspots": [
+            [
+              0,
+              2.94,
+              0
+            ]
+          ],
+          "normalizations": [
+            {
+              "scale": 0.9,
+              "offset": [
+                -2,
+                1,
+                3
+              ],
+              "size": [
+                1.8,
+                1.8,
+                1.8
+              ],
+              "center": [
+                0,
+                0.9,
+                0
+              ],
+              "radius": 1.5588457268119895
+            }
+          ]
+        },
+        "renderer": {
+          "live": true,
+          "frames": 10,
+          "times": [
+            904.8000000715256,
+            1184.6000000238419,
+            1414,
+            1616.6000000238419,
+            1741.8000000715256,
+            1782.7000000476837,
+            1888,
+            1941.7000000476837,
+            2031.8000000715256,
+            2070.100000023842
+          ],
+          "calls": 8,
+          "triangles": 4588,
+          "geometries": 8,
+          "textures": 6,
+          "materials": 8,
+          "objects": 17,
+          "labels": {
+            "21647bd3-90b9-4d01-acee-8d1e98c34015": 14
+          }
+        },
+        "samples": [
+          {
+            "downloadMs": 28,
+            "parseDecodeMs": 8.900000095367432,
+            "bytes": 94692
+          },
+          {
+            "downloadMs": 54.199999928474426,
+            "parseDecodeMs": 6.300000071525574,
+            "bytes": 94692
+          },
+          {
+            "downloadMs": 25.399999976158142,
+            "parseDecodeMs": 5.899999976158142,
+            "bytes": 94692
+          }
+        ],
+        "timingScope": "Fetch through intercepted loopback response and arrayBuffer, then shared GLTF parse including Draco worker initialization and embedded image decode. Each parsed result disposed immediately."
+      },
+      {
+        "name": "lod0",
+        "checksum": "43ee551f7e64f38c59416869e5e9f7040c19be74e64a49be7664452ff33537ba",
+        "state": {
+          "loaded": 1,
+          "hotspots": [
+            [
+              0,
+              2.94,
+              0
+            ]
+          ],
+          "normalizations": [
+            {
+              "scale": 0.9,
+              "offset": [
+                -2,
+                1,
+                3
+              ],
+              "size": [
+                1.8,
+                1.8,
+                1.8
+              ],
+              "center": [
+                0,
+                0.9,
+                0
+              ],
+              "radius": 1.5588457268119895
+            }
+          ]
+        },
+        "renderer": {
+          "live": true,
+          "frames": 10,
+          "times": [
+            851.8999999761581,
+            1116.1000000238419,
+            1422,
+            1614,
+            1677.1000000238419,
+            1816.3999999761581,
+            1912,
+            2051.600000023842,
+            2163,
+            2293.2000000476837
+          ],
+          "calls": 8,
+          "triangles": 4588,
+          "geometries": 8,
+          "textures": 6,
+          "materials": 8,
+          "objects": 17,
+          "labels": {
+            "cf969791-50c3-4056-af2b-d2ec0c13cb4f": 15
+          }
+        },
+        "samples": [
+          {
+            "downloadMs": 89.5,
+            "parseDecodeMs": 114.89999997615814,
+            "bytes": 23088
+          },
+          {
+            "downloadMs": 53.39999997615814,
+            "parseDecodeMs": 79.80000007152557,
+            "bytes": 23088
+          },
+          {
+            "downloadMs": 25.200000047683716,
+            "parseDecodeMs": 106.29999995231628,
+            "bytes": 23088
+          }
+        ],
+        "timingScope": "Fetch through intercepted loopback response and arrayBuffer, then shared GLTF parse including Draco worker initialization and embedded image decode. Each parsed result disposed immediately."
+      },
+      {
+        "name": "lod1",
+        "checksum": "72b624c372fec7cf9c929df3a8619526d8d7b5633d120f27ae6169256b6cf23a",
+        "state": {
+          "loaded": 1,
+          "hotspots": [
+            [
+              0,
+              2.94,
+              0
+            ]
+          ],
+          "normalizations": [
+            {
+              "scale": 0.9,
+              "offset": [
+                -2,
+                1,
+                3
+              ],
+              "size": [
+                1.8,
+                1.8,
+                1.8
+              ],
+              "center": [
+                0,
+                0.9,
+                0
+              ],
+              "radius": 1.5588457268119895
+            }
+          ]
+        },
+        "renderer": {
+          "live": true,
+          "frames": 11,
+          "times": [
+            1016,
+            1308.8000000715256,
+            1550.9000000953674,
+            2195.3000000715256,
+            2327.5,
+            2383,
+            2505.100000023842,
+            2610.3000000715256,
+            2741,
+            2827.8000000715256,
+            2961.9000000953674
+          ],
+          "calls": 8,
+          "triangles": 4162,
+          "geometries": 8,
+          "textures": 6,
+          "materials": 8,
+          "objects": 17,
+          "labels": {
+            "e88a0b95-62df-4fc4-859e-fdc3583ac9d5": 15
+          }
+        },
+        "samples": [
+          {
+            "downloadMs": 58.699999928474426,
+            "parseDecodeMs": 123.5,
+            "bytes": 22388
+          },
+          {
+            "downloadMs": 20.899999976158142,
+            "parseDecodeMs": 108.39999997615814,
+            "bytes": 22388
+          },
+          {
+            "downloadMs": 43.39999997615814,
+            "parseDecodeMs": 78,
+            "bytes": 22388
+          }
+        ],
+        "timingScope": "Fetch through intercepted loopback response and arrayBuffer, then shared GLTF parse including Draco worker initialization and embedded image decode. Each parsed result disposed immediately."
+      },
+      {
+        "name": "lod2",
+        "checksum": "bb8ac4684cf6531a33aba77a9b14dc833b71ab8b8ca78b2a5979b0ef12acbb2a",
+        "state": {
+          "loaded": 1,
+          "hotspots": [
+            [
+              0,
+              2.94,
+              0
+            ]
+          ],
+          "normalizations": [
+            {
+              "scale": 0.9,
+              "offset": [
+                -2,
+                1,
+                3
+              ],
+              "size": [
+                1.8,
+                1.8,
+                1.8
+              ],
+              "center": [
+                0,
+                0.9,
+                0
+              ],
+              "radius": 1.5588457268119895
+            }
+          ]
+        },
+        "renderer": {
+          "live": true,
+          "frames": 11,
+          "times": [
+            991.3000000715256,
+            1286.7000000476837,
+            1486,
+            1705.6000000238419,
+            1828.8000000715256,
+            1883.8000000715256,
+            2036,
+            2138.899999976158,
+            2273.100000023842,
+            2372.399999976158,
+            2531.100000023842
+          ],
+          "calls": 8,
+          "triangles": 3904,
+          "geometries": 8,
+          "textures": 6,
+          "materials": 8,
+          "objects": 17,
+          "labels": {
+            "0272b76f-b06e-4a2d-b72a-37bf54f4f2b6": 14
+          }
+        },
+        "samples": [
+          {
+            "downloadMs": 47.5,
+            "parseDecodeMs": 149.09999990463257,
+            "bytes": 21276
+          },
+          {
+            "downloadMs": 27.5,
+            "parseDecodeMs": 117.10000002384186,
+            "bytes": 21276
+          },
+          {
+            "downloadMs": 60.5,
+            "parseDecodeMs": 89.39999997615814,
+            "bytes": 21276
+          }
+        ],
+        "timingScope": "Fetch through intercepted loopback response and arrayBuffer, then shared GLTF parse including Draco worker initialization and embedded image decode. Each parsed result disposed immediately."
+      }
+    ],
+    "camera": {
+      "distance": 3,
+      "fov": 45,
+      "viewport": [
+        800,
+        600
+      ],
+      "dpr": 1
+    },
+    "visualQa": "REVIEW_REQUIRED"
+  },
+  "visualQa": "REVIEW_REQUIRED"
+}

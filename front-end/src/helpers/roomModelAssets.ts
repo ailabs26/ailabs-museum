@@ -12,7 +12,7 @@ export type ModelLoadState =
   | { status: 'ready'; asset: LoadedModel }
   | ({ status: 'error'; message: string; attempt: number; retriesRemaining: number; retryAt: number } & ModelFailure);
 export type ModelSnapshot = Readonly<Record<string, ModelLoadState>>;
-type LoadModel = (model: PublicModel, signal: AbortSignal, progress: (ratio: number) => void) => Promise<LoadedModel>;
+export type LoadModel = (model: PublicModel, signal: AbortSignal, progress: (ratio: number) => void) => Promise<LoadedModel>;
 
 /** One owner per open room. Shared bytes/resources, two active downloads, no global cache. */
 export class RoomModelAssets {
@@ -20,6 +20,8 @@ export class RoomModelAssets {
   private readonly controller = new AbortController();
   private readonly models = new Map<string, PublicModel>();
   private readonly attempts = new Map<string, number>();
+  private readonly references = new Map<Group, number>();
+  private readonly retired = new Map<Group, LoadedModel>();
   private queue: string[] = [];
   private active = 0;
   private closed = false;
@@ -34,6 +36,50 @@ export class RoomModelAssets {
     this.onChange(this.snapshot); this.pump();
   }
 
+  /** Add a separately delivered variant through the same two-download queue. */
+  request(model: PublicModel) {
+    const key = model.checksumSha256;
+    if (this.closed || this.models.has(key)) return;
+    this.models.set(key, model);
+    this.queue.push(key);
+    this.update(key, { status: 'queued' });
+    this.pump();
+  }
+
+  /** Caller must acknowledge that every primitive using this asset has detached. */
+  evictReady(key: string): boolean {
+    const state = this.snapshot[key];
+    if (this.closed || state?.status !== 'ready' || this.references.has(state.asset.scene)) return false;
+    this.models.delete(key); this.attempts.delete(key);
+    const snapshot = { ...this.snapshot };
+    delete snapshot[key];
+    this.snapshot = snapshot;
+    disposeModel(state.asset.scenes);
+    this.onChange(this.snapshot);
+    return true;
+  }
+
+  /** R3F is a separate React root. Track its actual mounted primitives before eviction. */
+  retain(asset: LoadedModel): () => void {
+    const scene = asset.scene;
+    this.references.set(scene, (this.references.get(scene) ?? 0) + 1);
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      const count = (this.references.get(scene) ?? 1) - 1;
+      if (count > 0) this.references.set(scene, count);
+      else {
+        this.references.delete(scene);
+        const retired = this.retired.get(scene);
+        if (retired) {
+          this.retired.delete(scene);
+          queueMicrotask(() => disposeModel(retired.scenes));
+        }
+      }
+    };
+  }
+
   retry(key: string) {
     const state = this.snapshot[key];
     if (this.closed || state?.status !== 'error' || state.retriesRemaining === 0 || Date.now() < state.retryAt) return;
@@ -43,10 +89,14 @@ export class RoomModelAssets {
   dispose() {
     if (this.closed) return;
     this.closed = true; this.controller.abort(); this.queue = [];
-    const assets = Object.values(this.snapshot).flatMap(state => state.status === 'ready' ? state.asset.scenes : []);
+    const assets = Object.values(this.snapshot).flatMap(state => state.status === 'ready' ? [state.asset] : []);
     this.snapshot = {}; this.models.clear(); this.attempts.clear();
-    // React has detached primitives by the time resource disposal runs.
-    queueMicrotask(() => disposeModel(assets));
+    // Mounted primitives release retired resources through their retain() cleanup.
+    const detached = assets.flatMap(asset => {
+      if (this.references.has(asset.scene)) { this.retired.set(asset.scene, asset); return []; }
+      return asset.scenes;
+    });
+    queueMicrotask(() => disposeModel(detached));
   }
 
   private update(key: string, state: ModelLoadState) {
