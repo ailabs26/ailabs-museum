@@ -1,4 +1,5 @@
 import { http } from '@/core/api/http-client';
+import { filenameFromDisposition } from '@/helpers/saveBlob';
 import type { Page } from '@/core/api/api-response';
 
 export interface AuditActor {
@@ -44,11 +45,8 @@ export interface ListAuditParams {
 
 export type ExportAuditParams = Omit<ListAuditParams, 'page' | 'pageSize'>;
 
-/** Tên file từ `Content-Disposition: attachment; filename="..."`; thiếu thì dùng tên mặc định. */
-export function filenameFromDisposition(header: unknown, fallback: string): string {
-  const match = typeof header === 'string' ? /filename="([^"]+)"/.exec(header) : null;
-  return match?.[1] ?? fallback;
-}
+// Giữ export cũ (test và nơi đang import từ đây); hàm nằm cùng helper tải file.
+export { filenameFromDisposition };
 
 export const auditService = {
   list(params: ListAuditParams): Promise<Page<AuditRow>> {

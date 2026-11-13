@@ -1,6 +1,7 @@
 import { http } from '@/core/api/http-client';
 import type { Page } from '@/core/api/api-response';
 import type { MediaKind, MediaProcessingState } from '@/services/media.service';
+import { filenameFromDisposition } from '@/helpers/saveBlob';
 
 export type ExhibitStatus = 'draft' | 'published';
 export type RevisionState = 'draft' | 'in_review' | 'approved' | 'rejected';
@@ -181,6 +182,33 @@ export interface UpdateExhibitInput {
   hotspots?: HotspotInput[];
 }
 
+/** Task 38 — tham số xuất: cùng bộ lọc với danh sách, không phân trang, không gồm thùng rác. */
+export type ExportExhibitsParams = Pick<ListExhibitsParams, 'q' | 'roomId' | 'status' | 'visibility'> & {
+  format: 'csv' | 'json';
+};
+
+export interface ImportRowResult {
+  /** Số thứ tự dòng dữ liệu (1 = dòng đầu tiên sau tiêu đề CSV / phần tử đầu JSON). */
+  row: number;
+  status: 'valid' | 'created' | 'error';
+  name: string | null;
+  exhibitId: string | null;
+  errors: Array<{ field: string; message: string }>;
+}
+
+export interface ImportExhibitsResult {
+  dryRun: boolean;
+  total: number;
+  valid: number;
+  created: number;
+  failed: number;
+  ids: string[];
+  rows: ImportRowResult[];
+}
+
+/** Giới hạn khớp back-end (`IMPORT_MAX_BYTES`): chặn sớm ở trình duyệt, back-end vẫn kiểm lại. */
+export const IMPORT_MAX_BYTES = 2_000_000;
+
 export const exhibitsService = {
   list(params: ListExhibitsParams): Promise<Page<ExhibitRow>> {
     return http.getPage<ExhibitRow>('/admin/exhibits', { params });
@@ -213,6 +241,23 @@ export const exhibitsService = {
   /** Khôi phục hiện vật đã xóa: tất cả hoặc không (chặn khi phòng đã xóa, 409 kèm lý do từng ID). */
   async restoreMany(ids: string[]): Promise<void> {
     await http.post<unknown>('/admin/exhibits/bulk-restore', { ids });
+  },
+
+  /** Tải file xuất (CSV có BOM cho Excel, hoặc JSON). Lỗi JSON trong response blob được http-client đọc lại. */
+  async exportFile(params: ExportExhibitsParams): Promise<{ blob: Blob; filename: string }> {
+    const res = await http.raw.get<Blob>('/admin/exhibits/export', { params, responseType: 'blob' });
+    return { blob: res.data, filename: filenameFromDisposition(res.headers['content-disposition'], `exhibits.${params.format}`) };
+  },
+
+  /** Nhập CSV/JSON (field `file`). `dryRun` chỉ kiểm tra từng dòng, không tạo hiện vật. */
+  importFile(file: File, dryRun: boolean): Promise<ImportExhibitsResult> {
+    const form = new FormData();
+    form.append('file', file);
+    return http.post<ImportExhibitsResult>('/admin/exhibits/import', form, {
+      params: { dryRun },
+      // Tối đa 500 dòng, mỗi dòng một transaction: nới timeout mặc định 20 s.
+      timeout: 120_000,
+    });
   },
 
   reorder(roomId: string, exhibitIds: string[]): Promise<{ success: boolean; message: string }> {
