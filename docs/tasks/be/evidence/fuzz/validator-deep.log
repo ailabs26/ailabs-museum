@@ -1,0 +1,5 @@
+[validator-fuzz] seed=1 đột biến=120000 {"accepted":18113,"rejected":76559,"unknown-format":25328} [validator-fuzz] seed=1 magic+ngẫu nhiên=120000 ℹ pass 2 ℹ fail 0 
+[validator-fuzz] seed=2 đột biến=120000 {"accepted":18146,"rejected":76460,"unknown-format":25394} [validator-fuzz] seed=2 magic+ngẫu nhiên=120000 ℹ pass 2 ℹ fail 0 
+[validator-fuzz] seed=3 đột biến=120000 {"accepted":17935,"rejected":76444,"unknown-format":25621} [validator-fuzz] seed=3 magic+ngẫu nhiên=120000 ℹ pass 2 ℹ fail 0 
+[validator-fuzz] seed=42 đột biến=120000 {"accepted":18222,"rejected":76108,"unknown-format":25670} [validator-fuzz] seed=42 magic+ngẫu nhiên=120000 ℹ pass 2 ℹ fail 0 
+[validator-fuzz] seed=20261113 đột biến=120000 {"accepted":18255,"rejected":76198,"unknown-format":25547} [validator-fuzz] seed=20261113 magic+ngẫu nhiên=120000 ℹ pass 2 ℹ fail 0 

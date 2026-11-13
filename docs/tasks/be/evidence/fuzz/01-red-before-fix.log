@@ -1,0 +1,46 @@
+# RED: controller của origin/dev (3af8fb7), chưa có MediaFileInterceptor
+    ✖ GLB 10.000.004 byte (vượt cả giới hạn multer) → 413 (27.105515ms)
+    ✖ 15 MB byte ngẫu nhiên → 413, không ghi gì ra đĩa (48.898238ms)
+    ✖ job: 15 MB → 413 cùng envelope, không tạo job (23.967456ms)
+  ✖ Dung lượng biên (207.372741ms)
+    ✖ tên file chứa NUL → busboy từ chối header → 400 media_invalid_multipart, không tạo media (3.803163ms)
+    ✖ job: sai tên field → 400 cùng envelope, không tạo job (2.238708ms)
+    ✖ sai tên field ("upload" thay vì "file") → 400 (2.529459ms)
+    ✖ hai file trong một request → 4xx, không lưu file nào (2.257076ms)
+    ✖ quá nhiều field (> 10) → 4xx, không 5xx (2.441318ms)
+    ✖ multipart bị cắt cụt (thiếu boundary kết thúc) → 400, không 5xx (4.18876ms)
+    ✖ multipart không có boundary → 400, không 5xx (1.890198ms)
+  ✖ Multipart dị dạng (57.008751ms)
+[fuzz] seed=20261113 perFormat=40 kết quả: 413:media_too_large=1, 422:media_corrupted=164, 422:media_empty_file=1, 422:media_external_resource=2, 422:media_kind_mismatch=1, 422:media_markup_rejected=5, 422:media_unsupported_type=55, accepted=55
+✖ Fuzz upload media (Task 28, AC-33) — seed 20261113, 40 biến thể/định dạng (2371.182319ms)
+ℹ tests 296
+ℹ pass 286
+ℹ fail 10
+✖ failing tests:
+✖ GLB 10.000.004 byte (vượt cả giới hạn multer) → 413 (27.105515ms)
+  AssertionError [ERR_ASSERTION]: [GLB 10.000.004 byte (vượt cả giới hạn multer)] thiếu errors[]: {"success":false,"data":null,"message":"File too large"}
+    actual: undefined,
+    expected: true,
+✖ 15 MB byte ngẫu nhiên → 413, không ghi gì ra đĩa (48.898238ms)
+✖ job: 15 MB → 413 cùng envelope, không tạo job (23.967456ms)
+✖ tên file chứa NUL → busboy từ chối header → 400 media_invalid_multipart, không tạo media (3.803163ms)
+    actual: undefined,
+    expected: 'file',
+✖ job: sai tên field → 400 cùng envelope, không tạo job (2.238708ms)
+    actual: undefined,
+    expected: 'file',
+✖ sai tên field ("upload" thay vì "file") → 400 (2.529459ms)
+    actual: undefined,
+    expected: 'file',
+✖ hai file trong một request → 4xx, không lưu file nào (2.257076ms)
+    actual: undefined,
+    expected: 'file',
+✖ quá nhiều field (> 10) → 4xx, không 5xx (2.441318ms)
+    actual: undefined,
+    expected: 'file',
+✖ multipart bị cắt cụt (thiếu boundary kết thúc) → 400, không 5xx (4.18876ms)
+    actual: undefined,
+    expected: 'file',
+✖ multipart không có boundary → 400, không 5xx (1.890198ms)
+    actual: undefined,
+    expected: 'file',

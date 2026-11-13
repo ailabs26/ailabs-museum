@@ -12,7 +12,6 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { auditClientInfo } from '../../audit/audit-request.util';
@@ -23,7 +22,7 @@ import { Permissions } from '../../../common/decorators/permissions.decorator';
 import { UploadMediaDto } from '../dto/upload-media.dto';
 import { MediaUploadJobService } from '../services/media-upload-job.service';
 import { UploadedMediaFile } from '../services/media.service';
-import { MEDIA_UPLOAD_LIMITS } from './admin-media.controller';
+import { MediaFileInterceptor } from '../interceptors/media-file.interceptor';
 
 /** Upload media bất đồng bộ: tạo job rồi hỏi trạng thái (VT-078). */
 @ApiTags('Admin · Media')
@@ -35,7 +34,7 @@ export class AdminUploadJobsController {
   @Post()
   @Permissions(PERMISSIONS.MEDIA_UPLOAD)
   @Audit('media.upload_job.create', 'media_upload_job')
-  @UseInterceptors(FileInterceptor('file', { limits: MEDIA_UPLOAD_LIMITS }))
+  @UseInterceptors(MediaFileInterceptor())
   @ApiConsumes('multipart/form-data')
   @ApiHeader({ name: 'Idempotency-Key', required: true, description: '1–128 ký tự [A-Za-z0-9_-]; gửi lại cùng key → nhận lại job cũ' })
   @ApiOperation({ summary: 'Tạo job upload media (202); retry cùng Idempotency-Key trả lại job cũ (200)' })
