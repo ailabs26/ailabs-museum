@@ -35,6 +35,9 @@
     "test:media": "node -r reflect-metadata -r ts-node/register --test src/modules/media/tests/*.spec.ts",
     "test:upload-jobs": "node -r reflect-metadata -r ts-node/register --test src/modules/media/tests/upload-jobs-*.spec.ts",
     "load:upload-jobs": "node -r reflect-metadata -r ts-node/register src/modules/media/tests/load/upload-jobs.load.ts",
+    "load:k6:prepare": "node -r reflect-metadata -r ts-node/register scripts/k6-load-data.ts",
+    "load:k6": "k6 run load/k6/public-visitor.js",
+    "test:load-scripts": "node -r reflect-metadata -r ts-node/register --test scripts/*.spec.ts",
     "test:service": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/rooms-service*.spec.ts",
     "test:extended": "node -r reflect-metadata -r ts-node/register --test src/modules/rooms/tests/rooms-service-extended.spec.ts"
   },
