@@ -9,11 +9,16 @@ export function importFileProblem(file: Pick<File, 'name' | 'size'> | null): str
   return null;
 }
 
+/** Một lỗi → chuỗi hiển thị; bỏ tiền tố tên trường khi thông điệp đã nhắc tới trường đó (tránh "x: x phải…"). */
+function describeError({ field, message }: { field: string; message: string }): string {
+  return field === 'row' || message.includes(field) ? message : `${field}: ${message}`;
+}
+
 /** Dòng lỗi kèm danh sách lỗi đã gộp thành một chuỗi để hiển thị trong bảng. */
 export function errorRows(result: ImportExhibitsResult): Array<ImportRowResult & { message: string }> {
   return result.rows
     .filter((row) => row.status === 'error')
-    .map((row) => ({ ...row, message: row.errors.map((e) => (e.field === 'row' ? e.message : `${e.field}: ${e.message}`)).join(' · ') }));
+    .map((row) => ({ ...row, message: row.errors.map(describeError).join(' · ') }));
 }
 
 /** Tóm tắt một dòng cho thông báo/Alert. */

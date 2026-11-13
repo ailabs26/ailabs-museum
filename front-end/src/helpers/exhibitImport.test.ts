@@ -38,6 +38,14 @@ describe('errorRows / importSummary', () => {
       expect.objectContaining({ row: 2, message: 'roomSlug: Không tìm thấy phòng · Dòng thừa ô' }),
     ]);
   });
+  it('không lặp tên trường khi thông điệp đã chứa tên đó', () => {
+    const rows = errorRows(result({ rows: [{ row: 4, status: 'error', name: null, exhibitId: null, errors: [
+      { field: 'placeholderColor', message: 'placeholderColor phải là mã hex 6 ký tự hợp lệ' },
+      { field: 'name.vi', message: 'Tên tiếng Việt không được vượt quá 200 ký tự' },
+    ] }] }));
+    expect(rows[0].message).toBe('placeholderColor phải là mã hex 6 ký tự hợp lệ · name.vi: Tên tiếng Việt không được vượt quá 200 ký tự');
+  });
+
   it('tóm tắt dry run và nhập thật, có/không có lỗi', () => {
     expect(importSummary(result())).toBe('2/3 dòng hợp lệ, 1 dòng lỗi (sẽ bị bỏ qua khi nhập).');
     expect(importSummary(result({ failed: 0, valid: 3 }))).toBe('Cả 3 dòng đều hợp lệ.');
