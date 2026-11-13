@@ -1,0 +1,7 @@
+# GREEN: sau MediaFileInterceptor, seed mặc định
+[fuzz] seed=20261113 perFormat=40 kết quả: 413:media_too_large=3, 422:media_corrupted=164, 422:media_empty_file=1, 422:media_external_resource=2, 422:media_kind_mismatch=1, 422:media_markup_rejected=5, 422:media_unsupported_type=55, accepted=55
+[validator-fuzz] seed=20261113 đột biến=12000 {"accepted":1790,"rejected":7600,"unknown-format":2610}
+[validator-fuzz] seed=20261113 magic+ngẫu nhiên=12000
+ℹ tests 298
+ℹ pass 298
+ℹ fail 0
