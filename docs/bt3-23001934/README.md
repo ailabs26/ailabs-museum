@@ -2,7 +2,7 @@
 
 Nguyễn Trọng Thành (23001934) · SE2026-T20 · 3D-WEB-03.
 Nhánh `feat/bt3-async-upload-jobs`, tách từ `origin/dev` tại baseline
-**`4c2a6d0cf89bbe52e76bb0e8509b5d0338178600`**. PR vào `dev`, **chưa merge** (chờ nhóm review).
+**`4c2a6d0cf89bbe52e76bb0e8509b5d0338178600`**. [PR #133](https://github.com/ailabs26/ailabs-museum/pull/133) **đã merge vào `dev` ngày 05/11/2026** (merge commit `c10ffa9`, head `e1a4d08`). Lúc merge, review cuối của reviewer vẫn ở trạng thái CHANGES_REQUESTED và giả định chạy một instance (mục dưới) chưa được xác nhận.
 
 ## Hash commit sau rebase
 
