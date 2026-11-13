@@ -54,7 +54,6 @@ export class MediaUploadJobRepository extends BaseRepository<MediaUploadJob> {
     return result.affected ?? 0;
   }
 
-  /** Xóa job đã kết thúc từ trước `cutoff`; job `queued`/`processing` không bao giờ bị xóa ở đây. */
   /**
    * Gắn media vào job trong transaction tạo media. Job không còn `processing` (instance khác đã ghi
    * `failed`) thì ném lỗi để rollback: thà không có media còn hơn có media mồ côi.
@@ -79,6 +78,7 @@ export class MediaUploadJobRepository extends BaseRepository<MediaUploadJob> {
     return result.affected ?? 0;
   }
 
+  /** Xóa job đã kết thúc từ trước `cutoff`; job `queued`/`processing` không bao giờ bị xóa ở đây. */
   async deleteFinishedBefore(cutoff: Date): Promise<number> {
     const result = await this.repo.delete({
       status: In([UploadJobStatus.SUCCEEDED, UploadJobStatus.FAILED]),
