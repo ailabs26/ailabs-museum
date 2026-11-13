@@ -208,6 +208,40 @@ test('missing decoder produces an isolated model fallback with no unhandled reje
   expect(errors).toEqual([]);
 });
 
+for (const decoder of ['wasm', 'js'] as const) test(`worker allocation limit returns a safe fallback with the ${decoder} decoder`, async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  if (decoder === 'js') await page.addInitScript(() => { Object.defineProperty(window, 'WebAssembly', { value: undefined, configurable: true }); });
+  await page.route('**/*draco*.js*', async route => {
+    if (route.request().resourceType() !== 'fetch') return route.continue();
+    const response = await route.fetch();
+    // Exercise allocation inside the actual worker before its native geometry decode.
+    const body = `${await response.text()}
+      var originalDracoFactory = DracoDecoderModule;
+      DracoDecoderModule = function(config) {
+        var loaded = config.onModuleLoaded;
+        config.onModuleLoaded = function(module) {
+          var decode = module.Decoder.prototype.DecodeArrayToMesh;
+          module.Decoder.prototype.DecodeArrayToMesh = function() {
+            module._malloc(128 * 1024 * 1024 + 1);
+            return decode.apply(this, arguments);
+          };
+          loaded(module);
+        };
+        return originalDracoFactory(config);
+      };
+    `;
+    await route.fulfill({ response, body });
+  });
+  await installHarness(page, { source: lodSet.levels[0].model });
+  await page.goto('/tests/fixtures/asset-pipeline.html');
+  await expect(page.getByTestId('asset-status')).toHaveText('error', { timeout: 60_000 });
+  expect((await artifactState(page)).loaded).toBe(0);
+  await expect(page.getByLabel('Asset fixture canvas')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('corrupt Draco payload fails through the native decoder without crashing the scene', async ({ page }) => {
   const bytes = Buffer.from(binaries.get(lodSet.levels[0].model.checksumSha256)!);
   const jsonLength = bytes.readUInt32LE(12);

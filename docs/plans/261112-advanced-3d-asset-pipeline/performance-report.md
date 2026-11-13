@@ -6,6 +6,10 @@ Ngày 12/11/2026. Base ban đầu `dcbb814141bef3ed547f0893edb701c4d9407771`, nh
 
 Đã triển khai CLI offline Draco, ba GLB LOD độc lập, WebP candidates, shared self-hosted Draco parser và fixture runtime LOD. Candidate luôn giữ `REVIEW_REQUIRED`, `publicationEligible=false`. Production multi-LOD chờ backend/database duyệt quan hệ original/derived. Dataset đo là tài nguyên tổng hợp do test sinh. Nghiệm thu chất lượng bảo tàng và thiết bị thật còn mở.
 
+Cập nhật ngày 13/11/2026 sau review P2, đã đồng bộ `dev` tại `3af8fb7` và đặt hard maximum cho decoder heap trước khi xử lý bitstream. Frontend có 399 unit tests đạt, typecheck/lint/build đạt và 9 dev asset browser cases đạt. Benchmark bytes/CPU/render trong các phần dưới thuộc bộ đo ngày 12/11/2026. Policy heap mới và chi phí JS fallback được mô tả ở phần Security considerations và `draco-design.md`.
+
+Production suite ngày 13/11/2026 đạt 27/28, gồm Public Draco WASM/JS và GLB/XR/context recovery. Còn lỗi Gallery Slots movement đã được ghi nhận từ stock dev. Resource/idle case đạt ở lần chạy mới. Hai Public cases cùng 9 dev cases tạo 11 ca asset browser riêng biệt đạt. Evidence hiện hành ở `asset-review-*.log`.
+
 ## 2. Kiến trúc before/after
 
 Base upload kiểm bytes/format/structure rồi tạo media ready. Published model được đọc qua room/exhibit/checksum API. Frontend kiểm SHA-256 và chặn Draco. Media entity chưa có quan hệ source/derived.
@@ -93,7 +97,7 @@ Browser là Headless Chromium 156, ANGLE/Vulkan SwiftShader, viewport 1280×720,
 
 Sau tích hợp Gallery Slots, chín ca browser asset đã qua, gồm hai production Public Museum WASM/JS và bảy fixture CMS/legacy LOD/slotted LOD/fallback/visual/native corrupt Draco. Frontend typecheck/lint/build đạt, unit tests đạt 383/383 trên 61 files. Ready-state identity được giữ trong lúc upgrade để Guided Tour tiếp tục camera motion. Bốn PNG fixed-camera sau tích hợp có checksum giống bộ capture đã lưu.
 
-Trước tích hợp Gallery Slots, production regression GLB/hotspots/Guided Tour/WebXR đạt 51/51. Sau tích hợp, selected production suite đạt 24/26, gồm Public Draco, CMS slot picker, late GLB/cancellation và XR/context recovery. Hai ca Gallery Slots đang lỗi về movement và resource/idle, đã tái hiện trên snapshot stock dev `446bba7` và khi chạy riêng trên task. Stock quan sát camera Z khoảng 5,701 với kỳ vọng < 5 và texture count 9 → 17. PR giữ draft với các lỗi này đang mở. Logs nằm trong `evidence/`.
+Trước tích hợp Gallery Slots, production regression GLB/hotspots/Guided Tour/WebXR đạt 51/51. Sau tích hợp, selected production suite đạt 24/26, gồm Public Draco, CMS slot picker, late GLB/cancellation và XR/context recovery. Hai ca Gallery Slots đang lỗi về movement và resource/idle, đã tái hiện trên snapshot stock dev `446bba7` và khi chạy riêng trên task. Stock quan sát camera Z khoảng 5,701 với kỳ vọng < 5 và texture count 9 → 17. PR ở trạng thái Ready for review với các lỗi này đang mở. Logs nằm trong `evidence/`.
 
 CMS Preview đã kiểm legacy/Draco/embedded WebP. Inspector backend nhận đủ bảy generated candidates và kiểm SHA, bytes, upload limit, format/structure. Backend media 592/592 và public models 10/10 là kết quả trước backend publish guard PR #185. Live storage/publication cần workflow riêng.
 
@@ -107,7 +111,7 @@ Sau đồng bộ Gallery Slots, `GallerySlotView` thực hiện LOD selection v�
 
 ## 11. Security considerations
 
-Chỉ mở thêm `KHR_draco_mesh_compression`. Meshopt/KTX2 chưa có decoder tiếp tục bị chặn. External URI bị từ chối trước parse. File limits, checksum và public authorization contract tiếp tục áp dụng. Declared geometry budget và post-decode checks bảo vệ đường nhận model. Native WASM có thể cấp phát trước post-decode validation, chưa có hard OS/WASM memory isolation.
+Chỉ mở thêm `KHR_draco_mesh_compression`. Meshopt/KTX2 chưa có decoder tiếp tục bị chặn. External URI bị từ chối trước parse. File limits, checksum và public authorization contract tiếp tục áp dụng. Sau review P2 ngày 13/11/2026, decoder WASM có engine-enforced maximum heap 128 MiB mỗi worker. JS fallback có fixed heap 128 MiB và worker kiểm ngân sách `_malloc` trước khi Three sao chép output. Maximum hai workers tương ứng 256 MiB decoder heaps. Native memory.grow vượt cận bị engine từ chối trước post-decode checks. Tổng browser heap, model cache và GPU resources cần các phép đo lifecycle riêng. Chi tiết và tradeoff JS fallback ở `draco-design.md`.
 
 Backend source/schema/auth/storage policy giữ theo base. Production variant phải được backend resolve từ original Published record và kế thừa revocation/QA. Adapter usage `fixture` và mock binary routes thể hiện phạm vi kiểm thử. Chưa có migration hay production derived URLs được triển khai.
 
@@ -115,7 +119,7 @@ Backend source/schema/auth/storage policy giữ theo base. Production variant ph
 
 Kết quả lệnh ở [verification.md](verification.md), raw evidence ở [evidence/README.md](evidence/README.md), SHA/PR ở [commit-plan.md](commit-plan.md). Review đã tìm và sửa fallback close inspection, R3F refcount, stale remount demand, APNG mất frame và Draco accessor mismatch. Các ca này có regression riêng.
 
-PR draft #186 có base `dev`, đang chờ human review trust-boundary validation và backend/database/curator checkpoints. [Pull request #186](https://github.com/ailabs26/ailabs-museum/pull/186)
+PR #186 Ready for review có base `dev`, đang chờ human review trust-boundary validation và backend/database/curator checkpoints. [Pull request #186](https://github.com/ailabs26/ailabs-museum/pull/186)
 
 ## 13. Limitations và phần cần duyệt
 
@@ -123,7 +127,7 @@ PR draft #186 có base `dev`, đang chờ human review trust-boundary validation
 - Backend/database duyệt quan hệ original/derived, additive DTO/routes, revocation, retention và migration nếu cần.
 - Cần Android/iOS/GPU/headset thật và ba runs cùng workload/network controls để nghiệm thu FPS/VRAM/heap.
 - Approved single GLB qua live CMS/storage/Published room chưa được xác minh. Offline và fixture có evidence riêng.
-- Hai Gallery Slots regression tests còn lỗi trên cả task và stock dev. Movement dùng fixed-duration input và resource/idle assertions cần được owner Gallery Slots xử lý trước nghiệm thu production.
+- Lịch sử ngày 12/11/2026 có hai Gallery Slots failures trên cả task và stock dev. Lần chạy ngày 13/11/2026 còn movement failure, resource/idle case đạt. Movement dùng fixed-duration input cần owner Gallery Slots xử lý trước nghiệm thu production.
 
 ## 14. Final acceptance status
 

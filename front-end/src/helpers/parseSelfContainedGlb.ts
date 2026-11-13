@@ -7,6 +7,7 @@ import decoderJsUrl from 'three/examples/jsm/libs/draco/gltf/draco_decoder.js?ur
 import decoderWasmUrl from 'three/examples/jsm/libs/draco/gltf/draco_decoder.wasm?url';
 import decoderWrapperUrl from 'three/examples/jsm/libs/draco/gltf/draco_wasm_wrapper.js?url';
 import { disposeModel, validateGlb } from './glbAsset';
+import { limitDracoDecoderSource, limitDracoWasmMemory } from './dracoMemory';
 
 const DECODER_URLS = new Map([
   ['draco_decoder.js', decoderJsUrl],
@@ -79,6 +80,7 @@ function trackDecodedGeometry(loader: GLTFLoader): () => void {
 type RuntimeDracoLoader = DRACOLoader & {
   decodeGeometry(buffer: ArrayBuffer, config: unknown): Promise<BufferGeometry>;
   _initDecoder(): Promise<void>;
+  _loadLibrary(url: string, responseType: string): Promise<string | ArrayBuffer>;
 };
 
 interface DecoderOwner {
@@ -111,6 +113,13 @@ function acquireDecoder(): DecoderOwner {
     return url;
   });
   const loader = new DRACOLoader(manager).setWorkerLimit(2) as RuntimeDracoLoader;
+  const loadLibrary = loader._loadLibrary.bind(loader);
+  loader._loadLibrary = async (url, responseType) => {
+    const library = await loadLibrary(url, responseType);
+    return url === 'draco_decoder.wasm'
+      ? limitDracoWasmMemory(library as ArrayBuffer)
+      : limitDracoDecoderSource(library as string, url === 'draco_decoder.js');
+  };
   // GLTFLoader calls preload() without observing failures in Three 0.170.
   // Lazy initialization lets the decode promise own missing-resource errors.
   loader.preload = () => loader;

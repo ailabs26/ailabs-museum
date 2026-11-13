@@ -18,6 +18,14 @@ Thêm `KHR_draco_mesh_compression` đúng whitelist sau khi parser đã cấu h�
 
 Public loader giữ download abort, byte count, SHA-256 và sanitize/normalization. Parse thành công đến muộn sau abort phải dispose toàn bộ scenes/quarantine trước trả về. Preview giữ abort và ownership riêng, dùng cùng parser/validation để tránh lệch khả năng hỗ trợ.
 
+## Giới hạn cấp phát trước decode sau review P2
+
+Review ngày 13/11/2026 yêu cầu giới hạn heap trước khi đọc bitstream. `dracoMemory.ts` giới hạn memory section của decoder WASM đã pin ở maximum 2048 pages, tương đương 128 MiB mỗi worker. WebAssembly engine thực thi cận này cho cả native allocation và memory.grow. Initial memory tiếp tục là 16 MiB. Thay đổi layout memory của dependency sẽ làm decoder fail closed và cần được kiểm chứng lại.
+
+Đường JS/asm fallback nhận `wasmMemory` là buffer cố định 128 MiB trước khởi tạo module và từ chối growth. Quyết định này tăng baseline heap của JS fallback từ 16 lên 128 MiB mỗi worker. Wrapper trong worker cũng đếm tổng các yêu cầu `_malloc` từ JS theo từng decode, từ chối khi vượt 128 MiB và kiểm pointer 0 trước khi Three sao chép attributes/indices. Native allocations trong bộ giải mã đi qua heap đã có cận. Model vượt ngân sách trả lỗi để UI hiện fallback.
+
+Một cohort có tối đa hai workers, tương ứng tối đa 256 MiB linear decoder heaps. Output arrays, input GLB, model cache, textures và bộ nhớ của trình duyệt có ownership/chi phí riêng. Kiểm tra accessor sau decode tiếp tục xác thực hình học trả về. Tests trực tiếp khởi tạo module WASM để kiểm memory.grow vượt maximum, chạy factory WASM/JS thật và kiểm ngân sách `_malloc` trong worker.
+
 ## Ma trận kiểm chứng
 
 | Ca | Điều cần quan sát |

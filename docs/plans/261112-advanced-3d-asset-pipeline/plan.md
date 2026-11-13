@@ -1,6 +1,6 @@
 # Kế hoạch Advanced 3D Asset Pipeline
 
-Ngày 12/11/2026. Base `origin/dev` tại `dcbb814141bef3ed547f0893edb701c4d9407771`, nhánh `feat/advanced-3d-asset-pipeline`. Phạm vi offline/fixture đã được triển khai và kiểm chứng. Nghiệm thu tổng thể REVIEW_REQUIRED tại PR draft #186. Kết quả và các checkpoint nằm trong `verification.md` và `performance-report.md`.
+Ngày 12/11/2026. Base `origin/dev` tại `dcbb814141bef3ed547f0893edb701c4d9407771`, nhánh `feat/advanced-3d-asset-pipeline`. Phạm vi offline/fixture đã được triển khai và kiểm chứng. Nghiệm thu tổng thể REVIEW_REQUIRED tại PR #186 Ready for review. Kết quả và các checkpoint nằm trong `verification.md` và `performance-report.md`.
 
 Đã nhận Gallery Slots từ `dev` tại `446bba7` qua merge `4388274` và backend publish guard tại `2a245d0` qua merge `12155b1`. Runtime LOD đi qua shared `GallerySlotView` của cả hai layout. Sau tích hợp, 383 units và 9 ca asset browser đạt. Selected production suite đạt 24/26, hai Gallery Slots failures đã tái hiện trên stock dev và còn mở để owner review.
 

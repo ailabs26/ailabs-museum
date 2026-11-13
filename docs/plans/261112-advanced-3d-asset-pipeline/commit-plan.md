@@ -13,7 +13,11 @@ Base `origin/dev` được fetch trước triển khai tại `dcbb814141bef3ed54
 | `d115a0b` | `docs(assets): deliver measured pipeline evidence and review checkpoints` | Benchmark manifests, raw logs và visual comparison |
 | `4388274` | `merge(dev): integrate Gallery Slots with asset LOD lifecycle` | 383 units, 7 dev asset cases, production 24/26 và stock-dev proof cho hai failures |
 | `12155b1` | Merge `origin/dev` tại `2a245d0` | Backend publish guard PR #185, frontend giống `4388274` |
+| `eef9579` | `docs(assets): record integrated Gallery Slots verification` | Evidence sau tích hợp, CI cả ba jobs đạt |
+| `f0fb334` | Merge `origin/dev` tại `3af8fb7` | Nhận Guided Tour mode sync, Rotunda toàn phòng và upstream test fix |
 
 Commit bổ sung evidence sau đồng bộ có message `docs(assets): record integrated Gallery Slots verification`. SHA cuối được hiển thị ở PR head và phản hồi bàn giao. Dùng `git log --first-parent dcbb814..HEAD --oneline` để đọc ledger của task.
 
-PR draft #186 có base `dev`, head `feat/advanced-3d-asset-pipeline`. Trạng thái tích hợp đang chờ human review. Các checkpoint gồm hai Gallery Slots failures đã tái hiện trên stock dev, curator fidelity trên dataset có quyền, backend/database contract original/derived và hardware performance theo audit 261104. [Pull request #186](https://github.com/ailabs26/ailabs-museum/pull/186)
+Bản sửa review P2 có message `fix(assets): enforce bounded Draco decoder memory`, gồm engine memory maximum, bounded JS fallback, worker allocation budget và regression evidence.
+
+PR #186 Ready for review có base `dev`, head `feat/advanced-3d-asset-pipeline`. Trạng thái tích hợp đang chờ human review. Các checkpoint gồm hai Gallery Slots failures đã tái hiện trên stock dev, curator fidelity trên dataset có quyền, backend/database contract original/derived và hardware performance theo audit 261104. [Pull request #186](https://github.com/ailabs26/ailabs-museum/pull/186)

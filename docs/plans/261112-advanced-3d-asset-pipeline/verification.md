@@ -2,7 +2,24 @@
 
 Ngày 12/11/2026, base ban đầu `dcbb814141bef3ed547f0893edb701c4d9407771`. Đã tích hợp Gallery Slots từ `dev` tại `446bba7` bằng merge `4388274`, sau đó đồng bộ backend publish guard tại `2a245d0` bằng merge `12155b1`. Lần đồng bộ sau chỉ đổi backend và tài liệu, frontend giống `4388274`. Logs lưu trong `evidence/`.
 
-## Gates sau tích hợp dev
+## Sửa review ngày 13/11/2026
+
+Đồng bộ `dev` tại `3af8fb7` qua merge `f0fb334`. Bản sửa P2 giới hạn decoder heap trước decode, áp dụng cho WASM và JS fallback. Đã kiểm tra native WASM engine memory maximum và chạy decoder factories thật. Hai regression tests cốt lõi đã fail trước sửa và pass sau sửa.
+
+| Gate | Kết quả | Evidence |
+| --- | --- | --- |
+| Frontend typecheck | Exit 0 | `asset-review-typecheck.log` |
+| Frontend lint | Exit 0 | `asset-review-lint.log` |
+| Frontend units | 399/399, 64 files, gồm 5 memory regressions | `asset-review-test-unit.log` |
+| Production build | Exit 0, large-chunk warning | `asset-review-build.log` |
+| Dev asset browser | 9/9, gồm WASM/JS worker allocation failure và safe fallback | `asset-review-browser.log` |
+| Production Public Draco/CMS/Gallery Slots/GLB/XR | 27/28, exit 1 | `asset-review-production.log` |
+
+Hai Public Draco WASM/JS cases đạt trên production build, cộng với 9 dev cases thành 11 ca asset browser riêng biệt. Production suite còn một lỗi Gallery Slots movement tại dòng 42, camera Z 5,706656685884195 với kỳ vọng < 5 sau 4,5 giây giữ W. Ca reopening resource/idle đạt ở lần chạy này. Reviewer xác định nhóm Gallery Slots failures trước đó cần theo dõi riêng, có stock-dev reproduction trong bằng chứng ngày 12/11/2026.
+
+Giới hạn áp dụng cho decoder heaps và các yêu cầu cấp phát output trong worker. JS fallback cấp phát fixed heap 128 MiB mỗi worker, tăng so với initial heap cũ 16 MiB. Model vượt ngân sách sử dụng fallback hiện có. Curator QA, dataset thực, production multi-LOD contract và physical-device measurements tiếp tục theo các checkpoint trong performance report.
+
+## Gates bàn giao ngày 12/11/2026
 
 | CWD | Lệnh hoặc phạm vi | Kết quả | Evidence |
 | --- | --- | --- | --- |
@@ -26,7 +43,7 @@ Hai lỗi đang mở trong `tests/museum-gallery-slots.spec.ts` được tái hi
 - Ca dòng 40 giữ W trong 4,5 giây, kỳ vọng camera Z < 5. Task quan sát khoảng 5,698 và stock dev khoảng 5,701.
 - Ca dòng 155 kiểm reopening/idle. Có lần texture count đổi từ 9 sang 17, có lần idle frames đổi từ 36 sang 37. Stock dev tái hiện texture mismatch 9 → 17.
 
-Thử nghiệm thêm một renderer warmup frame vào probe đã được gỡ hoàn toàn sau khi không giải quyết được lỗi. Hai assertions gốc tiếp tục áp dụng. Nghiệm thu production giữ `REVIEW_REQUIRED` và PR giữ draft để con người review các lỗi này. Phạm vi asset mới gồm 7 ca dev và 2 ca Public production đều đạt, tổng cộng 9 ca riêng biệt.
+Thử nghiệm thêm một renderer warmup frame vào probe đã được gỡ hoàn toàn sau khi không giải quyết được lỗi. Hai assertions gốc tiếp tục áp dụng. Nghiệm thu production giữ `REVIEW_REQUIRED` và PR ở trạng thái Ready for review để con người đánh giá các lỗi này. Phạm vi asset mới gồm 7 ca dev và 2 ca Public production đều đạt, tổng cộng 9 ca riêng biệt.
 
 `GallerySlotView` hiện sở hữu frame-based LOD selection và truyền retain callback cho `ArtifactModel`, dùng chung cho legacy display và Gallery Slots. Ca browser mới chứng minh occupied slot nâng LOD trong khi đủ năm plinths vẫn hiện. Các PNG fixed-camera sau tích hợp có SHA-256 giống từng byte với bộ capture trong `evidence/renders/`, nên comparison đã lưu tiếp tục khớp.
 
@@ -99,7 +116,9 @@ node tools/asset-pipeline/test/compare-renders.mjs front-end/tmp/asset-pipeline-
 
 ## Review regressions
 
-Independent review đã phát hiện Draco decoded count khác accessor declaration và APNG bị Sharp đọc như ảnh tĩnh. Đã có test tái hiện trước fix và kiểm tra sau fix. Root bổ sung fallback về original khi LOD0 lỗi, refcount bảo vệ tài nguyên qua R3F root, first-demand sau remount và ready-state identity để giữ camera Guided Tour trong lúc tải. Không còn confirmed P1/P2 sau review. Native WASM allocation trước admission check vẫn là giới hạn được ghi trong report.
+Independent review ban đầu phát hiện Draco decoded count khác accessor declaration và APNG bị Sharp đọc như ảnh tĩnh. Đã có test tái hiện trước fix và kiểm tra sau fix. Root bổ sung fallback về original khi LOD0 lỗi, refcount bảo vệ tài nguyên qua R3F root, first-demand sau remount và ready-state identity để giữ camera Guided Tour trong lúc tải.
+
+Review P2 ngày 13/11/2026 xác nhận admission check sau decode chạy quá muộn để giới hạn native allocation. Hai regression tests đã fail trước sửa, gồm native WASM memory.grow vượt 128 MiB được chấp nhận và JS worker thiếu bounded memory. Bản sửa đặt maximum memory trong module WASM trước instantiate, fixed heap cho JS fallback và ngân sách `_malloc` trong worker. Phần kiểm chứng bổ sung được ghi theo log review trong evidence index. Đã tích hợp `dev` tại `3af8fb7` qua merge `f0fb334` trước sửa.
 
 
 ## Generated artifact inspection

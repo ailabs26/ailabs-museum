@@ -2,6 +2,14 @@
 
 Ngày 12/11/2026. Base source `dcbb814141bef3ed547f0893edb701c4d9407771`. Evidence được thu từ implementation task trước các commit bàn giao, với dependency versions/config/checksums nằm trong JSON. Synthetic inputs được tạo bởi `tools/asset-pipeline/test/fixture.mjs` và `test/benchmark.mjs`, quyền CC0 do task sinh.
 
+## Review ngày 13/11/2026
+
+Logs `asset-review-*` ghi bản sửa giới hạn memory sau merge `f0fb334`, nhận `dev` tại `3af8fb7`. Frontend typecheck/lint/build exit 0, unit tests 399/399 trên 64 files, dev asset browser 9/9. Năm memory regressions gồm native engine growth limit, JS fixed heap/output budget, actual WASM/JS factories và fail-closed khi dependency memory layout thay đổi. Hai browser cases mới gây yêu cầu `_malloc` vượt budget bên trong worker dùng decoder thật, xác nhận safe fallback trên cả WASM/JS.
+
+`asset-review-production.log` ghi 27/28 ca đạt, gồm hai Public Draco WASM/JS. Còn Gallery Slots movement failure, camera Z 5,706656685884195 với kỳ vọng < 5. Reopening resource/idle case đạt lần này. Tổng số asset browser cases riêng biệt đã đạt là 11. Logs có hậu tố `typecheck`, `lint`, `test-unit`, `build`, `browser` và `production`.
+
+## Bàn giao ngày 12/11/2026
+
 Các logs có prefix `asset-pipeline-sync-` kiểm chứng frontend sau tích hợp Gallery Slots tại `446bba7` qua merge `4388274`. Merge `12155b1` nhận tiếp backend/docs từ `dev` tại `2a245d0`, frontend giống `4388274`. Bộ logs `*-final.log` và 51-case regression thuộc giai đoạn trước Gallery Slots. Backend counts trước PR #185 được giữ như lịch sử.
 
 | Evidence sau đồng bộ | Nội dung và phạm vi |
