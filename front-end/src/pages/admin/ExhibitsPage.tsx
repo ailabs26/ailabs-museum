@@ -15,6 +15,7 @@ import {
   Grid,
   Group,
   Loader,
+  Menu,
   NumberInput,
   Pagination,
   SegmentedControl,
@@ -34,6 +35,8 @@ import {
   IconBox,
   IconClock,
   IconCube,
+  IconDownload,
+  IconFileImport,
   IconEdit,
   IconEye,
   IconQrcode,
@@ -75,6 +78,8 @@ import type {
 import { exhibitsService } from '@/services/exhibits.service';
 import { HotspotEditor } from '@/components/cms/HotspotEditor';
 import { TourOrderModal } from '@/components/cms/TourOrderModal';
+import { ExhibitImportModal } from '@/components/cms/ExhibitImportModal';
+import { saveBlob } from '@/helpers/saveBlob';
 import { roomsService } from '@/services/rooms.service';
 import { moderationService } from '@/services/moderation.service';
 import {
@@ -308,6 +313,7 @@ export function ExhibitsPage() {
   useEffect(() => () => { editSessionRef.current++; actionRequestRef.current++; autosaveRef.current?.dispose(); }, []);
 
   const [tourOrderOpened, tourOrder] = useDisclosure(false);
+  const [importOpened, importModal] = useDisclosure(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [qrTarget, setQrTarget] = useState<ExhibitQrTarget | null>(null);
   const openQr = (exhibit: ExhibitRow) => setQrTarget({
@@ -367,6 +373,14 @@ export function ExhibitsPage() {
         deleted: trash || undefined,
       }),
     placeholderData: keepPreviousData,
+  });
+
+  // Task 38: xuất theo đúng bộ lọc đang xem (không phân trang, không gồm thùng rác).
+  const exportMutation = useMutation({
+    mutationFn: (format: 'csv' | 'json') =>
+      exhibitsService.exportFile({ format, q: search.trim() || undefined, status: queryStatus, roomId: queryRoomId }),
+    onSuccess: ({ blob, filename }) => saveBlob(blob, filename),
+    onError: (error: Error) => notify.error(error.message),
   });
 
   // Chi tiết 1 hiện vật khi xem
@@ -1039,6 +1053,25 @@ export function ExhibitsPage() {
                 Thứ tự tour
               </Button>
             )}
+            {!trash && (
+              <Menu position="bottom-end" withinPortal>
+                <Menu.Target>
+                  <Button variant="default" leftSection={<IconDownload size={16} />} loading={exportMutation.isPending}>
+                    Xuất
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>Theo bộ lọc đang xem</Menu.Label>
+                  <Menu.Item onClick={() => exportMutation.mutate('csv')}>CSV (mở bằng Excel)</Menu.Item>
+                  <Menu.Item onClick={() => exportMutation.mutate('json')}>JSON</Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            )}
+            {canCreate && !trash && (
+              <Button variant="default" leftSection={<IconFileImport size={16} />} onClick={importModal.open}>
+                Nhập
+              </Button>
+            )}
             {canCreate && !trash && (
               <Button leftSection={<IconPlus size={16} />} onClick={openCreate}>
                 Thêm hiện vật
@@ -1049,6 +1082,8 @@ export function ExhibitsPage() {
       />
 
       <ExhibitQrModal target={qrTarget} onClose={() => setQrTarget(null)} />
+
+      <ExhibitImportModal opened={importOpened} onClose={importModal.close} />
 
       <TourOrderModal
         opened={tourOrderOpened}
