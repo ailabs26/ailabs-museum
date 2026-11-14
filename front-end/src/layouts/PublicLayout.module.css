@@ -1,13 +1,65 @@
-.layout {
-  /* Cầu nối token cũ (--public-*) sang Aura DS 2.0 để component hiện có tự đổi màu. */
-  --public-background: var(--aura-bg);
-  --public-surface: var(--aura-surface);
-  --public-ink: var(--aura-ink);
-  --public-muted: var(--aura-muted);
-  --public-border: var(--aura-border);
-  --public-accent: var(--aura-accent);
+/* Public pages can consume these semantic tokens from CSS Modules via var(--public-ink). */
+.layout, .drawerContent {
+  --public-bg: #F5EFE5;
+  --public-paper: #FFF9F0;
+  --public-sand: #E9DDCD;
+  --public-ink: #1B2723;
+  --public-muted: #555A53;
+  --public-forest: #064735;
+  --public-forest-hover: #0B5D47;
+  --public-charcoal: #17221F;
+  --public-bronze: #B28B56;
+  --public-bronze-text: #73512D;
+  --public-border: #D9CDBB;
+  --public-focus: #174E96;
+  --public-error: #A82F37;
+  --public-action-bg: #064735;
+  --public-action-hover: #0B5D47;
+  --public-action-text: #FFF9F0;
+  --public-font-display: 'Noto Serif', Georgia, 'Times New Roman', serif;
+  --public-font-body: Inter, 'Segoe UI', Arial, sans-serif;
+  --public-content-max: 1360px;
+  --public-gutter: clamp(16px, 3.5vw, 48px);
+  --public-space-1: 4px;
+  --public-space-2: 8px;
+  --public-space-3: 12px;
+  --public-space-4: 16px;
+  --public-space-6: 24px;
+  --public-space-8: 32px;
+  --public-space-12: 48px;
+  --public-space-16: 64px;
+  --public-radius-card: 14px;
+  --public-radius-control: 9px;
+  --public-shadow-raised: 0 10px 30px -18px rgba(23, 34, 31, 0.28);
 
-  min-height: 100%;
+  /* Compatibility aliases for public descendants that already consume them. */
+  --public-background: var(--public-bg);
+  --public-surface: var(--public-paper);
+  --public-accent: var(--public-forest);
+}
+
+:global([data-mantine-color-scheme='dark']) .layout,
+:global([data-mantine-color-scheme='dark']) .drawerContent {
+  --public-bg: #121C1A;
+  --public-paper: #1B2824;
+  --public-sand: #25342F;
+  --public-ink: #F2E9DB;
+  --public-muted: #D1C5B2;
+  --public-forest: #91C8AA;
+  --public-forest-hover: #BAE1CC;
+  --public-bronze: #C7A46E;
+  --public-bronze-text: #D8B77F;
+  --public-border: #3A4A43;
+  --public-focus: #93C5FD;
+  --public-error: #FCA5A5;
+  --public-action-bg: #356F56;
+  --public-action-hover: #2A6B51;
+  --public-action-text: #FFF9F0;
+  --public-shadow-raised: 0 12px 32px -18px rgba(0, 0, 0, 0.65);
+}
+
+.layout {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: var(--aura-bg);
