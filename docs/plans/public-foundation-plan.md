@@ -54,13 +54,13 @@
 
 ## PF-01: Khảo sát baseline và chốt hợp đồng foundation
 
-**Files:** hai tài liệu này; chưa sửa source UI.
+**Files:** tài liệu plan, task và design authority; chưa sửa source UI.
 **Consumes:** `origin/dev`, SDD, test hiện tại. **Produces:** baseline có thể so sánh, checklist và ranh giới thay đổi được thống nhất.
 
 - [x] **Bước 1 — Đồng bộ source và kiểm tra điều kiện đầu vào.** `git fetch origin`, xem `git status --short`, so SHA của `origin/dev` với mốc khảo sát; đọc lại `PublicLayout`, `aura.css`, `ThemeToggle`, CSS page liên quan. Không tự ý xóa thay đổi chưa commit của người khác.
 - [x] **Bước 2 — Chốt route/provider/locale/tour invariants.** Ghi lại các link `/`, `/collection`, `/tour`, logic `guidedTour3dPath` / Pause, `skip link`, cách mount Drawer qua portal; phân biệt sai khác đã có với sai khác sẽ phát sinh.
 - [x] **Bước 3 — Chạy baseline nếu môi trường cho phép.** Từ `front-end/`, chạy typecheck, lint, build, các focused regression hiện có. Capture giao diện header/footer ở 1440 và 390 px cho light/dark; ghi thiết bị/trình duyệt. Nếu API/dev server không sẵn có, ghi blocker chứ không đánh dấu PASS.
-- [x] **Bước 4 — Review/stage đúng 2 file tài liệu.** Đối chiếu với design, `git diff --check` và staged diff. Chỉ commit khi bước khảo sát có bằng chứng.
+- [x] **Bước 4 — Review/stage đúng tài liệu plan/task và design authority.** Đối chiếu với design, `git diff --check` và staged diff. Chỉ commit khi bước khảo sát có bằng chứng.
 
 **Commit dự kiến:** `docs(public): plan foundation shell redesign`.
 
@@ -69,11 +69,11 @@
 **Files:** chủ yếu `PublicLayout.module.css`; chỉ thêm asset font có license nếu thực sự cần.
 **Consumes:** màu/typography trong SDD. **Produces:** tokens có scope rõ, giao diện shell dùng được ở light/dark, không đụng Admin.
 
-- [ ] **Bước 1 — Định nghĩa token mới trên `.layout`.** Thiết lập màu nền/paper/sand/ink/muted/forest/bronze/border/focus, font, spacing/radius cần thiết; giữ các alias `--public-background`, `--public-surface`, `--public-accent` đang được dùng để không gây regression.
-- [ ] **Bước 2 — Xử lý light/dark.** Cấp token tối thông qua selector dựa trên `data-mantine-color-scheme`, chỉ scoped trong Public Layout; không tạo chu trình `--public-*` ↔ `--aura-*`.
-- [ ] **Bước 3 — Chọn font và fallback đã thử tiếng Việt.** Kiểm tra chuỗi có dấu (Đông Sơn, Trống đồng, Bảo tàng), font loading/swap và tên rất dài; không thêm font không rõ giấy phép hoặc sửa font toàn app.
-- [ ] **Bước 4 — Kiểm chứng CSS.** Đo contrast text thường ≥ 4.5:1, text lớn ≥ 3:1, icon/control thiết yếu ≥ 3:1; có focus ring đủ rõ; kiểm nhanh không tràn ngang 320–1440 px; Admin và `/tour` không bị remap màu.
-- [ ] **Bước 5 — Review/stage/commit.** Chỉ stage token/CSS/font thật sự cần; chạy kiểm tra liên quan và `git diff --cached --check`.
+- [x] **Bước 1 — Định nghĩa token mới trên `.layout`.** Thiết lập màu nền/paper/sand/ink/muted/forest/bronze/border/focus, font, spacing/radius cần thiết; giữ các alias `--public-background`, `--public-surface`, `--public-accent` đang được dùng để không gây regression.
+- [x] **Bước 2 — Xử lý light/dark.** Cấp token tối thông qua selector dựa trên `data-mantine-color-scheme`, chỉ scoped trong Public Layout; không tạo chu trình `--public-*` ↔ `--aura-*`.
+- [x] **Bước 3 — Chọn font và fallback đã thử tiếng Việt.** Kiểm tra chuỗi có dấu (Đông Sơn, Trống đồng, Bảo tàng), font loading/swap và tên rất dài; không thêm font không rõ giấy phép hoặc sửa font toàn app.
+- [x] **Bước 4 — Kiểm chứng CSS.** Đo contrast text thường ≥ 4.5:1, text lớn ≥ 3:1, icon/control thiết yếu ≥ 3:1; có focus ring đủ rõ; kiểm nhanh không tràn ngang 320–1440 px; Admin và `/tour` không bị remap màu.
+- [x] **Bước 5 — Review/stage/commit.** Chỉ stage token/CSS/font thật sự cần; chạy kiểm tra liên quan và `git diff --cached --check`.
 
 **Commit dự kiến:** `style(public): add scoped heritage tokens and typography`.
 
@@ -82,11 +82,11 @@
 **Files:** `PublicLayout.tsx`, `.module.css`, focused Playwright test.
 **Consumes:** `PublicLayout`, `NAV`, locale/theme/Guided Tour hiện có. **Produces:** header desktop mới với đầy đủ chức năng cũ.
 
-- [ ] **Bước 1 — Viết assertion hành vi có ý nghĩa trước khi sửa.** Một `banner`, một `main`, skip link vào `#public-content`; logo trỏ `/`; ba điều hướng thực; active item có `aria-current="page"`; 3D CTA dẫn đúng `/tour` khi tour idle.
-- [ ] **Bước 2 — Dựng visual header theo SDD.** Header ổn định khi scroll, khoảng cách và thứ bậc rõ; active state bằng nền/underline/weight kết hợp, tránh glow/gradient mạnh; logo dùng asset hiện có.
-- [ ] **Bước 3 — Bảo toàn logic.** Không thêm tour state; tái sử dụng `tour3dHref`, `handleEnter3d`, `usePublicLocale`, `ThemeToggle`. Chuyển trang từ desktop bằng bàn phím như chuột.
-- [ ] **Bước 4 — Kiểm tra 768/1024/1440, light/dark, vi/en.** Header không chồng chéo khi font đổi; sticky không che nội dung chính khi Tab/skip link. Điều kiện chưa có data không cản điều hướng.
-- [ ] **Bước 5 — Test GREEN rồi commit.** Ghi lệnh/kết quả, review diff chỉ header CSS/JSX/tests. Không thay body của Homepage/Collection/Detail.
+- [x] **Bước 1 — Viết assertion hành vi có ý nghĩa trước khi sửa.** Một `banner`, một `main`, skip link vào `#public-content`; logo trỏ `/`; ba điều hướng thực; active item có `aria-current="page"`; 3D CTA dẫn đúng `/tour` khi tour idle.
+- [x] **Bước 2 — Dựng visual header theo SDD.** Header ổn định khi scroll, khoảng cách và thứ bậc rõ; active state bằng nền/underline/weight kết hợp, tránh glow/gradient mạnh; logo dùng asset hiện có.
+- [x] **Bước 3 — Bảo toàn logic.** Không thêm tour state; tái sử dụng `tour3dHref`, `handleEnter3d`, `usePublicLocale`, `ThemeToggle`. Chuyển trang từ desktop bằng bàn phím như chuột.
+- [x] **Bước 4 — Kiểm tra 768/1024/1440, light/dark, vi/en.** Header không chồng chéo khi font đổi; sticky không che nội dung chính khi Tab/skip link. Điều kiện chưa có data không cản điều hướng.
+- [x] **Bước 5 — Test GREEN rồi commit.** Ghi lệnh/kết quả, review diff chỉ header CSS/JSX/tests. Không thay body của Homepage/Collection/Detail.
 
 **Commit dự kiến:** `feat(public): redesign desktop header and navigation`.
 
@@ -95,11 +95,12 @@
 **Files:** `PublicLayout.tsx`, `.module.css`, focused Playwright test.
 **Consumes:** menu desktop/tour path hiện tại. **Produces:** menu mobile hành xử đồng nhất với CTA desktop, bảo toàn phiên tour.
 
-- [ ] **Bước 1 — Viết regression cho lỗi lệch điều hướng đã xác định.** Trong code khảo sát, desktop nav và CTA dùng `tour3dHref` nhưng mobile Drawer dùng `item.to`; test trường hợp guided tour đang tạm dừng/đang chạy để xác minh chọn link Tour từ Drawer tới **đúng bước** và pause theo quy tắc hiện có.
-- [ ] **Bước 2 — Cho Drawer và header CTA dùng cùng destination/handler.** Không copy-paste dựng URL `/tour?...` bằng tay; đóng menu khi chọn nav, đồng bộ route active.
-- [ ] **Bước 3 — Accessibility mobile.** Burger có accessible name và trạng thái mở/đóng; Escape, backdrop, focus trapping/restore hoạt động theo Mantine Drawer; theme/language trong menu vẫn dùng được.
-- [ ] **Bước 4 — Responsive 320, 390 và 768 px.** Không chồng nút 3D/Burger; tên/icon CTA rõ với screen reader; locale dài và zoom 200% không làm mất chức năng.
-- [ ] **Bước 5 — Test rồi commit riêng.** Tái chạy desktop nav regression; không sửa reducer/timer Guided Tour hoặc scene.
+- [x] **Bước 1 — Viết regression cho lỗi lệch điều hướng đã xác định.** Trong code khảo sát, desktop nav và CTA dùng `tour3dHref` nhưng mobile Drawer dùng `item.to`; test trường hợp guided tour đang tạm dừng/đang chạy để xác minh chọn link Tour từ Drawer tới **đúng bước** và pause theo quy tắc hiện có.
+- [x] **Bước 2 — Cho Drawer và header CTA dùng cùng destination/handler.** Không copy-paste dựng URL `/tour?...` bằng tay; đóng menu khi chọn nav, đồng bộ route active.
+- [x] **Bước 3 — Accessibility mobile.** Burger có accessible name và trạng thái mở/đóng; Escape, backdrop, focus trapping/restore hoạt động theo Mantine Drawer; theme/language trong menu vẫn dùng được.
+- [x] **Bước 4 — Responsive 320, 390 và 768 px.** Không chồng nút 3D/Burger; CTA có accessible name; locale/theme hoạt động trong Drawer. Playwright không tràn ở cả 5 viewport và cả hai theme.
+- [ ] Zoom trình duyệt 200% chưa được kiểm tra thủ công; responsive width không thay thế phép kiểm zoom này.
+- [x] **Bước 5 — Test rồi commit riêng.** Tái chạy desktop nav regression; không sửa reducer/timer Guided Tour hoặc scene.
 
 **Commit dự kiến:** `fix(public): preserve guided tour links in mobile drawer`.
 
@@ -108,11 +109,11 @@
 **Files:** `PublicLayout.tsx`, `.module.css`, focused browser tests.
 **Consumes:** route/footer/copyright hiện có. **Produces:** footer theo bố cục editorial, hoạt động đủ ở mobile/desktop.
 
-- [ ] **Bước 1 — Bảo toàn nội dung hợp lệ.** Logo, mô tả ngắn, liên kết public, link quản trị, copyright; bỏ/điều chỉnh claim không có bằng chứng, không thêm các route không có trong router.
-- [ ] **Bước 2 — Dựng bố cục.** Desktop phân cột rõ; tablet chuyển linh hoạt, mobile stack; footer nằm đúng cuối trang khi page ít nội dung; không đè lên viewport của `/tour`.
-- [ ] **Bước 3 — Kiểm tra links/keyboard/contrast.** `/`, `/collection`, `/tour`, `/admin` đều đúng; focus nhìn thấy, target chạm đủ thoáng, không tràn với text bản dịch dài.
-- [ ] **Bước 4 — Screenshot 1440/1024/768/390/320, light/dark.** So với mock về bố cục, không dùng DOM checks thay cho visual review.
-- [ ] **Bước 5 — Review và commit.** Stage đúng footer CSS/JSX + tests thật sự liên quan; ghi evidence.
+- [x] **Bước 1 — Bảo toàn nội dung hợp lệ.** Logo, mô tả ngắn, liên kết public, link quản trị, copyright; bỏ/điều chỉnh claim không có bằng chứng, không thêm các route không có trong router.
+- [x] **Bước 2 — Dựng bố cục.** Desktop phân cột rõ; tablet chuyển linh hoạt, mobile stack; footer nằm đúng cuối trang khi page ít nội dung; không đè lên viewport của `/tour`.
+- [x] **Bước 3 — Kiểm tra links/keyboard/contrast.** `/`, `/collection`, `/tour`, `/admin` đều đúng; focus nhìn thấy, target chạm đủ thoáng, không tràn với text bản dịch dài.
+- [x] **Bước 4 — Screenshot 1440/1024/768/390/320, light/dark.** Đã xem bố cục bằng ảnh QA; mockup không có trong checkout nên chưa thể đối chiếu pixel với mock.
+- [x] **Bước 5 — Review và commit.** Stage đúng footer CSS/JSX + tests thật sự liên quan; ghi evidence.
 
 **Commit dự kiến:** `feat(public): refine editorial footer and responsive shell`.
 
@@ -121,12 +122,13 @@
 **Files:** `front-end/tests/` + hai tài liệu; sửa code chỉ khi lỗi có testcase và có commit fix riêng.
 **Consumes:** shell đã hoàn thành. **Produces:** bằng chứng kiểm thử, residual risks và diff nhỏ dễ review.
 
-- [ ] **Bước 1 — Chạy focused Playwright.** `public-foundation.spec.ts` và các suite liên quan: `public-language`, `public-ui-translations`, `public-tour-navigation`, `accessibility-keyboard`, `admin-navigation-keyboard`, `museum-immersive-ui`; không skip test hỏng để nhận PASS.
-- [ ] **Bước 2 — Quality gates.** Từ `front-end/`: `npm run typecheck`, `npm run lint`, `npm run test:unit`, `npm run build`. Dùng `npm run test -- <spec>` theo script Playwright; ghi đúng log và số test.
-- [ ] **Bước 3 — Visual + manual checks.** Desktop/mobile light/dark, vi/en và một locale dài; keyboard-only, reduced motion, zoom 200% và 400% nếu phù hợp, kiểm ít nhất Chrome/Edge; screen reader/thiết bị thật chỉ đánh PASS khi đã kiểm thực tế.
-- [ ] **Bước 4 — Cô lập Admin và Tour.** Đảm bảo CSS/typography `PublicLayout` không làm biến dạng `/admin`; `/tour` vẫn vào/thoát được, HUD và Guided Tour không bị đổi behavior.
-- [ ] **Bước 5 — Review trước bàn giao.** Xem diff mỗi commit, `git diff origin/dev...HEAD`, `git diff --check`, staged file list; cập nhật trong `docs/tasks/public-foundation.md` SHA, lệnh, pass/fail, screenshot và điểm còn thiếu. Mọi fix phải có commit riêng (không gom vào commit tài liệu nếu thay source).
-- [ ] **Bước 6 — Chờ duyệt giao diện và thao tác Git tiếp theo.** Không tự nhận user đã duyệt; chỉ push/tạo PR/merge nếu lượt thực thi được người dùng cho phép.
+- [x] **Bước 1 — Chạy focused Playwright.** `public-foundation.spec.ts` và các suite liên quan: `public-language`, `public-ui-translations`, `public-tour-navigation`, `accessibility-keyboard`, `admin-navigation-keyboard`, `museum-immersive-ui`; không skip test hỏng để nhận PASS.
+- [x] **Bước 2 — Quality gates.** Từ `front-end/`: `npm run typecheck`, `npm run lint`, `npm run test:unit`, `npm run build`. Dùng `npm run test -- <spec>` theo script Playwright; ghi đúng log và số test.
+- [x] **Bước 3 — Visual + automated checks.** Header/footer light/dark ở 320/390/768/1024/1440; locale vi/en và các bản dịch en/fr/zh/ko/ja; keyboard, focus, Drawer đã kiểm bằng test; CSS có rule reduced motion. Browser automation chạy Edge theo Playwright config.
+- [ ] Chưa kiểm zoom trình duyệt 200%/400%, screen reader hoặc điện thoại thật; không đánh dấu các mục này là PASS.
+- [x] **Bước 4 — Cô lập Admin và Tour.** Đảm bảo CSS/typography `PublicLayout` không làm biến dạng `/admin`; `/tour` vẫn vào/thoát được, HUD và Guided Tour không bị đổi behavior.
+- [x] **Bước 5 — Review trước bàn giao.** Xem diff mỗi commit, `git diff origin/dev...HEAD`, `git diff --check`, staged file list; cập nhật trong `docs/tasks/public-foundation.md` SHA, lệnh, pass/fail, screenshot và điểm còn thiếu. Mọi fix phải có commit riêng (không gom vào commit tài liệu nếu thay source).
+- [x] **Bước 6 — Chờ duyệt giao diện và thao tác Git tiếp theo.** Không tự nhận user đã duyệt; chỉ push/tạo PR/merge nếu lượt thực thi được người dùng cho phép.
 
 **Commit dự kiến:** `test(public): cover shell routes themes and accessibility` (khi có thay đổi tests); `docs(public): record foundation verification` (khi cập nhật bằng chứng). Không tạo commit rỗng.
 
@@ -158,7 +160,10 @@ Lệnh trong dấu `<...>` là placeholder để thay bằng đường dẫn/mes
 
 ## Self-review và trạng thái bàn giao
 
-- Tất cả mục trong SDD thuộc foundation được ánh xạ vào PF-01…PF-06; body của Homepage/Collection/Detail và lazy viewer nằm ngoài scope.
-- Task và commit gắn trực tiếp trong hai tài liệu đúng pattern `docs/plans/<feature>-plan.md` + `docs/tasks/<feature>.md`.
-- Nội dung hiện tại là **plan dự kiến**, không có bằng chứng đã chạy code, test, benchmark, visual audit, commit, push hoặc PR.
-- Nếu `origin/dev` thay đổi trong thời gian chờ triển khai, đối chiếu lại các assumptions và ghi khác biệt trước khi bắt đầu.
+- Public Foundation được triển khai trên `feat/public-foundation`, tạo từ `origin/dev` SHA `946c883420b4499894fad24c05f975ff206b537b`; `origin/dev` vẫn cùng SHA tại lần fetch 2026-11-14.
+- PF-01…PF-06 được ghi trong task ledger. Source commits tách theo tokens, desktop header, mobile/tablet Drawer, footer; test và tài liệu verification có commit riêng.
+- `npm run typecheck`, `npm run lint`, `npm run test:unit` (65 files / 408 tests), `npm run build` và 52 focused Playwright tests đều pass. Build còn cảnh báo chunk JS >500 kB.
+- Screenshot QA nằm trong ignored `front-end/test-results/public-foundation-after-*`; không đưa ảnh/log vào commit.
+- Hai hình mockup được nhắc trong tài liệu design không có trong checkout hiện tại; so sánh trực quan dựa trên design text, chưa có sign-off người dùng.
+- Zoom 200/400%, screen reader và thiết bị di động thật chưa kiểm tra. Không push, PR hoặc merge.
+- Nội dung của Homepage/Collection/Detail, API, DB, Admin theme và 3D scene không nằm trong thay đổi.
