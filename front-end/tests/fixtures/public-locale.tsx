@@ -93,6 +93,7 @@ function PublicGuidedTourFixture() {
         <Route element={<PublicLayout />}>
           <Route path="/first" element={<GuidedTourRoute next="/second" />} />
           <Route path="/second" element={<GuidedTourRoute next="/admin" />} />
+          <Route path="/tour" element={<GuidedTourRoute next="/first" />} />
         </Route>
         <Route path="/admin" element={<Stack p="md"><Text data-testid="admin-fixture">Admin fixture</Text><Link to="/first">Return to public route</Link></Stack>} />
       </Routes>

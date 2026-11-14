@@ -1,13 +1,65 @@
-.layout {
-  /* Cầu nối token cũ (--public-*) sang Aura DS 2.0 để component hiện có tự đổi màu. */
-  --public-background: var(--aura-bg);
-  --public-surface: var(--aura-surface);
-  --public-ink: var(--aura-ink);
-  --public-muted: var(--aura-muted);
-  --public-border: var(--aura-border);
-  --public-accent: var(--aura-accent);
+/* Public pages can consume these semantic tokens from CSS Modules via var(--public-ink). */
+.layout, .drawerContent {
+  --public-bg: #F5EFE5;
+  --public-paper: #FFF9F0;
+  --public-sand: #E9DDCD;
+  --public-ink: #1B2723;
+  --public-muted: #555A53;
+  --public-forest: #064735;
+  --public-forest-hover: #0B5D47;
+  --public-charcoal: #17221F;
+  --public-bronze: #B28B56;
+  --public-bronze-text: #73512D;
+  --public-border: #D9CDBB;
+  --public-focus: #174E96;
+  --public-error: #A82F37;
+  --public-action-bg: #064735;
+  --public-action-hover: #0B5D47;
+  --public-action-text: #FFF9F0;
+  --public-font-display: 'Noto Serif', Georgia, 'Times New Roman', serif;
+  --public-font-body: Inter, 'Segoe UI', Arial, sans-serif;
+  --public-content-max: 1360px;
+  --public-gutter: clamp(16px, 3.5vw, 48px);
+  --public-space-1: 4px;
+  --public-space-2: 8px;
+  --public-space-3: 12px;
+  --public-space-4: 16px;
+  --public-space-6: 24px;
+  --public-space-8: 32px;
+  --public-space-12: 48px;
+  --public-space-16: 64px;
+  --public-radius-card: 14px;
+  --public-radius-control: 9px;
+  --public-shadow-raised: 0 10px 30px -18px rgba(23, 34, 31, 0.28);
 
-  min-height: 100%;
+  /* Compatibility aliases for public descendants that already consume them. */
+  --public-background: var(--public-bg);
+  --public-surface: var(--public-paper);
+  --public-accent: var(--public-forest);
+}
+
+:global([data-mantine-color-scheme='dark']) .layout,
+:global([data-mantine-color-scheme='dark']) .drawerContent {
+  --public-bg: #121C1A;
+  --public-paper: #1B2824;
+  --public-sand: #25342F;
+  --public-ink: #F2E9DB;
+  --public-muted: #D1C5B2;
+  --public-forest: #91C8AA;
+  --public-forest-hover: #BAE1CC;
+  --public-bronze: #C7A46E;
+  --public-bronze-text: #D8B77F;
+  --public-border: #3A4A43;
+  --public-focus: #93C5FD;
+  --public-error: #FCA5A5;
+  --public-action-bg: #356F56;
+  --public-action-hover: #2A6B51;
+  --public-action-text: #FFF9F0;
+  --public-shadow-raised: 0 12px 32px -18px rgba(0, 0, 0, 0.65);
+}
+
+.layout {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: var(--aura-bg);
@@ -16,117 +68,102 @@
   color: var(--aura-ink);
   font-family: var(--aura-font-body);
 }
+.layout :where(a) { color: inherit; text-decoration: none; }
 
-.layout a { color: inherit; text-decoration: none; }
-.layout a:focus-visible { outline: 2px solid var(--aura-accent); outline-offset: 3px; border-radius: 4px; }
-
-/* ============================ Sticky Glass Header ============================ */
 .header {
   position: sticky;
   top: 0;
   z-index: 100;
-  transition: padding 0.3s var(--aura-ease-spring), background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  min-height: 80px;
   border-bottom: 1px solid transparent;
-  padding-block: 8px;
+  background: var(--public-bg);
+  color: var(--public-ink);
 }
 .headerScrolled {
-  background: var(--aura-glass-bg);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border-bottom-color: var(--aura-glass-border);
-  box-shadow: 0 8px 30px -16px rgba(2, 6, 23, 0.4);
-  padding-block: 2px;
+  border-bottom-color: var(--public-border);
+  box-shadow: 0 6px 18px -14px rgba(23, 34, 31, 0.48);
 }
-.headerInner { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 14px; }
+.headerInner { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 80px; padding-block: 12px; }
 
-/* Logo phát hào quang */
-.brand { display: inline-flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: 0.1em; font-family: var(--aura-font-display); }
-.brandMark {
-  display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px;
-  background: var(--aura-surface); border: 1px solid var(--aura-glass-border);
-  transition: box-shadow 0.3s var(--aura-ease-spring), transform 0.3s var(--aura-ease-spring);
-}
-.brand:hover .brandMark { box-shadow: var(--aura-glow-emerald); transform: translateY(-1px); }
-.brandDetail { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.26em; color: var(--aura-muted); }
+.brand { display: inline-flex; align-items: center; gap: 10px; flex: 0 0 auto; color: var(--public-ink); font: 600 18px/1.2 var(--public-font-display); letter-spacing: 0.08em; }
+.brandMark { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--public-border); border-radius: 10px; background: var(--public-paper); }
+.brandDetail { display: block; margin-top: 3px; color: var(--public-muted); font: 600 9px/1.2 var(--public-font-body); letter-spacing: 0.2em; }
 
-/* Navigation với active pill */
-.navigation { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 14px; }
-.navLink {
-  position: relative; padding: 9px 16px; border-radius: 999px; font-weight: 600; color: var(--aura-ink-soft);
-  transition: color 0.25s ease, background 0.25s ease;
-}
-.navLink:hover { color: var(--aura-ink); background: color-mix(in srgb, var(--aura-accent) 10%, transparent); }
-.navLink[aria-current='page'] {
-  color: var(--aura-on-accent);
-  background: var(--aura-gradient-accent);
-  box-shadow: var(--aura-glow-emerald);
-}
+.navigation { display: flex; align-items: center; gap: clamp(8px, 1.6vw, 24px); font: 500 14px/1.35 var(--public-font-body); }
+.navLink { position: relative; display: inline-flex; align-items: center; min-height: 44px; padding: 0 2px; border-bottom: 2px solid transparent; color: var(--public-muted); font-weight: 600; transition: color 0.18s ease, border-color 0.18s ease; }
+.navLink:hover { color: var(--public-forest); }
+.navLink[aria-current='page'] { border-bottom-color: var(--public-forest); color: var(--public-forest); font-weight: 700; }
 
-.headerActions { display: flex; align-items: center; gap: 10px; }
+.headerActions { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+.languageSelect input { min-height: 40px; border-color: var(--public-border); background: var(--public-paper); color: var(--public-ink); }
+.headerThemeToggle { flex: 0 0 auto; border-color: var(--public-border); background: var(--public-paper); color: var(--public-ink); }
+.headerThemeToggle:hover { background: var(--public-sand); }
+.vrButton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid transparent; border-radius: var(--public-radius-control); background: var(--public-action-bg); color: var(--public-action-text); font: 700 14px/1.25 var(--public-font-body); transition: background-color 0.18s ease; }
+.vrButton:hover { background: var(--public-action-hover); }
+.headerActions button:focus-visible,
+.navLink:focus-visible,
+.vrButton:focus-visible,
+.brand:focus-visible,
+.footer a:focus-visible,
+.skipLink:focus-visible { outline: 3px solid var(--public-focus); outline-offset: 3px; }
 
-/* Nút CTA "Vào không gian 3D" */
-.vrButton {
-  display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: 999px;
-  font-weight: 700; font-size: 14px; color: var(--aura-on-accent);
-  background: var(--aura-gradient-accent); border: 1px solid transparent;
-  box-shadow: var(--aura-glow-emerald);
-  transition: transform 0.25s var(--aura-ease-spring), box-shadow 0.25s ease;
-}
-.vrButton:hover { transform: translateY(-2px); box-shadow: 0 0 34px -2px rgba(16, 185, 129, 0.6); }
-.vrButton:focus-visible { outline: 2px solid var(--aura-cyan-bright); outline-offset: 3px; }
-
-.main { flex: 1; }
-.skipLink {
-  position: fixed; top: 8px; left: 8px; z-index: 1000; padding: 12px 20px; border-radius: 10px;
-  background: var(--aura-surface); color: var(--aura-ink); box-shadow: var(--aura-shadow-card);
-  transform: translateY(-160%); transition: transform 0.2s ease;
-}
+.main { flex: 1; scroll-margin-top: 96px; }
+.skipLink { position: fixed; top: 8px; left: 8px; z-index: 1000; padding: 12px 18px; border-radius: var(--public-radius-control); transform: translateY(-160%); background: var(--public-action-bg); color: var(--public-action-text); font: 600 14px/1.3 var(--public-font-body); transition: transform 0.18s ease; }
 .skipLink:focus { transform: translateY(0); }
 
-/* ============================ Footer đa tầng ============================ */
-.footer {
-  margin-top: 64px;
-  border-top: 1px solid var(--aura-glass-border);
-  background: var(--aura-glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding-block: 56px 32px;
-}
-.footerGrid {
-  display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 48px;
-  padding-bottom: 40px; border-bottom: 1px solid var(--aura-glass-border);
-}
-.footerBrand { display: inline-flex; align-items: center; gap: 12px; font-family: var(--aura-font-display); font-weight: 800; font-size: 22px; letter-spacing: 0.08em; }
-.footerManifesto { color: var(--aura-muted); font-size: 14px; line-height: 1.7; max-width: 340px; margin: 16px 0 0; }
-.footerBadge {
-  display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; padding: 7px 14px; border-radius: 999px;
-  font-size: 12px; font-weight: 600; color: var(--aura-emerald);
-  background: color-mix(in srgb, var(--aura-accent) 12%, transparent);
-  border: 1px solid var(--aura-glass-border);
-}
-.footerColTitle { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--aura-muted); margin: 0 0 16px; }
+.footer { --public-focus: #93C5FD; margin-top: 64px; border-top: 1px solid rgba(242, 233, 219, 0.18); background: var(--public-charcoal); color: #F2E9DB; padding-block: 48px 24px; font-family: var(--public-font-body); }
+.footerGrid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(140px, 0.8fr) minmax(140px, 0.8fr); gap: 48px; padding-bottom: 36px; border-bottom: 1px solid rgba(242, 233, 219, 0.18); }
+.footerBrand { display: inline-flex; align-items: center; gap: 10px; color: #F2E9DB; font: 600 21px/1.25 var(--public-font-display); letter-spacing: 0.04em; }
+.footerBrand .brandMark { width: 36px; height: 36px; }
+.footerManifesto { max-width: 360px; margin: 16px 0 0; color: #D1C5B2; font-size: 14px; line-height: 1.7; }
+.footerColTitle { margin: 0 0 14px; color: #D1C5B2; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
 .footerLinks { display: flex; flex-direction: column; gap: 12px; font-size: 14px; }
-.footerLinks a { color: var(--aura-ink-soft); width: fit-content; transition: color 0.2s ease; }
-.footerLinks a:hover { color: var(--aura-accent); }
-.adminLink { display: inline-flex; align-items: center; gap: 6px; color: var(--aura-muted); font-weight: 600; }
-.footerBottom {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
-  padding-top: 28px; color: var(--aura-muted); font-size: 13px;
-}
+.footerLinks a { width: fit-content; min-height: 32px; color: #F2E9DB; transition: color 0.18s ease; }
+.footerLinks a:hover { color: #D8B77F; }
+.adminLink { display: inline-flex; align-items: center; gap: 6px; color: #D1C5B2 !important; font-weight: 600; }
+.footerBottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding-top: 22px; color: #D1C5B2; font-size: 12px; }
 
-@media (max-width: 62em) {
-  .footerGrid { grid-template-columns: 1fr 1fr; gap: 32px; }
-  .footerBrandCol { grid-column: 1 / -1; }
+.drawerContent { border-left: 1px solid var(--public-border); background: var(--public-bg); color: var(--public-ink); }
+.drawerHeader { background: var(--public-bg); color: var(--public-ink); }
+.drawerBody { background: var(--public-bg); color: var(--public-ink); }
+.drawerBody :where(a) { color: inherit; text-decoration: none; }
+.drawerTitle { font-family: var(--public-font-display); font-weight: 600; }
+.drawerClose { color: var(--public-ink); }
+.drawerClose:hover { background: var(--public-sand); }
+.drawerThemeToggle { align-self: flex-start; border-color: var(--public-border); background: var(--public-paper); color: var(--public-ink); }
+.drawerThemeToggle:hover { background: var(--public-sand); }
+.drawerBody :global(a:focus-visible), .drawerBody :global(button:focus-visible), .drawerBody :global(input:focus-visible) { outline: 3px solid var(--public-focus); outline-offset: 3px; }
+
+@media (max-width: 61.99em) {
+  .navigation, .headerThemeToggle { display: none; }
+  .headerInner { gap: 16px; }
+  .navigation { gap: 10px; }
+  .headerActions { gap: 8px; }
+  .vrButton { padding-inline: 12px; }
+  .footerGrid { grid-template-columns: minmax(0, 1.4fr) minmax(130px, 0.8fr) minmax(130px, 0.8fr); gap: 28px; }
 }
 
 @media (max-width: 47.99em) {
-  .navigation { display: none; }
+  .header, .headerInner { min-height: 68px; }
+  .headerInner { gap: 8px; padding-block: 8px; }
+  .brand { gap: 7px; font-size: 16px; letter-spacing: 0.06em; }
+  .brandMark { width: 36px; height: 36px; }
+  .brandDetail { font-size: 8px; letter-spacing: 0.14em; }
+  .headerActions { gap: 8px; }
+  .vrButton { width: 44px; min-width: 44px; min-height: 44px; padding: 0; }
   .vrButton span { display: none; }
-  .vrButton { padding: 9px 12px; }
-  .footerGrid { grid-template-columns: 1fr; gap: 28px; }
+  .footer { margin-top: 48px; padding-block: 36px 20px; }
+  .footerGrid { grid-template-columns: minmax(0, 1fr); gap: 28px; padding-bottom: 28px; }
+  .footerManifesto { max-width: 42ch; }
+  .footerBottom { align-items: flex-start; flex-direction: column; gap: 8px; padding-top: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navLink, .vrButton, .skipLink, .footerLinks a { transition: none; }
 }
 
 @media (forced-colors: active) {
-  .navLink[aria-current='page'] { color: LinkText; }
+  .navLink[aria-current='page'] { border-bottom-color: LinkText; color: LinkText; }
   .headerScrolled { border-bottom-color: CanvasText; }
+  .vrButton { border: 1px solid ButtonText; }
 }
