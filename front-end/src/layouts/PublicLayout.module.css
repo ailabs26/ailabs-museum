@@ -111,36 +111,17 @@
 .skipLink { position: fixed; top: 8px; left: 8px; z-index: 1000; padding: 12px 18px; border-radius: var(--public-radius-control); transform: translateY(-160%); background: var(--public-action-bg); color: var(--public-action-text); font: 600 14px/1.3 var(--public-font-body); transition: transform 0.18s ease; }
 .skipLink:focus { transform: translateY(0); }
 
-/* ============================ Footer đa tầng ============================ */
-.footer {
-  margin-top: 64px;
-  border-top: 1px solid var(--aura-glass-border);
-  background: var(--aura-glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding-block: 56px 32px;
-}
-.footerGrid {
-  display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 48px;
-  padding-bottom: 40px; border-bottom: 1px solid var(--aura-glass-border);
-}
-.footerBrand { display: inline-flex; align-items: center; gap: 12px; font-family: var(--aura-font-display); font-weight: 800; font-size: 22px; letter-spacing: 0.08em; }
-.footerManifesto { color: var(--aura-muted); font-size: 14px; line-height: 1.7; max-width: 340px; margin: 16px 0 0; }
-.footerBadge {
-  display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; padding: 7px 14px; border-radius: 999px;
-  font-size: 12px; font-weight: 600; color: var(--aura-emerald);
-  background: color-mix(in srgb, var(--aura-accent) 12%, transparent);
-  border: 1px solid var(--aura-glass-border);
-}
-.footerColTitle { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--aura-muted); margin: 0 0 16px; }
+.footer { --public-focus: #93C5FD; margin-top: 64px; border-top: 1px solid rgba(242, 233, 219, 0.18); background: var(--public-charcoal); color: #F2E9DB; padding-block: 48px 24px; font-family: var(--public-font-body); }
+.footerGrid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(140px, 0.8fr) minmax(140px, 0.8fr); gap: 48px; padding-bottom: 36px; border-bottom: 1px solid rgba(242, 233, 219, 0.18); }
+.footerBrand { display: inline-flex; align-items: center; gap: 10px; color: #F2E9DB; font: 600 21px/1.25 var(--public-font-display); letter-spacing: 0.04em; }
+.footerBrand .brandMark { width: 36px; height: 36px; }
+.footerManifesto { max-width: 360px; margin: 16px 0 0; color: #D1C5B2; font-size: 14px; line-height: 1.7; }
+.footerColTitle { margin: 0 0 14px; color: #D1C5B2; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
 .footerLinks { display: flex; flex-direction: column; gap: 12px; font-size: 14px; }
-.footerLinks a { color: var(--aura-ink-soft); width: fit-content; transition: color 0.2s ease; }
-.footerLinks a:hover { color: var(--aura-accent); }
-.adminLink { display: inline-flex; align-items: center; gap: 6px; color: var(--aura-muted); font-weight: 600; }
-.footerBottom {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
-  padding-top: 28px; color: var(--aura-muted); font-size: 13px;
-}
+.footerLinks a { width: fit-content; min-height: 32px; color: #F2E9DB; transition: color 0.18s ease; }
+.footerLinks a:hover { color: #D8B77F; }
+.adminLink { display: inline-flex; align-items: center; gap: 6px; color: #D1C5B2 !important; font-weight: 600; }
+.footerBottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding-top: 22px; color: #D1C5B2; font-size: 12px; }
 
 .drawerContent { border-left: 1px solid var(--public-border); background: var(--public-bg); color: var(--public-ink); }
 .drawerHeader { background: var(--public-bg); color: var(--public-ink); }
@@ -171,8 +152,14 @@
   .headerActions { gap: 8px; }
   .vrButton { width: 44px; min-width: 44px; min-height: 44px; padding: 0; }
   .vrButton span { display: none; }
-  .vrButton { padding: 9px 12px; }
-  .footerGrid { grid-template-columns: 1fr; gap: 28px; }
+  .footer { margin-top: 48px; padding-block: 36px 20px; }
+  .footerGrid { grid-template-columns: minmax(0, 1fr); gap: 28px; padding-bottom: 28px; }
+  .footerManifesto { max-width: 42ch; }
+  .footerBottom { align-items: flex-start; flex-direction: column; gap: 8px; padding-top: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navLink, .vrButton, .skipLink, .footerLinks a { transition: none; }
 }
 
 @media (forced-colors: active) {

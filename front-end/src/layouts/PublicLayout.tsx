@@ -115,7 +115,6 @@ function PublicLayoutContent() {
               <p className={classes.footerManifesto}>
                 {t('ui.footer.manifesto', 'Bảo tồn và kể lại câu chuyện di sản bằng không gian số 3D WebXR — để mọi người, ở bất cứ đâu, đều có thể chạm tới nghệ thuật và lịch sử.')}
               </p>
-              <span className={classes.footerBadge}>{t('ui.footer.accessibility', '✦ Cam kết tiếp cận WCAG 2.2 AA')}</span>
             </div>
 
             <nav aria-label={t('ui.footer.explore', 'Khám phá')} className={classes.footerCol}>
