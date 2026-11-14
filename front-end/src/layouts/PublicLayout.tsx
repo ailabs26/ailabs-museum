@@ -38,16 +38,17 @@ function PublicLayoutContent() {
   const { t } = usePublicLocale();
   const guided = useGuidedTour();
   const location = useLocation();
+  const [drawer, { open, close }] = useDisclosure(false);
   const is3dRoute = location.pathname === '/tour' || location.pathname === '/tour.html';
   const tour3dHref = !is3dRoute && guided.status !== 'idle' && guided.currentStep && guided.roomSlug
     ? guidedTour3dPath(guided.roomSlug, guided.currentStep.exhibitId)
     : '/tour';
   const handleEnter3d = () => {
     if (!is3dRoute && guided.status !== 'idle' && guided.currentStep && guided.roomSlug) guided.pause();
+    close();
   };
   usePageDescription();
   const scrolled = useScrolled();
-  const [drawer, { open, close }] = useDisclosure(false);
 
   return (
     <div className={classes.layout}>
@@ -74,18 +75,29 @@ function PublicLayoutContent() {
               <IconCube size={18} aria-hidden="true" />
               <span>{t('ui.cta.enter-3d', 'Vào không gian 3D')}</span>
             </Link>
-            <Burger opened={drawer} onClick={open} hiddenFrom="sm" size="sm" aria-label={t('ui.nav.open-menu', 'Mở menu điều hướng')} />
+            <Burger id="public-navigation-trigger" opened={drawer} onClick={open} hiddenFrom="md" size="sm"
+              aria-expanded={drawer} aria-controls="public-navigation-drawer"
+              aria-label={t('ui.nav.open-menu', 'Mở menu điều hướng')} />
           </div>
         </Container>
       </header>
 
-      <Drawer opened={drawer} onClose={close} position="right" size="xs" title={t('ui.nav.drawer-title', 'Điều hướng')} hiddenFrom="sm">
-        <Stack gap="xs">
-          {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} className={classes.navLink} onClick={close}>{t(item.key, item.label)}</NavLink>
-          ))}
-          <LanguageSelect />
-        </Stack>
+      <Drawer id="public-navigation-drawer" opened={drawer} onClose={close} position="right" size="xs"
+        title={t('ui.nav.drawer-title', 'Điều hướng')} hiddenFrom="md"
+        classNames={{ content: classes.drawerContent, header: classes.drawerHeader, body: classes.drawerBody,
+          title: classes.drawerTitle, close: classes.drawerClose }}>
+        <nav aria-label={t('ui.nav.main-aria', 'Điều hướng chính')}>
+          <Stack gap="xs">
+            {NAV.map((item) => (
+              <NavLink key={item.to} to={item.to === '/tour' ? tour3dHref : item.to} end={item.end}
+                className={classes.navLink} onClick={item.to === '/tour' ? handleEnter3d : close}>
+                {t(item.key, item.label)}
+              </NavLink>
+            ))}
+            <LanguageSelect />
+            <ThemeToggle className={classes.drawerThemeToggle} />
+          </Stack>
+        </nav>
       </Drawer>
 
       <main id="public-content" tabIndex={-1} className={classes.main}>
