@@ -23,7 +23,7 @@ const NAV = [
 function LanguageSelect(props: Pick<NativeSelectProps, 'visibleFrom'>) {
   const { locale, setLocale, t } = usePublicLocale();
   return (
-    <NativeSelect {...props} size="xs" aria-label={t('ui.language.label', 'Ngôn ngữ')} value={locale}
+    <NativeSelect {...props} className={classes.languageSelect} size="xs" aria-label={t('ui.language.label', 'Ngôn ngữ')} value={locale}
       onChange={(event) => setLocale(event.currentTarget.value)}
       data={LOCALES.map((item) => ({ value: item.code, label: item.label }))} />
   );
@@ -67,10 +67,10 @@ function PublicLayoutContent() {
           </nav>
 
           <div className={classes.headerActions}>
-            {/* Điện thoại: nằm trong Drawer để header không tràn ngang ở 320px. */}
-            <LanguageSelect visibleFrom="sm" />
-            <ThemeToggle />
-            <Link to={tour3dHref} onClick={handleEnter3d} className={classes.vrButton}>
+            <LanguageSelect visibleFrom="md" />
+            <ThemeToggle className={classes.headerThemeToggle} />
+            <Link to={tour3dHref} onClick={handleEnter3d} className={classes.vrButton}
+              aria-label={t('ui.cta.enter-3d', 'Vào không gian 3D')}>
               <IconCube size={18} aria-hidden="true" />
               <span>{t('ui.cta.enter-3d', 'Vào không gian 3D')}</span>
             </Link>
