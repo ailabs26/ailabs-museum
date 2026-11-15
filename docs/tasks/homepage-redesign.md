@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-REDESIGN: Public Homepage Editorial Redesign
 
-**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01 baseline hoàn tất, HR-02 tiếp theo.
+**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01 baseline hoàn tất, HR-03 tiếp theo.
 **Nguồn code khảo sát:** `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841` tại 15/11/2026; xác minh lại khi thực thi.
 **Nhánh hiện tại:** `feat/public-homepage-redesign` từ `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841`; PR base `dev`.
 **Plan:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md).
@@ -162,7 +162,7 @@ Sử dụng các tập test tồn tại thực tế; `homepage-redesign.spec.ts`
 | Task | Commit SHA / no-op | Test/lệnh/kết quả | Screenshot / lưu ý | Trạng thái |
 |---|---|---|---|---|
 | HR-01 | base 95c2bbe; branch feat/public-homepage-redesign | typecheck/lint/build; unit 408/408; Playwright 61/61 | baseline screenshots 390/1440 light/dark in ignored .superpowers/sdd/homepage-redesign-plan/ | Complete |
-| HR-02 | — | Chưa chạy | — | TODO |
+| HR-02 | 0e1fa8e | home-featured Playwright 7/7; typecheck/lint pass | one list + one room detail request; no other-room fetch | Complete |
 | HR-03 | — | Chưa chạy | — | TODO |
 | HR-04 | — | Chưa chạy | — | TODO |
 | HR-05 | — | Chưa chạy | — | TODO |

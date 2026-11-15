@@ -80,9 +80,9 @@
 **Files:** `HomePage.tsx`, `HomeFeaturedExhibits.tsx`; focused home tests.
 **Consumes:** `useMuseumRooms(null)`. **Produces:** một nguồn dữ liệu/guard thống nhất, **visual hiện tại chưa đổi**.
 
-- [ ] **Bước 1 — RED/contract:** thêm/khóa fixture assertions: phòng đầu, sorted copy by `displayOrder/id`, tối đa 3 card, list/detail pending, empty, error, retry, cached refetch failure; page hero branding không phụ thuộc network. Kiểm có đúng room detail request kỳ vọng, không fetch phòng khác.
-- [ ] **Bước 2 — Refactor:** nâng query ownership tới `HomePage` hoặc internal Home data adapter, truyền typed state vào `HomeFeaturedExhibits`. Thao tác sort chỉ trên bản sao; giữ `localizeExhibit` sau sort/slice; mô tả/alt fallback giữ nguyên.
-- [ ] **Bước 3 — Tests:** chứng minh featured output/URL/callback trước-sau không đổi; không thêm request không cần thiết, không tạo query key mới; review diff độc lập rồi commit.
+- [x] **Bước 1 — RED/contract:** thêm/khóa fixture assertions: phòng đầu, sorted copy by `displayOrder/id`, tối đa 3 card, list/detail pending, empty, error, retry, cached refetch failure; page hero branding không phụ thuộc network. Kiểm có đúng room detail request kỳ vọng, không fetch phòng khác.
+- [x] **Bước 2 — Refactor:** nâng query ownership tới `HomePage` hoặc internal Home data adapter, truyền typed state vào `HomeFeaturedExhibits`. Thao tác sort chỉ trên bản sao; giữ `localizeExhibit` sau sort/slice; mô tả/alt fallback giữ nguyên.
+- [x] **Bước 3 — Tests:** chứng minh featured output/URL/callback trước-sau không đổi; không thêm request không cần thiết, không tạo query key mới; review diff độc lập rồi commit.
 
 **Commit dự kiến:** `refactor(home): share published room state across homepage`.
 
