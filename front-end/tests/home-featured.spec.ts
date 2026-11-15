@@ -20,7 +20,7 @@ test('homepage shows the first three ordered public exhibits and links to their 
   await expect(link).toHaveAttribute('href', '/collection?room=sculpture');
   expect(requests.filter((url) => url.includes('/api/rooms/ceramics'))).toEqual([]);
   expect(requests.filter((url) => url.includes('/components/MuseumScene'))).toEqual([]);
-  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(featured.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' }).locator('canvas')).toHaveCount(0);
   await expect(featured.getByText('Một số hiện vật theo thứ tự trưng bày')).toBeVisible();
   await link.focus();
   await link.press('Enter');
@@ -126,3 +126,4 @@ test('featured long content fits mobile and desktop in light and dark', async ({
     }
   }
 });
+

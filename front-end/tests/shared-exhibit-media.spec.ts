@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 import { installMedia } from './fixtures/publicMediaApi';
 
 test('card media frame is fixed 4:3 and contains the published image', async ({ page }) => {
+  const requests: string[] = [];
+  page.on('request', (request) => { if (/\/(model|audio)\//.test(request.url())) requests.push(request.url()); });
   await installMedia(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/collection');
@@ -14,6 +16,7 @@ test('card media frame is fixed 4:3 and contains the published image', async ({ 
   });
   expect(media.ratio).toBeCloseTo(4 / 3, 2);
   expect(media.fit).toBe('contain');
+  expect(requests).toEqual([]);
 });
 
 test('missing or failed card media keeps the labelled placeholder and exhibit title', async ({ page }) => {
@@ -25,3 +28,4 @@ test('missing or failed card media keeps the labelled placeholder and exhibit ti
   await expect(card.getByText('Chưa có ảnh')).toBeVisible();
   await expect(card.getByRole('heading', { name: 'Bình gốm', exact: true })).toBeVisible();
 });
+

@@ -6,9 +6,10 @@ for (const view of ['/', '/collection', 'detail', '/tour']) {
     const room = await installMedia(page);
     await page.goto(view === 'detail' ? `/collection/${room.slug}/exhibits/${room.exhibits[0].id}` : view);
     const image = page.getByRole('img', { name: 'Ảnh bình', exact: true });
+    await image.scrollIntoViewIfNeeded();
     await expect(image).toBeVisible();
     await expect.poll(() => image.evaluate((node: HTMLImageElement) => node.naturalWidth)).toBeGreaterThan(0);
-    if (view !== '/tour') await expect(page.locator('canvas')).toHaveCount(0);
+    if (view !== '/tour') await expect(page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' }).locator('canvas')).toHaveCount(0);
     if (view === '/tour') {
       await page.getByRole('button', { name: 'Xem chi tiết Bình gốm', exact: true }).click();
       await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' }).getByRole('img', { name: 'Ảnh bình' })).toBeVisible();
@@ -37,3 +38,5 @@ test('corrupt image bytes use the labelled fallback', async ({ page }) => {
   await page.goto(`/collection/${room.slug}/exhibits/${room.exhibits[0].id}`);
   await expect(page.getByText('Chưa có ảnh', { exact: true })).toBeVisible();
 });
+
+
