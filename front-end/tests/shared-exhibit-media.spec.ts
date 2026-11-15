@@ -31,5 +31,3 @@ test('missing or failed card media keeps the labelled placeholder and exhibit ti
   await expect(card.getByText('Chưa có ảnh')).toBeVisible();
   await expect(card.getByRole('heading', { name: 'Bình gốm', exact: true })).toBeVisible();
 });
-
-

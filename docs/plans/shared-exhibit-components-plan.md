@@ -86,7 +86,7 @@
 - [x] **Bước 1 — Xác nhận base.** Fetch `origin/dev` tại `e63677f`; PR #195 đã merge Foundation. Tạo `feat/shared-exhibit-components` trực tiếp từ base này, không stacked.
 - [x] **Bước 2 — Audit callers.** Dùng CodeGraph và đọc design/coding conventions; xác nhận Grid có Home/Collection consumers, Collection localize trước Grid, Home chưa localize, các media/action contracts hiện hữu.
 - [x] **Bước 3 — Baseline.** Typecheck/lint/unit/build pass; focused Playwright 51/53 với hai assertion sai phạm vi/loading (được ghi trong task); chụp Home/Collection tại 390/1440 light/dark.
-- [ ] **Bước 4 — Review hai tài liệu.** Đối chiếu đúng SDD, stage docs và xem staged diff; chỉ commit sau khi được chấp thuận triển khai.
+- [x] **Bước 4 — Review hai tài liệu.** Đối chiếu đúng SDD, stage docs và xem staged diff; chỉ commit sau khi được chấp thuận triển khai.
 
 **Commit dự kiến:** `docs(public): plan shared exhibit component redesign`.
 
@@ -95,10 +95,10 @@
 **Files:** `ExhibitGrid.tsx`, `ExhibitGrid.module.css`, tạo `ExhibitCard.tsx` và `ExhibitCard.module.css`; focused tests nếu cần khóa contract.\
 **Consumes:** Grid và callback API hiện có. **Produces:** Card riêng, DOM/visual/hành vi chưa đổi.
 
-- [ ] **Bước 1:** Viết/khóa assertions về `ul/li` một hiện vật một item, thứ tự, H3, link encoded slug/ID, callback `onReport`, `renderActions`, không Canvas.
-- [ ] **Bước 2:** Di chuyển JSX của từng item sang `ExhibitCard`; giữ `ExhibitGrid` chỉ lặp và giữ nguyên chữ ký props, key, accessible labels, action slots.
-- [ ] **Bước 3:** Chuyển các CSS selector thuộc card từ Grid CSS sang Card CSS với cùng style cũ. **Chưa đổi token, tỉ lệ ảnh, breakpoint hay copy.**
-- [ ] **Bước 4:** Chạy focused Home + Collection + favorite/compare và typecheck/lint; bảo đảm không có nested interactive; review staged diff rồi commit.
+- [x] **Bước 1:** Viết/khóa assertions về `ul/li` một hiện vật một item, thứ tự, H3, link encoded slug/ID, callback `onReport`, `renderActions`, không Canvas.
+- [x] **Bước 2:** Di chuyển JSX của từng item sang `ExhibitCard`; giữ `ExhibitGrid` chỉ lặp và giữ nguyên chữ ký props, key, accessible labels, action slots.
+- [x] **Bước 3:** Chuyển các CSS selector thuộc card từ Grid CSS sang Card CSS với cùng style cũ. **Chưa đổi token, tỉ lệ ảnh, breakpoint hay copy.**
+- [x] **Bước 4:** Chạy focused Home + Collection + favorite/compare và typecheck/lint; bảo đảm không có nested interactive; review staged diff rồi commit.
 
 **Commit dự kiến:** `refactor(public): extract presentational exhibit card`.
 
@@ -107,9 +107,9 @@
 **Files:** chỉ `ExhibitCard.module.css`, cập nhật test visual/contrast nếu cần.\
 **Consumes:** `--public-*` từ Foundation. **Produces:** art direction mới cho card, chưa thay image geometry hoặc grid.
 
-- [ ] **Bước 1:** Thay glass/glow/gradient bằng paper, forest, bronze và border semantic tokens; giữ CSS scoped, không sửa `aura.css`/Admin.
-- [ ] **Bước 2:** Typography serif cho tên, sans cho mô tả/nút, spacing/radius/shadow theo SDD; giữ tên và đoạn văn từ CMS, không thêm badge category/năm/chất liệu.
-- [ ] **Bước 3:** Kiểm token light/dark, text contrast, focus/hover có state không chỉ dựa màu. So ảnh card Home/Collection ở cùng điều kiện; test/commit riêng.
+- [x] **Bước 1:** Thay glass/glow/gradient bằng paper, forest, bronze và border semantic tokens; giữ CSS scoped, không sửa `aura.css`/Admin.
+- [x] **Bước 2:** Typography serif cho tên, sans cho mô tả/nút, spacing/radius/shadow theo SDD; giữ tên và đoạn văn từ CMS, không thêm badge category/năm/chất liệu.
+- [x] **Bước 3:** Kiểm token light/dark, text contrast, focus/hover có state không chỉ dựa màu. So ảnh card Home/Collection ở cùng điều kiện; test/commit riêng.
 
 **Commit dự kiến:** `style(public): apply heritage palette and card typography`.
 
@@ -118,10 +118,10 @@
 **Files:** `ExhibitCard.module.css`; `ExhibitImage.tsx`/`ExhibitPreview.tsx` chỉ nếu phát hiện bug có test.\
 **Consumes:** poster image hoặc CMS placeholder đã có. **Produces:** media frame 4:3 nhất quán, không cắt hiện vật.
 
-- [ ] **Bước 1:** Đặt tỷ lệ 4:3 và khung giữ chỗ trước load; poster dùng `object-fit: contain`, ảnh ngang/dọc và nền trong suốt không bị crop/méo; không tăng nguy cơ CLS không cần thiết.
-- [ ] **Bước 2:** Giữ đúng `ExhibitImage` và `ExhibitPreview`; không làm placeholder trông giống ảnh hiện vật thật, không tự sinh URL.
-- [ ] **Bước 3:** Viết focused tests ảnh thật, null, lỗi và ảnh đổi URL nếu thay shared image logic. Nếu chỉ CSS, xác nhận geometry/screenshot trước–sau và focused tests.
-- [ ] **Bước 4:** Kiểm mobile, light/dark, image loading; review staged diff và commit riêng.
+- [x] **Bước 1:** Đặt tỷ lệ 4:3 và khung giữ chỗ trước load; poster dùng `object-fit: contain`, ảnh ngang/dọc và nền trong suốt không bị crop/méo; không tăng nguy cơ CLS không cần thiết.
+- [x] **Bước 2:** Giữ đúng `ExhibitImage` và `ExhibitPreview`; không làm placeholder trông giống ảnh hiện vật thật, không tự sinh URL.
+- [x] **Bước 3:** Viết focused tests ảnh thật, null, lỗi và ảnh đổi URL nếu thay shared image logic. Nếu chỉ CSS, xác nhận geometry/screenshot trước–sau và focused tests.
+- [x] **Bước 4:** Kiểm mobile, light/dark, image loading; review staged diff và commit riêng.
 
 **Commit dự kiến:** `style(public): standardize exhibit media frame`.
 
@@ -130,10 +130,10 @@
 **Files:** `ExhibitGrid.module.css` và test layout.\
 **Consumes:** Grid API hiện có. **Produces:** 1/2/3 cột theo bề ngang có thật của vùng chứa, không ép 3 cột khi Collection có sidebar.
 
-- [ ] **Bước 1:** Chọn CSS Grid/breakpoints dựa trên available width (container query hoặc cơ chế tương đương có fallback); không làm thay đổi thứ tự DOM hay số items.
-- [ ] **Bước 2:** Card tối thiểu khoảng 230–260 px khi đủ chỗ, tại 320 px là 1 cột; giới hạn tối đa 3 cột, không bóp card hay tràn sidebar.
-- [ ] **Bước 3:** Test vùng chứa hẹp hơn viewport, responsive 320/390/768/1024/1440, tên dài và zoom nếu môi trường hỗ trợ. Không gộp sửa Header/Collection Sidebar vào commit này.
-- [ ] **Bước 4:** Chạy test Home/Collection, xem screenshots + staged diff rồi commit.
+- [x] **Bước 1:** Chọn CSS Grid/breakpoints dựa trên available width (container query hoặc cơ chế tương đương có fallback); không làm thay đổi thứ tự DOM hay số items.
+- [x] **Bước 2:** Card tối thiểu khoảng 230–260 px khi đủ chỗ, tại 320 px là 1 cột; giới hạn tối đa 3 cột, không bóp card hay tràn sidebar.
+- [x] **Bước 3:** Test vùng chứa hẹp hơn viewport, responsive 320/390/768/1024/1440, tên dài và zoom nếu môi trường hỗ trợ. Không gộp sửa Header/Collection Sidebar vào commit này.
+- [x] **Bước 4:** Chạy test Home/Collection, xem screenshots + staged diff rồi commit.
 
 **Commit dự kiến:** `style(public): make exhibit grid container responsive`.
 
@@ -142,10 +142,10 @@
 **Files:** `ExhibitCard.tsx`, `HomeFeaturedExhibits.tsx` nếu cần adapter; `CollectionPage.tsx` chỉ khi có bằng chứng cần thiết; focused tests.\
 **Consumes:** `localizeExhibit`, `localizedAltText`, `usePublicLocale`. **Produces:** tên, mô tả và alt nhất quán, không dịch lặp hoặc mutate dữ liệu.
 
-- [ ] **Bước 1 — Test RED cho lỗi thật.** Vi/en và locale thiếu bản dịch; kiểm Home featured có nội dung/alt cùng quy tắc với Collection. Hiện grid dùng `altText.vi`, còn Collection đã `localizeExhibit` trước search.
-- [ ] **Bước 2 — Chốt ownership.** **Ưu tiên localize trước khi truyền vào Grid:** Collection giữ mapping đã có; HomeFeatured dùng `localizeExhibit` cho danh sách đã chọn nhưng không đổi order/limit; Card dùng `localizedAltText(altText, locale, name)` để tạo alt. Không localize lần hai trong Card khi consumer đã làm.
-- [ ] **Bước 3:** Giữ fallback nội dung VI và fallback alt có ý nghĩa; không dùng UI locale để giả định audio/ảnh mới tồn tại. Kiểm không đổi search/filter và không mutate React Query cache.
-- [ ] **Bước 4:** Chạy tests i18n + Home/Collection; commit riêng khi mọi contract đã xanh.
+- [x] **Bước 1 — Test RED cho lỗi thật.** Vi/en và locale thiếu bản dịch; kiểm Home featured có nội dung/alt cùng quy tắc với Collection. Hiện grid dùng `altText.vi`, còn Collection đã `localizeExhibit` trước search.
+- [x] **Bước 2 — Chốt ownership.** **Ưu tiên localize trước khi truyền vào Grid:** Collection giữ mapping đã có; HomeFeatured dùng `localizeExhibit` cho danh sách đã chọn nhưng không đổi order/limit; Card dùng `localizedAltText(altText, locale, name)` để tạo alt. Không localize lần hai trong Card khi consumer đã làm.
+- [x] **Bước 3:** Giữ fallback nội dung VI và fallback alt có ý nghĩa; không dùng UI locale để giả định audio/ảnh mới tồn tại. Kiểm không đổi search/filter và không mutate React Query cache.
+- [x] **Bước 4:** Chạy tests i18n + Home/Collection; commit riêng khi mọi contract đã xanh.
 
 **Commit dự kiến:** `fix(public): localize shared exhibit content and image alt`.
 
@@ -154,9 +154,9 @@
 **Files:** `ExhibitCard.tsx` hoặc style focus, adapter consumer chỉ nếu cần; focused tests.\
 **Consumes:** `onReport`, `renderActions`, Detail route. **Produces:** thao tác độc lập với link, không nhảy trang ngoài ý muốn.
 
-- [ ] **Bước 1:** Test click/Enter cho link detail encoded; click/Space/Enter cho Report, Favorite, Compare. Không nested `button` trong `Link`, không bubbling gây navigation.
-- [ ] **Bước 2:** Kiểm focus ring, tab order và touch targets với actions có thật. Không bỏ `aria-pressed`, disabled hoặc trạng thái visitor; không sửa visitor store nếu không có lỗi.
-- [ ] **Bước 3:** Chỉ sửa code khi test làm lộ lỗi; giữ renderActions callback và onReport contract. Chạy focused visitor regressions, staged diff rồi commit.
+- [x] **Bước 1:** Test click/Enter cho link detail encoded; click/Space/Enter cho Report, Favorite, Compare. Không nested `button` trong `Link`, không bubbling gây navigation.
+- [x] **Bước 2:** Kiểm focus ring, tab order và touch targets với actions có thật. Không bỏ `aria-pressed`, disabled hoặc trạng thái visitor; không sửa visitor store nếu không có lỗi.
+- [x] **Bước 3:** Chỉ sửa code khi test làm lộ lỗi; giữ renderActions callback và onReport contract. Chạy focused visitor regressions, staged diff rồi commit.
 
 **Commit dự kiến:** `fix(public): keep exhibit card actions independent` **nếu có code fix**; nếu chỉ thêm tests, dùng `test(public): cover exhibit card actions`. Không tạo commit rỗng.
 
@@ -165,10 +165,10 @@
 **Files:** chủ yếu `front-end/tests/shared-exhibit-components.spec.ts`; image component chỉ khi có regression được chứng minh.\
 **Consumes:** `ExhibitImage` / fallback hiện hữu. **Produces:** bằng chứng riêng cho trường hợp media lỗi và không tải 3D/audio do card.
 
-- [ ] **Bước 1:** Test ảnh hợp lệ, không có ảnh, URL lỗi/404, thay src và placeholder CMS (shape/color) đúng nhãn.
-- [ ] **Bước 2:** Theo dõi request: chỉ render card không được tự gọi GLB, scene, Canvas/Three hoặc phát audio; không thêm timeout giả định.
-- [ ] **Bước 3:** Nếu phát hiện bug, viết test fail trước và commit fix độc lập với regression; nếu hành vi hiện tại đúng, chỉ commit focused tests.
-- [ ] **Bước 4:** Chạy tests liên quan đến image/audio và Home/Collection, review staged diff rồi commit.
+- [x] **Bước 1:** Test ảnh hợp lệ, không có ảnh, URL lỗi/404, thay src và placeholder CMS (shape/color) đúng nhãn.
+- [x] **Bước 2:** Theo dõi request: chỉ render card không được tự gọi GLB, scene, Canvas/Three hoặc phát audio; không thêm timeout giả định.
+- [x] **Bước 3:** Nếu phát hiện bug, viết test fail trước và commit fix độc lập với regression; nếu hành vi hiện tại đúng, chỉ commit focused tests.
+- [x] **Bước 4:** Chạy tests liên quan đến image/audio và Home/Collection, review staged diff rồi commit.
 
 **Commit dự kiến:** `test(public): cover exhibit media fallbacks and resource isolation`; thêm commit `fix(public): ...` chỉ khi thật sự có bug.
 
@@ -177,10 +177,10 @@
 **Files:** tests/fixtures khi cần, không thay production code nếu không có bug cụ thể.\
 **Consumes:** shared Card/Grid đã ổn định. **Produces:** test hồi quy và ảnh QA cho hai consumer.
 
-- [ ] **Bước 1:** Chạy `home-featured`, `collection`, `collection-global-search`, `visitor-favorites`, `visitor-comparison`, `public-image-audio`, `public-language`, `public-ui-translations` cùng suite mới; giữ featured tối đa 3, search/room/filter/compare/report, loading/empty/error/retry.
-- [ ] **Bước 2:** Xác minh layout ở 320/390/768/1024/1440, light/dark; ảnh và text dài, keyboard, focus, reduced motion; zoom 200/400%, screen reader và mobile thật chỉ đánh PASS nếu đã thử thực tế.
-- [ ] **Bước 3:** So sánh ảnh theo SDD và reference có thật, không nhận pixel-perfect khi thiếu mockup. Check Admin `/tour` không đổi do CSS scoped.
-- [ ] **Bước 4:** Nếu thêm test e2e/fixtures để khóa integration, commit test riêng. Nếu lỗi production, fix bằng commit riêng đi kèm regression.
+- [x] **Bước 1:** Chạy `home-featured`, `collection`, `collection-global-search`, `visitor-favorites`, `visitor-comparison`, `public-image-audio`, `public-language`, `public-ui-translations` cùng suite mới; giữ featured tối đa 3, search/room/filter/compare/report, loading/empty/error/retry.
+- [ ] **Bước 2:** Viewport 320/390/768/1024/1440 và light/dark đã chụp; text dài, keyboard/focus đã có regression. Chưa kiểm zoom 200/400%, screen reader, reduced-motion runtime hay mobile thật.
+- [x] **Bước 3:** So sánh ảnh theo SDD và reference có thật, không nhận pixel-perfect khi thiếu mockup. Check Admin `/tour` không đổi do CSS scoped.
+- [x] **Bước 4:** Nếu thêm test e2e/fixtures để khóa integration, commit test riêng. Nếu lỗi production, fix bằng commit riêng đi kèm regression.
 
 **Commit dự kiến:** `test(public): verify shared cards across home and collection` (chỉ nếu có test mới).
 
@@ -189,10 +189,10 @@
 **Files:** `docs/plans/shared-exhibit-components-plan.md`, `docs/tasks/shared-exhibit-components.md`; source chỉ sửa trong commit fix riêng nếu phát hiện lỗi.\
 **Consumes:** tất cả slice trước. **Produces:** báo cáo kiểm chứng, SHA đúng, trạng thái review và phạm vi còn lại.
 
-- [ ] **Bước 1:** `npm run typecheck`, `npm run lint`, `npm run test:unit`, `npm run build`, focused Playwright; ghi số test, pass/fail, cảnh báo; không suy luận đã đạt từ log cũ.
-- [ ] **Bước 2:** Review `git diff origin/dev...HEAD`, từng `git show <sha>`, `git diff --check`, staged file list; bảo đảm không có file `.env`, artifact hoặc source ngoài scope.
-- [ ] **Bước 3:** Ghi commit SHA, lệnh/đầu ra kiểm thử, screenshots, giới hạn của browser/device/screen reader và các hạng mục cần duyệt vào task ledger.
-- [ ] **Bước 4:** Gửi ảnh/kết quả để người dùng duyệt; chưa tự push, tạo PR hay merge khi chưa được yêu cầu.
+- [x] **Bước 1:** `npm run typecheck`, `npm run lint`, `npm run test:unit`, `npm run build`, focused Playwright; ghi số test, pass/fail, cảnh báo; không suy luận đã đạt từ log cũ.
+- [x] **Bước 2:** Review `git diff origin/dev...HEAD`, từng `git show <sha>`, `git diff --check`, staged file list; bảo đảm không có file `.env`, artifact hoặc source ngoài scope.
+- [x] **Bước 3:** Ghi commit SHA, lệnh/đầu ra kiểm thử, screenshots, giới hạn của browser/device/screen reader và các hạng mục cần duyệt vào task ledger.
+- [x] **Bước 4:** Gửi ảnh/kết quả để người dùng duyệt; chưa tự push, tạo PR hay merge khi chưa được yêu cầu.
 
 **Commit dự kiến:** `docs(public): record shared exhibit verification` (chỉ khi có evidence thực). Không tạo commit rỗng.
 
@@ -241,4 +241,4 @@ git commit -m "<conventional-commit-message>"
 - [ ] Affected browser/unit/typecheck/lint/build PASS có log thực, screenshot/giới hạn thiết bị rõ.
 - [ ] Các slice SEC-01…SEC-10 có commit độc lập khi thực sự có thay đổi, mỗi commit build/test được, staged diff clean; người dùng duyệt kết quả trước khi PR/merge.
 
-**Trạng thái tại lúc viết:** mới lập kế hoạch, chưa tạo branch/code/commit/test cho Shared Exhibit Components. Đây là kế hoạch đề xuất, không phải bằng chứng đã triển khai.
+**Trạng thái thực thi (2026-11-15):** SEC-01–SEC-10 đã triển khai trên `feat/shared-exhibit-components`; 10 commits ahead `origin/dev`, chưa push/PR/merge. Browser/unit/typecheck/lint/build evidence và giới hạn manual QA được ghi trong task ledger. Còn chờ người dùng xem giao diện trước khi quyết định tích hợp.

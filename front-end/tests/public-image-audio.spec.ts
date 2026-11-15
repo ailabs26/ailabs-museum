@@ -38,5 +38,3 @@ test('corrupt image bytes use the labelled fallback', async ({ page }) => {
   await page.goto(`/collection/${room.slug}/exhibits/${room.exhibits[0].id}`);
   await expect(page.getByText('Chưa có ảnh', { exact: true })).toBeVisible();
 });
-
-

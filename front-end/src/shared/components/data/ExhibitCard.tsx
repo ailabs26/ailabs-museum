@@ -42,4 +42,3 @@ export function ExhibitCard({ exhibit, roomSlug, index, onReport, renderActions 
     </li>
   );
 }
-

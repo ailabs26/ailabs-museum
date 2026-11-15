@@ -126,4 +126,3 @@ test('featured long content fits mobile and desktop in light and dark', async ({
     }
   }
 });
-
