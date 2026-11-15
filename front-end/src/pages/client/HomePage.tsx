@@ -11,12 +11,18 @@ import { supportsWebgl } from '@/helpers/webglSupport';
 import { HomeFeaturedExhibits } from './HomeFeaturedExhibits';
 import classes from './HomePage.module.css';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 
 // Tách cảnh 3D ra chunk riêng: three.js nặng, chỉ tải khi hero thực sự dựng được WebGL.
 const HeroCanvas = lazy(() => import('@/components/home/HeroCanvas'));
 
 export function HomePage() {
   const { t } = usePublicLocale();
+  const { rooms, room, selectedRoom } = useMuseumRooms(null);
+  const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
+  const exhibits = detail ? [...detail.exhibits]
+    .sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)) : [];
+  const featured = exhibits.slice(0, 3);
   usePageTitle(null);
   const stats = [
     { value: '5+', label: t('ui.home.stat.rooms', 'Phòng trưng bày ảo') },
@@ -142,7 +148,7 @@ export function HomePage() {
       <section className={classes.featured} aria-labelledby="featured-title">
         <p className={classes.eyebrow}>{t('ui.home.featured.eyebrow', 'Từ bộ sưu tập')}</p>
         <Title order={2} id="featured-title" className={classes.sectionTitle}>{t('ui.home.featured.title', 'Hiện vật nổi bật')}</Title>
-        <HomeFeaturedExhibits />
+        <HomeFeaturedExhibits rooms={rooms} room={room} detail={detail} exhibits={featured} />
       </section>
     </Container>
   );

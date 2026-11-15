@@ -18,6 +18,8 @@ test('homepage shows the first three ordered public exhibits and links to their 
   await expect(featured.getByText(roomA.name, { exact: true })).toBeVisible();
   const link = featured.getByRole('link', { name: 'Xem bộ sưu tập của phòng này', exact: true });
   await expect(link).toHaveAttribute('href', '/collection?room=sculpture');
+  expect(requests.filter((url) => new URL(url).pathname === '/api/rooms')).toHaveLength(1);
+  expect(requests.filter((url) => new URL(url).pathname === '/api/rooms/sculpture')).toHaveLength(1);
   expect(requests.filter((url) => url.includes('/api/rooms/ceramics'))).toEqual([]);
   expect(requests.filter((url) => url.includes('/components/MuseumScene'))).toEqual([]);
   await expect(featured.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' }).locator('canvas')).toHaveCount(0);
