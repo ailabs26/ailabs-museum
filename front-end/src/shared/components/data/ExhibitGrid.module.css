@@ -1,4 +1,8 @@
-.grid { display: grid; grid-template-columns: 1fr; gap: 24px; list-style: none; padding: 0; margin: 0; }
-
-@media (min-width: 48em) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 62em) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.container { width: 100%; container-type: inline-size; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; list-style: none; padding: 0; margin: 0; }
+@container (min-width: 524px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (min-width: 800px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@supports not (container-type: inline-size) {
+  @media (min-width: 48em) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 62em) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+}

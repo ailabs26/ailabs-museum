@@ -12,11 +12,13 @@ export function ExhibitGrid({ exhibits, roomSlug, onReport, renderActions }: {
 }) {
   const { t } = usePublicLocale();
   return (
-    <ul className={classes.grid} aria-label={t('ui.collection.grid-aria', 'Hiện vật trong bộ sưu tập')}>
-      {exhibits.map((exhibit, index) => (
-        <ExhibitCard key={exhibit.id} exhibit={exhibit} roomSlug={roomSlug} index={index}
-          onReport={onReport} renderActions={renderActions} />
-      ))}
-    </ul>
+    <div className={classes.container}>
+      <ul className={classes.grid} aria-label={t('ui.collection.grid-aria', 'Hiện vật trong bộ sưu tập')}>
+        {exhibits.map((exhibit, index) => (
+          <ExhibitCard key={exhibit.id} exhibit={exhibit} roomSlug={roomSlug} index={index}
+            onReport={onReport} renderActions={renderActions} />
+        ))}
+      </ul>
+    </div>
   );
 }
