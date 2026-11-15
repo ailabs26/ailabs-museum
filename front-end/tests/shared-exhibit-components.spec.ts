@@ -50,3 +50,19 @@ test('cards use the heritage surface and typography in light and dark themes', a
     expect(focus).toEqual({ width: '3px', style: 'solid' });
   }
 });
+
+
+test('report stays on the card and Enter follows its detail link', async ({ page }) => {
+  await installMuseumApi(page);
+  await page.goto('/collection?room=sculpture');
+  const card = page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' }).getByRole('listitem').first();
+  await card.getByRole('button', { name: 'Báo nội dung' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page).toHaveURL(/\/collection\?room=sculpture$/);
+  await page.keyboard.press('Escape');
+  const detail = card.getByRole('link').first();
+  const href = await detail.getAttribute('href');
+  await detail.focus();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(new RegExp(`${href!.replace(/[.*+?^${}()|[\\]\\]/g, '\\\\$&')}$`));
+});
