@@ -28,6 +28,8 @@ test('missing or failed card media keeps the labelled placeholder and exhibit ti
   const preview = card.locator('[class*="preview"]');
   await expect(preview).toHaveCSS('background-color', 'rgb(233, 221, 205)');
   await expect(preview).toHaveCSS('background-image', 'none');
-  await expect(card.getByText('Chưa có ảnh')).toBeVisible();
+  const missingLabel = card.getByText('Chưa có ảnh');
+  await expect(missingLabel).toBeVisible();
+  await expect(missingLabel).toHaveCSS('color', 'rgb(85, 90, 83)');
   await expect(card.getByRole('heading', { name: 'Bình gốm', exact: true })).toBeVisible();
 });

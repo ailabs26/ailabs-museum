@@ -22,11 +22,12 @@
   margin: 12px 0 0; flex: 1; color: var(--public-muted);
   font: 400 15px/1.65 var(--public-font-body); white-space: pre-line; overflow-wrap: anywhere;
 }
-.actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 18px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 18px; }
+.actions > * { flex-shrink: 0; }
 .detailLink {
   display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border: 1px solid transparent;
   border-radius: var(--public-radius-control); background: var(--public-action-bg); color: var(--public-action-text);
-  font: 600 14px/1.35 var(--public-font-body); transition: background-color 0.18s ease, gap 0.18s ease;
+  font: 600 14px/1.35 var(--public-font-body); white-space: nowrap; transition: background-color 0.18s ease, gap 0.18s ease;
 }
 .detailLink:hover { gap: 11px; background: var(--public-action-hover); }
 .detailLink:focus-visible { outline: 3px solid var(--public-focus); outline-offset: 3px; }
@@ -39,3 +40,4 @@
 .media > .preview { background: var(--public-sand); color: var(--public-muted); }
 .media > .preview::before { display: none; }
 .media > .preview [aria-hidden=true] { border-color: var(--public-border); box-shadow: none; animation: none; }
+.media > .preview [class*="missingImage"] { color: var(--public-muted); }
