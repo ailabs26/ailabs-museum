@@ -25,7 +25,11 @@ test('missing or failed card media keeps the labelled placeholder and exhibit ti
   const card = page.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' }).getByRole('listitem').first();
   await card.scrollIntoViewIfNeeded();
   await expect(card.getByText('Hình minh họa thay thế')).toBeVisible();
+  const preview = card.locator('[class*="preview"]');
+  await expect(preview).toHaveCSS('background-color', 'rgb(233, 221, 205)');
+  await expect(preview).toHaveCSS('background-image', 'none');
   await expect(card.getByText('Chưa có ảnh')).toBeVisible();
   await expect(card.getByRole('heading', { name: 'Bình gốm', exact: true })).toBeVisible();
 });
+
 

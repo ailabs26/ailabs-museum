@@ -36,3 +36,6 @@
   .detailLink:hover { gap: 8px; }
 }
 
+.media > .preview { background: var(--public-sand); color: var(--public-muted); }
+.media > .preview::before { display: none; }
+.media > .preview [aria-hidden=true] { border-color: var(--public-border); box-shadow: none; animation: none; }
