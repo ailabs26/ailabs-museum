@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { usePublicLocale } from '@/core/i18n/public-locale';
 import type { RoomDetail } from '@/validations/roomSchema';
+import { localizedAltText } from '@/helpers/localizeExhibit';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import classes from './ExhibitCard.module.css';
 
@@ -16,11 +17,11 @@ export function ExhibitCard({ exhibit, roomSlug, index, onReport, renderActions 
   onReport?: (exhibit: Exhibit) => void;
   renderActions?: (exhibit: Exhibit) => ReactNode;
 }) {
-  const { t } = usePublicLocale();
+  const { locale, t } = usePublicLocale();
   return (
     <li className={classes.card}>
       <div className={classes.media}>
-        <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: exhibit.image.altText.vi || exhibit.name } : null}
+        <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: localizedAltText(exhibit.image.altText, locale, exhibit.name) } : null}
           shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
         <span className={classes.mediaOverlay} aria-hidden="true" />
         <span className={classes.badge}>{t('ui.collection.badge', 'Hiện vật {number}', { number: String(index + 1).padStart(2, '0') })}</span>
@@ -41,3 +42,4 @@ export function ExhibitCard({ exhibit, roomSlug, index, onReport, renderActions 
     </li>
   );
 }
+
