@@ -2,17 +2,18 @@ import { Alert, Button, Text } from '@mantine/core';
 import { IconArrowRight } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { usePublicLocale } from '@/core/i18n/public-locale';
+import { localizeExhibit } from '@/helpers/localizeExhibit';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitGrid } from '@/shared/components/data/ExhibitGrid';
 import classes from './HomePage.module.css';
 
 export function HomeFeaturedExhibits() {
-  const { t } = usePublicLocale();
+  const { locale, t } = usePublicLocale();
   const { rooms, room, selectedRoom } = useMuseumRooms(null);
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const featured = detail ? [...detail.exhibits]
     .sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
-    .slice(0, 3) : [];
+    .slice(0, 3).map((exhibit) => localizeExhibit(exhibit, locale)) : [];
 
   if (rooms.isPending) return <p role="status">{t('ui.rooms.loading', 'Đang tải danh sách phòng…')}</p>;
   if (rooms.isError) return (
