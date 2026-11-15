@@ -29,7 +29,7 @@ test('tour navigation stays visible without horizontal overflow in light and dar
     for (const width of [320, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/');
-      if (width < 768) {
+      if (width < 992) {
         await page.getByRole('button', { name: 'Mở menu điều hướng' }).click();
         await expect(page.getByRole('link', { name: 'Tham quan 3D', exact: true }).last()).toBeVisible();
       } else {
