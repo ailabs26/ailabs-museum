@@ -35,7 +35,7 @@ export function ExhibitCard({ exhibit, roomSlug, index, onReport, renderActions 
             aria-label={t('ui.collection.details-aria', 'Xem chi tiết {name}', { name: exhibit.name })}>
             {t('ui.collection.details', 'Xem chi tiết')} <IconArrowRight size={16} aria-hidden="true" />
           </Link>
-          {onReport && <Button variant="subtle" size="compact-sm" color="gray" onClick={() => onReport(exhibit)}>{t('ui.common.report-content', 'Báo nội dung')}</Button>}
+          {onReport && <Button className={classes.reportButton} variant="subtle" size="compact-sm" color="gray" onClick={() => onReport(exhibit)}>{t('ui.common.report-content', 'Báo nội dung')}</Button>}
         </div>
         {renderActions && <div className={classes.actions}>{renderActions(exhibit)}</div>}
       </div>

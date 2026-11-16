@@ -24,6 +24,10 @@
 }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 18px; }
 .actions > * { flex-shrink: 0; }
+/* Nút "Báo nội dung" subtle: dùng token muted của portal (đạt WCAG AA) thay cho gray.6
+   của Mantine (#868e96, chỉ 3.17:1 trên nền thẻ ngà). --button-color là biến Mantine
+   điều khiển màu chữ của Button mọi variant. Vùng chạm tối thiểu 24px cho WCAG 2.5.8. */
+.reportButton { --button-color: var(--public-muted) !important; min-height: 24px; }
 .detailLink {
   display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border: 1px solid transparent;
   border-radius: var(--public-radius-control); background: var(--public-action-bg); color: var(--public-action-text);

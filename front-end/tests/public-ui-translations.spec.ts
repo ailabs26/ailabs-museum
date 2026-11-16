@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { PUBLIC_UI_STRINGS } from '../../back-end/src/database/seeds/public-ui-strings';
 import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
-import { envelope } from './fixtures/museumContent';
+import { envelope, roomA } from './fixtures/museumContent';
 
 type Locale = keyof (typeof PUBLIC_UI_STRINGS)[number]['values'];
 
@@ -36,18 +36,66 @@ test.describe('Giao diện Client theo ngôn ngữ', () => {
 
       await expectNoVietnamese(page.locator('header'));
       await expectNoVietnamese(page.locator('footer'));
-      await expectNoVietnamese(page.locator('section[aria-labelledby="about-title"]'));
-      await expectNoVietnamese(page.locator('section[aria-labelledby="home-title"]'));
+      const story = page.getByRole('region', { name: value('ui.home.story.title') });
+      await expectNoVietnamese(story);
+      await expect(story).toContainText(value('ui.home.story.intro'));
+      await expect(story).toContainText(value('ui.home.story.tour.title'));
+      await expect(story).toContainText(value('ui.home.story.audio.title'));
+      await expect(story.getByRole('link', { name: value('ui.home.story.cta.tour') })).toHaveAttribute('href', '/tour');
+      await expect(story.getByRole('link', { name: value('ui.home.story.cta.collection') })).toHaveAttribute('href', '/collection');
+      const hero = page.locator('section[aria-labelledby="home-title"]');
+      await expectNoVietnamese(hero);
+      await expect(hero).toContainText(value('ui.home.badge'));
+      await expect(hero).toContainText(value('ui.home.intro'));
       await expect(page.getByRole('heading', { name: value('ui.home.featured.title') })).toBeVisible();
     });
   }
 
+  for (const locale of ['vi', 'en', 'fr', 'zh', 'ko', 'ja'] as const) {
+    test(`${locale}: carousel region, controls and manual announcement are accessible`, async ({ page }) => {
+      await installStrings(page);
+      await page.route('https://media.example/**', (route) => route.fulfill({
+        contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+      }));
+      const exhibits = roomA.exhibits.slice(0, 3).map((item, index) => ({
+        ...item,
+        name: `Announced exhibit ${index + 1}`,
+        description: `Announcement description ${index + 1}`,
+        image: {
+          id: `30000000-0000-4000-8000-00000000000${index + 1}`,
+          url: `https://media.example/announced-${index + 1}.svg`,
+          mimeType: 'image/svg+xml', sizeBytes: 128, rights: { source: null, author: null, license: null },
+          altText: { vi: `Alt ${index + 1}`, en: `Alt ${index + 1}` },
+        },
+      }));
+      await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits })));
+      await page.addInitScript((selectedLocale) =>
+        localStorage.setItem('aura:visitor:locale:v1', JSON.stringify({ version: 1, value: selectedLocale })), locale);
+      await page.goto('/');
+      const value = (key: string) => PUBLIC_UI_STRINGS.find((item) => item.namespace === key)!.values[locale];
+      const hero = page.locator('section[aria-labelledby="home-title"]');
+      const carousel = hero.getByRole('region', { name: value('ui.home.hero.carousel.name') });
+      const controls = carousel.getByRole('group', { name: value('ui.home.hero.carousel.controls') });
+      const firstDot = controls.getByRole('button', { name: value('ui.home.hero.carousel.go-to-slide').replace('{index}', '1') });
+      const secondDot = controls.getByRole('button', { name: value('ui.home.hero.carousel.go-to-slide').replace('{index}', '2') });
+      await expect(firstDot).toBeVisible();
+      await expect(secondDot).toBeVisible();
+      await expect(controls.getByRole('button')).toHaveCount(3);
+      await expect(carousel.getByRole('img')).toHaveCount(1);
+      await secondDot.click();
+      await expect(secondDot).toHaveAttribute('aria-pressed', 'true');
+      await expect(hero.locator('[aria-live="polite"]')).toContainText('Announced exhibit 2');
+      await expect(hero.locator('[aria-live="polite"]')).toContainText('Announcement description 2');
+      await expect(carousel.getByRole('img')).toHaveCount(1);
+      await expect(carousel).toBeVisible();
+    });
+  }
   test('chuỗi chưa dịch hoặc API lỗi thì hiện chữ dự phòng', async ({ page }) => {
     await page.route('**/api/public/translations**', (route) => route.abort());
     await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Chạm vào Di sản.');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Chạm vào di sản.');
     await chooseLanguage(page, 'ko');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Chạm vào Di sản.');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Chạm vào di sản.');
   });
 
   test('sửa bản tiếng Việt trên CMS thì trang đổi theo', async ({ page }) => {
