@@ -167,8 +167,8 @@ Mỗi slice: test mục tiêu → `git status --short` → `git diff --check` �
 | HC-07 | Ghi SHA ở HC-11 | Home regression 32/32; typecheck/lint pass | Screenshot HC-11 | DONE |
 | HC-08 | Ghi SHA ở HC-11 | Home regression 34/34; responsive/swipe target pass | Screenshot HC-11 | DONE |
 | HC-09 | `124df7b` | Carousel + localization 36/36; typecheck/lint/unit/build pass | Contrast/screen reader manual còn pending | DONE |
-| HC-10 | Ghi SHA ở HC-11 | Combined Playwright 46/46 | No visual artifact committed | DONE |
-| HC-11 | — | Quality gates pass; 20 screenshot đã tạo/xem | Reference image absent; contrast/screen reader manual pending | IN PROGRESS |
+| HC-10 | `9aac3d9` | Combined Playwright 46/46 | No visual artifact committed | DONE |
+| HC-11 | Pending manual review | `typecheck`/lint pass, unit 416/416, Playwright 46/46, build pass | 20 screenshots reviewed at `.superpowers/sdd/homepage-hero-carousel/hc11-visual-review`; reference image absent, CMS image quality/contrast/real SR unchecked | IN PROGRESS |
 
 **Không điền số test hoặc SHA giả.**
 
