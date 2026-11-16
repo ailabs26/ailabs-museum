@@ -635,3 +635,32 @@ test('hero stops after four supplemental rooms even when responses fail or have 
   expect(requests).not.toContain('/api/rooms/sixth');
   expect(maxConcurrent).toBe(2);
 });
+
+test('home mounts no canvas and requests no 3D models or audio', async ({ page }) => {
+  const mediaRequests: string[] = [];
+  const modelRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.resourceType() === 'media') mediaRequests.push(request.url());
+    if (/\.(glb|gltf)(?:[?#]|$)/i.test(request.url())) modelRequests.push(request.url());
+  });
+  await installHeroSlides(page, 'Network', 2);
+  await page.goto('/');
+
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  await expect(hero.getByRole('img', { name: 'Alt 1' })).toBeVisible();
+  await expect(page.locator('canvas, audio, video')).toHaveCount(0);
+  expect(modelRequests).toEqual([]);
+  expect(mediaRequests).toEqual([]);
+});
+
+test('home with no published posters shows no carousel controls or exposed image', async ({ page }) => {
+  await installHeroSlides(page, 'Empty', 0);
+  await page.route('**/api/rooms', (route) => fulfillMuseum(route, envelope(roomSummaries.slice(0, 1))));
+  await page.goto('/');
+
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  const stage = hero.locator('[class*="heroStage"]');
+  await expect(stage.locator('img')).toHaveCount(0);
+  await expect(stage.locator('[class*="heroControls"]')).toHaveCount(0);
+  await expect(hero.getByRole('region', { name: 'Bộ sưu tập hiện vật nổi bật' })).toHaveCount(0);
+});
