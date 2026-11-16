@@ -145,6 +145,8 @@ test('autoplay advances every six seconds, resets after manual navigation, and s
   currentIndex = currentIndex % 3 + 1;
   await expectActive(currentIndex);
 
+  await expect(hero.locator('[aria-live="polite"]')).toBeEmpty();
+
   await hero.getByRole('button', { name: 'Hiện vật tiếp theo' }).click();
   currentIndex = currentIndex % 3 + 1;
   await expectActive(currentIndex);
@@ -306,7 +308,7 @@ test('hero keeps the current poster and metadata visible until the next poster l
   await expect(hero.getByRole('heading', { level: 2, name: 'Delayed exhibit 1' })).toBeVisible();
   await expect.poll(() => hero.getByRole('img', { name: 'Alt 1' }).evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
   await hero.getByRole('button', { name: 'Hiện vật tiếp theo' }).click();
-  const incomingPoster = hero.getByRole('img', { name: 'Alt 2' });
+  const incomingPoster = hero.locator('img[alt="Alt 2"]');
   await expect(incomingPoster).toBeAttached();
   await expect(hero.getByRole('heading', { level: 2, name: 'Delayed exhibit 1' })).toBeVisible();
   await expect.poll(() => incomingPoster.evaluate((image: HTMLImageElement) => getComputedStyle(image.parentElement!).opacity))

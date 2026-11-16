@@ -478,6 +478,62 @@ export const PUBLIC_UI_STRINGS: PublicUiString[] = [
     },
   },
   {
+    namespace: "ui.home.hero.carousel.name",
+    context: "Tên vùng carousel hiện vật nổi bật cho trình đọc màn hình",
+    values: {
+      vi: "Bộ sưu tập hiện vật nổi bật", en: "Featured exhibits carousel", fr: "Carrousel des objets à la une",
+      zh: "精选展品轮播", ko: "대표 전시품 캐러셀", ja: "注目展示品カルーセル",
+    },
+  },
+  {
+    namespace: "ui.home.hero.carousel.controls",
+    context: "Tên nhóm nút điều khiển carousel",
+    values: {
+      vi: "Điều khiển hiện vật nổi bật", en: "Featured exhibit controls", fr: "Commandes de l’objet à la une",
+      zh: "精选展品控制", ko: "대표 전시품 제어", ja: "注目展示品の操作",
+    },
+  },
+  {
+    namespace: "ui.home.hero.carousel.previous",
+    context: "Nút hiện vật trước trong carousel",
+    values: {
+      vi: "Hiện vật trước", en: "Previous exhibit", fr: "Objet précédent",
+      zh: "上一个展品", ko: "이전 전시품", ja: "前の展示品",
+    },
+  },
+  {
+    namespace: "ui.home.hero.carousel.next",
+    context: "Nút hiện vật tiếp theo trong carousel",
+    values: {
+      vi: "Hiện vật tiếp theo", en: "Next exhibit", fr: "Objet suivant",
+      zh: "下一个展品", ko: "다음 전시품", ja: "次の展示品",
+    },
+  },
+  {
+    namespace: "ui.home.hero.carousel.go-to-slide",
+    context: "Nút chọn slide theo số thứ tự",
+    values: {
+      vi: "Đến hiện vật {index}", en: "Go to exhibit {index}", fr: "Aller à l’objet {index}",
+      zh: "前往展品 {index}", ko: "{index}번 전시품으로 이동", ja: "展示品 {index}へ移動",
+    },
+  },
+  {
+    namespace: "ui.home.hero.carousel.pause",
+    context: "Nút tạm dừng tự chuyển slide",
+    values: {
+      vi: "Tạm dừng tự chuyển", en: "Pause automatic slide changes", fr: "Mettre en pause le défilement automatique",
+      zh: "暂停自动切换", ko: "자동 슬라이드 일시정지", ja: "スライドの自動切り替えを一時停止",
+    },
+  },
+  {
+    namespace: "ui.home.hero.carousel.resume",
+    context: "Nút tiếp tục tự chuyển slide",
+    values: {
+      vi: "Tiếp tục tự chuyển", en: "Resume automatic slide changes", fr: "Reprendre le défilement automatique",
+      zh: "恢复自动切换", ko: "자동 슬라이드 다시 시작", ja: "スライドの自動切り替えを再開",
+    },
+  },
+  {
     namespace: "ui.home.stat.rooms",
     context: "Trang chủ, số liệu",
     values: {

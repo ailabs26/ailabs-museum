@@ -27,6 +27,7 @@ export function HomePage() {
   const [focused, setFocused] = useState(false);
   const [outgoingSlide, setOutgoingSlide] = useState<typeof heroSlides[number] | null>(null);
   const [readySlideKey, setReadySlideKey] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState('');
   const heroRef = useRef<HTMLElement>(null);
   const activeIndex = Math.max(0, heroSlides.findIndex((slide) => slide.key === activeSlideKey));
   const heroSlide = heroSlides[activeIndex];
@@ -39,17 +40,19 @@ export function HomePage() {
   const visibleSlideRef = useRef<typeof heroSlide>(undefined);
   const transitionTimerRef = useRef<number | null>(null);
   const swipeStartRef = useRef<{ id: number; x: number; y: number } | null>(null);
+  const announcementPendingKeyRef = useRef<string | null>(null);
   heroSlidesRef.current = heroSlides;
   activeSlideKeyRef.current = activeSlideKey;
   heroSlideRef.current = heroSlide;
   const featured = exhibits.slice(0, 3);
   usePageTitle(null);
 
-  const selectSlide = (key: string) => {
+  const selectSlide = (key: string, announce = true) => {
     if (key === activeSlideKeyRef.current) return;
     const current = visibleSlideRef.current ?? heroSlideRef.current;
     if (current) setOutgoingSlide(current);
     setReadySlideKey(null);
+    announcementPendingKeyRef.current = announce ? key : null;
     if (transitionTimerRef.current !== null) window.clearTimeout(transitionTimerRef.current);
     activeSlideKeyRef.current = key;
     setActiveSlideKey(key);
@@ -66,6 +69,10 @@ export function HomePage() {
     const loaded = heroSlidesRef.current.find((slide) => slide.key === key);
     if (!loaded || activeSlideKeyRef.current !== key) return;
     visibleSlideRef.current = loaded;
+    if (announcementPendingKeyRef.current === key) {
+      setAnnouncement(loaded.name + '. ' + loaded.description);
+      announcementPendingKeyRef.current = null;
+    }
     setReadySlideKey(key);
     if (transitionTimerRef.current !== null) window.clearTimeout(transitionTimerRef.current);
     transitionTimerRef.current = window.setTimeout(() => {
@@ -116,7 +123,7 @@ export function HomePage() {
       const slides = heroSlidesRef.current;
       const currentIndex = slides.findIndex((slide) => slide.key === activeSlideKeyRef.current);
       const next = slides[(Math.max(0, currentIndex) + 1) % slides.length];
-      if (next) selectSlideRef.current(next.key);
+      if (next) selectSlideRef.current(next.key, false);
     }, 6000);
     return () => window.clearTimeout(timer);
   }, [activeSlideKey, autoplayPaused, documentVisible, focused, heroVisible, hovered, prefersReducedMotion, reducedMotionOverride, slideKeys]);
@@ -172,7 +179,7 @@ export function HomePage() {
             </div>
           </div>
 
-          <div className={classes.heroStage} aria-hidden={!heroSlide}
+          <div className={classes.heroStage} role="region" aria-label={t('ui.home.hero.carousel.name', 'Bộ sưu tập hiện vật nổi bật')} aria-hidden={!heroSlide}
             onPointerDown={(event) => {
               if (event.pointerType !== 'touch' || (event.target instanceof Element && event.target.closest('button, a'))) {
                 swipeStartRef.current = null;
@@ -191,11 +198,11 @@ export function HomePage() {
             onPointerCancel={() => { swipeStartRef.current = null; }}>
             {heroSlide ? (
               <>
-                {outgoingSlide && <div className={`${classes.heroPosterLayer} ${readySlideKey === heroSlide.key ? classes.heroPosterLeaving : classes.heroPosterVisible}`}>
+                {outgoingSlide && <div aria-hidden={readySlideKey === heroSlide.key} className={`${classes.heroPosterLayer} ${readySlideKey === heroSlide.key ? classes.heroPosterLeaving : classes.heroPosterVisible}`}>
                   <ExhibitImage image={{ url: outgoingSlide.imageUrl, alt: outgoingSlide.imageAlt }}
                     shape={outgoingSlide.shape} color={outgoingSlide.color} className={classes.heroImage} />
                 </div>}
-                <div className={`${classes.heroPosterLayer} ${readySlideKey === heroSlide.key || !outgoingSlide ? classes.heroPosterVisible : classes.heroPosterWaiting}`}>
+                <div aria-hidden={!!outgoingSlide && readySlideKey !== heroSlide.key} className={`${classes.heroPosterLayer} ${readySlideKey === heroSlide.key || !outgoingSlide ? classes.heroPosterVisible : classes.heroPosterWaiting}`}>
                   <ExhibitImage image={{ url: heroSlide.imageUrl, alt: heroSlide.imageAlt }}
                     loading="eager" fetchPriority="high" onLoad={() => finishSlideLoad(heroSlide.key)}
                     onError={() => finishSlideLoad(heroSlide.key)} shape={heroSlide.shape} color={heroSlide.color}
@@ -259,6 +266,7 @@ export function HomePage() {
             </div>}
           </aside>
         </div>
+        <span className={classes.visuallyHidden} aria-live="polite" aria-atomic="true">{announcement}</span>
       </section>
 
       <section className={classes.featured} aria-labelledby="featured-title">

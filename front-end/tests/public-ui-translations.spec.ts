@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { PUBLIC_UI_STRINGS } from '../../back-end/src/database/seeds/public-ui-strings';
 import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
-import { envelope } from './fixtures/museumContent';
+import { envelope, roomA } from './fixtures/museumContent';
 
 type Locale = keyof (typeof PUBLIC_UI_STRINGS)[number]['values'];
 
@@ -51,6 +51,43 @@ test.describe('Giao diện Client theo ngôn ngữ', () => {
     });
   }
 
+  for (const locale of ['vi', 'en', 'fr', 'zh', 'ko', 'ja'] as const) {
+    test(`${locale}: carousel region, controls and manual announcement are accessible`, async ({ page }) => {
+      await installStrings(page);
+      await page.route('https://media.example/**', (route) => route.fulfill({
+        contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+      }));
+      const exhibits = roomA.exhibits.slice(0, 3).map((item, index) => ({
+        ...item,
+        name: `Announced exhibit ${index + 1}`,
+        description: `Announcement description ${index + 1}`,
+        image: {
+          id: `30000000-0000-4000-8000-00000000000${index + 1}`,
+          url: `https://media.example/announced-${index + 1}.svg`,
+          mimeType: 'image/svg+xml', sizeBytes: 128, rights: { source: null, author: null, license: null },
+          altText: { vi: `Alt ${index + 1}`, en: `Alt ${index + 1}` },
+        },
+      }));
+      await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits })));
+      await page.addInitScript((selectedLocale) =>
+        localStorage.setItem('aura:visitor:locale:v1', JSON.stringify({ version: 1, value: selectedLocale })), locale);
+      await page.goto('/');
+      const value = (key: string) => PUBLIC_UI_STRINGS.find((item) => item.namespace === key)!.values[locale];
+      const hero = page.locator('section[aria-labelledby="home-title"]');
+      const carousel = hero.getByRole('region', { name: value('ui.home.hero.carousel.name') });
+      const controls = carousel.getByRole('group', { name: value('ui.home.hero.carousel.controls') });
+      await expect(controls.getByRole('button', { name: value('ui.home.hero.carousel.previous') })).toBeVisible();
+      await expect(controls.getByRole('button', { name: value('ui.home.hero.carousel.next') })).toBeVisible();
+      await expect(controls.getByRole('button', { name: value('ui.home.hero.carousel.go-to-slide').replace('{index}', '2') })).toBeVisible();
+      await expect(controls.getByRole('button', { name: value('ui.home.hero.carousel.pause') })).toBeVisible();
+      await expect(carousel.getByRole('img')).toHaveCount(1);
+      await controls.getByRole('button', { name: value('ui.home.hero.carousel.next') }).click();
+      await expect(hero.locator('[aria-live="polite"]')).toContainText('Announced exhibit 2');
+      await expect(hero.locator('[aria-live="polite"]')).toContainText('Announcement description 2');
+      await expect(carousel.getByRole('img')).toHaveCount(1);
+      await expect(carousel).toBeVisible();
+    });
+  }
   test('chuỗi chưa dịch hoặc API lỗi thì hiện chữ dự phòng', async ({ page }) => {
     await page.route('**/api/public/translations**', (route) => route.abort());
     await page.goto('/');

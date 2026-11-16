@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-HERO-CAROUSEL: Nâng cấp Hero Editorial Carousel
 
-**Trạng thái:** IN PROGRESS — HC-01 through HC-08 complete; localization and accessibility hardening continues in HC-09.
+**Trạng thái:** IN PROGRESS — HC-01 through HC-09 complete; HC-10 regression/network checks and HC-11 quality handoff remain.
 **Nhánh triển khai:** `feat/public-homepage-redesign` — **tiếp tục trên nhánh Homepage hiện tại, không tạo nhánh mới**.
 **Plan:** [homepage-hero-carousel-plan.md](../plans/homepage-hero-carousel-plan.md).
 **Kế hoạch gốc:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md), [homepage-redesign.md](./homepage-redesign.md).
@@ -110,10 +110,11 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 - [ ] Screenshot light/dark và ảnh reference matrix để HC-11; ảnh dọc/zoom 200–400% chưa đo.
 ### HC-09 — i18n & accessibility
 
-- [ ] `vi/en/fr/zh/ko/ja`; UI labels được dịch qua `t`; alt, tên, mô tả dùng helper localization hiện có.
-- [ ] Carousel accessible region/name; chỉ slide active tiếp cận, controls có labels/state; manual change announced polite, auto không spam.
-- [ ] Keyboard focus/contrast/heading hierarchy, prefers-reduced-motion tắt animation/autoplay; screen reader thật chỉ tick khi chạy.
-- [ ] Nếu thêm UI keys, cập nhật seed và tests trong cùng slice; test rồi commit riêng.
+- [x] `vi/en/fr/zh/ko/ja`; UI labels được dịch qua `t`; alt, tên, mô tả dùng helper localization hiện có.
+- [x] Carousel accessible region/name; poster không active bị ẩn khỏi accessibility tree; controls có labels/state; manual change announced polite, autoplay không spam.
+- [x] Keyboard/buttons, focus pause, reduced-motion default và crossfade states có Playwright coverage.
+- [ ] Đo contrast và screen reader thật còn cần manual check.
+- [x] UI keys carousel đã thêm vào seed và locale regression; `36/36` Playwright pass.
 
 ### HC-10 — Regression & network
 
@@ -165,11 +166,13 @@ Mỗi slice: test mục tiêu → `git status --short` → `git diff --check` �
 | HC-06 | — | Chưa chạy | — | TODO |
 | HC-07 | Ghi SHA ở HC-11 | Home regression 32/32; typecheck/lint pass | Screenshot HC-11 | DONE |
 | HC-08 | Ghi SHA ở HC-11 | Home regression 34/34; responsive/swipe target pass | Screenshot HC-11 | DONE |
-| HC-09 | — | Chưa chạy | — | TODO |
+| HC-09 | Ghi SHA ở HC-11 | Carousel + localization 36/36; typecheck/lint/unit/build pass | Contrast/screen reader manual còn pending | DONE |
 | HC-10 | — | Chưa chạy | — | TODO |
 | HC-11 | — | Chưa chạy | Chưa chụp | TODO |
 
-**Không điền số test hoặc SHA giả.** Nếu đã có bug/thiếu ảnh CMS, ghi blocker thực. Các mục zoom 200/400%, NVDA/VoiceOver, mobile thật, Lighthouse/CLS/LCP chỉ ghi PASS khi đã đo; không coi responsive screenshot tự động tương đương manual QA.
+**Không điền số test hoặc SHA giả.**
+
+Backend `test:seed` đang có lỗi nền: thiếu khóa `ui.guided2d.progress`; caller này giống `origin/dev`, HC-09 không sửa phần đó. Nếu đã có bug/thiếu ảnh CMS, ghi blocker thực. Các mục zoom 200/400%, NVDA/VoiceOver, mobile thật, Lighthouse/CLS/LCP chỉ ghi PASS khi đã đo; không coi responsive screenshot tự động tương đương manual QA.
 
 ## Handoff / Git
 
