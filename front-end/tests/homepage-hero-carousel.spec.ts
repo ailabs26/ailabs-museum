@@ -1,6 +1,25 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
 import { envelope, exhibit, roomA, roomB, roomC, roomSummaries, ROOM_B_ID } from './fixtures/museumContent';
+
+async function installHeroSlides(page: Page, prefix: string) {
+  await installMuseumApi(page);
+  await page.route('https://media.example/**', (route) => route.fulfill({
+    contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+  }));
+  const items = roomA.exhibits.slice(0, 3).map((item, index) => ({
+    ...item,
+    name: `${prefix} exhibit ${index + 1}`,
+    description: `Description ${index + 1}`,
+    image: {
+      id: `30000000-0000-4000-8000-00000000000${index + 1}`, url: `https://media.example/${prefix}-${index + 1}.svg`,
+      mimeType: 'image/svg+xml', sizeBytes: 128, rights: { source: null, author: null, license: null },
+      altText: { vi: `Alt ${index + 1}`, en: `Alt ${index + 1}` },
+    },
+  }));
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: items })));
+  return items;
+}
 
 test('hero keeps poster, localized copy, and detail route on the same published exhibit', async ({ page }) => {
   await installMuseumApi(page);
@@ -68,21 +87,7 @@ test('failed hero image falls back without hiding exhibit metadata or the detail
 });
 
 test('hero controls wrap, select a slide, and keep the poster, metadata, and link together', async ({ page }) => {
-  await installMuseumApi(page);
-  await page.route('https://media.example/**', (route) => route.fulfill({
-    contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
-  }));
-  const items = roomA.exhibits.slice(0, 3).map((item, index) => ({
-    ...item,
-    name: `Hero exhibit ${index + 1}`,
-    description: `Description ${index + 1}`,
-    image: {
-      id: `30000000-0000-4000-8000-00000000000${index + 1}`, url: `https://media.example/${index + 1}.svg`,
-      mimeType: 'image/svg+xml', sizeBytes: 128, rights: { source: null, author: null, license: null },
-      altText: { vi: `Alt ${index + 1}`, en: `Alt ${index + 1}` },
-    },
-  }));
-  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: items })));
+  const items = await installHeroSlides(page, 'Hero');
 
   await page.goto('/');
   const hero = page.locator('section[aria-labelledby="home-title"]');
@@ -112,6 +117,143 @@ test('hero controls wrap, select a slide, and keep the poster, metadata, and lin
   const { width, height } = await firstDot.boundingBox() ?? { width: 0, height: 0 };
   expect(width).toBeGreaterThanOrEqual(44);
   expect(height).toBeGreaterThanOrEqual(44);
+});
+
+test('autoplay advances every six seconds, resets after manual navigation, and stays paused until resumed', async ({ page }) => {
+  await page.clock.install();
+  await installHeroSlides(page, 'Timed');
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  const controls = hero.getByRole('group', { name: 'Điều khiển hiện vật nổi bật' });
+  await expect(controls).toBeVisible();
+  await page.clock.pauseAt(new Date(Date.now() + 60000));
+  const activeDot = controls.locator('button[aria-pressed="true"]');
+  const activeLabel = await activeDot.getAttribute('aria-label');
+  let currentIndex = Number(activeLabel?.match(/\d+/)?.[0]);
+  expect(currentIndex).toBeGreaterThanOrEqual(1);
+  const expectActive = (index: number) => expect(hero.getByRole('heading', { level: 2, name: `Timed exhibit ${index}` })).toBeVisible();
+  const leaveHero = async () => {
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.mouse.move(1, 899);
+  };
+  await expectActive(currentIndex);
+  await page.clock.fastForward(5999);
+  await expectActive(currentIndex);
+  await page.clock.fastForward(1);
+  currentIndex = currentIndex % 3 + 1;
+  await expectActive(currentIndex);
+
+  await hero.getByRole('button', { name: 'Hiện vật tiếp theo' }).click();
+  currentIndex = currentIndex % 3 + 1;
+  await expectActive(currentIndex);
+  await leaveHero();
+  await page.clock.fastForward(5999);
+  await expectActive(currentIndex);
+  await page.clock.fastForward(1);
+  currentIndex = currentIndex % 3 + 1;
+  await expectActive(currentIndex);
+
+  await hero.getByRole('button', { name: 'Tạm dừng tự chuyển' }).click();
+  await leaveHero();
+  await page.clock.fastForward(12000);
+  await expectActive(currentIndex);
+  await hero.getByRole('button', { name: 'Tiếp tục tự chuyển' }).click();
+  await leaveHero();
+  await page.clock.fastForward(6000);
+  currentIndex = currentIndex % 3 + 1;
+  await expectActive(currentIndex);
+});
+
+test('autoplay pauses on hover, focus, hidden tab, and offscreen hero', async ({ page }) => {
+  await page.clock.install();
+  await installHeroSlides(page, 'Lifecycle');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  const controls = hero.getByRole('group', { name: 'Điều khiển hiện vật nổi bật' });
+  await expect(controls).toBeVisible();
+  await page.clock.pauseAt(new Date(Date.now() + 60000));
+  const activeDot = controls.locator('button[aria-pressed="true"]');
+  const activeLabel = await activeDot.getAttribute('aria-label');
+  let currentIndex = Number(activeLabel?.match(/\d+/)?.[0]);
+  const expectActive = (index: number) => expect(hero.getByRole('heading', { level: 2, name: `Lifecycle exhibit ${index}` })).toBeVisible();
+  const leaveHero = async () => {
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.mouse.move(1, 899);
+  };
+
+  await page.mouse.move(500, 400);
+  await page.clock.fastForward(12000);
+  await expectActive(currentIndex);
+  await leaveHero();
+  await page.clock.fastForward(6000);
+  currentIndex = currentIndex % 3 + 1;
+  await expectActive(currentIndex);
+
+  await controls.getByRole('button', { name: 'Hiện vật tiếp theo' }).focus();
+  await page.clock.fastForward(12000);
+  await expectActive(currentIndex);
+  await leaveHero();
+  await page.clock.fastForward(6000);
+  currentIndex = currentIndex % 3 + 1;
+  await expectActive(currentIndex);
+
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.clock.fastForward(12000);
+  await expectActive(currentIndex);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.clock.fastForward(6000);
+  currentIndex = currentIndex % 3 + 1;
+  await expectActive(currentIndex);
+
+  await page.evaluate(() => {
+    window.scrollTo(0, document.documentElement.scrollHeight);
+    window.dispatchEvent(new Event('scroll'));
+  });
+  await expect.poll(() => hero.evaluate((element) => element.getBoundingClientRect().bottom < 0)).toBe(true);
+  await page.waitForTimeout(100);
+  await page.clock.fastForward(12000);
+  await expectActive(currentIndex);
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+    window.dispatchEvent(new Event('scroll'));
+  });
+  await page.waitForTimeout(100);
+  await page.clock.fastForward(6000);
+  currentIndex = currentIndex % 3 + 1;
+  await expectActive(currentIndex);
+});
+
+test('reduced motion disables autoplay by default but Resume remains an explicit opt-in', async ({ page }) => {
+  await page.clock.install();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await installHeroSlides(page, 'Reduced');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  const controls = hero.getByRole('group', { name: 'Điều khiển hiện vật nổi bật' });
+  const resume = controls.getByRole('button', { name: 'Tiếp tục tự chuyển' });
+  await expect(resume).toHaveAttribute('aria-pressed', 'true');
+  await page.clock.pauseAt(new Date(Date.now() + 60000));
+  const activeDot = controls.locator('button[aria-pressed="true"][aria-label^="Đến hiện vật"]');
+  const currentLabel = await activeDot.getAttribute('aria-label');
+  const currentIndex = Number(currentLabel?.match(/\d+/)?.[0]);
+  await page.clock.fastForward(12000);
+  await expect(hero.getByRole('heading', { level: 2, name: `Reduced exhibit ${currentIndex}` })).toBeVisible();
+
+  await resume.click();
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.mouse.move(1, 899);
+  await page.clock.fastForward(6000);
+  await expect(hero.getByRole('heading', { level: 2, name: `Reduced exhibit ${currentIndex % 3 + 1}` })).toBeVisible();
 });
 
 test('hero supplements a sparse first room with at most two concurrent room queries and stops at three posters', async ({ page }) => {

@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-HERO-CAROUSEL: Nâng cấp Hero Editorial Carousel
 
-**Trạng thái:** IN PROGRESS — HC-01 through HC-05 complete; autoplay and transitions continue in HC-06–HC-07.
+**Trạng thái:** IN PROGRESS — HC-01 through HC-06 complete; crossfade and media resilience continue in HC-07.
 **Nhánh triển khai:** `feat/public-homepage-redesign` — **tiếp tục trên nhánh Homepage hiện tại, không tạo nhánh mới**.
 **Plan:** [homepage-hero-carousel-plan.md](../plans/homepage-hero-carousel-plan.md).
 **Kế hoạch gốc:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md), [homepage-redesign.md](./homepage-redesign.md).
@@ -90,9 +90,9 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 
 ### HC-06 — Autoplay và cleanup
 
-- [ ] Dùng browser clock test 6s/cycle; manual action reset timer; không nhân đôi timer khi re-render/locale.
-- [ ] Hover/focus pause, manual pause persistent đến Resume; tab hidden hoặc Hero ngoài viewport không chạy.
-- [ ] Reduced motion tắt auto mặc định; chỉ transition theo user preference; controls hoạt động độc lập.
+- [x] Browser clock xác minh 6s/cycle và timer reset sau thao tác; đổi locale không làm nhân đôi timer.
+- [x] Hover/focus pause; manual pause giữ đến Resume; tab ẩn và Hero ngoài viewport dừng timer.
+- [x] Reduced motion dừng auto mặc định; người dùng có thể chọn Resume; controls thủ công vẫn dùng được.
 - [ ] Cleanup timers/observers/listeners sau unmount và route change; a11y auto announcements không spam; commit riêng.
 
 ### HC-07 — Transition mượt, preload và ảnh lỗi

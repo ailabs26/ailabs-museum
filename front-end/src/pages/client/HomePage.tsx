@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Container, Title } from '@mantine/core';
-import { IconArrowRight, IconChevronLeft, IconChevronRight, IconCube, IconHeadphones } from '@tabler/icons-react';
+import { IconArrowRight, IconChevronLeft, IconChevronRight, IconCube, IconHeadphones, IconPlayerPause, IconPlayerPlay } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { usePublicLocale } from '@/core/i18n/public-locale';
 import { useHomeHeroSlides } from '@/hooks/useHomeHeroSlides';
@@ -18,8 +18,19 @@ export function HomePage() {
     .sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)) : [];
   const heroSlides = useHomeHeroSlides({ rooms, room, selectedRoom });
   const [activeSlideKey, setActiveSlideKey] = useState<string | null>(null);
+  const [autoplayPaused, setAutoplayPaused] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const [reducedMotionOverride, setReducedMotionOverride] = useState(false);
+  const [documentVisible, setDocumentVisible] = useState(() => !document.hidden);
+  const [heroVisible, setHeroVisible] = useState(true);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const heroRef = useRef<HTMLElement>(null);
+  const heroSlidesRef = useRef(heroSlides);
+  heroSlidesRef.current = heroSlides;
   const activeIndex = Math.max(0, heroSlides.findIndex((slide) => slide.key === activeSlideKey));
   const heroSlide = heroSlides[activeIndex];
+  const slideKeys = heroSlides.map((slide) => slide.key).join('|');
   const featured = exhibits.slice(0, 3);
   usePageTitle(null);
 
@@ -29,9 +40,67 @@ export function HomePage() {
     return heroSlides[(Math.max(0, currentIndex) + direction + heroSlides.length) % heroSlides.length].key;
   });
 
+  useEffect(() => {
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const syncMotion = () => {
+      setPrefersReducedMotion(motion.matches);
+      if (motion.matches) {
+        setAutoplayPaused(true);
+        setReducedMotionOverride(false);
+      }
+    };
+    const syncVisibility = () => setDocumentVisible(!document.hidden);
+    syncMotion();
+    document.addEventListener('visibilitychange', syncVisibility);
+    motion.addEventListener('change', syncMotion);
+    return () => {
+      document.removeEventListener('visibilitychange', syncVisibility);
+      motion.removeEventListener('change', syncMotion);
+    };
+  }, []);
+
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+    const syncHeroVisibility = () => {
+      const bounds = hero.getBoundingClientRect();
+      setHeroVisible(bounds.bottom > 0 && bounds.top < window.innerHeight);
+    };
+    syncHeroVisibility();
+    window.addEventListener('scroll', syncHeroVisibility, { passive: true });
+    window.addEventListener('resize', syncHeroVisibility);
+    return () => {
+      window.removeEventListener('scroll', syncHeroVisibility);
+      window.removeEventListener('resize', syncHeroVisibility);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (heroSlidesRef.current.length < 2 || autoplayPaused || (prefersReducedMotion && !reducedMotionOverride)
+      || !documentVisible || !heroVisible || hovered || focused) return;
+    const timer = window.setTimeout(() => {
+      setActiveSlideKey((key) => {
+        const slides = heroSlidesRef.current;
+        const currentIndex = slides.findIndex((slide) => slide.key === key);
+        return slides[(Math.max(0, currentIndex) + 1) % slides.length]?.key ?? null;
+      });
+    }, 6000);
+    return () => window.clearTimeout(timer);
+  }, [activeSlideKey, autoplayPaused, documentVisible, focused, heroVisible, hovered, prefersReducedMotion, reducedMotionOverride, slideKeys]);
+
+  const toggleAutoplay = () => {
+    setAutoplayPaused(!autoplayPaused);
+    if (prefersReducedMotion) setReducedMotionOverride(autoplayPaused);
+  };
+
   return (
     <div className={classes.page}>
-      <section className={classes.hero} aria-labelledby="home-title">
+      <section ref={heroRef} className={classes.hero} aria-labelledby="home-title"
+        onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+        onFocusCapture={() => setFocused(true)}
+        onBlurCapture={(event) => {
+          if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) setFocused(false);
+        }}>
         <div className={classes.heroInner}>
           <div className={classes.heroContent}>
             <p className={classes.badge}>{t('ui.home.badge', 'Bộ sưu tập di sản số')}</p>
@@ -78,6 +147,13 @@ export function HomePage() {
                 <button type="button" className={classes.heroControlButton}
                   aria-label={t('ui.home.hero.carousel.next', 'Hiện vật tiếp theo')} onClick={() => moveSlide(1)}>
                   <IconChevronRight aria-hidden="true" size={20} />
+                </button>
+                <button type="button" className={classes.heroControlButton}
+                  aria-label={t(autoplayPaused ? 'ui.home.hero.carousel.resume' : 'ui.home.hero.carousel.pause', autoplayPaused ? 'Tiếp tục tự chuyển' : 'Tạm dừng tự chuyển')}
+                  aria-pressed={autoplayPaused} onClick={toggleAutoplay}>
+                  {autoplayPaused
+                    ? <IconPlayerPlay aria-hidden="true" size={18} />
+                    : <IconPlayerPause aria-hidden="true" size={18} />}
                 </button>
               </div>}
               </>
