@@ -36,12 +36,12 @@
 .heroPosterVisible { opacity: 1; }
 .heroPosterWaiting, .heroPosterLeaving { opacity: 0; pointer-events: none; }
 .heroImage { width: 100%; height: 100%; min-height: 0; padding: 0; }
-.heroControls { display: flex; min-height: 44px; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; max-width: 100%; margin-top: auto; }
-.heroControlButton { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; border: 1px solid var(--public-border); border-radius: 50%; background: transparent; color: var(--public-action-text); cursor: pointer; }
-.heroControlButton:hover { border-color: var(--public-bronze); color: var(--public-bronze); }
+.heroControls { display: flex; min-height: 44px; align-items: center; justify-content: center; gap: 2px; flex-wrap: wrap; max-width: 100%; margin-top: auto; }
+.heroControlButton { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--public-action-text); cursor: pointer; }
+.heroControlButton:hover { color: var(--public-bronze); }
 .heroControlButton:focus-visible { outline: 3px solid var(--public-focus); outline-offset: 2px; }
-.heroDot { display: block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .55; }
-.heroControlButton[aria-pressed='true'] .heroDot { width: 18px; border-radius: 999px; opacity: 1; }
+.heroDot { display: block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .45; transition: opacity 160ms ease, transform 160ms ease; }
+.heroControlButton[aria-pressed='true'] .heroDot { opacity: .9; transform: scale(1.25); }
 .heroMetadata { display: grid; min-width: 0; max-width: 30ch; }
 .heroMetadataLayer { grid-area: 1 / 1; transition: opacity 600ms ease; }
 .heroMetadataVisible { opacity: 1; }

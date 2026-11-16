@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Container, Title } from '@mantine/core';
-import { IconArrowRight, IconChevronLeft, IconChevronRight, IconCube, IconHeadphones, IconPlayerPause, IconPlayerPlay } from '@tabler/icons-react';
+import { IconArrowRight, IconCube, IconHeadphones } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { usePublicLocale } from '@/core/i18n/public-locale';
 import { useHomeHeroSlides } from '@/hooks/useHomeHeroSlides';
@@ -18,9 +18,7 @@ export function HomePage() {
     .sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)) : [];
   const heroSlides = useHomeHeroSlides({ rooms, room, selectedRoom });
   const [activeSlideKey, setActiveSlideKey] = useState<string | null>(null);
-  const [autoplayPaused, setAutoplayPaused] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const [reducedMotionOverride, setReducedMotionOverride] = useState(false);
   const [documentVisible, setDocumentVisible] = useState(() => !document.hidden);
   const [heroVisible, setHeroVisible] = useState(true);
   const [hovered, setHovered] = useState(false);
@@ -57,14 +55,14 @@ export function HomePage() {
     activeSlideKeyRef.current = key;
     setActiveSlideKey(key);
   };
-  const selectSlideRef = useRef(selectSlide);
-  selectSlideRef.current = selectSlide;
   const moveSlide = (direction: number) => {
     const slides = heroSlidesRef.current;
     if (!slides.length) return;
     const currentIndex = slides.findIndex((slide) => slide.key === activeSlideKeyRef.current);
     selectSlide(slides[(Math.max(0, currentIndex) + direction + slides.length) % slides.length].key);
   };
+  const selectSlideRef = useRef(selectSlide);
+  selectSlideRef.current = selectSlide;
   const finishSlideLoad = (key: string) => {
     const loaded = heroSlidesRef.current.find((slide) => slide.key === key);
     if (!loaded || activeSlideKeyRef.current !== key) return;
@@ -83,13 +81,7 @@ export function HomePage() {
 
   useEffect(() => {
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const syncMotion = () => {
-      setPrefersReducedMotion(motion.matches);
-      if (motion.matches) {
-        setAutoplayPaused(true);
-        setReducedMotionOverride(false);
-      }
-    };
+    const syncMotion = () => setPrefersReducedMotion(motion.matches);
     const syncVisibility = () => setDocumentVisible(!document.hidden);
     syncMotion();
     document.addEventListener('visibilitychange', syncVisibility);
@@ -117,8 +109,7 @@ export function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (heroSlidesRef.current.length < 2 || autoplayPaused || (prefersReducedMotion && !reducedMotionOverride)
-      || !documentVisible || !heroVisible || hovered || focused) return;
+    if (heroSlidesRef.current.length < 2 || prefersReducedMotion || !documentVisible || !heroVisible || hovered || focused) return;
     const timer = window.setTimeout(() => {
       const slides = heroSlidesRef.current;
       const currentIndex = slides.findIndex((slide) => slide.key === activeSlideKeyRef.current);
@@ -126,7 +117,7 @@ export function HomePage() {
       if (next) selectSlideRef.current(next.key, false);
     }, 6000);
     return () => window.clearTimeout(timer);
-  }, [activeSlideKey, autoplayPaused, documentVisible, focused, heroVisible, hovered, prefersReducedMotion, reducedMotionOverride, slideKeys]);
+  }, [activeSlideKey, documentVisible, focused, heroVisible, hovered, prefersReducedMotion, slideKeys]);
 
   useEffect(() => {
     if (!nextSlideImageUrl || outgoingSlide) return;
@@ -143,11 +134,6 @@ export function HomePage() {
   useEffect(() => () => {
     if (transitionTimerRef.current !== null) window.clearTimeout(transitionTimerRef.current);
   }, []);
-
-  const toggleAutoplay = () => {
-    setAutoplayPaused(!autoplayPaused);
-    if (prefersReducedMotion) setReducedMotionOverride(autoplayPaused);
-  };
 
   return (
     <div className={classes.page}>
@@ -210,10 +196,6 @@ export function HomePage() {
                 </div>
                 {heroSlides.length > 1 && <div className={classes.heroControls} role="group"
                   aria-label={t('ui.home.hero.carousel.controls', 'Điều khiển hiện vật nổi bật')}>
-                  <button type="button" className={classes.heroControlButton}
-                    aria-label={t('ui.home.hero.carousel.previous', 'Hiện vật trước')} onClick={() => moveSlide(-1)}>
-                    <IconChevronLeft aria-hidden="true" size={20} />
-                  </button>
                   {heroSlides.map((slide, index) => (
                     <button key={slide.key} type="button" className={classes.heroControlButton}
                       aria-label={t('ui.home.hero.carousel.go-to-slide', 'Đến hiện vật {index}', { index: index + 1 })}
@@ -222,17 +204,6 @@ export function HomePage() {
                       <span className={classes.heroDot} aria-hidden="true" />
                     </button>
                   ))}
-                  <button type="button" className={classes.heroControlButton}
-                    aria-label={t('ui.home.hero.carousel.next', 'Hiện vật tiếp theo')} onClick={() => moveSlide(1)}>
-                    <IconChevronRight aria-hidden="true" size={20} />
-                  </button>
-                  <button type="button" className={classes.heroControlButton}
-                    aria-label={t(autoplayPaused ? 'ui.home.hero.carousel.resume' : 'ui.home.hero.carousel.pause', autoplayPaused ? 'Tiếp tục tự chuyển' : 'Tạm dừng tự chuyển')}
-                    aria-pressed={autoplayPaused} onClick={toggleAutoplay}>
-                    {autoplayPaused
-                      ? <IconPlayerPlay aria-hidden="true" size={18} />
-                      : <IconPlayerPause aria-hidden="true" size={18} />}
-                  </button>
                 </div>}
               </>
             ) : (

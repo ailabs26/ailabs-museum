@@ -100,13 +100,13 @@ test('failed hero image falls back without hiding exhibit metadata or the detail
   await expect(hero.getByRole('link', { name: `Xem chi tiết ${item.name}` })).toBeVisible();
 });
 
-test('hero controls wrap, select a slide, and keep the poster, metadata, and link together', async ({ page }) => {
+test('hero dots select a slide and keep the poster, metadata, and link together', async ({ page }) => {
   const items = await installHeroSlides(page, 'Hero');
 
   await page.goto('/');
   const hero = page.locator('section[aria-labelledby="home-title"]');
-  const next = hero.getByRole('button', { name: 'Hiện vật tiếp theo' });
-  const previous = hero.getByRole('button', { name: 'Hiện vật trước' });
+  const controls = hero.getByRole('group', { name: 'Điều khiển hiện vật nổi bật' });
+  const dots = controls.getByRole('button', { name: /^Đến hiện vật/ });
   const expectActive = async (index: number) => {
     await expect(hero.getByRole('img', { name: `Alt ${index}` })).toBeVisible();
     await expect(hero.getByRole('heading', { level: 2, name: `Hero exhibit ${index}` })).toBeVisible();
@@ -115,16 +115,15 @@ test('hero controls wrap, select a slide, and keep the poster, metadata, and lin
   };
 
   await expectActive(1);
-  await next.focus();
+  await expect(dots).toHaveCount(3);
+  await expect(hero.getByRole('button', { name: /Hiện vật trước|Hiện vật tiếp theo|Tạm dừng tự chuyển|Tiếp tục tự chuyển/ })).toHaveCount(0);
+  await dots.nth(1).focus();
   await page.keyboard.press('Enter');
   await expectActive(2);
+  await dots.nth(2).focus();
   await page.keyboard.press('Space');
   await expectActive(3);
-  await next.click();
-  await expectActive(1);
-  await previous.click();
-  await expectActive(3);
-  const firstDot = hero.getByRole('button', { name: 'Đến hiện vật 1' });
+  const firstDot = dots.nth(0);
   await firstDot.click();
   await expect(firstDot).toHaveAttribute('aria-pressed', 'true');
   await expectActive(1);
@@ -133,84 +132,28 @@ test('hero controls wrap, select a slide, and keep the poster, metadata, and lin
   expect(height).toBeGreaterThanOrEqual(44);
 });
 
-test('hero focus indicators have at least 3:1 contrast against the dark hero surface in both themes', async ({ page }) => {
-  await installHeroSlides(page, 'Focus contrast');
-  await page.goto('/');
-  const hero = page.locator('section[aria-labelledby="home-title"]');
-  const focusColors = () => hero.evaluate((element) => ({
-    outline: getComputedStyle(element).getPropertyValue('--public-focus').trim(),
-    surface: getComputedStyle(element).getPropertyValue('--public-charcoal').trim(),
-  }));
-  let colors = await focusColors();
-  expect(contrastRatio(colors.outline, colors.surface)).toBeGreaterThanOrEqual(3);
-
-  await page.locator('html').evaluate((element) => element.setAttribute('data-mantine-color-scheme', 'dark'));
-  colors = await focusColors();
-  expect(contrastRatio(colors.outline, colors.surface)).toBeGreaterThanOrEqual(3);
-});
-
-test('autoplay advances every six seconds, resets after manual navigation, and stays paused until resumed', async ({ page }) => {
+test('autoplay advances every six seconds without announcing the automatic change', async ({ page }) => {
   await page.clock.install();
   await installHeroSlides(page, 'Timed');
-  await page.setViewportSize({ width: 1440, height: 900 });
-
   await page.goto('/');
   const hero = page.locator('section[aria-labelledby="home-title"]');
-  const controls = hero.getByRole('group', { name: 'Điều khiển hiện vật nổi bật' });
-  await expect(controls).toBeVisible();
-  await page.clock.pauseAt(new Date(Date.now() + 60000));
-  const activeDot = controls.locator('button[aria-pressed="true"]');
-  const activeLabel = await activeDot.getAttribute('aria-label');
-  let currentIndex = Number(activeLabel?.match(/\d+/)?.[0]);
-  expect(currentIndex).toBeGreaterThanOrEqual(1);
-  const expectActive = (index: number) => expect(hero.getByRole('heading', { level: 2, name: `Timed exhibit ${index}` })).toBeVisible();
-  const leaveHero = async () => {
-    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-    await page.mouse.move(1, 899);
-  };
-  await expectActive(currentIndex);
-  await page.clock.fastForward(5999);
-  await expectActive(currentIndex);
-  await page.clock.fastForward(1);
-  currentIndex = currentIndex % 3 + 1;
-  await expectActive(currentIndex);
-
-  await expect(hero.locator('[aria-live="polite"]')).toBeEmpty();
-
-  await hero.getByRole('button', { name: 'Hiện vật tiếp theo' }).click();
-  currentIndex = currentIndex % 3 + 1;
-  await expectActive(currentIndex);
-  await leaveHero();
-  await page.clock.fastForward(5999);
-  await expectActive(currentIndex);
-  await page.clock.fastForward(1);
-  currentIndex = currentIndex % 3 + 1;
-  await expectActive(currentIndex);
-
-  await hero.getByRole('button', { name: 'Tạm dừng tự chuyển' }).click();
-  await leaveHero();
-  await page.clock.fastForward(12000);
-  await expectActive(currentIndex);
-  await hero.getByRole('button', { name: 'Tiếp tục tự chuyển' }).click();
-  await leaveHero();
+  await expect(hero.getByRole('heading', { level: 2, name: 'Timed exhibit 1' })).toBeVisible();
   await page.clock.fastForward(6000);
-  currentIndex = currentIndex % 3 + 1;
-  await expectActive(currentIndex);
+  await expect(hero.getByRole('heading', { level: 2, name: 'Timed exhibit 2' })).toBeVisible();
+  await expect(hero.locator('[aria-live="polite"]')).toBeEmpty();
 });
 
-test('autoplay pauses on hover, focus, hidden tab, and offscreen hero', async ({ page }) => {
+test('autoplay pauses on hover, focus, a hidden tab, and an offscreen hero', async ({ page }) => {
   await page.clock.install();
   await installHeroSlides(page, 'Lifecycle');
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   const hero = page.locator('section[aria-labelledby="home-title"]');
   const controls = hero.getByRole('group', { name: 'Điều khiển hiện vật nổi bật' });
-  await expect(controls).toBeVisible();
-  await page.clock.pauseAt(new Date(Date.now() + 60000));
-  const activeDot = controls.locator('button[aria-pressed="true"]');
-  const activeLabel = await activeDot.getAttribute('aria-label');
-  let currentIndex = Number(activeLabel?.match(/\d+/)?.[0]);
+  const dots = controls.getByRole('button', { name: /^Đến hiện vật/ });
+  await expect(dots).toHaveCount(3);
   const expectActive = (index: number) => expect(hero.getByRole('heading', { level: 2, name: `Lifecycle exhibit ${index}` })).toBeVisible();
+  let currentIndex = 1;
   const leaveHero = async () => {
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.mouse.move(1, 899);
@@ -224,7 +167,7 @@ test('autoplay pauses on hover, focus, hidden tab, and offscreen hero', async ({
   currentIndex = currentIndex % 3 + 1;
   await expectActive(currentIndex);
 
-  await controls.getByRole('button', { name: 'Hiện vật tiếp theo' }).focus();
+  await dots.nth(currentIndex - 1).focus();
   await page.clock.fastForward(12000);
   await expectActive(currentIndex);
   await leaveHero();
@@ -264,7 +207,7 @@ test('autoplay pauses on hover, focus, hidden tab, and offscreen hero', async ({
   await expectActive(currentIndex);
 });
 
-test('reduced motion disables autoplay by default but Resume remains an explicit opt-in', async ({ page }) => {
+test('reduced motion disables autoplay while dots remain usable', async ({ page }) => {
   await page.clock.install();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await installHeroSlides(page, 'Reduced');
@@ -272,20 +215,29 @@ test('reduced motion disables autoplay by default but Resume remains an explicit
   await page.goto('/');
   const hero = page.locator('section[aria-labelledby="home-title"]');
   const controls = hero.getByRole('group', { name: 'Điều khiển hiện vật nổi bật' });
-  const resume = controls.getByRole('button', { name: 'Tiếp tục tự chuyển' });
-  await expect(resume).toHaveAttribute('aria-pressed', 'true');
+  const dots = controls.getByRole('button', { name: /^Đến hiện vật/ });
+  await expect(dots).toHaveCount(3);
   await page.clock.pauseAt(new Date(Date.now() + 60000));
-  const activeDot = controls.locator('button[aria-pressed="true"][aria-label^="Đến hiện vật"]');
-  const currentLabel = await activeDot.getAttribute('aria-label');
-  const currentIndex = Number(currentLabel?.match(/\d+/)?.[0]);
   await page.clock.fastForward(12000);
-  await expect(hero.getByRole('heading', { level: 2, name: `Reduced exhibit ${currentIndex}` })).toBeVisible();
+  await expect(hero.getByRole('heading', { level: 2, name: 'Reduced exhibit 1' })).toBeVisible();
+  await dots.nth(1).click();
+  await expect(hero.getByRole('heading', { level: 2, name: 'Reduced exhibit 2' })).toBeVisible();
+});
 
-  await resume.click();
-  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-  await page.mouse.move(1, 899);
-  await page.clock.fastForward(6000);
-  await expect(hero.getByRole('heading', { level: 2, name: `Reduced exhibit ${currentIndex % 3 + 1}` })).toBeVisible();
+test('hero focus indicators have at least 3:1 contrast against the dark hero surface in both themes', async ({ page }) => {
+  await installHeroSlides(page, 'Focus contrast');
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  const focusColors = () => hero.evaluate((element) => ({
+    outline: getComputedStyle(element).getPropertyValue('--public-focus').trim(),
+    surface: getComputedStyle(element).getPropertyValue('--public-charcoal').trim(),
+  }));
+  let colors = await focusColors();
+  expect(contrastRatio(colors.outline, colors.surface)).toBeGreaterThanOrEqual(3);
+
+  await page.locator('html').evaluate((element) => element.setAttribute('data-mantine-color-scheme', 'dark'));
+  colors = await focusColors();
+  expect(contrastRatio(colors.outline, colors.surface)).toBeGreaterThanOrEqual(3);
 });
 
 test('hero eagerly loads the first poster and preloads only the next poster', async ({ page }) => {
@@ -337,7 +289,7 @@ test('hero keeps the current poster and metadata visible until the next poster l
   const hero = page.locator('section[aria-labelledby="home-title"]');
   await expect(hero.getByRole('heading', { level: 2, name: 'Delayed exhibit 1' })).toBeVisible();
   await expect.poll(() => hero.getByRole('img', { name: 'Alt 1' }).evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
-  await hero.getByRole('button', { name: 'Hiện vật tiếp theo' }).click();
+  await hero.getByRole('button', { name: 'Đến hiện vật 2' }).click();
   const incomingPoster = hero.locator('img[alt="Alt 2"]');
   await expect(incomingPoster).toBeAttached();
   await expect(hero.getByRole('heading', { level: 2, name: 'Delayed exhibit 1' })).toBeVisible();
@@ -361,7 +313,7 @@ test('broken carousel poster falls back without losing its matching metadata or 
   const hero = page.locator('section[aria-labelledby="home-title"]');
   await expect.poll(() => hero.getByRole('img', { name: 'Alt 1' }).evaluate((image: HTMLImageElement) => image.naturalWidth))
     .toBeGreaterThan(0);
-  await hero.getByRole('button', { name: 'Hiện vật tiếp theo' }).click();
+  await hero.getByRole('button', { name: 'Đến hiện vật 2' }).click();
   await expect(hero.getByText('Hình minh họa thay thế')).toBeVisible();
   await expect(hero.getByRole('heading', { level: 2, name: 'Broken exhibit 2' })).toBeVisible();
   await expect(hero.locator(`a[href="/collection/${roomA.slug}/exhibits/${roomA.exhibits[1].id}"]`)).toBeVisible();
@@ -386,9 +338,8 @@ test('reduced motion disables the crossfade and rapid navigation keeps the lates
   const hero = page.locator('section[aria-labelledby="home-title"]');
   await expect.poll(() => hero.getByRole('img', { name: 'Alt 1' }).evaluate((image: HTMLImageElement) => image.naturalWidth))
     .toBeGreaterThan(0);
-  const next = hero.getByRole('button', { name: 'Hiện vật tiếp theo' });
-  await next.click();
-  await next.click();
+  await hero.getByRole('button', { name: 'Đến hiện vật 2' }).click();
+  await hero.getByRole('button', { name: 'Đến hiện vật 3' }).click();
   await release.resolve();
   await expect(hero.getByRole('heading', { level: 2, name: 'Rapid exhibit 3' })).toBeVisible();
   await expect(hero.locator(`a[href="/collection/${roomA.slug}/exhibits/${roomA.exhibits[2].id}"]`)).toBeVisible();
@@ -415,6 +366,7 @@ test('hero swipe changes slides horizontally without blocking vertical gestures'
 test('hero controls and stage fit the supported desktop, tablet, and phone widths', async ({ page }) => {
   await installHeroSlides(page, 'Responsive', 5);
   await page.goto('/');
+  await expect(page.locator('section[aria-labelledby="home-title"] [class*="heroControls"] button')).toHaveCount(5);
   const widths = [320, 390, 768, 1024, 1280, 1440];
   for (const width of widths) {
     await page.setViewportSize({ width, height: 900 });
@@ -439,7 +391,7 @@ test('hero controls and stage fit the supported desktop, tablet, and phone width
     expect(geometry.scrollWidth).toBeLessThanOrEqual(width);
     expect(geometry.stage.left).toBeGreaterThanOrEqual(0);
     expect(geometry.stage.right).toBeLessThanOrEqual(width);
-    expect(geometry.controls).toHaveLength(8);
+    expect(geometry.controls).toHaveLength(5);
     expect(geometry.controls.every((button) => button.width >= 44 && button.height >= 44
       && button.left >= 0 && button.right <= width && button.top >= geometry.stage.top
       && button.bottom <= geometry.stage.bottom)).toBe(true);
@@ -719,7 +671,7 @@ test('hero clears its autoplay timer when navigating away', async ({ page }) => 
   await installHeroSlides(page, 'Unmount');
   await page.goto('/');
   const hero = page.locator('section[aria-labelledby="home-title"]');
-  await expect(hero.getByRole('button', { name: 'Hiện vật tiếp theo' })).toBeVisible();
+  await expect(hero.getByRole('button', { name: 'Đến hiện vật 1' })).toBeVisible();
   await expect.poll(() => page.evaluate(() => (window as Window & { __heroTimers: Set<number> }).__heroTimers.size)).toBe(1);
 
   await hero.getByRole('link', { name: /danh mục bộ sưu tập/i }).click();
