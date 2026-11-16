@@ -105,12 +105,14 @@
 **Files:** `HomePage.tsx`, `HomeHeroMedia.tsx` (nếu tách), CSS và focused tests.
 **Consumes:** danh sách đã sort của room đầu + `ExhibitImage`, `localizedAltText`. **Produces:** ảnh/tên/link cùng exhibit thật hoặc neutral fallback.
 
-- [ ] **Bước 1 — Test RED:** đảo thứ tự fixture, chèn 0/1/n exhibits, case item đầu không ảnh nhưng item sau có ảnh, tất cả không ảnh, room rỗng. Test `heroExhibit` chọn **first with valid image** từ room đầu; không tìm room thứ hai.
-- [ ] **Bước 2 — Data binding:** chọn từ mảng sorted validated; `localizeExhibit`/`localizedAltText` cho title và image alt; media `ExhibitImage`; link chi tiết encode roomSlug/id. **Tên, ảnh, đường dẫn phải từ cùng exhibit**. Thiếu ảnh room -> neutral branding, không fake artifact caption/link.
-- [ ] **Bước 3 — Error/refresh:** HTTP image lỗi → placeholder có nhãn; exhibit đã chọn vẫn có link vì metadata thật. Query list/detail error hoặc stale invalid -> không để hero show dữ liệu cũ, hero branding tĩnh + featured alert hiện hành.
-- [ ] **Bước 4 — Test GREEN:** network cases, locale/name/alt, semantic link/keyboard; run focused suites, commit riêng.
+- [x] **Bước 1 — Test RED:** đảo thứ tự fixture, chèn 0/1/n exhibits, case item đầu không ảnh nhưng item sau có ảnh, tất cả không ảnh, room rỗng. Test `heroExhibit` chọn **first with valid image** từ room đầu; không tìm room thứ hai. Tie `displayOrder` được quyết định bằng ID.
+- [x] **Bước 2 — Data binding:** chọn từ mảng sorted validated; `localizeExhibit`/`localizedAltText` cho title và image alt; media `ExhibitImage`; link chi tiết encode roomSlug/id. **Tên, ảnh, đường dẫn phải từ cùng exhibit**. Thiếu ảnh room -> neutral branding, không fake artifact caption/link.
+- [x] **Bước 3 — Error/refresh:** HTTP image lỗi → placeholder có nhãn; exhibit đã chọn vẫn có link vì metadata thật. Query list/detail error hoặc stale invalid -> không để hero show dữ liệu cũ, hero branding tĩnh + featured alert hiện hành.
+- [x] **Bước 4 — Test GREEN:** focused Playwright 22/22, typecheck/lint/build pass; poster và neutral screenshots được chụp và kiểm tra. Commit riêng.
 
 **Commit dự kiến:** `feat(home): display published exhibit poster in hero`.
+
+**HR-04 evidence:** Commit `4abcba5`. Bộ 22 tests gồm `homepage-redesign` (6), `home-featured` (7), `public-image-audio` (7), `shared-exhibit-media` (2); bao gồm localized name/alt, tie-break, ảnh lỗi, API/refetch error và không giữ poster stale. `npm.cmd run typecheck`, `lint`, `build` pass; build giữ chunk warnings hiện có (main 1,124.02 KB). Screenshots ignored: `hr04-hero-poster.png`, `hr04-hero-neutral.png`; ảnh poster dùng fixture kiểm thử, không phải ảnh sản phẩm/CMS thật. Visual sign-off cuối vẫn theo HR-12.
 
 ## HR-05: Tải ảnh hero có ưu tiên, media fallback
 

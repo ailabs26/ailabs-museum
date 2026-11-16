@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-REDESIGN: Public Homepage Editorial Redesign
 
-**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-03 hoàn tất, HR-04 tiếp theo.
+**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-04 hoàn tất, HR-05 tiếp theo.
 **Nguồn code khảo sát:** `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841` tại 15/11/2026; xác minh lại khi thực thi.
 **Nhánh hiện tại:** `feat/public-homepage-redesign` từ `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841`; PR base `dev`.
 **Plan:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md).
@@ -74,10 +74,10 @@ Thiết kế lại **Homepage `/`** theo phong cách *Contemporary Heritage Edit
 
 ### HR-04 — Poster từ CMS
 
-- [ ] Test room đầu 0/1/n exhibit, thứ tự đảo và tie ID; chọn first valid `image` trong room đầu, không quét phòng khác.
-- [ ] Hero hiển thị đúng ảnh, localized name/alt và encoded detail route **cùng exhibit**; khi không có ảnh dùng neutral art, không fake caption.
-- [ ] Image 404/corrupt giữ fallback; error/refetch stale không lộ poster cũ; CTA chung vẫn dùng được.
-- [ ] Focused tests và screenshot hero poster/neutral, commit riêng.
+- [x] Test room đầu 0/1/n exhibit, thứ tự đảo và tie ID; chọn first valid `image` trong room đầu, không quét phòng khác.
+- [x] Hero hiển thị đúng ảnh, localized name/alt và encoded detail route **cùng exhibit**; khi không có ảnh dùng neutral art, không fake caption.
+- [x] Image 404/corrupt giữ fallback; error/refetch stale không lộ poster cũ; CTA chung vẫn dùng được.
+- [x] Focused tests và screenshot hero poster/neutral, commit riêng.
 
 ### HR-05 — Hero image priority
 
@@ -164,7 +164,7 @@ Sử dụng các tập test tồn tại thực tế; `homepage-redesign.spec.ts`
 | HR-01 | base 95c2bbe; branch feat/public-homepage-redesign | typecheck/lint/build; unit 408/408; Playwright 61/61 | baseline screenshots 390/1440 light/dark in ignored .superpowers/sdd/homepage-redesign-plan/ | Complete |
 | HR-02 | 0e1fa8e | home-featured Playwright 7/7; typecheck/lint pass | one list + one room detail request; no other-room fetch | Complete |
 | HR-03 | 06a44b9, b2225e0 | homepage-redesign 3/3; public-ui-translations 13/13; typecheck/lint/build pass | light/dark hero screenshots inspected; visual sign-off deferred to HR-12. Existing seed test failure: missing `ui.guided2d.progress` on origin/dev. | Complete |
-| HR-04 | — | Chưa chạy | — | TODO |
+| HR-04 | 4abcba5 | focused Playwright 22/22; typecheck/lint/build pass | poster/neutral screenshots inspected; fixture illustration only, CMS poster sign-off deferred to HR-12 | Complete |
 | HR-05 | — | Chưa chạy | — | TODO |
 | HR-06 | — | Chưa chạy | — | TODO |
 | HR-07 | — | Chưa chạy | — | TODO |
