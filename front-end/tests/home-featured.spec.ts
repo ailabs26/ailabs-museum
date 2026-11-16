@@ -140,3 +140,16 @@ test('featured long content fits mobile and desktop in light and dark', async ({
     }
   }
 });
+
+test('featured section leads with an editorial introduction and adapts the shared grid', async ({ page }) => {
+  await installMuseumApi(page);
+  for (const [width, columns] of [[390, 1], [768, 2], [1440, 3]] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const featured = page.getByRole('region', { name: 'Hiện vật nổi bật' });
+    await expect(featured.locator('h2 + p')).toHaveText('Một số hiện vật theo thứ tự trưng bày');
+    const columnCount = await featured.getByRole('list').evaluate((list) =>
+      getComputedStyle(list).gridTemplateColumns.split(' ').length);
+    expect(columnCount).toBe(columns);
+  }
+});

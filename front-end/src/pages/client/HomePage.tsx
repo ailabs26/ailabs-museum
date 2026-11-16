@@ -108,13 +108,18 @@ export function HomePage() {
             </article>
           </div>
         </section>
-
-        <section className={classes.featured} aria-labelledby="featured-title">
-          <p className={classes.eyebrow}>{t('ui.home.featured.eyebrow', 'Từ bộ sưu tập')}</p>
-          <Title order={2} id="featured-title" className={classes.sectionTitle}>{t('ui.home.featured.title', 'Hiện vật nổi bật')}</Title>
-          <HomeFeaturedExhibits rooms={rooms} room={room} detail={detail} exhibits={featured} />
-        </section>
       </Container>
+
+      <section className={classes.featured} aria-labelledby="featured-title">
+        <Container size="xl">
+          <div className={classes.featuredHeader}>
+            <p className={classes.eyebrow}>{t('ui.home.featured.eyebrow', 'Từ bộ sưu tập')}</p>
+            <Title order={2} id="featured-title" className={classes.sectionTitle}>{t('ui.home.featured.title', 'Hiện vật nổi bật')}</Title>
+            <p className={classes.featuredIntro}>{t('ui.home.featured.description', 'Một số hiện vật theo thứ tự trưng bày')}</p>
+          </div>
+          <HomeFeaturedExhibits rooms={rooms} room={room} detail={detail} exhibits={featured} />
+        </Container>
+      </section>
     </div>
   );
 }

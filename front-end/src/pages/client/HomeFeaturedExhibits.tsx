@@ -40,7 +40,6 @@ export function HomeFeaturedExhibits({ rooms, room, detail, exhibits }: HomeFeat
     <div className={classes.featuredContent}>
       <p className={classes.featuredRoom}>{detail.name}</p>
       {featured.length > 0 ? <>
-        <p className={classes.featuredDescription}>{t('ui.home.featured.description', 'Một số hiện vật theo thứ tự trưng bày')}</p>
         <ExhibitGrid exhibits={featured} roomSlug={detail.slug} />
       </> : <p role="status">{t('ui.rooms.no-exhibits', 'Phòng này chưa có hiện vật được xuất bản.')}</p>}
       <Link to={`/collection?${new URLSearchParams({ room: detail.slug })}`} className={classes.textLink}>
