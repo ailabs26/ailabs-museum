@@ -119,11 +119,13 @@
 **Files:** `ExhibitImage.tsx` (nếu cần), `HomeHeroMedia.tsx`, media tests.
 **Consumes:** API media absolute URL và fallback component. **Produces:** ảnh above-the-fold được tải sớm, card bên dưới vẫn lazy.
 
-- [ ] **Bước 1 — Test behavior:** xác nhận ảnh hero có thuộc tính priority phù hợp (`loading="eager"`, `fetchPriority` nếu được React/TS hỗ trợ), featured/card khác vẫn `loading="lazy"`; `referrerPolicy` và fallback giữ nguyên. Không tự dựng media URL.
-- [ ] **Bước 2 — API tối thiểu:** thêm prop optional cho `ExhibitImage`, default lazy, không fork code error/fallback; ưu tiên ảnh thật có metadata, không preload tệp GLB. Không hardcode kích thước ảnh chưa có; giữ container ratio để hạn chế CLS.
-- [ ] **Bước 3 — Test:** media healthy/404/corrupt/src changed, ảnh trong suốt/portrait không crop, keyboard, no model/audio. Commit riêng cùng focused tests.
+- [x] **Bước 1 — Test behavior:** xác nhận ảnh hero có thuộc tính priority phù hợp (`loading="eager"`, `fetchPriority` nếu được React/TS hỗ trợ), featured/card khác vẫn `loading="lazy"`; `referrerPolicy` và fallback giữ nguyên. Không tự dựng media URL.
+- [x] **Bước 2 — API tối thiểu:** thêm prop optional cho `ExhibitImage`, default lazy, không fork code error/fallback; ưu tiên ảnh thật có metadata, không preload tệp GLB. Không hardcode kích thước ảnh chưa có; giữ container ratio để hạn chế CLS.
+- [x] **Bước 3 — Test:** media healthy/404/corrupt/src changed, ảnh trong suốt/portrait không crop, keyboard, no model/audio. Commit riêng cùng focused tests.
 
 **Commit dự kiến:** `perf(home): prioritize hero poster without changing card loading`.
+
+**HR-05 evidence:** Commits `a7d3489` (optional `ExhibitImage.loading`, hero eager) và `2706a52` (poster portrait/transparent regression). Homepage poster kiểm `loading="eager"`, featured/shared cards kiểm `loading="lazy"`; SVG portrait có vùng trong suốt hiển thị `object-fit: contain`, không phát model/audio request. Bộ focused Playwright 22/22, typecheck/lint/build pass. Build giữ warning chunk trên 500 KB (main 1,124.05 KB).
 
 ## HR-06: Featured section theo bố cục editorial
 

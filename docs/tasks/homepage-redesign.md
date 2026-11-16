@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-REDESIGN: Public Homepage Editorial Redesign
 
-**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-04 hoàn tất, HR-05 tiếp theo.
+**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-05 hoàn tất, HR-06 tiếp theo.
 **Nguồn code khảo sát:** `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841` tại 15/11/2026; xác minh lại khi thực thi.
 **Nhánh hiện tại:** `feat/public-homepage-redesign` từ `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841`; PR base `dev`.
 **Plan:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md).
@@ -81,9 +81,9 @@ Thiết kế lại **Homepage `/`** theo phong cách *Contemporary Heritage Edit
 
 ### HR-05 — Hero image priority
 
-- [ ] Viết test poster above-the-fold `loading=eager` (hoặc tương đương); card dưới fold vẫn lazy.
-- [ ] Nếu cần thêm prop optional cho `ExhibitImage` với mặc định lazy; giữ fallback, media API URL/referrerPolicy.
-- [ ] Kiểm ảnh ngang/dọc/trong suốt, no audio/GLB, load fail/source đổi; commit `perf` kèm test.
+- [x] Viết test poster above-the-fold `loading=eager` (hoặc tương đương); card dưới fold vẫn lazy.
+- [x] Nếu cần thêm prop optional cho `ExhibitImage` với mặc định lazy; giữ fallback, media API URL/referrerPolicy.
+- [x] Kiểm ảnh ngang/dọc/trong suốt, no audio/GLB, load fail/source đổi; commit `perf` kèm test.
 
 ### HR-06 — Featured editorial
 
@@ -165,7 +165,7 @@ Sử dụng các tập test tồn tại thực tế; `homepage-redesign.spec.ts`
 | HR-02 | 0e1fa8e | home-featured Playwright 7/7; typecheck/lint pass | one list + one room detail request; no other-room fetch | Complete |
 | HR-03 | 06a44b9, b2225e0 | homepage-redesign 3/3; public-ui-translations 13/13; typecheck/lint/build pass | light/dark hero screenshots inspected; visual sign-off deferred to HR-12. Existing seed test failure: missing `ui.guided2d.progress` on origin/dev. | Complete |
 | HR-04 | 4abcba5 | focused Playwright 22/22; typecheck/lint/build pass | poster/neutral screenshots inspected; fixture illustration only, CMS poster sign-off deferred to HR-12 | Complete |
-| HR-05 | — | Chưa chạy | — | TODO |
+| HR-05 | a7d3489, 2706a52 | focused Playwright 22/22; typecheck/lint/build pass | hero eager, featured/card lazy; portrait transparent SVG remains contained; no model/audio requests | Complete |
 | HR-06 | — | Chưa chạy | — | TODO |
 | HR-07 | — | Chưa chạy | — | TODO |
 | HR-08 | — | Chưa chạy | — | TODO |
