@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-HERO-CAROUSEL: Nâng cấp Hero Editorial Carousel
 
-**Trạng thái:** IN PROGRESS — HC-01 through HC-10 complete; HC-11 code/regression gates complete, manual contrast/screen-reader and real CMS media review remain.
+**Trạng thái:** IN PROGRESS — HC-01 through HC-10 complete; HC-11 code and automated QA complete, real screen-reader, CMS media and reference-image review remain.
 **Nhánh triển khai:** `feat/public-homepage-redesign` — **tiếp tục trên nhánh Homepage hiện tại, không tạo nhánh mới**.
 **Plan:** [homepage-hero-carousel-plan.md](../plans/homepage-hero-carousel-plan.md).
 **Kế hoạch gốc:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md), [homepage-redesign.md](./homepage-redesign.md).
@@ -113,7 +113,8 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 - [x] `vi/en/fr/zh/ko/ja`; UI labels được dịch qua `t`; alt, tên, mô tả dùng helper localization hiện có.
 - [x] Carousel accessible region/name; poster không active bị ẩn khỏi accessibility tree; controls có labels/state; manual change announced polite, autoplay không spam.
 - [x] Keyboard/buttons, focus pause, reduced-motion default và crossfade states có Playwright coverage.
-- [ ] Đo contrast và screen reader thật còn cần manual check.
+- [x] Contrast audit: body text minimum `14.45:1` light / `14.08:1` dark; bronze text minimum `4.84:1` / `6.29:1`; primary CTA `5.23:1` / `6.98:1`; focus ring minimum `8.17:1` after the hero-local focus color fix. Playwright checks the focus token in both themes.
+- [ ] Kiểm bằng screen reader thật còn cần manual check.
 - [x] UI keys carousel đã thêm vào seed và locale regression; `36/36` Playwright pass.
 
 ### HC-10 — Regression & network
@@ -127,7 +128,8 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 
 - [x] `typecheck`, `lint`, `test:unit` 416/416, `build`, focused Playwright 46/46 và regression 12 spec 96/96; build còn warning bundle >500 kB.
 - [x] Tạo và xem đủ 20 ảnh 0/1/3 poster × light/dark × viewport 320/390/768/1024/1280/1440 tại `.superpowers/sdd/homepage-hero-carousel/hc11-visual-review/`; user đã duyệt giao diện. Fixture poster không đại diện ảnh CMS.
-- [ ] Đối chiếu trực tiếp ảnh reference (file gốc không có trong checkout), xác minh media CMS thật, đo contrast và kiểm screen reader thật.
+- [x] Đo contrast theo WCAG với màu token và endpoint sáng nhất của gradient: body text tối thiểu `14.45:1` light / `14.08:1` dark; bronze text tối thiểu `4.84:1` / `6.29:1`; primary CTA `5.23:1` / `6.98:1`; focus ring tối thiểu `8.17:1` sau khi sửa màu focus riêng cho Hero. Playwright regression kiểm tra focus contrast cả hai theme.
+- [ ] Đối chiếu ảnh reference (file gốc không có trong checkout), xác minh media CMS thật và kiểm screen reader thật.
 - [x] Review `git diff origin/dev...HEAD`, commit log, changed paths và whitespace; thay đổi nằm trong homepage hero, test, locale seed và docs; không artifacts/secret. Staged diff và whitespace đã được kiểm.
 - [x] Ghi test/screenshots, commit liên quan và giới hạn QA bên dưới. Branch local-only; chưa push/PR/merge.
 - [ ] Xác nhận số và chất lượng poster từ CMS thật sau khi media được gắn/xuất bản.
@@ -170,9 +172,9 @@ Mỗi slice: test mục tiêu → `git status --short` → `git diff --check` �
 | HC-06 | `47a8b6c` | Home 28/28; lifecycle 4/4; typecheck/lint pass | — | DONE |
 | HC-07 | `ed84016` | Home regression 32/32; typecheck/lint pass | — | DONE |
 | HC-08 | `fb92432` | Home regression 34/34; responsive/swipe target pass | 20-screen matrix in HC-11 | DONE |
-| HC-09 | `124df7b` | Carousel + localization 36/36; typecheck/lint/unit/build pass | Contrast/screen reader manual còn pending | DONE |
+| HC-09 | `124df7b` | Carousel + localization 36/36; typecheck/lint/unit/build pass | Contrast audited in HC-11; real screen-reader check pending | DONE |
 | HC-10 | `9aac3d9` | Combined Playwright 46/46; later full affected-surface regression 96/96 | No visual artifact committed | DONE |
-| HC-11 | Test correction `cf65c01`; HC-11 evidence recorded in this docs commit | Required 12-spec Playwright 96/96; `typecheck`, lint, unit 416/416 and build pass | 20 screenshots reviewed and UI approved; reference/CMS image/contrast/real SR checks remain | IN PROGRESS |
+| HC-11 | Test correction `cf65c01`; contrast fix `0a9fe53` | Required 12-spec Playwright 96/96; carousel 20/20; `typecheck`, lint, unit 416/416 and build pass | 20 screenshots reviewed and UI approved; reference/CMS image/real SR checks remain | IN PROGRESS |
 
 **Không điền số test hoặc SHA giả.**
 
