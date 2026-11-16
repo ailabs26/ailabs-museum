@@ -2,6 +2,20 @@ import { expect, test, type Page } from '@playwright/test';
 import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
 import { envelope, exhibit, roomA, roomB, roomC, roomSummaries, ROOM_B_ID } from './fixtures/museumContent';
 
+function contrastRatio(first: string, second: string) {
+  const luminance = (color: string) => {
+    const channels = color.match(/^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i)?.slice(1).map((channel) => parseInt(channel, 16)) ?? [];
+    if (channels.length !== 3) throw new Error(`Unsupported computed color: ${color}`);
+    const [r, g, b] = channels.map((channel) => {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return r * 0.2126 + g * 0.7152 + b * 0.0722;
+  };
+  const a = luminance(first), b = luminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
 async function installHeroSlides(page: Page, prefix: string, count = 3) {
   await installMuseumApi(page);
   await page.route('https://media.example/**', (route) => route.fulfill({
@@ -117,6 +131,22 @@ test('hero controls wrap, select a slide, and keep the poster, metadata, and lin
   const { width, height } = await firstDot.boundingBox() ?? { width: 0, height: 0 };
   expect(width).toBeGreaterThanOrEqual(44);
   expect(height).toBeGreaterThanOrEqual(44);
+});
+
+test('hero focus indicators have at least 3:1 contrast against the dark hero surface in both themes', async ({ page }) => {
+  await installHeroSlides(page, 'Focus contrast');
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  const focusColors = () => hero.evaluate((element) => ({
+    outline: getComputedStyle(element).getPropertyValue('--public-focus').trim(),
+    surface: getComputedStyle(element).getPropertyValue('--public-charcoal').trim(),
+  }));
+  let colors = await focusColors();
+  expect(contrastRatio(colors.outline, colors.surface)).toBeGreaterThanOrEqual(3);
+
+  await page.locator('html').evaluate((element) => element.setAttribute('data-mantine-color-scheme', 'dark'));
+  colors = await focusColors();
+  expect(contrastRatio(colors.outline, colors.surface)).toBeGreaterThanOrEqual(3);
 });
 
 test('autoplay advances every six seconds, resets after manual navigation, and stays paused until resumed', async ({ page }) => {
