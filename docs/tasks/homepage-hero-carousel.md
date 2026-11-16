@@ -93,7 +93,7 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 - [x] Browser clock xác minh 6s/cycle và timer reset sau thao tác; đổi locale không làm nhân đôi timer.
 - [x] Hover/focus pause; manual pause giữ đến Resume; tab ẩn và Hero ngoài viewport dừng timer.
 - [x] Reduced motion dừng auto mặc định; người dùng có thể chọn Resume; controls thủ công vẫn dùng được.
-- [ ] Cleanup timers/observers/listeners sau unmount và route change; a11y auto announcements không spam; commit riêng.
+- [x] Cleanup timers/observers/listeners sau unmount và route change; Playwright xác minh autoplay timer được xóa khi rời trang; test autoplay xác minh live region không announce slide tự động.
 
 ### HC-07 — Transition mượt, preload và ảnh lỗi
 
@@ -169,16 +169,18 @@ Mỗi slice: test mục tiêu → `git status --short` → `git diff --check` �
 | HC-03 | `34ecaf8` | Layout regression 22/22; typecheck/lint pass | Screenshot desktop hero | DONE |
 | HC-04 | `8d00df1` | Home regression 24/24; typecheck/lint pass | Cross-locale image check | DONE |
 | HC-05 | `ca8c693` | Home 25/25; targeted 3/3; typecheck/lint pass | — | DONE |
-| HC-06 | `47a8b6c` | Home 28/28; lifecycle 4/4; typecheck/lint pass | — | DONE |
+| HC-06 | `47a8b6c`, regression `637d54e` | Hero Playwright suite 21/21; route-unmount timer cleanup and autoplay announcement covered; typecheck/lint pass | — | DONE |
 | HC-07 | `ed84016` | Home regression 32/32; typecheck/lint pass | — | DONE |
 | HC-08 | `fb92432` | Home regression 34/34; responsive/swipe target pass | 20-screen matrix in HC-11 | DONE |
 | HC-09 | `124df7b` | Carousel + localization 36/36; typecheck/lint/unit/build pass | Contrast audited in HC-11; real screen-reader check pending | DONE |
 | HC-10 | `9aac3d9` | Combined Playwright 46/46; later full affected-surface regression 96/96 | No visual artifact committed | DONE |
-| HC-11 | Test correction `cf65c01`; contrast fix `0a9fe53` | Required 12-spec Playwright 96/96; carousel 20/20; `typecheck`, lint, unit 416/416 and build pass | 20 screenshots reviewed and UI approved; reference/CMS image/real SR checks remain | IN PROGRESS |
+| HC-11 | Test correction `cf65c01`; contrast fix `0a9fe53`; route-cleanup regression `637d54e` | Required 12-spec Playwright 96/96; carousel 21/21; `typecheck`, lint, unit 416/416 and build pass | 20 screenshots reviewed and UI approved; reference/CMS image/real SR checks remain | IN PROGRESS |
 
 **Không điền số test hoặc SHA giả.**
 
 Backend `test:seed` đang có lỗi nền: thiếu khóa `ui.guided2d.progress`; caller này giống `origin/dev`, HC-09 không sửa phần đó. Nếu đã có bug/thiếu ảnh CMS, ghi blocker thực. Các mục zoom 200/400%, NVDA/VoiceOver, mobile thật, Lighthouse/CLS/LCP chỉ ghi PASS khi đã đo; không coi responsive screenshot tự động tương đương manual QA.
+
+Read-only CMS probe during HC-11 could not connect to local API `127.0.0.1:3101`; poster count/quality therefore remains unverified.
 
 ## Handoff / Git
 
