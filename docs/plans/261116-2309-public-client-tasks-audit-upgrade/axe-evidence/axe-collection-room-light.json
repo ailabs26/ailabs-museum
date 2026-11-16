@@ -1,0 +1,50 @@
+[
+  {
+    "id": "color-contrast",
+    "impact": "serious",
+    "nodes": [
+      {
+        "target": [
+          ".m_b6d8b162.mantine-Text-root[data-size=\"sm\"]:nth-child(2)"
+        ],
+        "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.32 (foreground color: #868e96, background color: #ffffff, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "target": [
+          "li:nth-child(1) > ._cardBody_9l26s_16 > ._actions_9l26s_25:nth-child(3) > .mantine-active[data-variant=\"subtle\"][data-size=\"compact-sm\"] > .m_80f1301b.mantine-Button-inner > .m_811560b9.mantine-Button-label"
+        ],
+        "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.17 (foreground color: #868e96, background color: #fff9f0, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "target": [
+          "li:nth-child(2) > ._cardBody_9l26s_16 > ._actions_9l26s_25:nth-child(3) > .mantine-active[data-variant=\"subtle\"][data-size=\"compact-sm\"] > .m_80f1301b.mantine-Button-inner > .m_811560b9.mantine-Button-label"
+        ],
+        "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.17 (foreground color: #868e96, background color: #fff9f0, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "target": [
+          "li:nth-child(3) > ._cardBody_9l26s_16 > ._actions_9l26s_25:nth-child(3) > .mantine-active[data-variant=\"subtle\"][data-size=\"compact-sm\"] > .m_80f1301b.mantine-Button-inner > .m_811560b9.mantine-Button-label"
+        ],
+        "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.17 (foreground color: #868e96, background color: #fff9f0, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "target": [
+          "li:nth-child(4) > ._cardBody_9l26s_16 > ._actions_9l26s_25:nth-child(3) > .mantine-active[data-variant=\"subtle\"][data-size=\"compact-sm\"] > .m_80f1301b.mantine-Button-inner > .m_811560b9.mantine-Button-label"
+        ],
+        "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.17 (foreground color: #868e96, background color: #fff9f0, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "target": [
+          "li:nth-child(5) > ._cardBody_9l26s_16 > ._actions_9l26s_25:nth-child(3) > .mantine-active[data-variant=\"subtle\"][data-size=\"compact-sm\"] > .m_80f1301b.mantine-Button-inner > .m_811560b9.mantine-Button-label"
+        ],
+        "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.17 (foreground color: #868e96, background color: #fff9f0, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "target": [
+          "section[aria-labelledby=\"recent-title\"] > .m_b6d8b162.mantine-Text-root"
+        ],
+        "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.32 (foreground color: #868e96, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1"
+      }
+    ]
+  }
+]
