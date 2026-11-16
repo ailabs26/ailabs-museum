@@ -10,7 +10,7 @@ import { usePublicLocale } from '@/core/i18n/public-locale';
 import { supportsWebgl } from '@/helpers/webglSupport';
 import { HomeFeaturedExhibits } from './HomeFeaturedExhibits';
 import classes from './HomePage.module.css';
-import { usePageTitle } from '@/hooks/usePageTitle';
+import { usePageTitle, useSocialMeta } from '@/hooks/usePageTitle';
 
 // Tách cảnh 3D ra chunk riêng: three.js nặng, chỉ tải khi hero thực sự dựng được WebGL.
 const HeroCanvas = lazy(() => import('@/components/home/HeroCanvas'));
@@ -18,6 +18,10 @@ const HeroCanvas = lazy(() => import('@/components/home/HeroCanvas'));
 export function HomePage() {
   const { t } = usePublicLocale();
   usePageTitle(null);
+  useSocialMeta(
+    t('ui.meta.home-title', 'Aura Museum — Nghệ thuật và di sản'),
+    t('ui.meta.description', 'Khám phá nghệ thuật và di sản cùng Aura Museum. Mỗi hiện vật mở ra một câu chuyện trong không gian bảo tàng số.'),
+  );
   const stats = [
     { value: '5+', label: t('ui.home.stat.rooms', 'Phòng trưng bày ảo') },
     { value: '100%', label: t('ui.home.stat.webxr', 'Khám phá 3D & WebXR') },
