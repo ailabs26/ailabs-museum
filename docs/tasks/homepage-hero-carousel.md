@@ -132,7 +132,8 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 - [ ] Đối chiếu ảnh reference (file gốc không có trong checkout), xác minh media CMS thật và kiểm screen reader thật.
 - [x] Review `git diff origin/dev...HEAD`, commit log, changed paths và whitespace; thay đổi nằm trong homepage hero, test, locale seed và docs; không artifacts/secret. Staged diff và whitespace đã được kiểm.
 - [x] Ghi test/screenshots, commit liên quan và giới hạn QA bên dưới. Branch local-only; chưa push/PR/merge.
-- [ ] Xác nhận số và chất lượng poster từ CMS thật sau khi media được gắn/xuất bản.
+- [x] Read-only public API check: 9 phòng public hiện có, 0 ảnh hiện vật published.
+- [ ] Đánh giá chất lượng poster sau khi ảnh thật được gắn vào hiện vật và xuất bản.
 
 ## Acceptance criteria
 
@@ -180,7 +181,7 @@ Mỗi slice: test mục tiêu → `git status --short` → `git diff --check` �
 
 Backend `test:seed` đang có lỗi nền: thiếu khóa `ui.guided2d.progress`; caller này giống `origin/dev`, HC-09 không sửa phần đó. Nếu đã có bug/thiếu ảnh CMS, ghi blocker thực. Các mục zoom 200/400%, NVDA/VoiceOver, mobile thật, Lighthouse/CLS/LCP chỉ ghi PASS khi đã đo; không coi responsive screenshot tự động tương đương manual QA.
 
-Read-only CMS probe during HC-11 could not connect to local API `127.0.0.1:3101`; poster count/quality therefore remains unverified.
+Read-only CMS probe used the running local API on port `3001` (not `3101`): 9 public rooms, 0 published exhibit images. Poster quality and the rendered real-media state remain pending until media is attached and published.
 
 ## Handoff / Git
 
