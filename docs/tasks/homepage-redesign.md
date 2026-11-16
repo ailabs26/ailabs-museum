@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-REDESIGN: Public Homepage Editorial Redesign
 
-**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-06 hoàn tất, HR-07 tiếp theo.
+**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-07 hoàn tất, HR-08 tiếp theo.
 **Nguồn code khảo sát:** `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841` tại 15/11/2026; xác minh lại khi thực thi.
 **Nhánh hiện tại:** `feat/public-homepage-redesign` từ `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841`; PR base `dev`.
 **Plan:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md).
@@ -93,9 +93,9 @@ Thiết kế lại **Homepage `/`** theo phong cách *Contemporary Heritage Edit
 
 ### HR-07 — Immersive Story
 
-- [ ] Thay bento lớn bằng 2-column editorial: giới thiệu 3D và audio, CTA 3D/2D, neutral artwork/texture.
-- [ ] Không gắn hình minh họa thành phòng thật; bỏ claims VR/device/WCAG/số liệu không xác minh.
-- [ ] Kiểm heading hierarchy, decorative icon aria, keyboard/CTA và responsive, commit riêng.
+- [x] Thay Bento bằng 2-column editorial: hai điểm 3D/audio, CTA 3D/2D, artwork hình học trung tính.
+- [x] Bỏ claims VR/device/WCAG/số liệu không xác minh; copy audio chỉ nói có ở một số hiện vật.
+- [x] Kiểm heading hierarchy, icon decorative, keyboard/CTA, 390/768/1440 responsive; screenshot light/dark và commit riêng.
 
 ### HR-08 — Visual CSS cleanup
 
@@ -167,7 +167,7 @@ Sử dụng các tập test tồn tại thực tế; `homepage-redesign.spec.ts`
 | HR-04 | 4abcba5 | focused Playwright 22/22; typecheck/lint/build pass | poster/neutral screenshots inspected; fixture illustration only, CMS poster sign-off deferred to HR-12 | Complete |
 | HR-05 | a7d3489, 2706a52 | focused Playwright 22/22; typecheck/lint/build pass | hero eager, featured/card lazy; portrait transparent SVG remains contained; no model/audio requests | Complete |
 | HR-06 | 8140348 | `home-featured.spec.ts` 8/8; typecheck/lint pass | 390/1024/1440 light/dark screenshots; UI sign-off deferred to HR-12 | Complete |
-| HR-07 | — | Chưa chạy | — | TODO |
+| HR-07 | dc6eac1 | homepage + public translations 20/20; typecheck/lint pass; seed spec 4/5 (baseline `ui.guided2d.progress` missing) | 390/1440 light/dark screenshots; translation seed added 8, rerun added 0; UI sign-off deferred to HR-12 | Complete |
 | HR-08 | — | Chưa chạy | — | TODO |
 | HR-09 | — | Chưa chạy | — | TODO |
 | HR-10 | — | Chưa chạy | — | TODO |

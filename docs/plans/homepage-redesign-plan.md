@@ -146,9 +146,11 @@
 **Files:** `HomePage.tsx`, `HomePage.module.css`; focused tests.
 **Consumes:** tính năng tour/audio thực tế đang có, SDD H01.3. **Produces:** 2-column giới thiệu 3D/audio và artwork trung tính.
 
-- [ ] **Bước 1 — Structure:** thay bento feature cards bằng editorial section: mô tả ngắn, hai thông tin 3D và audio, CTA tới `/tour`, `/collection`, artwork/motif trang trí trung tính bên phải. H2 phù hợp, không có nhiều H1.
-- [ ] **Bước 2 — Content safety:** bỏ copy khẳng định đạt WCAG 2.2 AA, 100% keyboard/device compatibility, số phòng hoặc transcript có mọi ngôn ngữ nếu chưa có chứng cứ; không tự xưng ảnh minh họa là ảnh phòng thật.
-- [ ] **Bước 3 — A11y:** icons decorative `aria-hidden`, link và heading order, responsive stack giữ đúng thứ tự DOM, text có contrast. Kiểm browser navigation, screenshot và commit.
+- [x] **Bước 1 — Structure:** thay Bento bằng 2-column editorial, hai điểm 3D/audio, CTA `/tour` và `/collection`, artwork hình học trung tính.
+- [x] **Bước 2 — Content safety:** bỏ claims về WCAG, 100%, headset/thiết bị, subtitles phổ quát và chi tiết vật liệu không có dữ liệu; copy audio nói rõ chỉ có ở một số hiện vật.
+- [x] **Bước 3 — A11y:** icon trang trí có `aria-hidden`, một H1, DOM stack theo thứ tự đọc, test CTA bằng Enter và không tràn ngang ở 390/768/1440; đã chụp light/dark mobile/desktop.
+
+**HR-07 evidence:** Commit `dc6eac1`; `homepage-redesign.spec.ts` và `public-ui-translations.spec.ts` 20/20, typecheck/lint pass. Thêm 8 chuỗi story đủ sáu locale; `seed:translations` thêm 8 key rồi lần chạy lại thêm 0. Ảnh 390/1440 light/dark đã chụp và kiểm tra. `public-ui-strings.spec.ts` còn lỗi baseline `ui.guided2d.progress` thiếu trong seed (4/5 assertions pass); không thuộc phạm vi story. UI sign-off cuối vẫn dành cho HR-12.
 
 **Commit dự kiến:** `feat(home): replace feature bento with immersive story`.
 
