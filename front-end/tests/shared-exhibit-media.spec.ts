@@ -10,6 +10,7 @@ test('card media frame is fixed 4:3 and contains the published image', async ({ 
   const image = page.getByRole('img', { name: 'Ảnh bình', exact: true });
   await image.scrollIntoViewIfNeeded();
   await expect.poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth)).toBeGreaterThan(0);
+  await expect(image).toHaveAttribute('loading', 'lazy');
   const media = await image.evaluate((element) => {
     const frame = element.parentElement!.getBoundingClientRect();
     return { ratio: frame.width / frame.height, fit: getComputedStyle(element).objectFit };

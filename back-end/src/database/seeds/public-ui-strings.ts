@@ -409,12 +409,12 @@ export const PUBLIC_UI_STRINGS: PublicUiString[] = [
     namespace: "ui.home.badge",
     context: "Trang chủ, nhãn trên tiêu đề",
     values: {
-      vi: "Bảo tàng số 3D WebXR thế hệ mới",
-      en: "A new generation 3D WebXR digital museum",
-      fr: "Un musée numérique 3D WebXR de nouvelle génération",
-      zh: "新一代 3D WebXR 数字博物馆",
-      ko: "차세대 3D WebXR 디지털 박물관",
-      ja: "次世代の3D WebXRデジタルミュージアム",
+      vi: "Bộ sưu tập di sản số",
+      en: "Digital heritage collection",
+      fr: "Collection de patrimoine numérique",
+      zh: "数字文化遗产馆藏",
+      ko: "디지털 문화유산 컬렉션",
+      ja: "デジタル文化遺産コレクション",
     },
   },
   {
@@ -445,12 +445,12 @@ export const PUBLIC_UI_STRINGS: PublicUiString[] = [
     namespace: "ui.home.intro",
     context: "Trang chủ, đoạn giới thiệu",
     values: {
-      vi: "Bước vào không gian triển lãm 3D tương tác thực tế ảo, lắng nghe câu chuyện nghìn năm qua âm thanh thuyết minh sống động — ngay trên trình duyệt của bạn.",
-      en: "Step into an interactive virtual reality 3D exhibition and hear thousand-year-old stories through vivid audio narration, right in your browser.",
-      fr: "Entrez dans une exposition 3D interactive en réalité virtuelle et écoutez des histoires millénaires grâce à une narration audio vivante, directement dans votre navigateur.",
-      zh: "走进可交互的虚拟现实 3D 展览，通过生动的语音讲解聆听千年故事——就在您的浏览器中。",
-      ko: "상호작용하는 가상현실 3D 전시 공간에 들어가, 생생한 음성 해설로 천 년의 이야기를 들어 보세요. 브라우저에서 바로 가능합니다.",
-      ja: "インタラクティブなVRの3D展示空間に入り、臨場感あふれる音声解説で千年の物語を聴いてみましょう。ブラウザですぐに体験できます。",
+      vi: "Khám phá các hiện vật đã xuất bản và chọn cách trải nghiệm phù hợp với bạn.",
+      en: "Explore published exhibits and choose how you want to experience them.",
+      fr: "Découvrez les objets publiés et choisissez votre façon de les explorer.",
+      zh: "探索已发布的展品，并选择适合自己的体验方式。",
+      ko: "공개된 전시품을 살펴보고 원하는 방식으로 경험해 보세요.",
+      ja: "公開中の展示品を見て、自分に合った方法でお楽しみください。",
     },
   },
   {
@@ -475,6 +475,62 @@ export const PUBLIC_UI_STRINGS: PublicUiString[] = [
       zh: "查看馆藏目录",
       ko: "컬렉션 보기",
       ja: "コレクションを見る",
+    },
+  },
+  {
+    namespace: "ui.home.hero.carousel.name",
+    context: "Tên vùng carousel hiện vật nổi bật cho trình đọc màn hình",
+    values: {
+      vi: "Bộ sưu tập hiện vật nổi bật", en: "Featured exhibits carousel", fr: "Carrousel des objets à la une",
+      zh: "精选展品轮播", ko: "대표 전시품 캐러셀", ja: "注目展示品カルーセル",
+    },
+  },
+  {
+    namespace: "ui.home.hero.carousel.controls",
+    context: "Tên nhóm nút điều khiển carousel",
+    values: {
+      vi: "Điều khiển hiện vật nổi bật", en: "Featured exhibit controls", fr: "Commandes de l’objet à la une",
+      zh: "精选展品控制", ko: "대표 전시품 제어", ja: "注目展示品の操作",
+    },
+  },
+  {
+    namespace: "ui.home.hero.carousel.previous",
+    context: "Nút hiện vật trước trong carousel",
+    values: {
+      vi: "Hiện vật trước", en: "Previous exhibit", fr: "Objet précédent",
+      zh: "上一个展品", ko: "이전 전시품", ja: "前の展示品",
+    },
+  },
+  {
+    namespace: "ui.home.hero.carousel.next",
+    context: "Nút hiện vật tiếp theo trong carousel",
+    values: {
+      vi: "Hiện vật tiếp theo", en: "Next exhibit", fr: "Objet suivant",
+      zh: "下一个展品", ko: "다음 전시품", ja: "次の展示品",
+    },
+  },
+  {
+    namespace: "ui.home.hero.carousel.go-to-slide",
+    context: "Nút chọn slide theo số thứ tự",
+    values: {
+      vi: "Đến hiện vật {index}", en: "Go to exhibit {index}", fr: "Aller à l’objet {index}",
+      zh: "前往展品 {index}", ko: "{index}번 전시품으로 이동", ja: "展示品 {index}へ移動",
+    },
+  },
+  {
+    namespace: "ui.home.hero.carousel.pause",
+    context: "Nút tạm dừng tự chuyển slide",
+    values: {
+      vi: "Tạm dừng tự chuyển", en: "Pause automatic slide changes", fr: "Mettre en pause le défilement automatique",
+      zh: "暂停自动切换", ko: "자동 슬라이드 일시정지", ja: "スライドの自動切り替えを一時停止",
+    },
+  },
+  {
+    namespace: "ui.home.hero.carousel.resume",
+    context: "Nút tiếp tục tự chuyển slide",
+    values: {
+      vi: "Tiếp tục tự chuyển", en: "Resume automatic slide changes", fr: "Reprendre le défilement automatique",
+      zh: "恢复自动切换", ko: "자동 슬라이드 다시 시작", ja: "スライドの自動切り替えを再開",
     },
   },
   {
@@ -703,6 +759,102 @@ export const PUBLIC_UI_STRINGS: PublicUiString[] = [
       zh: "支持完整键盘导航，对比度达标，设备不支持 WebGL 时可流畅切换 2D 模式。",
       ko: "전체 키보드 탐색, 기준을 충족하는 대비, WebGL을 지원하지 않는 기기를 위한 부드러운 2D 대체 화면을 제공합니다.",
       ja: "完全なキーボード操作、基準を満たすコントラスト、WebGL非対応端末向けの滑らかな2Dモードを備えています。",
+    },
+  },
+  {
+    namespace: "ui.home.story.title",
+    context: "Trang chủ, giới thiệu trải nghiệm",
+    values: {
+      vi: "Hai cách khám phá di sản",
+      en: "Two ways to explore heritage",
+      fr: "Deux façons d’explorer le patrimoine",
+      zh: "探索文化遗产的两种方式",
+      ko: "유산을 탐험하는 두 가지 방법",
+      ja: "文化遺産を楽しむ二つの方法",
+    },
+  },
+  {
+    namespace: "ui.home.story.intro",
+    context: "Trang chủ, giới thiệu trải nghiệm",
+    values: {
+      vi: "Chọn tham quan 3D hoặc xem bộ sưu tập hiện vật ở dạng 2D.",
+      en: "Take a 3D tour or browse the exhibits in the 2D collection.",
+      fr: "Parcourez une visite 3D ou explorez les œuvres dans la collection 2D.",
+      zh: "您可以参加 3D 导览，也可以浏览 2D 藏品。",
+      ko: "3D 투어를 둘러보거나 2D 컬렉션에서 전시물을 살펴보세요.",
+      ja: "3Dツアーを巡るか、2Dコレクションで展示品をご覧ください。",
+    },
+  },
+  {
+    namespace: "ui.home.story.tour.title",
+    context: "Trang chủ, giới thiệu trải nghiệm",
+    values: {
+      vi: "Tham quan trong không gian 3D",
+      en: "Explore in 3D",
+      fr: "Explorer en 3D",
+      zh: "在 3D 空间中参观",
+      ko: "3D 공간에서 둘러보기",
+      ja: "3D空間を巡る",
+    },
+  },
+  {
+    namespace: "ui.home.story.tour.text",
+    context: "Trang chủ, giới thiệu trải nghiệm",
+    values: {
+      vi: "Khám phá các phòng và hiện vật qua trang Tham quan 3D.",
+      en: "Explore rooms and exhibits through the 3D tour.",
+      fr: "Explorez les salles et les œuvres avec la visite 3D.",
+      zh: "通过 3D 导览探索展厅和藏品。",
+      ko: "3D 투어에서 전시실과 전시물을 둘러보세요.",
+      ja: "3Dツアーで展示室と展示品をご覧ください。",
+    },
+  },
+  {
+    namespace: "ui.home.story.audio.title",
+    context: "Trang chủ, giới thiệu trải nghiệm",
+    values: {
+      vi: "Lắng nghe thuyết minh",
+      en: "Listen to narration",
+      fr: "Écouter les commentaires audio",
+      zh: "聆听语音讲解",
+      ko: "음성 해설 듣기",
+      ja: "音声ガイドを聴く",
+    },
+  },
+  {
+    namespace: "ui.home.story.audio.text",
+    context: "Trang chủ, giới thiệu trải nghiệm",
+    values: {
+      vi: "Một số hiện vật có thuyết minh âm thanh trên trang chi tiết.",
+      en: "Some exhibits include audio narration on their detail pages.",
+      fr: "Certaines œuvres proposent un commentaire audio sur leur page de détail.",
+      zh: "部分藏品详情页提供语音讲解。",
+      ko: "일부 전시물의 상세 페이지에서 음성 해설을 들을 수 있습니다.",
+      ja: "一部の展示品の詳細ページでは音声ガイドを利用できます。",
+    },
+  },
+  {
+    namespace: "ui.home.story.cta.tour",
+    context: "Trang chủ, CTA trải nghiệm",
+    values: {
+      vi: "Vào tham quan 3D",
+      en: "Open the 3D tour",
+      fr: "Accéder à la visite 3D",
+      zh: "进入 3D 导览",
+      ko: "3D 투어 시작",
+      ja: "3Dツアーへ",
+    },
+  },
+  {
+    namespace: "ui.home.story.cta.collection",
+    context: "Trang chủ, CTA trải nghiệm",
+    values: {
+      vi: "Xem bộ sưu tập 2D",
+      en: "Browse the 2D collection",
+      fr: "Parcourir la collection 2D",
+      zh: "浏览 2D 藏品",
+      ko: "2D 컬렉션 둘러보기",
+      ja: "2Dコレクションを見る",
     },
   },
   {
