@@ -2,19 +2,25 @@ import { expect, test } from '@playwright/test';
 import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
 import { envelope, exhibit, roomA, roomC, roomSummaries } from './fixtures/museumContent';
 
-const forbidden3dRequest = /HeroCanvas|react-three-fiber|three-[^/]+\.js|\.glb(?:\?|$)/i;
+const forbidden3dRequest = /HeroCanvas|MuseumScene\.tsx|ModelPreview\.tsx|react-three-fiber|@react-three\/fiber|three(?:\.|-|\/)|\.glb(?:\?|$)|draco_decoder/i;
 
-for (const webglEnabled of [true, false]) {
-  test(`homepage hero stays 2D with WebGL ${webglEnabled ? 'enabled' : 'disabled'}`, async ({ page }) => {
+for (const { webglEnabled, reducedMotion } of [
+  { webglEnabled: true, reducedMotion: false },
+  { webglEnabled: false, reducedMotion: false },
+  { webglEnabled: true, reducedMotion: true },
+]) {
+  test(`homepage stays 2D with WebGL ${webglEnabled ? 'enabled' : 'disabled'} and reduced motion ${reducedMotion ? 'enabled' : 'disabled'}`, async ({ page }) => {
     const requests: string[] = [];
     page.on('request', (request) => requests.push(request.url()));
     if (!webglEnabled) {
       await page.addInitScript(() => Object.defineProperty(window, 'WebGLRenderingContext', { configurable: true, value: undefined }));
     }
+    if (reducedMotion) await page.emulateMedia({ reducedMotion: 'reduce' });
     await installMuseumApi(page);
     await page.goto('/');
-    await page.waitForTimeout(500);
+    await page.waitForLoadState('networkidle');
 
+    expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(reducedMotion);
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
     await expect(page.getByRole('link', { name: 'Khám phá Không gian 3D (WebXR)' })).toHaveAttribute('href', '/tour');
     await expect(page.getByRole('link', { name: 'Xem Danh mục Bộ sưu tập' })).toHaveAttribute('href', '/collection');
