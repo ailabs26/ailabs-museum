@@ -2,12 +2,12 @@ import { expect, test, type Page } from '@playwright/test';
 import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
 import { envelope, exhibit, roomA, roomB, roomC, roomSummaries, ROOM_B_ID } from './fixtures/museumContent';
 
-async function installHeroSlides(page: Page, prefix: string) {
+async function installHeroSlides(page: Page, prefix: string, count = 3) {
   await installMuseumApi(page);
   await page.route('https://media.example/**', (route) => route.fulfill({
     contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
   }));
-  const items = roomA.exhibits.slice(0, 3).map((item, index) => ({
+  const items = Array.from({ length: count }, (_, index) => roomA.exhibits[index] ?? exhibit(index + 1)).map((item, index) => ({
     ...item,
     name: `${prefix} exhibit ${index + 1}`,
     description: `Description ${index + 1}`,
@@ -256,6 +256,114 @@ test('reduced motion disables autoplay by default but Resume remains an explicit
   await expect(hero.getByRole('heading', { level: 2, name: `Reduced exhibit ${currentIndex % 3 + 1}` })).toBeVisible();
 });
 
+test('hero eagerly loads the first poster and preloads only the next poster', async ({ page }) => {
+  await installMuseumApi(page);
+  await page.setViewportSize({ width: 1440, height: 500 });
+  await page.route('https://media.example/**', (route) => route.fulfill({
+    contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+  }));
+  const withPoster = (item: ReturnType<typeof exhibit>, index: number) => ({
+    ...item,
+    image: {
+      id: `30000000-0000-4000-8000-00000000000${index}`, url: `https://media.example/preload-${index}.svg`,
+      mimeType: 'image/svg+xml', sizeBytes: 128, rights: { source: null, author: null, license: null },
+      altText: { vi: `Poster ${index}`, en: `Poster ${index}` },
+    },
+  });
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({
+    ...roomA, exhibits: [withPoster(roomA.exhibits[0], 1)],
+  })));
+  await page.route('**/api/rooms/ceramics', (route) => fulfillMuseum(route, envelope({
+    ...roomB, exhibits: [withPoster(exhibit(6, ROOM_B_ID), 2), withPoster(exhibit(7, ROOM_B_ID), 3)],
+  })));
+  const requests: string[] = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).hostname === 'media.example') requests.push(new URL(request.url()).pathname);
+  });
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  const firstPoster = hero.getByRole('img', { name: 'Poster 1' });
+  await expect.poll(() => firstPoster.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+  await expect.poll(() => requests).toHaveLength(2);
+  await expect(firstPoster).toHaveAttribute('loading', 'eager');
+  await expect(firstPoster).toHaveAttribute('fetchpriority', 'high');
+  expect(requests).toEqual(['/preload-1.svg', '/preload-2.svg']);
+});
+
+test('hero keeps the current poster and metadata visible until the next poster loads', async ({ page }) => {
+  const release = (() => {
+    let resolve!: () => void;
+    const pending = new Promise<void>((done) => { resolve = done; });
+    return { pending, resolve: () => resolve() };
+  })();
+  await installHeroSlides(page, 'Delayed');
+  await page.route('https://media.example/Delayed-2.svg', async (route) => {
+    await release.pending;
+    await route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>' });
+  });
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  await expect(hero.getByRole('heading', { level: 2, name: 'Delayed exhibit 1' })).toBeVisible();
+  await expect.poll(() => hero.getByRole('img', { name: 'Alt 1' }).evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+  await hero.getByRole('button', { name: 'Hiện vật tiếp theo' }).click();
+  const incomingPoster = hero.getByRole('img', { name: 'Alt 2' });
+  await expect(incomingPoster).toBeAttached();
+  await expect(hero.getByRole('heading', { level: 2, name: 'Delayed exhibit 1' })).toBeVisible();
+  await expect.poll(() => incomingPoster.evaluate((image: HTMLImageElement) => getComputedStyle(image.parentElement!).opacity))
+    .toBe('0');
+  await expect.poll(() => hero.getByRole('img', { name: 'Alt 1' }).evaluate(
+    (image: HTMLImageElement) => getComputedStyle(image.parentElement!).opacity,
+  )).toBe('1');
+  release.resolve();
+  await expect(hero.getByRole('heading', { level: 2, name: 'Delayed exhibit 2' })).toBeVisible();
+  await expect(hero.locator(`a[href="/collection/${roomA.slug}/exhibits/${roomA.exhibits[1].id}"]`)).toBeVisible();
+});
+test('broken carousel poster falls back without losing its matching metadata or retrying', async ({ page }) => {
+  await installHeroSlides(page, 'Broken');
+  let failedPosterRequests = 0;
+  await page.route('https://media.example/Broken-2.svg', async (route) => {
+    failedPosterRequests += 1;
+    await route.abort();
+  });
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  await expect.poll(() => hero.getByRole('img', { name: 'Alt 1' }).evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
+  await hero.getByRole('button', { name: 'Hiện vật tiếp theo' }).click();
+  await expect(hero.getByText('Hình minh họa thay thế')).toBeVisible();
+  await expect(hero.getByRole('heading', { level: 2, name: 'Broken exhibit 2' })).toBeVisible();
+  await expect(hero.locator(`a[href="/collection/${roomA.slug}/exhibits/${roomA.exhibits[1].id}"]`)).toBeVisible();
+  const requestCountAfterFallback = failedPosterRequests;
+  await page.waitForTimeout(700);
+  expect(failedPosterRequests).toBe(requestCountAfterFallback);
+});
+
+test('reduced motion disables the crossfade and rapid navigation keeps the latest exhibit selected', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const release = (() => {
+    let resolve!: () => void;
+    const pending = new Promise<void>((done) => { resolve = done; });
+    return { pending, resolve: () => resolve() };
+  })();
+  await installHeroSlides(page, 'Rapid');
+  await page.route('https://media.example/Rapid-2.svg', async (route) => {
+    await release.pending;
+    await route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>' });
+  });
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  await expect.poll(() => hero.getByRole('img', { name: 'Alt 1' }).evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
+  const next = hero.getByRole('button', { name: 'Hiện vật tiếp theo' });
+  await next.click();
+  await next.click();
+  await release.resolve();
+  await expect(hero.getByRole('heading', { level: 2, name: 'Rapid exhibit 3' })).toBeVisible();
+  await expect(hero.locator(`a[href="/collection/${roomA.slug}/exhibits/${roomA.exhibits[2].id}"]`)).toBeVisible();
+  expect(await hero.getByRole('img', { name: 'Alt 3' }).evaluate(
+    (image: HTMLImageElement) => parseFloat(getComputedStyle(image.parentElement!).transitionDuration),
+  )).toBeLessThan(0.001);
+});
 test('hero supplements a sparse first room with at most two concurrent room queries and stops at three posters', async ({ page }) => {
   await installMuseumApi(page);
   const rooms = [

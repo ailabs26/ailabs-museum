@@ -24,21 +24,27 @@
 .ctaSecondary { border-color: var(--public-border); color: var(--public-action-text); }
 .ctaSecondary:hover { border-color: var(--public-bronze); color: var(--public-bronze); }
 .ctaPrimary:focus-visible, .ctaSecondary:focus-visible { outline: 3px solid var(--public-focus); outline-offset: 4px; }
-.heroStage { position: relative; display: flex; min-width: 0; min-height: 440px; align-items: center; flex-direction: column; justify-content: center; overflow: hidden; }
+.heroStage { position: relative; display: flex; min-width: 0; min-height: 520px; align-items: center; flex-direction: column; justify-content: flex-end; overflow: hidden; }
 .artworkMedallion {
   position: relative; z-index: 1; display: block; width: min(42%, 250px); aspect-ratio: 1; border: 1px solid var(--public-bronze);
   border-radius: 50%;
 }
 .artworkOrbit { position: absolute; width: min(82%, 520px); aspect-ratio: 1.45; border: 1px solid var(--public-action-text); border-radius: 50%; opacity: .14; transform: rotate(-28deg); }
 .artworkAccent { position: absolute; right: 12%; bottom: 14%; width: 9px; height: 9px; border-radius: 50%; background: var(--public-bronze); }
-.heroImage { width: 100%; height: min(52vh, 450px); min-height: 0; padding: 0; }
-.heroControls { display: flex; min-height: 44px; align-items: center; justify-content: center; gap: 4px; margin-top: 8px; }
+.heroPosterLayer { position: absolute; inset: 0 0 52px; display: grid; place-items: center; transition: opacity 600ms ease; }
+.heroPosterVisible { opacity: 1; }
+.heroPosterWaiting, .heroPosterLeaving { opacity: 0; pointer-events: none; }
+.heroImage { width: 100%; height: 100%; min-height: 0; padding: 0; }
+.heroControls { display: flex; min-height: 44px; align-items: center; justify-content: center; gap: 4px; margin-top: auto; }
 .heroControlButton { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; border: 1px solid var(--public-border); border-radius: 50%; background: transparent; color: var(--public-action-text); cursor: pointer; }
 .heroControlButton:hover { border-color: var(--public-bronze); color: var(--public-bronze); }
 .heroControlButton:focus-visible { outline: 3px solid var(--public-focus); outline-offset: 2px; }
 .heroDot { display: block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .55; }
 .heroControlButton[aria-pressed='true'] .heroDot { width: 18px; border-radius: 999px; opacity: 1; }
-.heroMetadata { min-width: 0; max-width: 30ch; }
+.heroMetadata { display: grid; min-width: 0; max-width: 30ch; }
+.heroMetadataLayer { grid-area: 1 / 1; transition: opacity 600ms ease; }
+.heroMetadataVisible { opacity: 1; }
+.heroMetadataWaiting, .heroMetadataLeaving { opacity: 0; pointer-events: none; }
 .heroMetaTitle { margin: 0 0 16px; color: var(--public-action-text); font: 600 clamp(24px, 2vw, 32px)/1.18 var(--public-font-display); overflow-wrap: anywhere; }
 .heroMetaDescription { margin: 0; color: var(--public-action-text); font: 400 15px/1.65 var(--public-font-body); overflow-wrap: anywhere; }
 .heroMetaLink { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; margin-top: 22px; color: var(--public-bronze); font: 650 14px/1.4 var(--public-font-body); text-decoration: underline; text-underline-offset: 5px; }
@@ -73,7 +79,7 @@
 @media (max-width: 70em) {
   .heroInner { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); min-height: 520px; }
   .heroContent { grid-column: 1; grid-row: 1 / span 2; }
-  .heroStage { grid-column: 2; grid-row: 1; min-height: 360px; }
+  .heroStage { grid-column: 2; grid-row: 1; min-height: 440px; }
   .heroMetadata { grid-column: 2; grid-row: 2; }
 }
 @media (max-width: 62em) {
@@ -84,8 +90,8 @@
 @media (max-width: 48em) {
   .heroInner { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-block: 40px; }
   .heroContent, .heroStage, .heroMetadata { grid-column: 1; grid-row: auto; }
-  .heroStage { min-height: 280px; }
-  .heroImage { height: min(58vh, 420px); }
+  .heroStage { min-height: 340px; }
+
   .heroMetadata { max-width: 55ch; }
   .title { font-size: clamp(38px, 10vw, 54px); }
   .introduction { font-size: 16px; }
@@ -95,5 +101,5 @@
   .featured { padding-block: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ctaPrimary, .ctaSecondary { transition: none; }
+  .ctaPrimary, .ctaSecondary, .heroPosterLayer, .heroMetadataLayer { transition: none; }
 }

@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-HERO-CAROUSEL: Nâng cấp Hero Editorial Carousel
 
-**Trạng thái:** IN PROGRESS — HC-01 through HC-06 complete; crossfade and media resilience continue in HC-07.
+**Trạng thái:** IN PROGRESS — HC-01 through HC-07 complete; responsive and swipe work continues in HC-08.
 **Nhánh triển khai:** `feat/public-homepage-redesign` — **tiếp tục trên nhánh Homepage hiện tại, không tạo nhánh mới**.
 **Plan:** [homepage-hero-carousel-plan.md](../plans/homepage-hero-carousel-plan.md).
 **Kế hoạch gốc:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md), [homepage-redesign.md](./homepage-redesign.md).
@@ -97,10 +97,10 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 
 ### HC-07 — Transition mượt, preload và ảnh lỗi
 
-- [ ] Media dùng 2 layers trong ~550–650ms crossfade, stage fixed geometry; caption và link không lệch slide identity.
-- [ ] First poster eager/high priority; preload **tối đa 1 ảnh kế**, không download all posters đồng loạt/GLB/Canvas.
-- [ ] 404/corrupt/slow loading không nhấp nháy thành frame trắng; không loop ảnh lỗi, URL mới cập nhật có thể hồi phục.
-- [ ] Test slow media, rapid clicks, reduced motion, request trace; visual QA và commit riêng.
+- [x] Hai poster/metadata layers crossfade 600ms; stage giữ hình học, poster và caption/link đi cùng exhibit trong lúc chờ tải.
+- [x] Poster đầu eager/high priority; preload đúng một poster kế với low priority; test xác nhận không tải cả carousel cùng lúc.
+- [x] Slow poster giữ nội dung hiện tại; ảnh hỏng hiện fallback không retry loop; rapid selection giữ exhibit mới nhất; reduced motion bỏ transition.
+- [x] Playwright Home regression 32/32; typecheck và lint sạch; checkpoint commit riêng. Screenshot matrix/reference comparison để HC-11.
 
 ### HC-08 — Mobile/tablet & swipe
 
@@ -164,7 +164,7 @@ Mỗi slice: test mục tiêu → `git status --short` → `git diff --check` �
 | HC-04 | — | Chưa chạy | Chưa chụp | TODO |
 | HC-05 | — | Chưa chạy | — | TODO |
 | HC-06 | — | Chưa chạy | — | TODO |
-| HC-07 | — | Chưa chạy | Chưa chụp | TODO |
+| HC-07 | Ghi SHA ở HC-11 | Home regression 32/32; typecheck/lint pass | Screenshot HC-11 | DONE |
 | HC-08 | — | Chưa chạy | Chưa chụp | TODO |
 | HC-09 | — | Chưa chạy | — | TODO |
 | HC-10 | — | Chưa chạy | — | TODO |
