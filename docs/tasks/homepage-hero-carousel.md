@@ -9,13 +9,13 @@
 
 ## Mục tiêu
 
-Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headline/CTA ở trái; **hiện vật lớn ở trung tâm** thay cho khung ảnh trông như card; tên, mô tả và link chi tiết hiện vật ở phải. Các hiện vật có ảnh published được tự chuyển **mượt bằng crossfade**, có thao tác thủ công, pause, hỗ trợ di động/keyboard và reduced motion. **Giữ nguyên hai section phía dưới:** Featured Exhibits và Immersive Story.
+Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headline/CTA ở trái; **hiện vật lớn ở trung tâm** thay cho khung ảnh trông như card; tên, mô tả và link chi tiết hiện vật ở phải. Các hiện vật có ảnh published tự chuyển **mượt bằng crossfade**; người xem đổi ảnh bằng các chấm nhỏ, hỗ trợ di động/keyboard và reduced motion. Autoplay tự tạm dừng khi hover/focus, tab bị ẩn hoặc Hero ngoài viewport. **Giữ nguyên hai section phía dưới:** Featured Exhibits và Immersive Story.
 
 ## Phạm vi đã chốt
 
 - Hero dark full-bleed, hình ảnh hiện vật làm tâm điểm; cột phải là metadata **của slide đang active**, không show tên/niên đại tĩnh.
 - Nguồn poster chỉ từ public published API. Ưu tiên phòng đầu, tối đa 5 slides; khi phòng đầu có dưới 3 poster thì bổ sung từ tối đa 4 phòng public tiếp theo, không quá 2 request đồng thời. Không sinh ảnh, không tự đưa placeholder vào carousel.
-- 0 ảnh: neutral Hero; 1 ảnh: poster tĩnh; ≥2 ảnh: tự chuyển mỗi 6s, fade khoảng 550–650ms; nút Prev/Next/dots/Pause/Resume; hover/focus/tab hidden/offscreen pause; swipe mobile.
+- 0 ảnh: neutral Hero; 1 ảnh: poster tĩnh; ≥2 ảnh: tự chuyển mỗi 6s, fade khoảng 550–650ms; chỉ có dots đơn giản để chọn ảnh, không có Prev/Next/Pause/Resume; hover/focus/tab hidden/offscreen pause; swipe mobile.
 - Mỗi slide đồng bộ poster, `name`, `description`, localized alt và route `/collection/:roomSlug/exhibits/:exhibitId`; UI labels qua `t()`.
 - CTA chung đến `/tour`, `/collection` luôn hoạt động, kể cả lỗi API; không download WebGL/GLB/Three trên Homepage.
 - Desktop bố cục ba vùng; tablet co còn hai; mobile stack, không tràn 320px; có focus/contrast và reduced motion.
@@ -84,14 +84,14 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 ### HC-05 — Điều khiển thủ công
 
 - [x] Prev/Next wrap, dots active, labels đi qua `t()`, buttons ≥44px; Enter/Space và link metadata cùng slide đã được test.
-- [x] 0/1 slide không hiện controls; dot là button độc lập. Pause/Resume đi cùng autoplay ở HC-06 để không có nút giả.
+- [x] 0/1 slide không hiện controls; dot là button độc lập. HC-06 ban đầu có Pause/Resume; HC-12 bỏ hai nút này và giữ autoplay.
 - [x] Lưu active selection bằng exhibit key; functional state update giữ đúng slide khi thao tác liên tiếp.
 - [x] Playwright carousel/Home regression 25/25; targeted 0/1/N tests 3/3; typecheck/lint pass; commit riêng trước autoplay.
 
 ### HC-06 — Autoplay và cleanup
 
 - [x] Browser clock xác minh 6s/cycle và timer reset sau thao tác; đổi locale không làm nhân đôi timer.
-- [x] Hover/focus pause; manual pause giữ đến Resume; tab ẩn và Hero ngoài viewport dừng timer.
+- [x] Hover/focus pause; tab ẩn và Hero ngoài viewport dừng timer. Manual pause đã được bỏ ở HC-12.
 - [x] Reduced motion dừng auto mặc định; người dùng có thể chọn Resume; controls thủ công vẫn dùng được.
 - [x] Cleanup timers/observers/listeners sau unmount và route change; Playwright xác minh autoplay timer được xóa khi rời trang; test autoplay xác minh live region không announce slide tự động.
 
@@ -135,10 +135,18 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 - [x] Read-only public API check: 9 phòng public hiện có, 0 ảnh hiện vật published.
 - [ ] Đánh giá chất lượng poster sau khi ảnh thật được gắn vào hiện vật và xuất bản.
 
+### HC-12 — Tinh gọn thanh điều hướng Hero
+
+- [x] Bỏ nút Prev/Next và Pause/Resume; autoplay 6 giây/slide vẫn hoạt động.
+- [x] Chỉ giữ dot để chọn slide; giảm độ nổi bật nhưng giữ vùng bấm 44×44px và focus indicator.
+- [x] Autoplay tự dừng khi reduced motion, hover/focus, tab ẩn hoặc Hero ngoài viewport; không announce slide tự động.
+- [x] Cập nhật kiểm thử carousel và locale cho dot-only controls.
+- [x] Regression 12 spec 98/98; typecheck, lint và build pass. Build còn warning bundle >500 kB.
+
 ## Acceptance criteria
 
 - [x] Hero ba vùng: copy trái/ảnh lớn giữa/metadata phải, không còn khung card showcase nhỏ; user duyệt screenshot matrix. Ảnh reference gốc không có để đối chiếu trực tiếp.
-- [x] Với ≥2 poster từ public API, Hero tự chạy 6s/slide, crossfade ~550–650ms, Prev/Next/dots/Pause/Resume; mouse/keyboard/mobile gesture có test.
+- [x] Với ≥2 poster từ public API, Hero tự chạy 6s/slide, crossfade ~550–650ms; chỉ dots dùng để chọn slide; mouse/keyboard/mobile gesture có test.
 - [x] 0/1 poster hoạt động đúng, không tự tạo ảnh; Hero chỉ dùng ảnh nhận từ public published API.
 - [x] Hình, alt, tên, mô tả và detail link đồng bộ trong transition/locale; poster lỗi không làm hỏng Hero.
 - [x] Truy vấn thêm phòng bị giới hạn, không tác động Featured 0–3 của phòng đầu; loading/error/retry có regression coverage.
@@ -176,6 +184,7 @@ Mỗi slice: test mục tiêu → `git status --short` → `git diff --check` �
 | HC-09 | `124df7b` | Carousel + localization 36/36; typecheck/lint/unit/build pass | Contrast audited in HC-11; real screen-reader check pending | DONE |
 | HC-10 | `9aac3d9` | Combined Playwright 46/46; later full affected-surface regression 96/96 | No visual artifact committed | DONE |
 | HC-11 | Test correction `cf65c01`; contrast fix `0a9fe53`; route-cleanup regression `637d54e` | Required 12-spec Playwright 96/96; carousel 21/21; `typecheck`, lint, unit 416/416 and build pass | 20 screenshots reviewed and UI approved; reference/CMS image/real SR checks remain | IN PROGRESS |
+| HC-12 | Local changes, not committed | Regression 98/98; typecheck/lint/build pass | Dot-only controls, autoplay retained; build warns on bundle >500 kB | DONE |
 
 **Không điền số test hoặc SHA giả.**
 
