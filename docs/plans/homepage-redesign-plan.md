@@ -91,12 +91,14 @@
 **Files:** `HomePage.tsx`, `HomePage.module.css`, `homepage-redesign.spec.ts`.
 **Consumes:** visual direction từ SDD, Public tokens. **Produces:** hero charcoal responsive, 2 CTA, media neutral trước khi có poster.
 
-- [ ] **Bước 1 — Viết test trước:** `/` có một H1; CTA `/tour` + `/collection`; *không có* Canvas, HeroCanvas/Three dynamic chunk, GLB requests trong **mọi** trường hợp WebGL supported/unsupported; không hiển thị `5+`, `100%`, `0s` hoặc nhãn Trống đồng/era hardcode.
-- [ ] **Bước 2 — Remove eager WebGL path:** bỏ `lazy/Suspense/HeroCanvas`, `supportsWebgl`, `useMediaQuery`, state/effect dựng 3D; **chỉ bỏ import ở HomePage** (xem còn caller trước khi xóa file component). Tắt các visual cũ soundwave/floating orb/stats; không ảnh hưởng `/tour`.
-- [ ] **Bước 3 — Dựng hero:** nền charcoal full-bleed, vùng nội dung 40/60 ở desktop, H1/copy có `t(key, fallback)`, CTA semantic Link tới route thật, neutral illustration `aria-hidden` khi chưa có ảnh; không render button play giả.
-- [ ] **Bước 4 — Verify:** focused hero/no-WebGL/keyboard, typecheck/lint/build, screenshot light/dark. Không chuyển hardcoded labels sang copy lịch sử khác. Review staged diff và commit.
+- [x] **Bước 1 — Viết test trước:** `/` có một H1; CTA `/tour` + `/collection`; *không có* Canvas, HeroCanvas/Three dynamic chunk, GLB requests trong **mọi** trường hợp WebGL supported/unsupported; không hiển thị `5+`, `100%`, `0s` hoặc nhãn Trống đồng/era hardcode. RED ban đầu bắt được canvas khi WebGL bật; sau triển khai cả hai chế độ pass.
+- [x] **Bước 2 — Remove eager WebGL path:** bỏ `lazy/Suspense/HeroCanvas`, `supportsWebgl`, `useMediaQuery`, state/effect dựng 3D; **chỉ bỏ import ở HomePage** (xem còn caller trước khi xóa file component). Tắt các visual cũ soundwave/floating orb/stats; không ảnh hưởng `/tour`.
+- [x] **Bước 3 — Dựng hero:** nền charcoal full-bleed, vùng nội dung 40/60 ở desktop, H1/copy có `t(key, fallback)`, CTA semantic Link tới route thật, neutral illustration `aria-hidden` khi chưa có ảnh; không render button play giả. Tái dùng key `ui.home.badge`/`ui.home.intro`, thay copy cũ có tuyên bố lịch sử chưa kiểm chứng ở đủ sáu locale.
+- [x] **Bước 4 — Verify:** `homepage-redesign.spec.ts` 3/3 (WebGL on/off, API lỗi, keyboard focus); `public-ui-translations.spec.ts` 13/13; typecheck/lint/build pass. Chụp và xem hero light/dark tại `.superpowers/sdd/homepage-redesign-plan/hr03-hero-{light,dark}.png`; review diff và commits `06a44b9`, `b2225e0`. Visual sign-off cuối vẫn theo HR-12.
 
 **Commit dự kiến:** `feat(home): replace webgl showcase with editorial hero`.
+
+**HR-03 evidence:** Commit `06a44b9` (hero, copy sáu locale, no-WebGL/API regressions) và `b2225e0` (keyboard-focus regression). `npm.cmd run typecheck`, `lint`, `build` pass; Playwright homepage 3/3 và locale 13/13 pass. Build vẫn có chunk warning (main 1,123.43 KB; các chunk hiện hữu khác trên 500 KB). Thử `back-end npm.cmd run test:seed` còn fail ở key `ui.guided2d.progress` đã được dùng trên `origin/dev` nhưng chưa có trong seed; không phát sinh từ HR-03.
 
 ## HR-04: Media hero lấy từ hiện vật xuất bản
 

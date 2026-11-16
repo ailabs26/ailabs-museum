@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-REDESIGN: Public Homepage Editorial Redesign
 
-**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01 baseline hoàn tất, HR-03 tiếp theo.
+**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-03 hoàn tất, HR-04 tiếp theo.
 **Nguồn code khảo sát:** `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841` tại 15/11/2026; xác minh lại khi thực thi.
 **Nhánh hiện tại:** `feat/public-homepage-redesign` từ `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841`; PR base `dev`.
 **Plan:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md).
@@ -61,16 +61,16 @@ Thiết kế lại **Homepage `/`** theo phong cách *Contemporary Heritage Edit
 
 ### HR-02 — Lift homepage data owner
 
-- [ ] Khóa expected data contract: first room, sort copy, 0–3 featured, pending/empty/error/retry/cached refetch failure.
-- [ ] Sử dụng một `useMuseumRooms(null)` owner cho hero và featured; giữ query key, guards, localization và UI hiện tại.
-- [ ] Không fetch room thứ hai, không mutate API/cache hoặc trigger thêm request; focused tests pass, commit riêng.
+- [x] Khóa expected data contract: first room, sort copy, 0–3 featured, pending/empty/error/retry/cached refetch failure.
+- [x] Sử dụng một `useMuseumRooms(null)` owner cho hero và featured; giữ query key, guards, localization và UI hiện tại.
+- [x] Không fetch room thứ hai, không mutate API/cache hoặc trigger thêm request; focused tests pass, commit riêng.
 
 ### HR-03 — Hero tĩnh, không auto WebGL
 
-- [ ] Test RED: hai CTA tới `/tour`, `/collection`; 1 H1; không Canvas/HeroCanvas/Three/R3F/GLB request kể cả WebGL enabled.
-- [ ] Thay HeroCanvas/showcase 3D bằng hero charcoal/neutral art và gỡ các stats/label/era giả, soundwave/particles.
-- [ ] CTA dùng `Link`, focus thấy rõ; CSS scoped theo Foundation; giữ page hoạt động khi API down.
-- [ ] Test GREEN + typecheck/lint/build, commit riêng.
+- [x] Test RED: hai CTA tới `/tour`, `/collection`; 1 H1; không Canvas/HeroCanvas/Three/R3F/GLB request kể cả WebGL enabled.
+- [x] Thay HeroCanvas/showcase 3D bằng hero charcoal/neutral art và gỡ các stats/label/era giả, soundwave/particles.
+- [x] CTA dùng `Link`, focus thấy rõ; CSS scoped theo Foundation; giữ page hoạt động khi API down.
+- [x] Test GREEN + typecheck/lint/build; commit riêng.
 
 ### HR-04 — Poster từ CMS
 
@@ -163,7 +163,7 @@ Sử dụng các tập test tồn tại thực tế; `homepage-redesign.spec.ts`
 |---|---|---|---|---|
 | HR-01 | base 95c2bbe; branch feat/public-homepage-redesign | typecheck/lint/build; unit 408/408; Playwright 61/61 | baseline screenshots 390/1440 light/dark in ignored .superpowers/sdd/homepage-redesign-plan/ | Complete |
 | HR-02 | 0e1fa8e | home-featured Playwright 7/7; typecheck/lint pass | one list + one room detail request; no other-room fetch | Complete |
-| HR-03 | — | Chưa chạy | — | TODO |
+| HR-03 | 06a44b9, b2225e0 | homepage-redesign 3/3; public-ui-translations 13/13; typecheck/lint/build pass | light/dark hero screenshots inspected; visual sign-off deferred to HR-12. Existing seed test failure: missing `ui.guided2d.progress` on origin/dev. | Complete |
 | HR-04 | — | Chưa chạy | — | TODO |
 | HR-05 | — | Chưa chạy | — | TODO |
 | HR-06 | — | Chưa chạy | — | TODO |
