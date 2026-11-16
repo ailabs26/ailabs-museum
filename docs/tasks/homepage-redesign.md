@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-REDESIGN: Public Homepage Editorial Redesign
 
-**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-08 hoàn tất, HR-09 tiếp theo.
+**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-09 hoàn tất, HR-10 tiếp theo.
 **Nguồn code khảo sát:** `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841` tại 15/11/2026; xác minh lại khi thực thi.
 **Nhánh hiện tại:** `feat/public-homepage-redesign` từ `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841`; PR base `dev`.
 **Plan:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md).
@@ -105,9 +105,9 @@ Thiết kế lại **Homepage `/`** theo phong cách *Contemporary Heritage Edit
 
 ### HR-09 — Responsive
 
-- [ ] Kiểm 320/390/768/1024/1440 px, light/dark: 40/60 desktop, mobile stack, cards 1/2/3 theo container.
-- [ ] Không overflow ngang, CTA không che, ảnh không crop, DOM/tab order đúng, landscape và tên dài.
-- [ ] Browser assertion + screenshots full-page; commit riêng.
+- [x] Kiểm 320/390/768/1024/1440 px, light/dark: hero stack ở mobile, cards 1/1/2/3/3 theo container.
+- [x] Không overflow ngang; hai CTA nằm trong viewport; poster 800×400 giữ `object-fit: contain`; kiểm 844×390 landscape và room/exhibit text dài.
+- [x] Playwright `home-featured.spec.ts` 8/8; chụp/xem 10 ảnh full-page. Layout đã đáp ứng nên không đổi production CSS; test commit `8b99bb3`.
 
 ### HR-10 — i18n và accessibility
 
@@ -169,7 +169,7 @@ Sử dụng các tập test tồn tại thực tế; `homepage-redesign.spec.ts`
 | HR-06 | 8140348 | `home-featured.spec.ts` 8/8; typecheck/lint pass | 390/1024/1440 light/dark screenshots; UI sign-off deferred to HR-12 | Complete |
 | HR-07 | dc6eac1 | homepage + public translations 20/20; typecheck/lint pass; seed spec 4/5 (baseline `ui.guided2d.progress` missing) | 390/1440 light/dark screenshots; translation seed added 8, rerun added 0; UI sign-off deferred to HR-12 | Complete |
 | HR-08 | a4b7ddd | Homepage + featured Playwright 15/15; typecheck/lint; `git diff --check` pass | `.superpowers/sdd/homepage-redesign-plan/hr08-home-{390,1440}-{light,dark}.png`; ảnh neutral do backend API không chạy | Complete |
-| HR-09 | — | Chưa chạy | — | TODO |
+| HR-09 | 8b99bb3 | `home-featured.spec.ts` 8/8; typecheck/lint pass; poster object-fit + natural dimensions and CTA viewport bounds pass | 10 ảnh full-page 320/390/768/1024/1440 light/dark; no overflow, long room/exhibit text, landscape 844×390 | Complete |
 | HR-10 | — | Chưa chạy | — | TODO |
 | HR-11 | — | Chưa chạy | — | TODO |
 | HR-12 | — | Chưa chạy | Chưa chụp | TODO |

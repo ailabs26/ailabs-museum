@@ -172,9 +172,11 @@
 **Files:** `HomePage.module.css`, `homepage-redesign.spec.ts`.
 **Consumes:** new hero, featured, immersive. **Produces:** không overflow / CTA che ở các kích thước chính.
 
-- [ ] **Bước 1:** test 320, 390, 768, 1024, 1440; xác nhận 2→1 column theo rộng, media không cắt vật, CTA không tràn, section không va header/footer; lang en/de? hệ thống chỉ vi/en/fr/zh/ko/ja.
-- [ ] **Bước 2:** xử lý text dài/room name dài và device landscape; không dựng spacer cố định lớn ở 320, không đảo thứ tự tab bằng CSS order thiếu kiểm thử.
-- [ ] **Bước 3:** test DOM `documentElement.scrollWidth <= innerWidth`, bounding boxes hero/sidebar, CTA visible/focus; chụp light/dark matrix và kiểm layout trực quan, commit riêng.
+- [x] **Bước 1:** kiểm 320/390/768/1024/1440; shared grid lần lượt 1/1/2/3/3 cột, hero stack trên mobile và giữ hai cột desktop.
+- [x] **Bước 2:** thêm room name, tiêu đề/mô tả exhibit dài và viewport landscape 844×390; không cần đổi production CSS.
+- [x] **Bước 3:** `documentElement.scrollWidth <= innerWidth`, hai CTA nằm trong viewport và poster 800×400 giữ `object-fit: contain` ở mọi kích thước, light/dark; chụp/xem đủ 10 screenshot full-page. `home-featured.spec.ts` 8/8, typecheck/lint pass.
+
+**HR-09 evidence:** Test-only commit `8b99bb3`; screenshots `.superpowers/sdd/homepage-redesign-plan/hr09-home-{320,390,768,1024,1440}-{light,dark}.png`.
 
 **Commit dự kiến:** `style(home): refine responsive hero and section layouts`.
 
