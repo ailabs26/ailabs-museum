@@ -71,10 +71,13 @@ test('hero selects the first sorted exhibit with an image and keeps its localize
   await page.goto('/');
 
   const hero = page.locator('section[aria-labelledby="home-title"]');
-  await expect(hero.getByRole('img', { name: 'Localized image alt' })).toBeVisible();
+  const heroImage = hero.getByRole('img', { name: 'Localized image alt' });
+  await expect(heroImage).toBeVisible();
+  await expect(heroImage).toHaveAttribute('loading', 'eager');
   const heroLink = hero.getByRole('link', { name: /English Candidate by ID/ });
   await expect(heroLink).toHaveAttribute('href', `/collection/sculpture/exhibits/${idFirst}`);
   await expect(hero.getByRole('img', { name: 'Second image alt' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Hiện vật nổi bật' }).getByRole('img').first()).toHaveAttribute('loading', 'lazy');
 });
 
 test('hero stays neutral when the first public room has no image or no exhibits', async ({ page }) => {

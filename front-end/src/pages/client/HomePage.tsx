@@ -53,7 +53,7 @@ export function HomePage() {
                 <ExhibitImage image={{
                   url: heroImage.url,
                   alt: localizedAltText(heroImage.altText, locale, localizedHeroExhibit.name),
-                }} shape={localizedHeroExhibit.placeholderShape} color={localizedHeroExhibit.placeholderColor}
+                }} loading="eager" shape={localizedHeroExhibit.placeholderShape} color={localizedHeroExhibit.placeholderColor}
                   className={classes.heroImage} />
                 <span className={classes.posterCaption}>{localizedHeroExhibit.name}</span>
               </Link>
