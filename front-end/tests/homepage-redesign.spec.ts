@@ -32,6 +32,13 @@ test('homepage hero and shared navigation remain available when room API fails',
   await page.goto('/');
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-  await expect(page.getByRole('link', { name: 'Khám phá Không gian 3D (WebXR)' })).toHaveAttribute('href', '/tour');
+  const tourLink = page.getByRole('link', { name: 'Khám phá Không gian 3D (WebXR)' });
+  await expect(tourLink).toHaveAttribute('href', '/tour');
   await expect(page.getByRole('link', { name: 'Xem Danh mục Bộ sưu tập' })).toHaveAttribute('href', '/collection');
+
+  for (let index = 0; index < 12 && !(await tourLink.evaluate((link) => link === document.activeElement)); index += 1) {
+    await page.keyboard.press('Tab');
+  }
+  await expect(tourLink).toBeFocused();
+  await expect(tourLink).toHaveCSS('outline-style', 'solid');
 });
