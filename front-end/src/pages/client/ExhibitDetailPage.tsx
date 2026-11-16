@@ -171,7 +171,7 @@ export function ExhibitDetailPage() {
           <div className={classes.sections}>
             <div className={classes.audioDock}>
               <AudioPlayer key={`${detail.id}:${exhibit.id}:${audioLocale}`} src={audio?.audio.url} subtitleUrl={audio?.subtitle?.url} locale={audioLocale} />
-              {audioLanguageNote && <p role="note" className={classes.body}>
+              {audioLanguageNote && <p className={classes.body}>
                 {t('ui.exhibit.audioLanguage', 'Thuyết minh và phụ đề hiện có bằng {language}.', { language: audioLanguageNote })}
               </p>}
             </div>
@@ -181,7 +181,7 @@ export function ExhibitDetailPage() {
             </section>
             {transcript && <section aria-labelledby="exhibit-transcript-title">
               <Title order={2} id="exhibit-transcript-title" className={classes.sectionTitle}>{t('ui.exhibit.transcript', 'Bản thuyết minh')}</Title>
-              {transcriptIsOriginal && <p role="note" className={classes.body}>
+              {transcriptIsOriginal && <p className={classes.body}>
                 {t('ui.exhibit.transcriptOriginal', 'Chưa có bản dịch thuyết minh, đang hiển thị bản tiếng Việt gốc.')}
               </p>}
               <p className={classes.body}>{transcript}</p>
