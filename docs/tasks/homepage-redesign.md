@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-REDESIGN: Public Homepage Editorial Redesign
 
-**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-07 hoàn tất, HR-08 tiếp theo.
+**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-08 hoàn tất, HR-09 tiếp theo.
 **Nguồn code khảo sát:** `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841` tại 15/11/2026; xác minh lại khi thực thi.
 **Nhánh hiện tại:** `feat/public-homepage-redesign` từ `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841`; PR base `dev`.
 **Plan:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md).
@@ -99,9 +99,9 @@ Thiết kế lại **Homepage `/`** theo phong cách *Contemporary Heritage Edit
 
 ### HR-08 — Visual CSS cleanup
 
-- [ ] Xóa selector Home không còn dùng: bento/showcase/glow/soundwave/stats/aura-reveal/delay; không ảnh hưởng style shared.
-- [ ] Chuẩn hóa `--public-*` cho Hero/Featured/Immersive; hero charcoal light/dark có contrast tốt.
-- [ ] Kiểm tiếng Việt, hover/focus/long text, screenshot before-after; commit style riêng.
+- [x] Xóa selector Home không còn dùng: Bento và `titleGradient`; các selector showcase/glow/soundwave/stats/aura-reveal/delay không còn trên page; không ảnh hưởng style shared.
+- [x] Chuẩn hóa `--public-*` cho Hero/Featured/Immersive; hero charcoal dùng public token trong light/dark.
+- [x] Kiểm tiếng Việt, hover/focus/reduced-motion và long content qua browser; chụp/xem 390/1440 light/dark. Commit `a4b7ddd`.
 
 ### HR-09 — Responsive
 
@@ -168,7 +168,7 @@ Sử dụng các tập test tồn tại thực tế; `homepage-redesign.spec.ts`
 | HR-05 | a7d3489, 2706a52 | focused Playwright 22/22; typecheck/lint/build pass | hero eager, featured/card lazy; portrait transparent SVG remains contained; no model/audio requests | Complete |
 | HR-06 | 8140348 | `home-featured.spec.ts` 8/8; typecheck/lint pass | 390/1024/1440 light/dark screenshots; UI sign-off deferred to HR-12 | Complete |
 | HR-07 | dc6eac1 | homepage + public translations 20/20; typecheck/lint pass; seed spec 4/5 (baseline `ui.guided2d.progress` missing) | 390/1440 light/dark screenshots; translation seed added 8, rerun added 0; UI sign-off deferred to HR-12 | Complete |
-| HR-08 | — | Chưa chạy | — | TODO |
+| HR-08 | a4b7ddd | Homepage + featured Playwright 15/15; typecheck/lint; `git diff --check` pass | `.superpowers/sdd/homepage-redesign-plan/hr08-home-{390,1440}-{light,dark}.png`; ảnh neutral do backend API không chạy | Complete |
 | HR-09 | — | Chưa chạy | — | TODO |
 | HR-10 | — | Chưa chạy | — | TODO |
 | HR-11 | — | Chưa chạy | — | TODO |

@@ -159,9 +159,11 @@
 **Files:** `HomePage.module.css`, `HomePage.tsx` chỉ khi selector chết, focused style tests.
 **Consumes:** new layout từ 03/06/07. **Produces:** CSS mới sạch, không còn glass/glow/parallax của Home.
 
-- [ ] **Bước 1:** dọn `.showcase*`, `.soundwave`, `.stats`, `.bento*`, `.titleGradient`, `aura-reveal`, `--aura-delay` nếu không còn dùng trên page; đảm bảo thay đổi chỉ trong Home CSS/markup.
-- [ ] **Bước 2:** dùng `--public-*` (giấy sáng, charcoal, forest, bronze) và fallback hợp lý; tránh lặp token hardcode/đổi global theme.
-- [ ] **Bước 3:** kiểm visual hierarchy, hover/focus/reduced-motion, long content, font dấu Việt. Screenshot diff theo light/dark; stage đúng file và commit.
+- [x] **Bước 1:** xóa selector Bento không còn dùng và selector `.titleGradient`; `.showcase*`, `.soundwave`, `.stats`, `aura-reveal`, `--aura-delay` đã không còn trong Homepage. Thay đổi chỉ ở Home CSS.
+- [x] **Bước 2:** dùng `--public-*` cho hero surface, border, intro và artwork; không sửa global theme. CTA hover transition dùng đúng `filter`.
+- [x] **Bước 3:** Playwright `homepage-redesign` + `home-featured` 15/15, typecheck/lint và `git diff --check` pass. Chụp, xem 390/1440 light/dark; neutral screenshots hiển thị API error vì backend local không chạy. Reduced motion rule và focus-visible giữ nguyên.
+
+**HR-08 evidence:** Commit `a4b7ddd`; screenshots nằm trong ignored `.superpowers/sdd/homepage-redesign-plan/hr08-home-{390,1440}-{light,dark}.png`.
 
 **Commit dự kiến:** `style(home): simplify editorial surfaces and remove legacy effects`.
 
