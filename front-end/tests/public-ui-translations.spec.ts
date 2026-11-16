@@ -37,7 +37,10 @@ test.describe('Giao diện Client theo ngôn ngữ', () => {
       await expectNoVietnamese(page.locator('header'));
       await expectNoVietnamese(page.locator('footer'));
       await expectNoVietnamese(page.locator('section[aria-labelledby="about-title"]'));
-      await expectNoVietnamese(page.locator('section[aria-labelledby="home-title"]'));
+      const hero = page.locator('section[aria-labelledby="home-title"]');
+      await expectNoVietnamese(hero);
+      await expect(hero).toContainText(value('ui.home.badge'));
+      await expect(hero).toContainText(value('ui.home.intro'));
       await expect(page.getByRole('heading', { name: value('ui.home.featured.title') })).toBeVisible();
     });
   }
@@ -45,9 +48,9 @@ test.describe('Giao diện Client theo ngôn ngữ', () => {
   test('chuỗi chưa dịch hoặc API lỗi thì hiện chữ dự phòng', async ({ page }) => {
     await page.route('**/api/public/translations**', (route) => route.abort());
     await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Chạm vào Di sản.');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Chạm vào di sản.');
     await chooseLanguage(page, 'ko');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Chạm vào Di sản.');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Chạm vào di sản.');
   });
 
   test('sửa bản tiếng Việt trên CMS thì trang đổi theo', async ({ page }) => {
