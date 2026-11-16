@@ -41,6 +41,13 @@
 }
 .artworkOrbit { position: absolute; width: min(82%, 520px); aspect-ratio: 1.45; border: 1px solid rgb(255 249 240 / 14%); border-radius: 50%; transform: rotate(-28deg); }
 .artworkAccent { position: absolute; right: 12%; bottom: 14%; width: 9px; height: 9px; border-radius: 50%; background: var(--public-bronze); box-shadow: -28px -14px 0 -2px rgb(199 164 110 / 55%), 22px -39px 0 -3px rgb(199 164 110 / 65%); }
+.heroPoster {
+  display: grid; grid-template-rows: minmax(0, 1fr) auto; width: 100%; height: 100%; min-height: 0;
+  color: var(--public-action-text); text-decoration: none; text-align: center;
+}
+.heroPoster:focus-visible { outline: 3px solid var(--public-focus); outline-offset: -5px; }
+.heroImage { width: 100%; height: 100%; min-height: 0; padding: 24px 24px 0; }
+.posterCaption { padding: 14px 24px 20px; font: 600 16px/1.4 var(--public-font-display); }
 .content { padding-top: 32px; padding-bottom: 48px; }
 .about, .featured { padding-block: 48px; border-top: 1px solid var(--public-border); }
 .aboutHead { margin-bottom: 28px; }

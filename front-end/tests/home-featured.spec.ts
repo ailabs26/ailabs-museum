@@ -85,7 +85,7 @@ test('list HTTP error and malformed detail response retry without sample substit
   await page.goto('/');
   const featured = page.getByRole('region', { name: 'Hiện vật nổi bật' });
   await expect(featured.getByRole('alert')).toContainText('Không tải được danh sách phòng');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Khám phá Không giới hạn.');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Chạm vào di sản.');
   await expect(featured.getByRole('listitem')).toHaveCount(0);
   failList = false;
   await featured.getByRole('button', { name: 'Thử lại' }).click();
@@ -96,8 +96,18 @@ test('list HTTP error and malformed detail response retry without sample substit
   await expect(featured.getByRole('listitem')).toHaveCount(3);
 });
 
-test('failed refetch hides cached featured cards until retry succeeds', async ({ page }) => {
+test('failed refetch hides the cached hero poster and featured cards until retry succeeds', async ({ page }) => {
+  const heroExhibit = { ...roomA.exhibits[0], image: {
+    id: '30000000-0000-4000-8000-000000000001', url: 'https://museum.test/hero.png', mimeType: 'image/png', sizeBytes: 68,
+    rights: { source: null, author: null, license: null }, altText: { vi: 'Ảnh hero', en: 'Hero image' },
+  } };
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: [heroExhibit, ...roomA.exhibits.slice(1)] })));
+  await page.route('https://museum.test/hero.png', (route) => route.fulfill({
+    contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jCRkAAAAASUVORK5CYII=', 'base64'),
+  }));
   await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  await expect(hero.getByRole('img', { name: 'Ảnh hero' })).toBeVisible();
   const featured = page.getByRole('region', { name: 'Hiện vật nổi bật' });
   await expect(featured.getByRole('listitem')).toHaveCount(3);
   await featured.getByRole('link', { name: 'Xem bộ sưu tập của phòng này' }).click();
@@ -106,6 +116,8 @@ test('failed refetch hides cached featured cards until retry succeeds', async ({
   await page.getByRole('button', { name: 'Làm mới', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
   await page.getByRole('link', { name: 'Aura Museum — Trang chủ', exact: true }).click();
+  await expect(hero.locator('img')).toHaveCount(0);
+  await expect(hero.locator('a[href*="/exhibits/"]')).toHaveCount(0);
   await expect(featured.getByRole('listitem')).toHaveCount(0);
   await expect(featured.getByRole('alert')).toBeVisible();
   await page.unroute('**/api/rooms/sculpture');

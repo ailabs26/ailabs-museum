@@ -2,17 +2,22 @@ import { Container, Title } from '@mantine/core';
 import { IconAccessible, IconArrowRight, IconCube, IconDeviceGamepad2, IconHeadphones, IconSparkles } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { usePublicLocale } from '@/core/i18n/public-locale';
+import { localizeExhibit, localizedAltText } from '@/helpers/localizeExhibit';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
+import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import { HomeFeaturedExhibits } from './HomeFeaturedExhibits';
 import classes from './HomePage.module.css';
 
 export function HomePage() {
-  const { t } = usePublicLocale();
+  const { locale, t } = usePublicLocale();
   const { rooms, room, selectedRoom } = useMuseumRooms(null);
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const exhibits = detail ? [...detail.exhibits]
     .sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)) : [];
+  const heroExhibit = exhibits.find((exhibit) => !!exhibit.image?.url);
+  const localizedHeroExhibit = heroExhibit ? localizeExhibit(heroExhibit, locale) : null;
+  const heroImage = localizedHeroExhibit?.image;
   const featured = exhibits.slice(0, 3);
   usePageTitle(null);
 
@@ -41,10 +46,24 @@ export function HomePage() {
             </div>
           </div>
 
-          <div className={classes.heroArtwork} aria-hidden="true">
-            <span className={classes.artworkMedallion} />
-            <span className={classes.artworkOrbit} />
-            <span className={classes.artworkAccent} />
+          <div className={classes.heroArtwork} aria-hidden={!heroImage}>
+            {localizedHeroExhibit && heroImage && selectedRoom ? (
+              <Link className={classes.heroPoster}
+                to={`/collection/${encodeURIComponent(selectedRoom.slug)}/exhibits/${encodeURIComponent(localizedHeroExhibit.id)}`}>
+                <ExhibitImage image={{
+                  url: heroImage.url,
+                  alt: localizedAltText(heroImage.altText, locale, localizedHeroExhibit.name),
+                }} shape={localizedHeroExhibit.placeholderShape} color={localizedHeroExhibit.placeholderColor}
+                  className={classes.heroImage} />
+                <span className={classes.posterCaption}>{localizedHeroExhibit.name}</span>
+              </Link>
+            ) : (
+              <>
+                <span className={classes.artworkMedallion} />
+                <span className={classes.artworkOrbit} />
+                <span className={classes.artworkAccent} />
+              </>
+            )}
           </div>
         </div>
       </section>
