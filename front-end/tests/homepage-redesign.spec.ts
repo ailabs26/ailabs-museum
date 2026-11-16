@@ -87,7 +87,7 @@ test('hero selects the first sorted exhibit with an image and keeps its localize
   const heroLink = hero.getByRole('link', { name: /English Candidate by ID/ });
   await expect(heroLink).toHaveAttribute('href', `/collection/sculpture/exhibits/${idFirst}`);
   await expect(hero.getByRole('img', { name: 'Second image alt' })).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'Hiện vật nổi bật' }).getByRole('img').first()).toHaveAttribute('loading', 'lazy');
+  await expect(page.locator('section[aria-labelledby="featured-title"]').getByRole('img').first()).toHaveAttribute('loading', 'lazy');
   expect(requests.filter((url) => /\/(model|audio)\//i.test(url))).toEqual([]);
 });
 
