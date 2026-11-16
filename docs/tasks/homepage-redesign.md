@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-REDESIGN: Public Homepage Editorial Redesign
 
-**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-10 hoàn tất, HR-11 tiếp theo.
+**Trạng thái:** HR-01–HR-11 hoàn tất trên `feat/public-homepage-redesign`; HR-12 gates đã pass, đang chờ người dùng duyệt visual trước khi kết luận.
 **Nguồn code khảo sát:** `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841` tại 15/11/2026; xác minh lại khi thực thi.
 **Nhánh hiện tại:** `feat/public-homepage-redesign` từ `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841`; PR base `dev`.
 **Plan:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md).
@@ -118,17 +118,17 @@ Thiết kế lại **Homepage `/`** theo phong cách *Contemporary Heritage Edit
 
 ### HR-11 — Integration / no-WebGL
 
-- [ ] Homepage không Canvas, không GLB, không import HeroCanvas/Three chunk trước click `/tour` trên cả WebGL enabled/disabled.
-- [ ] E2E room empty/pending/error/retry/stale, image valid/404/corrupt, locale/theme, key links; cập nhật existing tests đúng contract mới.
-- [ ] Re-run Home featured, public i18n, shared cards/grid/media, public navigation, Collection, image/audio.
-- [ ] Fix bug phát hiện bằng commit `fix(home)` cùng regression; test-only commit cho hạng mục QA mới nếu có.
+- [x] `homepage-redesign.spec.ts` xác nhận không canvas/GLB/HeroCanvas/Three/R3F request khi WebGL bật/tắt hoặc reduced motion bật; test chờ networkidle.
+- [x] Re-run room empty/pending/error/retry/stale, ảnh valid/404/corrupt, locale/theme và route/keyboard links.
+- [x] Chạy 11 integration suites (71/71, gồm homepage 9/9); typecheck/lint pass.
+- [x] Fix false positive của network regex; test commit `dc1c78e`. Không phát hiện bug runtime khác.
 
 ### HR-12 — Bàn giao
 
-- [ ] Typecheck, lint, unit, build, focused Playwright: ghi lệnh và pass/fail thực tế; không gắn kết quả cũ.
-- [ ] Ảnh Home desktop/tablet/mobile light/dark và neutral/real poster; đối chiếu SDD. Zoom 200/400%, NVDA/VoiceOver, mobile thật chỉ tick khi test thật.
-- [ ] Review `git diff origin/dev...HEAD`, từng commit, staged/whitespace, file scope, không artifacts/secret.
-- [ ] Ghi SHA, kết quả, warnings, ảnh và giới hạn manual QA; chờ user visual sign-off, push/PR theo yêu cầu sau.
+- [x] Typecheck, lint, unit (408/408), build và focused Playwright (71/71) pass. Build warning chunks >500 kB: `draco_decoder` 512.47, `react-apexcharts` 543.94, `sanitizeModel` 884.24, `main` 1,122.00 kB; chưa build origin/dev để xác nhận baseline.
+- [x] Chụp 20 ảnh full-page: 5 widths × 2 themes × poster/neutral ở `.superpowers/sdd/homepage-redesign-plan/hr12-home-{320,390,768,1024,1440}-{light,dark}-{poster,neutral}.png`; poster nạp từ API local GET-only, là dữ liệu mẫu phát triển. Kiểm tra trực quan 320 và 1440 light/dark.
+- [x] Rà branch log, diff/staged diff, file scope và `git diff --check`; screenshot/temp capture không được stage.
+- [x] Ghi SHA/test/warning/screenshot và các giới hạn manual QA; docs commit riêng. Push/PR/merge chưa thực hiện.
 
 ## Acceptance criteria
 
@@ -171,8 +171,8 @@ Sử dụng các tập test tồn tại thực tế; `homepage-redesign.spec.ts`
 | HR-08 | a4b7ddd | Homepage + featured Playwright 15/15; typecheck/lint; `git diff --check` pass | `.superpowers/sdd/homepage-redesign-plan/hr08-home-{390,1440}-{light,dark}.png`; ảnh neutral do backend API không chạy | Complete |
 | HR-09 | 8b99bb3 | `home-featured.spec.ts` 8/8; typecheck/lint pass; poster object-fit + natural dimensions and CTA viewport bounds pass | 10 ảnh full-page 320/390/768/1024/1440 light/dark; no overflow, long room/exhibit text, landscape 844×390 | Complete |
 | HR-10 | 33fa865 | homepage + `public-ui-translations` 21/21; typecheck/lint/build pass; reduced motion/semantics/contrast checked | locale API mocked from current UI seed; no screen-reader device/manual audit | Complete |
-| HR-11 | — | Chưa chạy | — | TODO |
-| HR-12 | — | Chưa chạy | Chưa chụp | TODO |
+| HR-11 | dc1c78e | 11 integration suites 71/71; homepage 9/9; typecheck/lint pass | zero canvas/3D renderer requests at `/`; image failure, stale retry, locale/theme, navigation covered | Complete |
+| HR-12 | pending | typecheck/lint pass; unit 408/408; build pass with >500 kB chunk warning; Playwright 71/71 | 20 ignored screenshots: poster + neutral, 5 widths, light/dark; user visual sign-off pending; manual zoom/screen reader/real device/network profile not checked | Awaiting review |
 
 **Bằng chứng phải là sự kiện thực:** không tự điền SHAs, test count hoặc browser audit kết quả. Nếu task không có diff, ghi `no-op` có giải thích và không commit rỗng. Bug trong QA được thêm dòng `fix` và regression cùng SHA tương ứng.
 

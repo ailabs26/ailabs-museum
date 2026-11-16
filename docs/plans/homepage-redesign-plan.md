@@ -199,10 +199,12 @@
 **Files:** `front-end/tests/homepage-redesign.spec.ts`, affected regressions/fixtures; nếu test lộ bug thì code fix commit riêng.
 **Consumes:** feature đã ổn định. **Produces:** test evidence độc lập cho trạng thái và không tải 3D.
 
-- [ ] **Bước 1:** kiểm ở `/`: có WebGL, không WebGL, reduced motion đều **0 canvas, 0 GLB, 0 `HeroCanvas`/Three/R3F request**; sau click CTA sang `/tour` mới có thể load tài nguyên tour. Phân biệt request tới app chunk của home và những chunk chỉ có ở tour; không fake số đo performance.
-- [ ] **Bước 2:** re-run full Home states (room list empty, room empty, image absent, image HTTP 404/corrupt, schema error, retry, delayed API, stale refetch, theme/locale), existing featured/localization/visitor routes. Live API opt-in chỉ đọc nếu backend sẵn có, không yêu cầu seed dữ liệu thật.
-- [ ] **Bước 3:** `public-foundation`, `shared-exhibit-*`, `public-image-audio`, `public-tour-navigation`, `collection`, affected localization tests; lỗi baseline/legacy assumptions thay bằng assertions đúng contract mới, không skip.
-- [ ] **Bước 4:** nếu thêm tests mới thì review/commit riêng; mọi bug sửa trong commit `fix(home): ...` cùng regression, không gộp fix vào docs.
+- [x] **Bước 1:** networkidle proof ở `/` với WebGL enabled/disabled và reduced motion enabled: 0 canvas, GLB, HeroCanvas/Three/R3F renderer request. CTA `/tour` và điều hướng route được kiểm trong suite tour riêng.
+- [x] **Bước 2:** re-run empty/pending/error/retry/stale, poster thật/404/corrupt, locale/theme và các luồng điều hướng; không dùng live API/seed.
+- [x] **Bước 3:** chạy 11 suites integration theo validation commands: 71/71 pass (homepage 9/9 nằm trong tổng); typecheck/lint pass. Không có lỗi legacy cần sửa.
+- [x] **Bước 4:** bổ sung scenario WebGL/motion và thay `waitForTimeout(500)` bằng networkidle; test commit `dc1c78e`. Assertion lọc file renderer, tránh bắt nhầm interface `museumScene.ts`.
+
+**HR-11 evidence:** 11 integration suites 71/71; homepage suite 9/9; typecheck/lint pass. Regex network test bao phủ renderer entry/chunk, Three/R3F, GLB và Draco; test 0 canvas khi ở `/`.
 
 **Commit dự kiến:** `test(home): verify editorial page and no eager 3d`; `fix(home): ...` nếu thực sự có lỗi.
 
@@ -211,12 +213,14 @@
 **Files:** docs plan/task và test evidence; chỉ sửa code nếu có bug và commit fix riêng.
 **Consumes:** tất cả slice đã triển khai. **Produces:** trạng thái kiểm chứng có thể review, PR clean.
 
-- [ ] **Bước 1:** chạy từ `front-end/`: typecheck, lint, test:unit, build và focused Playwright. Ghi số pass/fail, warning chunk tồn tại hay mới phát sinh, không tự nhận Lighthouse/CLS mục tiêu đã đạt.
-- [ ] **Bước 2:** screenshot Home ở 320/390/768/1024/1440 light/dark, ảnh thật/neutral, full-page; so SDD/mocks nếu có, người dùng review trước khi kết luận đạt visual. Zoom 200/400%, NVDA/VoiceOver, mobile thực, network profile chỉ ghi PASS khi có thực tế.
-- [ ] **Bước 3:** đối chiếu diff với `origin/dev`, `git log --oneline`, `git show <sha>` từng slice; `git diff --check` + staged diff, chỉ file scope. Không stage screenshot/log/.env.
-- [ ] **Bước 4:** điền commit SHA, test counts, screenshot path, residual risks, trạng thái được người dùng chấp nhận; soạn title + PR description khi được yêu cầu; chưa tự push/PR/merge.
+- [x] **Bước 1:** `npm.cmd run typecheck`, `lint`, `test:unit` (408/408), `build` và 11 focused Playwright suites (71/71) đều pass. Vite 6.4.4 báo chunk >500 kB: `draco_decoder` 512.47, `react-apexcharts` 543.94, `sanitizeModel` 884.24, `main` 1,122.00 kB. Chưa build `origin/dev` để phân loại warning baseline; Lighthouse/CLS chưa đo.
+- [x] **Bước 2:** chụp 20 ảnh full-page ở 320/390/768/1024/1440, light/dark, poster từ API local (GET-only) và neutral không poster: `.superpowers/sdd/homepage-redesign-plan/hr12-home-{320,390,768,1024,1440}-{light,dark}-{poster,neutral}.png`. Kiểm tra trực quan ảnh 320 light/dark và 1440 light/dark; không thấy tràn ngang. Poster local là dữ liệu mẫu phát triển.
+- [x] **Bước 3:** đã rà branch log, diff từng slice, staged diff và `git diff --check`; chỉ test homepage cùng plan/task docs thay đổi trong HR-11/12; không stage screenshot, log hoặc `.env`.
+- [x] **Bước 4:** cập nhật SHA, gate, warning, screenshot và giới hạn QA trong docs; commit docs riêng. Chưa push/PR/merge.
 
-**Commit dự kiến:** `docs(home): record homepage redesign verification` nếu có evidence thay đổi.
+**Visual sign-off pending:** cần người dùng duyệt 20 ảnh trước khi xác nhận UI đạt. Chưa kiểm zoom 200/400%, NVDA/VoiceOver, thiết bị mobile thật hoặc network profile; chưa đo Lighthouse/CLS. Chưa so sánh build warning với baseline `origin/dev`.
+
+**Commit dự kiến:** `docs(home): record homepage redesign verification`.
 
 ## Commands và kiểm tra trước từng commit
 
