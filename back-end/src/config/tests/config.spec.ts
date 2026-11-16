@@ -10,7 +10,8 @@ import { reportsConfig } from '../reports.config';
 const BASE = { DATABASE_URL: 'postgres://u:p@localhost:5432/db' };
 const ENV_KEYS = ['PORT', 'FRONTEND_ORIGIN', 'DATABASE_URL', 'JWT_ACCESS_SECRET', 'JWT_ACCESS_TTL',
   'JWT_REFRESH_TTL_DAYS', 'REFRESH_COOKIE_NAME', 'BCRYPT_ROUNDS', 'SEED_ADMIN_EMAIL', 'SEED_ADMIN_PASSWORD', 'TRUST_PROXY',
-  'REFRESH_RATE_LIMIT_PER_SESSION', 'REFRESH_RATE_LIMIT_PER_IP', 'REFRESH_RATE_LIMIT_INVALID_PER_IP', 'PUBLIC_REPORT_RATE_LIMIT', 'TOTP_ENCRYPTION_KEY'];
+  'REFRESH_RATE_LIMIT_PER_SESSION', 'REFRESH_RATE_LIMIT_PER_IP', 'REFRESH_RATE_LIMIT_INVALID_PER_IP', 'PUBLIC_REPORT_RATE_LIMIT', 'TOTP_ENCRYPTION_KEY',
+  'PUBLIC_API_RATE_LIMIT', 'PUBLIC_MEDIA_RATE_LIMIT'];
 const saved = Object.fromEntries(ENV_KEYS.map((key) => [key, process.env[key]]));
 
 function invalidFields(input: Record<string, unknown>): string {
@@ -34,6 +35,8 @@ describe('validateEnvironment', () => {
     assert.equal(env.REFRESH_RATE_LIMIT_PER_IP, 300);
     assert.equal(env.REFRESH_RATE_LIMIT_INVALID_PER_IP, 20);
     assert.equal(env.PUBLIC_REPORT_RATE_LIMIT, 5);
+    assert.equal(env.PUBLIC_API_RATE_LIMIT, 600);
+    assert.equal(env.PUBLIC_MEDIA_RATE_LIMIT, 3000);
   });
 
   it('accepts report limits at both inclusive boundaries', () => {
@@ -73,6 +76,8 @@ describe('validateEnvironment', () => {
     ['REFRESH_RATE_LIMIT_PER_SESSION', '0'],
     ['REFRESH_RATE_LIMIT_PER_IP', '10001'],
     ['REFRESH_RATE_LIMIT_INVALID_PER_IP', 'abc'],
+    ['PUBLIC_API_RATE_LIMIT', '0'],
+    ['PUBLIC_MEDIA_RATE_LIMIT', '100001'],
     ['TRUST_PROXY', '10.0.0.0/8, proxy.local'],
   ] as const) {
     it(`từ chối ${field}=${value}`, () => {
@@ -185,10 +190,12 @@ describe('registerAs config', () => {
       JWT_ACCESS_SECRET: 's'.repeat(20), JWT_ACCESS_TTL: '5m', JWT_REFRESH_TTL_DAYS: '3', TOTP_ENCRYPTION_KEY: 'k'.repeat(32),
       REFRESH_COOKIE_NAME: 'rt', BCRYPT_ROUNDS: '11', SEED_ADMIN_EMAIL: 'a@b.c', TRUST_PROXY: '1',
       REFRESH_RATE_LIMIT_PER_SESSION: '12', REFRESH_RATE_LIMIT_PER_IP: '500', REFRESH_RATE_LIMIT_INVALID_PER_IP: '7',
+      PUBLIC_API_RATE_LIMIT: '900', PUBLIC_MEDIA_RATE_LIMIT: '5000',
     });
     assert.deepEqual(appConfig(), {
       port: 4000, frontendOrigin: 'https://museum.example', apiPrefix: 'api', trustProxy: 1,
       seedAdminEmail: 'a@b.c', seedAdminPassword: process.env.SEED_ADMIN_PASSWORD,
+      publicRateLimit: { api: 900, media: 5000 },
     });
     assert.deepEqual(databaseConfig(), { url: 'postgres://x' });
     assert.deepEqual(jwtConfig(), {

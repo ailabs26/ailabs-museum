@@ -89,7 +89,45 @@ describe('toPublicExhibit', () => {
     assert.deepEqual(dto.i18n, {
       vi: { name: 'Bình', description: 'Mô tả', transcript: 'Thuyết minh' },
       en: { name: 'Vase', description: 'Description', transcript: 'Narration' },
+      fr: { name: null, description: null, transcript: null }, zh: { name: null, description: null, transcript: null },
+      ko: { name: null, description: null, transcript: null }, ja: { name: null, description: null, transcript: null },
     });
+    assert.equal('contentLocale' in dto, false, 'không truyền lang thì giữ nguyên contract cũ');
+  });
+
+  it('lang: trả theo ngôn ngữ yêu cầu và báo ngôn ngữ thật; thiếu bản dịch thì về tiếng Việt', () => {
+    const content = {
+      name: { vi: 'Bình', en: 'Vase', ko: '꽃병' },
+      description: { vi: 'Mô tả', en: 'Description', ko: '  ' },
+      transcript: { vi: 'Thuyết minh', ja: 'ナレーション' },
+    };
+    const rev = revision({ hotspots: [hotspot({ label: '{"vi":"Miệng","ko":"입구"}', body: '{"vi":"Thân"}' })] }, content);
+    const dto = toPublicExhibit(exhibit(rev), url, () => undefined, 'room', 'ko')!;
+    assert.equal(dto.name, '꽃병');
+    assert.equal(dto.contentLocale, 'ko');
+    assert.equal(dto.description, 'Mô tả', 'chuỗi trắng coi như thiếu');
+    assert.equal(dto.transcript, 'Thuyết minh');
+    assert.deepEqual([dto.hotspots[0].label, dto.hotspots[0].body], ['입구', 'Thân']);
+    assert.equal(dto.i18n.ko.name, '꽃병');
+    assert.equal(dto.i18n.ja.transcript, 'ナレーション');
+
+    const fallback = toPublicExhibit(exhibit(rev), url, () => undefined, 'room', 'fr')!;
+    assert.deepEqual([fallback.name, fallback.contentLocale], ['Bình', 'vi']);
+    const enOnly = toPublicExhibit(exhibit(revision({}, { name: { en: 'Only EN' } })), url, () => undefined, 'room', 'zh')!;
+    assert.deepEqual([enOnly.name, enOnly.contentLocale], ['Only EN', 'en']);
+  });
+
+  it('lang: alt text ảnh theo ngôn ngữ; audio vẫn giữ transcript đúng ngôn ngữ của audio', () => {
+    const rev = revision({ imageMedia: media(MediaKind.IMAGE, 'i'), audioMedia: media(MediaKind.AUDIO, 'a') }, {
+      altText: { vi: 'Ảnh', ja: '写真' },
+      transcript: { vi: 'Thuyết minh', ja: 'ナレーション' },
+    });
+    const dto = toPublicExhibit(exhibit(rev), url, () => undefined, 'room', 'ja')!;
+    assert.equal(dto.image?.localizedAltText, '写真');
+    assert.equal(dto.image?.altText.vi, 'Ảnh');
+    assert.equal(dto.audio?.vi?.transcript, 'Thuyết minh');
+    const none = toPublicExhibit(exhibit(rev), url, () => undefined, 'room')!;
+    assert.equal(none.image && 'localizedAltText' in none.image, false);
   });
 
   it('nội dung chuỗi thường (seed) vẫn hoạt động; thiếu vi thì dùng en', () => {
@@ -150,7 +188,7 @@ describe('toPublicExhibit', () => {
       rights: { source: 'Nguồn', author: 'Tác giả', license: 'CC BY 4.0' },
     });
     assert.equal(dto.image?.url, 'http://api.test/media/uploads/image/i.png');
-    assert.deepEqual(dto.image?.altText, { vi: 'Ảnh', en: 'Photo' });
+    assert.deepEqual(dto.image?.altText, { vi: 'Ảnh', en: 'Photo', fr: null, zh: null, ko: null, ja: null });
     assert.equal(dto.audio?.vi?.audio.id, 'av');
     assert.equal(dto.audio?.vi?.subtitle?.id, 'sv');
     assert.equal(dto.audio?.vi?.transcript, 'Thuyết minh');

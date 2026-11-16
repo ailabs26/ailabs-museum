@@ -1,10 +1,11 @@
-import { Room, RoomStatus } from '../entities/room.entity';
+import { Room, RoomStatus, RoomTranslations } from '../entities/room.entity';
 
 export interface RoomResponse {
   id: string;
   slug: string;
   name: string;
   description: string | null;
+  translations: RoomTranslations;
   status: RoomStatus;
   exhibitsCount: number;
   createdAt: Date;
@@ -16,6 +17,7 @@ export class RoomResponseDto implements RoomResponse {
   slug!: string;
   name!: string;
   description!: string | null;
+  translations!: RoomTranslations;
   status!: RoomStatus;
   exhibitsCount!: number;
   createdAt!: Date;
@@ -27,6 +29,7 @@ export class RoomResponseDto implements RoomResponse {
     dto.slug = entity.slug;
     dto.name = entity.name;
     dto.description = entity.description ?? null;
+    dto.translations = entity.translations ?? {};
     dto.status = entity.status;
     dto.exhibitsCount =
       exhibitsCount !== undefined

@@ -1,11 +1,13 @@
 import { ActionIcon, useComputedColorScheme, useMantineColorScheme } from '@mantine/core';
 import { IconMoonStars, IconSun } from '@tabler/icons-react';
+import { usePublicT } from '@/core/i18n/public-locale';
 
 /**
  * Bộ chuyển đổi Dark / Light mode với icon Mặt trời / Mặt trăng.
  * Dùng useComputedColorScheme để phân giải chế độ 'auto' về giá trị thực.
  */
 export function ThemeToggle({ className }: { className?: string }) {
+  const t = usePublicT();
   const { setColorScheme } = useMantineColorScheme();
   const computed = useComputedColorScheme('light', { getInitialValueInEffect: true });
   const isDark = computed === 'dark';
@@ -16,7 +18,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       variant="default"
       size="lg"
       radius="xl"
-      aria-label={isDark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+      aria-label={isDark ? t('ui.theme.to-light', 'Chuyển sang giao diện sáng') : t('ui.theme.to-dark', 'Chuyển sang giao diện tối')}
       onClick={() => setColorScheme(isDark ? 'light' : 'dark')}
     >
       {isDark

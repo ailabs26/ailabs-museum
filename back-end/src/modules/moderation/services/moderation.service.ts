@@ -25,14 +25,21 @@ import {
 } from '../dto/revision-response.dto';
 import { ModerationRepository } from '../repositories/moderation.repository';
 import { REVISION_MEDIA_SLOTS } from '../../exhibits/constants/revision-media-slots';
+import { resolveBilingual } from '../../exhibits/utils/bilingual';
+import { LOCALE_LABELS, SUPPORTED_LOCALES } from '../../translations/constants/locales';
 import { RevisionPublishGate } from '../../exhibits/services/revision-publish.gate';
 import { NotificationsService } from '../../notifications/services/notifications.service';
 
-/** Các field nội dung được so sánh khi diff cũ/mới. */
-const DIFF_FIELDS: { field: string; label: string }[] = [
+/** Field đa ngôn ngữ: diff tách theo từng ngôn ngữ. */
+const LOCALIZED_DIFF_FIELDS: { field: string; label: string }[] = [
   { field: 'name', label: 'Tên hiện vật' },
   { field: 'description', label: 'Mô tả' },
   { field: 'transcript', label: 'Thuyết minh' },
+  { field: 'altText', label: 'Alt text ảnh' },
+];
+
+/** Các field còn lại được so sánh khi diff cũ/mới. */
+const DIFF_FIELDS: { field: string; label: string }[] = [
   { field: 'position', label: 'Vị trí (x, y, z)' },
   { field: 'placeholderShape', label: 'Hình khối placeholder' },
   { field: 'placeholderColor', label: 'Màu placeholder' },
@@ -79,11 +86,13 @@ export class ModerationService {
     const oldContent = published?.content ?? null;
     const newContent = revision.content;
 
-    const fields: DiffFieldDto[] = DIFF_FIELDS.map(({ field, label }) => {
+    const fields: DiffFieldDto[] = LOCALIZED_DIFF_FIELDS.flatMap(({ field, label }) =>
+      this.diffLocalized(oldContent, newContent, field, label));
+    for (const { field, label } of DIFF_FIELDS) {
       const oldValue = this.pickField(oldContent, field);
       const newValue = this.pickField(newContent, field);
-      return { field, label, oldValue, newValue, changed: oldValue !== newValue };
-    });
+      fields.push({ field, label, oldValue, newValue, changed: oldValue !== newValue });
+    }
     // Media là cột của revision (không nằm trong content): so sánh theo id media từng slot.
     for (const slot of REVISION_MEDIA_SLOTS) {
       const oldValue = published ? (published[slot.column] ?? null) : null;
@@ -119,6 +128,11 @@ export class ModerationService {
       // §5.1/5.2: kiểm lại toàn bộ nội dung + media trước khi công khai. Media được khóa
       // FOR SHARE tới hết transaction → không thể bị xóa giữa lúc kiểm tra và lúc publish.
       await this.publishGate.assertPublishable(revision, m);
+      // Mỗi bục của phòng chỉ có một hiện vật công khai: kiểm tra khi đang giữ khóa các hiện vật của phòng.
+      await this.publishGate.assertSlotFree(
+        { exhibitId: revision.exhibitId, roomId: revision.exhibit.roomId, position: revision.content?.position },
+        m,
+      );
 
       const res = await m.update(
         Exhibit,
@@ -200,8 +214,20 @@ export class ModerationService {
     const exhibit = await this.repo.findExhibit(exhibitId);
     if (!exhibit) throw new NotFoundException('Không tìm thấy hiện vật');
 
-    const res = await this.tx.run((m) =>
-      m.update(
+    // Hiện lại là đưa bản đã xuất bản trở lại phòng: bục của nó có thể đã được giao cho hiện vật khác.
+    const published =
+      visibility === ExhibitVisibility.VISIBLE && exhibit.publishedRevisionId
+        ? await this.repo.findDetail(exhibit.publishedRevisionId)
+        : null;
+
+    const res = await this.tx.run(async (m) => {
+      if (published) {
+        await this.publishGate.assertSlotFree(
+          { exhibitId, roomId: exhibit.roomId, position: published.content?.position },
+          m,
+        );
+      }
+      return m.update(
         Exhibit,
         { id: exhibitId, version, isDeleted: false },
         {
@@ -209,12 +235,37 @@ export class ModerationService {
           archivedAt: visibility === ExhibitVisibility.HIDDEN ? new Date() : null,
           version: () => '"version" + 1',
         },
-      ),
-    );
+      );
+    });
     if (!res.affected) throw new ConflictException(VERSION_CONFLICT);
 
     const updated = await this.repo.findExhibit(exhibitId);
     return this.toExhibitBrief(updated)!;
+  }
+
+  /** Một dòng diff cho mỗi ngôn ngữ có nội dung ở bản cũ hoặc bản mới. */
+  private diffLocalized(
+    oldContent: ExhibitRevisionContent | null,
+    newContent: ExhibitRevisionContent | null,
+    field: string,
+    label: string,
+  ): DiffFieldDto[] {
+    const read = (content: ExhibitRevisionContent | null) =>
+      resolveBilingual((content as unknown as Record<string, unknown> | null)?.[field]);
+    const oldText = read(oldContent);
+    const newText = read(newContent);
+    return SUPPORTED_LOCALES.flatMap((locale) => {
+      const oldValue = oldText[locale];
+      const newValue = newText[locale];
+      if (oldValue === null && newValue === null) return [];
+      return [{
+        field: `${field}.${locale}`,
+        label: `${label} (${LOCALE_LABELS[locale]})`,
+        oldValue,
+        newValue,
+        changed: oldValue !== newValue,
+      }];
+    });
   }
 
   /** Lấy giá trị 1 field dưới dạng chuỗi để so sánh/hiển thị. */

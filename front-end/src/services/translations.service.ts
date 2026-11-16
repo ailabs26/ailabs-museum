@@ -22,9 +22,14 @@ export const LOCALES: readonly LocaleMeta[] = [
   { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳', source: true },
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'ja', label: '日本語', flag: '🇯🇵' },
   { code: 'zh', label: '中文', flag: '🇨🇳' },
+  { code: 'ko', label: '한국어', flag: '🇰🇷' },
+  { code: 'ja', label: '日本語', flag: '🇯🇵' },
 ];
+
+/** Ngôn ngữ không bắt buộc của nội dung hiện vật: thiếu thì khách thấy tiếng Việt. */
+export const OPTIONAL_CONTENT_LOCALES = ['fr', 'zh', 'ko', 'ja'] as const;
+export type OptionalContentLocale = (typeof OPTIONAL_CONTENT_LOCALES)[number];
 
 export const SOURCE_LOCALE = 'vi';
 export const TARGET_LOCALES = LOCALES.filter((locale) => !locale.source);

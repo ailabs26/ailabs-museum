@@ -1,0 +1,68 @@
+{
+  "scope": "Existing backend byte identification, upload limits and structure validation. Read-only generated candidates.",
+  "records": [
+    {
+      "file": "lod0.glb",
+      "format": "glb",
+      "mimeType": "model/gltf-binary",
+      "bytes": 23088,
+      "uploadMaxBytes": 10000000,
+      "checksumSha256": "43ee551f7e64f38c59416869e5e9f7040c19be74e64a49be7664452ff33537ba",
+      "inspection": "ACCEPTED"
+    },
+    {
+      "file": "lod1.glb",
+      "format": "glb",
+      "mimeType": "model/gltf-binary",
+      "bytes": 22388,
+      "uploadMaxBytes": 10000000,
+      "checksumSha256": "72b624c372fec7cf9c929df3a8619526d8d7b5633d120f27ae6169256b6cf23a",
+      "inspection": "ACCEPTED"
+    },
+    {
+      "file": "lod2.glb",
+      "format": "glb",
+      "mimeType": "model/gltf-binary",
+      "bytes": 21276,
+      "uploadMaxBytes": 10000000,
+      "checksumSha256": "bb8ac4684cf6531a33aba77a9b14dc833b71ab8b8ca78b2a5979b0ef12acbb2a",
+      "inspection": "ACCEPTED"
+    },
+    {
+      "file": "lod0.glb",
+      "format": "glb",
+      "mimeType": "model/gltf-binary",
+      "bytes": 22412,
+      "uploadMaxBytes": 10000000,
+      "checksumSha256": "1bdd7c4055dce9c64cccd3b1bcaa991a9c4e94fdf3fcbada58330715051b18f5",
+      "inspection": "ACCEPTED"
+    },
+    {
+      "file": "lod1.glb",
+      "format": "glb",
+      "mimeType": "model/gltf-binary",
+      "bytes": 21712,
+      "uploadMaxBytes": 10000000,
+      "checksumSha256": "ac8815476f38641a9c666807571e581eae354e782f5fe61e6cb683e8a37b7fb9",
+      "inspection": "ACCEPTED"
+    },
+    {
+      "file": "lod2.glb",
+      "format": "glb",
+      "mimeType": "model/gltf-binary",
+      "bytes": 20600,
+      "uploadMaxBytes": 10000000,
+      "checksumSha256": "ef89cfb6ee241ab3ff8f4517d07d6b6fa94ae70abaaae9d8377e8a26e4882dc4",
+      "inspection": "ACCEPTED"
+    },
+    {
+      "file": "image.webp",
+      "format": "webp",
+      "mimeType": "image/webp",
+      "bytes": 202,
+      "uploadMaxBytes": 2000000,
+      "checksumSha256": "a9c3321876f89412d511e2e2bd89b8f1dadf1ebfbea5059b32cc867aef5081b6",
+      "inspection": "ACCEPTED"
+    }
+  ]
+}

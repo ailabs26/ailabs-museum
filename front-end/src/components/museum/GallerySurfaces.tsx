@@ -1,10 +1,14 @@
 import { createContext, useContext, useLayoutEffect, useState, type ReactNode } from 'react';
 import { useThree } from '@react-three/fiber';
-import { MeshStandardMaterial, RepeatWrapping, SRGBColorSpace, TextureLoader, Vector2, type Texture } from 'three';
+import { MeshBasicMaterial, MeshStandardMaterial, RepeatWrapping, SRGBColorSpace, TextureLoader, Vector2, type Texture } from 'three';
 
 interface GalleryMaterials {
   stone: MeshStandardMaterial; plaster: MeshStandardMaterial; walnut: MeshStandardMaterial;
   bronze: MeshStandardMaterial; charcoal: MeshStandardMaterial; grout: MeshStandardMaterial; contact: Texture;
+  /** Dải sáng emissive tĩnh (cove, chân bục): không phải nguồn sáng runtime. */
+  glow: MeshBasicMaterial;
+  /** Sàn đá mài của Gallery Template: cùng texture limestone, tông trầm và bóng vừa phải. */
+  floor: MeshStandardMaterial;
 }
 const GallerySurfaceContext = createContext<GalleryMaterials | null>(null);
 
@@ -23,12 +27,16 @@ export function GallerySurfaces({ children, anisotropy = 4 }: { children: ReactN
     const bronze = new MeshStandardMaterial({ name: 'Gallery brushed bronze', color: '#a68b59', metalness: .72, roughness: .38 });
     const charcoal = new MeshStandardMaterial({ name: 'Gallery charcoal stone', color: '#30342f', roughness: .62 });
     const grout = new MeshStandardMaterial({ name: 'Gallery stone joints', color: '#aaa394', roughness: .95 });
-    const load = (name: string, material: MeshStandardMaterial | null, channel: 'map' | 'normalMap' | 'roughnessMap' = 'map', repeat = 1) => {
+    const floor = new MeshStandardMaterial({ name: 'Gallery honed floor', color: '#8f8676', roughness: .52, normalScale: new Vector2(.05, .05) });
+    const glow = new MeshBasicMaterial({ name: 'Gallery amber cove', color: '#ffcf94' });
+    const load = (name: string, target: MeshStandardMaterial | MeshStandardMaterial[] | null, channel: 'map' | 'normalMap' | 'roughnessMap' = 'map', repeat = 1) => {
+      const materials = !target ? [] : Array.isArray(target) ? target : [target];
       const texture = loader.load(`/textures/gallery/${name}.png`, () => {
         if (isDisposed) { texture.dispose(); return; }
-        if (material) {
+        for (const material of materials) {
           material[channel] = texture;
-          if (channel === 'map') material.color.set('#ffffff');
+          // Sàn giữ màu nhân để trầm hơn tường/bục dù dùng chung ảnh.
+          if (channel === 'map' && material !== floor) material.color.set('#ffffff');
           material.needsUpdate = true;
         }
         // Publish async material changes through the committed R3F consumers.
@@ -40,23 +48,23 @@ export function GallerySurfaces({ children, anisotropy = 4 }: { children: ReactN
       texture.wrapS = texture.wrapT = RepeatWrapping;
       texture.repeat.set(repeat, repeat);
       texture.anisotropy = Math.min(anisotropy, gl.capabilities.getMaxAnisotropy());
-      if (channel === 'map' && material) texture.colorSpace = SRGBColorSpace;
+      if (channel === 'map' && target) texture.colorSpace = SRGBColorSpace;
       textures.push(texture);
       return texture;
     };
-    load('limestone-color', stone, 'map', 4);
-    load('limestone-normal', stone, 'normalMap', 4);
-    load('limestone-roughness', stone, 'roughnessMap', 4);
+    load('limestone-color', [stone, floor], 'map', 4);
+    load('limestone-normal', [stone, floor], 'normalMap', 4);
+    load('limestone-roughness', [stone, floor], 'roughnessMap', 4);
     load('plaster-color', plaster, 'map', 2);
     load('plaster-normal', plaster, 'normalMap', 2);
     load('walnut-color', walnut);
     load('walnut-normal', walnut, 'normalMap');
     const contact = load('contact-shadow', null);
-    setMaterials({ stone, plaster, walnut, bronze, charcoal, grout, contact });
+    setMaterials({ stone, plaster, walnut, bronze, charcoal, grout, contact, glow, floor });
     return () => {
       isDisposed = true;
       textures.forEach(texture => texture.dispose());
-      [stone, plaster, walnut, bronze, charcoal, grout].forEach(material => material.dispose());
+      [stone, plaster, walnut, bronze, charcoal, grout, glow, floor].forEach(material => material.dispose());
     };
   }, [gl, invalidate, anisotropy]);
   return materials && <GallerySurfaceContext.Provider value={materials}>{children}</GallerySurfaceContext.Provider>;

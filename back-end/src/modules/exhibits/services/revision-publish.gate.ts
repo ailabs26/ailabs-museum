@@ -4,9 +4,11 @@ import { ApiError } from '../../../common/dto/api-response';
 import { DomainValidationException } from '../../../common/exceptions/validation.exception';
 import { Media } from '../../media/entities/media.entity';
 import { MediaReferenceValidator } from '../../media/services/media-reference.validator';
+import { matchGallerySlot } from '../constants/gallery-slots';
 import { ContentLocale, REVISION_MEDIA_SLOTS } from '../constants/revision-media-slots';
 import { validateForPublish } from '../dto/publish-validation.dto';
 import { ExhibitRevision } from '../entities/exhibit-revision.entity';
+import { ExhibitsRepository } from '../repositories/exhibits.repository';
 import { resolveBilingual } from '../utils/bilingual';
 import { mediaReferencesOf, pickRevisionMedia } from '../utils/revision-media-patch';
 
@@ -145,7 +147,41 @@ export function checkMediaForPublish(
  */
 @Injectable()
 export class RevisionPublishGate {
-  constructor(private readonly mediaReferences: MediaReferenceValidator) {}
+  constructor(
+    private readonly mediaReferences: MediaReferenceValidator,
+    private readonly exhibits: ExhibitsRepository,
+  ) {}
+
+  /**
+   * Gallery Template V1: mỗi bục của một phòng chỉ có tối đa một hiện vật đang công khai.
+   * Gọi TRONG transaction đưa hiện vật ra công khai ở phòng đó (xuất bản, hiện lại, chuyển phòng),
+   * trước lệnh ghi. Tọa độ tự do (không khớp bục nào) không bị ràng buộc — phòng legacy giữ nguyên.
+   */
+  async assertSlotFree(
+    target: { exhibitId: string; roomId: string; position: unknown },
+    manager: EntityManager,
+  ): Promise<void> {
+    const slot = matchGallerySlot(target.position);
+    if (!slot) return;
+    const placements = await this.exhibits.lockPublicPlacements(target.roomId, manager);
+    const isTaken = placements.some(
+      (placement) =>
+        placement.exhibitId !== target.exhibitId &&
+        matchGallerySlot(placement.position)?.id === slot.id,
+    );
+    if (isTaken) {
+      throw new DomainValidationException(
+        [
+          {
+            field: 'position',
+            code: 'gallery_slot_occupied',
+            message: `${slot.label} của phòng đã có hiện vật công khai khác. Hãy chọn bục khác hoặc ẩn hiện vật đang ở bục này trước.`,
+          },
+        ],
+        'Vị trí trưng bày đã có hiện vật khác',
+      );
+    }
+  }
 
   async assertPublishable(revision: RevisionForPublish, manager: EntityManager): Promise<void> {
     const references = mediaReferencesOf(pickRevisionMedia(revision));

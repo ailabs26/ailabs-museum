@@ -1,0 +1,18 @@
+
+k6 · profile=stress · base=http://localhost:3101/api · VU tối đa=500
+Mục tiêu AC-49: p95 < 500 ms, lỗi < 1%
+Thông lượng: 261.8 req/s · checks đạt 100.00%
+Response lỗi: 429=0 · 5xx=0 · khác=0
+
+endpoint            requests  p50 ms  p95 ms  p99 ms  max ms  lỗi    kết luận
+------------------  --------  ------  ------  ------  ------  -----  --------
+exhibit_location    2894      91.0    209.7   322.7   444.1   0.00%  ĐẠT     
+public_room_detail  2513      96.2    226.3   314.2   457.6   0.00%  ĐẠT     
+public_rooms_list   2901      84.8    215.1   310.6   449.5   0.00%  ĐẠT     
+room_detail         8972      163.1   408.0   556.9   816.0   0.00%  ĐẠT     
+rooms_list          7084      86.2    216.5   322.9   454.6   0.00%  ĐẠT     
+search              7051      158.0   429.3   566.0   866.9   0.00%  ĐẠT     
+ui_translations     4218      86.0    211.4   292.2   448.8   0.00%  ĐẠT     
+TỔNG                35639     106.2   373.8   478.8   866.9   0.00%  ĐẠT     
+
+Mọi ngưỡng đều ĐẠT.

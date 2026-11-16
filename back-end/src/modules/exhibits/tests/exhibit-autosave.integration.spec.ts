@@ -74,12 +74,13 @@ describe('VT-079 · autosave chống ghi đè (PostgreSQL thật)', { skip }, ()
     await db.initialize();
     await db.runMigrations();
     const references = new MediaReferenceValidator(new MediaRepository(db.getRepository(Media)));
+    const exhibitsRepo = new ExhibitsRepository(db.getRepository(Exhibit), db.getRepository(ExhibitRevision), db.getRepository(Hotspot));
     service = new ExhibitsService(
-      new ExhibitsRepository(db.getRepository(Exhibit), db.getRepository(ExhibitRevision), db.getRepository(Hotspot)),
+      exhibitsRepo,
       new RoomsRepository(db.getRepository(Room)),
       new TransactionManager(db),
       references,
-      new RevisionPublishGate(references),
+      new RevisionPublishGate(references, exhibitsRepo),
       testMediaUrlService(),
       notificationsStub(),
     );

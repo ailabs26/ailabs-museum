@@ -135,13 +135,15 @@ test('room loading preserves native fullscreen and its reachable exit', async ({
   await page.route('**/api/rooms/ceramics', async route => { await wait; await fulfillMuseum(route, envelope(roomB)); });
   await page.goto('/tour');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
-  await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible();
+  // Both rooms create a cold software renderer. Match the existing GLB scene
+  // readiness gate, while the Exit/fullscreen assertions remain unchanged.
+  await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible({ timeout: 15_000 });
   await page.getByLabel('Chọn phòng trưng bày', { exact: true }).selectOption('ceramics');
   await expect(page.getByRole('dialog', { name: 'Tham quan bảo tàng' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Thoát tham quan', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.fullscreenElement?.getAttribute('data-immersive-tour'))).toBe('true');
   release();
-  await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible();
+  await expect(page.getByLabel('Phòng trưng bày 3D')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog', { name: 'Tham quan bảo tàng' }).getByRole('heading', { name: 'Gốm Việt' })).toBeVisible();
 });
 

@@ -117,6 +117,18 @@ class Environment {
   @Max(100)
   PUBLIC_REPORT_RATE_LIMIT: number = 5;
 
+  /** Request mỗi phút cho một IP ở API nội dung công khai (phòng, tìm kiếm, bản dịch, sitemap...). */
+  @IsInt()
+  @Min(1)
+  @Max(100000)
+  PUBLIC_API_RATE_LIMIT: number = 600;
+
+  /** Request mỗi phút cho một IP khi tải media/GLB công khai (ảnh, audio tua, mô hình 3D). */
+  @IsInt()
+  @Min(1)
+  @Max(100000)
+  PUBLIC_MEDIA_RATE_LIMIT: number = 3000;
+
   /** Cost factor hash bcrypt. */
   @IsInt()
   @Min(10)
@@ -156,6 +168,18 @@ class Environment {
   @Min(1)
   @Max(3650)
   MEDIA_TRASH_RETENTION_DAYS: number = 30;
+
+  /** Số job upload media chạy cùng lúc; tối thiểu 1 vì 0 làm hàng đợi không bao giờ chạy. */
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  MEDIA_UPLOAD_JOB_CONCURRENCY: number = 3;
+
+  /** Số ngày giữ job upload đã kết thúc; sau mốc này Idempotency-Key của job đó dùng lại được. */
+  @IsInt()
+  @Min(1)
+  @Max(3650)
+  MEDIA_UPLOAD_JOB_RETENTION_DAYS: number = 7;
 
   /** Project URL của Supabase, vd https://<ref>.supabase.co — bắt buộc khi driver = supabase. */
   @ValidateIf((env: Environment) => env.MEDIA_STORAGE_DRIVER === 'supabase')

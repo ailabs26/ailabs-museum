@@ -1,8 +1,21 @@
+import { applyDecorators } from '@nestjs/common';
 import { Transform } from 'class-transformer';
 import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { LOCALE_LABELS, SupportedLocale } from '../../translations/constants/locales';
+
+/** Bản dịch không bắt buộc của một ngôn ngữ, cùng giới hạn độ dài với tiếng Việt và tiếng Anh. */
+function OptionalTranslation(subject: string, locale: SupportedLocale, max: number) {
+  const label = `${subject} ${LOCALE_LABELS[locale].toLowerCase()}`;
+  return applyDecorators(
+    IsOptional(),
+    IsString({ message: `${label} phải là chuỗi ký tự` }),
+    MaxLength(max, { message: `${label} không được vượt quá ${max.toLocaleString('vi-VN')} ký tự` }),
+    Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value)),
+  );
+}
 
 /**
- * DTO cho văn bản song ngữ (Tiếng Việt và Tiếng Anh)
+ * DTO cho văn bản đa ngôn ngữ (tiếng Việt, tiếng Anh và các bản dịch không bắt buộc)
  */
 export class BilingualTextDto {
   @IsOptional()
@@ -20,10 +33,22 @@ export class BilingualTextDto {
     typeof value === 'string' ? value.trim() : value,
   )
   en?: string;
+
+  @OptionalTranslation('Nội dung', 'fr', 10000)
+  fr?: string;
+
+  @OptionalTranslation('Nội dung', 'zh', 10000)
+  zh?: string;
+
+  @OptionalTranslation('Nội dung', 'ko', 10000)
+  ko?: string;
+
+  @OptionalTranslation('Nội dung', 'ja', 10000)
+  ja?: string;
 }
 
 /**
- * DTO cho tên/tiêu đề song ngữ (giới hạn 200 ký tự)
+ * DTO cho tên/tiêu đề đa ngôn ngữ (giới hạn 200 ký tự)
  */
 export class BilingualNameDto {
   @IsOptional()
@@ -41,10 +66,22 @@ export class BilingualNameDto {
     typeof value === 'string' ? value.trim() : value,
   )
   en?: string;
+
+  @OptionalTranslation('Tên', 'fr', 200)
+  fr?: string;
+
+  @OptionalTranslation('Tên', 'zh', 200)
+  zh?: string;
+
+  @OptionalTranslation('Tên', 'ko', 200)
+  ko?: string;
+
+  @OptionalTranslation('Tên', 'ja', 200)
+  ja?: string;
 }
 
 /**
- * DTO cho mô tả song ngữ (giới hạn 10.000 ký tự)
+ * DTO cho mô tả đa ngôn ngữ (giới hạn 10.000 ký tự)
  */
 export class BilingualDescriptionDto {
   @IsOptional()
@@ -62,5 +99,17 @@ export class BilingualDescriptionDto {
     typeof value === 'string' ? value.trim() : value,
   )
   en?: string;
+
+  @OptionalTranslation('Mô tả', 'fr', 10000)
+  fr?: string;
+
+  @OptionalTranslation('Mô tả', 'zh', 10000)
+  zh?: string;
+
+  @OptionalTranslation('Mô tả', 'ko', 10000)
+  ko?: string;
+
+  @OptionalTranslation('Mô tả', 'ja', 10000)
+  ja?: string;
 }
 

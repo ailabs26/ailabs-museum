@@ -1,3 +1,4 @@
+import { seedPublicUiStrings } from './seed-translations';
 import 'reflect-metadata';
 import { createHash, randomBytes } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
@@ -197,6 +198,7 @@ async function run(): Promise<void> {
   await seedAdmin(roles);
   console.log('Seed: dữ liệu CMS mẫu (i18n + API key)...');
   await seedTranslations();
+  await seedPublicUiStrings(dataSource.getRepository(Translation));
   await seedPartnerApiKeys();
   await dataSource.destroy();
   console.log('Seed xong.');

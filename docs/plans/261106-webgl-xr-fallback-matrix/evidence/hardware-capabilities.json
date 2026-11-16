@@ -1,0 +1,13 @@
+{
+  "capturedUtc": "2026-11-06T15:12:44.464Z",
+  "browserVersion": "156.0.4314.58",
+  "channel": "msedge",
+  "headless": true,
+  "extraLaunchArgs": [],
+  "contextOptions": "matches MuseumScene WebGL2 options",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+  "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+  "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x0000A7A0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "vendor": "Google Inc. (Intel)",
+  "loseContextExtension": true
+}

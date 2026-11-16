@@ -181,12 +181,13 @@ describe('Thùng rác & khôi phục (PostgreSQL thật)', { skip }, () => {
       tx,
       testMediaUrlService(),
     );
+    const exhibitsRepo = new ExhibitsRepository(db.getRepository(Exhibit), db.getRepository(ExhibitRevision), db.getRepository(Hotspot));
     exhibitsService = new ExhibitsService(
-      new ExhibitsRepository(db.getRepository(Exhibit), db.getRepository(ExhibitRevision), db.getRepository(Hotspot)),
+      exhibitsRepo,
       roomsRepo,
       tx,
       references,
-      new RevisionPublishGate(references),
+      new RevisionPublishGate(references, exhibitsRepo),
       testMediaUrlService(),
       notificationsStub(),
     );

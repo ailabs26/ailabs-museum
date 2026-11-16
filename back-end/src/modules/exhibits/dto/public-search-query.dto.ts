@@ -1,5 +1,7 @@
-import { IsOptional, IsUUID } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsIn, IsOptional, IsUUID } from 'class-validator';
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
+import { SUPPORTED_LOCALES, SupportedLocale } from '../../translations/constants/locales';
 
 /**
  * Query cho tìm kiếm hiện vật CÔNG KHAI (VT-077).
@@ -18,4 +20,10 @@ export class PublicSearchQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsUUID(undefined, { message: 'roomId phải là định dạng UUID hợp lệ' })
   roomId?: string;
+
+  /** Ngôn ngữ trả về, xem `PublicLangQueryDto`. */
+  @ApiPropertyOptional({ enum: SUPPORTED_LOCALES, example: 'ko' })
+  @IsOptional()
+  @IsIn(SUPPORTED_LOCALES, { message: 'Ngôn ngữ không được hỗ trợ' })
+  lang?: SupportedLocale;
 }

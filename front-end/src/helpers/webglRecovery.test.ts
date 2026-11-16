@@ -25,3 +25,17 @@ it('removes canvas listeners and cancels deadlines on unmount', () => {
   canvas.dispatchEvent(new Event('webglcontextlost')); recovery.dispose(); changed.mockClear();
   vi.runAllTimers(); canvas.dispatchEvent(new Event('webglcontextlost')); expect(changed).not.toHaveBeenCalled();
 });
+
+it('keeps the original deadline while verifying and ignores restoration after failure', () => {
+  vi.useFakeTimers(); const canvas = new EventTarget(), changed = vi.fn();
+  const recovery = watchWebglRecovery(canvas, changed);
+  canvas.dispatchEvent(new Event('webglcontextlost'));
+  vi.advanceTimersByTime(7999);
+  canvas.dispatchEvent(new Event('webglcontextrestored'));
+  expect(changed).toHaveBeenLastCalledWith('verifying');
+  vi.advanceTimersByTime(1);
+  expect(changed).toHaveBeenLastCalledWith('failed');
+  canvas.dispatchEvent(new Event('webglcontextrestored')); recovery.frameRendered();
+  expect(changed.mock.calls.map(([status]) => status)).toEqual(['recovering', 'verifying', 'failed']);
+  recovery.dispose(); expect(vi.getTimerCount()).toBe(0);
+});

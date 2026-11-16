@@ -1,0 +1,22 @@
+diff --git a/back-end/src/modules/users/repositories/users.repository.ts b/back-end/src/modules/users/repositories/users.repository.ts
+index 67498cf..7b7f466 100644
+--- a/back-end/src/modules/users/repositories/users.repository.ts
++++ b/back-end/src/modules/users/repositories/users.repository.ts
+@@ -89,2 +89,3 @@ export class UsersRepository extends BaseRepository<User> {
+-  async markRestored(ids: string[], manager: EntityManager): Promise<void> {
+-    await this.scoped(manager).update({ id: In(ids) }, { isDeleted: false, deletedAt: null });
++  async markRestored(ids: string[], manager: EntityManager): Promise<number> {
++    const result = await this.scoped(manager).update({ id: In(ids) }, { isDeleted: false, deletedAt: null });
++    return result.affected ?? 0;
+diff --git a/back-end/src/modules/users/services/users.service.ts b/back-end/src/modules/users/services/users.service.ts
+index 6c0ad52..a0f92f0 100644
+--- a/back-end/src/modules/users/services/users.service.ts
++++ b/back-end/src/modules/users/services/users.service.ts
+@@ -3,0 +4 @@ import {
++  InternalServerErrorException,
+@@ -132 +133,4 @@ export class UsersService {
+-      await this.users.markRestored(ids, manager);
++      const restored = await this.users.markRestored(ids, manager);
++      if (restored !== ids.length) {
++        throw new InternalServerErrorException('Không thể khôi phục toàn bộ tài khoản');
++      }

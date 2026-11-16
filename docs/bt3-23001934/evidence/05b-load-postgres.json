@@ -1,0 +1,228 @@
+{
+  "generatedAt": "2026-10-31T16:34:23.020Z",
+  "config": {
+    "concurrency": 80,
+    "runs": 5,
+    "fileBytes": 2000000,
+    "repository": "postgresql-16 (docker, localhost)",
+    "topology": "server ở tiến trình con (fork)",
+    "storage": "local disk (tmp)",
+    "p95TargetMs": 2500
+  },
+  "machine": {
+    "node": "v26.3.0",
+    "cpus": 16,
+    "cpuModel": "AMD Ryzen 7 7730U with Radeon Graphics",
+    "totalMemGb": 14
+  },
+  "runs": [
+    {
+      "run": 1,
+      "s1": {
+        "post": {
+          "n": 80,
+          "p50": 1378.6,
+          "p95": 1473.4,
+          "max": 1506.3
+        },
+        "postStatus": {
+          "202": 80
+        },
+        "meetsTarget": true,
+        "getStatus": {
+          "n": 220,
+          "p50": 186.9,
+          "p95": 288.5,
+          "max": 352.5
+        },
+        "completion": {
+          "n": 80,
+          "p50": 2369.4,
+          "p95": 2408.2,
+          "max": 2410.4
+        },
+        "jobStatuses": {
+          "succeeded": 80
+        }
+      },
+      "s2": {
+        "post": {
+          "n": 80,
+          "p50": 1374.4,
+          "p95": 1390.6,
+          "max": 1397.3
+        },
+        "accepted202": 1,
+        "replay200": 79,
+        "distinctJobIds": 1
+      }
+    },
+    {
+      "run": 2,
+      "s1": {
+        "post": {
+          "n": 80,
+          "p50": 1136.6,
+          "p95": 1192.3,
+          "max": 1200.8
+        },
+        "postStatus": {
+          "202": 80
+        },
+        "meetsTarget": true,
+        "getStatus": {
+          "n": 223,
+          "p50": 103.3,
+          "p95": 196.8,
+          "max": 251.4
+        },
+        "completion": {
+          "n": 80,
+          "p50": 1801.2,
+          "p95": 1827.8,
+          "max": 1829.4
+        },
+        "jobStatuses": {
+          "succeeded": 80
+        }
+      },
+      "s2": {
+        "post": {
+          "n": 80,
+          "p50": 1015.4,
+          "p95": 1035.4,
+          "max": 1038.6
+        },
+        "accepted202": 1,
+        "replay200": 79,
+        "distinctJobIds": 1
+      }
+    },
+    {
+      "run": 3,
+      "s1": {
+        "post": {
+          "n": 80,
+          "p50": 701,
+          "p95": 735.2,
+          "max": 736
+        },
+        "postStatus": {
+          "202": 80
+        },
+        "meetsTarget": true,
+        "getStatus": {
+          "n": 221,
+          "p50": 119,
+          "p95": 185.8,
+          "max": 199.6
+        },
+        "completion": {
+          "n": 80,
+          "p50": 1287,
+          "p95": 1305.8,
+          "max": 1307.1
+        },
+        "jobStatuses": {
+          "succeeded": 80
+        }
+      },
+      "s2": {
+        "post": {
+          "n": 80,
+          "p50": 1154.5,
+          "p95": 1180.7,
+          "max": 1185
+        },
+        "accepted202": 1,
+        "replay200": 79,
+        "distinctJobIds": 1
+      }
+    },
+    {
+      "run": 4,
+      "s1": {
+        "post": {
+          "n": 80,
+          "p50": 892.5,
+          "p95": 947.2,
+          "max": 948.2
+        },
+        "postStatus": {
+          "202": 80
+        },
+        "meetsTarget": true,
+        "getStatus": {
+          "n": 233,
+          "p50": 148.3,
+          "p95": 234.1,
+          "max": 239.2
+        },
+        "completion": {
+          "n": 80,
+          "p50": 1630,
+          "p95": 1664.6,
+          "max": 1666.6
+        },
+        "jobStatuses": {
+          "succeeded": 80
+        }
+      },
+      "s2": {
+        "post": {
+          "n": 80,
+          "p50": 1254.2,
+          "p95": 1284.9,
+          "max": 1288.6
+        },
+        "accepted202": 1,
+        "replay200": 79,
+        "distinctJobIds": 1
+      }
+    },
+    {
+      "run": 5,
+      "s1": {
+        "post": {
+          "n": 80,
+          "p50": 1090.8,
+          "p95": 1139.6,
+          "max": 1153.4
+        },
+        "postStatus": {
+          "202": 80
+        },
+        "meetsTarget": true,
+        "getStatus": {
+          "n": 240,
+          "p50": 82.4,
+          "p95": 363.1,
+          "max": 377.2
+        },
+        "completion": {
+          "n": 80,
+          "p50": 1907.9,
+          "p95": 1929.9,
+          "max": 1931.8
+        },
+        "jobStatuses": {
+          "succeeded": 80
+        }
+      },
+      "s2": {
+        "post": {
+          "n": 80,
+          "p50": 1181.2,
+          "p95": 1217.7,
+          "max": 1221.9
+        },
+        "accepted202": 1,
+        "replay200": 79,
+        "distinctJobIds": 1
+      }
+    }
+  ],
+  "worstRunPostP95Ms": 1473.4,
+  "allRunsMeetTarget": true,
+  "idempotencyHeldInAllRuns": true
+}

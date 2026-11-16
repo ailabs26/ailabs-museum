@@ -25,6 +25,8 @@ test('permission failures and corrupt GLBs stay isolated and can be retried with
   });
   await page.goto('/tour.html');
   await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
+  // Establish scene readiness before measuring the isolated model failure UI.
+  await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('button', { name: 'Thử lại Hiện vật 1', exact: true })).toBeVisible();
   await expect(page.getByText('Đã tải 0/1 mô hình 3D', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Thử lại Hiện vật 1', exact: true }).click();

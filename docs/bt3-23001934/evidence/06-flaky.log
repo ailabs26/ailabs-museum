@@ -1,0 +1,35 @@
+# FLAKY 1 — time/async + concurrency: chạy lặp 20 lần (gồm TC04 20 request đồng thời, PG 20 insert đồng thời) — 2026-10-31T23:22:42+07:00
+run 1: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11351.466502 
+run 2: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11408.324021 
+run 3: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11447.899606 
+run 4: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11612.160917 
+run 5: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11278.573655 
+run 6: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11155.229641 
+run 7: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11524.247217 
+run 8: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11476.931249 
+run 9: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11464.231184 
+run 10: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11401.342042 
+run 11: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11259.070043 
+run 12: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11412.51654 
+run 13: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11348.860605 
+run 14: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11852.093769 
+run 15: ℹ pass 34 ℹ fail 0 ℹ duration_ms 13077.702298 
+run 16: ℹ pass 34 ℹ fail 0 ℹ duration_ms 11813.114177 
+run 17: ℹ pass 34 ℹ fail 0 ℹ duration_ms 12184.468936 
+run 18: ℹ pass 34 ℹ fail 0 ℹ duration_ms 13522.436176 
+run 19: ℹ pass 34 ℹ fail 0 ℹ duration_ms 13806.034348 
+run 20: ℹ pass 34 ℹ fail 0 ℹ duration_ms 13505.682555 
+
+# FLAKY 2 — order/shared state: --test-randomize với 5 seed
+seed 1: ℹ Randomized test order seed: 1 ℹ pass 34 ℹ fail 0 
+seed 42: ℹ Randomized test order seed: 42 ℹ pass 34 ℹ fail 0 
+seed 2026: ℹ Randomized test order seed: 2026 ℹ pass 34 ℹ fail 0 
+seed 31337: ℹ Randomized test order seed: 31337 ℹ pass 34 ℹ fail 0 
+seed 78078: ℹ Randomized test order seed: 78078 ℹ pass 34 ℹ fail 0 
+
+# FLAKY 3 — thí nghiệm tạm (không commit): bỏ afterEach whenIdle(), worker của test trước ghi lấn sang test sau
+seed 1: ℹ pass 23 ℹ fail 0 
+seed 42: ✖ Upload media bất đồng bộ (VT-078) — HTTP (348.462998ms) ℹ pass 22 ℹ fail 1 ✖ TC02 — E2E API: tạo job → poll → succeeded, progress 100, mediaId trỏ tới media ready (24.184705ms) 
+seed 2026: ✖ Upload media bất đồng bộ (VT-078) — HTTP (462.235179ms) ℹ pass 21 ℹ fail 2 ✖ TC04 — 20 request đồng thời cùng key → đúng 1 lần 202, cùng một job, 1 media (51.891964ms) ✖ TC08c — GLB hỏng cấu trúc → 202 rồi failed (media_corrupted), không có media ready (7.221112ms) 
+seed 31337: ✖ Upload media bất đồng bộ (VT-078) — HTTP (390.669052ms) ℹ pass 21 ℹ fail 2 ✖ TC02 — E2E API: tạo job → poll → succeeded, progress 100, mediaId trỏ tới media ready (28.811183ms) ✖ TC03 — gửi lại tuần tự cùng key + cùng file → 200, cùng job, 1 job, 1 media (25.289256ms) 
+seed 78078: ✖ Upload media bất đồng bộ (VT-078) — HTTP (363.668104ms) ℹ pass 21 ℹ fail 2 ✖ TC02 — E2E API: tạo job → poll → succeeded, progress 100, mediaId trỏ tới media ready (20.775643ms) ✖ TC04 — 20 request đồng thời cùng key → đúng 1 lần 202, cùng một job, 1 media (43.38471ms) 

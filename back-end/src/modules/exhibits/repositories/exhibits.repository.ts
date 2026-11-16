@@ -1,3 +1,4 @@
+import { SUPPORTED_LOCALES, SupportedLocale } from '../../translations/constants/locales';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, EntityManager, In, IsNull, Not, Repository, SelectQueryBuilder } from 'typeorm';
@@ -20,8 +21,8 @@ const LIKE_ESCAPE = "ESCAPE '\\'";
 // chữ thường → không khớp alias `"publishedRevision"`. Viết tường minh để resolve đúng cột JSONB.
 const REV_CONTENT = `"publishedRevision"."content"`;
 
-/** Giá trị văn bản của một ngôn ngữ khi `content.<field>` là object song ngữ `{vi,en}`. */
-const jsonText = (field: 'name' | 'description', lang: 'vi' | 'en'): string =>
+/** Giá trị văn bản của một ngôn ngữ khi `content.<field>` là object đa ngôn ngữ. */
+const jsonText = (field: 'name' | 'description', lang: SupportedLocale): string =>
   `${REV_CONTENT}->'${field}'->>'${lang}'`;
 
 /** Giá trị văn bản khi `content.<field>` là chuỗi thường (seed/dữ liệu cũ) — bỏ qua nếu là object. */
@@ -318,15 +319,19 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
       const search = `%${escaped}%`;
       qb.andWhere(
         new Brackets((sub) => {
-          // Chỉ tìm trong các trường HIỂN THỊ công khai (tên phòng + tên/mô tả song ngữ của hiện vật).
+          // Chỉ tìm trong các trường HIỂN THỊ công khai (tên phòng + tên/mô tả đa ngôn ngữ của hiện vật).
           // KHÔNG cast cả JSONB `content` sang text: tránh khớp nhầm khóa JSON ("name", "position", "en")
           // và các trường nội bộ (màu, tọa độ...). Hỗ trợ cả hai dạng dữ liệu: object {vi,en} và chuỗi thường.
+          sub.where(`room.name ILIKE :search ${LIKE_ESCAPE}`);
+          for (const lang of SUPPORTED_LOCALES) {
+            sub.orWhere(`"room"."translations"->'name'->>'${lang}' ILIKE :search ${LIKE_ESCAPE}`);
+          }
+          for (const field of ['name', 'description'] as const) {
+            for (const lang of SUPPORTED_LOCALES) {
+              sub.orWhere(`${jsonText(field, lang)} ILIKE :search ${LIKE_ESCAPE}`);
+            }
+          }
           sub
-            .where(`room.name ILIKE :search ${LIKE_ESCAPE}`)
-            .orWhere(`${jsonText('name', 'vi')} ILIKE :search ${LIKE_ESCAPE}`)
-            .orWhere(`${jsonText('name', 'en')} ILIKE :search ${LIKE_ESCAPE}`)
-            .orWhere(`${jsonText('description', 'vi')} ILIKE :search ${LIKE_ESCAPE}`)
-            .orWhere(`${jsonText('description', 'en')} ILIKE :search ${LIKE_ESCAPE}`)
             .orWhere(`${jsonPlain('name')} ILIKE :search ${LIKE_ESCAPE}`)
             .orWhere(`${jsonPlain('description')} ILIKE :search ${LIKE_ESCAPE}`);
         }),
@@ -341,6 +346,32 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
       .addOrderBy('exhibit.id', 'ASC');
 
     return qb;
+  }
+
+  /**
+   * Phòng chứa một hiện vật công khai, cho liên kết cố định của mã QR (`/e/<id>`). Cùng điều kiện với tìm kiếm
+   * công khai, nên bản nháp, hiện vật đã ẩn/xóa hoặc thuộc phòng lưu trữ đều trả `null`.
+   */
+  async findPublicLocation(id: string): Promise<{ exhibitId: string; roomSlug: string } | null> {
+    const exhibit = await this.buildPublicSearchIdQuery()
+      .addSelect('room.slug')
+      .andWhere('exhibit.id = :id', { id })
+      .getOne();
+    return exhibit?.room ? { exhibitId: exhibit.id, roomSlug: exhibit.room.slug } : null;
+  }
+
+  /** Hiện vật công khai cho sitemap: phòng chứa và thời điểm bản đang xuất bản được duyệt. */
+  async findPublicSitemapEntries(limit: number): Promise<{ exhibitId: string; roomSlug: string; publishedAt: Date }[]> {
+    const exhibits = await this.buildPublicSearchIdQuery()
+      .addSelect(['room.slug', 'exhibit.updatedAt', 'publishedRevision.reviewedAt'])
+      .take(limit)
+      .getMany();
+    return exhibits.map((exhibit) => ({
+      exhibitId: exhibit.id,
+      roomSlug: exhibit.room.slug,
+      // Bản cũ có thể thiếu `reviewedAt`: dùng lần sửa gần nhất của hiện vật.
+      publishedAt: exhibit.publishedRevision?.reviewedAt ?? exhibit.updatedAt,
+    }));
   }
 
   /**
@@ -433,9 +464,35 @@ export class ExhibitsRepository extends BaseRepository<Exhibit> {
     const rows = await this.scoped(manager).find({
       select: { id: true },
       where: { roomId, isDeleted: false },
+      // Thứ tự khóa cố định: các transaction cùng khóa một phòng chờ nhau thay vì khóa chéo (deadlock).
+      order: { id: 'ASC' },
       lock: { mode: 'pessimistic_write' },
     });
     return rows.map((row) => row.id);
+  }
+
+  /**
+   * Vị trí (theo bản đang xuất bản) của các hiện vật đang công khai trong phòng, sau khi đã khóa
+   * FOR UPDATE mọi hiện vật chưa xóa của phòng: hai lần xuất bản/hiện lại/chuyển phòng đồng thời
+   * vào cùng một phòng phải chạy tuần tự, nên không thể cùng lọt qua kiểm tra trùng bục.
+   */
+  async lockPublicPlacements(
+    roomId: string,
+    manager: EntityManager,
+  ): Promise<{ exhibitId: string; position: unknown }[]> {
+    await this.findIdsByRoomForUpdate(roomId, manager);
+    const rows = await this.scoped(manager).find({
+      where: {
+        roomId,
+        visibility: ExhibitVisibility.VISIBLE,
+        isDeleted: false,
+        archivedAt: IsNull(),
+        publishedRevisionId: Not(IsNull()),
+        publishedRevision: { state: RevisionState.APPROVED },
+      },
+      relations: { publishedRevision: true },
+    });
+    return rows.map((row) => ({ exhibitId: row.id, position: row.publishedRevision?.content?.position }));
   }
 
   /**

@@ -1,0 +1,29 @@
+
+> @aura-museum/asset-pipeline@1.0.0 test
+> node --test test/*.test.mjs
+
+✔ CLI help, invalid options and real invocation use the normal entry point (3081.0442ms)
+✔ photo JPEG candidate preserves orientation and dimensions with measured color error (110.5167ms)
+✔ normal and roughness channel data remain pixel-exact in lossless WebP (60.3364ms)
+✔ ICC input is reported unsupported and larger WebP candidates retain original (20.7633ms)
+✔ malformed images, unsupported bytes and excessive decoded pixel counts are rejected (5.6217ms)
+✔ genuine two-frame APNG is unsupported even when Sharp omits its page count (8.5507ms)
+✔ truncated PNG chunks are rejected before Sharp can accept the default frame (6.7748ms)
+✔ real GLB produces three decoded Draco review candidates without changing original (1865.0691ms)
+✔ rejects empty, malformed and oversized sources without output (195.689ms)
+✔ fresh output required and source ancestor collisions cannot overwrite originals (56.5439ms)
+✔ unsupported features are reported and unsafe external resources are rejected before decoding (181.4061ms)
+✔ lossless WebP preserves alpha and exact oriented pixels, with original fallback for bigger candidates (47.1987ms)
+✔ invalid config and decompression pixel limit fail before artifact generation (52.7704ms)
+✔ quality gate catches changed UV and normals even when bounds and triangles match (58.9233ms)
+✔ failed validation cleans temporary files and concurrent output selection has one winner (270.7426ms)
+✔ embedded WebP is opt-in, lossless, and preserves noncolor texture bytes after decoding (1291.0653ms)
+✔ glTF spec-invalid material factors are rejected before NodeIO and output cleanup is complete (61.6347ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4679.8099

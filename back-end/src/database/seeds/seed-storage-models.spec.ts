@@ -9,6 +9,7 @@ import { Room } from '../../modules/rooms/entities/room.entity';
 import { User } from '../../modules/users/entities/user.entity';
 import { STORAGE_MODELS, STORAGE_MODEL_ROOM } from './storage-model-content';
 import { seedStorageModels } from './seed-storage-models';
+import { GALLERY_SLOTS, matchGallerySlot } from '../../modules/exhibits/constants/gallery-slots';
 
 function database() {
   const tables = new Map<unknown, Map<string, Record<string, unknown>>>();
@@ -59,4 +60,8 @@ it('rolls back all new content on a path collision and refuses a missing admin',
   db.denyAdmin();
   await assert.rejects(() => seedStorageModels(db.source, 'admin'), /admin/);
   assert.equal(db.tables.get(Room)!.has(STORAGE_MODEL_ROOM.id), false);
+});
+
+it('seeded GLB exhibits occupy the five Gallery Template slots, one each', () => {
+  assert.deepEqual(STORAGE_MODELS.map((model) => matchGallerySlot(model.position)?.id), GALLERY_SLOTS.map((slot) => slot.id));
 });

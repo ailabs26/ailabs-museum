@@ -1,0 +1,21 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test museum-audit.spec.ts --reporter=line --output=test-results/audit-panel-final
+
+
+[WebServer] (node:19648) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:23248) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:17464) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+[1/3] tests\museum-audit.spec.ts:9:1 › audit off loads no instrumentation, records nothing and preserves demand idle
+[2/3] tests\museum-audit.spec.ts:25:1 › opt-in exports actual submissions, stays idle and releases renderer observers across rooms
+[3/3] tests\museum-audit.spec.ts:77:1 › touch audit controls › audit controls work by touch after orientation resize
+  3 passed (47.1s)

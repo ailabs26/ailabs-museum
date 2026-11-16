@@ -23,7 +23,8 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertCircle, IconEdit, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react';
+import { IconAlertCircle, IconEdit, IconPlus, IconPrinter, IconSearch, IconTrash } from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiException } from '@/core/api/api-error';
 import { useAuth } from '@/core/auth/use-auth';
@@ -43,12 +44,15 @@ import {
   RoomStatus,
   UpdateRoomInput,
 } from '@/services/rooms.service';
+import { RoomTranslationsFields } from '@/components/cms/RoomTranslationsFields';
+import { toRoomTranslationsInput, toRoomTranslationValues, type RoomTranslationValues } from '@/helpers/roomTranslations';
 
 interface RoomFormValues {
   name: string;
   slug: string;
   description: string;
   status: RoomStatus;
+  translations: RoomTranslationValues;
 }
 
 const STATUS_FILTER_OPTIONS = [
@@ -88,6 +92,7 @@ export function RoomsPage() {
   const canCreate = hasPermission(PERMISSIONS.ROOM_CREATE);
   const canUpdate = hasPermission(PERMISSIONS.ROOM_UPDATE);
   const canDelete = hasPermission(PERMISSIONS.ROOM_DELETE);
+  const canPrintQr = hasPermission(PERMISSIONS.EXHIBIT_READ);
 
   const queryStatus = statusFilter !== 'all' ? (statusFilter as RoomStatus) : undefined;
 
@@ -110,6 +115,7 @@ export function RoomsPage() {
       slug: '',
       description: '',
       status: 'active',
+      translations: toRoomTranslationValues(),
     },
     validate: {
       name: (v) => (v.trim().length === 0 ? 'Tên phòng không được để trống' : null),
@@ -152,6 +158,7 @@ export function RoomsPage() {
           name: values.name.trim(),
           description: values.description.trim() || undefined,
           status: values.status,
+          translations: toRoomTranslationsInput(values.translations),
         };
         return roomsService.update(editing.id, patch);
       }
@@ -159,6 +166,7 @@ export function RoomsPage() {
         name: values.name.trim(),
         slug: values.slug.trim(),
         description: values.description.trim() || undefined,
+        translations: toRoomTranslationsInput(values.translations),
       };
       return roomsService.create(input);
     },
@@ -205,7 +213,7 @@ export function RoomsPage() {
     setEditing(null);
     setAutoSlug(true);
     form.reset();
-    form.setValues({ name: '', slug: '', description: '', status: 'active' });
+    form.setValues({ name: '', slug: '', description: '', status: 'active', translations: toRoomTranslationValues() });
     drawer.open();
   };
 
@@ -217,6 +225,7 @@ export function RoomsPage() {
       slug: room.slug,
       description: room.description ?? '',
       status: room.status,
+      translations: toRoomTranslationValues(room.translations),
     });
     drawer.open();
   };
@@ -324,6 +333,13 @@ export function RoomsPage() {
         </Group>
       ) : (
         <Group gap={6} justify="flex-end" wrap="nowrap">
+          {canPrintQr && (
+            <Tooltip label="In mã QR các hiện vật của phòng">
+              <ActionIcon variant="subtle" color="dark" component={Link} to={`/admin/rooms/${r.id}/qr`} aria-label={`In mã QR phòng ${r.name}`}>
+                <IconPrinter size={18} />
+              </ActionIcon>
+            </Tooltip>
+          )}
           {canUpdate && (
             <Tooltip label="Chỉnh sửa thông tin phòng">
               <ActionIcon
@@ -504,6 +520,11 @@ export function RoomsPage() {
                     onClick={() => restore.confirmRestore([room.id])} />
                 ) : (
                 <Group gap={6} wrap="nowrap">
+                  {canPrintQr && (
+                    <ActionIcon variant="subtle" color="dark" component={Link} to={`/admin/rooms/${room.id}/qr`} aria-label={`In mã QR phòng ${room.name}`}>
+                      <IconPrinter size={18} />
+                    </ActionIcon>
+                  )}
                   {canUpdate && (
                     <ActionIcon
                       variant="subtle"
@@ -602,6 +623,11 @@ export function RoomsPage() {
               value={form.values.description}
               onChange={(e) => form.setFieldValue('description', e.currentTarget.value)}
               error={form.errors.description}
+            />
+
+            <RoomTranslationsFields
+              source={{ name: form.values.name, description: form.values.description }}
+              getInputProps={form.getInputProps}
             />
 
             {editing && (

@@ -222,12 +222,13 @@ describe('Đăng ký module', () => {
     assert.deepEqual(guards, [JwtAuthGuard, ActiveSessionGuard, PermissionsGuard]);
   });
 
-  it('CommonModule là @Global và export TransactionManager + PasswordService', async () => {
+  it('CommonModule là @Global và export TransactionManager + PasswordService + PublicRateLimiter', async () => {
     const { CommonModule } = await import('../common.module');
     const { TransactionManager } = await import('../database/transaction.manager');
     const { PasswordService } = await import('../security/password.service');
+    const { PublicRateLimiter } = await import('../rate-limit/public-rate-limiter');
     assert.equal(Reflect.getMetadata('__module:global__', CommonModule), true);
-    assert.deepEqual(Reflect.getMetadata('exports', CommonModule), [TransactionManager, PasswordService]);
+    assert.deepEqual(Reflect.getMetadata('exports', CommonModule), [TransactionManager, PasswordService, PublicRateLimiter]);
   });
 
   it('UsersModule export UsersRepository cho AuthModule; RolesModule khai báo controller quản trị', async () => {

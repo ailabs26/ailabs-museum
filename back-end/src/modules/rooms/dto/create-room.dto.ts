@@ -1,5 +1,6 @@
-import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsNotEmpty, IsOptional, IsString, Matches, MaxLength, ValidateNested } from 'class-validator';
+import { RoomTranslationsDto } from './room-translations.dto';
 
 /**
  * Slug dành riêng cho route tĩnh dưới `/rooms` (vd `GET /rooms/search` của VT-077).
@@ -36,4 +37,9 @@ export class CreateRoomDto {
     typeof value === 'string' ? value.trim() : value,
   )
   description?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => RoomTranslationsDto)
+  translations?: RoomTranslationsDto;
 }

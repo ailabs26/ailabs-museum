@@ -1,0 +1,5047 @@
+{
+  "stats": {
+    "startTime": "2026-11-06T14:58:39.827Z",
+    "duration": 465458.473,
+    "expected": 75,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "preview": {
+    "command": "npm run preview -- --host 127.0.0.1 --port 4173 --strictPort",
+    "url": "http://127.0.0.1:4173",
+    "reuseExistingServer": false
+  },
+  "files": {
+    "museum-fullscreen.spec.ts": 8,
+    "museum-glb.spec.ts": 5,
+    "museum-hotspots.spec.ts": 21,
+    "museum-immersive-ui.spec.ts": 5,
+    "museum-xr-disconnect.spec.ts": 14,
+    "museum-xr.spec.ts": 12,
+    "tour-2d-fallback.spec.ts": 10
+  },
+  "cases": [
+    {
+      "file": "museum-fullscreen.spec.ts",
+      "name": "opening fills the viewport and detail selection never shrinks Canvas",
+      "status": "passed",
+      "durationMs": 4202,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-fullscreen.spec.ts",
+      "name": "three open/close cycles restore scroll, focus, background and release renderers",
+      "status": "passed",
+      "durationMs": 10763,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-fullscreen.spec.ts",
+      "name": "rejected native fullscreen keeps a usable overlay",
+      "status": "passed",
+      "durationMs": 3065,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-fullscreen.spec.ts",
+      "name": "a late native fullscreen grant after closing is released without reopening the tour",
+      "status": "passed",
+      "durationMs": 785,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-fullscreen.spec.ts",
+      "name": "external native fullscreen exit reconciles tour state",
+      "status": "passed",
+      "durationMs": 1932,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-fullscreen.spec.ts",
+      "name": "closing preserves selected exhibit for the readable page",
+      "status": "passed",
+      "durationMs": 3601,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-fullscreen.spec.ts",
+      "name": "room loading preserves native fullscreen and its reachable exit",
+      "status": "passed",
+      "durationMs": 4972,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-fullscreen.spec.ts",
+      "name": "Escape can close the tour after an XR scene unmounts during room loading",
+      "status": "passed",
+      "durationMs": 2614,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-glb.spec.ts",
+      "name": "permission failures and corrupt GLBs stay isolated and can be retried without crashing the room",
+      "status": "passed",
+      "durationMs": 4358,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-glb.spec.ts",
+      "name": "switching rooms while two GLBs are loading cancels the queue and keeps the next room usable",
+      "status": "passed",
+      "durationMs": 4675,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-glb.spec.ts",
+      "name": "background clicks clear selection but dragging the background does not",
+      "status": "passed",
+      "durationMs": 6500,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-glb.spec.ts",
+      "name": "finishing a real GLB download respects an earlier camera reset",
+      "status": "passed",
+      "durationMs": 7661,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-glb.spec.ts",
+      "name": "finishing a real GLB download respects an earlier camera drag",
+      "status": "passed",
+      "durationMs": 12646,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "3D hotspot mouse picking shares selection, hover tooltip and drag rejection",
+      "status": "passed",
+      "durationMs": 13370,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "a camera drag away from a hotspot and back to its starting point never selects it",
+      "status": "passed",
+      "durationMs": 11009,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "metadata refresh updates annotations without downloading healthy GLBs again",
+      "status": "passed",
+      "durationMs": 4578,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "multiple published annotations preserve coordinates and bind their labels to one artifact",
+      "status": "passed",
+      "durationMs": 4780,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "a genuine GLTFLoader parser rejection falls back per artifact after header and checksum validation",
+      "status": "passed",
+      "durationMs": 4784,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "per-artifact retry cooldown unlocks the button and stops after three retries",
+      "status": "passed",
+      "durationMs": 7546,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "hover tooltips release their textures and mounted hotspots preserve demand rendering",
+      "status": "passed",
+      "durationMs": 7240,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "five parsed models expose identity-bound 3D and keyboard hotspots with one selection state",
+      "status": "passed",
+      "durationMs": 4529,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "invalid optional mesh keeps its valid sibling and all five artifacts render",
+      "status": "passed",
+      "durationMs": 3208,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "a model clone/render exception is contained per artifact and retries without refetching healthy assets",
+      "status": "passed",
+      "durationMs": 5459,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "one 401 GLB preserves four healthy models, interactive placeholder and isolated retry",
+      "status": "passed",
+      "durationMs": 6351,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "glb-isolation.json",
+          "data": {
+            "failure": 401,
+            "before": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "7070918f-022f-4a47-bc61-affe2c756a18",
+                "10000000-0000-4000-8000-000000000003": "a80bc992-3928-4585-acfa-b725c7e2d03f",
+                "10000000-0000-4000-8000-000000000004": "6cb78749-38a1-4ed8-96aa-6d584e8ce613",
+                "10000000-0000-4000-8000-000000000005": "808bfae8-530a-41f9-b5c9-0451a48ac76c"
+              },
+              "fallbacks": [
+                "10000000-0000-4000-8000-000000000002"
+              ]
+            },
+            "after": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "7070918f-022f-4a47-bc61-affe2c756a18",
+                "10000000-0000-4000-8000-000000000002": "a5df4575-e61d-42a8-be01-efff47586464",
+                "10000000-0000-4000-8000-000000000003": "a80bc992-3928-4585-acfa-b725c7e2d03f",
+                "10000000-0000-4000-8000-000000000004": "6cb78749-38a1-4ed8-96aa-6d584e8ce613",
+                "10000000-0000-4000-8000-000000000005": "808bfae8-530a-41f9-b5c9-0451a48ac76c"
+              },
+              "fallbacks": []
+            },
+            "requests": [
+              1,
+              2,
+              1,
+              1,
+              1
+            ],
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 46,
+                "times": [
+                  665.6999999880791,
+                  692,
+                  692.3000000119209,
+                  692.9000000059605,
+                  693.0999999940395,
+                  693.3000000119209,
+                  693.3000000119209,
+                  693.4000000059605,
+                  693.5,
+                  693.5,
+                  693.5999999940395,
+                  693.6999999880791,
+                  696.1999999880791,
+                  696.3000000119209,
+                  696.5,
+                  696.5999999940395,
+                  696.5999999940395,
+                  696.6999999880791,
+                  696.8000000119209,
+                  696.8000000119209,
+                  696.9000000059605,
+                  696.9000000059605,
+                  697,
+                  697,
+                  697.0999999940395,
+                  697.1999999880791,
+                  697.1999999880791,
+                  697.1999999880791,
+                  697.1999999880791,
+                  697.1999999880791,
+                  697.4000000059605,
+                  697.4000000059605,
+                  697.4000000059605,
+                  697.4000000059605,
+                  988.1999999880791,
+                  1001.3000000119209,
+                  2373.199999988079,
+                  2378.5999999940395,
+                  3357.300000011921,
+                  3749.300000011921,
+                  3760,
+                  3808.800000011921,
+                  3824.5,
+                  4184.5,
+                  4612.699999988079,
+                  5978
+                ],
+                "calls": 50,
+                "triangles": 4020,
+                "geometries": 68,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "50b1c83a-742e-41db-bca0-f187580b3c82": 18,
+                  "44375aa3-5645-4acb-802f-d6dd5976649e": 20,
+                  "4b42aa13-db97-4f81-ae71-1654e72568ac": 21,
+                  "961886e5-ecfc-4509-8fb8-2b602bb90ea0": 22,
+                  "1f7fb22b-644a-4d3e-b5ab-e00213257e87": 23
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "one 403 GLB preserves four healthy models, interactive placeholder and isolated retry",
+      "status": "passed",
+      "durationMs": 6436,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "glb-isolation.json",
+          "data": {
+            "failure": 403,
+            "before": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "93b2c70e-3228-4fef-a0a8-bd765ff2d760",
+                "10000000-0000-4000-8000-000000000003": "5def72f5-d27e-4dc1-83f6-87a14a3cfa76",
+                "10000000-0000-4000-8000-000000000004": "637c11ef-84a1-42e6-850b-7225ca049e7f",
+                "10000000-0000-4000-8000-000000000005": "0059346f-8703-462d-8c04-423ead9434cc"
+              },
+              "fallbacks": [
+                "10000000-0000-4000-8000-000000000002"
+              ]
+            },
+            "after": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "93b2c70e-3228-4fef-a0a8-bd765ff2d760",
+                "10000000-0000-4000-8000-000000000002": "e062cbca-e49c-4a03-8c7e-afcf85e5093a",
+                "10000000-0000-4000-8000-000000000003": "5def72f5-d27e-4dc1-83f6-87a14a3cfa76",
+                "10000000-0000-4000-8000-000000000004": "637c11ef-84a1-42e6-850b-7225ca049e7f",
+                "10000000-0000-4000-8000-000000000005": "0059346f-8703-462d-8c04-423ead9434cc"
+              },
+              "fallbacks": []
+            },
+            "requests": [
+              1,
+              2,
+              1,
+              1,
+              1
+            ],
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 46,
+                "times": [
+                  876.2999999821186,
+                  903.0999999940395,
+                  903.4000000059605,
+                  904.0999999940395,
+                  904.1999999880791,
+                  904.2999999821186,
+                  904.4000000059605,
+                  904.5999999940395,
+                  904.5999999940395,
+                  904.6999999880791,
+                  904.7999999821186,
+                  904.9000000059605,
+                  907.5999999940395,
+                  907.7999999821186,
+                  908,
+                  908.0999999940395,
+                  908.0999999940395,
+                  908.0999999940395,
+                  908.1999999880791,
+                  908.2999999821186,
+                  908.4000000059605,
+                  908.4000000059605,
+                  908.5,
+                  908.5,
+                  908.5,
+                  908.5999999940395,
+                  908.5999999940395,
+                  908.5999999940395,
+                  908.6999999880791,
+                  908.6999999880791,
+                  908.7999999821186,
+                  908.7999999821186,
+                  908.7999999821186,
+                  908.9000000059605,
+                  1204.7999999821186,
+                  1221.7999999821186,
+                  2171.699999988079,
+                  2891.199999988079,
+                  2895.2999999821186,
+                  3879,
+                  4248.799999982119,
+                  4257.9000000059605,
+                  4309.9000000059605,
+                  4695.5,
+                  5535,
+                  5901.4000000059605
+                ],
+                "calls": 50,
+                "triangles": 4020,
+                "geometries": 68,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "3ba73272-34ae-48df-ae44-338fccf4acb3": 18,
+                  "f49467b3-eddf-4f58-97a1-1a1d1fde15cf": 20,
+                  "b56a2e09-2c95-4c94-bbcc-67e811435e6e": 21,
+                  "4a185a73-7857-493f-a6ec-b7a6e4951322": 22,
+                  "e47a649b-bb8b-44ee-8007-3ac4dec30fb0": 23
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "one 404 GLB preserves four healthy models, interactive placeholder and isolated retry",
+      "status": "passed",
+      "durationMs": 5914,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "glb-isolation.json",
+          "data": {
+            "failure": 404,
+            "before": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "70b97a0c-be7d-4467-9639-00f44cbb4dad",
+                "10000000-0000-4000-8000-000000000003": "51bbb669-cf5e-4341-a5bc-3e81ec01b6a7",
+                "10000000-0000-4000-8000-000000000004": "27c775ad-e2d4-41d1-8cb1-5ab0f9fc0250",
+                "10000000-0000-4000-8000-000000000005": "389aeba1-999e-4215-968e-1a8f61262f4c"
+              },
+              "fallbacks": [
+                "10000000-0000-4000-8000-000000000002"
+              ]
+            },
+            "after": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "70b97a0c-be7d-4467-9639-00f44cbb4dad",
+                "10000000-0000-4000-8000-000000000002": "0eb30834-acca-4d86-aebd-cadd6973f4ec",
+                "10000000-0000-4000-8000-000000000003": "51bbb669-cf5e-4341-a5bc-3e81ec01b6a7",
+                "10000000-0000-4000-8000-000000000004": "27c775ad-e2d4-41d1-8cb1-5ab0f9fc0250",
+                "10000000-0000-4000-8000-000000000005": "389aeba1-999e-4215-968e-1a8f61262f4c"
+              },
+              "fallbacks": []
+            },
+            "requests": [
+              1,
+              2,
+              1,
+              1,
+              1
+            ],
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 45,
+                "times": [
+                  668.3000000119209,
+                  693.7000000178814,
+                  694,
+                  694.5999999940395,
+                  694.7000000178814,
+                  694.9000000059605,
+                  695,
+                  695.0999999940395,
+                  695.2000000178814,
+                  695.3000000119209,
+                  695.3000000119209,
+                  695.5,
+                  698.4000000059605,
+                  698.5,
+                  698.7000000178814,
+                  698.8000000119209,
+                  698.9000000059605,
+                  698.9000000059605,
+                  699,
+                  699.0999999940395,
+                  699.0999999940395,
+                  699.0999999940395,
+                  699.3000000119209,
+                  699.3000000119209,
+                  699.3000000119209,
+                  699.3000000119209,
+                  699.4000000059605,
+                  699.4000000059605,
+                  699.4000000059605,
+                  699.5,
+                  699.5999999940395,
+                  699.5999999940395,
+                  699.7000000178814,
+                  699.7000000178814,
+                  1006.8000000119209,
+                  1023.2000000178814,
+                  2399.4000000059605,
+                  2406.4000000059605,
+                  3422.800000011921,
+                  3812.0999999940395,
+                  3820.300000011921,
+                  3828.2000000178814,
+                  4220.700000017881,
+                  4757.800000011921,
+                  5388.5
+                ],
+                "calls": 50,
+                "triangles": 4020,
+                "geometries": 68,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "14457863-5080-468f-ae19-95967c83883f": 18,
+                  "ce4aec18-1ba6-4469-816e-8cb82ba5945d": 20,
+                  "176d36a8-ec11-4f87-96b6-a363e78024f6": 21,
+                  "87b341be-975a-4dec-af2e-d372bb43fb17": 22,
+                  "6d592387-5b45-4e4e-800a-c69cda818680": 23
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "one 500 GLB preserves four healthy models, interactive placeholder and isolated retry",
+      "status": "passed",
+      "durationMs": 6806,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "glb-isolation.json",
+          "data": {
+            "failure": 500,
+            "before": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "fecae7ff-480b-4065-8885-b2e43360a4a4",
+                "10000000-0000-4000-8000-000000000003": "ba745d28-d1bc-494a-8625-69bf33dd1f0b",
+                "10000000-0000-4000-8000-000000000004": "b801d8f5-ca68-4a43-a56e-3c799a7d9dda",
+                "10000000-0000-4000-8000-000000000005": "51aa29a0-6122-4029-8f8f-3d4fc28f6456"
+              },
+              "fallbacks": [
+                "10000000-0000-4000-8000-000000000002"
+              ]
+            },
+            "after": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "fecae7ff-480b-4065-8885-b2e43360a4a4",
+                "10000000-0000-4000-8000-000000000002": "71558bc1-a3ad-462e-b4c3-cf9368f178db",
+                "10000000-0000-4000-8000-000000000003": "ba745d28-d1bc-494a-8625-69bf33dd1f0b",
+                "10000000-0000-4000-8000-000000000004": "b801d8f5-ca68-4a43-a56e-3c799a7d9dda",
+                "10000000-0000-4000-8000-000000000005": "51aa29a0-6122-4029-8f8f-3d4fc28f6456"
+              },
+              "fallbacks": []
+            },
+            "requests": [
+              1,
+              2,
+              1,
+              1,
+              1
+            ],
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 46,
+                "times": [
+                  720.5999999940395,
+                  749.1999999880791,
+                  749.4000000059605,
+                  750.1999999880791,
+                  750.1999999880791,
+                  750.4000000059605,
+                  750.4000000059605,
+                  750.5999999940395,
+                  750.5999999940395,
+                  750.6999999880791,
+                  750.9000000059605,
+                  750.9000000059605,
+                  753.5999999940395,
+                  753.7999999821186,
+                  753.9000000059605,
+                  754,
+                  754.0999999940395,
+                  754.0999999940395,
+                  754.2999999821186,
+                  754.2999999821186,
+                  754.4000000059605,
+                  754.4000000059605,
+                  754.5,
+                  754.5,
+                  754.5999999940395,
+                  754.5999999940395,
+                  754.5999999940395,
+                  754.5999999940395,
+                  754.6999999880791,
+                  754.6999999880791,
+                  754.7999999821186,
+                  754.7999999821186,
+                  754.9000000059605,
+                  754.9000000059605,
+                  1058.199999988079,
+                  1071.9000000059605,
+                  2032,
+                  2877.0999999940395,
+                  2880.7999999821186,
+                  4063,
+                  4468.5999999940395,
+                  4474.5999999940395,
+                  4534.699999988079,
+                  4965.9000000059605,
+                  5294.4000000059605,
+                  6280.9000000059605
+                ],
+                "calls": 50,
+                "triangles": 4020,
+                "geometries": 68,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "981e53f5-f92b-447a-af79-23341fa45cbc": 18,
+                  "cbead372-991a-4216-a322-3f097beeb5d0": 20,
+                  "f4dff07a-179c-4727-b987-4db17e3047de": 21,
+                  "cb207852-5ccc-4467-91ec-dc5e1032d906": 22,
+                  "f0edc7f3-42fa-458c-af24-e7917f2f63e3": 23
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "one 502 GLB preserves four healthy models, interactive placeholder and isolated retry",
+      "status": "passed",
+      "durationMs": 6560,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "glb-isolation.json",
+          "data": {
+            "failure": 502,
+            "before": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "fe7461a9-9a9d-4db2-8350-c388a4813e28",
+                "10000000-0000-4000-8000-000000000003": "5f49dfaa-ceaf-40ae-a426-9bb39be7ce5c",
+                "10000000-0000-4000-8000-000000000004": "959e2a5e-d955-4fba-b1b3-ff8646d002c0",
+                "10000000-0000-4000-8000-000000000005": "0be81140-10df-4fff-b0a3-cfb9ed60d92c"
+              },
+              "fallbacks": [
+                "10000000-0000-4000-8000-000000000002"
+              ]
+            },
+            "after": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "fe7461a9-9a9d-4db2-8350-c388a4813e28",
+                "10000000-0000-4000-8000-000000000002": "b0b1b8c9-5c9f-4482-8850-d4e34d1ed832",
+                "10000000-0000-4000-8000-000000000003": "5f49dfaa-ceaf-40ae-a426-9bb39be7ce5c",
+                "10000000-0000-4000-8000-000000000004": "959e2a5e-d955-4fba-b1b3-ff8646d002c0",
+                "10000000-0000-4000-8000-000000000005": "0be81140-10df-4fff-b0a3-cfb9ed60d92c"
+              },
+              "fallbacks": []
+            },
+            "requests": [
+              1,
+              2,
+              1,
+              1,
+              1
+            ],
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 46,
+                "times": [
+                  797.7000000178814,
+                  824.7000000178814,
+                  824.9000000059605,
+                  825.6000000238419,
+                  825.7000000178814,
+                  825.8000000119209,
+                  825.9000000059605,
+                  826,
+                  826.1000000238419,
+                  826.2000000178814,
+                  826.2000000178814,
+                  826.4000000059605,
+                  829.1000000238419,
+                  829.2000000178814,
+                  829.4000000059605,
+                  829.4000000059605,
+                  829.6000000238419,
+                  829.6000000238419,
+                  829.7000000178814,
+                  829.7000000178814,
+                  829.8000000119209,
+                  829.8000000119209,
+                  829.9000000059605,
+                  829.9000000059605,
+                  830,
+                  830,
+                  830.1000000238419,
+                  830.1000000238419,
+                  830.2000000178814,
+                  830.2000000178814,
+                  830.2000000178814,
+                  830.3000000119209,
+                  830.3000000119209,
+                  830.3000000119209,
+                  1142.4000000059605,
+                  1158.2000000178814,
+                  2139.2000000178814,
+                  2947.7000000178814,
+                  2952.600000023842,
+                  4034.9000000059605,
+                  4431.9000000059605,
+                  4440.5,
+                  4448.600000023842,
+                  4854.600000023842,
+                  5424.600000023842,
+                  6041.800000011921
+                ],
+                "calls": 50,
+                "triangles": 4020,
+                "geometries": 68,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "14c014d3-e4f4-42c8-9135-48fd03c4f4c2": 18,
+                  "4db4e448-0d2d-49e3-82c1-91b3b306f768": 20,
+                  "0b1b7c96-dc3e-4d76-a1e7-616538da04be": 21,
+                  "67b5755d-e45f-425b-882e-85d150c31469": 22,
+                  "f3f8d6b5-4220-46a1-ad37-746543ba9a5d": 23
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "one network GLB preserves four healthy models, interactive placeholder and isolated retry",
+      "status": "passed",
+      "durationMs": 6482,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "glb-isolation.json",
+          "data": {
+            "failure": "network",
+            "before": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "2c19239f-5734-4838-854e-702f6b65ba2a",
+                "10000000-0000-4000-8000-000000000003": "0f4f789f-f44f-4f23-a94f-e3fb378ab1d6",
+                "10000000-0000-4000-8000-000000000004": "b545a181-2340-411b-8796-99708c3f7023",
+                "10000000-0000-4000-8000-000000000005": "8ef446d5-2607-4e65-9c82-afd67438bd9c"
+              },
+              "fallbacks": [
+                "10000000-0000-4000-8000-000000000002"
+              ]
+            },
+            "after": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "2c19239f-5734-4838-854e-702f6b65ba2a",
+                "10000000-0000-4000-8000-000000000002": "79412c37-c686-426b-a57c-f1ec21a70afe",
+                "10000000-0000-4000-8000-000000000003": "0f4f789f-f44f-4f23-a94f-e3fb378ab1d6",
+                "10000000-0000-4000-8000-000000000004": "b545a181-2340-411b-8796-99708c3f7023",
+                "10000000-0000-4000-8000-000000000005": "8ef446d5-2607-4e65-9c82-afd67438bd9c"
+              },
+              "fallbacks": []
+            },
+            "requests": [
+              1,
+              2,
+              1,
+              1,
+              1
+            ],
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 45,
+                "times": [
+                  913.7000000178814,
+                  942.0999999940395,
+                  942.3000000119209,
+                  942.9000000059605,
+                  943.0999999940395,
+                  943.2000000178814,
+                  943.3000000119209,
+                  943.4000000059605,
+                  943.5,
+                  943.5999999940395,
+                  943.5999999940395,
+                  943.8000000119209,
+                  946.3000000119209,
+                  946.5,
+                  946.5999999940395,
+                  946.7000000178814,
+                  946.8000000119209,
+                  946.8000000119209,
+                  946.9000000059605,
+                  946.9000000059605,
+                  947,
+                  947,
+                  947.0999999940395,
+                  947.2000000178814,
+                  947.3000000119209,
+                  947.3000000119209,
+                  947.3000000119209,
+                  947.4000000059605,
+                  947.4000000059605,
+                  947.4000000059605,
+                  947.5,
+                  947.5,
+                  947.7000000178814,
+                  947.8000000119209,
+                  1262.2000000178814,
+                  1276.5,
+                  2249.7000000178814,
+                  3072.5999999940395,
+                  3078.800000011921,
+                  4140.800000011921,
+                  4548.4000000059605,
+                  4557.0999999940395,
+                  5008.4000000059605,
+                  5617.5,
+                  6008.5
+                ],
+                "calls": 50,
+                "triangles": 4020,
+                "geometries": 68,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "d8f4d277-8a64-4e3d-b357-165ab0dbd122": 18,
+                  "3ed17ba1-22ae-40d1-b5f4-37518dcea28b": 20,
+                  "a12db6f3-37ba-44b9-a157-06f58a0b2857": 21,
+                  "5a75fd78-4990-4245-829a-e79ba7800ffa": 22,
+                  "83f85459-f9ca-4fab-b504-5b0cd926efe3": 23
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "one timeout GLB preserves four healthy models, interactive placeholder and isolated retry",
+      "status": "passed",
+      "durationMs": 6249,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "glb-isolation.json",
+          "data": {
+            "failure": "timeout",
+            "before": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "210d7a50-a25f-405e-8206-98c0b516cb8f",
+                "10000000-0000-4000-8000-000000000003": "2e62a4fc-af43-4278-a834-b0731e537dc3",
+                "10000000-0000-4000-8000-000000000004": "e5d5237c-1447-42a1-8d92-af32c77c2605",
+                "10000000-0000-4000-8000-000000000005": "b8aa20ab-9a0c-4f2f-98f2-e36872c104ac"
+              },
+              "fallbacks": [
+                "10000000-0000-4000-8000-000000000002"
+              ]
+            },
+            "after": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "210d7a50-a25f-405e-8206-98c0b516cb8f",
+                "10000000-0000-4000-8000-000000000002": "8674b2b3-a6ea-44f9-9f14-4c07aba0a399",
+                "10000000-0000-4000-8000-000000000003": "2e62a4fc-af43-4278-a834-b0731e537dc3",
+                "10000000-0000-4000-8000-000000000004": "e5d5237c-1447-42a1-8d92-af32c77c2605",
+                "10000000-0000-4000-8000-000000000005": "b8aa20ab-9a0c-4f2f-98f2-e36872c104ac"
+              },
+              "fallbacks": []
+            },
+            "requests": [
+              1,
+              2,
+              1,
+              1,
+              1
+            ],
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 44,
+                "times": [
+                  993.9000000059605,
+                  1022.5999999940395,
+                  1022.8000000119209,
+                  1023.5999999940395,
+                  1023.7000000178814,
+                  1023.9000000059605,
+                  1024,
+                  1024.0999999940395,
+                  1024.2000000178814,
+                  1024.2000000178814,
+                  1024.300000011921,
+                  1024.4000000059605,
+                  1027.0999999940395,
+                  1027.2000000178814,
+                  1027.4000000059605,
+                  1027.5,
+                  1027.5,
+                  1027.5999999940395,
+                  1027.7000000178814,
+                  1027.7000000178814,
+                  1027.800000011921,
+                  1027.800000011921,
+                  1027.9000000059605,
+                  1028,
+                  1028.0999999940395,
+                  1028.0999999940395,
+                  1028.0999999940395,
+                  1028.0999999940395,
+                  1028.2000000178814,
+                  1028.2000000178814,
+                  1028.300000011921,
+                  1028.300000011921,
+                  1028.4000000059605,
+                  1028.4000000059605,
+                  1325.2000000178814,
+                  2379.4000000059605,
+                  2845.7000000178814,
+                  2849.300000011921,
+                  3851.4000000059605,
+                  4244.0999999940395,
+                  4256.5,
+                  4624.800000011921,
+                  5286.300000011921,
+                  5671.4000000059605
+                ],
+                "calls": 50,
+                "triangles": 4020,
+                "geometries": 68,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "546abab4-b42a-4e46-9506-deeeb98e5004": 18,
+                  "c022464d-6d3f-4a1e-8210-9e30a85564c0": 20,
+                  "48f483c2-b6be-4af2-afcf-681485073d6e": 21,
+                  "cafb2acc-b075-479f-a6fb-37b1fd2866db": 22,
+                  "0e49fe07-787e-44fb-ad07-db7c3e98d03c": 23
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "one corrupt GLB preserves four healthy models, interactive placeholder and isolated retry",
+      "status": "passed",
+      "durationMs": 6893,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "glb-isolation.json",
+          "data": {
+            "failure": "corrupt",
+            "before": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "1d60db17-f32d-4c9a-89c3-4db03fe2e7fb",
+                "10000000-0000-4000-8000-000000000003": "39743e26-436f-47d7-9fe5-7144922e3c8f",
+                "10000000-0000-4000-8000-000000000004": "8ecec3e0-0a62-4b78-8cea-11e0838c4562",
+                "10000000-0000-4000-8000-000000000005": "260c39c3-1406-4e86-acce-2eb7e658d23a"
+              },
+              "fallbacks": [
+                "10000000-0000-4000-8000-000000000002"
+              ]
+            },
+            "after": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "1d60db17-f32d-4c9a-89c3-4db03fe2e7fb",
+                "10000000-0000-4000-8000-000000000002": "73e5d1c4-cdf9-4a2a-aee1-890bd3c322f3",
+                "10000000-0000-4000-8000-000000000003": "39743e26-436f-47d7-9fe5-7144922e3c8f",
+                "10000000-0000-4000-8000-000000000004": "8ecec3e0-0a62-4b78-8cea-11e0838c4562",
+                "10000000-0000-4000-8000-000000000005": "260c39c3-1406-4e86-acce-2eb7e658d23a"
+              },
+              "fallbacks": []
+            },
+            "requests": [
+              1,
+              2,
+              1,
+              1,
+              1
+            ],
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 45,
+                "times": [
+                  797.5,
+                  831.3999999761581,
+                  831.7999999821186,
+                  833.0999999940395,
+                  833.2999999821186,
+                  833.5,
+                  833.5999999940395,
+                  833.6999999880791,
+                  833.7999999821186,
+                  833.8999999761581,
+                  834,
+                  834.0999999940395,
+                  837.6999999880791,
+                  838,
+                  838.1999999880791,
+                  838.2999999821186,
+                  838.3999999761581,
+                  838.3999999761581,
+                  838.5,
+                  838.5,
+                  838.6999999880791,
+                  838.6999999880791,
+                  838.7999999821186,
+                  838.7999999821186,
+                  838.7999999821186,
+                  838.8999999761581,
+                  839.0999999940395,
+                  839.0999999940395,
+                  839.1999999880791,
+                  839.1999999880791,
+                  839.1999999880791,
+                  839.1999999880791,
+                  839.2999999821186,
+                  839.2999999821186,
+                  1198.7999999821186,
+                  1221.699999988079,
+                  2611.399999976158,
+                  3342,
+                  3942.199999988079,
+                  4417.399999976158,
+                  4423.5,
+                  4488,
+                  4502.0999999940395,
+                  5301.199999988079,
+                  6464.899999976158
+                ],
+                "calls": 50,
+                "triangles": 4020,
+                "geometries": 68,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "a5ee720f-fb62-486b-81c6-8fa17cf679b4": 18,
+                  "9088db67-b810-4be8-9774-f3c862500d84": 20,
+                  "67dc3e87-c551-4851-a04b-0a1645b228e6": 21,
+                  "0ca957fe-0be8-41ba-8ca2-4941098b6081": 22,
+                  "fa448cdc-9a6b-4e1a-b1ca-7ebb03e5b36a": 23
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "one checksum GLB preserves four healthy models, interactive placeholder and isolated retry",
+      "status": "passed",
+      "durationMs": 6528,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "glb-isolation.json",
+          "data": {
+            "failure": "checksum",
+            "before": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "b6d7e20f-12cd-4ab7-a8ea-693c443637fe",
+                "10000000-0000-4000-8000-000000000003": "6e7d218c-0574-459c-a89b-8fe01de3c947",
+                "10000000-0000-4000-8000-000000000004": "2481fe99-1477-4221-a102-5df9f26fbd61",
+                "10000000-0000-4000-8000-000000000005": "62fda0ba-5543-44fd-85a2-949099c20e47"
+              },
+              "fallbacks": [
+                "10000000-0000-4000-8000-000000000002"
+              ]
+            },
+            "after": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "b6d7e20f-12cd-4ab7-a8ea-693c443637fe",
+                "10000000-0000-4000-8000-000000000002": "e32a39b1-acbd-4f8d-b889-e692cb318e2b",
+                "10000000-0000-4000-8000-000000000003": "6e7d218c-0574-459c-a89b-8fe01de3c947",
+                "10000000-0000-4000-8000-000000000004": "2481fe99-1477-4221-a102-5df9f26fbd61",
+                "10000000-0000-4000-8000-000000000005": "62fda0ba-5543-44fd-85a2-949099c20e47"
+              },
+              "fallbacks": []
+            },
+            "requests": [
+              1,
+              2,
+              1,
+              1,
+              1
+            ],
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 46,
+                "times": [
+                  846.9000000059605,
+                  880.7000000178814,
+                  881,
+                  881.7000000178814,
+                  881.8000000119209,
+                  882,
+                  882.2000000178814,
+                  882.2000000178814,
+                  882.4000000059605,
+                  882.4000000059605,
+                  882.5,
+                  882.6000000238419,
+                  885.8000000119209,
+                  885.9000000059605,
+                  886.1000000238419,
+                  886.2000000178814,
+                  886.4000000059605,
+                  886.4000000059605,
+                  886.4000000059605,
+                  886.5,
+                  886.6000000238419,
+                  886.6000000238419,
+                  886.8000000119209,
+                  886.8000000119209,
+                  886.8000000119209,
+                  886.9000000059605,
+                  887,
+                  887,
+                  887.1000000238419,
+                  887.1000000238419,
+                  887.2000000178814,
+                  887.2000000178814,
+                  887.2000000178814,
+                  887.2000000178814,
+                  1179.5,
+                  1196.6000000238419,
+                  2111.5,
+                  2897.4000000059605,
+                  2901.2000000178814,
+                  3901.300000011921,
+                  4262.800000011921,
+                  4269.9000000059605,
+                  4277.100000023842,
+                  4667.800000011921,
+                  5269,
+                  5948.100000023842
+                ],
+                "calls": 50,
+                "triangles": 4020,
+                "geometries": 68,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "097a9cd9-a86d-4d9e-b8a3-eefa5077fa31": 18,
+                  "bc7c7e55-fd13-4c4f-bed7-269a9e341e4a": 20,
+                  "a41bcaed-4f14-41d3-bcbc-c6d812f96e4d": 21,
+                  "534f1e10-1b61-4911-852b-e673719e4cf4": 22,
+                  "f0e44b6a-9011-4b45-8065-dc5f2bc70a12": 23
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "one truncated GLB preserves four healthy models, interactive placeholder and isolated retry",
+      "status": "passed",
+      "durationMs": 6984,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "glb-isolation.json",
+          "data": {
+            "failure": "truncated",
+            "before": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "e4637189-3713-4447-85f5-82ea8680d32e",
+                "10000000-0000-4000-8000-000000000003": "54810f8a-e246-4b43-bd23-7b8f4daae7ba",
+                "10000000-0000-4000-8000-000000000004": "fbae0690-9a71-4a9e-82d1-228ce3a5a900",
+                "10000000-0000-4000-8000-000000000005": "ffbaa93e-481e-4311-b4c6-1953db6450df"
+              },
+              "fallbacks": [
+                "10000000-0000-4000-8000-000000000002"
+              ]
+            },
+            "after": {
+              "models": {
+                "10000000-0000-4000-8000-000000000001": "e4637189-3713-4447-85f5-82ea8680d32e",
+                "10000000-0000-4000-8000-000000000002": "90a71774-3edb-4fff-80ce-64c39c0bbaa2",
+                "10000000-0000-4000-8000-000000000003": "54810f8a-e246-4b43-bd23-7b8f4daae7ba",
+                "10000000-0000-4000-8000-000000000004": "fbae0690-9a71-4a9e-82d1-228ce3a5a900",
+                "10000000-0000-4000-8000-000000000005": "ffbaa93e-481e-4311-b4c6-1953db6450df"
+              },
+              "fallbacks": []
+            },
+            "requests": [
+              1,
+              2,
+              1,
+              1,
+              1
+            ],
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 47,
+                "times": [
+                  894.3000000119209,
+                  922.3000000119209,
+                  922.5,
+                  923.1999999880791,
+                  923.3000000119209,
+                  923.5,
+                  923.5,
+                  923.6999999880791,
+                  923.6999999880791,
+                  923.8000000119209,
+                  924,
+                  924.1999999880791,
+                  926.5,
+                  926.6999999880791,
+                  926.9000000059605,
+                  926.9000000059605,
+                  927,
+                  927.0999999940395,
+                  927.0999999940395,
+                  927.1999999880791,
+                  927.3000000119209,
+                  927.3000000119209,
+                  927.4000000059605,
+                  927.4000000059605,
+                  927.4000000059605,
+                  927.6999999880791,
+                  927.8000000119209,
+                  927.8000000119209,
+                  927.8000000119209,
+                  927.8000000119209,
+                  927.9000000059605,
+                  927.9000000059605,
+                  928,
+                  928,
+                  1242.0999999940395,
+                  1255.4000000059605,
+                  2207.5,
+                  2962.9000000059605,
+                  3613.300000011921,
+                  4028.0999999940395,
+                  4035.800000011921,
+                  4094.0999999940395,
+                  4106,
+                  4468.800000011921,
+                  4833,
+                  5802.5999999940395,
+                  6448.199999988079
+                ],
+                "calls": 50,
+                "triangles": 4020,
+                "geometries": 68,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "39852709-7cd5-42fb-bee2-e64d3970848f": 18,
+                  "6ad678b6-21dd-4d3d-8885-37cfbe903e61": 20,
+                  "c5d872be-b33c-4b96-b254-d241646f6945": 21,
+                  "93efc94a-3a10-467d-8f45-2f80c5af6ae6": 22,
+                  "cb797094-bdf5-4d55-a19b-98ae747ede3a": 23
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-hotspots.spec.ts",
+      "name": "touch selects a failed artifact marker and keyboard Space selects another artifact",
+      "status": "passed",
+      "durationMs": 4920,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-immersive-ui.spec.ts",
+      "name": "immersive controls remain reachable at 1440x900",
+      "status": "passed",
+      "durationMs": 5879,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-immersive-ui.spec.ts",
+      "name": "immersive controls remain reachable at 320x568",
+      "status": "passed",
+      "durationMs": 3122,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-immersive-ui.spec.ts",
+      "name": "immersive controls remain reachable at 390x844",
+      "status": "passed",
+      "durationMs": 3694,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-immersive-ui.spec.ts",
+      "name": "immersive controls remain reachable at 844x390",
+      "status": "passed",
+      "durationMs": 3614,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-immersive-ui.spec.ts",
+      "name": "report modal owns Escape before exhibit and tour",
+      "status": "passed",
+      "durationMs": 3642,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-xr-disconnect.spec.ts",
+      "name": "F11 F16 F18 native mid-session headset disconnect and fresh reconnect, end-first",
+      "status": "passed",
+      "durationMs": 20700,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "disconnect-samples.json",
+          "data": {
+            "saved": {
+              "position": [
+                0,
+                2.6,
+                5.8
+              ],
+              "quaternion": [
+                -0.10593609660099126,
+                0,
+                0,
+                0.9943729398153115
+              ]
+            },
+            "samples": [
+              {
+                "stage": "active-0",
+                "target": {
+                  "id": "10000000-0000-4000-8000-000000000005",
+                  "point": [
+                    1.8,
+                    0.78,
+                    3.24
+                  ]
+                },
+                "requests": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "renderers": [
+                  {
+                    "live": true,
+                    "frames": 46,
+                    "times": [
+                      799.2000000178814,
+                      831,
+                      831.3000000119209,
+                      832,
+                      832.2000000178814,
+                      832.4000000059605,
+                      832.5,
+                      832.5,
+                      832.5999999940395,
+                      832.7000000178814,
+                      832.8000000119209,
+                      832.9000000059605,
+                      835.9000000059605,
+                      836,
+                      836.2000000178814,
+                      836.3000000119209,
+                      836.3000000119209,
+                      836.4000000059605,
+                      836.5,
+                      836.5,
+                      836.5999999940395,
+                      836.7000000178814,
+                      836.7000000178814,
+                      836.8000000119209,
+                      836.9000000059605,
+                      836.9000000059605,
+                      836.9000000059605,
+                      837,
+                      837.0999999940395,
+                      837.0999999940395,
+                      837.0999999940395,
+                      837.2000000178814,
+                      837.2000000178814,
+                      837.3000000119209,
+                      1140.2000000178814,
+                      1165.9000000059605,
+                      2115.4000000059605,
+                      2913.300000011921,
+                      3576.2000000178814,
+                      3958.9000000059605,
+                      3966.0999999940395,
+                      4368.300000011921,
+                      6270.0999999940395,
+                      6621.5999999940395,
+                      6632.5999999940395,
+                      6648.0999999940395
+                    ],
+                    "calls": 158,
+                    "triangles": 11072,
+                    "geometries": 75,
+                    "textures": 16,
+                    "materials": 45,
+                    "objects": 143,
+                    "labels": {
+                      "d92423aa-07dd-43e7-bec6-49b05e577d44": 18,
+                      "45719da7-558e-453d-a5a9-91f2b3d334a0": 19,
+                      "88a633c6-99aa-428e-afb6-f56240e6fdc1": 20,
+                      "af2cc2aa-4f61-4b42-bd02-93af5a1d42e5": 21,
+                      "f66ebfa4-4621-450d-9b71-74e1b207f874": 22
+                    }
+                  }
+                ]
+              },
+              {
+                "stage": "web-0",
+                "requests": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "renderers": [
+                  {
+                    "live": true,
+                    "frames": 49,
+                    "times": [
+                      799.2000000178814,
+                      831,
+                      831.3000000119209,
+                      832,
+                      832.2000000178814,
+                      832.4000000059605,
+                      832.5,
+                      832.5,
+                      832.5999999940395,
+                      832.7000000178814,
+                      832.8000000119209,
+                      832.9000000059605,
+                      835.9000000059605,
+                      836,
+                      836.2000000178814,
+                      836.3000000119209,
+                      836.3000000119209,
+                      836.4000000059605,
+                      836.5,
+                      836.5,
+                      836.5999999940395,
+                      836.7000000178814,
+                      836.7000000178814,
+                      836.8000000119209,
+                      836.9000000059605,
+                      836.9000000059605,
+                      836.9000000059605,
+                      837,
+                      837.0999999940395,
+                      837.0999999940395,
+                      837.0999999940395,
+                      837.2000000178814,
+                      837.2000000178814,
+                      837.3000000119209,
+                      1140.2000000178814,
+                      1165.9000000059605,
+                      2115.4000000059605,
+                      2913.300000011921,
+                      3576.2000000178814,
+                      3958.9000000059605,
+                      3966.0999999940395,
+                      4368.300000011921,
+                      6270.0999999940395,
+                      6621.5999999940395,
+                      6632.5999999940395,
+                      6648.0999999940395,
+                      7051.9000000059605,
+                      7398.0999999940395,
+                      9548.90000000596
+                    ],
+                    "calls": 73,
+                    "triangles": 5506,
+                    "geometries": 69,
+                    "textures": 16,
+                    "materials": 35,
+                    "objects": 125,
+                    "labels": {
+                      "d92423aa-07dd-43e7-bec6-49b05e577d44": 18,
+                      "45719da7-558e-453d-a5a9-91f2b3d334a0": 19,
+                      "88a633c6-99aa-428e-afb6-f56240e6fdc1": 20,
+                      "af2cc2aa-4f61-4b42-bd02-93af5a1d42e5": 21,
+                      "f66ebfa4-4621-450d-9b71-74e1b207f874": 22
+                    }
+                  }
+                ]
+              },
+              {
+                "stage": "active-1",
+                "target": {
+                  "id": "10000000-0000-4000-8000-000000000003",
+                  "point": [
+                    3.6,
+                    0.78,
+                    -0.76
+                  ]
+                },
+                "requests": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "renderers": [
+                  {
+                    "live": true,
+                    "frames": 53,
+                    "times": [
+                      799.2000000178814,
+                      831,
+                      831.3000000119209,
+                      832,
+                      832.2000000178814,
+                      832.4000000059605,
+                      832.5,
+                      832.5,
+                      832.5999999940395,
+                      832.7000000178814,
+                      832.8000000119209,
+                      832.9000000059605,
+                      835.9000000059605,
+                      836,
+                      836.2000000178814,
+                      836.3000000119209,
+                      836.3000000119209,
+                      836.4000000059605,
+                      836.5,
+                      836.5,
+                      836.5999999940395,
+                      836.7000000178814,
+                      836.7000000178814,
+                      836.8000000119209,
+                      836.9000000059605,
+                      836.9000000059605,
+                      836.9000000059605,
+                      837,
+                      837.0999999940395,
+                      837.0999999940395,
+                      837.0999999940395,
+                      837.2000000178814,
+                      837.2000000178814,
+                      837.3000000119209,
+                      1140.2000000178814,
+                      1165.9000000059605,
+                      2115.4000000059605,
+                      2913.300000011921,
+                      3576.2000000178814,
+                      3958.9000000059605,
+                      3966.0999999940395,
+                      4368.300000011921,
+                      6270.0999999940395,
+                      6621.5999999940395,
+                      6632.5999999940395,
+                      6648.0999999940395,
+                      7051.9000000059605,
+                      7398.0999999940395,
+                      9548.90000000596,
+                      9920.90000000596,
+                      10260.5,
+                      10265.700000017881,
+                      10273.700000017881
+                    ],
+                    "calls": 160,
+                    "triangles": 11352,
+                    "geometries": 75,
+                    "textures": 17,
+                    "materials": 46,
+                    "objects": 144,
+                    "labels": {
+                      "d92423aa-07dd-43e7-bec6-49b05e577d44": 18,
+                      "45719da7-558e-453d-a5a9-91f2b3d334a0": 19,
+                      "88a633c6-99aa-428e-afb6-f56240e6fdc1": 20,
+                      "af2cc2aa-4f61-4b42-bd02-93af5a1d42e5": 21,
+                      "f66ebfa4-4621-450d-9b71-74e1b207f874": 22,
+                      "d32c40f0-e4c5-4b92-9e04-d739ffd120b8": 33
+                    }
+                  }
+                ]
+              },
+              {
+                "stage": "web-1",
+                "requests": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "renderers": [
+                  {
+                    "live": true,
+                    "frames": 56,
+                    "times": [
+                      799.2000000178814,
+                      831,
+                      831.3000000119209,
+                      832,
+                      832.2000000178814,
+                      832.4000000059605,
+                      832.5,
+                      832.5,
+                      832.5999999940395,
+                      832.7000000178814,
+                      832.8000000119209,
+                      832.9000000059605,
+                      835.9000000059605,
+                      836,
+                      836.2000000178814,
+                      836.3000000119209,
+                      836.3000000119209,
+                      836.4000000059605,
+                      836.5,
+                      836.5,
+                      836.5999999940395,
+                      836.7000000178814,
+                      836.7000000178814,
+                      836.8000000119209,
+                      836.9000000059605,
+                      836.9000000059605,
+                      836.9000000059605,
+                      837,
+                      837.0999999940395,
+                      837.0999999940395,
+                      837.0999999940395,
+                      837.2000000178814,
+                      837.2000000178814,
+                      837.3000000119209,
+                      1140.2000000178814,
+                      1165.9000000059605,
+                      2115.4000000059605,
+                      2913.300000011921,
+                      3576.2000000178814,
+                      3958.9000000059605,
+                      3966.0999999940395,
+                      4368.300000011921,
+                      6270.0999999940395,
+                      6621.5999999940395,
+                      6632.5999999940395,
+                      6648.0999999940395,
+                      7051.9000000059605,
+                      7398.0999999940395,
+                      9548.90000000596,
+                      9920.90000000596,
+                      10260.5,
+                      10265.700000017881,
+                      10273.700000017881,
+                      10666.09999999404,
+                      11008.90000000596,
+                      12941.90000000596
+                    ],
+                    "calls": 73,
+                    "triangles": 5506,
+                    "geometries": 69,
+                    "textures": 16,
+                    "materials": 35,
+                    "objects": 125,
+                    "labels": {
+                      "d92423aa-07dd-43e7-bec6-49b05e577d44": 18,
+                      "45719da7-558e-453d-a5a9-91f2b3d334a0": 19,
+                      "88a633c6-99aa-428e-afb6-f56240e6fdc1": 20,
+                      "af2cc2aa-4f61-4b42-bd02-93af5a1d42e5": 21,
+                      "f66ebfa4-4621-450d-9b71-74e1b207f874": 22
+                    }
+                  }
+                ]
+              },
+              {
+                "stage": "active-2",
+                "target": {
+                  "id": "10000000-0000-4000-8000-000000000005",
+                  "point": [
+                    1.8,
+                    0.78,
+                    3.24
+                  ]
+                },
+                "requests": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "renderers": [
+                  {
+                    "live": true,
+                    "frames": 60,
+                    "times": [
+                      799.2000000178814,
+                      831,
+                      831.3000000119209,
+                      832,
+                      832.2000000178814,
+                      832.4000000059605,
+                      832.5,
+                      832.5,
+                      832.5999999940395,
+                      832.7000000178814,
+                      832.8000000119209,
+                      832.9000000059605,
+                      835.9000000059605,
+                      836,
+                      836.2000000178814,
+                      836.3000000119209,
+                      836.3000000119209,
+                      836.4000000059605,
+                      836.5,
+                      836.5,
+                      836.5999999940395,
+                      836.7000000178814,
+                      836.7000000178814,
+                      836.8000000119209,
+                      836.9000000059605,
+                      836.9000000059605,
+                      836.9000000059605,
+                      837,
+                      837.0999999940395,
+                      837.0999999940395,
+                      837.0999999940395,
+                      837.2000000178814,
+                      837.2000000178814,
+                      837.3000000119209,
+                      1140.2000000178814,
+                      1165.9000000059605,
+                      2115.4000000059605,
+                      2913.300000011921,
+                      3576.2000000178814,
+                      3958.9000000059605,
+                      3966.0999999940395,
+                      4368.300000011921,
+                      6270.0999999940395,
+                      6621.5999999940395,
+                      6632.5999999940395,
+                      6648.0999999940395,
+                      7051.9000000059605,
+                      7398.0999999940395,
+                      9548.90000000596,
+                      9920.90000000596,
+                      10260.5,
+                      10265.700000017881,
+                      10273.700000017881,
+                      10666.09999999404,
+                      11008.90000000596,
+                      12941.90000000596,
+                      13309.200000017881,
+                      13663.09999999404,
+                      13668.5,
+                      13677.5
+                    ],
+                    "calls": 160,
+                    "triangles": 11352,
+                    "geometries": 75,
+                    "textures": 17,
+                    "materials": 46,
+                    "objects": 144,
+                    "labels": {
+                      "d92423aa-07dd-43e7-bec6-49b05e577d44": 18,
+                      "45719da7-558e-453d-a5a9-91f2b3d334a0": 19,
+                      "88a633c6-99aa-428e-afb6-f56240e6fdc1": 20,
+                      "9f16b631-206f-4f20-bab9-305f8e96c76d": 38,
+                      "af2cc2aa-4f61-4b42-bd02-93af5a1d42e5": 21,
+                      "f66ebfa4-4621-450d-9b71-74e1b207f874": 22
+                    }
+                  }
+                ]
+              },
+              {
+                "stage": "web-2",
+                "requests": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "renderers": [
+                  {
+                    "live": true,
+                    "frames": 63,
+                    "times": [
+                      799.2000000178814,
+                      831,
+                      831.3000000119209,
+                      832,
+                      832.2000000178814,
+                      832.4000000059605,
+                      832.5,
+                      832.5,
+                      832.5999999940395,
+                      832.7000000178814,
+                      832.8000000119209,
+                      832.9000000059605,
+                      835.9000000059605,
+                      836,
+                      836.2000000178814,
+                      836.3000000119209,
+                      836.3000000119209,
+                      836.4000000059605,
+                      836.5,
+                      836.5,
+                      836.5999999940395,
+                      836.7000000178814,
+                      836.7000000178814,
+                      836.8000000119209,
+                      836.9000000059605,
+                      836.9000000059605,
+                      836.9000000059605,
+                      837,
+                      837.0999999940395,
+                      837.0999999940395,
+                      837.0999999940395,
+                      837.2000000178814,
+                      837.2000000178814,
+                      837.3000000119209,
+                      1140.2000000178814,
+                      1165.9000000059605,
+                      2115.4000000059605,
+                      2913.300000011921,
+                      3576.2000000178814,
+                      3958.9000000059605,
+                      3966.0999999940395,
+                      4368.300000011921,
+                      6270.0999999940395,
+                      6621.5999999940395,
+                      6632.5999999940395,
+                      6648.0999999940395,
+                      7051.9000000059605,
+                      7398.0999999940395,
+                      9548.90000000596,
+                      9920.90000000596,
+                      10260.5,
+                      10265.700000017881,
+                      10273.700000017881,
+                      10666.09999999404,
+                      11008.90000000596,
+                      12941.90000000596,
+                      13309.200000017881,
+                      13663.09999999404,
+                      13668.5,
+                      13677.5,
+                      14073.300000011921,
+                      14572.09999999404,
+                      16533.70000001788
+                    ],
+                    "calls": 73,
+                    "triangles": 5506,
+                    "geometries": 69,
+                    "textures": 16,
+                    "materials": 35,
+                    "objects": 125,
+                    "labels": {
+                      "d92423aa-07dd-43e7-bec6-49b05e577d44": 18,
+                      "45719da7-558e-453d-a5a9-91f2b3d334a0": 19,
+                      "88a633c6-99aa-428e-afb6-f56240e6fdc1": 20,
+                      "af2cc2aa-4f61-4b42-bd02-93af5a1d42e5": 21,
+                      "f66ebfa4-4621-450d-9b71-74e1b207f874": 22
+                    }
+                  }
+                ]
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "name": "xr-lifecycle.json",
+          "data": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+            "timeline": [
+              {
+                "event": "request",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "devicechange",
+                "session": 0,
+                "available": false
+              },
+              {
+                "event": "devicechange",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "request",
+                "session": 1,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 1,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 1,
+                "available": true
+              },
+              {
+                "event": "devicechange",
+                "session": 1,
+                "available": false
+              },
+              {
+                "event": "devicechange",
+                "session": 1,
+                "available": true
+              },
+              {
+                "event": "request",
+                "session": 2,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 2,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 2,
+                "available": true
+              },
+              {
+                "event": "devicechange",
+                "session": 2,
+                "available": false
+              },
+              {
+                "event": "devicechange",
+                "session": 2,
+                "available": true
+              },
+              {
+                "event": "request",
+                "session": 3,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 3,
+                "available": true
+              },
+              {
+                "event": "app:end",
+                "session": 3,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 3,
+                "available": true
+              }
+            ],
+            "listeners": [
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              },
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              },
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              },
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              }
+            ],
+            "requests": 4,
+            "ends": 4,
+            "endCalls": 1,
+            "rejections": [],
+            "errors": [],
+            "renderers": [
+              {
+                "live": false,
+                "frames": 70,
+                "times": [
+                  799.2000000178814,
+                  831,
+                  831.3000000119209,
+                  832,
+                  832.2000000178814,
+                  832.4000000059605,
+                  832.5,
+                  832.5,
+                  832.5999999940395,
+                  832.7000000178814,
+                  832.8000000119209,
+                  832.9000000059605,
+                  835.9000000059605,
+                  836,
+                  836.2000000178814,
+                  836.3000000119209,
+                  836.3000000119209,
+                  836.4000000059605,
+                  836.5,
+                  836.5,
+                  836.5999999940395,
+                  836.7000000178814,
+                  836.7000000178814,
+                  836.8000000119209,
+                  836.9000000059605,
+                  836.9000000059605,
+                  836.9000000059605,
+                  837,
+                  837.0999999940395,
+                  837.0999999940395,
+                  837.0999999940395,
+                  837.2000000178814,
+                  837.2000000178814,
+                  837.3000000119209,
+                  1140.2000000178814,
+                  1165.9000000059605,
+                  2115.4000000059605,
+                  2913.300000011921,
+                  3576.2000000178814,
+                  3958.9000000059605,
+                  3966.0999999940395,
+                  4368.300000011921,
+                  6270.0999999940395,
+                  6621.5999999940395,
+                  6632.5999999940395,
+                  6648.0999999940395,
+                  7051.9000000059605,
+                  7398.0999999940395,
+                  9548.90000000596,
+                  9920.90000000596,
+                  10260.5,
+                  10265.700000017881,
+                  10273.700000017881,
+                  10666.09999999404,
+                  11008.90000000596,
+                  12941.90000000596,
+                  13309.200000017881,
+                  13663.09999999404,
+                  13668.5,
+                  13677.5,
+                  14073.300000011921,
+                  14572.09999999404,
+                  16533.70000001788,
+                  16942.80000001192,
+                  17292.70000001788,
+                  17304.90000000596,
+                  17315,
+                  17688.90000000596,
+                  18029.30000001192,
+                  18383.30000001192
+                ],
+                "calls": 73,
+                "triangles": 5506,
+                "geometries": 1,
+                "textures": 0,
+                "materials": 0,
+                "objects": 1,
+                "labels": {}
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr-disconnect.spec.ts",
+      "name": "F11 F16 F18 native mid-session headset disconnect and fresh reconnect, device-first",
+      "status": "passed",
+      "durationMs": 20362,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "disconnect-samples.json",
+          "data": {
+            "saved": {
+              "position": [
+                0,
+                2.6,
+                5.8
+              ],
+              "quaternion": [
+                -0.10593609660099126,
+                0,
+                0,
+                0.9943729398153115
+              ]
+            },
+            "samples": [
+              {
+                "stage": "active-0",
+                "target": {
+                  "id": "10000000-0000-4000-8000-000000000005",
+                  "point": [
+                    1.8,
+                    0.78,
+                    3.24
+                  ]
+                },
+                "requests": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "renderers": [
+                  {
+                    "live": true,
+                    "frames": 46,
+                    "times": [
+                      683.4000000059605,
+                      709.3000000119209,
+                      709.6000000238419,
+                      710.3000000119209,
+                      710.5,
+                      710.7000000178814,
+                      710.9000000059605,
+                      711,
+                      711.1000000238419,
+                      711.2000000178814,
+                      711.3000000119209,
+                      711.5,
+                      714.4000000059605,
+                      714.4000000059605,
+                      714.6000000238419,
+                      714.7000000178814,
+                      714.8000000119209,
+                      714.8000000119209,
+                      714.9000000059605,
+                      714.9000000059605,
+                      715,
+                      715,
+                      715.1000000238419,
+                      715.1000000238419,
+                      715.2000000178814,
+                      715.2000000178814,
+                      715.2000000178814,
+                      715.3000000119209,
+                      715.3000000119209,
+                      715.3000000119209,
+                      715.4000000059605,
+                      715.4000000059605,
+                      715.4000000059605,
+                      715.4000000059605,
+                      975.7000000178814,
+                      990.3000000119209,
+                      2397.5,
+                      2401.300000011921,
+                      3377.800000011921,
+                      3757.300000011921,
+                      4100.5,
+                      4184.5,
+                      4193.800000011921,
+                      6393.300000011921,
+                      6400.200000017881,
+                      6404.300000011921
+                    ],
+                    "calls": 146,
+                    "triangles": 11012,
+                    "geometries": 69,
+                    "textures": 16,
+                    "materials": 45,
+                    "objects": 143,
+                    "labels": {
+                      "7b0b7661-8962-4b8c-b867-9be35433689a": 18,
+                      "ba39b27e-df62-40e9-8660-74c88ef6660b": 19,
+                      "e9345efa-7571-4f2f-8c38-23a0743d6335": 20,
+                      "88d151e2-587e-4c09-b0c4-5a5a99b08d9c": 21,
+                      "32bfb876-84d1-4c50-b395-a782f7bebe6b": 22
+                    }
+                  }
+                ]
+              },
+              {
+                "stage": "web-0",
+                "requests": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "renderers": [
+                  {
+                    "live": true,
+                    "frames": 49,
+                    "times": [
+                      683.4000000059605,
+                      709.3000000119209,
+                      709.6000000238419,
+                      710.3000000119209,
+                      710.5,
+                      710.7000000178814,
+                      710.9000000059605,
+                      711,
+                      711.1000000238419,
+                      711.2000000178814,
+                      711.3000000119209,
+                      711.5,
+                      714.4000000059605,
+                      714.4000000059605,
+                      714.6000000238419,
+                      714.7000000178814,
+                      714.8000000119209,
+                      714.8000000119209,
+                      714.9000000059605,
+                      714.9000000059605,
+                      715,
+                      715,
+                      715.1000000238419,
+                      715.1000000238419,
+                      715.2000000178814,
+                      715.2000000178814,
+                      715.2000000178814,
+                      715.3000000119209,
+                      715.3000000119209,
+                      715.3000000119209,
+                      715.4000000059605,
+                      715.4000000059605,
+                      715.4000000059605,
+                      715.4000000059605,
+                      975.7000000178814,
+                      990.3000000119209,
+                      2397.5,
+                      2401.300000011921,
+                      3377.800000011921,
+                      3757.300000011921,
+                      4100.5,
+                      4184.5,
+                      4193.800000011921,
+                      6393.300000011921,
+                      6400.200000017881,
+                      6404.300000011921,
+                      6762.600000023842,
+                      7418.100000023842,
+                      9088.40000000596
+                    ],
+                    "calls": 73,
+                    "triangles": 5506,
+                    "geometries": 69,
+                    "textures": 16,
+                    "materials": 35,
+                    "objects": 125,
+                    "labels": {
+                      "7b0b7661-8962-4b8c-b867-9be35433689a": 18,
+                      "ba39b27e-df62-40e9-8660-74c88ef6660b": 19,
+                      "e9345efa-7571-4f2f-8c38-23a0743d6335": 20,
+                      "88d151e2-587e-4c09-b0c4-5a5a99b08d9c": 21,
+                      "32bfb876-84d1-4c50-b395-a782f7bebe6b": 22
+                    }
+                  }
+                ]
+              },
+              {
+                "stage": "active-1",
+                "target": {
+                  "id": "10000000-0000-4000-8000-000000000003",
+                  "point": [
+                    3.6,
+                    0.78,
+                    -0.76
+                  ]
+                },
+                "requests": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "renderers": [
+                  {
+                    "live": true,
+                    "frames": 53,
+                    "times": [
+                      683.4000000059605,
+                      709.3000000119209,
+                      709.6000000238419,
+                      710.3000000119209,
+                      710.5,
+                      710.7000000178814,
+                      710.9000000059605,
+                      711,
+                      711.1000000238419,
+                      711.2000000178814,
+                      711.3000000119209,
+                      711.5,
+                      714.4000000059605,
+                      714.4000000059605,
+                      714.6000000238419,
+                      714.7000000178814,
+                      714.8000000119209,
+                      714.8000000119209,
+                      714.9000000059605,
+                      714.9000000059605,
+                      715,
+                      715,
+                      715.1000000238419,
+                      715.1000000238419,
+                      715.2000000178814,
+                      715.2000000178814,
+                      715.2000000178814,
+                      715.3000000119209,
+                      715.3000000119209,
+                      715.3000000119209,
+                      715.4000000059605,
+                      715.4000000059605,
+                      715.4000000059605,
+                      715.4000000059605,
+                      975.7000000178814,
+                      990.3000000119209,
+                      2397.5,
+                      2401.300000011921,
+                      3377.800000011921,
+                      3757.300000011921,
+                      4100.5,
+                      4184.5,
+                      4193.800000011921,
+                      6393.300000011921,
+                      6400.200000017881,
+                      6404.300000011921,
+                      6762.600000023842,
+                      7418.100000023842,
+                      9088.40000000596,
+                      9454.40000000596,
+                      9773,
+                      9780.40000000596,
+                      9790.800000011921
+                    ],
+                    "calls": 160,
+                    "triangles": 11352,
+                    "geometries": 75,
+                    "textures": 17,
+                    "materials": 46,
+                    "objects": 144,
+                    "labels": {
+                      "7b0b7661-8962-4b8c-b867-9be35433689a": 18,
+                      "ba39b27e-df62-40e9-8660-74c88ef6660b": 19,
+                      "e9345efa-7571-4f2f-8c38-23a0743d6335": 20,
+                      "88d151e2-587e-4c09-b0c4-5a5a99b08d9c": 21,
+                      "32bfb876-84d1-4c50-b395-a782f7bebe6b": 22,
+                      "db15b462-b828-4069-beb3-5dd8df2970d2": 32
+                    }
+                  }
+                ]
+              },
+              {
+                "stage": "web-1",
+                "requests": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "renderers": [
+                  {
+                    "live": true,
+                    "frames": 56,
+                    "times": [
+                      683.4000000059605,
+                      709.3000000119209,
+                      709.6000000238419,
+                      710.3000000119209,
+                      710.5,
+                      710.7000000178814,
+                      710.9000000059605,
+                      711,
+                      711.1000000238419,
+                      711.2000000178814,
+                      711.3000000119209,
+                      711.5,
+                      714.4000000059605,
+                      714.4000000059605,
+                      714.6000000238419,
+                      714.7000000178814,
+                      714.8000000119209,
+                      714.8000000119209,
+                      714.9000000059605,
+                      714.9000000059605,
+                      715,
+                      715,
+                      715.1000000238419,
+                      715.1000000238419,
+                      715.2000000178814,
+                      715.2000000178814,
+                      715.2000000178814,
+                      715.3000000119209,
+                      715.3000000119209,
+                      715.3000000119209,
+                      715.4000000059605,
+                      715.4000000059605,
+                      715.4000000059605,
+                      715.4000000059605,
+                      975.7000000178814,
+                      990.3000000119209,
+                      2397.5,
+                      2401.300000011921,
+                      3377.800000011921,
+                      3757.300000011921,
+                      4100.5,
+                      4184.5,
+                      4193.800000011921,
+                      6393.300000011921,
+                      6400.200000017881,
+                      6404.300000011921,
+                      6762.600000023842,
+                      7418.100000023842,
+                      9088.40000000596,
+                      9454.40000000596,
+                      9773,
+                      9780.40000000596,
+                      9790.800000011921,
+                      10179.40000000596,
+                      10534.200000017881,
+                      12634.200000017881
+                    ],
+                    "calls": 73,
+                    "triangles": 5506,
+                    "geometries": 69,
+                    "textures": 16,
+                    "materials": 35,
+                    "objects": 125,
+                    "labels": {
+                      "7b0b7661-8962-4b8c-b867-9be35433689a": 18,
+                      "ba39b27e-df62-40e9-8660-74c88ef6660b": 19,
+                      "e9345efa-7571-4f2f-8c38-23a0743d6335": 20,
+                      "88d151e2-587e-4c09-b0c4-5a5a99b08d9c": 21,
+                      "32bfb876-84d1-4c50-b395-a782f7bebe6b": 22
+                    }
+                  }
+                ]
+              },
+              {
+                "stage": "active-2",
+                "target": {
+                  "id": "10000000-0000-4000-8000-000000000005",
+                  "point": [
+                    1.8,
+                    0.78,
+                    3.24
+                  ]
+                },
+                "requests": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "renderers": [
+                  {
+                    "live": true,
+                    "frames": 60,
+                    "times": [
+                      683.4000000059605,
+                      709.3000000119209,
+                      709.6000000238419,
+                      710.3000000119209,
+                      710.5,
+                      710.7000000178814,
+                      710.9000000059605,
+                      711,
+                      711.1000000238419,
+                      711.2000000178814,
+                      711.3000000119209,
+                      711.5,
+                      714.4000000059605,
+                      714.4000000059605,
+                      714.6000000238419,
+                      714.7000000178814,
+                      714.8000000119209,
+                      714.8000000119209,
+                      714.9000000059605,
+                      714.9000000059605,
+                      715,
+                      715,
+                      715.1000000238419,
+                      715.1000000238419,
+                      715.2000000178814,
+                      715.2000000178814,
+                      715.2000000178814,
+                      715.3000000119209,
+                      715.3000000119209,
+                      715.3000000119209,
+                      715.4000000059605,
+                      715.4000000059605,
+                      715.4000000059605,
+                      715.4000000059605,
+                      975.7000000178814,
+                      990.3000000119209,
+                      2397.5,
+                      2401.300000011921,
+                      3377.800000011921,
+                      3757.300000011921,
+                      4100.5,
+                      4184.5,
+                      4193.800000011921,
+                      6393.300000011921,
+                      6400.200000017881,
+                      6404.300000011921,
+                      6762.600000023842,
+                      7418.100000023842,
+                      9088.40000000596,
+                      9454.40000000596,
+                      9773,
+                      9780.40000000596,
+                      9790.800000011921,
+                      10179.40000000596,
+                      10534.200000017881,
+                      12634.200000017881,
+                      12987.800000011921,
+                      13312.90000000596,
+                      13318,
+                      13326.700000017881
+                    ],
+                    "calls": 160,
+                    "triangles": 11352,
+                    "geometries": 75,
+                    "textures": 17,
+                    "materials": 46,
+                    "objects": 144,
+                    "labels": {
+                      "7b0b7661-8962-4b8c-b867-9be35433689a": 18,
+                      "ba39b27e-df62-40e9-8660-74c88ef6660b": 19,
+                      "e9345efa-7571-4f2f-8c38-23a0743d6335": 20,
+                      "a8d5d116-6324-41ea-bc22-6027afd30a6b": 37,
+                      "88d151e2-587e-4c09-b0c4-5a5a99b08d9c": 21,
+                      "32bfb876-84d1-4c50-b395-a782f7bebe6b": 22
+                    }
+                  }
+                ]
+              },
+              {
+                "stage": "web-2",
+                "requests": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "renderers": [
+                  {
+                    "live": true,
+                    "frames": 63,
+                    "times": [
+                      683.4000000059605,
+                      709.3000000119209,
+                      709.6000000238419,
+                      710.3000000119209,
+                      710.5,
+                      710.7000000178814,
+                      710.9000000059605,
+                      711,
+                      711.1000000238419,
+                      711.2000000178814,
+                      711.3000000119209,
+                      711.5,
+                      714.4000000059605,
+                      714.4000000059605,
+                      714.6000000238419,
+                      714.7000000178814,
+                      714.8000000119209,
+                      714.8000000119209,
+                      714.9000000059605,
+                      714.9000000059605,
+                      715,
+                      715,
+                      715.1000000238419,
+                      715.1000000238419,
+                      715.2000000178814,
+                      715.2000000178814,
+                      715.2000000178814,
+                      715.3000000119209,
+                      715.3000000119209,
+                      715.3000000119209,
+                      715.4000000059605,
+                      715.4000000059605,
+                      715.4000000059605,
+                      715.4000000059605,
+                      975.7000000178814,
+                      990.3000000119209,
+                      2397.5,
+                      2401.300000011921,
+                      3377.800000011921,
+                      3757.300000011921,
+                      4100.5,
+                      4184.5,
+                      4193.800000011921,
+                      6393.300000011921,
+                      6400.200000017881,
+                      6404.300000011921,
+                      6762.600000023842,
+                      7418.100000023842,
+                      9088.40000000596,
+                      9454.40000000596,
+                      9773,
+                      9780.40000000596,
+                      9790.800000011921,
+                      10179.40000000596,
+                      10534.200000017881,
+                      12634.200000017881,
+                      12987.800000011921,
+                      13312.90000000596,
+                      13318,
+                      13326.700000017881,
+                      13730.5,
+                      14392.300000011921,
+                      16211.600000023842
+                    ],
+                    "calls": 73,
+                    "triangles": 5506,
+                    "geometries": 69,
+                    "textures": 16,
+                    "materials": 35,
+                    "objects": 125,
+                    "labels": {
+                      "7b0b7661-8962-4b8c-b867-9be35433689a": 18,
+                      "ba39b27e-df62-40e9-8660-74c88ef6660b": 19,
+                      "e9345efa-7571-4f2f-8c38-23a0743d6335": 20,
+                      "88d151e2-587e-4c09-b0c4-5a5a99b08d9c": 21,
+                      "32bfb876-84d1-4c50-b395-a782f7bebe6b": 22
+                    }
+                  }
+                ]
+              }
+            ],
+            "errors": []
+          }
+        },
+        {
+          "name": "xr-lifecycle.json",
+          "data": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+            "timeline": [
+              {
+                "event": "request",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "devicechange",
+                "session": 0,
+                "available": false
+              },
+              {
+                "event": "native:end",
+                "session": 0,
+                "available": false
+              },
+              {
+                "event": "devicechange",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "request",
+                "session": 1,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 1,
+                "available": true
+              },
+              {
+                "event": "devicechange",
+                "session": 1,
+                "available": false
+              },
+              {
+                "event": "native:end",
+                "session": 1,
+                "available": false
+              },
+              {
+                "event": "devicechange",
+                "session": 1,
+                "available": true
+              },
+              {
+                "event": "request",
+                "session": 2,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 2,
+                "available": true
+              },
+              {
+                "event": "devicechange",
+                "session": 2,
+                "available": false
+              },
+              {
+                "event": "native:end",
+                "session": 2,
+                "available": false
+              },
+              {
+                "event": "devicechange",
+                "session": 2,
+                "available": true
+              },
+              {
+                "event": "request",
+                "session": 3,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 3,
+                "available": true
+              },
+              {
+                "event": "app:end",
+                "session": 3,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 3,
+                "available": true
+              }
+            ],
+            "listeners": [
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              },
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              },
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              },
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              }
+            ],
+            "requests": 4,
+            "ends": 4,
+            "endCalls": 1,
+            "rejections": [],
+            "errors": [],
+            "renderers": [
+              {
+                "live": false,
+                "frames": 70,
+                "times": [
+                  683.4000000059605,
+                  709.3000000119209,
+                  709.6000000238419,
+                  710.3000000119209,
+                  710.5,
+                  710.7000000178814,
+                  710.9000000059605,
+                  711,
+                  711.1000000238419,
+                  711.2000000178814,
+                  711.3000000119209,
+                  711.5,
+                  714.4000000059605,
+                  714.4000000059605,
+                  714.6000000238419,
+                  714.7000000178814,
+                  714.8000000119209,
+                  714.8000000119209,
+                  714.9000000059605,
+                  714.9000000059605,
+                  715,
+                  715,
+                  715.1000000238419,
+                  715.1000000238419,
+                  715.2000000178814,
+                  715.2000000178814,
+                  715.2000000178814,
+                  715.3000000119209,
+                  715.3000000119209,
+                  715.3000000119209,
+                  715.4000000059605,
+                  715.4000000059605,
+                  715.4000000059605,
+                  715.4000000059605,
+                  975.7000000178814,
+                  990.3000000119209,
+                  2397.5,
+                  2401.300000011921,
+                  3377.800000011921,
+                  3757.300000011921,
+                  4100.5,
+                  4184.5,
+                  4193.800000011921,
+                  6393.300000011921,
+                  6400.200000017881,
+                  6404.300000011921,
+                  6762.600000023842,
+                  7418.100000023842,
+                  9088.40000000596,
+                  9454.40000000596,
+                  9773,
+                  9780.40000000596,
+                  9790.800000011921,
+                  10179.40000000596,
+                  10534.200000017881,
+                  12634.200000017881,
+                  12987.800000011921,
+                  13312.90000000596,
+                  13318,
+                  13326.700000017881,
+                  13730.5,
+                  14392.300000011921,
+                  16211.600000023842,
+                  16599.90000000596,
+                  16940.5,
+                  16948.80000001192,
+                  16956,
+                  17335.30000001192,
+                  17659,
+                  18006
+                ],
+                "calls": 73,
+                "triangles": 5506,
+                "geometries": 1,
+                "textures": 0,
+                "materials": 0,
+                "objects": 1,
+                "labels": {}
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr-disconnect.spec.ts",
+      "name": "F13 blurred visibility ignores select and snap-turn, hidden ends the session",
+      "status": "passed",
+      "durationMs": 5518,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "xr-lifecycle.json",
+          "data": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+            "timeline": [
+              {
+                "event": "request",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "visibility:visible-blurred",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "visibility:visible",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "visibility:hidden",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "app:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 0,
+                "available": true
+              }
+            ],
+            "listeners": [
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              }
+            ],
+            "requests": 1,
+            "ends": 1,
+            "endCalls": 1,
+            "rejections": [],
+            "webgl": "ready",
+            "xr": "idle",
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 46,
+                "times": [
+                  752.8000000119209,
+                  778.8000000119209,
+                  779,
+                  779.7000000178814,
+                  779.7000000178814,
+                  779.9000000059605,
+                  780,
+                  780.0999999940395,
+                  780.2000000178814,
+                  780.3000000119209,
+                  780.4000000059605,
+                  780.4000000059605,
+                  782.7000000178814,
+                  782.8000000119209,
+                  783,
+                  783,
+                  783.2000000178814,
+                  783.2000000178814,
+                  783.2000000178814,
+                  783.3000000119209,
+                  783.3000000119209,
+                  783.4000000059605,
+                  783.5,
+                  783.5,
+                  783.5,
+                  783.5999999940395,
+                  783.7000000178814,
+                  783.7000000178814,
+                  783.7000000178814,
+                  783.7000000178814,
+                  783.7000000178814,
+                  783.8000000119209,
+                  783.9000000059605,
+                  783.9000000059605,
+                  1071.9000000059605,
+                  1083.2000000178814,
+                  2301.9000000059605,
+                  2905.2000000178814,
+                  3501,
+                  3885.9000000059605,
+                  3894.5999999940395,
+                  3902.300000011921,
+                  5171.4000000059605,
+                  5184.9000000059605,
+                  5192.4000000059605,
+                  5254.5999999940395
+                ],
+                "calls": 71,
+                "triangles": 5502,
+                "geometries": 69,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "c28a9d75-7ac8-4e88-ab1c-4eb436c65869": 18,
+                  "96e47346-0eae-47df-8ab1-a68d6877c485": 19,
+                  "7a835c34-5311-46dd-8b62-5def669a9188": 20,
+                  "d1c32b82-6074-4d63-80ea-dec934b486b6": 21,
+                  "62d68da6-260a-4747-a424-ae4a24a66198": 22
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr-disconnect.spec.ts",
+      "name": "F14 native termination before a pending request is delivered never binds the ended session",
+      "status": "passed",
+      "durationMs": 2793,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "xr-lifecycle.json",
+          "data": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+            "timeline": [
+              {
+                "event": "request",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "devicechange",
+                "session": 0,
+                "available": false
+              },
+              {
+                "event": "app:end",
+                "session": 0,
+                "available": false
+              }
+            ],
+            "listeners": [
+              {
+                "end": 0,
+                "visibilitychange": 0
+              }
+            ],
+            "requests": 1,
+            "ends": 1,
+            "endCalls": 1,
+            "rejections": [],
+            "webgl": "ready",
+            "xr": "idle",
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 37,
+                "times": [
+                  639.5999999940395,
+                  664.2000000178814,
+                  664.4000000059605,
+                  665.0999999940395,
+                  665.3000000119209,
+                  665.4000000059605,
+                  665.5,
+                  666.2000000178814,
+                  666.3000000119209,
+                  666.5,
+                  666.5999999940395,
+                  666.7000000178814,
+                  669.2000000178814,
+                  669.4000000059605,
+                  669.5,
+                  669.5,
+                  669.5999999940395,
+                  669.7000000178814,
+                  669.7000000178814,
+                  669.7000000178814,
+                  669.8000000119209,
+                  669.8000000119209,
+                  669.9000000059605,
+                  669.9000000059605,
+                  670.0999999940395,
+                  670.0999999940395,
+                  670.2000000178814,
+                  670.2000000178814,
+                  670.2000000178814,
+                  670.2000000178814,
+                  670.3000000119209,
+                  670.3000000119209,
+                  670.3000000119209,
+                  670.4000000059605,
+                  926.9000000059605,
+                  948.4000000059605,
+                  2395.5
+                ],
+                "calls": 73,
+                "triangles": 5506,
+                "geometries": 69,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "094801cf-80f7-40b7-834c-82ae1031ec91": 18,
+                  "5b058a8a-6ccf-4c85-8e87-7348089df680": 19,
+                  "67902a68-149b-4731-8068-da14d2870571": 20,
+                  "3f465c73-4228-4b23-814e-0890962e498b": 21,
+                  "8f15c13c-5947-41a2-a351-ab5da626636c": 22
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr-disconnect.spec.ts",
+      "name": "F16 rapid disconnect and reconnect rechecks capability without automatic entry",
+      "status": "passed",
+      "durationMs": 5599,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "xr-lifecycle.json",
+          "data": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+            "timeline": [
+              {
+                "event": "request",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "devicechange",
+                "session": 0,
+                "available": false
+              },
+              {
+                "event": "devicechange",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "request",
+                "session": 1,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 1,
+                "available": true
+              },
+              {
+                "event": "app:end",
+                "session": 1,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 1,
+                "available": true
+              }
+            ],
+            "listeners": [
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              },
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              }
+            ],
+            "requests": 2,
+            "ends": 2,
+            "endCalls": 1,
+            "rejections": [],
+            "webgl": "ready",
+            "xr": "idle",
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 44,
+                "times": [
+                  719.5,
+                  749.2999999821186,
+                  749.3999999761581,
+                  750.1999999880791,
+                  750.2999999821186,
+                  750.5,
+                  750.5,
+                  750.6999999880791,
+                  750.6999999880791,
+                  750.8999999761581,
+                  750.8999999761581,
+                  751,
+                  753.6999999880791,
+                  753.7999999821186,
+                  754,
+                  754.0999999940395,
+                  754.1999999880791,
+                  754.1999999880791,
+                  754.2999999821186,
+                  754.2999999821186,
+                  754.3999999761581,
+                  754.3999999761581,
+                  754.5,
+                  754.5,
+                  754.6999999880791,
+                  754.6999999880791,
+                  754.6999999880791,
+                  754.6999999880791,
+                  754.7999999821186,
+                  754.8999999761581,
+                  754.8999999761581,
+                  754.8999999761581,
+                  754.8999999761581,
+                  755,
+                  1045.199999988079,
+                  1070.3999999761581,
+                  2004.699999988079,
+                  2779.699999988079,
+                  2784.199999988079,
+                  3781.0999999940395,
+                  3810.5999999940395,
+                  4579.5999999940395,
+                  4586,
+                  4600.199999988079
+                ],
+                "calls": 158,
+                "triangles": 11072,
+                "geometries": 69,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "ea998a47-71a0-478a-8f4a-5e34cc5fb403": 18,
+                  "2d16fbde-a444-4c67-9fe2-03c4e90f8591": 19,
+                  "717a759b-4862-4a35-8379-60d2ffb87bb9": 20,
+                  "1f76eea5-4c50-48f1-87b9-045c7afd9a8b": 21,
+                  "e8983b2a-1bf3-4a1c-88b8-5d46bbe1fc97": 22
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr-disconnect.spec.ts",
+      "name": "F14 native end during pending compatibility cannot resurrect presentation",
+      "status": "passed",
+      "durationMs": 3993,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "xr-lifecycle.json",
+          "data": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+            "timeline": [
+              {
+                "event": "request",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "compatibility:pending",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "devicechange",
+                "session": 0,
+                "available": false
+              },
+              {
+                "event": "app:end",
+                "session": 0,
+                "available": false
+              }
+            ],
+            "listeners": [
+              {
+                "end": 0,
+                "visibilitychange": 0
+              }
+            ],
+            "requests": 1,
+            "ends": 1,
+            "endCalls": 1,
+            "rejections": [],
+            "webgl": "ready",
+            "xr": "idle",
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 39,
+                "times": [
+                  1043.800000011921,
+                  1079.800000011921,
+                  1079.9000000059605,
+                  1080.800000011921,
+                  1080.9000000059605,
+                  1081.0999999940395,
+                  1081.199999988079,
+                  1082.0999999940395,
+                  1082.0999999940395,
+                  1082.300000011921,
+                  1082.300000011921,
+                  1082.4000000059605,
+                  1085.800000011921,
+                  1085.800000011921,
+                  1086.0999999940395,
+                  1086.0999999940395,
+                  1086.199999988079,
+                  1086.300000011921,
+                  1086.300000011921,
+                  1086.300000011921,
+                  1086.5,
+                  1086.5,
+                  1086.5999999940395,
+                  1086.5999999940395,
+                  1086.699999988079,
+                  1086.800000011921,
+                  1086.800000011921,
+                  1086.800000011921,
+                  1086.9000000059605,
+                  1087,
+                  1087,
+                  1087,
+                  1087.0999999940395,
+                  1087.0999999940395,
+                  1368,
+                  2343.800000011921,
+                  2819.300000011921,
+                  2823.699999988079,
+                  3521
+                ],
+                "calls": 70,
+                "triangles": 5168,
+                "geometries": 69,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "3163bad9-adeb-4d63-a7fa-1121ae878264": 18,
+                  "43165f5b-6fb8-46cc-9400-d18ee5449b8a": 19,
+                  "e3f77cb7-b894-4fdb-a12e-90f10c80d2b1": 20,
+                  "4c2f4bb4-a260-42b3-ad32-e3a0e50a5dd9": 21,
+                  "c839268c-9ff3-448a-8bdf-5e22f37fccc6": 22
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr-disconnect.spec.ts",
+      "name": "F14 native end during pending binding cannot resurrect presentation",
+      "status": "passed",
+      "durationMs": 5184,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "xr-lifecycle.json",
+          "data": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+            "timeline": [
+              {
+                "event": "request",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "binding:pending",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "devicechange",
+                "session": 0,
+                "available": false
+              },
+              {
+                "event": "binding:resolve",
+                "session": 0,
+                "available": false
+              },
+              {
+                "event": "app:end",
+                "session": 0,
+                "available": false
+              }
+            ],
+            "listeners": [
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              }
+            ],
+            "requests": 1,
+            "ends": 1,
+            "endCalls": 1,
+            "rejections": [],
+            "webgl": "ready",
+            "xr": "idle",
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 39,
+                "times": [
+                  794.2000000178814,
+                  830.3000000119209,
+                  830.5,
+                  831.3000000119209,
+                  831.4000000059605,
+                  831.5,
+                  831.6000000238419,
+                  831.8000000119209,
+                  832.5,
+                  832.6000000238419,
+                  832.7000000178814,
+                  832.9000000059605,
+                  835.8000000119209,
+                  835.9000000059605,
+                  836.3000000119209,
+                  836.3000000119209,
+                  836.4000000059605,
+                  836.5,
+                  836.6000000238419,
+                  836.6000000238419,
+                  836.7000000178814,
+                  836.8000000119209,
+                  837,
+                  837,
+                  837.1000000238419,
+                  837.1000000238419,
+                  837.2000000178814,
+                  837.3000000119209,
+                  837.3000000119209,
+                  837.4000000059605,
+                  837.4000000059605,
+                  837.5,
+                  837.5,
+                  837.5,
+                  1159.4000000059605,
+                  1179,
+                  2370.100000023842,
+                  3330.9000000059605,
+                  3339.300000011921
+                ],
+                "calls": 73,
+                "triangles": 5506,
+                "geometries": 69,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "587b9028-ce2d-40b8-8f76-a23c63f05c9b": 18,
+                  "e3397f20-eade-4ac3-8336-13377e0968ae": 19,
+                  "9e2f402a-7f38-4d36-a1eb-419b483ae7a4": 20,
+                  "25611b68-4974-4506-a180-2131d999f4c6": 21,
+                  "f1163670-5c0b-44cb-b304-6e4176344bc2": 22
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr-disconnect.spec.ts",
+      "name": "F17 close while native request is pending ends the late session without binding",
+      "status": "passed",
+      "durationMs": 6815,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "xr-lifecycle.json",
+          "data": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+            "timeline": [
+              {
+                "event": "request",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "app:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 0,
+                "available": true
+              }
+            ],
+            "listeners": [
+              {}
+            ],
+            "requests": 1,
+            "ends": 1,
+            "endCalls": 1,
+            "rejections": [],
+            "errors": [],
+            "renderers": [
+              {
+                "live": false,
+                "frames": 39,
+                "times": [
+                  875.1999999880791,
+                  906.8000000119209,
+                  907,
+                  907.8000000119209,
+                  907.9000000059605,
+                  908.0999999940395,
+                  908.1999999880791,
+                  908.3000000119209,
+                  908.4000000059605,
+                  908.4000000059605,
+                  908.5999999940395,
+                  908.6999999880791,
+                  911.8000000119209,
+                  912,
+                  912.1999999880791,
+                  912.1999999880791,
+                  912.3000000119209,
+                  912.3000000119209,
+                  912.4000000059605,
+                  912.4000000059605,
+                  912.5999999940395,
+                  912.5999999940395,
+                  912.6999999880791,
+                  912.6999999880791,
+                  912.6999999880791,
+                  912.6999999880791,
+                  912.8000000119209,
+                  912.9000000059605,
+                  912.9000000059605,
+                  912.9000000059605,
+                  913.0999999940395,
+                  913.0999999940395,
+                  913.0999999940395,
+                  913.1999999880791,
+                  1250.5999999940395,
+                  1280.9000000059605,
+                  2450.800000011921,
+                  4022.699999988079,
+                  5072.5999999940395
+                ],
+                "calls": 73,
+                "triangles": 5506,
+                "geometries": 1,
+                "textures": 0,
+                "materials": 0,
+                "objects": 1,
+                "labels": {}
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr-disconnect.spec.ts",
+      "name": "F17 room while native request is pending ends the late session without binding",
+      "status": "passed",
+      "durationMs": 5833,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "xr-lifecycle.json",
+          "data": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+            "timeline": [
+              {
+                "event": "request",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "app:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 0,
+                "available": true
+              }
+            ],
+            "listeners": [
+              {}
+            ],
+            "requests": 1,
+            "ends": 1,
+            "endCalls": 1,
+            "rejections": [],
+            "webgl": "ready",
+            "xr": "idle",
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 39,
+                "times": [
+                  1339.8999999761581,
+                  1535.0999999940395,
+                  1535.3999999761581,
+                  1536.7999999821186,
+                  1536.8999999761581,
+                  1537.0999999940395,
+                  1537.0999999940395,
+                  1537.199999988079,
+                  1537.2999999821186,
+                  1537.3999999761581,
+                  1537.3999999761581,
+                  1537.5999999940395,
+                  1544.2999999821186,
+                  1544.7999999821186,
+                  1545.0999999940395,
+                  1545.2999999821186,
+                  1545.3999999761581,
+                  1545.699999988079,
+                  1545.8999999761581,
+                  1546,
+                  1546.199999988079,
+                  1546.199999988079,
+                  1546.3999999761581,
+                  1546.5,
+                  1546.5999999940395,
+                  1546.699999988079,
+                  1546.7999999821186,
+                  1546.8999999761581,
+                  1547.0999999940395,
+                  1547.199999988079,
+                  1547.3999999761581,
+                  1547.3999999761581,
+                  1547.5999999940395,
+                  1547.5999999940395,
+                  3105.5,
+                  3219.2999999821186,
+                  4323.699999988079,
+                  4339.5,
+                  4460.899999976158
+                ],
+                "calls": 73,
+                "triangles": 5506,
+                "geometries": 1,
+                "textures": 0,
+                "materials": 0,
+                "objects": 1,
+                "labels": {}
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr-disconnect.spec.ts",
+      "name": "F15 real context loss with native termination, binding=false, native-first",
+      "status": "passed",
+      "durationMs": 6351,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "xr-lifecycle.json",
+          "data": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+            "timeline": [
+              {
+                "event": "request",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "devicechange",
+                "session": 0,
+                "available": false
+              }
+            ],
+            "listeners": [
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              }
+            ],
+            "requests": 1,
+            "ends": 1,
+            "endCalls": 0,
+            "rejections": [],
+            "webgl": "ready",
+            "xr": "idle",
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 77,
+                "times": [
+                  763.4000000059605,
+                  794.5999999940395,
+                  794.7999999821186,
+                  795.5,
+                  795.5,
+                  795.6999999880791,
+                  795.7999999821186,
+                  795.9000000059605,
+                  795.9000000059605,
+                  796.0999999940395,
+                  796.0999999940395,
+                  796.2999999821186,
+                  799.0999999940395,
+                  799.2999999821186,
+                  799.4000000059605,
+                  799.5,
+                  799.5999999940395,
+                  799.6999999880791,
+                  799.6999999880791,
+                  799.6999999880791,
+                  799.9000000059605,
+                  799.9000000059605,
+                  799.9000000059605,
+                  799.9000000059605,
+                  800.0999999940395,
+                  800.0999999940395,
+                  800.1999999880791,
+                  800.1999999880791,
+                  800.1999999880791,
+                  800.1999999880791,
+                  800.2999999821186,
+                  800.2999999821186,
+                  800.4000000059605,
+                  800.4000000059605,
+                  1065.5,
+                  1086,
+                  2126,
+                  3244,
+                  3252,
+                  4719.5999999940395,
+                  4724.699999988079,
+                  5546.299999982119,
+                  5573,
+                  5573.0999999940395,
+                  5573.299999982119,
+                  5573.4000000059605,
+                  5573.5,
+                  5573.5,
+                  5573.5999999940395,
+                  5573.5999999940395,
+                  5573.5999999940395,
+                  5573.5999999940395,
+                  5573.5999999940395,
+                  5577.5999999940395,
+                  5577.699999988079,
+                  5577.9000000059605,
+                  5577.9000000059605,
+                  5578,
+                  5578,
+                  5578.199999988079,
+                  5578.199999988079,
+                  5578.199999988079,
+                  5578.199999988079,
+                  5578.299999982119,
+                  5578.299999982119,
+                  5578.4000000059605,
+                  5578.4000000059605,
+                  5578.4000000059605,
+                  5578.4000000059605,
+                  5578.5,
+                  5578.5,
+                  5578.5,
+                  5578.5999999940395,
+                  5578.5999999940395,
+                  5578.699999988079,
+                  5971.5999999940395,
+                  5986.199999988079
+                ],
+                "calls": 73,
+                "triangles": 5506,
+                "geometries": 69,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "ff017381-60d1-4a5f-b900-6cddde270bcf": 18,
+                  "4d72c17e-c1b5-4330-951b-246b80db4b1c": 19,
+                  "cc80d4f1-fd40-4cb3-9328-dddad572aaa7": 20,
+                  "af74cf6f-a0b7-4374-9f07-188ce8234fe7": 21,
+                  "985bd50e-a6ed-4d0c-b6ba-4b28901b3018": 22
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr-disconnect.spec.ts",
+      "name": "F15 real context loss with native termination, binding=false, context-first",
+      "status": "passed",
+      "durationMs": 7078,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "xr-lifecycle.json",
+          "data": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+            "timeline": [
+              {
+                "event": "request",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "app:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "devicechange",
+                "session": 0,
+                "available": false
+              }
+            ],
+            "listeners": [
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              }
+            ],
+            "requests": 1,
+            "ends": 1,
+            "endCalls": 1,
+            "rejections": [],
+            "webgl": "ready",
+            "xr": "idle",
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 77,
+                "times": [
+                  943.4000000059605,
+                  983.8000000119209,
+                  984.0999999940395,
+                  984.9000000059605,
+                  985.0999999940395,
+                  985.3000000119209,
+                  985.3000000119209,
+                  985.5,
+                  985.5,
+                  985.6999999880791,
+                  985.6999999880791,
+                  985.8000000119209,
+                  989,
+                  989.1999999880791,
+                  989.4000000059605,
+                  989.5,
+                  989.5999999940395,
+                  989.5999999940395,
+                  989.6999999880791,
+                  989.8000000119209,
+                  989.8000000119209,
+                  989.9000000059605,
+                  990,
+                  990,
+                  990.0999999940395,
+                  990.0999999940395,
+                  990.1999999880791,
+                  990.1999999880791,
+                  990.3000000119209,
+                  990.3000000119209,
+                  990.5,
+                  990.5,
+                  990.5,
+                  990.5,
+                  1298.800000011921,
+                  2281.699999988079,
+                  2885.5,
+                  2889.9000000059605,
+                  4371.5,
+                  4376.0999999940395,
+                  5188,
+                  5212.9000000059605,
+                  5213,
+                  5213.4000000059605,
+                  5213.5,
+                  5213.5,
+                  5213.5,
+                  5213.5,
+                  5213.5,
+                  5213.5999999940395,
+                  5213.5999999940395,
+                  5213.5999999940395,
+                  5216.4000000059605,
+                  5216.4000000059605,
+                  5216.5,
+                  5216.5999999940395,
+                  5216.5999999940395,
+                  5216.5999999940395,
+                  5216.699999988079,
+                  5216.699999988079,
+                  5216.699999988079,
+                  5216.800000011921,
+                  5216.800000011921,
+                  5216.800000011921,
+                  5216.800000011921,
+                  5216.9000000059605,
+                  5216.9000000059605,
+                  5216.9000000059605,
+                  5217,
+                  5217,
+                  5217,
+                  5217.0999999940395,
+                  5217.0999999940395,
+                  5217.0999999940395,
+                  5607.9000000059605,
+                  5617,
+                  5619.5999999940395
+                ],
+                "calls": 73,
+                "triangles": 5506,
+                "geometries": 69,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "82850d31-550c-4ca2-ab48-9cb2a87510bb": 18,
+                  "dc8866e5-bcd0-419f-8d6f-2d0badc735cd": 19,
+                  "07798ff5-b643-4d4c-8ed5-35efb76a1bc8": 20,
+                  "18d15608-c569-4395-9cb9-d1dc7705f959": 21,
+                  "4f16b9f7-e0de-4ba1-975a-15d348838e9f": 22
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr-disconnect.spec.ts",
+      "name": "F15 real context loss with native termination, binding=true, native-first",
+      "status": "passed",
+      "durationMs": 6841,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "xr-lifecycle.json",
+          "data": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+            "timeline": [
+              {
+                "event": "request",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "binding:pending",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "devicechange",
+                "session": 0,
+                "available": false
+              },
+              {
+                "event": "binding:resolve",
+                "session": 0,
+                "available": false
+              },
+              {
+                "event": "app:end",
+                "session": 0,
+                "available": false
+              }
+            ],
+            "listeners": [
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              }
+            ],
+            "requests": 1,
+            "ends": 1,
+            "endCalls": 1,
+            "rejections": [],
+            "webgl": "ready",
+            "xr": "idle",
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 78,
+                "times": [
+                  904.5999999940395,
+                  935.6999999880791,
+                  935.9000000059605,
+                  936.5999999940395,
+                  936.7999999821186,
+                  937,
+                  937,
+                  937.0999999940395,
+                  937.1999999880791,
+                  937.2999999821186,
+                  937.4000000059605,
+                  937.4000000059605,
+                  940.4000000059605,
+                  940.5999999940395,
+                  940.7999999821186,
+                  940.7999999821186,
+                  941,
+                  941,
+                  941.0999999940395,
+                  941.0999999940395,
+                  941.1999999880791,
+                  941.1999999880791,
+                  941.2999999821186,
+                  941.4000000059605,
+                  941.4000000059605,
+                  941.5,
+                  941.5999999940395,
+                  941.5999999940395,
+                  941.5999999940395,
+                  941.5999999940395,
+                  941.6999999880791,
+                  941.7999999821186,
+                  941.7999999821186,
+                  941.7999999821186,
+                  1239.4000000059605,
+                  1259.2999999821186,
+                  2218.199999988079,
+                  3013.2999999821186,
+                  3016.699999988079,
+                  4286.799999982119,
+                  4292.299999982119,
+                  5065.9000000059605,
+                  5090.9000000059605,
+                  5091,
+                  5091.199999988079,
+                  5091.299999982119,
+                  5091.4000000059605,
+                  5091.4000000059605,
+                  5091.4000000059605,
+                  5091.4000000059605,
+                  5091.5,
+                  5091.5,
+                  5091.5,
+                  5094.4000000059605,
+                  5094.5,
+                  5094.5,
+                  5094.5999999940395,
+                  5094.5999999940395,
+                  5094.5999999940395,
+                  5094.699999988079,
+                  5094.699999988079,
+                  5094.699999988079,
+                  5094.699999988079,
+                  5094.799999982119,
+                  5094.799999982119,
+                  5094.799999982119,
+                  5094.799999982119,
+                  5094.799999982119,
+                  5094.799999982119,
+                  5094.9000000059605,
+                  5095,
+                  5095,
+                  5095,
+                  5095,
+                  5095,
+                  5472.699999988079,
+                  5481.5,
+                  5487.9000000059605
+                ],
+                "calls": 73,
+                "triangles": 5506,
+                "geometries": 69,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "30f19c87-9020-4ff8-863c-1e09312420ea": 18,
+                  "f2221acc-bc33-4e86-a221-df3320d59bc7": 19,
+                  "04a28da2-0d90-4b53-a2ae-15af8017ef51": 20,
+                  "b6828035-838a-40bc-85a9-0eb21ed89e37": 21,
+                  "937833cf-a8ce-4a56-a639-95d07e922dc6": 22
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr-disconnect.spec.ts",
+      "name": "F15 real context loss with native termination, binding=true, context-first",
+      "status": "passed",
+      "durationMs": 6340,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "xr-lifecycle.json",
+          "data": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+            "timeline": [
+              {
+                "event": "request",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "binding:pending",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "devicechange",
+                "session": 0,
+                "available": false
+              },
+              {
+                "event": "binding:resolve",
+                "session": 0,
+                "available": false
+              },
+              {
+                "event": "app:end",
+                "session": 0,
+                "available": false
+              }
+            ],
+            "listeners": [
+              {
+                "end": 0,
+                "visibilitychange": 0,
+                "select": 0,
+                "selectstart": 0,
+                "selectend": 0,
+                "squeeze": 0,
+                "squeezestart": 0,
+                "squeezeend": 0,
+                "inputsourceschange": 0
+              }
+            ],
+            "requests": 1,
+            "ends": 1,
+            "endCalls": 1,
+            "rejections": [],
+            "webgl": "ready",
+            "xr": "idle",
+            "errors": [],
+            "renderers": [
+              {
+                "live": true,
+                "frames": 77,
+                "times": [
+                  893.7999999821186,
+                  923.5999999940395,
+                  923.7999999821186,
+                  924.5,
+                  924.5999999940395,
+                  924.7999999821186,
+                  924.7999999821186,
+                  925,
+                  925,
+                  925.1999999880791,
+                  925.1999999880791,
+                  925.4000000059605,
+                  928.9000000059605,
+                  929.0999999940395,
+                  929.2999999821186,
+                  929.2999999821186,
+                  929.4000000059605,
+                  929.5,
+                  929.5,
+                  929.5,
+                  929.5999999940395,
+                  929.6999999880791,
+                  929.7999999821186,
+                  929.7999999821186,
+                  929.9000000059605,
+                  929.9000000059605,
+                  930,
+                  930,
+                  930.1999999880791,
+                  930.1999999880791,
+                  930.2999999821186,
+                  930.4000000059605,
+                  930.4000000059605,
+                  930.5,
+                  1200.0999999940395,
+                  2185.5,
+                  2659.5,
+                  2664.5999999940395,
+                  3992.9000000059605,
+                  3997.4000000059605,
+                  4777.4000000059605,
+                  4801.199999988079,
+                  4801.299999982119,
+                  4801.5999999940395,
+                  4801.5999999940395,
+                  4801.699999988079,
+                  4801.799999982119,
+                  4801.799999982119,
+                  4801.799999982119,
+                  4801.799999982119,
+                  4801.799999982119,
+                  4801.9000000059605,
+                  4804.799999982119,
+                  4804.9000000059605,
+                  4804.9000000059605,
+                  4805,
+                  4805,
+                  4805,
+                  4805.0999999940395,
+                  4805.0999999940395,
+                  4805.0999999940395,
+                  4805.0999999940395,
+                  4805.0999999940395,
+                  4805.199999988079,
+                  4805.299999982119,
+                  4805.299999982119,
+                  4805.299999982119,
+                  4805.299999982119,
+                  4805.299999982119,
+                  4805.4000000059605,
+                  4805.4000000059605,
+                  4805.4000000059605,
+                  4805.4000000059605,
+                  4805.4000000059605,
+                  5088.9000000059605,
+                  5095.799999982119,
+                  5101
+                ],
+                "calls": 73,
+                "triangles": 5506,
+                "geometries": 69,
+                "textures": 16,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "410f34c9-9614-4047-8a46-185d8ac0ab91": 18,
+                  "beda826e-4a72-4f94-b284-7ae110204966": 19,
+                  "19315bee-09c5-471f-a6a6-33e4fad71a39": 20,
+                  "a04d0b50-9239-43e6-811d-fbc43d2d8498": 21,
+                  "001c9b76-3113-4ca6-81a2-532f37f820f2": 22
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr-disconnect.spec.ts",
+      "name": "F04 F18 three partial binding failures exhaust the Canvas reset budget into readable 2D",
+      "status": "passed",
+      "durationMs": 12368,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "xr-lifecycle.json",
+          "data": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+            "timeline": [
+              {
+                "event": "request",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "app:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 0,
+                "available": true
+              },
+              {
+                "event": "request",
+                "session": 1,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 1,
+                "available": true
+              },
+              {
+                "event": "app:end",
+                "session": 1,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 1,
+                "available": true
+              },
+              {
+                "event": "request",
+                "session": 2,
+                "available": true
+              },
+              {
+                "event": "binding:start",
+                "session": 2,
+                "available": true
+              },
+              {
+                "event": "app:end",
+                "session": 2,
+                "available": true
+              },
+              {
+                "event": "native:end",
+                "session": 2,
+                "available": true
+              }
+            ],
+            "listeners": [
+              {
+                "end": 1,
+                "visibilitychange": 0,
+                "select": 1,
+                "selectstart": 1,
+                "selectend": 1,
+                "squeeze": 1,
+                "squeezestart": 1,
+                "squeezeend": 1,
+                "inputsourceschange": 1
+              },
+              {
+                "end": 1,
+                "visibilitychange": 0,
+                "select": 1,
+                "selectstart": 1,
+                "selectend": 1,
+                "squeeze": 1,
+                "squeezestart": 1,
+                "squeezeend": 1,
+                "inputsourceschange": 1
+              },
+              {
+                "end": 1,
+                "visibilitychange": 0,
+                "select": 1,
+                "selectstart": 1,
+                "selectend": 1,
+                "squeeze": 1,
+                "squeezestart": 1,
+                "squeezeend": 1,
+                "inputsourceschange": 1
+              }
+            ],
+            "requests": 3,
+            "ends": 3,
+            "endCalls": 3,
+            "rejections": [],
+            "errors": [],
+            "renderers": [
+              {
+                "live": false,
+                "frames": 41,
+                "times": [
+                  667.2999999821186,
+                  692.5,
+                  692.5999999940395,
+                  693.2999999821186,
+                  693.3999999761581,
+                  693.5,
+                  693.5999999940395,
+                  693.6999999880791,
+                  693.7999999821186,
+                  693.7999999821186,
+                  693.8999999761581,
+                  694,
+                  696.6999999880791,
+                  696.8999999761581,
+                  697,
+                  697.0999999940395,
+                  697.1999999880791,
+                  697.1999999880791,
+                  697.2999999821186,
+                  697.2999999821186,
+                  697.2999999821186,
+                  697.3999999761581,
+                  697.5,
+                  697.5,
+                  697.5,
+                  697.5,
+                  697.5999999940395,
+                  697.5999999940395,
+                  697.6999999880791,
+                  697.6999999880791,
+                  697.7999999821186,
+                  697.7999999821186,
+                  697.7999999821186,
+                  697.7999999821186,
+                  976.5,
+                  990.5999999940395,
+                  2638.399999976158,
+                  2643.199999988079,
+                  3822.399999976158,
+                  4273.199999988079,
+                  4280.799999982119
+                ],
+                "calls": 69,
+                "triangles": 5166,
+                "geometries": 1,
+                "textures": 0,
+                "materials": 0,
+                "objects": 0,
+                "labels": {}
+              },
+              {
+                "live": false,
+                "frames": 38,
+                "times": [
+                  5278.5,
+                  5309.699999988079,
+                  5309.899999976158,
+                  5310.199999988079,
+                  5310.199999988079,
+                  5310.299999982119,
+                  5310.299999982119,
+                  5310.299999982119,
+                  5310.299999982119,
+                  5310.299999982119,
+                  5310.399999976158,
+                  5310.399999976158,
+                  5313.5999999940395,
+                  5313.799999982119,
+                  5314,
+                  5314,
+                  5314.0999999940395,
+                  5314.199999988079,
+                  5314.199999988079,
+                  5314.199999988079,
+                  5314.299999982119,
+                  5314.299999982119,
+                  5314.399999976158,
+                  5314.399999976158,
+                  5314.399999976158,
+                  5314.5,
+                  5314.5,
+                  5314.5,
+                  5314.5999999940395,
+                  5314.5999999940395,
+                  5314.5999999940395,
+                  5314.5999999940395,
+                  5314.699999988079,
+                  5314.699999988079,
+                  5564.5999999940395,
+                  6866.899999976158,
+                  6870.5,
+                  7516.199999988079
+                ],
+                "calls": 60,
+                "triangles": 4268,
+                "geometries": 1,
+                "textures": 0,
+                "materials": 0,
+                "objects": 1,
+                "labels": {}
+              },
+              {
+                "live": false,
+                "frames": 37,
+                "times": [
+                  8294.59999999404,
+                  8321.199999988079,
+                  8321.299999982119,
+                  8321.399999976158,
+                  8321.5,
+                  8321.59999999404,
+                  8321.59999999404,
+                  8321.59999999404,
+                  8321.59999999404,
+                  8321.59999999404,
+                  8321.59999999404,
+                  8321.59999999404,
+                  8324.699999988079,
+                  8324.799999982119,
+                  8324.799999982119,
+                  8324.899999976158,
+                  8324.899999976158,
+                  8325,
+                  8325,
+                  8325,
+                  8325,
+                  8325,
+                  8325.09999999404,
+                  8325.09999999404,
+                  8325.09999999404,
+                  8325.09999999404,
+                  8325.199999988079,
+                  8325.199999988079,
+                  8325.199999988079,
+                  8325.199999988079,
+                  8325.199999988079,
+                  8325.199999988079,
+                  8325.299999982119,
+                  8325.299999982119,
+                  8908.699999988079,
+                  8919.299999982119,
+                  8929.299999982119
+                ],
+                "calls": 60,
+                "triangles": 4268,
+                "geometries": 1,
+                "textures": 0,
+                "materials": 0,
+                "objects": 1,
+                "labels": {}
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr.spec.ts",
+      "name": "decorative floor joints do not block teleport along the central aisle",
+      "status": "passed",
+      "durationMs": 4557,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-xr.spec.ts",
+      "name": "2D catalogue renders published images and permits deliberate 3D retry without refetch or selection loss",
+      "status": "passed",
+      "durationMs": 4535,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-xr.spec.ts",
+      "name": "unsupported XR keeps the existing 3D scene and web navigation",
+      "status": "passed",
+      "durationMs": 3638,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-xr.spec.ts",
+      "name": "a supported but refused VR request preserves canvas, selection and permits retry",
+      "status": "passed",
+      "durationMs": 4872,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-xr.spec.ts",
+      "name": "actual context restores the same canvas and keeps logical selection",
+      "status": "passed",
+      "durationMs": 8117,
+      "errors": [],
+      "evidence": [
+        {
+          "name": "webgl-recovery.json",
+          "data": {
+            "statuses": [
+              "ready",
+              "recovering",
+              "verifying",
+              "ready"
+            ],
+            "beforeFrames": 39,
+            "renderers": [
+              {
+                "live": true,
+                "frames": 78,
+                "times": [
+                  687.4000000059605,
+                  719.9000000059605,
+                  720.5,
+                  721.1999999880791,
+                  721.4000000059605,
+                  721.5,
+                  721.6999999880791,
+                  721.8000000119209,
+                  721.9000000059605,
+                  721.9000000059605,
+                  722,
+                  722.0999999940395,
+                  725.4000000059605,
+                  725.5,
+                  725.6999999880791,
+                  725.8000000119209,
+                  725.9000000059605,
+                  725.9000000059605,
+                  726,
+                  726,
+                  726.0999999940395,
+                  726.1999999880791,
+                  726.1999999880791,
+                  726.1999999880791,
+                  726.3000000119209,
+                  726.3000000119209,
+                  726.5,
+                  726.5,
+                  726.5,
+                  726.5999999940395,
+                  726.6999999880791,
+                  726.6999999880791,
+                  726.8000000119209,
+                  726.9000000059605,
+                  1004.5,
+                  1024.300000011921,
+                  2415.199999988079,
+                  2426.0999999940395,
+                  3426.800000011921,
+                  4215.300000011921,
+                  4220.5,
+                  4898.0999999940395,
+                  4921.300000011921,
+                  4921.300000011921,
+                  4921.5999999940395,
+                  4921.5999999940395,
+                  4921.699999988079,
+                  4921.800000011921,
+                  4921.800000011921,
+                  4921.9000000059605,
+                  4921.9000000059605,
+                  4921.9000000059605,
+                  4921.9000000059605,
+                  4925.199999988079,
+                  4925.199999988079,
+                  4925.4000000059605,
+                  4925.4000000059605,
+                  4925.4000000059605,
+                  4925.4000000059605,
+                  4925.5,
+                  4925.5,
+                  4925.5,
+                  4925.5,
+                  4925.5,
+                  4925.5999999940395,
+                  4925.699999988079,
+                  4925.699999988079,
+                  4925.699999988079,
+                  4925.699999988079,
+                  4925.800000011921,
+                  4925.800000011921,
+                  4925.800000011921,
+                  4925.800000011921,
+                  4925.800000011921,
+                  4925.800000011921,
+                  5253.5,
+                  5266,
+                  5272.5999999940395
+                ],
+                "calls": 69,
+                "triangles": 5166,
+                "geometries": 67,
+                "textures": 14,
+                "materials": 35,
+                "objects": 125,
+                "labels": {
+                  "b042bee4-45b2-456f-acd7-cbf3c4115839": 18,
+                  "7f98dd4c-d5c2-4a01-9b95-9e75fee86d1e": 19,
+                  "c7117605-8217-4dfa-a18b-2d1990af8be1": 20,
+                  "28435aa6-7f59-4d30-a10a-0056568e49e5": 21,
+                  "042e96ad-5e6e-4176-b737-a3cc31952051": 22
+                }
+              }
+            ],
+            "requests": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "file": "museum-xr.spec.ts",
+      "name": "simulated native XR renders stereo, selects once, teleports, snap-turns and restores web camera without reloading GLBs",
+      "status": "passed",
+      "durationMs": 8235,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-xr.spec.ts",
+      "name": "repeated actual context losses exhaust recovery into stable readable 2D",
+      "status": "passed",
+      "durationMs": 10274,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-xr.spec.ts",
+      "name": "native session end during initialization never resurrects XR or throws a renderer event error",
+      "status": "passed",
+      "durationMs": 3404,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-xr.spec.ts",
+      "name": "native renderer binding failure recreates only Canvas and retains cached GLBs and selection",
+      "status": "passed",
+      "durationMs": 6153,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-xr.spec.ts",
+      "name": "actual context loss during XR ends the session and restores normal 3D without automatic re-entry",
+      "status": "passed",
+      "durationMs": 9245,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-xr.spec.ts",
+      "name": "a controller-free session can gaze at the in-world Exit without moving the origin",
+      "status": "passed",
+      "durationMs": 7786,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "museum-xr.spec.ts",
+      "name": "persistent WebGL failure exhausts only two deliberate retries and leaves readable 2D",
+      "status": "passed",
+      "durationMs": 3598,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "tour-2d-fallback.spec.ts",
+      "name": "[F02] panel link follows selected exhibit and navigates to readable 2D detail",
+      "status": "passed",
+      "durationMs": 1347,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "tour-2d-fallback.spec.ts",
+      "name": "[F03] webgl failure offers contextual 2D link with selection=false",
+      "status": "passed",
+      "durationMs": 1343,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "tour-2d-fallback.spec.ts",
+      "name": "[F03] webgl failure offers contextual 2D link with selection=true",
+      "status": "passed",
+      "durationMs": 1849,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "tour-2d-fallback.spec.ts",
+      "name": "[F03] context failure offers contextual 2D link with selection=false",
+      "status": "passed",
+      "durationMs": 10855,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "tour-2d-fallback.spec.ts",
+      "name": "[F03] context failure offers contextual 2D link with selection=true",
+      "status": "passed",
+      "durationMs": 12798,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "tour-2d-fallback.spec.ts",
+      "name": "[F03] chunk failure offers contextual 2D link with selection=false",
+      "status": "passed",
+      "durationMs": 1884,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "tour-2d-fallback.spec.ts",
+      "name": "[F03] chunk failure offers contextual 2D link with selection=true",
+      "status": "passed",
+      "durationMs": 1924,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "tour-2d-fallback.spec.ts",
+      "name": "[F04] missing WebGL cancels pending models and focuses collection after deliberate navigation",
+      "status": "passed",
+      "durationMs": 984,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "tour-2d-fallback.spec.ts",
+      "name": "[F04] unrecovered context retains selection and releases in-flight GLBs after the bounded recovery deadline",
+      "status": "passed",
+      "durationMs": 12293,
+      "errors": [],
+      "evidence": []
+    },
+    {
+      "file": "tour-2d-fallback.spec.ts",
+      "name": "[F04] fallback text and links reflow in light/dark and remain usable after API refresh failure",
+      "status": "passed",
+      "durationMs": 1452,
+      "errors": [],
+      "evidence": []
+    }
+  ]
+}

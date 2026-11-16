@@ -1,0 +1,189 @@
+{
+  "stats": {
+    "startTime": "2026-11-06T14:05:07.310Z",
+    "duration": 24275.748,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "name": "F17 close while native request is pending ends the late session without binding",
+      "status": "passed",
+      "errors": [],
+      "attachments": {
+        "xr-lifecycle.json": {
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+          "timeline": [
+            {
+              "event": "request",
+              "session": 0,
+              "available": true
+            },
+            {
+              "event": "app:end",
+              "session": 0,
+              "available": true
+            },
+            {
+              "event": "native:end",
+              "session": 0,
+              "available": true
+            }
+          ],
+          "listeners": [
+            {}
+          ],
+          "requests": 1,
+          "ends": 1,
+          "endCalls": 1,
+          "rejections": [],
+          "errors": [],
+          "renderers": [
+            {
+              "live": false,
+              "frames": 38,
+              "times": [
+                2489.5999999940395,
+                2563.7999999821186,
+                2564.0999999940395,
+                2564.699999988079,
+                2564.899999976158,
+                2565.0999999940395,
+                2565.0999999940395,
+                2565.2999999821186,
+                2565.399999976158,
+                2565.5,
+                2565.5,
+                2565.5999999940395,
+                2575.0999999940395,
+                2575.399999976158,
+                2575.5999999940395,
+                2575.5999999940395,
+                2575.699999988079,
+                2575.699999988079,
+                2575.7999999821186,
+                2575.7999999821186,
+                2576,
+                2576.0999999940395,
+                2576.0999999940395,
+                2576.199999988079,
+                2576.199999988079,
+                2576.199999988079,
+                2576.399999976158,
+                2576.399999976158,
+                2576.5,
+                2576.5,
+                2576.5999999940395,
+                2576.5999999940395,
+                2576.699999988079,
+                2576.699999988079,
+                3932.0999999940395,
+                4661.199999988079,
+                7427.0999999940395,
+                9100.5
+              ],
+              "calls": 73,
+              "triangles": 5506,
+              "geometries": 1,
+              "textures": 0,
+              "materials": 0,
+              "objects": 1,
+              "labels": {}
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "F17 room while native request is pending ends the late session without binding",
+      "status": "passed",
+      "errors": [],
+      "attachments": {
+        "xr-lifecycle.json": {
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+          "timeline": [
+            {
+              "event": "request",
+              "session": 0,
+              "available": true
+            },
+            {
+              "event": "app:end",
+              "session": 0,
+              "available": true
+            },
+            {
+              "event": "native:end",
+              "session": 0,
+              "available": true
+            }
+          ],
+          "listeners": [
+            {}
+          ],
+          "requests": 1,
+          "ends": 1,
+          "endCalls": 1,
+          "rejections": [],
+          "webgl": "ready",
+          "xr": "idle",
+          "errors": [],
+          "renderers": [
+            {
+              "live": true,
+              "frames": 37,
+              "times": [
+                1791.5,
+                2079.0999999940395,
+                2079.199999988079,
+                2080.5,
+                2080.9000000059605,
+                2081.4000000059605,
+                2081.5999999940395,
+                2082,
+                2082.199999988079,
+                2082.5999999940395,
+                2082.699999988079,
+                2083,
+                2089.0999999940395,
+                2089.4000000059605,
+                2089.7999999821186,
+                2089.7999999821186,
+                2089.9000000059605,
+                2089.9000000059605,
+                2090,
+                2090,
+                2090.0999999940395,
+                2090.199999988079,
+                2090.199999988079,
+                2090.2999999821186,
+                2090.2999999821186,
+                2090.4000000059605,
+                2090.4000000059605,
+                2091.4000000059605,
+                2091.5999999940395,
+                2091.5999999940395,
+                2091.7999999821186,
+                2091.7999999821186,
+                2091.9000000059605,
+                2091.9000000059605,
+                5178.199999988079,
+                5243.5999999940395,
+                6811.5999999940395
+              ],
+              "calls": 73,
+              "triangles": 5506,
+              "geometries": 1,
+              "textures": 0,
+              "materials": 0,
+              "objects": 1,
+              "labels": {}
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

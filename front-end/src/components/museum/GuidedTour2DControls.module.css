@@ -1,0 +1,18 @@
+.controls {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  margin-block: 16px 24px;
+  border: 1px solid var(--aura-glass-border);
+  border-radius: 14px;
+  background: var(--aura-glass-bg);
+}
+
+.summary { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.progress { margin-top: 4px; }
+.actions { flex-wrap: wrap; }
+
+@media (max-width: 30em) {
+  .controls { padding: 12px; }
+  .actions > * { flex: 1 1 auto; }
+}

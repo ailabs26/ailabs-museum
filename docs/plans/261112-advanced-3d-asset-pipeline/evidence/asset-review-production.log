@@ -1,0 +1,73 @@
+
+> aura-museum-web@0.1.0 test
+> playwright test asset-pipeline.spec.ts museum-gallery-slots.spec.ts cms-gallery-slot-picker.spec.ts museum-glb.spec.ts museum-xr.spec.ts guided-tour-camera.spec.ts --grep generated Draco loads|museum-gallery-slots|cms-gallery-slot-picker|actual context|native renderer binding failure|replacement GLB|finishing a real GLB|switching rooms while two GLBs|persistent WebGL failure --output=tmp/asset-review-production --reporter=line
+
+
+Running 28 tests using 1 worker
+
+
+
+(node:35732) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[1/28] tests\asset-pipeline.spec.ts:144:48 › generated Draco loads in the public museum using self-hosted wasm decoder
+[2/28] tests\asset-pipeline.spec.ts:144:48 › generated Draco loads in the public museum using self-hosted js decoder
+[3/28] tests\cms-gallery-slot-picker.spec.ts:27:1 › a new exhibit takes the first free plinth; occupied plinths are locked
+[4/28] tests\cms-gallery-slot-picker.spec.ts:46:1 › a new room offers five empty plinths and defaults to the centre
+[5/28] tests\cms-gallery-slot-picker.spec.ts:57:1 › editing keeps the exhibit on its own plinth and never rewrites its position on load
+[6/28] tests\cms-gallery-slot-picker.spec.ts:71:1 › free coordinates stay untouched and remain editable under advanced options
+[7/28] tests\cms-gallery-slot-picker.spec.ts:86:1 › a stale conflict is called out instead of silently replacing the other exhibit
+[8/28] tests\guided-tour-camera.spec.ts:130:1 › XR and actual context loss pause without auto-resume or replacing the Canvas
+[9/28] tests\guided-tour-camera.spec.ts:300:1 › a replacement GLB clears an obsolete render failure for the same exhibit
+[10/28] tests\museum-gallery-slots.spec.ts:42:1 › a room without exhibits still opens in 3D with exactly five empty plinths
+  1) tests\museum-gallery-slots.spec.ts:42:1 › a room without exhibits still opens in 3D with exactly five empty plinths
+
+    Error: expect(received).toBeLessThan(expected)
+
+    Expected: < 5
+    Received:   5.706656685884195
+
+      51 |   await page.keyboard.down('w'); await page.waitForTimeout(4500); await page.keyboard.up('w');
+      52 |   expect(await cameraZ(page)).toBeGreaterThan(-0.54);
+    > 53 |   expect(await cameraZ(page)).toBeLessThan(5);
+         |                               ^
+      54 |   // Bấm vào bục trống không mở chi tiết nào.
+      55 |   await page.getByRole('button', { name: 'Góc nhìn ban đầu', exact: true }).click();
+      56 |   const box = (await canvas.boundingBox())!;
+        at D:\CNPM\ailabs-museum\front-end\tests\museum-gallery-slots.spec.ts:53:31
+
+    Error Context: tmp\asset-review-production\museum-gallery-slots-a-roo-95522--exactly-five-empty-plinths\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    tmp\asset-review-production\museum-gallery-slots-a-roo-95522--exactly-five-empty-plinths\trace.zip
+    Usage:
+
+        npx playwright show-trace tmp\asset-review-production\museum-gallery-slots-a-roo-95522--exactly-five-empty-plinths\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+(node:7736) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[11/28] tests\museum-gallery-slots.spec.ts:63:3 › 1 assigned exhibit(s) sit on their own plinths and the others stay
+[12/28] tests\museum-gallery-slots.spec.ts:63:3 › 2 assigned exhibit(s) sit on their own plinths and the others stay
+[13/28] tests\museum-gallery-slots.spec.ts:63:3 › 5 assigned exhibit(s) sit on their own plinths and the others stay
+[14/28] tests\museum-gallery-slots.spec.ts:75:1 › unassigning an exhibit keeps its plinth
+[15/28] tests\museum-gallery-slots.spec.ts:91:1 › free coordinates, duplicates and more than five exhibits stay in the legacy layout with nothing hidden
+[16/28] tests\museum-gallery-slots.spec.ts:111:1 › existing free-placement fixture rooms keep the legacy layout
+[17/28] tests\museum-gallery-slots.spec.ts:120:1 › template rooms use the Rotunda shell, a single shadow caster and stay within the render budget
+[18/28] tests\museum-gallery-slots.spec.ts:156:1 › reopening a template room releases its GPU resources and sleeps when idle
+[19/28] tests\museum-gallery-slots.spec.ts:235:1 › free-placement rooms also get the Rotunda shell without decoration touching any plinth or model
+[20/28] tests\museum-gallery-slots.spec.ts:255:1 › legacy GLB room: Rotunda shell, spots aimed at the real exhibits, no collision with loaded models
+[21/28] tests\museum-glb.spec.ts:41:1 › switching rooms while two GLBs are loading cancels the queue and keeps the next room usable
+[22/28] tests\museum-glb.spec.ts:82:41 › finishing a real GLB download respects an earlier camera reset
+[23/28] tests\museum-glb.spec.ts:82:41 › finishing a real GLB download respects an earlier camera drag
+[24/28] tests\museum-xr.spec.ts:84:1 › actual context restores the same canvas and keeps logical selection
+[25/28] tests\museum-xr.spec.ts:179:1 › repeated actual context losses exhaust recovery into stable readable 2D
+[26/28] tests\museum-xr.spec.ts:211:1 › native renderer binding failure recreates only Canvas and retains cached GLBs and selection
+[27/28] tests\museum-xr.spec.ts:226:1 › actual context loss during XR ends the session and restores normal 3D without automatic re-entry
+[28/28] tests\museum-xr.spec.ts:276:1 › persistent WebGL failure exhausts only two deliberate retries and leaves readable 2D
+  1 failed
+    tests\museum-gallery-slots.spec.ts:42:1 › a room without exhibits still opens in 3D with exactly five empty plinths
+  27 passed (6.1m)

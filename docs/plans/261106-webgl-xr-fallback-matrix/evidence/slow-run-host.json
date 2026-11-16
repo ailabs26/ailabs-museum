@@ -1,0 +1,46 @@
+{
+  "capturedUtc": "2026-11-06T14:13:33.0117954Z",
+  "cpu": [
+    {
+      "PercentProcessorTime": 60
+    }
+  ],
+  "memory": [
+    {
+      "FreePhysicalMemory": 2038036,
+      "TotalVisibleMemorySize": 16393140
+    }
+  ],
+  "automationBrowsers": [
+    {
+      "ProcessId": 11648,
+      "ParentProcessId": 12444,
+      "CreationDate": "2026-11-06T21:10:16.747956+07:00"
+    },
+    {
+      "ProcessId": 27200,
+      "ParentProcessId": 11648,
+      "CreationDate": "2026-11-06T21:10:16.873013+07:00"
+    }
+  ],
+  "nodeProcesses": [
+    {
+      "ProcessId": 33404,
+      "ParentProcessId": 8088,
+      "CreationDate": "2026-11-06T21:06:36.635058+07:00",
+      "CommandLine": "\"node\"   \"D:\\CNPM\\ailabs-museum\\front-end\\node_modules\\.bin\\\\..\\@playwright\\test\\cli.js\" test museum-xr.spec.ts museum-xr-disconnect.spec.ts museum-glb.spec.ts museum-hotspots.spec.ts tour-2d-fallback.spec.ts museum-fullscreen.spec.ts museum-immersive-ui.spec.ts --reporter=list,json --output=tmp/fallback-delivery"
+    },
+    {
+      "ProcessId": 30952,
+      "ParentProcessId": 20720,
+      "CreationDate": "2026-11-06T21:06:37.504128+07:00",
+      "CommandLine": "\"node\"   \"D:\\CNPM\\ailabs-museum\\front-end\\node_modules\\.bin\\\\..\\vite\\bin\\vite.js\" preview --host 127.0.0.1 --port 4173 --strictPort"
+    },
+    {
+      "ProcessId": 12444,
+      "ParentProcessId": 33404,
+      "CreationDate": "2026-11-06T21:10:16.245105+07:00",
+      "CommandLine": "D:\\node\\node.exe D:\\CNPM\\ailabs-museum\\front-end\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js"
+    }
+  ]
+}

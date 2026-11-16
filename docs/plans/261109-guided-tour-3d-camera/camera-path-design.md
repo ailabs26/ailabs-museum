@@ -1,0 +1,11 @@
+# Camera path design
+
+Reuse getExhibitView for lens/bounds framing. Validate finite coordinates and room placement. Candidate viewing positions must fit the model sphere, remain outside all expanded colliders, and have an unobstructed sightline against other exhibits. Search around the target when the nominal position fails. Failure leaves the camera in place.
+
+Use the visibility graph around existing AABBs, preferring an additional 0.22 m margin. Endpoints always use the existing room/body clearance. The graph is preprocessed once per request. Greedy visibility pruning removes redundant waypoints.
+
+For each corner choose tangent points at at most 0.55 m and 40% of adjacent segment lengths. Sample a quadratic Bézier at at most 0.005 m control-polygon spacing. This also limits the discrete heading change at 120 Hz. Validate every chord using the shared slab test and both endpoints against room bounds. Halve radius on failure, retaining the original corner after bounded attempts. The sampled polyline is the rendered route, so no unsampled spline can leave the validated envelope.
+
+Resample linear sections at at most 0.04 m, with an interior acceleration sample even on very short segments. Store cumulative distances. Curvature limits speed through curves, sharp fallback corners require a stop. Forward/backward passes allocate 0.6 m/s² to tangential acceleration and 0.4 m/s² to turning within a 1 m/s² vector budget, with a 1.25 m/s speed ceiling. Store cumulative travel times from constant-acceleration segments. Sample by elapsed travel time, solving distance within the segment and looking up position by arc length. Clamp frame delta to 50 ms to prevent background-tab jumps. Route length controls duration. Unit sampling verifies vector acceleration at 30/60/120 FPS with zero and one metre of simultaneous vertical travel.
+
+Look ahead along the route and blend toward exhibit focus within the final 2 m. Limit shortest yaw/pitch displacement to 1.3 rad/s and rebuild the YXZ quaternion with zero roll. Arrival waits for position and orientation completion. Vertical interpolation uses smoothstep over travel progress within validated floor/ceiling limits. Total duration includes simultaneous vertical and horizontal speed through a conservative sum bound, plus an acceleration duration bound.

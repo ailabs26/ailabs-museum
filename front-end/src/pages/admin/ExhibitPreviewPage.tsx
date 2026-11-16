@@ -158,6 +158,7 @@ export function ExhibitPreviewPage() {
               <Suspense fallback={<Center mih={420}><Loader /></Center>}>
                 <LazyMuseumScene
                   displays={displays}
+                  roomName={room?.name}
                   selectedId={selected?.id ?? null}
                   onSelect={setSelectedId}
                   onClear={() => setSelectedId(null)}

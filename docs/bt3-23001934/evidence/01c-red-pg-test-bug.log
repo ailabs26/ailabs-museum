@@ -1,0 +1,70 @@
+# RED — integration PG thật (migration + stub repository) — 2026-10-31T23:14:08+07:00
+▶ MediaUploadJobRepository (PostgreSQL thật)
+  ✖ 20 insert đồng thời cùng key → đúng 1 created, cả 20 nhận cùng job, bảng có 1 dòng (11.094422ms)
+  ✖ unique constraint tồn tại đúng tên; created_by NOT NULL (18.15176ms)
+  ✖ findOwned chỉ trả job của đúng người tạo; failInterrupted chỉ đổi job dang dở (6.73362ms)
+✖ MediaUploadJobRepository (PostgreSQL thật) (3877.232959ms)
+ℹ tests 3
+ℹ suites 1
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10172.032924
+
+✖ failing tests:
+
+test at src/modules/media/tests/upload-jobs-repository.integration.spec.ts:52:24
+✖ 20 insert đồng thời cùng key → đúng 1 created, cả 20 nhận cùng job, bảng có 1 dòng (11.094422ms)
+  NotImplementedException: BT3: insertOrFindExisting chưa hiện thực
+      at MediaUploadJobRepository.insertOrFindExisting (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/repositories/media-upload-job.repository.ts:18:11)
+      at /media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-repository.integration.spec.ts:57:14
+      at Array.from (<anonymous>)
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-repository.integration.spec.ts:56:13)
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1869:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    response: { message: 'BT3: insertOrFindExisting chưa hiện thực', error: 'Not Implemented', statusCode: 501 },
+    status: 501,
+    options: {}
+  }
+
+test at src/modules/media/tests/upload-jobs-repository.integration.spec.ts:61:24
+✖ unique constraint tồn tại đúng tên; created_by NOT NULL (18.15176ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'PK_media_upload_jobs'
+  - 'UQ_media_upload_jobs_actor_key'
+  
+      at Object.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-repository.integration.spec.ts:77:14)
+      at expectedException (node:assert:547:17)
+      at expectsError (node:assert:672:21)
+      at strict.rejects (node:assert:738:3)
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-repository.integration.spec.ts:73:5)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'PK_media_upload_jobs',
+    expected: 'UQ_media_upload_jobs_actor_key',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/modules/media/tests/upload-jobs-repository.integration.spec.ts:74:24
+✖ findOwned chỉ trả job của đúng người tạo; failInterrupted chỉ đổi job dang dở (6.73362ms)
+  NotImplementedException: BT3: insertOrFindExisting chưa hiện thực
+      at MediaUploadJobRepository.insertOrFindExisting (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/repositories/media-upload-job.repository.ts:18:11)
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-repository.integration.spec.ts:89:41)
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    response: { message: 'BT3: insertOrFindExisting chưa hiện thực', error: 'Not Implemented', statusCode: 501 },
+    status: 501,
+    options: {}
+  }

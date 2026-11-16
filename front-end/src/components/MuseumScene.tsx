@@ -4,8 +4,12 @@ import { Button, Group, Text } from '@mantine/core';
 import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace } from 'three';
 import { MuseumRoom } from '@/components/museum/MuseumRoom';
 import { ExhibitionDisplay } from '@/components/museum/ExhibitionDisplay';
+import { GallerySlots } from '@/components/museum/GallerySlots';
+import type { ExhibitRenderProps } from '@/components/museum/GallerySlotView';
+import { resolveGalleryLayout } from '@/helpers/gallerySlots';
+import { GALLERY_SLOT_TARGETS } from '@/helpers/galleryLighting';
 import { MuseumLighting } from '@/components/museum/MuseumLighting';
-import { MuseumControls, type CameraAction, type CameraCommand } from '@/components/museum/MuseumControls';
+import { MuseumControls, type CameraAction } from '@/components/museum/MuseumControls';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { SceneLifecycle } from '@/components/museum/SceneLifecycle';
 import { INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET } from '@/helpers/museumCamera';
@@ -30,6 +34,9 @@ import type { XrSessionController, XrSnapshot } from '@/helpers/xrSession';
 import type { WebglStatus } from '@/helpers/webglRecovery';
 import { GallerySurfaces } from '@/components/museum/GallerySurfaces';
 import { useMuseumQuality } from '@/hooks/useMuseumQuality';
+import { usePublicT, type Translator } from '@/core/i18n/public-locale';
+import type { GuidedCameraBinding } from '@/hooks/useGuidedCameraTour';
+import type { ModelLodSet } from '@/helpers/modelLod';
 
 // Labels render over solid geometry. Picking follows that same visual order;
 // intersecting labels still use nearest-first ordering within their layer.
@@ -39,14 +46,33 @@ const createMuseumEvents: typeof events = (store) => ({
     Number(right.object.userData.museumLabel === true) - Number(left.object.userData.museumLabel === true) || left.distance - right.distance),
 });
 
-export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback, immersive = false, onXrChange }: {
+/** Thông báo VR sinh ở `xrSession` (không có React) bằng tiếng Việt: dịch lúc hiển thị. */
+const XR_MESSAGES = [
+  { key: 'ui.tour.xr.restarting', label: 'Đang khởi tạo lại phần hiển thị sau lỗi VR.' },
+  { key: 'ui.tour.xr.enter-failed', label: 'Không thể vào VR. Bạn vẫn có thể tham quan 3D và thử lại.' },
+  { key: 'ui.tour.xr.exit-failed', label: 'Hãy dùng nút thoát VR của thiết bị hoặc thử thoát lại.' },
+] as const;
+
+function xrMessage(message: string, t: Translator): string {
+  const known = XR_MESSAGES.find((item) => item.label === message);
+  return known ? t(known.key, known.label) : message;
+}
+
+export function MuseumScene({ displays, navigationDisplays = displays, roomName, selectedId, onSelect, onClear, fallback, immersive = false, onXrChange, guided, modelLodSets = [] }: {
   displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void; onClear: () => void;
+  navigationDisplays?: readonly MuseumDisplay[];
+  /** Tên phòng (đã theo ngôn ngữ của khách) cho biển trên vách trung tâm của Gallery Template. */
+  roomName?: string;
   fallback: ReactNode;
   immersive?: boolean;
   onXrChange?: (snapshot: XrSnapshot, owner: XrSessionController | null) => void;
+  guided?: GuidedCameraBinding;
+  /** Test adapter until the reviewed backend source/variant publication relation exists. */
+  modelLodSets?: readonly ModelLodSet[];
 }) {
+  const t = usePublicT();
   const quality = useMuseumQuality();
-  const [command, setCommand] = useState<CameraCommand | null>(null);
+  const commandHandler = useRef<((action: CameraAction) => void) | null>(null);
   const [webglStatus, setWebglStatus] = useState<WebglStatus>('ready');
   const [xrOwner, setXrOwner] = useState<XrSessionController | null>(null);
   const [xrStatus, setXrStatus] = useState<XrSnapshot>({ capability: 'checking', phase: 'idle', message: '' });
@@ -62,7 +88,7 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
   const handleRendererReset = useCallback(() => {
     if (++rendererResets.current > 2) { setWebglStatus('failed'); return; }
     setIsRendererRestarting(true); setXrOwner(null);
-    setXrStatus({ capability: 'checking', phase: 'idle', message: 'Đang khởi tạo lại phần hiển thị sau lỗi VR.' });
+    setXrStatus({ capability: 'checking', phase: 'idle', message: XR_MESSAGES[0].label });
   }, []);
   useEffect(() => {
     if (!isRendererRestarting) return;
@@ -81,13 +107,32 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
   const [hasTouch, setHasTouch] = useState(false);
   useEffect(() => { setHasTouch(navigator.maxTouchPoints > 0 || matchMedia('(any-pointer: coarse)').matches); }, []);
   const handleSceneSelect = (id: string) => { if (gestures.canSelect) onSelect(id); };
-  const { models, retry } = useRoomModels(displays);
+  const { models, retry, selectLod, retainModel } = useRoomModels(displays, modelLodSets);
+  // Phòng rỗng/khớp đủ bục dùng Gallery Template; phòng tọa độ tự do giữ nguyên cách dựng cũ.
+  const layout = useMemo(() => resolveGalleryLayout(displays), [displays]);
+  // Phòng legacy: đèn chiếu vào vị trí hiện vật thật thay vì 5 bục của template.
+  const lightTargets = useMemo(() => layout.mode === 'slotted' ? GALLERY_SLOT_TARGETS
+    : displays.filter(display => !display.isOutsideRoom).map(display => ({ id: display.id, position: display.position,
+      isHero: !!display.model || display.shape === 'torus' })), [layout, displays]);
   const selectedDisplay = displays.find((display) => display.id === selectedId);
+  const selection = useMemo(() => ({ id: selectedId, issuedAt: performance.now() }), [selectedId]);
   const selectedModel = selectedDisplay?.model ? models[selectedDisplay.model.checksumSha256] : undefined;
   const selectedRenderState = renderStates[selectedDisplay?.id ?? ''];
   const selectedAsset = selectedModel?.status === 'ready' && !(selectedRenderState?.checksum === selectedDisplay?.model?.checksumSha256 && selectedRenderState?.failed) ? selectedModel.asset : undefined;
   const focusBounds = useMemo(() => selectedDisplay?.model ? getArtifactFocusBounds(selectedDisplay, selectedAsset?.normalization)
     : undefined, [selectedDisplay, selectedAsset]);
+  const guidedDisplay = navigationDisplays.find(display => display.id === guided?.request?.exhibitId);
+  const guidedModel = guidedDisplay?.model ? models[guidedDisplay.model.checksumSha256] : undefined;
+  const guidedBounds = useMemo(() => guidedDisplay?.model ? getArtifactFocusBounds(guidedDisplay,
+    guidedModel?.status === 'ready' ? guidedModel.asset.normalization : undefined) : undefined, [guidedDisplay, guidedModel]);
+  const onGuidedReady = guided?.onReady;
+  const guidedRenderState = renderStates[guidedDisplay?.id ?? ''];
+  const guidedModelFailed = guidedModel?.status === 'error'
+    || !!(guidedDisplay?.model && guidedRenderState?.checksum === guidedDisplay.model.checksumSha256 && guidedRenderState.failed);
+  useEffect(() => {
+    onGuidedReady?.(isWebInputEnabled);
+    return () => onGuidedReady?.(false);
+  }, [onGuidedReady, isWebInputEnabled]);
   const handleWebglStatus = useCallback((status: WebglStatus) => setWebglStatus(status), []);
   const handleRenderError = (display: MuseumDisplay) => {
     const previous = renderStates[display.id];
@@ -99,22 +144,33 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
     const state = states[id];
     return !state || !state.failed || state.attempts >= 3 ? states : { ...states, [id]: { ...state, failed: false, attempts: state.attempts + 1 } };
   });
-  const handleCommand = (action: CameraAction) => setCommand((previous) => ({ action, sequence: (previous?.sequence ?? 0) + 1 }));
+  const getExhibitProps = (display: MuseumDisplay): ExhibitRenderProps => ({
+    lodSet: modelLodSets.find(set => set.sourceChecksumSha256 === display.model?.checksumSha256),
+    isFocused: display.id === guided?.request?.exhibitId, onLodChange: selectLod, onRetainModel: retainModel,
+    isSelected: display.id === selectedId, onSelect: handleSceneSelect,
+    modelState: display.model ? models[display.model.checksumSha256] : undefined, renderAttempt: renderStates[display.id]?.attempts,
+    hasRenderError: renderStates[display.id]?.checksum === display.model?.checksumSha256 && renderStates[display.id]?.failed,
+    isXrHovered: xrHoveredId === display.id, onRenderError: () => handleRenderError(display),
+  });
+  const handleCommand = (action: CameraAction) => commandHandler.current?.(action);
   const captureRef = useRef<(() => string | null) | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const handlePhoto = async () => {
     setIsCapturing(true);
     try {
-      const ok = await downloadScenePhoto(captureRef.current?.() ?? null);
-      if (ok) notify.success('Đã lưu ảnh kỷ niệm không gian 3D');
-      else notify.error('Chưa chụp được ảnh. Hãy thử lại sau khi khung 3D hiển thị xong.');
+      // `<html lang>` theo ngôn ngữ khách (PublicLocaleProvider); ở trang xem trước admin là `vi`.
+      const ok = await downloadScenePhoto(captureRef.current?.() ?? null, {
+        caption: t('ui.tour.photo-caption', 'Ảnh kỷ niệm không gian 3D'), locale: document.documentElement.lang || 'vi',
+      });
+      if (ok) notify.success(t('ui.tour.photo-saved', 'Đã lưu ảnh kỷ niệm không gian 3D'), t('ui.notify.success', 'Thành công'));
+      else notify.error(t('ui.tour.photo-failed', 'Chưa chụp được ảnh. Hãy thử lại sau khi khung 3D hiển thị xong.'), t('ui.notify.error', 'Lỗi'));
     } finally {
       setIsCapturing(false);
     }
   };
   if (webglStatus === 'failed') return fallback;
   return (
-    <div className={`${classes.scene} ${immersive ? classes.immersive : ''}`} data-quality-tier={quality.tier} data-webgl-status={webglStatus} data-xr-phase={xrStatus.phase}>
+    <div className={`${classes.scene} ${immersive ? classes.immersive : ''}`} data-guided-session={guided?.hasSession || undefined} data-gallery-layout={layout.mode} data-quality-tier={quality.tier} data-webgl-status={webglStatus} data-xr-phase={xrStatus.phase}>
     <div className={classes.canvasFrame}
       onPointerDownCapture={event => { gestures.start(event.pointerId, event.clientX, event.clientY); if (event.pointerType === 'touch') setHasTouch(true); }}
       onPointerMoveCapture={event => gestures.move(event.pointerId, event.clientX, event.clientY)}
@@ -128,58 +184,64 @@ export function MuseumScene({ displays, selectedId, onSelect, onClear, fallback,
       camera={{ position: INITIAL_CAMERA_POSITION, fov: 60, near: 0.1, far: 40 }}
       gl={{ antialias: true, alpha: false, powerPreference: 'low-power', preserveDrawingBuffer: true, outputColorSpace: SRGBColorSpace, toneMapping: ACESFilmicToneMapping, toneMappingExposure: .96 }}
       // R3F mounts this inside <canvas> even when WebGL works; no failure callbacks here.
-      fallback="Trình duyệt không hiển thị được canvas. Nội dung hiện vật vẫn có trong danh mục bên dưới."
+      fallback={t('ui.tour.canvas-fallback', 'Trình duyệt không hiển thị được canvas. Nội dung hiện vật vẫn có trong danh mục bên dưới.')}
       onPointerMissed={(event) => { if (isWebInputEnabled && event.type === 'click' && gestures.canSelect) onClear(); }}
       onCreated={({ camera }) => camera.lookAt(...INITIAL_CAMERA_TARGET)}
     >
       <color attach="background" args={['#eee9df']} />
-      <MuseumLighting shadowSize={quality.shadowSize} isRecovering={webglStatus === 'recovering'} />
-      <SceneLifecycle onStatus={handleWebglStatus} />
+      <MuseumLighting shadowSize={quality.shadowSize} isRecovering={webglStatus === 'recovering'} tier={quality.tier} targets={lightTargets} />
+      <SceneLifecycle onStatus={handleWebglStatus} auditWorkload={new URLSearchParams(window.location.search).get('museumAudit') === '1' ? { roomId: displays[0]?.roomId ?? 'empty', exhibits: displays.length,
+        visibleExhibits: displays.filter(display => !display.isOutsideRoom).length,
+        expectedGlb: displays.filter(display => display.model && !display.isOutsideRoom).length,
+        expectedGlbAssets: new Set(displays.flatMap(display => display.model && !display.isOutsideRoom ? [display.model.checksumSha256] : [])).size,
+        readyGlbAssets: Object.values(models).filter(model => model.status === 'ready').length,
+        failedGlbAssets: Object.values(models).filter(model => model.status === 'error').length,
+        failedGlbRenders: displays.filter(display => display.model && renderStates[display.id]?.checksum === display.model.checksumSha256 && renderStates[display.id]?.failed).length,
+        tier: quality.tier, dprCap: quality.dpr, shadowSize: quality.shadowSize, anisotropy: quality.anisotropy } : undefined} />
       <MuseumXr available={webglStatus === 'ready'} displays={displays} selectedId={selectedId} onSelect={onSelect}
         onController={setXrOwner} onStatus={setXrStatus} onHover={setXrHoveredId} onRendererReset={handleRendererReset} />
       <PhotoCapture bind={(fn) => { captureRef.current = fn; }} />
-      <MuseumControls enabled={isWebInputEnabled} command={command} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
-        displays={displays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} />
+      <MuseumControls enabled={isWebInputEnabled} commandHandler={commandHandler} selectionIssuedAt={selection.issuedAt} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
+        displays={navigationDisplays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} guided={guided} guidedBounds={guidedBounds} guidedModelFailed={guidedModelFailed} />
       <GallerySurfaces anisotropy={quality.anisotropy}>
-      <MuseumRoom />
-      {displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} isSelected={display.id === selectedId} onSelect={handleSceneSelect}
-        modelState={display.model ? models[display.model.checksumSha256] : undefined} renderAttempt={renderStates[display.id]?.attempts}
-        hasRenderError={renderStates[display.id]?.checksum === display.model?.checksumSha256 && renderStates[display.id]?.failed}
-        isXrHovered={xrHoveredId === display.id} onRenderError={() => handleRenderError(display)} />)}
+      <MuseumRoom roomName={roomName} hasHeroHalo={layout.mode === 'slotted'} />
+      {layout.mode === 'slotted' ? <GallerySlots slots={layout.slots} getExhibitProps={getExhibitProps} />
+        : displays.filter((display) => !display.isOutsideRoom).map((display) => <ExhibitionDisplay key={display.id} display={display} {...getExhibitProps(display)} />)}
       </GallerySurfaces>
     </Canvas>}
-    {isRendererRestarting && <div className={classes.recovering} role="status">Đang khởi tạo lại phần hiển thị sau lỗi VR.</div>}
-    {webglStatus !== 'ready' && <div className={classes.recovering} role="status">Đang khôi phục không gian 3D. Bạn có thể tiếp tục đọc danh mục.</div>}
+    {isRendererRestarting && <div className={classes.recovering} role="status">{t('ui.tour.xr.restarting', 'Đang khởi tạo lại phần hiển thị sau lỗi VR.')}</div>}
+    {webglStatus !== 'ready' && <div className={classes.recovering} role="status">{t('ui.tour.recovering', 'Đang khôi phục không gian 3D. Bạn có thể tiếp tục đọc danh mục.')}</div>}
     {isWebInputEnabled && <NavigationHud input={input} mode={mode} isActive={isActive} hasTouch={hasTouch} immersive={immersive} />}
     {isWebInputEnabled && <SpatialMinimap displays={displays} selectedId={selectedId} onSelect={onSelect} />}
     {isWebInputEnabled && <ArtifactDock displays={displays} selectedId={selectedId} onSelect={onSelect} onFocus={() => handleCommand('focus')} />}
     </div>
-    <Group className={classes.toolbar} gap="xs" aria-label="Điều khiển góc nhìn">
-      <Button variant="default" aria-label="Góc nhìn ban đầu" title="Góc nhìn ban đầu (Home)" disabled={!isWebInputEnabled} onClick={() => handleCommand('reset')}>
-        <IconHome size={18} aria-hidden="true" />{!immersive && 'Góc nhìn ban đầu'}
+    <Group className={classes.toolbar} gap="xs" aria-label={t('ui.tour.view-controls', 'Điều khiển góc nhìn')}>
+      <Button variant="default" aria-label={t('ui.tour.reset-view', 'Góc nhìn ban đầu')} title={t('ui.tour.reset-view-title', 'Góc nhìn ban đầu (Home)')} disabled={!isWebInputEnabled} onClick={() => handleCommand('reset')}>
+        <IconHome size={18} aria-hidden="true" />{!immersive && t('ui.tour.reset-view', 'Góc nhìn ban đầu')}
       </Button>
-      <Button variant="default" aria-label="Tập trung hiện vật" title="Tập trung hiện vật (F)" disabled={!isWebInputEnabled || !selectedDisplay || selectedDisplay.isOutsideRoom} onClick={() => handleCommand('focus')}>
-        <IconFocus2 size={18} aria-hidden="true" />{!immersive && 'Tập trung hiện vật'}
+      <Button variant="default" aria-label={t('ui.tour.focus', 'Tập trung hiện vật')} title={t('ui.tour.focus-title', 'Tập trung hiện vật (F)')} disabled={!isWebInputEnabled || !selectedDisplay || selectedDisplay.isOutsideRoom} onClick={() => handleCommand('focus')}>
+        <IconFocus2 size={18} aria-hidden="true" />{!immersive && t('ui.tour.focus', 'Tập trung hiện vật')}
       </Button>
-      <Button variant="default" aria-label="Chụp ảnh" title="Chụp ảnh" disabled={!isWebInputEnabled || isCapturing}
-        loading={isCapturing} onClick={() => void handlePhoto()}><IconCamera size={18} aria-hidden="true" />{!immersive && 'Chụp ảnh'}</Button>
-      <details className={classes.moreControls}><summary aria-label="Thêm điều khiển" title="Thêm điều khiển"><IconAdjustmentsHorizontal size={18} aria-hidden="true" /></summary>
+      <Button variant="default" aria-label={t('ui.tour.photo', 'Chụp ảnh')} title={t('ui.tour.photo', 'Chụp ảnh')} disabled={!isWebInputEnabled || isCapturing}
+        loading={isCapturing} onClick={() => void handlePhoto()}><IconCamera size={18} aria-hidden="true" />{!immersive && t('ui.tour.photo', 'Chụp ảnh')}</Button>
+      <details className={classes.moreControls}><summary aria-label={t('ui.tour.more-controls', 'Thêm điều khiển')} title={t('ui.tour.more-controls', 'Thêm điều khiển')}><IconAdjustmentsHorizontal size={18} aria-hidden="true" /></summary>
         <div>
-          <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('in')}>Đến gần</Button>
-          <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('out')}>Lùi xa</Button>
-          <Text size="xs">{xrStatus.capability === 'checking' ? 'Đang kiểm tra VR…'
-            : xrStatus.capability === 'unavailable' ? 'VR không khả dụng trong trình duyệt hoặc thiết bị này. Bạn vẫn có thể tham quan 3D.' : ''}</Text>
+          <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('in')}>{t('ui.tour.closer', 'Đến gần')}</Button>
+          <Button variant="default" disabled={!isWebInputEnabled} onClick={() => handleCommand('out')}>{t('ui.tour.back', 'Lùi xa')}</Button>
+          <Text size="xs">{xrStatus.capability === 'checking' ? t('ui.tour.xr.checking', 'Đang kiểm tra VR…')
+            : xrStatus.capability === 'unavailable' ? t('ui.tour.xr.unavailable', 'VR không khả dụng trong trình duyệt hoặc thiết bị này. Bạn vẫn có thể tham quan 3D.') : ''}</Text>
         </div>
       </details>
       {xrStatus.capability === 'ready' && xrStatus.phase === 'idle' && <Button disabled={webglStatus !== 'ready' || !xrOwner} onClick={() => {
+        guided?.onManual(); input.stop();
         onXrChange?.({ ...xrStatus, phase: 'requesting' }, xrOwner); void xrOwner?.enter();
       }}>Enter VR</Button>}
-      {xrStatus.phase === 'requesting' && <Button disabled>Đang vào VR…</Button>}
+      {xrStatus.phase === 'requesting' && <Button disabled>{t('ui.tour.xr.entering', 'Đang vào VR…')}</Button>}
       {(xrStatus.phase === 'active' || xrStatus.phase === 'ending') && <Button disabled={xrStatus.phase === 'ending'} onClick={() => { void xrOwner?.exit(); }}>Exit VR</Button>}
     </Group>
-    {xrStatus.message && <Text className={classes.xrFeedback} size="xs" role="status">{xrStatus.message}</Text>}
-    {displays.some(display => !display.model) && <p className={classes.illustrationNote}>Hình khối minh họa cho hiện vật chưa có mô hình</p>}
-    <details data-hotspots className={classes.hotspotMenu}><summary>Điểm tương tác</summary>
+    {xrStatus.message && <Text className={classes.xrFeedback} size="xs" role="status">{xrMessage(xrStatus.message, t)}</Text>}
+    {displays.some(display => !display.model) && <p className={classes.illustrationNote}>{t('ui.tour.shapes-note', 'Hình khối minh họa cho hiện vật chưa có mô hình')}</p>}
+    <details data-hotspots className={classes.hotspotMenu}><summary>{t('ui.tour.hotspots-summary', 'Điểm tương tác')}</summary>
       <ArtifactHotspotControls displays={displays} selectedId={selectedId} onSelect={onSelect} />
     </details>
     <div className={classes.modelStatus}><ModelLoadingStatus displays={displays} models={models} onRetry={retry} renderStates={renderStates} onRetryRender={handleRetryRender} /></div>

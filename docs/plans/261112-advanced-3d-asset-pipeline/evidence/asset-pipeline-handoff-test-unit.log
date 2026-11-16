@@ -1,0 +1,79 @@
+
+> aura-museum-web@0.1.0 test:unit
+> vitest run
+
+
+ RUN  v2.1.8 D:/CNPM/ailabs-museum/front-end
+
+ ✓ src/helpers/draftAutosave.test.ts (9 tests) 22ms
+ ✓ src/helpers/xrSession.test.ts (14 tests) 199ms
+ ✓ src/reducers/museumReducer.test.ts (17 tests) 20ms
+ ✓ src/helpers/glbAsset.test.ts (5 tests) 17ms
+ ✓ src/helpers/museumNavigation.test.ts (9 tests) 24ms
+ ✓ src/helpers/visitorPersistence.test.ts (9 tests) 19ms
+ ✓ src/helpers/sanitizeModel.test.ts (16 tests) 64ms
+ ✓ src/helpers/museumAuditMetrics.test.ts (22 tests) 633ms
+ ✓ src/helpers/gallerySlots.test.ts (21 tests) 239ms
+ ✓ src/helpers/parseSelfContainedGlb.test.ts (13 tests) 407ms
+ ✓ src/helpers/xrRendererBinding.test.ts (7 tests) 178ms
+ ✓ src/helpers/roomModelAssets.test.ts (8 tests) 1266ms
+   ✓ limits concurrent loads, deduplicates shared GLBs and retries a failed asset independently 392ms
+ ✓ src/helpers/roomModelLods.test.ts (7 tests) 1309ms
+   ✓ starts light, retains the visible scene during upgrade, deduplicates and pins master normalization 478ms
+ ✓ src/helpers/exhibitFormErrors.test.ts (7 tests) 7ms
+ ✓ src/helpers/localizeExhibit.test.ts (7 tests) 14ms
+ ✓ src/helpers/attachNavigationInput.test.ts (5 tests) 13ms
+ ✓ src/helpers/visitorState.test.ts (6 tests) 20ms
+ ✓ src/helpers/loadMuseumModel.test.ts (4 tests) 23ms
+ ✓ src/helpers/xrInteraction.test.ts (5 tests) 16ms
+ ✓ src/helpers/artifactHotspots.test.ts (5 tests) 13ms
+ ✓ src/core/api/http-client.test.ts (11 tests) 272ms
+ ✓ src/helpers/cinematicIntro.test.ts (7 tests) 14ms
+ ✓ src/helpers/publicLocale.test.ts (12 tests) 14ms
+ ✓ src/helpers/exhibitHotspots.test.ts (7 tests) 33ms
+ ✓ src/helpers/draftPreviewDisplay.test.ts (10 tests) 84ms
+ ✓ src/helpers/webglRecovery.test.ts (4 tests) 14ms
+ ✓ src/helpers/modelCamera.test.ts (3 tests) 23ms
+ ✓ src/helpers/museumAuditBrowser.test.ts (2 tests) 24ms
+ ✓ src/helpers/mediaCredits.test.ts (3 tests) 7ms
+ ✓ src/layouts/adminNav.permissions.test.ts (3 tests) 8ms
+ ✓ src/helpers/guidedTourSelectors.test.ts (4 tests) 10ms
+ ✓ src/core/auth/clearSessionCache.test.ts (3 tests) 14ms
+ ✓ src/helpers/modelNormalization.test.ts (3 tests) 17ms
+ ✓ src/helpers/museumAuditAnalysis.test.ts (1 test) 960ms
+   ✓ re-analyzes raw JSON on native-TS Node and separates workloads rather than pooling device FPS 958ms
+ ✓ src/helpers/modelLod.test.ts (4 tests) 10ms
+ ✓ src/helpers/passwordPolicy.test.ts (3 tests) 12ms
+ ✓ src/helpers/bulkDelete.test.ts (4 tests) 42ms
+ ✓ src/services/audit.service.test.ts (3 tests) 13ms
+ ✓ src/helpers/exhibitTranslations.test.ts (5 tests) 9ms
+ ✓ src/helpers/buildGuidedTourSteps.test.ts (3 tests) 8ms
+ ✓ src/shared/components/media/previewModel.test.ts (2 tests) 17ms
+ ✓ src/helpers/galleryLighting.test.ts (3 tests) 9ms
+ ✓ src/helpers/guidedCameraPath.test.ts (19 tests) 2823ms
+   ✓ guided collision-safe arc-length motion > keeps every rendered chord safe through obstacles [] 401ms
+   ✓ guided collision-safe arc-length motion > keeps every rendered chord safe through obstacles [ { minX: -1.5, maxX: 1.5, …(2) } ] 1074ms
+   ✓ guided collision-safe arc-length motion > keeps every rendered chord safe through obstacles [ …(2) ] 891ms
+ ✓ src/helpers/userAgent.test.ts (8 tests) 7ms
+ ✓ src/core/api/cms-error-message.test.ts (7 tests) 7ms
+ ✓ src/helpers/navigationGestures.test.ts (3 tests) 6ms
+ ✓ src/helpers/exhibitQr.test.ts (4 tests) 196ms
+ ✓ src/helpers/webglRenderGuard.test.ts (2 tests) 10ms
+ ✓ src/helpers/tourOrder.test.ts (4 tests) 8ms
+ ✓ src/helpers/modelDiagnostics.test.ts (2 tests) 10ms
+ ✓ src/helpers/notificationDisplay.test.ts (2 tests) 40ms
+ ✓ src/helpers/mediaLibrary.test.ts (3 tests) 6ms
+ ✓ src/helpers/fitLabelTitle.test.ts (4 tests) 7ms
+ ✓ src/helpers/audioTime.test.ts (19 tests) 9ms
+ ✓ src/helpers/guidedTour2dMessages.test.ts (1 test) 8ms
+ ✓ src/helpers/museumQuality.test.ts (3 tests) 9ms
+ ✓ src/helpers/museumAuditRoute.test.ts (1 test) 4ms
+ ✓ src/helpers/guidedTour2dNavigation.test.ts (1 test) 3ms
+ ✓ src/helpers/mapRoomDisplays.test.ts (1 test) 10ms
+ ✓ src/helpers/roomTranslations.test.ts (2 tests) 6ms
+ ✓ src/core/i18n/public-locale.test.ts (1 test) 5ms
+
+ Test Files  61 passed (61)
+      Tests  383 passed (383)
+   Start at  23:42:25
+   Duration  12.51s (transform 30.33s, setup 0ms, collect 72.73s, tests 9.29s, environment 25ms, prepare 22.85s)

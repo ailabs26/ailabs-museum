@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { sanitizeValues } from '../constants/locales';
+import { sanitizeValues, SupportedLocale } from '../constants/locales';
 import { CreateTranslationDto } from '../dto/create-translation.dto';
 import { UpdateTranslationValuesDto } from '../dto/update-translation-values.dto';
 import { TranslationResponse, toTranslationResponse } from '../dto/translation-response.dto';
@@ -12,6 +12,19 @@ export class TranslationsService {
 
   async list(): Promise<TranslationResponse[]> {
     return (await this.translations.listAll()).map(toTranslationResponse);
+  }
+
+  /**
+   * Chuỗi giao diện công khai của một ngôn ngữ: `{ namespace: text }`, bỏ chuỗi chưa dịch để FE dùng giá trị dự phòng.
+   * CHỈ loại `ui`: chuỗi `exhibit`/`room` có thể thuộc nội dung chưa duyệt, không được lộ qua API công khai —
+   * nội dung hiện vật đa ngôn ngữ đi theo revision đã xuất bản.
+   */
+  async publicUi(locale: SupportedLocale): Promise<Record<string, string>> {
+    const entries = await this.translations.listByCategory('ui');
+    return Object.fromEntries(entries.flatMap((entry) => {
+      const text = entry.values[locale];
+      return text ? [[entry.namespace, text]] : [];
+    }));
   }
 
   async create(dto: CreateTranslationDto): Promise<TranslationResponse> {

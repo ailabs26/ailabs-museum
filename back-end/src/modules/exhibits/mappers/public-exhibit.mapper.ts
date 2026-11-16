@@ -3,7 +3,8 @@ import { Media, MediaKind, MediaProcessingState } from '../../media/entities/med
 import { Exhibit } from '../entities/exhibit.entity';
 import { ExhibitRevision, RevisionState } from '../entities/exhibit-revision.entity';
 import { Hotspot } from '../entities/hotspot.entity';
-import { BilingualValue, primaryText, resolveBilingual } from '../utils/bilingual';
+import { SUPPORTED_LOCALES, SupportedLocale } from '../../translations/constants/locales';
+import { BilingualValue, pickLocale, resolveBilingual } from '../utils/bilingual';
 
 export interface Vector3 {
   x: number;
@@ -28,6 +29,8 @@ export interface PublicMediaDto {
 
 export interface PublicImageDto extends PublicMediaDto {
   altText: BilingualValue;
+  /** Chỉ có khi gọi với `lang`: alt text theo ngôn ngữ đó, thiếu thì về tiếng Việt. */
+  localizedAltText?: string | null;
 }
 
 export interface PublicAudioTrackDto {
@@ -44,10 +47,10 @@ export interface PublicLocalizedText {
 
 export interface PublicHotspotDto {
   id: string;
-  /** Bản tiếng Việt (thiếu thì tiếng Anh) — giữ contract cũ. */
+  /** Theo `lang` nếu có; mặc định là bản tiếng Việt (thiếu thì tiếng Anh) — giữ contract cũ. */
   label: string;
   body: string;
-  i18n: { vi: { label: string | null; body: string | null }; en: { label: string | null; body: string | null } };
+  i18n: Record<SupportedLocale, { label: string | null; body: string | null }>;
   positionX: number;
   positionY: number;
   positionZ: number;
@@ -59,11 +62,13 @@ export interface PublicExhibitDto {
   revisionId: string;
   roomId: string;
   displayOrder: number;
-  /** Bản tiếng Việt (thiếu thì tiếng Anh) — giữ contract cũ cho FE hiện tại. */
+  /** Theo `lang` nếu có; mặc định là bản tiếng Việt (thiếu thì tiếng Anh) — giữ contract cũ cho FE hiện tại. */
   name: string;
   description: string;
   transcript: string | null;
-  i18n: { vi: PublicLocalizedText; en: PublicLocalizedText };
+  /** Chỉ có khi gọi với `lang`: ngôn ngữ thật của `name`, khác `lang` nghĩa là đã fallback. */
+  contentLocale?: SupportedLocale | null;
+  i18n: Record<SupportedLocale, PublicLocalizedText>;
   /** Vắng mặt khi bản nội dung chưa có vị trí hợp lệ → FE tự xếp theo layout phòng. */
   positionX?: number;
   positionY?: number;
@@ -124,16 +129,21 @@ function isFiniteNumberText(value: unknown): boolean {
   return typeof number === 'number' && Number.isFinite(number);
 }
 
-function toHotspot(hotspot: Hotspot): PublicHotspotDto | null {
+/** Dựng bản đồ `{ locale: ... }` cho đủ các ngôn ngữ. */
+function perLocale<T>(build: (locale: SupportedLocale) => T): Record<SupportedLocale, T> {
+  return Object.fromEntries(SUPPORTED_LOCALES.map((locale) => [locale, build(locale)])) as Record<SupportedLocale, T>;
+}
+
+function toHotspot(hotspot: Hotspot, lang: SupportedLocale): PublicHotspotDto | null {
   // Hotspot có tọa độ không hữu hạn bị loại để FE không nhận NaN (cả phòng sẽ fail validate).
   if (![hotspot.positionX, hotspot.positionY, hotspot.positionZ].every(isFiniteNumberText)) return null;
   const label = resolveBilingual(hotspot.label);
   const body = resolveBilingual(hotspot.body);
   return {
     id: hotspot.id,
-    label: primaryText(label) ?? '',
-    body: primaryText(body) ?? '',
-    i18n: { vi: { label: label.vi, body: body.vi }, en: { label: label.en, body: body.en } },
+    label: pickLocale(label, lang).text ?? '',
+    body: pickLocale(body, lang).text ?? '',
+    i18n: perLocale((locale) => ({ label: label[locale], body: body[locale] })),
     positionX: Number(hotspot.positionX),
     positionY: Number(hotspot.positionY),
     positionZ: Number(hotspot.positionZ),
@@ -150,6 +160,7 @@ export function toPublicExhibit(
   mediaUrl: MediaUrlBuilder,
   reportSkip: MediaSkipReporter,
   roomSlug: string,
+  lang?: SupportedLocale,
 ): PublicExhibitDto | null {
   const revision: ExhibitRevision | null = exhibit.publishedRevision;
   if (
@@ -165,6 +176,10 @@ export function toPublicExhibit(
   const description = resolveBilingual(content.description);
   const transcript = resolveBilingual(content.transcript);
   const position = placement(content.position);
+  const altText = resolveBilingual(content.altText);
+  // Không truyền `lang` thì `vi` cho đúng kết quả cũ: tiếng Việt, thiếu thì tiếng Anh.
+  const displayLang = lang ?? 'vi';
+  const displayName = pickLocale(name, displayLang);
 
   const media = (value: Media | null | undefined, kind: MediaKind): PublicMediaDto | null => {
     if (!value) return null;
@@ -210,13 +225,13 @@ export function toPublicExhibit(
     revisionId: revision.id,
     roomId: exhibit.roomId,
     displayOrder: exhibit.displayOrder,
-    name: primaryText(name) ?? '',
-    description: primaryText(description) ?? '',
-    transcript: primaryText(transcript),
-    i18n: {
-      vi: { name: name.vi, description: description.vi, transcript: transcript.vi },
-      en: { name: name.en, description: description.en, transcript: transcript.en },
-    },
+    name: displayName.text ?? '',
+    description: pickLocale(description, displayLang).text ?? '',
+    transcript: pickLocale(transcript, displayLang).text,
+    ...(lang ? { contentLocale: displayName.locale } : {}),
+    i18n: perLocale((locale) => ({
+      name: name[locale], description: description[locale], transcript: transcript[locale],
+    })),
     positionX: position?.x,
     positionY: position?.y,
     positionZ: position?.z,
@@ -225,11 +240,11 @@ export function toPublicExhibit(
     placeholderShape: PLACEHOLDER_SHAPES.has(placeholderShape) ? placeholderShape : DEFAULT_SHAPE,
     placeholderColor: HEX_COLOR.test(placeholderColor) ? placeholderColor : DEFAULT_COLOR,
     hotspots: (revision.hotspots ?? [])
-      .flatMap((hotspot) => toHotspot(hotspot) ?? [])
+      .flatMap((hotspot) => toHotspot(hotspot, displayLang) ?? [])
       .sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)),
     model,
     image: imageDto
-      ? { ...imageDto, altText: resolveBilingual(content.altText) }
+      ? { ...imageDto, altText, ...(lang ? { localizedAltText: pickLocale(altText, lang).text } : {}) }
       : null,
     audio: audioVi || audioEn ? { vi: audioVi, en: audioEn } : null,
   };

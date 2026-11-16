@@ -83,12 +83,21 @@ Nội dung giống API công khai (chỉ revision Published hiện hành).
 | Route | Scope | Kết quả |
 |---|---|---|
 | `GET /partner/v1/rooms` | `rooms:read` | danh sách phòng công khai |
-| `GET /partner/v1/rooms/:slug` | `exhibits:read` | phòng + hiện vật đã xuất bản (kèm URL media) |
+| `GET /partner/v1/rooms/:slug` | `exhibits:read` | phòng + hiện vật đã xuất bản (kèm URL media); nhận `?lang=` |
 | `GET /partner/v1/rooms/:slug/tour` | `tour:embed` | `{ room, stops: [{ exhibitId, displayOrder, name, i18n }] }` theo `displayOrder` |
 | `GET /partner/v1/rooms/:slug/exhibits/:exhibitId/model` | `media:read` | tệp GLB |
 
 Mã lỗi: **401** key sai/thu hồi/hết hạn/đã xóa · **403** thiếu scope · **429** vượt `rate_limit_per_minute` (kèm `Retry-After`).
 Ví dụ: `curl -H "X-API-Key: ak_live_…" https://<host>/api/partner/v1/rooms`.
+
+#### Ngôn ngữ nội dung hiện vật (`?lang=`)
+
+`lang` nhận `vi, en, fr, zh, ko, ja`; giá trị khác trả 400. Áp dụng cho `GET /rooms/:slug`, `GET /rooms/search`, `GET /partner/v1/rooms/:slug`, `GET /partner/v1/rooms/:slug/tour`.
+
+- Có `lang`: `name`, `description`, `transcript`, `hotspots[].label`, `hotspots[].body` và `image.localizedAltText` theo ngôn ngữ đó; thiếu bản dịch thì về tiếng Việt, rồi tiếng Anh. `contentLocale` là ngôn ngữ thật của `name`, khác `lang` nghĩa là đã fallback.
+- Không có `lang`: như cũ, tiếng Việt rồi tiếng Anh; không có `contentLocale`, `localizedAltText`.
+- `i18n` luôn có đủ 6 ngôn ngữ, thiếu thì `null`. `audio` chỉ có `vi`, `en` và không tự thay bằng ngôn ngữ khác.
+- Phòng cũng nhận `lang` ở `GET /rooms`, `GET /rooms/:slug`, `GET /public/rooms`, `GET /public/rooms/:slug`, `GET /partner/v1/rooms`: `name`, `description` theo ngôn ngữ, kèm `i18n` và `contentLocale` như hiện vật. Tìm kiếm công khai quét cả bản dịch tên phòng.
 
 Quản lý key (Admin): `GET /partner-api-keys` (`apikey:read`); `POST /partner-api-keys` body
 `{ partnerName, label?, scopes[], expiresInDays?, rateLimitPerMinute? }` → kèm `plaintext` (một lần); `POST /partner-api-keys/:id/revoke`;
@@ -175,6 +184,8 @@ POST   /revisions/:id/reject              # kèm lý do
 POST   /exhibits/:id/hide  |  /unhide
 POST   /media   (multipart)               GET /media/:id       DELETE /media/:id
 POST   /exhibits/:id/attach-media         # (thực tế Task 9: gắn qua PATCH /admin/exhibits/:id — modelId, imageId, audioViId, audioEnId, subtitleViId, subtitleEnId)
+GET    /admin/exhibits/export?format=csv|json&roomId&status&visibility&q   # Task 38: exhibit:read, tối đa 5.000, CSV UTF-8 có BOM
+POST   /admin/exhibits/import?dryRun=true|false (multipart field "file") # Task 38: exhibit:create, ≤ 2 MB/500 dòng, mỗi dòng → bản nháp mới, kết quả theo dòng
 ```
 
 ### Kiểm duyệt & báo cáo
@@ -273,6 +284,12 @@ DELETE /notifications/:id                # null; xóa hẳn
 Thông báo được tạo **sau** khi thao tác chính thành công. Lỗi tạo thông báo chỉ ghi log, không làm hỏng thao tác chính.
 Tiêu đề lấy tên hiện vật tiếng Việt (thiếu thì tiếng Anh), cắt còn 200 ký tự.
 
+### Bản dịch giao diện cho khách
+
+`GET /public/translations?locale=vi|en|fr|ja|zh` (`@Public()`) → `{ "<namespace>": "<text>" }`, bỏ chuỗi chưa dịch; sai `locale` → 400.
+**Chỉ trả loại `ui`.** Chuỗi `exhibit`/`room` trong CMS có thể thuộc nội dung chưa duyệt nên không ra API công khai; nội dung
+hiện vật đa ngôn ngữ đi theo revision đã xuất bản (trường `i18n`, hiện có vi/en).
+
 ### Health check (`@Public()`, không audit)
 ```
 GET    /health          # liveness: process còn chạy → 200 { status: "ok" } (không chạm DB)
@@ -283,11 +300,14 @@ GET    /health/ready    # readiness: SELECT 1 (timeout 2s) → 200 { status: "ok
 ### Public (client — chỉ đọc nội dung published)
 ```
 GET    /rooms                             # danh sách phòng công khai (active)
-GET    /rooms/search                      # tìm kiếm hiện vật công khai (?q=&roomId=&page=&pageSize=)
-GET    /rooms/:slug                       # phòng + danh sách hiện vật published
+GET    /rooms/search                      # tìm kiếm hiện vật công khai (?q=&roomId=&lang=&page=&pageSize=)
+GET    /rooms/:slug                       # phòng + danh sách hiện vật published (?lang=)
+GET    /public/exhibits/:id/location      # { exhibitId, roomSlug } cho liên kết cố định /e/<id> của mã QR; không công khai → 404
+GET    /public/sitemap.xml                # sitemap XML (không bọc ApiResponse) cho công cụ tìm kiếm; URL tuyệt đối theo FRONTEND_ORIGIN, cache 1 giờ
 GET    /rooms/:slug/exhibits/:id/model    # tệp GLB công khai của hiện vật
 POST   /public/reports                    # gửi báo cáo nội dung sai (rate limit)
 ```
+Mọi route GET ở trên và tệp media công khai có rate limit theo IP (mặc định 600 request/phút cho API, 3000 cho media/GLB); vượt → 429 + `Retry-After`. Chi tiết: [05 — Bảo mật](05-security-rbac.md).
 
 > Public cache TTL ≤ 60s; không bao giờ trả revision `draft/pending`.
 > `GET /api/rooms/search`: chỉ trả hiện vật `APPROVED` + `visible` thuộc phòng `ACTIVE`; sắp xếp cố định `roomId, displayOrder, id` (`sort` bị bỏ qua); chi tiết xem [be/public-exhibit-search.md](be/public-exhibit-search.md).

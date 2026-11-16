@@ -1,0 +1,74 @@
+▶ user restore affected-row contract
+  ✔ repository returns the affected-row count, or zero when the driver omits it (1.3457ms)
+  ✔ rejects a zero-row update instead of reporting a successful restore (0.854ms)
+  ✔ property: for seeded batches of 1–100 IDs, success requires every row updated (3.6723ms)
+  ✔ propagates a persistence rejection and does not clean role links (0.2208ms)
+✔ user restore affected-row contract (6.953ms)
+▶ UsersService
+  ✔ list/getById không bao giờ trả passwordHash (2.0918ms)
+  ✔ getById: 404 khi không tồn tại (0.8929ms)
+  ✔ create: hash mật khẩu, khóa quản trị, lưu user + role trong CÙNG transaction (0.9491ms)
+  ✔ create: email đã dùng (kể cả user đã xóa mềm) → 409 (0.2458ms)
+  ✔ create kèm roleIds khi actor thiếu role:assign → 403, không ghi gì (0.3097ms)
+  ✔ create không kèm role vẫn cho phép actor thiếu role:assign (0.1413ms)
+  ✔ create: roleId không tồn tại → 422 (0.2495ms)
+  ✔ update: đổi tên/trạng thái/mật khẩu trong transaction (0.4608ms)
+  ✔ update không đổi gì thì không gọi update (0.2097ms)
+  ✔ update roleIds cần role:assign và thay toàn bộ role (0.284ms)
+  ▶ thu hồi phiên khi đổi thông tin đăng nhập
+    ✔ đổi mật khẩu → thu hồi mọi phiên của user, sau khi ghi hash mới (0.2233ms)
+    ✔ khóa user → thu hồi mọi phiên (0.1874ms)
+    ✔ xóa mềm user → thu hồi mọi phiên (0.3661ms)
+    ✔ đổi tên, mở khóa, đổi role → KHÔNG đăng xuất user (0.1542ms)
+    ✔ bị chặn vì Admin cuối → không thu hồi gì (0.2055ms)
+  ✔ thu hồi phiên khi đổi thông tin đăng nhập (1.3037ms)
+  ▶ bảo vệ Admin hoạt động cuối cùng
+    ✔ không khóa được Admin cuối (0.1492ms)
+    ✔ không bỏ role admin của Admin cuối qua update/setRoles/removeRole (0.4275ms)
+    ✔ không xóa mềm được Admin cuối (0.1687ms)
+    ✔ không xóa mềm được tài khoản Admin kể cả khi còn Admin khác (phải bỏ vai trò Admin trước) (0.1141ms)
+    ✔ Admin đã bị khóa thì không bị chặn (0.0821ms)
+  ✔ bảo vệ Admin hoạt động cuối cùng (1.0615ms)
+  ▶ xóa mềm hàng loạt
+    ✔ hợp lệ hết → khóa quản trị 1 lần, xóa mềm + đăng xuất từng tài khoản, trả { ids } (0.2194ms)
+    ✔ tất cả hoặc không: có Admin hoặc ID không tồn tại → 409 liệt kê từng ID, không ai bị xóa/đăng xuất (0.3475ms)
+    ✔ xóa lẻ: không tồn tại → 404 (0.0945ms)
+  ✔ xóa mềm hàng loạt (0.7507ms)
+  ✔ assignRoles thêm role (không trùng), 404/422 khi sai (0.2725ms)
+  ✔ setRoles thay toàn bộ role của user thường (0.0981ms)
+  ✔ removeRole bỏ role admin khi vẫn còn Admin khác (0.1484ms)
+✔ UsersService (10.831ms)
+▶ toAuthUser / toUserResponse
+  ✔ gộp permission trùng giữa các role, bỏ role/permission thiếu quan hệ (0.1977ms)
+  ✔ toUserResponse loại passwordHash và role thiếu (0.0768ms)
+✔ toAuthUser / toUserResponse (0.3282ms)
+ℹ tests 32
+ℹ suites 6
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6491.2013
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------------------------------------------------------------
+ℹ file                         | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------------------------------------------------------------
+ℹ src                          |        |          |         |
+ℹ  modules                     |        |          |         |
+ℹ   users                      |        |          |         |
+ℹ    dto                       |        |          |         |
+ℹ     user-response.dto.ts     | 100.00 |   100.00 |  100.00 |
+ℹ    entities                  |        |          |         |
+ℹ     user-role.entity.ts      |  82.76 |    70.00 |  100.00 | 10 17-20
+ℹ     user.entity.ts           |  87.04 |    63.64 |   87.50 | 19-20 47-51
+ℹ    repositories              |        |          |         |
+ℹ     user-roles.repository.ts |  61.33 |    50.00 |   57.14 | 4 10-12 33 38-42 44-49 51-52 65-75
+ℹ     users.repository.ts      |  46.26 |    66.67 |   37.50 | 7-9 12 53-54 57-64 66-67 71 74-93 96-100 108-111 113-122 125-147
+ℹ    services                  |        |          |         |
+ℹ     users.service.ts         |  98.61 |    94.62 |   96.97 | 8 11 145
+ℹ    user-access.util.ts       | 100.00 |   100.00 |  100.00 |
+ℹ ------------------------------------------------------------------------------------------------------------------------------
+ℹ all files                    |  78.79 |    86.45 |   78.31 |
+ℹ ------------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

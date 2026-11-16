@@ -1,0 +1,14 @@
+
+> aura-museum-web@0.1.0 test:unit
+> vitest run src/helpers/xrRendererBinding.test.ts
+
+
+ RUN  v2.1.8 D:/CNPM/ailabs-museum/front-end
+
+ ✓ src/helpers/xrRendererBinding.test.ts (7 tests) 194ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  20:44:22
+   Duration  2.48s (transform 152ms, setup 0ms, collect 242ms, tests 194ms, environment 0ms, prepare 377ms)
+

@@ -1,0 +1,4 @@
+== M11: bỏ try/catch quanh deleteFinishedBefore
+ℹ fail 1
+ℹ pass 5
+✖ TC36 — failure path: dọn job lỗi → khởi động vẫn thành công, failInterrupted vẫn đã c

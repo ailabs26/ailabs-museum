@@ -1,0 +1,74 @@
+{
+  "title": "F17 close while native request is pending ends the late session without binding",
+  "ok": false,
+  "tags": [],
+  "tests": [
+    {
+      "timeout": 30000,
+      "annotations": [],
+      "expectedStatus": "passed",
+      "projectId": "",
+      "projectName": "",
+      "results": [
+        {
+          "workerIndex": 2,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 11684,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"binding:start\"\u001b[39m\nReceived array:     \u001b[31m[\"request\", \u001b[7m\"binding:start\"\u001b[27m, \"app:end\", \"native:end\"]\u001b[39m",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"binding:start\"\u001b[39m\nReceived array:     \u001b[31m[\"request\", \u001b[7m\"binding:start\"\u001b[27m, \"app:end\", \"native:end\"]\u001b[39m\n    at D:\\CNPM\\ailabs-museum\\front-end\\tests\\museum-xr-disconnect.spec.ts:202:24",
+            "location": {
+              "file": "D:\\CNPM\\ailabs-museum\\front-end\\tests\\museum-xr-disconnect.spec.ts",
+              "column": 24,
+              "line": 202
+            },
+            "snippet": "  200 |     const events = await page.evaluate(() => window.museumXrFixture.timeline.map(item => item.event));\n  201 |     expect(events.indexOf('app:end')).toBeLessThan(events.indexOf('native:end'));\n> 202 |     expect(events).not.toContain('binding:start');\n      |                        ^\n  203 |     await assertReleased(page);\n  204 |     await expect.poll(async () => (await readRendererProbe(page)).filter(record => record.live).length).toBe(action === 'close' ? 0 : 1);\n  205 |     if (action === 'room') {"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "D:\\CNPM\\ailabs-museum\\front-end\\tests\\museum-xr-disconnect.spec.ts",
+                "column": 24,
+                "line": 202
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"binding:start\"\u001b[39m\nReceived array:     \u001b[31m[\"request\", \u001b[7m\"binding:start\"\u001b[27m, \"app:end\", \"native:end\"]\u001b[39m\n\n  200 |     const events = await page.evaluate(() => window.museumXrFixture.timeline.map(item => item.event));\n  201 |     expect(events.indexOf('app:end')).toBeLessThan(events.indexOf('native:end'));\n> 202 |     expect(events).not.toContain('binding:start');\n      |                        ^\n  203 |     await assertReleased(page);\n  204 |     await expect.poll(async () => (await readRendererProbe(page)).filter(record => record.live).length).toBe(action === 'close' ? 0 : 1);\n  205 |     if (action === 'room') {\n    at D:\\CNPM\\ailabs-museum\\front-end\\tests\\museum-xr-disconnect.spec.ts:202:24"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-06T13:54:43.861Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "xr-lifecycle.json",
+              "contentType": "application/json",
+              "body": "ewogICJ1c2VyQWdlbnQiOiAiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgSGVhZGxlc3NDaHJvbWUvMTU2LjAuMC4wIFNhZmFyaS81MzcuMzYgRWRnLzE1Ni4wLjAuMCIsCiAgInRpbWVsaW5lIjogWwogICAgewogICAgICAiZXZlbnQiOiAicmVxdWVzdCIsCiAgICAgICJzZXNzaW9uIjogMCwKICAgICAgImF2YWlsYWJsZSI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJldmVudCI6ICJiaW5kaW5nOnN0YXJ0IiwKICAgICAgInNlc3Npb24iOiAwLAogICAgICAiYXZhaWxhYmxlIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgImV2ZW50IjogImFwcDplbmQiLAogICAgICAic2Vzc2lvbiI6IDAsCiAgICAgICJhdmFpbGFibGUiOiB0cnVlCiAgICB9LAogICAgewogICAgICAiZXZlbnQiOiAibmF0aXZlOmVuZCIsCiAgICAgICJzZXNzaW9uIjogMCwKICAgICAgImF2YWlsYWJsZSI6IHRydWUKICAgIH0KICBdLAogICJsaXN0ZW5lcnMiOiBbCiAgICB7CiAgICAgICJlbmQiOiAwLAogICAgICAidmlzaWJpbGl0eWNoYW5nZSI6IDAsCiAgICAgICJzZWxlY3QiOiAwLAogICAgICAic2VsZWN0c3RhcnQiOiAwLAogICAgICAic2VsZWN0ZW5kIjogMCwKICAgICAgInNxdWVlemUiOiAwLAogICAgICAic3F1ZWV6ZXN0YXJ0IjogMCwKICAgICAgInNxdWVlemVlbmQiOiAwLAogICAgICAiaW5wdXRzb3VyY2VzY2hhbmdlIjogMAogICAgfQogIF0sCiAgInJlcXVlc3RzIjogMSwKICAiZW5kcyI6IDEsCiAgImVuZENhbGxzIjogMSwKICAicmVqZWN0aW9ucyI6IFtdLAogICJlcnJvcnMiOiBbXSwKICAicmVuZGVyZXJzIjogWwogICAgewogICAgICAibGl2ZSI6IGZhbHNlLAogICAgICAiZnJhbWVzIjogMzksCiAgICAgICJ0aW1lcyI6IFsKICAgICAgICAxNDM3Ljc5OTk5OTk4MjExODYsCiAgICAgICAgMTc1My4yOTk5OTk5ODIxMTg2LAogICAgICAgIDE3NTMuNzk5OTk5OTgyMTE4NiwKICAgICAgICAxNzU1LjA5OTk5OTk5NDAzOTUsCiAgICAgICAgMTc1NS4yOTk5OTk5ODIxMTg2LAogICAgICAgIDE3NTUuNSwKICAgICAgICAxNzU1LjUsCiAgICAgICAgMTc1NS41OTk5OTk5OTQwMzk1LAogICAgICAgIDE3NTUuNjk5OTk5OTg4MDc5LAogICAgICAgIDE3NTUuNzk5OTk5OTgyMTE4NiwKICAgICAgICAxNzU1Ljc5OTk5OTk4MjExODYsCiAgICAgICAgMTc1NiwKICAgICAgICAxNzYzLjI5OTk5OTk4MjExODYsCiAgICAgICAgMTc2My41LAogICAgICAgIDE3NjMuNjk5OTk5OTg4MDc5LAogICAgICAgIDE3NjMuNjk5OTk5OTg4MDc5LAogICAgICAgIDE3NjMuNzk5OTk5OTgyMTE4NiwKICAgICAgICAxNzYzLjkwMDAwMDAwNTk2MDUsCiAgICAgICAgMTc2My45MDAwMDAwMDU5NjA1LAogICAgICAgIDE3NjQsCiAgICAgICAgMTc2NC4wOTk5OTk5OTQwMzk1LAogICAgICAgIDE3NjQuMDk5OTk5OTk0MDM5NSwKICAgICAgICAxNzY0LjE5OTk5OTk4ODA3OSwKICAgICAgICAxNzY0LjE5OTk5OTk4ODA3OSwKICAgICAgICAxNzY0LjE5OTk5OTk4ODA3OSwKICAgICAgICAxNzY0LjE5OTk5OTk4ODA3OSwKICAgICAgICAxNzY0LjI5OTk5OTk4MjExODYsCiAgICAgICAgMTc2NC40MDAwMDAwMDU5NjA1LAogICAgICAgIDE3NjQuNDAwMDAwMDA1OTYwNSwKICAgICAgICAxNzY0LjQwMDAwMDAwNTk2MDUsCiAgICAgICAgMTc2NC41LAogICAgICAgIDE3NjQuNSwKICAgICAgICAxNzY0LjU5OTk5OTk5NDAzOTUsCiAgICAgICAgMTc2NC41OTk5OTk5OTQwMzk1LAogICAgICAgIDQ1NTUuOTAwMDAwMDA1OTYwNSwKICAgICAgICA0NzcxLjUsCiAgICAgICAgNzQyOC43OTk5OTk5ODIxMTksCiAgICAgICAgNzgxOC4wOTk5OTk5OTQwMzk1LAogICAgICAgIDg0OTcuNTk5OTk5OTk0MDQKICAgICAgXSwKICAgICAgImNhbGxzIjogNzMsCiAgICAgICJ0cmlhbmdsZXMiOiA1NTA2LAogICAgICAiZ2VvbWV0cmllcyI6IDEsCiAgICAgICJ0ZXh0dXJlcyI6IDAsCiAgICAgICJtYXRlcmlhbHMiOiAwLAogICAgICAib2JqZWN0cyI6IDEsCiAgICAgICJsYWJlbHMiOiB7fQogICAgfQogIF0KfQ=="
+            },
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "D:\\CNPM\\ailabs-museum\\front-end\\tmp\\fallback-final-reviewed\\museum-xr-disconnect-F17-c-95d51-ate-session-without-binding\\error-context.md"
+            },
+            {
+              "name": "trace",
+              "contentType": "application/zip",
+              "path": "D:\\CNPM\\ailabs-museum\\front-end\\tmp\\fallback-final-reviewed\\museum-xr-disconnect-F17-c-95d51-ate-session-without-binding\\trace.zip"
+            }
+          ],
+          "errorLocation": {
+            "file": "D:\\CNPM\\ailabs-museum\\front-end\\tests\\museum-xr-disconnect.spec.ts",
+            "column": 24,
+            "line": 202
+          }
+        }
+      ],
+      "status": "unexpected"
+    }
+  ],
+  "id": "bc86406e641265ea35ac-1d4b7a3a60e004c7acd8",
+  "file": "museum-xr-disconnect.spec.ts",
+  "line": 189,
+  "column": 3
+}

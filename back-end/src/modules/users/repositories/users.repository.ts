@@ -93,8 +93,9 @@ export class UsersRepository extends BaseRepository<User> {
     });
   }
 
-  async markRestored(ids: string[], manager: EntityManager): Promise<void> {
-    await this.scoped(manager).update({ id: In(ids) }, { isDeleted: false, deletedAt: null });
+  async markRestored(ids: string[], manager: EntityManager): Promise<number> {
+    const result = await this.scoped(manager).update({ id: In(ids) }, { isDeleted: false, deletedAt: null });
+    return result.affected ?? 0;
   }
 
   /** Tuần tự hóa các thay đổi tài khoản/Role để bảo vệ Admin cuối cùng. */

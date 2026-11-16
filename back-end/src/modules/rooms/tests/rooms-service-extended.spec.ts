@@ -62,6 +62,9 @@ function createSampleQuery(overrides?: Partial<ListRoomsQueryDto>): ListRoomsQue
 // Mock RoomsRepository linh hoạt với memory store
 class InMemoryMockRoomsRepository {
   rooms: Map<string, Room> = new Map();
+  // Bộ đếm đảm bảo id duy nhất: trước đây dùng Date.now()+random nên tạo nhiều phòng
+  // trong cùng mili-giây có thể trùng id, ghi đè Map và làm test đếm sai (flaky).
+  private idSeq = 0;
   searchRoomsCalls: ListRoomsQueryDto[] = [];
   findWithExhibitsCalls: string[] = [];
   findPublicRoomsCallsCount = 0;
@@ -148,7 +151,7 @@ class InMemoryMockRoomsRepository {
     this.createCalls.push(data);
     const room = new Room();
     Object.assign(room, data);
-    room.id = `room-uuid-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    room.id = `room-uuid-${++this.idSeq}`;
     room.status = RoomStatus.ACTIVE;
     room.isDeleted = false;
     room.deletedAt = null;

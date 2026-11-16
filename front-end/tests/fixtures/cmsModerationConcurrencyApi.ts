@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { installCmsSession } from './cmsSession';
 
 export interface TestRevision {
   id: string;
@@ -10,11 +11,12 @@ export interface TestRevision {
     description: { vi: string; en: string };
     position: { x: number; y: number; z: number };
   };
-  createdBy: { id: string; displayName: string } | null;
-  reviewedBy: { id: string; displayName: string } | null;
+  createdBy: { id: string; email: string; displayName: string } | null;
+  reviewedBy: { id: string; email: string; displayName: string } | null;
   reason: string | null;
   reviewedAt: string | null;
   createdAt: string;
+  exhibit: { id: string; roomId: string; visibility: string; version: number; publishedRevisionId: string | null };
 }
 
 export const initialTestRevisions: TestRevision[] = [
@@ -28,11 +30,12 @@ export const initialTestRevisions: TestRevision[] = [
       description: { vi: 'Bảo vật quốc gia thời kỳ Đông Sơn đỉnh cao.', en: 'National treasure of Dong Son civilization.' },
       position: { x: 0, y: 0, z: -2 },
     },
-    createdBy: { id: 'editor-1', displayName: 'Biên tập viên A' },
+    createdBy: { id: 'editor-1', email: 'editor@aura.local', displayName: 'Biên tập viên A' },
     reviewedBy: null,
     reason: null,
     reviewedAt: null,
     createdAt: new Date().toISOString(),
+    exhibit: { id: 'exhibit-001', roomId: 'room-001', visibility: 'visible', version: 3, publishedRevisionId: 'rev-000' },
   },
 ];
 
@@ -43,23 +46,7 @@ export async function installCmsModerationConcurrencyApi(
   let queue: TestRevision[] = [...initialTestRevisions];
   const writes: Array<{ method: string; path: string; data?: unknown }> = [];
 
-  await page.route('**/api/auth/me', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        success: true,
-        data: {
-          id: 'moderator-id',
-          email: 'moderator@aura.local',
-          displayName: 'Moderator',
-          roles: ['moderator'],
-          permissions: ['revision:publish', 'revision:reject', 'revision:hide', 'revision:read'],
-        },
-        message: null,
-      }),
-    });
-  });
+  await installCmsSession(page, ['revision:publish', 'revision:reject', 'revision:hide', 'revision:read']);
 
   // GET /api/moderation/queue
   await page.route('**/api/moderation/queue*', async (route) => {
@@ -94,11 +81,13 @@ export async function installCmsModerationConcurrencyApi(
       body: JSON.stringify({
         success: true,
         data: {
+          revisionId: 'rev-001',
+          exhibitId: 'exhibit-001',
           publishedRevisionNo: 1,
           targetRevisionNo: 2,
           fields: [
-            { field: 'name.vi', old: 'Trống Đồng', new: 'Trống Đồng Ngọc Lũ' },
-            { field: 'description.vi', old: 'Hiện vật cổ', new: 'Bảo vật quốc gia thời kỳ Đông Sơn đỉnh cao.' },
+            { field: 'name', label: 'Tên', oldValue: 'Trống Đồng', newValue: 'Trống Đồng Ngọc Lũ', changed: true },
+            { field: 'description', label: 'Mô tả', oldValue: 'Hiện vật cổ', newValue: 'Bảo vật quốc gia thời kỳ Đông Sơn đỉnh cao.', changed: true },
           ],
         },
         message: null,
@@ -114,8 +103,8 @@ export async function installCmsModerationConcurrencyApi(
       body: JSON.stringify({
         success: true,
         data: [
-          { revisionNo: 1, state: 'approved', createdAt: '2026-10-10T10:00:00Z', reviewedAt: '2026-10-10T12:00:00Z' },
-          { revisionNo: 2, state: 'in_review', createdAt: '2026-10-15T09:00:00Z', reviewedAt: null },
+          { id: 'rev-000', revisionNo: 1, state: 'approved', createdAt: '2026-10-10T10:00:00Z', reviewedAt: '2026-10-10T12:00:00Z' },
+          { id: 'rev-001', revisionNo: 2, state: 'in_review', createdAt: '2026-10-15T09:00:00Z', reviewedAt: null },
         ],
         message: null,
       }),

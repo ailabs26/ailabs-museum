@@ -30,6 +30,40 @@ describe('XR capability', () => {
   });
 });
 describe('XR session ownership', () => {
+  it('ignores old capability checks after rapid device availability changes', async () => {
+    const { owner, xr } = setup();
+    let finish!: (supported: boolean) => void;
+    xr.isSessionSupported.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const stale = owner.check();
+    xr.isSessionSupported.mockResolvedValueOnce(false); await owner.check();
+    finish(true); await stale;
+    expect(owner.getSnapshot().capability).toBe('unavailable'); owner.dispose();
+  });
+
+  it('native end during reference space resolution never attaches the old session', async () => {
+    const { owner, session, attach, detach } = setup(); await owner.check();
+    let finish!: (space: { type: string }) => void;
+    session.requestReferenceSpace.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const entry = owner.enter(); await Promise.resolve();
+    session.dispatchEvent(new Event('end')); finish({ type: 'local-floor' }); await entry;
+    expect(attach).not.toHaveBeenCalled(); expect(detach).not.toHaveBeenCalled();
+    expect(owner.getSession()).toBeNull(); expect(owner.getSnapshot().phase).toBe('idle'); owner.dispose();
+  });
+
+  it('serializes a late binding resolution before allowing a fresh session', async () => {
+    const { owner, session, xr, attach, detach } = setup(); await owner.check();
+    let finish!: () => void;
+    attach.mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve; }));
+    const entry = owner.enter(); await vi.waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    session.dispatchEvent(new Event('end')); await owner.enter();
+    expect(xr.requestSession).toHaveBeenCalledTimes(1);
+    finish(); await entry;
+    const fresh = new Session(); xr.requestSession.mockResolvedValueOnce(fresh); await owner.enter();
+    session.dispatchEvent(new Event('end'));
+    expect(owner.getSession()).toBe(fresh); expect(owner.getSnapshot().phase).toBe('active');
+    expect(detach).toHaveBeenCalledTimes(1); await owner.exit();
+    expect(detach).toHaveBeenCalledTimes(2); owner.dispose();
+  });
   it('requests synchronously, suppresses duplicates, exits and re-enters', async () => {
     const { owner, xr, session, attach, detach } = setup(); await owner.check();
     const entry = owner.enter(); owner.enter();

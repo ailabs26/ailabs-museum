@@ -3,11 +3,18 @@ import type { Page } from '@/core/api/api-response';
 
 export type RoomStatus = 'active' | 'archived';
 
+/** Bản dịch theo ngôn ngữ của tên và mô tả; tiếng Việt nằm ở `name`, `description`. */
+export interface RoomTranslationsInput {
+  name?: Partial<Record<string, string>>;
+  description?: Partial<Record<string, string>>;
+}
+
 export interface RoomRow {
   id: string;
   slug: string;
   name: string;
   description: string | null;
+  translations?: RoomTranslationsInput;
   status: RoomStatus;
   exhibitsCount: number;
   createdAt: string;
@@ -29,11 +36,13 @@ export interface CreateRoomInput {
   slug: string;
   name: string;
   description?: string;
+  translations?: RoomTranslationsInput;
 }
 
 export interface UpdateRoomInput {
   name?: string;
   description?: string;
+  translations?: RoomTranslationsInput;
   status?: RoomStatus;
 }
 

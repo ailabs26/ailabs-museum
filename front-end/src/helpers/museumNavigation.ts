@@ -67,11 +67,10 @@ export function findSafeNavigationPoint(point: NavigationVector, room: Navigatio
     .sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0] ?? null;
 }
 
-/** Visibility graph around expanded proxy corners, computed only on focus.
- * The slab intersection test rejects every segment through an obstacle. */
-export function findNavigationPath(start: NavigationVector, end: NavigationVector, room: NavigationRoom, colliders: readonly NavigationCollider[]): NavigationVector[] | null {
-  if (!isNavigationPositionSafe(start.x, start.y, room, colliders) || !isNavigationPositionSafe(end.x, end.y, room, colliders)) return null;
-  const clear = (a: NavigationVector, b: NavigationVector) => !colliders.some(box => {
+/** Exact swept-segment check, shared by pathfinding and rendered guided chords. */
+export function isNavigationSegmentSafe(a: NavigationVector, b: NavigationVector, room: NavigationRoom, colliders: readonly NavigationCollider[]): boolean {
+  if (!isNavigationPositionSafe(a.x, a.y, room, colliders) || !isNavigationPositionSafe(b.x, b.y, room, colliders)) return false;
+  return !colliders.some(box => {
     let enter = 0, exit = 1;
     for (const [origin, direction, low, high] of [[a.x, b.x - a.x, box.minX, box.maxX], [a.y, b.y - a.y, box.minZ, box.maxZ]]) {
       if (Math.abs(direction) < 1e-9) { if (origin <= low || origin >= high) return false; }
@@ -83,6 +82,13 @@ export function findNavigationPath(start: NavigationVector, end: NavigationVecto
     }
     return enter < exit;
   });
+}
+
+/** Visibility graph around expanded proxy corners, computed only on focus.
+ * The slab intersection test rejects every segment through an obstacle. */
+export function findNavigationPath(start: NavigationVector, end: NavigationVector, room: NavigationRoom, colliders: readonly NavigationCollider[]): NavigationVector[] | null {
+  if (!isNavigationPositionSafe(start.x, start.y, room, colliders) || !isNavigationPositionSafe(end.x, end.y, room, colliders)) return null;
+  const clear = (a: NavigationVector, b: NavigationVector) => isNavigationSegmentSafe(a, b, room, colliders);
   if (clear(start, end)) return [start, end];
   const nodes = [start, end, ...navigationCorners(room, colliders)];
   const distances = nodes.map(() => Infinity), previous = nodes.map(() => -1), visited = new Set<number>(); distances[0] = 0;

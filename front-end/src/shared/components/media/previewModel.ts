@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { LoadingManager } from 'three';
 import type { Object3D } from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { disposeModel, validateGlb } from '@/helpers/glbAsset';
+import { disposeModel } from '@/helpers/glbAsset';
+import { parseSelfContainedGlb } from '@/helpers/parseSelfContainedGlb';
 import { normalizeModel } from '@/helpers/modelNormalization';
 import type { ModelNormalization } from '@/helpers/modelNormalization';
 import { sanitizeModel } from '@/helpers/sanitizeModel';
@@ -28,19 +27,14 @@ export async function loadPreviewModel(url: string, signal: AbortSignal): Promis
 
   let scenes: Object3D[] = [];
   try {
-    validateGlb(buffer);
-    const manager = new LoadingManager();
-    manager.setURLModifier((resource) => {
-      if (!resource.startsWith('blob:')) throw new Error('external resource');
-      return resource;
-    });
-    const gltf = await new GLTFLoader(manager).parseAsync(buffer, '');
+    const gltf = await parseSelfContainedGlb(buffer, signal);
     scenes = [...gltf.scenes];
     const { quarantined } = sanitizeModel(gltf.scene);
     scenes.push(...quarantined);
     return { scene: gltf.scene, scenes, normalization: normalizeModel(gltf.scene) };
   } catch {
     disposeModel(scenes);
+    signal.throwIfAborted();
     // Lỗi của loader/three là thông điệp kỹ thuật — báo người dùng điều họ hiểu được.
     throw new Error(INVALID_MODEL_MESSAGE);
   }
@@ -61,9 +55,11 @@ export function usePreviewModel(url: string): PreviewState {
     setState({ status: 'loading' });
     loadPreviewModel(url, controller.signal)
       .then((model) => {
-        loaded = model;
-        if (!controller.signal.aborted) setState({ status: 'ready', model });
-        else disposeModel(model.scenes);
+        if (controller.signal.aborted) disposeModel(model.scenes);
+        else {
+          loaded = model;
+          setState({ status: 'ready', model });
+        }
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;

@@ -16,7 +16,7 @@ import { RevisionPublishGate } from '../../exhibits/services/revision-publish.ga
 import { notificationsStub } from '../../notifications/tests/notifications.stub';
 
 /** Cổng Submit/Publish giả: mặc định cho qua (luật cổng được test riêng). */
-const passGate = { assertPublishable: () => Promise.resolve() } as unknown as RevisionPublishGate;
+const passGate = { assertPublishable: () => Promise.resolve(), assertSlotFree: () => Promise.resolve() } as unknown as RevisionPublishGate;
 
 const ACTOR: AuthUser = {
   id: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
@@ -134,9 +134,15 @@ describe('ModerationService.publish — cổng Submit/Publish (Task 9)', () => {
         log.push('gate');
         return Promise.resolve();
       },
+      assertSlotFree: (target: { exhibitId: string; roomId: string; position: unknown }, used: EntityManager) => {
+        assert.equal(used, manager);
+        assert.deepEqual(target, { exhibitId: revision.exhibitId, roomId: revision.exhibit.roomId, position: revision.content.position });
+        log.push('slot');
+        return Promise.resolve();
+      },
     } as unknown as RevisionPublishGate;
     await new ModerationService(fakeRepo({ revision }), tx, gate, notificationsStub()).publish('d', { version: 3 }, ACTOR);
-    assert.deepEqual(log, ['gate', 'update', 'update']);
+    assert.deepEqual(log, ['gate', 'slot', 'update', 'update']);
   });
 
   it('cổng từ chối → 422, không update exhibit/revision nào', async () => {
@@ -185,6 +191,31 @@ describe('ModerationService.diff — media', () => {
       'media.subtitleVi': [null, 's1', true],
       'media.subtitleEn': [null, null, false],
     });
+  });
+
+  it('nội dung đa ngôn ngữ dạng object: so sánh từng ngôn ngữ, không còn [object Object]', async () => {
+    const position = { x: 0, y: 0, z: 0 };
+    const published = sampleRevision({
+      id: 'p', revisionNo: 1, state: RevisionState.APPROVED,
+      content: { name: { vi: 'Bình', en: 'Vase' }, description: 'Mô tả', position } as never,
+    });
+    const exhibit = sampleExhibit({ publishedRevisionId: 'p' });
+    exhibit.publishedRevision = published;
+    const target = sampleRevision({
+      exhibit,
+      content: { name: { vi: 'Bình gốm', en: 'Vase', ko: '꽃병' }, description: 'Mô tả', altText: { ja: '写真' }, position } as never,
+    });
+    const repo = { findForDiff: () => Promise.resolve(target) } as unknown as ModerationRepository;
+    const diff = await new ModerationService(repo, fakeTx([]), passGate, notificationsStub()).diff('d');
+    const rows = Object.fromEntries(diff.fields.map((f) => [f.field, [f.oldValue, f.newValue, f.changed]]));
+    assert.deepEqual(rows['name.vi'], ['Bình', 'Bình gốm', true]);
+    assert.deepEqual(rows['name.en'], ['Vase', 'Vase', false]);
+    assert.deepEqual(rows['name.ko'], [null, '꽃병', true]);
+    assert.deepEqual(rows['altText.ja'], [null, '写真', true]);
+    assert.deepEqual(rows['description.vi'], ['Mô tả', 'Mô tả', false]);
+    assert.equal(rows['name.fr'], undefined, 'ngôn ngữ trống ở cả hai bản thì không hiện');
+    assert.equal(diff.fields.find((f) => f.field === 'name.ko')?.label, 'Tên hiện vật (Tiếng Hàn)');
+    assert.ok(!JSON.stringify(diff).includes('[object Object]'));
   });
 
   it('hiện vật chưa từng xuất bản → oldValue null cho mọi slot', async () => {
@@ -266,5 +297,45 @@ describe('ModerationService.hide/unhide', () => {
     );
     const res = await svc.hide('e', { version: 3 });
     assert.equal(res.id, 'e1111111-1111-4111-1111-111111111111');
+  });
+});
+
+describe('ModerationService — mỗi bục một hiện vật công khai (Gallery Template)', () => {
+  const occupied = () => Promise.reject(new UnprocessableEntityException({ message: 'x', errors: [{ field: 'position', code: 'gallery_slot_occupied', message: 'x' }] }));
+
+  it('publish: bục đã có hiện vật công khai khác → 422, không ghi gì, không báo đã duyệt', async () => {
+    let updates = 0;
+    const manager = { update: () => { updates++; return Promise.resolve({ affected: 1 }); } } as unknown as EntityManager;
+    const tx = { run: (work: (m: EntityManager) => unknown) => work(manager) } as unknown as TransactionManager;
+    const gate = { assertPublishable: () => Promise.resolve(), assertSlotFree: occupied } as unknown as RevisionPublishGate;
+    const notifier = notificationsStub();
+    await assert.rejects(
+      new ModerationService(fakeRepo({ revision: sampleRevision() }), tx, gate, notifier).publish('d', { version: 3 }, ACTOR),
+      UnprocessableEntityException,
+    );
+    assert.equal(updates, 0);
+    assert.deepEqual(notifier.calls, []);
+  });
+
+  it('unhide: kiểm tra bục của bản đang xuất bản ở đúng phòng trước khi hiện lại', async () => {
+    const exhibit = sampleExhibit({ visibility: ExhibitVisibility.HIDDEN, publishedRevisionId: 'd1111111-1111-4111-1111-111111111111' });
+    const revision = sampleRevision({ state: RevisionState.APPROVED, content: { name: 'A', description: 'd', position: { x: 4.3, y: 0, z: 2.1 } } as never });
+    const checks: unknown[] = [];
+    const gate = { assertSlotFree: (target: unknown) => { checks.push(target); return Promise.resolve(); } } as unknown as RevisionPublishGate;
+    await new ModerationService(fakeRepo({ revision, exhibit }), fakeTx([1]), gate, notificationsStub()).unhide(exhibit.id, { version: 3 });
+    assert.deepEqual(checks, [{ exhibitId: exhibit.id, roomId: exhibit.roomId, position: { x: 4.3, y: 0, z: 2.1 } }]);
+  });
+
+  it('unhide: bục đã bị chiếm → 422 và hiện vật vẫn ẩn; hide không kiểm tra bục', async () => {
+    const exhibit = sampleExhibit({ visibility: ExhibitVisibility.HIDDEN, publishedRevisionId: 'd1111111-1111-4111-1111-111111111111' });
+    let updates = 0;
+    const manager = { update: () => { updates++; return Promise.resolve({ affected: 1 }); } } as unknown as EntityManager;
+    const tx = { run: (work: (m: EntityManager) => unknown) => work(manager) } as unknown as TransactionManager;
+    const gate = { assertSlotFree: occupied } as unknown as RevisionPublishGate;
+    const svc = new ModerationService(fakeRepo({ revision: sampleRevision({ state: RevisionState.APPROVED }), exhibit }), tx, gate, notificationsStub());
+    await assert.rejects(() => svc.unhide(exhibit.id, { version: 3 }), UnprocessableEntityException);
+    assert.equal(updates, 0);
+    await svc.hide(exhibit.id, { version: 3 });
+    assert.equal(updates, 1);
   });
 });

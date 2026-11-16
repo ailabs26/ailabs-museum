@@ -968,6 +968,7 @@ describe('Task 6.3 — RoomsService Comprehensive Unit Test Suite (105 Test Case
         slug: 'phong-hoi-hoa',
         name: 'Phòng Hội Họa',
         description: 'Tranh sơn dầu và sơn mài',
+        translations: { name: {}, description: {} },
       });
     });
 

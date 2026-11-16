@@ -1,6 +1,6 @@
 import { notifications } from '@mantine/notifications';
 
-/** Helper thông báo nhất quán toàn app. */
+/** Helper thông báo nhất quán toàn app. Tiêu đề mặc định tiếng Việt (CMS); trang khách truyền tiêu đề đã dịch. */
 export const notify = {
   success(message: string, title = 'Thành công') {
     notifications.show({ color: 'green', title, message });

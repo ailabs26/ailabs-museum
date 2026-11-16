@@ -10,10 +10,12 @@ import {
   Query,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { Public } from '../../../common/decorators/public.decorator';
+import { PublicRateBucketOf, PublicRateLimitGuard } from '../../../common/rate-limit/public-rate-limit.guard';
 import { MediaKind } from '../entities/media.entity';
 import { MediaDeliveryService } from '../services/media-delivery.service';
 import { ByteRange } from '../storage/media-storage-driver';
@@ -35,6 +37,8 @@ const NOT_FOUND_MESSAGE = 'Không tìm thấy media';
  */
 @ApiExcludeController()
 @Public()
+@UseGuards(PublicRateLimitGuard)
+@PublicRateBucketOf('media')
 @Controller()
 export class MediaDeliveryController {
   private readonly logger = new Logger(MediaDeliveryController.name);

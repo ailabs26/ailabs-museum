@@ -1,3 +1,6 @@
+import { buildSitemapXml, SITEMAP_MAX_URLS, type SitemapEntry } from '../utils/sitemap-xml';
+import { PublicRoomText, toPublicRoomText } from '../../rooms/utils/room-translations';
+import type { SupportedLocale } from '../../translations/constants/locales';
 import {
   ConflictException,
   Injectable,
@@ -47,11 +50,9 @@ import {
 import { RevisionPublishGate } from './revision-publish.gate';
 
 /** Phòng công khai kèm hiện vật đã xuất bản (FR-68). */
-export interface PublicRoomResponse {
+export interface PublicRoomResponse extends PublicRoomText {
   id: string;
   slug: string;
-  name: string;
-  description: string | null;
   exhibits: PublicExhibitDto[];
 }
 
@@ -76,16 +77,16 @@ export class ExhibitsService {
   /**
    * Danh sách phòng trưng bày công khai đang hoạt động (active).
    */
-  async roomsList() {
+  async roomsList(lang?: SupportedLocale) {
     const rooms = await this.roomsRepo.findPublicRooms();
-    return rooms.map(({ id, slug, name, description }) => ({ id, slug, name, description }));
+    return rooms.map((room) => ({ id: room.id, slug: room.slug, ...toPublicRoomText(room, lang) }));
   }
 
   /**
    * Chi tiết phòng kèm danh sách hiện vật đã xuất bản (cho khách tham quan).
    * Chỉ revision Published hiện hành và media của chính revision đó (FR-68, AC-36).
    */
-  async roomWithExhibits(slug: string): Promise<PublicRoomResponse> {
+  async roomWithExhibits(slug: string, lang?: SupportedLocale): Promise<PublicRoomResponse> {
     const room = await this.roomsRepo.findBySlug(slug);
 
     if (!room || room.status !== RoomStatus.ACTIVE || room.isDeleted) {
@@ -100,14 +101,14 @@ export class ExhibitsService {
           (exhibitId, mediaId, reason) =>
             this.logger.warn(`Bỏ qua media ${mediaId} của hiện vật ${exhibitId}: ${reason}`),
           room.slug,
+          lang,
         ) ?? [],
     );
 
     return {
       id: room.id,
       slug: room.slug,
-      name: room.name,
-      description: room.description,
+      ...toPublicRoomText(room, lang),
       exhibits,
     };
   }
@@ -130,9 +131,30 @@ export class ExhibitsService {
           (exhibitId, mediaId, reason) =>
             this.logger.warn(`Bỏ qua media ${mediaId} của hiện vật ${exhibitId}: ${reason}`),
           exhibit.room?.slug ?? '',
+          query.lang,
         ) ?? [],
     );
     return { items, total: result.total, page: result.page, pageSize: result.pageSize };
+  }
+
+  /** Phòng chứa hiện vật công khai, để liên kết cố định của mã QR chuyển tới đúng trang chi tiết. */
+  async publicLocation(id: string): Promise<{ exhibitId: string; roomSlug: string }> {
+    const location = await this.exhibits.findPublicLocation(id);
+    if (!location) throw new NotFoundException('Không tìm thấy hiện vật');
+    return location;
+  }
+
+  /** Sitemap các trang khách: trang chính, từng phòng active và từng hiện vật đã xuất bản. */
+  async sitemapXml(siteUrl: string): Promise<string> {
+    const rooms = await this.roomsRepo.findPublicRooms();
+    const staticPages: SitemapEntry[] = [{ path: '/' }, { path: '/collection' }, { path: '/tour' }];
+    const roomPages = rooms.map((room) => ({ path: `/collection?room=${encodeURIComponent(room.slug)}`, lastmod: room.updatedAt }));
+    const exhibits = await this.exhibits.findPublicSitemapEntries(SITEMAP_MAX_URLS - staticPages.length - roomPages.length);
+    const exhibitPages = exhibits.map(({ roomSlug, exhibitId, publishedAt }) => ({
+      path: `/collection/${encodeURIComponent(roomSlug)}/exhibits/${encodeURIComponent(exhibitId)}`,
+      lastmod: publishedAt,
+    }));
+    return buildSitemapXml(siteUrl, [...staticPages, ...roomPages, ...exhibitPages]);
   }
 
   // =========================================================================
@@ -352,6 +374,20 @@ export class ExhibitsService {
       const currentRevision = await this.exhibits.findActiveRevision(id, manager);
       if (!currentRevision || currentExhibit.version !== exhibit.version || currentRevision.id !== activeRev.id || currentRevision.state !== activeRev.state) {
         throw new ConflictException('Trạng thái hiện vật vừa thay đổi. Vui lòng tải lại và thử lại.');
+      }
+
+      // Chuyển phòng có hiệu lực ngay với hiện vật đang công khai (không qua duyệt): bục của bản đang
+      // xuất bản không được trùng hiện vật công khai khác ở phòng mới.
+      if (
+        dto.roomId &&
+        dto.roomId !== currentExhibit.roomId &&
+        currentExhibit.visibility === ExhibitVisibility.VISIBLE &&
+        exhibit.publishedRevision
+      ) {
+        await this.publishGate.assertSlotFree(
+          { exhibitId: id, roomId: dto.roomId, position: exhibit.publishedRevision.content?.position },
+          manager,
+        );
       }
 
       // 1. Cập nhật thông tin Exhibit nếu có thay đổi

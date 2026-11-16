@@ -9,6 +9,8 @@ export enum MediaErrorCode {
   KIND_MISMATCH = 'media_kind_mismatch',
   TOO_LARGE = 'media_too_large',
   QUARANTINED = 'media_quarantined',
+  /** Request multipart hỏng, sai field "file", nhiều file hoặc quá nhiều trường (lỗi của multer/busboy). */
+  INVALID_MULTIPART = 'media_invalid_multipart',
 }
 
 /**

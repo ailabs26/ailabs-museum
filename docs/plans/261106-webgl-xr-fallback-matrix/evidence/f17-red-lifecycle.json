@@ -1,0 +1,115 @@
+[
+  {
+    "name": "F17 close while native request is pending ends the late session without binding",
+    "status": "failed",
+    "errors": [
+      {
+        "location": {
+          "file": "D:\\CNPM\\ailabs-museum\\front-end\\tests\\museum-xr-disconnect.spec.ts",
+          "column": 24,
+          "line": 202
+        },
+        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"binding:start\"\u001b[39m\nReceived array:     \u001b[31m[\"request\", \u001b[7m\"binding:start\"\u001b[27m, \"app:end\", \"native:end\"]\u001b[39m\n\n  200 |     const events = await page.evaluate(() => window.museumXrFixture.timeline.map(item => item.event));\n  201 |     expect(events.indexOf('app:end')).toBeLessThan(events.indexOf('native:end'));\n> 202 |     expect(events).not.toContain('binding:start');\n      |                        ^\n  203 |     await assertReleased(page);\n  204 |     await expect.poll(async () => (await readRendererProbe(page)).filter(record => record.live).length).toBe(action === 'close' ? 0 : 1);\n  205 |     if (action === 'room') {\n    at D:\\CNPM\\ailabs-museum\\front-end\\tests\\museum-xr-disconnect.spec.ts:202:24"
+      }
+    ],
+    "attachments": {
+      "xr-lifecycle.json": {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+        "timeline": [
+          {
+            "event": "request",
+            "session": 0,
+            "available": true
+          },
+          {
+            "event": "binding:start",
+            "session": 0,
+            "available": true
+          },
+          {
+            "event": "app:end",
+            "session": 0,
+            "available": true
+          },
+          {
+            "event": "native:end",
+            "session": 0,
+            "available": true
+          }
+        ],
+        "listeners": [
+          {
+            "end": 0,
+            "visibilitychange": 0,
+            "select": 0,
+            "selectstart": 0,
+            "selectend": 0,
+            "squeeze": 0,
+            "squeezestart": 0,
+            "squeezeend": 0,
+            "inputsourceschange": 0
+          }
+        ],
+        "requests": 1,
+        "ends": 1,
+        "endCalls": 1,
+        "rejections": [],
+        "errors": [],
+        "renderers": [
+          {
+            "live": false,
+            "frames": 39,
+            "times": [
+              1437.7999999821186,
+              1753.2999999821186,
+              1753.7999999821186,
+              1755.0999999940395,
+              1755.2999999821186,
+              1755.5,
+              1755.5,
+              1755.5999999940395,
+              1755.699999988079,
+              1755.7999999821186,
+              1755.7999999821186,
+              1756,
+              1763.2999999821186,
+              1763.5,
+              1763.699999988079,
+              1763.699999988079,
+              1763.7999999821186,
+              1763.9000000059605,
+              1763.9000000059605,
+              1764,
+              1764.0999999940395,
+              1764.0999999940395,
+              1764.199999988079,
+              1764.199999988079,
+              1764.199999988079,
+              1764.199999988079,
+              1764.2999999821186,
+              1764.4000000059605,
+              1764.4000000059605,
+              1764.4000000059605,
+              1764.5,
+              1764.5,
+              1764.5999999940395,
+              1764.5999999940395,
+              4555.9000000059605,
+              4771.5,
+              7428.799999982119,
+              7818.0999999940395,
+              8497.59999999404
+            ],
+            "calls": 73,
+            "triangles": 5506,
+            "geometries": 1,
+            "textures": 0,
+            "materials": 0,
+            "objects": 1,
+            "labels": {}
+          }
+        ]
+      }
+    }
+  }
+]

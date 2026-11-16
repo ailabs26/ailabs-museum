@@ -85,7 +85,7 @@ export function AdminLayout() {
                 {scheme === 'dark' ? <IconSun size={20} stroke={1.6} /> : <IconMoonStars size={20} stroke={1.6} />}
               </UnstyledButton>
             </Tooltip>
-            <Menu position="bottom-end" withArrow>
+            <Menu position="bottom-end" withArrow returnFocus>
               <Menu.Target>
                 <UnstyledButton aria-label={`Tài khoản ${user?.displayName ?? 'Admin'}`}>
                   <Group gap="xs">

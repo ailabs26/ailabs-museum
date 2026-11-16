@@ -3,7 +3,8 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Euler, Group, Matrix4, MeshBasicMaterial, PerspectiveCamera, Quaternion, Raycaster, Vector3, type Mesh } from 'three';
 import { XrSessionController, type XrSnapshot } from '@/helpers/xrSession';
 import { canTeleport, getSnapAxis, resolveXrIntersection, snapTurnOrigin, teleportOrigin, type XrTarget } from '@/helpers/xrInteraction';
-import { getDisplayColliders, NAVIGATION } from '@/helpers/museumNavigation';
+import { NAVIGATION } from '@/helpers/museumNavigation';
+import { getGalleryColliders } from '@/helpers/gallerySlots';
 import { MUSEUM_ROOM_SIZE, type MuseumDisplay } from '@/interfaces/museumScene';
 import { XrDetailsPanel } from './XrDetailsPanel';
 import { bindXrRenderer } from '@/helpers/xrRendererBinding';
@@ -17,7 +18,7 @@ export function MuseumXr({ available, displays, selectedId, onSelect, onControll
   const origin = useMemo(() => new Group(), []);
   const ownerRef = useRef<XrSessionController | null>(null);
   const props = useRef({ displays, selectedId, onSelect, onHover, available }); props.current = { displays, selectedId, onSelect, onHover, available };
-  const colliders = useMemo(() => getDisplayColliders(displays), [displays]);
+  const colliders = useMemo(() => getGalleryColliders(displays), [displays]);
   const collidersRef = useRef(colliders); collidersRef.current = colliders;
   const [session, setSession] = useState<XRSession | null>(null);
   const [page, setPage] = useState(0), [pageCount, setPageCount] = useState(1);
@@ -43,7 +44,8 @@ export function MuseumXr({ available, displays, selectedId, onSelect, onControll
     };
     const owner = new XrSessionController({ xr: navigator.xr, secure: window.isSecureContext,
       attach: async (nextSession, type, space) => {
-        if (!mounted || !props.current.available) throw new Error('Renderer unavailable');
+        // Canvas can leave the DOM before R3F commits its asynchronous teardown.
+        if (!mounted || !gl.domElement.isConnected || !props.current.available) throw new Error('Renderer unavailable');
         snapshot = { parent: camera.parent, position: camera.position.clone(), quaternion: camera.quaternion.clone(), scale: camera.scale.clone(), fov: camera instanceof PerspectiveCamera ? camera.fov : undefined, zoom: camera.zoom };
         const yaw = new Euler().setFromQuaternion(camera.quaternion, 'YXZ').y;
         origin.position.set(camera.position.x, type === 'local' ? NAVIGATION.eyeHeight : 0, camera.position.z); origin.rotation.set(0, yaw, 0);

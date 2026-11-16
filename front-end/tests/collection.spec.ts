@@ -101,7 +101,9 @@ test('search filters names and descriptions locally, reports counts, clears and 
   await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: namedExhibits })));
   const requests: string[] = [];
   page.on('request', (request) => {
-    if (new URL(request.url()).pathname.startsWith('/api/rooms')) requests.push(new URL(request.url()).pathname);
+    // Lọc trong phòng không được tải lại phòng; /rooms/search là khối "Ở các phòng khác", kiểm ở spec riêng.
+    const { pathname } = new URL(request.url());
+    if (pathname.startsWith('/api/rooms') && pathname !== '/api/rooms/search') requests.push(pathname);
   });
   await page.goto('/collection');
   const input = page.getByRole('textbox', { name: 'Tìm kiếm hiện vật' });

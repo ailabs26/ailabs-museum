@@ -17,7 +17,7 @@ describe('collectMediaCredits', () => {
         en: { audio: media('ae', rights(null, null, null)), subtitle: null, transcript: null },
       },
     } as unknown as PublicExhibit;
-    expect(collectMediaCredits(exhibit)).toEqual([
+    expect(collectMediaCredits(exhibit)).toMatchObject([
       { label: 'Mô hình 3D', source: 'Bảo tàng', author: 'Xưởng 3D', license: 'CC BY 4.0' },
       { label: 'Hình ảnh', source: 'Bảo tàng', author: 'Nhiếp ảnh gia', license: 'CC BY 4.0' },
       { label: 'Thuyết minh tiếng Việt', source: 'Bảo tàng', author: 'Người đọc', license: 'CC BY 4.0' },

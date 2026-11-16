@@ -1,0 +1,30 @@
+# E2E API thật (node dist/main.js, NODE_ENV=production, Postgres 16 local, storage đĩa) — 2026-11-13T12:40:01+07:00, commit 3af8fb7 + thay đổi nhánh
+PNG hợp lệ                     201 image/png | None
+GLB hợp lệ khai báo .png      201 model/gltf-binary | None
+EXE đổi tên .png               422 media_unsupported_type | Định dạng file không được hỗ trợ. Chấp nhận: GLB, JPEG, PNG, WebP, MP3, WebVTT
+SVG có script khai báo png       422 media_markup_rejected | Không chấp nhận SVG, HTML, XML hoặc script — các định dạng này có thể chứa mã độc
+PNG hỏng CRC                     422 media_corrupted | CRC của chunk IHDR trong PNG không khớp
+PNG + script sau IEND              201 image/png | None
+15 MB (đồng bộ)               413 media_too_large | File vượt giới hạn tải lên tối đa 10 MB
+15 MB (job)                        413 media_too_large | File vượt giới hạn tải lên tối đa 10 MB
+sai field 'upload'                 400 media_invalid_multipart | File phải được gửi trong trường "file" của form multipart/form-data
+2 file                             400 media_invalid_multipart | Mỗi lần chỉ được tải lên một file
+multipart cắt cụt              400 media_invalid_multipart | Dữ liệu multipart/form-data không hợp lệ hoặc bị cắt cụt
+tên ../../etc/passwd.png          201 image/png | None
+job EXE                            202 queued | None
+không token                       201 image/png | None
+--- DB: media theo trạng thái
+ready|image/png|ok.png
+ready|model/gltf-binary|x.png
+ready|image/png|polyglot.png
+ready|image/png|passwd.png
+ready|image/png|ok.png
+--- DB: job
+failed|media_unsupported_type|-
+--- File trên đĩa (cwd của API)
+      4 ./public/media/uploads/images/<uuid>.png
+      1 ./public/media/uploads/models/<uuid>.glb
+--- Ghi chú: dòng 'không token' ở trên bị script gắn kèm token hợp lệ (curl gửi 2 header Authorization) nên tạo thêm 1 media; kiểm lại riêng:
+token sai      401
+không có token 401
+số media sau 2 request trên: 5

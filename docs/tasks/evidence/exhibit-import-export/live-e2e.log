@@ -1,0 +1,15 @@
+# E2E live Task 38 — 2026-11-13T13:11:37+07:00
+API: back-end/dist (nhánh feat/exhibits-bulk-import-export), NODE_ENV=production, Postgres 16 local (DB thử 'fuzz'), Vite dev + Playwright Chromium
+Kịch bản: live-e2e.spec.ts.txt — 1 passed
+--- DB sau khi chạy (từ trạng thái sạch)
+    slug    | visibility | chua_xuat_ban | state |                     name                      |             pos             |   mau   
+------------+------------+---------------+-------+-----------------------------------------------+-----------------------------+---------
+ phong-gom  | hidden     | t             | draft | {"en": "Blue jar", "vi": "Bình gốm, men lam"} | {"x": -3.5, "y": 0, "z": 0} | #112233
+ phong-dong | hidden     | t             | draft | {"en": "Bronze drum", "vi": "Trống đồng"}     | {"x": 2, "y": 0, "z": 0}    | #8b7355
+(2 rows)
+
+     action     | resource_type | count 
+----------------+---------------+-------
+ exhibit.import | exhibit       |     2
+(1 row)
+

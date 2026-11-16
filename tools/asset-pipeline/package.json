@@ -1,0 +1,26 @@
+{
+  "name": "@aura-museum/asset-pipeline",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "optimize": "node src/cli.mjs",
+    "fixture": "node test/create-fixture.mjs",
+    "benchmark": "node test/benchmark.mjs"
+  },
+  "overrides": {
+    "ndarray-pixels": "5.0.1",
+    "sharp": "$sharp"
+  },
+  "dependencies": {
+    "@gltf-transform/core": "4.2.1",
+    "@gltf-transform/extensions": "4.2.1",
+    "@gltf-transform/functions": "4.2.1",
+    "draco3dgltf": "1.5.7",
+    "gltf-validator": "2.0.0-dev.3.10",
+    "meshoptimizer": "0.23.0",
+    "sharp": "0.34.3"
+  }
+}

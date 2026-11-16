@@ -1,0 +1,42 @@
+▶ user restore affected-row contract
+  ✔ repository returns the affected-row count, or zero when the driver omits it (1.0167ms)
+  ✖ rejects a zero-row update instead of reporting a successful restore (2.9162ms)
+  ✖ property: for seeded batches of 1–100 IDs, success requires every row updated (0.3392ms)
+  ✔ propagates a persistence rejection and does not clean role links (0.3019ms)
+✖ user restore affected-row contract (5.2869ms)
+ℹ tests 4
+ℹ suites 1
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2141.2033
+
+✖ failing tests:
+
+test at src\modules\users\tests\users-restore.spec.ts:77:24
+✖ rejects a zero-row update instead of reporting a successful restore (2.9162ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (InternalServerErrorException).
+      at async TestContext.<anonymous> (D:\CNPM\ailabs-museum\back-end\src\modules\users\tests\users-restore.spec.ts:93:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at src\modules\users\tests\users-restore.spec.ts:83:24
+✖ property: for seeded batches of 1–100 IDs, success requires every row updated (0.3392ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (InternalServerErrorException): seed=1
+      at async TestContext.<anonymous> (D:\CNPM\ailabs-museum\back-end\src\modules\users\tests\users-restore.spec.ts:108:9)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }

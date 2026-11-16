@@ -38,7 +38,7 @@ function setup(states: RevisionState[] = []) {
     saveRevision: async (r: ExhibitRevision) => { log.push('save-revision'); return r; },
   };
   const tx = { run: async (work: (m: EntityManager) => unknown) => { log.push('begin'); try { return await work(manager); } catch (e) { log.push('rollback'); throw e; } } } as TransactionManager;
-  const gate = { assertPublishable: async () => { present = false; } };
+  const gate = { assertPublishable: async () => { present = false; }, assertSlotFree: async () => {} };
   const media = { assertAttachable: async () => { present = false; } };
   const service = new ExhibitsService(repo as unknown as ExhibitsRepository, {} as never, tx, media as never, gate as never, {} as never, notificationsStub());
   return { service, exhibit, revisions, log, setPresent: (value: boolean) => { present = value; }, setReports: () => { reports = true; }, fail: (error: unknown) => { failDelete = error; } };
@@ -112,13 +112,14 @@ describe('Whole exhibit deletion policy', () => {
 
   it('a stale publish snapshot cannot recreate an exhibit deleted before its conditional update', async () => {
     const state = setup([RevisionState.DRAFT]);
-    const snapshot = Object.assign(new ExhibitRevision(), state.revisions[0], { state: RevisionState.IN_REVIEW });
+    // `findDetail` luôn nạp quan hệ exhibit (publish đọc roomId để kiểm tra trùng bục).
+    const snapshot = Object.assign(new ExhibitRevision(), state.revisions[0], { state: RevisionState.IN_REVIEW, exhibit: Object.assign(new Exhibit(), { id: 'fixture', roomId: 'room' }) });
     const updates: unknown[] = [];
     const manager = { update: async (target: unknown) => { updates.push(target); return { affected: 0 }; } } as unknown as EntityManager;
     const moderation = new ModerationService(
       { findDetail: async () => snapshot } as unknown as ModerationRepository,
       { run: async (work: (m: EntityManager) => unknown) => work(manager) } as TransactionManager,
-      { assertPublishable: async () => { await state.service.deleteExhibitDraft('fixture'); } } as never,
+      { assertPublishable: async () => { await state.service.deleteExhibitDraft('fixture'); }, assertSlotFree: async () => {} } as never,
       notificationsStub(),
     );
     await assert.rejects(() => moderation.publish(snapshot.id, { version: 1 }, { id: 'actor' } as never), ConflictException);

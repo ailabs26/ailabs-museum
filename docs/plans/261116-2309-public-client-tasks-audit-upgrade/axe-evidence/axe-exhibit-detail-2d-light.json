@@ -1,0 +1,20 @@
+[
+  {
+    "id": "color-contrast",
+    "impact": "serious",
+    "nodes": [
+      {
+        "target": [
+          "#mantine-v0keini27-description"
+        ],
+        "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.32 (foreground color: #868e96, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "target": [
+          "section[aria-label=\"Ghi chú riêng\"] > .m_b6d8b162.mantine-Text-root[data-size=\"sm\"]:nth-child(2)"
+        ],
+        "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.32 (foreground color: #868e96, background color: #ffffff, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+      }
+    ]
+  }
+]

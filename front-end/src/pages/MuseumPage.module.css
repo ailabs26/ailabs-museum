@@ -58,5 +58,6 @@
   .immersiveCatalogue { top: 136px; left: 12px; }
   .immersiveDetail { top: auto; right: 12px; left: 12px; bottom: 110px; width: auto; height: min(42dvh, 380px); }
   .immersiveDetail > aside { padding: 16px; }
+  .guidedDetail { top: 390px; bottom: 110px; left: 144px; height: auto; }
 }
 @media (max-height: 500px) { .immersiveDetail { top: 156px; right: 120px; bottom: 90px; width: min(380px, 48vw); height: auto; } .immersiveDetail > aside { padding: 12px; } .immersiveCatalogue[open] { max-height: calc(100dvh - 180px); } }

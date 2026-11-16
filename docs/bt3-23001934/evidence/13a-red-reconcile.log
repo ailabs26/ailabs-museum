@@ -1,0 +1,403 @@
+# Review P2 đối soát — đỏ — 2026-11-05T22:29:58+07:00 — d308c72 + test và stub (chưa có hành vi) — node v26.3.0 — có PostgreSQL
+
+> aura-museum-api@0.1.0 test:upload-jobs
+> node -r reflect-metadata -r ts-node/register --test src/modules/media/tests/upload-jobs-*.spec.ts
+
+▶ Audit media.upload của worker upload-jobs
+  ✔ TC20 — job succeeded → đúng 1 audit media.upload: resource là media vừa tạo, actor là người tạo job, giữ client info (11.063729ms)
+  ✔ TC20b — không có client info (gọi ngoài HTTP) vẫn ghi audit với requestId sinh mới (3.241015ms)
+[Nest] 134235  - 11/05/2026, 10:30:09 PM    WARN [AuditService] {"action":"media.upload","requestId":"c6d6cec3-0259-41a7-9b03-ec9b33b900e7","message":"Không ghi được audit"}
+  ✔ TC21 — failure path: ghi audit lỗi → job vẫn succeeded có mediaId, không có patch failed (4.129823ms)
+[Nest] 134235  - 11/05/2026, 10:30:09 PM   ERROR [MediaUploadJobService] Job upload b6fb7763-eb3e-4b20-8e2e-ef64a6ada3ac lỗi: ECONNRESET
+  ✔ TC22 — negative: job failed (file bị từ chối, storage lỗi) → không có audit media.upload (5.745756ms)
+  ✔ TC23 — risk: retry cùng key (tuần tự sau khi xong và 20 request đồng thời) chỉ có 1 audit media.upload (4.040985ms)
+  ✔ TC24 — ghi succeeded lỗi 2 lần rồi được: chỉ 1 audit, không ghi theo số lần thử (4.386981ms)
+[Nest] 134235  - 11/05/2026, 10:30:09 PM   ERROR [MediaUploadJobService] Job upload 816bcc33-46cc-4a26-9837-083faba78eb3: media 0bca81d5-6530-44b4-87c0-184565f92ef6 đã lưu nhưng không ghi được trạng thái succeeded sau 3 lần (connection terminated unexpectedly); job giữ processing, cần đối soát
+  ✔ TC24b — media đã lưu nhưng không ghi được succeeded: job giữ processing, media có thật nên vẫn có audit (5.011577ms)
+✔ Audit media.upload của worker upload-jobs (48.895914ms)
+▶ Hàng đợi concurrency của MediaUploadJobService
+  ✔ TC26 — 5 job, giới hạn 3: chỉ 3 job chạy; job chờ giữ queued/progress 0, không có patch; xong 1 thì job kế tiếp mới processing (12.021123ms)
+  ✔ TC27 — FIFO: giới hạn 1 thì job chạy đúng thứ tự enqueue, từng job một (4.137646ms)
+  ✔ TC28 — whenIdle chờ cả job đang chạy lẫn job còn trong hàng đợi (2.990003ms)
+[Nest] 134236  - 11/05/2026, 10:30:09 PM   ERROR [MediaUploadJobService] Job upload da1fb48e-b5d2-491d-bf9f-5fc02d2fd837 lỗi: pipeline nổ
+  ✔ TC29 — failure path: job lỗi pipeline trả slot, job sau vẫn chạy và job lỗi là failed (2.552513ms)
+[Nest] 134236  - 11/05/2026, 10:30:09 PM   ERROR [MediaUploadJobService] Job upload c96ddfed-e617-4a67-a69e-ceb7fa4f4d3a lỗi: connection terminated unexpectedly
+[Nest] 134236  - 11/05/2026, 10:30:09 PM   ERROR [MediaUploadJobService] Không cập nhật được job c96ddfed-e617-4a67-a69e-ceb7fa4f4d3a: connection terminated unexpectedly
+  ✔ TC29b — failure path: patch processing lỗi và cả patch failed cũng lỗi → slot vẫn được trả (1.336007ms)
+[Nest] 134236  - 11/05/2026, 10:30:09 PM   ERROR [MediaUploadJobService] Worker job upload aafa36ef-3540-4cbf-bfa7-05cfff764e02 lỗi: audit nổ
+[Nest] 134236  - 11/05/2026, 10:30:09 PM   ERROR [MediaUploadJobService] Worker job upload 9a8bf3e8-87e6-4c37-a4f3-98efa059a7de lỗi: audit nổ
+  ✔ TC29c — failure path: worker ném lỗi ngoài dự kiến (sau khi media đã lưu) → slot được trả, hàng đợi không kẹt (1.265605ms)
+  ✔ TC30 — retry cùng key khi job còn trong hàng đợi: trả job queued cũ, không thêm vào hàng đợi, pipeline chạy đúng 1 lần (1.006422ms)
+[Nest] 134236  - 11/05/2026, 10:30:09 PM   ERROR [MediaUploadJobService] Job upload 861062d9-9f44-4a4f-abe3-644ed27a9b6b: media 100b37bd-8367-44aa-a233-2748bfb728a8 đã lưu nhưng không ghi được trạng thái succeeded sau 3 lần (connection terminated unexpectedly); job giữ processing, cần đối soát
+  ✔ TC31 — media đã lưu, ghi succeeded lỗi liên tục: job giữ processing, không ghi failed, slot được trả cho job sau (4.028482ms)
+[Nest] 134236  - 11/05/2026, 10:30:09 PM    WARN [MediaUploadJobService] Đánh dấu 2 job upload bị gián đoạn khi khởi động lại
+  ✔ TC32 — khởi động lại khi còn job processing và queued: failInterrupted đánh dấu cả hai job_interrupted (5.196239ms)
+  ✔ TC33 — không cấu hình: mặc định 3 job chạy cùng lúc (3.539379ms)
+✔ Hàng đợi concurrency của MediaUploadJobService (41.682919ms)
+▶ Cấu hình MEDIA_UPLOAD_JOB_CONCURRENCY
+  ✔ TC34 — media.config: mặc định 3, đọc được env (0.72014ms)
+  ✔ TC34b — negative: env.validation từ chối 0 (hàng đợi sẽ không bao giờ chạy), số âm, số lẻ, chữ; nhận biên 1 và 50 (16.77645ms)
+✔ Cấu hình MEDIA_UPLOAD_JOB_CONCURRENCY (17.804802ms)
+▶ Upload media bất đồng bộ (VT-078) — HTTP
+  ▶ AC1–AC2: tạo job và theo dõi tiến trình
+    ✔ TC01 — GLB hợp lệ + key mới → 202, status queued, progress 0, có id (38.350481ms)
+    ✔ TC02 — E2E API: tạo job → poll → succeeded, progress 100, mediaId trỏ tới media ready (25.1403ms)
+    ✔ ghi audit với resource type media_upload_job và id của job (5.074504ms)
+    ✔ TC25 — E2E API: job xong có thêm audit media.upload trỏ tới media, cùng actor và cùng request-id với request tạo job (3.988951ms)
+  ✔ AC1–AC2: tạo job và theo dõi tiến trình (73.592369ms)
+  ▶ AC3: retry cùng Idempotency-Key không tạo bản ghi trùng
+    ✔ TC03 — gửi lại tuần tự cùng key + cùng file → 200, cùng job, 1 job, 1 media (22.548466ms)
+    ✔ TC04 — 20 request đồng thời cùng key → đúng 1 lần 202, cùng một job, 1 media (32.695241ms)
+    ✔ cùng key nhưng khác người tạo → hai job độc lập (key chỉ duy nhất theo người tạo) (6.175493ms)
+  ✔ AC3: retry cùng Idempotency-Key không tạo bản ghi trùng (61.835248ms)
+  ▶ AC5: phân lớp tương đương Idempotency-Key
+    ✔ TC05 — key đã dùng + nội dung khác → 409 idempotency_key_reused, không thêm job (7.615633ms)
+    ✔ TC06 — thiếu header → 400 idempotency_key_required, không tạo job (3.151827ms)
+    ✔ TC06b — header rỗng → 400 idempotency_key_required (2.80129ms)
+    ✔ TC07 — key 129 ký tự (ngay trên biên) → 400 idempotency_key_invalid (2.290117ms)
+    ✔ TC07 — key chứa khoảng trắng → 400 idempotency_key_invalid (2.223348ms)
+    ✔ TC07 — key chứa ký tự "/" → 400 idempotency_key_invalid (2.18298ms)
+    ✔ TC07 — key chứa ký tự Latin-1 ngoài ASCII → 400 idempotency_key_invalid (2.262529ms)
+    ✔ key 1 ký tự (biên dưới) → 202 (4.2679ms)
+    ✔ key 128 ký tự (biên trên) → 202 (3.156716ms)
+    ✔ key dạng UUID (đại diện lớp hợp lệ) → 202 (2.800522ms)
+  ✔ AC5: phân lớp tương đương Idempotency-Key (33.493534ms)
+  ▶ AC4: phân lớp tương đương file — lỗi pipeline thành job failed
+    ✔ TC08 — file EXE đổi đuôi .glb → 202 rồi failed (media_unsupported_type), không có media ready (5.412539ms)
+    ✔ TC08b — PNG vượt 2 MB (giới hạn theo định dạng) → 202 rồi failed (media_too_large), không có media ready (13.863134ms)
+    ✔ TC08c — GLB hỏng cấu trúc → 202 rồi failed (media_corrupted), không có media ready (3.640929ms)
+    ✔ thiếu file → 400 ngay, không tạo job (4.45333ms)
+    ✔ vượt giới hạn multipart (> 10 MB) → 413 ngay, không tạo job (39.081447ms)
+  ✔ AC4: phân lớp tương đương file — lỗi pipeline thành job failed (66.88901ms)
+  ▶ GET /admin/media/upload-jobs/:id — phân lớp jobId
+    ✔ TC11 — UUID không tồn tại → 404 (3.087153ms)
+    ✔ TC11b — job của biên tập viên khác → 404 (không lộ sự tồn tại) (5.009342ms)
+    ✔ TC12 — id không phải UUID → 400 (1.774474ms)
+  ✔ GET /admin/media/upload-jobs/:id — phân lớp jobId (10.189937ms)
+✔ Upload media bất đồng bộ (VT-078) — HTTP (299.360098ms)
+[Nest] 134248  - 11/05/2026, 10:30:09 PM   ERROR [MediaUploadJobService] Job upload 0ebc0f42-3f0c-48be-ae22-31ac94c531a3: media 5d646556-6178-4db6-8166-cb6ccc74ad7b đã lưu nhưng không ghi được trạng thái succeeded sau 3 lần (connection terminated unexpectedly); job giữ processing, cần đối soát
+▶ Đối soát job upload với media đã lưu
+  ✖ TC38 — review P2: upload thành công → 3 lần ghi succeeded lỗi → restart → retry cùng key: job succeeded có mediaId, không chạy lại worker, không có media thứ hai (28.23758ms)
+[Nest] 134248  - 11/05/2026, 10:30:09 PM   ERROR [MediaUploadJobService] Job upload 9589a9a3-4ed0-4b25-826c-7de5d4babfa5: media 3a4dba6f-4718-4677-85ac-0c93aba6c13b đã lưu nhưng không ghi được trạng thái succeeded sau 3 lần (connection terminated unexpectedly); job giữ processing, cần đối soát
+[Nest] 134248  - 11/05/2026, 10:30:09 PM    WARN [MediaUploadJobService] Đánh dấu 3 job upload bị gián đoạn khi khởi động lại
+  ✖ TC38b — retry cùng key khi job còn kẹt processing (chưa restart): trả job cũ đã có mediaId, không chạy lại worker (8.272706ms)
+  ✖ TC39 — khởi động: job không có media vẫn failed job_interrupted như cũ; job có media thành succeeded (2.334117ms)
+[Nest] 134248  - 11/05/2026, 10:30:09 PM    WARN [MediaService] Media 7a1e53eb-b507-40fc-81cd-01ed81fe9e61 bị cách ly: parser nổ
+  ✔ TC40 — negative: media bị cách ly không được liên kết: job failed media_quarantined, mediaId null (4.411426ms)
+  ✖ TC41 — failure path: ghi liên kết lỗi → upload coi là thất bại: file bị dọn, job failed không có mediaId (2.698971ms)
+[Nest] 134248  - 11/05/2026, 10:30:09 PM   ERROR [MediaUploadJobService] Job upload 5f0bfac5-8bba-4f25-a377-92121bfd25f8 lỗi: không ký được URL
+  ✖ TC42 — transaction đã commit nhưng upload() vẫn ném lỗi sau đó: job không bị ghi failed, thành succeeded và có audit (3.496147ms)
+[Nest] 134248  - 11/05/2026, 10:30:09 PM    WARN [MediaUploadJobService] Đánh dấu 2 job upload bị gián đoạn khi khởi động lại
+  ✖ TC44 — liên kết chạy cùng transaction với media; đường upload đồng bộ không mở transaction (3.033864ms)
+  ✖ TC45 — failure path: bước đối soát lỗi lúc khởi động → job có media vẫn không bị failed, lần khởi động sau thành succeeded (1.673832ms)
+✖ Đối soát job upload với media đã lưu (64.742977ms)
+▶ MediaUploadJobRepository (PostgreSQL thật)
+  ✔ 20 insert đồng thời cùng key → đúng 1 created, cả 20 nhận cùng job, bảng có 1 dòng (68.477983ms)
+  ✔ unique constraint tồn tại đúng tên; created_by NOT NULL (7.285072ms)
+  ✔ findOwned chỉ trả job của đúng người tạo; failInterrupted chỉ đổi job dang dở (17.312836ms)
+  ✔ TC35-DB — deleteFinishedBefore chỉ xóa job succeeded/failed cũ hơn mốc; job dang dở và job mới giữ nguyên (20.839085ms)
+  ✔ TC35b-DB — failInterrupted đặt lại updated_at nên job vừa bị gián đoạn không bị dọn ngay trong cùng lần khởi động (7.362945ms)
+[Nest] 134254  - 11/05/2026, 10:30:13 PM   ERROR [MediaUploadJobService] Job upload 4397af11-7a77-463a-b43c-7d1f9680ca70: media 7dd668c8-7e4e-49a1-a124-aeb92e779609 đã lưu nhưng không ghi được trạng thái succeeded sau 3 lần (connection terminated unexpectedly); job giữ processing, cần đối soát
+  ✖ TC38-DB — review P2: media lưu xong → 3 lần ghi succeeded lỗi → restart → retry cùng key: job succeeded có mediaId, không có media thứ hai (22.096169ms)
+[Nest] 134254  - 11/05/2026, 10:30:13 PM   ERROR [MediaUploadJobService] Job upload 6d725ede-6495-458b-947b-ddb4546f5afc: media fdb56598-f546-419b-a4c5-51979864c85e đã lưu nhưng không ghi được trạng thái succeeded sau 3 lần (connection terminated unexpectedly); job giữ processing, cần đối soát
+[Nest] 134254  - 11/05/2026, 10:30:13 PM    WARN [MediaUploadJobService] Đánh dấu 4 job upload bị gián đoạn khi khởi động lại
+  ✖ TC39-DB — khởi động: job có media → succeeded; job processing và queued chưa có media → failed job_interrupted (20.742214ms)
+  ✖ TC41-DB — nguyên tử: ghi liên kết lỗi → rollback, không còn media mồ côi, job failed không có mediaId (11.740986ms)
+  ✖ TC43-DB — job không còn processing lúc liên kết (instance khác đã ghi failed) → rollback media, job vẫn failed (10.880184ms)
+✖ MediaUploadJobRepository (PostgreSQL thật) (4000.702483ms)
+[Nest] 134261  - 11/05/2026, 7:00:00 AM    WARN [MediaUploadJobService] Đánh dấu 1 job upload bị gián đoạn khi khởi động lại
+[Nest] 134261  - 11/05/2026, 7:00:00 AM     LOG [MediaUploadJobService] Đã dọn 2 job upload cũ hơn 7 ngày
+[Nest] 134261  - 11/05/2026, 7:00:00 AM    WARN [MediaUploadJobService] Đánh dấu 1 job upload bị gián đoạn khi khởi động lại
+[Nest] 134261  - 11/05/2026, 7:00:00 AM   ERROR [MediaUploadJobService] Không dọn được job upload cũ: connection terminated unexpectedly
+[Nest] 134261  - 11/05/2026, 7:00:00 AM   ERROR [MediaUploadJobService] Không dọn được job upload dang dở: connection terminated unexpectedly
+[Nest] 134261  - 11/05/2026, 7:00:00 AM     LOG [MediaUploadJobService] Đã dọn 1 job upload cũ hơn 7 ngày
+▶ Dọn media_upload_jobs khi khởi động
+  ✔ TC35 — mặc định 7 ngày: xóa job succeeded/failed cũ hơn mốc; job tại đúng mốc, job mới và job gián đoạn được giữ (6.547541ms)
+  ✔ TC35c — số ngày lấy từ cấu hình (0.802484ms)
+  ✔ TC36 — failure path: dọn job lỗi → khởi động vẫn thành công, failInterrupted vẫn đã chạy (1.473385ms)
+  ✔ TC36b — failure path: failInterrupted lỗi → vẫn dọn job cũ, khởi động không hỏng (0.956974ms)
+✔ Dọn media_upload_jobs khi khởi động (11.664301ms)
+▶ Cấu hình MEDIA_UPLOAD_JOB_RETENTION_DAYS
+  ✔ TC37 — media.config: mặc định 7, đọc được env (1.031286ms)
+  ✔ TC37b — negative: env.validation từ chối 0, số âm, số lẻ, chữ; nhận biên 1 và 3650 (12.849588ms)
+✔ Cấu hình MEDIA_UPLOAD_JOB_RETENTION_DAYS (14.306001ms)
+[Nest] 134267  - 11/05/2026, 10:30:09 PM   ERROR [MediaUploadJobService] Job upload a5bc8738-6309-4534-b00f-97b2f9d2f26d lỗi: ECONNRESET supabase://bucket/secret-path
+▶ MediaUploadJobService (unit, VT-078)
+  ✔ TC09 — failure path: storage lỗi → job failed (internal_error, không lộ chi tiết); retry cùng key trả job failed cũ, không chạy lại pipeline (14.832958ms)
+  ✔ fingerprint gồm cả metadata: cùng key, cùng file nhưng altText khác → 409 (3.873992ms)
+  ✔ TC19 — media đã lưu, patch succeeded lỗi DB tạm thời 2 lần rồi thành công → job succeeded có mediaId, không ghi failed (5.923923ms)
+[Nest] 134267  - 11/05/2026, 10:30:09 PM   ERROR [MediaUploadJobService] Job upload 0cd090bf-2f3b-494f-965a-009b2c46bd59: media 95307034-d4b5-40d8-bd54-1f8f57af41f4 đã lưu nhưng không ghi được trạng thái succeeded sau 3 lần (connection terminated unexpectedly); job giữ processing, cần đối soát
+[Nest] 134267  - 11/05/2026, 10:30:09 PM    WARN [MediaUploadJobService] Đánh dấu 2 job upload bị gián đoạn khi khởi động lại
+  ✔ TC19b — media đã lưu, patch succeeded lỗi liên tục → media vẫn còn, job giữ processing, không ghi failed; retry cùng key không chạy lại worker (6.906528ms)
+  ✔ TC13 — khởi động lại: job queued/processing → failed job_interrupted; job đã xong giữ nguyên (1.662657ms)
+✔ MediaUploadJobService (unit, VT-078) (43.855353ms)
+▶ toUploadJobResponse (unit) — TC10
+  ✔ ánh xạ đúng từng field, không lộ checksum/key/người tạo (0.938675ms)
+  ✔ job failed giữ errorCode/errorMessage, mediaId null (0.429668ms)
+✔ toUploadJobResponse (unit) — TC10 (1.729007ms)
+▶ MediaUploadJobRepository.insertOrFindExisting (unit, lỗi 23505)
+  ✔ insert thành công → created true (0.501256ms)
+  ✔ vi phạm UQ actor+key (request đồng thời thắng trước) → đọc lại job đã có, created false (0.626831ms)
+  ✔ vi phạm constraint khác hoặc lỗi DB khác → ném lại, không nuốt lỗi (0.435743ms)
+✔ MediaUploadJobRepository.insertOrFindExisting (unit, lỗi 23505) (1.891529ms)
+ℹ tests 77
+ℹ suites 16
+ℹ pass 66
+ℹ fail 11
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14969.048651
+
+✖ failing tests:
+
+test at src/modules/media/tests/upload-jobs-reconcile.spec.ts:65:24
+✖ TC38 — review P2: upload thành công → 3 lần ghi succeeded lỗi → restart → retry cùng key: job succeeded có mediaId, không chạy lại worker, không có media thứ hai (28.23758ms)
+  AssertionError [ERR_ASSERTION]: liên kết phải nằm trong job, không chỉ trong log
+  + actual - expected
+  
+  + null
+  - '5d646556-6178-4db6-8166-cb6ccc74ad7b'
+  
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-reconcile.spec.ts:104:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1869:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: '5d646556-6178-4db6-8166-cb6ccc74ad7b',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/modules/media/tests/upload-jobs-reconcile.spec.ts:93:24
+✖ TC38b — retry cùng key khi job còn kẹt processing (chưa restart): trả job cũ đã có mediaId, không chạy lại worker (8.272706ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + null
+  - '3a4dba6f-4718-4677-85ac-0c93aba6c13b'
+  
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-reconcile.spec.ts:139:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: '3a4dba6f-4718-4677-85ac-0c93aba6c13b',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/modules/media/tests/upload-jobs-reconcile.spec.ts:105:24
+✖ TC39 — khởi động: job không có media vẫn failed job_interrupted như cũ; job có media thành succeeded (2.334117ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'failed'
+  - 'succeeded'
+  
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-reconcile.spec.ts:151:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'failed',
+    expected: 'succeeded',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/modules/media/tests/upload-jobs-reconcile.spec.ts:126:24
+✖ TC41 — failure path: ghi liên kết lỗi → upload coi là thất bại: file bị dọn, job failed không có mediaId (2.698971ms)
+  AssertionError [ERR_ASSERTION]: file đã ghi phải được dọn khi transaction hỏng
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-reconcile.spec.ts:174:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/modules/media/tests/upload-jobs-reconcile.spec.ts:137:24
+✖ TC42 — transaction đã commit nhưng upload() vẫn ném lỗi sau đó: job không bị ghi failed, thành succeeded và có audit (3.496147ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'failed'
+  - 'succeeded'
+  
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-reconcile.spec.ts:190:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'failed',
+    expected: 'succeeded',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/modules/media/tests/upload-jobs-reconcile.spec.ts:151:24
+✖ TC44 — liên kết chạy cùng transaction với media; đường upload đồng bộ không mở transaction (3.033864ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-reconcile.spec.ts:201:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/modules/media/tests/upload-jobs-reconcile.spec.ts:164:24
+✖ TC45 — failure path: bước đối soát lỗi lúc khởi động → job có media vẫn không bị failed, lần khởi động sau thành succeeded (1.673832ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'failed'
+  - 'processing'
+  
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-reconcile.spec.ts:218:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'failed',
+    expected: 'processing',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/modules/media/tests/upload-jobs-repository.integration.spec.ts:164:24
+✖ TC38-DB — review P2: media lưu xong → 3 lần ghi succeeded lỗi → restart → retry cùng key: job succeeded có mediaId, không có media thứ hai (22.096169ms)
+  AssertionError [ERR_ASSERTION]: liên kết phải nằm trong database, không chỉ trong log
+  + actual - expected
+  
+  + null
+  - '7dd668c8-7e4e-49a1-a124-aeb92e779609'
+  
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-repository.integration.spec.ts:214:12)
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: '7dd668c8-7e4e-49a1-a124-aeb92e779609',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/modules/media/tests/upload-jobs-repository.integration.spec.ts:193:24
+✖ TC39-DB — khởi động: job có media → succeeded; job processing và queued chưa có media → failed job_interrupted (20.742214ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'failed'
+  - 'succeeded'
+  
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-repository.integration.spec.ts:247:12)
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'failed',
+    expected: 'succeeded',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/modules/media/tests/upload-jobs-repository.integration.spec.ts:211:24
+✖ TC41-DB — nguyên tử: ghi liên kết lỗi → rollback, không còn media mồ côi, job failed không có mediaId (11.740986ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   Media {
+  +     altText: null,
+  +     author: null,
+  +     checksumSha256: '4527093ab595d03caea0a6709fb75f7ee2c64e12850dc469073746167920edbb',
+  +     createdAt: 2026-11-05T15:30:13.628Z,
+  +     createdBy: undefined,
+  +     createdById: 'd89d8cc0-08f8-40ab-bbf7-96a69308d53f',
+  +     deletedAt: null,
+  +     id: '97c704eb-2ef6-4749-a929-30d999cb5599',
+  +     isDeleted: false,
+  +     kind: 'model',
+  +     license: null,
+  +     mimeType: 'model/gltf-binary',
+  +     originalName: 'tuong-phat.glb',
+  +     processingState: 'ready',
+  +     sizeBytes: '320',
+  +     source: null,
+  +     storageKey: 'uploads/models/b23f4a9e-25ba-45be-b466-ba0e3d130f05.glb'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-repository.integration.spec.ts:263:12)
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { id: '97c704eb-2ef6-4749-a929-30d999cb5599', kind: 'model', storageKey: 'uploads/models/b23f4a9e-25ba-45be-b466-ba0e3d130f05.glb', mimeType: 'model/gltf-binary', sizeBytes: '320', checksumSha256: '4527093ab595d03caea0a6709fb75f7ee2c64e12850dc469073746167920edbb', processingState: 'ready', originalName: 'tuong-phat.glb', altText: null, source: null, author: null, license: null, createdById: 'd89d8cc0-08f8-40ab-bbf7-96a69308d53f', createdBy: undefined, isDeleted: false, deletedAt: null, createdAt: 2026-11-05T15:30:13.628Z } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/modules/media/tests/upload-jobs-repository.integration.spec.ts:223:24
+✖ TC43-DB — job không còn processing lúc liên kết (instance khác đã ghi failed) → rollback media, job vẫn failed (10.880184ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   Media {
+  +     altText: null,
+  +     author: null,
+  +     checksumSha256: '4527093ab595d03caea0a6709fb75f7ee2c64e12850dc469073746167920edbb',
+  +     createdAt: 2026-11-05T15:30:13.640Z,
+  +     createdBy: undefined,
+  +     createdById: 'ca3b1b64-b572-45df-9650-6018ea64083a',
+  +     deletedAt: null,
+  +     id: 'b9bebb15-6be8-4c31-ae4f-f004dcd6101b',
+  +     isDeleted: false,
+  +     kind: 'model',
+  +     license: null,
+  +     mimeType: 'model/gltf-binary',
+  +     originalName: 'tuong-phat.glb',
+  +     processingState: 'ready',
+  +     sizeBytes: '320',
+  +     source: null,
+  +     storageKey: 'uploads/models/786f2c85-4bca-4c08-9f83-49dd6adac764.glb'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/media/trong-thanh/Data/University/Fourth Year/Software Engineer/ailabs-museum-bt3/back-end/src/modules/media/tests/upload-jobs-repository.integration.spec.ts:277:12)
+      at processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { id: 'b9bebb15-6be8-4c31-ae4f-f004dcd6101b', kind: 'model', storageKey: 'uploads/models/786f2c85-4bca-4c08-9f83-49dd6adac764.glb', mimeType: 'model/gltf-binary', sizeBytes: '320', checksumSha256: '4527093ab595d03caea0a6709fb75f7ee2c64e12850dc469073746167920edbb', processingState: 'ready', originalName: 'tuong-phat.glb', altText: null, source: null, author: null, license: null, createdById: 'ca3b1b64-b572-45df-9650-6018ea64083a', createdBy: undefined, isDeleted: false, deletedAt: null, createdAt: 2026-11-05T15:30:13.640Z } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,30 @@
+
+> aura-museum-web@0.1.0 build
+> tsc -b && vite build
+
+vite v6.4.4 building for production...
+transforming...
+✓ 7525 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/assets/aura-mark-DDYHOked.svg                 0.25 kB │ gzip:   0.20 kB
+dist/tour.html                                     0.59 kB │ gzip:   0.41 kB
+dist/index.html                                    1.08 kB │ gzip:   0.60 kB
+dist/assets/MuseumScene-CotU0nmi.css               9.12 kB │ gzip:   2.55 kB
+dist/assets/main-BMcIXMJz.css                    255.65 kB │ gzip:  39.52 kB
+dist/assets/HeroCanvas-BeqrLZmP.js                 2.52 kB │ gzip:   1.15 kB
+dist/assets/ModelPreview-CtQf-98H.js               2.62 kB │ gzip:   1.41 kB
+dist/assets/MuseumAuditPanel-DF_pTNbn.js           3.69 kB │ gzip:   1.80 kB
+dist/assets/museumAuditBrowser-B-VEizl-.js         9.69 kB │ gzip:   3.84 kB
+dist/assets/ModelHotspotPicker-Dz6ZdQPm.js        10.36 kB │ gzip:   4.20 kB
+dist/assets/sanitizeModel-CEmvATNE.js             51.33 kB │ gzip:  15.60 kB
+dist/assets/MuseumScene-DuVJge0A.js               74.29 kB │ gzip:  26.54 kB
+dist/assets/react-apexcharts.min-BOSjkX-T.js     543.94 kB │ gzip: 143.80 kB
+dist/assets/react-three-fiber.esm-DwaYkT13.js    820.69 kB │ gzip: 220.56 kB
+dist/assets/main-D_wrqfYX.js                   1,059.40 kB │ gzip: 320.69 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 48.54s

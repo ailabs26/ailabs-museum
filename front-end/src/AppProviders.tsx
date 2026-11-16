@@ -5,6 +5,7 @@ import { ModalsProvider } from '@mantine/modals';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { theme } from '@/app/theme';
+import { auraCssVariablesResolver } from '@/app/cssVariablesResolver';
 import { queryClient } from '@/core/api/query-client';
 import { AuthProvider } from '@/core/auth/auth.context';
 import { ErrorBoundary, GlobalLoadingBar } from '@/shared/components/feedback';
@@ -12,7 +13,7 @@ import { ErrorBoundary, GlobalLoadingBar } from '@/shared/components/feedback';
 /** Gộp toàn bộ provider cấp ứng dụng theo đúng thứ tự. */
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <MantineProvider theme={theme} defaultColorScheme="auto">
+    <MantineProvider theme={theme} defaultColorScheme="auto" cssVariablesResolver={auraCssVariablesResolver}>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>

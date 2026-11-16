@@ -1,0 +1,79 @@
+# Sau review P2 của dinhtienn — code tại 7cef13f — 2026-11-04T23:44:54+07:00 — node v26.3.0
+
+== 1. npm run test:upload-jobs, có MEDIA_TEST_DATABASE_URL (PG16 docker)
+ℹ tests 37
+ℹ pass 37
+ℹ fail 0
+✔ TC19 — media đã lưu, patch succeeded lỗi DB tạm thời 2 lần rồi thành công → job succeeded có mediaId, không ghi failed (4.170673ms)
+✔ TC19b — media đã lưu, patch succeeded lỗi liên tục → media vẫn còn, job giữ processing, không ghi failed; retry cùng key không chạy lại worker (5.503813ms)
+
+== 2. npm run test:upload-jobs, không có DB (suite PG không được đăng ký)
+ℹ tests 34
+ℹ pass 34
+ℹ fail 0
+
+== 3. npm run test (toàn back-end, không đặt DB) + lint + typecheck
+ℹ tests 2107
+ℹ pass 2107
+ℹ fail 0
+lint exit 0, typecheck exit 0
+
+== 4. Mutation M3 (tạm, không commit): patch succeeded nằm lại trong try như trước bản sửa
+ℹ tests 34
+ℹ pass 32
+ℹ fail 2
+✖ failing tests:
+✖ MediaUploadJobService (unit, VT-078) (30.412972ms)
+✖ TC19b — media đã lưu, patch succeeded lỗi liên tục → media vẫn còn, job giữ processing, không ghi failed; retry cùng key không chạy lại worker (7.06637ms)
+✖ TC19 — media đã lưu, patch succeeded lỗi DB tạm thời 2 lần rồi thành công → job succeeded có mediaId, không ghi failed (5.676102ms)
+(đã hoàn nguyên service; git diff rỗng)
+
+== 5. Coverage file của slice (có PG)
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------------------
+ℹ file                                | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------------------
+ℹ src                                 |        |          |         | 
+ℹ  modules                            |        |          |         | 
+ℹ   media                             |        |          |         | 
+ℹ    controllers                      |        |          |         | 
+ℹ     admin-upload-jobs.controller.ts | 100.00 |   100.00 |  100.00 | 
+ℹ    dto                              |        |          |         | 
+ℹ     upload-job-response.dto.ts      |  96.30 |   100.00 |  100.00 | 1
+ℹ    repositories                     |        |          |         | 
+ℹ     media-upload-job.repository.ts  | 100.00 |    87.50 |  100.00 | 
+ℹ    services                         |        |          |         | 
+ℹ     media-upload-job.service.ts     |  98.90 |    91.84 |   95.00 | 81-82
+ℹ ------------------------------------------------------------------------------------
+ℹ all files                           |  99.09 |    92.31 |   96.77 | 
+ℹ ------------------------------------------------------------------------------------
+ℹ end of coverage report
+
+== 6. Flaky: lặp 20 lần (có PG)
+run 1: ℹ pass 37 ℹ fail 0 
+run 2: ℹ pass 37 ℹ fail 0 
+run 3: ℹ pass 37 ℹ fail 0 
+run 4: ℹ pass 37 ℹ fail 0 
+run 5: ℹ pass 37 ℹ fail 0 
+run 6: ℹ pass 37 ℹ fail 0 
+run 7: ℹ pass 37 ℹ fail 0 
+run 8: ℹ pass 37 ℹ fail 0 
+run 9: ℹ pass 37 ℹ fail 0 
+run 10: ℹ pass 37 ℹ fail 0 
+run 11: ℹ pass 37 ℹ fail 0 
+run 12: ℹ pass 37 ℹ fail 0 
+run 13: ℹ pass 37 ℹ fail 0 
+run 14: ℹ pass 37 ℹ fail 0 
+run 15: ℹ pass 37 ℹ fail 0 
+run 16: ℹ pass 37 ℹ fail 0 
+run 17: ℹ pass 37 ℹ fail 0 
+run 18: ℹ pass 37 ℹ fail 0 
+run 19: ℹ pass 37 ℹ fail 0 
+run 20: ℹ pass 37 ℹ fail 0 
+
+== 7. Flaky: --test-randomize 5 seed (có PG)
+seed 1: ℹ pass 37 ℹ fail 0 
+seed 42: ℹ pass 37 ℹ fail 0 
+seed 2026: ℹ pass 37 ℹ fail 0 
+seed 31337: ℹ pass 37 ℹ fail 0 
+seed 78078: ℹ pass 37 ℹ fail 0 

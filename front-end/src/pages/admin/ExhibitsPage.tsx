@@ -15,6 +15,7 @@ import {
   Grid,
   Group,
   Loader,
+  Menu,
   NumberInput,
   Pagination,
   SegmentedControl,
@@ -34,12 +35,16 @@ import {
   IconBox,
   IconClock,
   IconCube,
+  IconDownload,
+  IconFileImport,
   IconEdit,
   IconEye,
+  IconQrcode,
   IconEyeOff,
   IconInfoCircle,
   IconLayoutGrid,
   IconListNumbers,
+  IconLanguage,
   IconMapPin,
   IconPhoto,
   IconPlus,
@@ -73,6 +78,8 @@ import type {
 import { exhibitsService } from '@/services/exhibits.service';
 import { HotspotEditor } from '@/components/cms/HotspotEditor';
 import { TourOrderModal } from '@/components/cms/TourOrderModal';
+import { ExhibitImportModal } from '@/components/cms/ExhibitImportModal';
+import { saveBlob } from '@/helpers/saveBlob';
 import { roomsService } from '@/services/rooms.service';
 import { moderationService } from '@/services/moderation.service';
 import {
@@ -83,8 +90,12 @@ import { useBulkDelete, useBulkRestore } from '@/shared/hooks/useBulkDelete';
 import { useRowSelection } from '@/shared/hooks/useRowSelection';
 import { confirmAction, notify } from '@/shared/components/feedback';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
+import { ExhibitTranslationsPanel } from '@/components/cms/ExhibitTranslationsPanel';
+import { ExhibitQrModal, type ExhibitQrTarget } from '@/components/cms/ExhibitQrModal';
+import { toExhibitTranslations, translatedField, type ExhibitTranslations } from '@/helpers/exhibitTranslations';
 import { MediaPreview } from '@/shared/components/media/MediaPreview';
 import { MediaSlotSelect } from '@/shared/components/media/MediaSlotSelect';
+import { GallerySlotPicker } from '@/components/cms/GallerySlotPicker';
 
 interface ExhibitFormValues {
   roomId: string;
@@ -114,6 +125,7 @@ interface ExhibitFormValues {
   altTextEn: string;
   transcriptVi: string;
   transcriptEn: string;
+  translations: ExhibitTranslations;
   hotspots: HotspotFormValue[];
 }
 
@@ -139,10 +151,10 @@ const PREVIEW_SLOTS: { slot: RevisionMediaSlot; label: string }[] = [
   { slot: 'subtitleEn', label: 'Phụ đề (English)' },
 ];
 
-/** Hai ô trống → `null` (xóa trên server); ngược lại gửi bản đã trim, bỏ ngôn ngữ rỗng. */
-function toBilingual(vi: string, en: string): BilingualText | null {
-  const value = { vi: vi.trim() || undefined, en: en.trim() || undefined };
-  return value.vi || value.en ? value : null;
+/** Mọi ô trống → `null` (xóa trên server); ngược lại gửi bản đã trim, bỏ ngôn ngữ rỗng. */
+function toBilingual(vi: string, en: string, translated: BilingualText): BilingualText | null {
+  const value = { vi: vi.trim() || undefined, en: en.trim() || undefined, ...translated };
+  return Object.values(value).some(Boolean) ? value : null;
 }
 
 /** Payload lưu bản nháp từ giá trị form — dùng chung cho nút Lưu và autosave (VT-079). */
@@ -152,10 +164,12 @@ function buildExhibitPayload(values: ExhibitFormValues): CreateExhibitInput {
     name: {
       vi: values.nameVi.trim(),
       en: values.nameEn.trim() || undefined,
+      ...translatedField(values.translations, 'name'),
     },
     description: {
       vi: values.descriptionVi.trim(),
       en: values.descriptionEn.trim() || undefined,
+      ...translatedField(values.translations, 'description'),
     },
     displayOrder: values.displayOrder,
     position: {
@@ -182,8 +196,8 @@ function buildExhibitPayload(values: ExhibitFormValues): CreateExhibitInput {
     audioEnId: values.audioEnId,
     subtitleViId: values.subtitleViId,
     subtitleEnId: values.subtitleEnId,
-    altText: toBilingual(values.altTextVi, values.altTextEn),
-    transcript: toBilingual(values.transcriptVi, values.transcriptEn),
+    altText: toBilingual(values.altTextVi, values.altTextEn, translatedField(values.translations, 'altText')),
+    transcript: toBilingual(values.transcriptVi, values.transcriptEn, translatedField(values.translations, 'transcript')),
     hotspots: toHotspotPayload(values.hotspots),
   };
 }
@@ -299,7 +313,14 @@ export function ExhibitsPage() {
   useEffect(() => () => { editSessionRef.current++; actionRequestRef.current++; autosaveRef.current?.dispose(); }, []);
 
   const [tourOrderOpened, tourOrder] = useDisclosure(false);
+  const [importOpened, importModal] = useDisclosure(false);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [qrTarget, setQrTarget] = useState<ExhibitQrTarget | null>(null);
+  const openQr = (exhibit: ExhibitRow) => setQrTarget({
+    id: exhibit.id,
+    name: getDisplayText(exhibit.content.name, 'vi'),
+    isPublic: exhibit.status === 'published' && exhibit.visibility === 'visible',
+  });
   const [detailOpened, detailDrawer] = useDisclosure(false);
 
   const canCreate = hasPermission(PERMISSIONS.EXHIBIT_CREATE);
@@ -354,6 +375,14 @@ export function ExhibitsPage() {
     placeholderData: keepPreviousData,
   });
 
+  // Task 38: xuất theo đúng bộ lọc đang xem (không phân trang, không gồm thùng rác).
+  const exportMutation = useMutation({
+    mutationFn: (format: 'csv' | 'json') =>
+      exhibitsService.exportFile({ format, q: search.trim() || undefined, status: queryStatus, roomId: queryRoomId }),
+    onSuccess: ({ blob, filename }) => saveBlob(blob, filename),
+    onError: (error: Error) => notify.error(error.message),
+  });
+
   // Chi tiết 1 hiện vật khi xem
   const detailQuery = useQuery({
     queryKey: ['admin-exhibit-detail', detailId],
@@ -390,6 +419,7 @@ export function ExhibitsPage() {
       altTextEn: '',
       transcriptVi: '',
       transcriptEn: '',
+      translations: toExhibitTranslations(),
       hotspots: [],
     },
     validate: (values) => {
@@ -753,6 +783,7 @@ export function ExhibitsPage() {
       altTextEn: getLocalizedText(content.altText, 'en'),
       transcriptVi: getLocalizedText(content.transcript, 'vi'),
       transcriptEn: getLocalizedText(content.transcript, 'en'),
+      translations: toExhibitTranslations(content),
       hotspots: toHotspotFormValues(detail.hotspots),
     };
     form.setValues(values);
@@ -958,6 +989,7 @@ export function ExhibitsPage() {
                 <ActionIcon
                   variant="subtle"
                   color="yellow"
+                  aria-label={`Gửi kiểm duyệt hiện vật ${getDisplayText(r.content.name) || 'chưa đặt tên'}`}
                   onClick={() => handleSubmitReview(r)}
                 >
                   <IconSend size={18} />
@@ -996,6 +1028,12 @@ export function ExhibitsPage() {
                 </ActionIcon>
               </Tooltip>
             )}
+            <Tooltip label="Mã QR dán cạnh hiện vật">
+              <ActionIcon variant="subtle" color="dark" aria-label={`Mã QR hiện vật ${getDisplayText(r.content.name) || 'chưa đặt tên'}`}
+                onClick={() => openQr(r)}>
+                <IconQrcode size={18} />
+              </ActionIcon>
+            </Tooltip>
           </Group>
         );
       },
@@ -1015,6 +1053,25 @@ export function ExhibitsPage() {
                 Thứ tự tour
               </Button>
             )}
+            {!trash && (
+              <Menu position="bottom-end" withinPortal>
+                <Menu.Target>
+                  <Button variant="default" leftSection={<IconDownload size={16} />} loading={exportMutation.isPending}>
+                    Xuất
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>Theo bộ lọc đang xem</Menu.Label>
+                  <Menu.Item onClick={() => exportMutation.mutate('csv')}>CSV (mở bằng Excel)</Menu.Item>
+                  <Menu.Item onClick={() => exportMutation.mutate('json')}>JSON</Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            )}
+            {canCreate && !trash && (
+              <Button variant="default" leftSection={<IconFileImport size={16} />} onClick={importModal.open}>
+                Nhập
+              </Button>
+            )}
             {canCreate && !trash && (
               <Button leftSection={<IconPlus size={16} />} onClick={openCreate}>
                 Thêm hiện vật
@@ -1023,6 +1080,10 @@ export function ExhibitsPage() {
           </Group>
         }
       />
+
+      <ExhibitQrModal target={qrTarget} onClose={() => setQrTarget(null)} />
+
+      <ExhibitImportModal opened={importOpened} onClose={importModal.close} />
 
       <TourOrderModal
         opened={tourOrderOpened}
@@ -1153,7 +1214,7 @@ export function ExhibitsPage() {
                       </Tooltip>
                     )}
                     {canSubmit && (r.revisionState === 'draft' || r.revisionState === 'rejected') && (
-                      <Tooltip label="Gửi kiểm duyệt"><ActionIcon variant="subtle" color="yellow" onClick={() => handleSubmitReview(r)}><IconSend size={18} /></ActionIcon></Tooltip>
+                      <Tooltip label="Gửi kiểm duyệt"><ActionIcon variant="subtle" color="yellow" aria-label={`Gửi kiểm duyệt hiện vật ${getDisplayText(r.content.name) || 'chưa đặt tên'}`} onClick={() => handleSubmitReview(r)}><IconSend size={18} /></ActionIcon></Tooltip>
                     )}
                     {canHide && r.visibility === 'visible' && r.publishedRevisionId && (
                       <Tooltip label="Ẩn khỏi bảo tàng"><ActionIcon variant="subtle" color="gray" disabled={isActionBusy} onClick={() => handleHide(r)}><IconEyeOff size={18} /></ActionIcon></Tooltip>
@@ -1166,6 +1227,7 @@ export function ExhibitsPage() {
                         <ActionIcon variant="subtle" color={deleteReason ? 'gray' : 'red'} disabled={!!deleteReason || isActionBusy} onClick={() => handleDelete(r)}><IconTrash size={18} /></ActionIcon>
                       </Tooltip>
                     )}
+                    <Tooltip label="Mã QR"><ActionIcon variant="subtle" color="dark" aria-label={`Mã QR hiện vật ${getDisplayText(r.content.name) || 'chưa đặt tên'}`} onClick={() => openQr(r)}><IconQrcode size={18} /></ActionIcon></Tooltip>
                   </Group>
                   )}
                 </Card>
@@ -1257,12 +1319,15 @@ export function ExhibitsPage() {
             <Tabs value={formTab} onChange={(value) => value && setFormTab(value as ExhibitFormTab)}>
               <Tabs.List mb="md">
                 <Tabs.Tab value="basic">Thông tin cơ bản</Tabs.Tab>
-                <Tabs.Tab value="transform">Tọa độ 3D & Khối tạm</Tabs.Tab>
+                <Tabs.Tab value="transform">Vị trí 3D & Khối tạm</Tabs.Tab>
                 <Tabs.Tab value="media" leftSection={<IconPhoto size={14} />}>
                   Media & thuyết minh
                 </Tabs.Tab>
                 <Tabs.Tab value="hotspots" leftSection={<IconMapPin size={14} />}>
                    Hotspots ({form.values.hotspots.length})
+                </Tabs.Tab>
+                <Tabs.Tab value="translations" leftSection={<IconLanguage size={14} />}>
+                  Bản dịch
                 </Tabs.Tab>
               </Tabs.List>
 
@@ -1318,39 +1383,54 @@ export function ExhibitsPage() {
                 </Stack>
               </Tabs.Panel>
 
-              {/* Tab 2: Tọa độ 3D & Khối tạm */}
+              {/* Tab 2: Vị trí 3D & Khối tạm */}
               <Tabs.Panel value="transform">
                 <Stack gap="md">
                   <Card withBorder p="sm" radius="xs" bg="gray.0">
                     <Text fw={600} size="sm" mb="xs">
-                      1. Vị trí 3D (Position — mét, Y hướng lên)
+                      1. Vị trí trưng bày (bục trong phòng 3D)
                     </Text>
-                    <Grid gutter="xs">
-                      <Grid.Col span={4}>
-                        <NumberInput
-                          label="X"
-                          step={0.1}
-                          decimalScale={2}
-                          {...form.getInputProps('positionX')}
-                        />
-                      </Grid.Col>
-                      <Grid.Col span={4}>
-                        <NumberInput
-                          label="Y"
-                          step={0.1}
-                          decimalScale={2}
-                          {...form.getInputProps('positionY')}
-                        />
-                      </Grid.Col>
-                      <Grid.Col span={4}>
-                        <NumberInput
-                          label="Z"
-                          step={0.1}
-                          decimalScale={2}
-                          {...form.getInputProps('positionZ')}
-                        />
-                      </Grid.Col>
-                    </Grid>
+                    <GallerySlotPicker
+                      roomId={form.values.roomId}
+                      exhibitId={editing?.id}
+                      position={{ x: form.values.positionX, y: form.values.positionY, z: form.values.positionZ }}
+                      autoAssign={!editing || editing.roomId !== form.values.roomId}
+                      isActive={formTab === 'transform'}
+                      onSelect={(position) => form.setValues({ positionX: position.x, positionY: position.y, positionZ: position.z })}
+                    />
+                    {/* Phòng legacy/dữ liệu cũ vẫn sửa được tọa độ tự do; không xóa các trường này. */}
+                    <details data-advanced-position style={{ marginTop: 12 }}>
+                      <summary style={{ cursor: 'pointer', fontSize: 13 }}>Tọa độ nâng cao (legacy — mét, Y hướng lên)</summary>
+                      <Text size="xs" c="dimmed" my="xs">
+                        Nhập tọa độ tự do sẽ đưa hiện vật ra khỏi bục; phòng có hiện vật như vậy hiển thị theo bố cục cũ.
+                      </Text>
+                        <Grid gutter="xs">
+                          <Grid.Col span={4}>
+                            <NumberInput
+                              label="X"
+                              step={0.1}
+                              decimalScale={2}
+                              {...form.getInputProps('positionX')}
+                            />
+                          </Grid.Col>
+                          <Grid.Col span={4}>
+                            <NumberInput
+                              label="Y"
+                              step={0.1}
+                              decimalScale={2}
+                              {...form.getInputProps('positionY')}
+                            />
+                          </Grid.Col>
+                          <Grid.Col span={4}>
+                            <NumberInput
+                              label="Z"
+                              step={0.1}
+                              decimalScale={2}
+                              {...form.getInputProps('positionZ')}
+                            />
+                          </Grid.Col>
+                        </Grid>
+                    </details>
                   </Card>
 
                   <Card withBorder p="sm" radius="xs" bg="gray.0">
@@ -1522,6 +1602,21 @@ export function ExhibitsPage() {
                   form={form}
                   modelId={form.values.modelId}
                   ready
+                />
+              </Tabs.Panel>
+
+              {/* Tab 5: Bản dịch */}
+              <Tabs.Panel value="translations">
+                <ExhibitTranslationsPanel
+                  translations={form.values.translations}
+                  hotspots={form.values.hotspots}
+                  source={{
+                    name: form.values.nameVi,
+                    description: form.values.descriptionVi,
+                    transcript: form.values.transcriptVi,
+                    altText: form.values.altTextVi,
+                  }}
+                  getInputProps={form.getInputProps}
                 />
               </Tabs.Panel>
             </Tabs>

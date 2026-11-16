@@ -49,3 +49,26 @@ it('removes its guard after normal binding so a later native end is delivered', 
   await bindXrRenderer(test.renderer, test.session, test.reset); test.session.dispatchEvent(new Event('end'));
   expect(cleanup).toHaveBeenCalledTimes(1); expect(test.reset).not.toHaveBeenCalled();
 });
+
+it('coalesces duplicate end signals while binding is pending', async () => {
+  const test = setup(), gate = deferred(), cleanup = vi.fn();
+  test.setSession.mockImplementationOnce(async session => { session.addEventListener('end', cleanup); await gate.promise; });
+  const binding = bindXrRenderer(test.renderer, test.session, test.reset);
+  await vi.waitFor(() => expect(test.setSession).toHaveBeenCalled());
+  test.session.dispatchEvent(new Event('end')); test.session.dispatchEvent(new Event('end'));
+  expect(cleanup).not.toHaveBeenCalled();
+  gate.resolve(); await expect(binding).rejects.toThrow('ended during');
+  expect(cleanup).toHaveBeenCalledTimes(1); expect(test.reset).not.toHaveBeenCalled();
+});
+
+it('retires a late rejected binding after duplicate native end without unsafe cleanup', async () => {
+  const test = setup(), gate = deferred(), cleanup = vi.fn();
+  test.setSession.mockImplementationOnce(async session => {
+    session.addEventListener('end', cleanup); await gate.promise; throw new Error('late rejection');
+  });
+  const binding = bindXrRenderer(test.renderer, test.session, test.reset);
+  await vi.waitFor(() => expect(test.setSession).toHaveBeenCalled());
+  test.session.dispatchEvent(new Event('end')); test.session.dispatchEvent(new Event('end'));
+  gate.resolve(); await expect(binding).rejects.toThrow('late rejection');
+  expect(test.reset).toHaveBeenCalledTimes(1); expect(cleanup).not.toHaveBeenCalled();
+});

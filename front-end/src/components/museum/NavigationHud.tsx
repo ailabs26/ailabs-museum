@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { getJoystickVector, type NavigationInput } from '@/helpers/museumNavigation';
 import classes from './NavigationHud.module.css';
+import { usePublicT } from '@/core/i18n/public-locale';
 
 export type NavigationMode = 'explore' | 'focusing' | 'inspect';
 
 export function NavigationHud({ input, mode, isActive, hasTouch, immersive = false }: {
   input: NavigationInput; mode: NavigationMode; isActive: boolean; hasTouch: boolean; immersive?: boolean;
 }) {
+  const t = usePublicT();
   const [isHelpVisible, setIsHelpVisible] = useState(!immersive);
   const [isPressed, setIsPressed] = useState(false);
   const pointerRef = useRef<number | null>(null);
@@ -43,15 +45,17 @@ export function NavigationHud({ input, mode, isActive, hasTouch, immersive = fal
   return <div className={`${classes.hud} ${immersive ? classes.immersive : ''}`} data-navigation-mode={mode}>
     <div className={classes.help}>
       <button type="button" onClick={() => setIsHelpVisible(value => !value)} aria-expanded={isHelpVisible} aria-controls="navigation-instructions">
-        {isHelpVisible ? 'Ẩn hướng dẫn' : 'Hướng dẫn di chuyển'}
+        {isHelpVisible ? t('ui.hud.hide-help', 'Ẩn hướng dẫn') : t('ui.hud.show-help', 'Hướng dẫn di chuyển')}
       </button>
       {isHelpVisible && <p id="navigation-instructions">{hasTouch
-        ? 'Joystick trái để đi · Vuốt vùng nhìn bên phải để quay · Chạm hiện vật để xem'
-        : 'WASD để đi · Giữ và kéo chuột để nhìn · Shift đi nhanh · F tập trung · Home đặt lại'}</p>}
-      <span role="status">{mode === 'focusing' ? 'Đang tập trung hiện vật' : mode === 'inspect' ? 'Đang xem hiện vật · Di chuyển để khám phá tiếp'
-        : isActive ? 'Sẵn sàng khám phá' : hasTouch ? 'Chạm joystick hoặc vuốt để khám phá' : 'Chọn khung 3D để bắt đầu di chuyển'}</span>
+        ? t('ui.hud.help-touch', 'Joystick trái để đi · Vuốt vùng nhìn bên phải để quay · Chạm hiện vật để xem')
+        : t('ui.hud.help-keys', 'WASD để đi · Giữ và kéo chuột để nhìn · Shift đi nhanh · F tập trung · Home đặt lại')}</p>}
+      <span role="status">{mode === 'focusing' ? t('ui.hud.focusing', 'Đang tập trung hiện vật')
+        : mode === 'inspect' ? t('ui.hud.inspecting', 'Đang xem hiện vật · Di chuyển để khám phá tiếp')
+          : isActive ? t('ui.hud.ready', 'Sẵn sàng khám phá')
+            : hasTouch ? t('ui.hud.touch-start', 'Chạm joystick hoặc vuốt để khám phá') : t('ui.hud.keys-start', 'Chọn khung 3D để bắt đầu di chuyển')}</span>
     </div>
-    {hasTouch && <button ref={baseRef} type="button" className={classes.joystick} aria-label="Di chuyển bằng joystick" aria-pressed={isPressed}
+    {hasTouch && <button ref={baseRef} type="button" className={classes.joystick} aria-label={t('ui.hud.joystick-aria', 'Di chuyển bằng joystick')} aria-pressed={isPressed}
       onPointerDown={event => {
         event.preventDefault(); event.stopPropagation();
         if (pointerRef.current !== null) return;

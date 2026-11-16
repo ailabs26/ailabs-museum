@@ -26,6 +26,9 @@ async function projectedPoint(page: import('@playwright/test').Page, artifactId:
 }
 
 test('3D hotspot mouse picking shares selection, hover tooltip and drag rejection', async ({ page }, testInfo) => {
+  // Five real picking/focus cycles exceeded 30s on the recorded loaded host.
+  // Use the existing multi-cycle XR budget, without changing assertion deadlines.
+  test.setTimeout(60_000);
   const { exhibits } = await installFiveModels(page); await installRendererProbe(page); await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/tour.html'); await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
   await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
@@ -194,7 +197,7 @@ test('a model clone/render exception is contained per artifact and retries witho
   let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
   const { requests } = await installFiveModels(page, { gate }); await installRendererProbe(page);
   await page.goto('/tour.html'); await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
-  await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Phòng trưng bày 3D', { exact: true })).toBeVisible({ timeout: 15_000 });
   await expect.poll(() => page.evaluate(() => !!window.museumProbe.at(-1)?.scene?.deref())).toBe(true);
   await page.evaluate(() => {
     const scene = window.museumProbe.at(-1)!.scene!.deref()!;
@@ -216,7 +219,7 @@ test('a model clone/render exception is contained per artifact and retries witho
   expect(requests).toEqual([1, 1, 1, 1, 1]);
 });
 
-for (const failure of [403, 404, 502, 'network', 'corrupt'] as const) test(`one ${failure} GLB preserves four healthy models, interactive placeholder and isolated retry`, async ({ page }) => {
+for (const failure of [401, 403, 404, 500, 502, 'network', 'timeout', 'corrupt', 'checksum', 'truncated'] as const) test(`one ${failure} GLB preserves four healthy models, interactive placeholder and isolated retry`, async ({ page }, info) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   const { exhibits, requests } = await installFiveModels(page, { failIndex: 1, failure }); await installRendererProbe(page);
   await page.goto('/tour.html'); await page.getByRole('button', { name: 'Mở phòng 3D' }).click();
@@ -246,4 +249,5 @@ for (const failure of [403, 404, 502, 'network', 'corrupt'] as const) test(`one 
   const after = await snapshot(); expect(after.fallbacks).toEqual([]);
   for (const [id, uuid] of Object.entries(before.models)) expect(after.models[id]).toBe(uuid);
   expect(requests).toEqual([1, 2, 1, 1, 1]); expect(errors).toEqual([]);
+  await info.attach('glb-isolation.json', { body: JSON.stringify({ failure, before, after, requests, errors, renderers: await readRendererProbe(page) }, null, 2), contentType: 'application/json' });
 });

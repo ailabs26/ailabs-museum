@@ -7,16 +7,16 @@ test.describe('E2E: Kiểm duyệt nội dung & Xử lý xung đột 409 (Modera
     await page.goto('/admin/moderation');
 
     await expect(page.getByRole('heading', { name: 'Kiểm duyệt nội dung' })).toBeVisible();
-    await expect(page.getByText('Trống Đồng Ngọc Lũ')).toBeVisible();
+    await expect(page.getByRole('table').getByText('Trống Đồng Ngọc Lũ')).toBeVisible();
 
     // Mở drawer xem chi tiết
     await page.getByRole('row').filter({ hasText: 'Trống Đồng Ngọc Lũ' }).click();
 
-    const drawer = page.getByRole('dialog', { name: /Duyệt phiên bản/ });
+    const drawer = page.getByRole('dialog', { name: 'Trống Đồng Ngọc Lũ' });
     await expect(drawer).toBeVisible();
 
     // Kiểm tra tab so sánh thay đổi
-    await expect(drawer.getByText('So sánh thay đổi')).toBeVisible();
+    await expect(drawer.getByRole('tab', { name: 'So sánh cũ/mới' })).toBeVisible();
     await expect(drawer.getByText('Bảo vật quốc gia thời kỳ Đông Sơn đỉnh cao.')).toBeVisible();
 
     // Bấm xuất bản
@@ -34,7 +34,7 @@ test.describe('E2E: Kiểm duyệt nội dung & Xử lý xung đột 409 (Modera
     await page.goto('/admin/moderation');
 
     await page.getByRole('row').filter({ hasText: 'Trống Đồng Ngọc Lũ' }).click();
-    const drawer = page.getByRole('dialog', { name: /Duyệt phiên bản/ });
+    const drawer = page.getByRole('dialog', { name: 'Trống Đồng Ngọc Lũ' });
     await expect(drawer).toBeVisible();
 
     // Bấm nút Từ chối trong Drawer
@@ -45,7 +45,7 @@ test.describe('E2E: Kiểm duyệt nội dung & Xử lý xung đột 409 (Modera
     await expect(modal).toBeVisible();
 
     // Nhập lý do từ chối
-    const reasonInput = modal.getByLabel('Lý do từ chối (bắt buộc)');
+    const reasonInput = modal.getByRole('textbox', { name: 'Lý do từ chối' });
     await reasonInput.fill('Ảnh đại diện bị mờ và thiếu phần mô tả tiếng Anh.');
 
     // Bấm Xác nhận từ chối
@@ -66,7 +66,7 @@ test.describe('E2E: Kiểm duyệt nội dung & Xử lý xung đột 409 (Modera
     await page.goto('/admin/moderation');
 
     await page.getByRole('row').filter({ hasText: 'Trống Đồng Ngọc Lũ' }).click();
-    const drawer = page.getByRole('dialog', { name: /Duyệt phiên bản/ });
+    const drawer = page.getByRole('dialog', { name: 'Trống Đồng Ngọc Lũ' });
     await expect(drawer).toBeVisible();
 
     // Bấm xuất bản

@@ -1,0 +1,134 @@
+▶ RBAC HTTP — guard toàn cục trên route quản trị
+  ✖ phát hiện đủ route quản trị và route nào cũng khai báo @Permissions (3.5771ms)
+  ✔ token hợp lệ nhưng phiên đã bị đăng xuất hoặc thiếu sid → 401 trước khi kiểm quyền, service không bị gọi (24.3576ms)
+  ✔ route @Public() (health) truy cập được không cần token (4.8718ms)
+  ✔ GET /users: 401 khi không có token, service không bị gọi (3.7484ms)
+  ✔ GET /users: 403 khi thiếu quyền [user:read], ghi audit từ chối (4.5695ms)
+  ✔ GET /users: qua guard khi có đúng quyền yêu cầu (5.8292ms)
+  ✔ GET /users/22222222-2222-4222-8222-222222222222: 401 khi không có token, service không bị gọi (3.3585ms)
+  ✖ GET /users/22222222-2222-4222-8222-222222222222: 403 khi thiếu quyền [], ghi audit từ chối (4.0811ms)
+  ✔ GET /users/22222222-2222-4222-8222-222222222222: qua guard khi có đúng quyền yêu cầu (4.2012ms)
+  ✔ POST /users: 401 khi không có token, service không bị gọi (8.443ms)
+  ✔ POST /users: 403 khi thiếu quyền [user:create], ghi audit từ chối (4.139ms)
+  ✔ POST /users: qua guard khi có đúng quyền yêu cầu (4.5606ms)
+  ✔ PATCH /users/22222222-2222-4222-8222-222222222222: 401 khi không có token, service không bị gọi (2.9914ms)
+  ✔ PATCH /users/22222222-2222-4222-8222-222222222222: 403 khi thiếu quyền [user:update], ghi audit từ chối (3.212ms)
+  ✔ PATCH /users/22222222-2222-4222-8222-222222222222: qua guard khi có đúng quyền yêu cầu (3.1588ms)
+  ✔ POST /users/bulk-delete: 401 khi không có token, service không bị gọi (2.5102ms)
+  ✔ POST /users/bulk-delete: 403 khi thiếu quyền [user:delete], ghi audit từ chối (3.1802ms)
+  ✔ POST /users/bulk-delete: qua guard khi có đúng quyền yêu cầu (3.0347ms)
+  ✔ POST /users/bulk-restore: 401 khi không có token, service không bị gọi (2.4073ms)
+  ✔ POST /users/bulk-restore: 403 khi thiếu quyền [user:delete], ghi audit từ chối (2.8535ms)
+  ✔ POST /users/bulk-restore: qua guard khi có đúng quyền yêu cầu (3.7938ms)
+  ✔ DELETE /users/22222222-2222-4222-8222-222222222222: 401 khi không có token, service không bị gọi (2.5011ms)
+  ✔ DELETE /users/22222222-2222-4222-8222-222222222222: 403 khi thiếu quyền [user:delete], ghi audit từ chối (2.7373ms)
+  ✔ DELETE /users/22222222-2222-4222-8222-222222222222: qua guard khi có đúng quyền yêu cầu (3.0107ms)
+  ✔ POST /users/22222222-2222-4222-8222-222222222222/roles: 401 khi không có token, service không bị gọi (2.5341ms)
+  ✔ POST /users/22222222-2222-4222-8222-222222222222/roles: 403 khi thiếu quyền [role:assign], ghi audit từ chối (3.3238ms)
+  ✔ POST /users/22222222-2222-4222-8222-222222222222/roles: qua guard khi có đúng quyền yêu cầu (2.9563ms)
+  ✔ PUT /users/22222222-2222-4222-8222-222222222222/roles: 401 khi không có token, service không bị gọi (2.5279ms)
+  ✔ PUT /users/22222222-2222-4222-8222-222222222222/roles: 403 khi thiếu quyền [role:assign], ghi audit từ chối (3.4317ms)
+  ✔ PUT /users/22222222-2222-4222-8222-222222222222/roles: qua guard khi có đúng quyền yêu cầu (3.1961ms)
+  ✔ DELETE /users/22222222-2222-4222-8222-222222222222/roles/33333333-3333-4333-8333-333333333333: 401 khi không có token, service không bị gọi (2.3293ms)
+  ✔ DELETE /users/22222222-2222-4222-8222-222222222222/roles/33333333-3333-4333-8333-333333333333: 403 khi thiếu quyền [role:assign], ghi audit từ chối (3.1547ms)
+  ✔ DELETE /users/22222222-2222-4222-8222-222222222222/roles/33333333-3333-4333-8333-333333333333: qua guard khi có đúng quyền yêu cầu (2.7603ms)
+  ✔ GET /roles: 401 khi không có token, service không bị gọi (2.1205ms)
+  ✔ GET /roles: 403 khi thiếu quyền [role:read], ghi audit từ chối (2.8198ms)
+  ✔ GET /roles: qua guard khi có đúng quyền yêu cầu (3.2537ms)
+  ✔ POST /roles: 401 khi không có token, service không bị gọi (2.5262ms)
+  ✔ POST /roles: 403 khi thiếu quyền [role:create], ghi audit từ chối (2.9249ms)
+  ✔ POST /roles: qua guard khi có đúng quyền yêu cầu (2.9801ms)
+  ✔ PUT /roles/permission-matrix: 401 khi không có token, service không bị gọi (2.7463ms)
+  ✔ PUT /roles/permission-matrix: 403 khi thiếu quyền [role:update], ghi audit từ chối (2.8763ms)
+  ✔ PUT /roles/permission-matrix: qua guard khi có đúng quyền yêu cầu (2.8673ms)
+  ✔ GET /roles/22222222-2222-4222-8222-222222222222/permissions: 401 khi không có token, service không bị gọi (2.1056ms)
+  ✔ GET /roles/22222222-2222-4222-8222-222222222222/permissions: 403 khi thiếu quyền [role:read], ghi audit từ chối (3.6853ms)
+  ✔ GET /roles/22222222-2222-4222-8222-222222222222/permissions: qua guard khi có đúng quyền yêu cầu (2.9536ms)
+  ✔ PUT /roles/22222222-2222-4222-8222-222222222222/permissions: 401 khi không có token, service không bị gọi (2.4685ms)
+  ✔ PUT /roles/22222222-2222-4222-8222-222222222222/permissions: 403 khi thiếu quyền [role:update], ghi audit từ chối (2.9348ms)
+  ✔ PUT /roles/22222222-2222-4222-8222-222222222222/permissions: qua guard khi có đúng quyền yêu cầu (3.0349ms)
+  ✔ PATCH /roles/22222222-2222-4222-8222-222222222222: 401 khi không có token, service không bị gọi (2.2321ms)
+  ✔ PATCH /roles/22222222-2222-4222-8222-222222222222: 403 khi thiếu quyền [role:update], ghi audit từ chối (2.5414ms)
+  ✔ PATCH /roles/22222222-2222-4222-8222-222222222222: qua guard khi có đúng quyền yêu cầu (2.5603ms)
+  ✔ POST /roles/bulk-delete: 401 khi không có token, service không bị gọi (2.7479ms)
+  ✔ POST /roles/bulk-delete: 403 khi thiếu quyền [role:delete], ghi audit từ chối (3.852ms)
+  ✔ POST /roles/bulk-delete: qua guard khi có đúng quyền yêu cầu (2.9264ms)
+  ✔ POST /roles/bulk-restore: 401 khi không có token, service không bị gọi (2.681ms)
+  ✔ POST /roles/bulk-restore: 403 khi thiếu quyền [role:delete], ghi audit từ chối (3.5167ms)
+  ✔ POST /roles/bulk-restore: qua guard khi có đúng quyền yêu cầu (2.9347ms)
+  ✔ DELETE /roles/22222222-2222-4222-8222-222222222222: 401 khi không có token, service không bị gọi (2.1068ms)
+  ✔ DELETE /roles/22222222-2222-4222-8222-222222222222: 403 khi thiếu quyền [role:delete], ghi audit từ chối (3.034ms)
+  ✔ DELETE /roles/22222222-2222-4222-8222-222222222222: qua guard khi có đúng quyền yêu cầu (2.5791ms)
+  ✔ GET /permissions: 401 khi không có token, service không bị gọi (2.1974ms)
+  ✔ GET /permissions: 403 khi thiếu quyền [permission:read], ghi audit từ chối (2.7902ms)
+  ✔ GET /permissions: qua guard khi có đúng quyền yêu cầu (2.665ms)
+  ✔ 401 khi token hết hạn hoặc ký bằng secret khác (kể cả mang đủ quyền) (5.1232ms)
+  ✔ token không có quyền nào vẫn đọc được /auth/me (route chỉ cần xác thực) (4.3044ms)
+  ✔ role mặc định: editor bị chặn quản trị user, moderator chỉ đọc được danh mục quyền (9.0567ms)
+  ✖ thiếu quyền không đọc được email của user khác hoặc khôi phục tài khoản đó (2.7086ms)
+✖ RBAC HTTP — guard toàn cục trên route quản trị (330.4029ms)
+ℹ tests 67
+ℹ suites 1
+ℹ pass 64
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2829.0697
+
+✖ failing tests:
+
+test at src\common\tests\rbac-http.integration.spec.ts:225:24
+✖ phát hiện đủ route quản trị và route nào cũng khai báo @Permissions (3.5771ms)
+  AssertionError [ERR_ASSERTION]: GET /users/22222222-2222-4222-8222-222222222222 thiếu @Permissions
+      at TestContext.<anonymous> (D:\CNPM\ailabs-museum\back-end\src\common\tests\rbac-http.integration.spec.ts:208:14)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1516:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at src\common\tests\rbac-http.integration.spec.ts:255:28
+✖ GET /users/22222222-2222-4222-8222-222222222222: 403 khi thiếu quyền [], ghi audit từ chối (4.0811ms)
+  Error: expected 403 "Forbidden", got 200 "OK"
+      at TestContext.<anonymous> (D:\CNPM\ailabs-museum\back-end\src\common\tests\rbac-http.integration.spec.ts:243:61)
+      at processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7)
+  ----
+      at Test._assertStatus (D:\CNPM\ailabs-museum\back-end\node_modules\supertest\lib\test.js:252:14)
+      at D:\CNPM\ailabs-museum\back-end\node_modules\supertest\lib\test.js:308:13
+      at Test._assertFunction (D:\CNPM\ailabs-museum\back-end\node_modules\supertest\lib\test.js:285:13)
+      at Test.assert (D:\CNPM\ailabs-museum\back-end\node_modules\supertest\lib\test.js:164:23)
+      at Server.localAssert (D:\CNPM\ailabs-museum\back-end\node_modules\supertest\lib\test.js:120:14)
+      at Object.onceWrapper (node:events:622:28)
+      at Server.emit (node:events:508:28)
+      at Server.emit (node:domain:489:12)
+      at emitCloseNT (node:net:2419:8)
+      at processTicksAndRejections (node:internal/process/task_queues:89:21)
+
+test at src\common\tests\rbac-http.integration.spec.ts:297:24
+✖ thiếu quyền không đọc được email của user khác hoặc khôi phục tài khoản đó (2.7086ms)
+  Error: expected 403 "Forbidden", got 200 "OK"
+      at TestContext.<anonymous> (D:\CNPM\ailabs-museum\back-end\src\common\tests\rbac-http.integration.spec.ts:294:8)
+      at processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:788:7)
+  ----
+      at Test._assertStatus (D:\CNPM\ailabs-museum\back-end\node_modules\supertest\lib\test.js:252:14)
+      at D:\CNPM\ailabs-museum\back-end\node_modules\supertest\lib\test.js:308:13
+      at Test._assertFunction (D:\CNPM\ailabs-museum\back-end\node_modules\supertest\lib\test.js:285:13)
+      at Test.assert (D:\CNPM\ailabs-museum\back-end\node_modules\supertest\lib\test.js:164:23)
+      at Server.localAssert (D:\CNPM\ailabs-museum\back-end\node_modules\supertest\lib\test.js:120:14)
+      at Object.onceWrapper (node:events:622:28)
+      at Server.emit (node:events:508:28)
+      at Server.emit (node:domain:489:12)
+      at emitCloseNT (node:net:2419:8)
+      at processTicksAndRejections (node:internal/process/task_queues:89:21)

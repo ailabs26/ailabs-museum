@@ -1,0 +1,17 @@
+# Kiểm tra cuối — code tại e2276be — 2026-11-05T22:34:54+07:00 — node v26.3.0
+typecheck exit 0
+lint exit 0
+== test:upload-jobs (không DB)
+ℹ tests 68 ℹ pass 68 ℹ fail 0 ℹ cancelled 0 ℹ skipped 0 
+== test:media (không DB)
+ℹ tests 592 ℹ pass 592 ℹ fail 0 ℹ cancelled 0 ℹ skipped 0 
+== test:rooms (không DB)
+ℹ tests 446 ℹ pass 446 ℹ fail 0 ℹ cancelled 0 ℹ skipped 0 
+== test:exhibits (không DB)
+ℹ tests 633 ℹ pass 633 ℹ fail 0 ℹ cancelled 0 ℹ skipped 0 
+== test:upload-jobs (PostgreSQL 16 docker)
+ℹ tests 78 ℹ pass 78 ℹ fail 0 ℹ cancelled 0 ℹ skipped 0 
+== test:media (PostgreSQL 16 docker, --test-concurrency=1)
+ℹ tests 666 ℹ pass 666 ℹ fail 0 ℹ cancelled 0 ℹ skipped 0 
+== npm run test (toàn back-end, không DB)
+ℹ tests 2141 ℹ pass 2141 ℹ fail 0 ℹ cancelled 0 ℹ skipped 0 

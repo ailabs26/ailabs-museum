@@ -89,3 +89,36 @@ it('reports a quarantined mesh once without degrading the usable asset', async (
   expect(onFailure).toHaveBeenCalledWith('a'.repeat(64), { stage: 'mesh', category: 'mesh' }, 1);
   expect(onFailure).toHaveBeenCalledTimes(1); assets.dispose();
 });
+
+it('requests variants idempotently and evicts a detached ready variant for bounded caching', async () => {
+  const value = loaded();
+  const dispose = vi.spyOn((value.scene.children[0] as Mesh).geometry, 'dispose');
+  const load = vi.fn(async () => value);
+  const assets = new RoomModelAssets(load, () => {});
+  assets.start([model('a')]);
+  assets.request(model('a'));
+  await vi.waitFor(() => expect(assets.snapshot['a'.repeat(64)].status).toBe('ready'));
+  expect(load).toHaveBeenCalledTimes(1);
+  expect(assets.evictReady('a'.repeat(64))).toBe(true);
+  expect(dispose).toHaveBeenCalledTimes(1);
+  expect(assets.snapshot['a'.repeat(64)]).toBeUndefined();
+  assets.dispose();
+});
+
+it('holds shared GPU resources until every R3F primitive detaches, including room teardown', async () => {
+  const value = loaded();
+  const dispose = vi.spyOn((value.scene.children[0] as Mesh).geometry, 'dispose');
+  const assets = new RoomModelAssets(async () => value, () => {});
+  assets.start([model('a')]);
+  await vi.waitFor(() => expect(assets.snapshot['a'.repeat(64)].status).toBe('ready'));
+  const releaseFirst = assets.retain(value);
+  const releaseSecond = assets.retain({ ...value });
+  expect(assets.evictReady('a'.repeat(64))).toBe(false);
+  assets.dispose();
+  await Promise.resolve();
+  expect(dispose).not.toHaveBeenCalled();
+  releaseFirst(); releaseFirst();
+  expect(dispose).not.toHaveBeenCalled();
+  releaseSecond();
+  await vi.waitFor(() => expect(dispose).toHaveBeenCalledTimes(1));
+});

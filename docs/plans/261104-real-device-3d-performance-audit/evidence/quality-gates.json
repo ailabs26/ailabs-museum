@@ -1,0 +1,84 @@
+{
+  "observedDateLocal": "2026-11-04",
+  "applicationSourceSha": "d4e1d5647a271cdae808ece9e8210ef6fcad2cef",
+  "workingDirectory": "front-end",
+  "gates": [
+    {
+      "command": "npm.cmd run typecheck",
+      "exitCode": 0,
+      "log": "logs/typecheck.log"
+    },
+    {
+      "command": "npm.cmd run lint",
+      "exitCode": 0,
+      "log": "logs/lint.log"
+    },
+    {
+      "command": "npm.cmd run test:unit",
+      "exitCode": 0,
+      "filesPassed": 43,
+      "testsPassed": 244,
+      "testsFailed": 0,
+      "log": "logs/unit.log"
+    },
+    {
+      "command": "npm.cmd run build",
+      "exitCode": 0,
+      "warning": "Existing chunks exceed 500 kB",
+      "log": "logs/build.log"
+    }
+  ],
+  "browserRegressions": [
+    {
+      "command": "CI=1 PLAYWRIGHT_PREVIEW=1 npm.cmd test -- museum-tour.spec.ts museum-performance.spec.ts museum-resource-budget.spec.ts museum-lifecycle.spec.ts museum-fullscreen.spec.ts museum-immersive-ui.spec.ts museum-navigation.spec.ts museum-interaction.spec.ts museum-camera.spec.ts museum-gallery.spec.ts museum-xr.spec.ts museum-glb.spec.ts tour-2d-fallback.spec.ts museum-audit.spec.ts museum-audit-benchmark.spec.ts --reporter=line",
+      "sourceSha": "7971b44",
+      "exitCode": 1,
+      "passed": 92,
+      "failed": 2,
+      "skipped": 2,
+      "log": "logs/regression-initial.log",
+      "failures": [
+        "Museum lifecycle test counted intentional Home HeroCanvas as museum canvas",
+        "XR central-aisle teleport observed origin z5.8 instead of4; first-run cause unresolved"
+      ],
+      "skips": "Two manual hardware benchmarks opt-in only"
+    },
+    {
+      "command": "CI=1 PLAYWRIGHT_PREVIEW=1 npm.cmd test -- museum-audit.spec.ts museum-lifecycle.spec.ts museum-xr.spec.ts --reporter=line",
+      "sourceSha": "2bb7833",
+      "exitCode": 0,
+      "passed": 17,
+      "failed": 0,
+      "log": "logs/regression-reviewed.log",
+      "scope": "Entire three files after scoped lifecycle correction and review fixes; XR source unchanged"
+    },
+    {
+      "command": "CI=1 PLAYWRIGHT_PREVIEW=1 npm.cmd test -- museum-audit.spec.ts --reporter=line",
+      "sourceSha": "d4e1d56",
+      "exitCode": 0,
+      "passed": 3,
+      "failed": 0,
+      "log": "logs/audit-panel-final.log",
+      "scope": "Disabled path, demand idle, actual touch controls, export, observer cleanup, collapsed reset click"
+    }
+  ],
+  "redProofLogs": [
+    "logs/review-workload-red.log",
+    "logs/review-cli-red.log",
+    "logs/audit-panel-red.log",
+    "logs/cli-runtime-red.log"
+  ],
+  "interpretation": "Software WebGL regression only; do not sum overlapping reruns as independent cases or infer physical FPS from these gates. Physical benchmark evidence is indexed separately.",
+  "analysisToolSourceSha": "03a2990e73f0188b487e7ff2d5e3ff3c69d2b0aa",
+  "hardwareBenchmark": {
+    "command": "CI=1 PLAYWRIGHT_PREVIEW=1 MUSEUM_HARDWARE_AUDIT=1 MUSEUM_AUDIT_LONG_SESSION=1 npm.cmd test -- museum-audit-benchmark.spec.ts --reporter=line",
+    "sourceSha": "d4e1d5647a271cdae808ece9e8210ef6fcad2cef",
+    "exitCode": 0,
+    "passed": 2,
+    "failed": 0,
+    "elapsedMinutes": 14.5,
+    "log": "logs/hardware-final.log",
+    "scope": "Iris Xe hardware headless, fixture5 illustrated exhibits/0GLB;3x30s+30s idle+separate10s trace+601.27s long run+10 mounts+10 switches",
+    "physicalPhonesMeasured": 0
+  }
+}

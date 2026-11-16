@@ -52,12 +52,12 @@ test('exhibit detail loading does not move focus outside the drawer when data ar
 for (const record of [
   { route: 'roles', heading: 'Vai trò', confirm: 'Đồng ý', trigger: 'Xóa' },
   { route: 'rooms', heading: 'Quản lý Phòng trưng bày', confirm: 'Đồng ý', trigger: 'Xóa' },
-  { route: 'exhibits', heading: 'Hiện vật', confirm: 'Xóa vĩnh viễn bản nháp', trigger: '' },
+  { route: 'exhibits', heading: 'Hiện vật', confirm: 'Xóa bản nháp', trigger: '' },
 ]) {
   test(`${record.route} delete restores a stable page target after the invoker disappears`, async ({ page }) => {
     await installOverlayApi(page);
     await page.goto(`/admin/${record.route}`);
-    const trigger = record.trigger ? page.getByRole('button', { name: record.trigger, exact: true }) : page.getByRole('row').filter({ hasText: 'Hiện vật mẫu' }).getByRole('button').last();
+    const trigger = record.trigger ? page.getByRole('button', { name: record.trigger, exact: true }) : page.getByRole('button', { name: 'Xóa hiện vật Hiện vật mẫu', exact: true });
     await trigger.press('Enter');
     await page.getByRole('dialog').getByRole('button', { name: record.confirm, exact: true }).press('Enter');
     await expect(page.getByRole('dialog')).toHaveCount(0);

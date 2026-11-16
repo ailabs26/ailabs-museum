@@ -17,6 +17,9 @@ test('decorative floor joints do not block teleport along the central aisle', as
   await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible(sceneReady);
   await page.getByRole('button', { name: 'Enter VR', exact: true }).click();
   await expect(page.locator('[data-xr-phase="active"]')).toBeVisible();
+  // Wait for both native-manager and scene input ownership before firing a
+  // synchronous simulated trigger. React's input effect commits separately.
+  await expect.poll(() => page.evaluate(() => window.museumXrFixture.listeners.at(-1)?.select)).toBe(2);
   await aimXr(page, [0, 0, 4]);
   await page.evaluate(() => window.museumXrFixture.select());
   await expect.poll(() => page.evaluate(() => {
@@ -78,13 +81,19 @@ test('a supported but refused VR request preserves canvas, selection and permits
   await page.getByRole('button', { name: 'Enter VR', exact: true }).click();
   expect(await page.evaluate(() => (window as unknown as { requests: number }).requests)).toBe(2);
 });
-test('actual context restores the same canvas and keeps logical selection', async ({ page }) => {
+test('actual context restores the same canvas and keeps logical selection', async ({ page }, info) => {
   await installRendererProbe(page);
   const { requests } = await installFiveModels(page);
   await page.goto('/tour.html?room=sculpture'); await page.getByRole('button', { name: 'Mở phòng 3D', exact: true }).click();
   const canvas = page.getByLabel('Phòng trưng bày 3D', { exact: true }); await expect(canvas).toBeVisible(sceneReady);
   await expect(page.getByText('Đã tải 5/5 mô hình 3D', { exact: true })).toBeVisible();
   await selectMuseumExhibit(page, 'Xem chi tiết Hiện vật 2');
+  const beforeFrames = (await readRendererProbe(page)).at(-1)!.frames;
+  await page.locator('[data-webgl-status]').evaluate(node => {
+    const statuses = ['ready']; Reflect.set(window, 'recoveryStatuses', statuses);
+    const observer = new MutationObserver(() => statuses.push(node.getAttribute('data-webgl-status')!));
+    observer.observe(node, { attributes: true, attributeFilter: ['data-webgl-status'] });
+  });
   await canvas.evaluate((node: HTMLCanvasElement) => {
     node.dataset.identity = 'original';
     const extension = node.getContext('webgl2')!.getExtension('WEBGL_lose_context')!;
@@ -98,8 +107,12 @@ test('actual context restores the same canvas and keeps logical selection', asyn
   await expect(page.getByRole('complementary', { name: 'Chi tiết hiện vật' })).toContainText('Hiện vật 2');
   await expect(page.getByRole('button', { name: 'Góc nhìn ban đầu', exact: true })).toBeEnabled();
   await expect.poll(async () => (await readRendererProbe(page)).at(-1)!.triangles).toBeGreaterThan(0);
+  expect((await readRendererProbe(page)).at(-1)!.frames).toBeGreaterThan(beforeFrames);
+  const statuses = await page.evaluate(() => Reflect.get(window, 'recoveryStatuses') as string[]);
+  expect(statuses).toEqual(['ready', 'recovering', 'verifying', 'ready']);
   expect(requests).toEqual([1, 1, 1, 1, 1]);
-  await page.screenshot({ path: 'tmp/xr-restored.png', fullPage: true });
+  await info.attach('webgl-recovery.json', { body: JSON.stringify({ statuses, beforeFrames, renderers: await readRendererProbe(page), requests }, null, 2), contentType: 'application/json' });
+  await page.screenshot({ path: info.outputPath('xr-restored.png'), fullPage: true });
 });
 
 test('simulated native XR renders stereo, selects once, teleports, snap-turns and restores web camera without reloading GLBs', async ({ page }) => {

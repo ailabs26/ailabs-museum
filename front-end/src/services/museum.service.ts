@@ -1,7 +1,8 @@
 import type { z } from 'zod';
 import { http } from '@/core/api/http-client';
 import { ApiException } from '@/core/api/api-error';
-import { roomDetailSchema, roomListSchema, roomResponseSchema } from '@/validations/roomSchema';
+import { z as zod } from 'zod';
+import { exhibitSearchResponseSchema, roomDetailSchema, roomListSchema, roomResponseSchema } from '@/validations/roomSchema';
 import type { PublicModel, RoomSummary } from '@/validations/roomSchema';
 
 async function readPublicContent<Schema extends z.ZodTypeAny>(url: string, schema: Schema, signal?: AbortSignal): Promise<z.infer<Schema>> {
@@ -11,6 +12,10 @@ async function readPublicContent<Schema extends z.ZodTypeAny>(url: string, schem
   if (!parsed.success) throw new ApiException('Dữ liệu phòng không hợp lệ từ máy chủ.', 502);
   return parsed.data.data;
 }
+
+const SEARCH_PAGE_SIZE = 12;
+
+const exhibitLocationSchema = zod.object({ exhibitId: zod.string().uuid(), roomSlug: zod.string().min(1) });
 
 export const museumService = {
   async getModelBinary(model: PublicModel, signal: AbortSignal, onProgress: (ratio: number) => void) {
@@ -22,6 +27,17 @@ export const museumService = {
       throw new ApiException('Tệp mô hình không đầy đủ.', 502);
     }
     return response.data;
+  },
+  /** Tìm hiện vật đã xuất bản trên toàn bảo tàng (phân trang). */
+  async searchExhibits(q: string, page: number, signal?: AbortSignal) {
+    const response = await http.raw.get<unknown>('/rooms/search', { params: { q, page, pageSize: SEARCH_PAGE_SIZE }, signal });
+    const parsed = exhibitSearchResponseSchema.safeParse(response.data);
+    if (!parsed.success) throw new ApiException('Dữ liệu tìm kiếm không hợp lệ từ máy chủ.', 502);
+    return { items: parsed.data.data, ...parsed.data.meta };
+  },
+  /** Phòng chứa hiện vật công khai, cho liên kết cố định `/e/<id>` của mã QR. Không công khai thì 404. */
+  exhibitLocation(exhibitId: string, signal?: AbortSignal) {
+    return readPublicContent(`/public/exhibits/${encodeURIComponent(exhibitId)}/location`, exhibitLocationSchema, signal);
   },
   listRooms(signal?: AbortSignal) {
     return readPublicContent('/rooms', roomListSchema, signal);

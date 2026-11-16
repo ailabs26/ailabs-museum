@@ -4,7 +4,10 @@ import { saveBlob } from './saveBlob';
  * Ghép watermark nghệ thuật Aura Museum lên ảnh chụp cảnh 3D rồi tải về.
  * Trả về false nếu không dựng được ảnh (ví dụ canvas rỗng).
  */
-export function downloadScenePhoto(dataUrl: string | null, roomName?: string): Promise<boolean> {
+export function downloadScenePhoto(
+  dataUrl: string | null,
+  { roomName, caption = 'Ảnh kỷ niệm không gian 3D', locale = 'vi-VN' }: { roomName?: string; caption?: string; locale?: string } = {},
+): Promise<boolean> {
   return new Promise((resolve) => {
     if (!dataUrl || !dataUrl.startsWith('data:image')) {
       resolve(false);
@@ -38,8 +41,8 @@ export function downloadScenePhoto(dataUrl: string | null, roomName?: string): P
 
       ctx.fillStyle = 'rgba(241,245,249,0.9)';
       ctx.font = `600 ${fontSub}px Inter, sans-serif`;
-      const date = new Date().toLocaleDateString('vi-VN');
-      ctx.fillText(`${roomName ? roomName + ' · ' : ''}Ảnh kỷ niệm không gian 3D · ${date}`, padX, baseY + fontSub + 6);
+      const date = new Date().toLocaleDateString(locale);
+      ctx.fillText(`${roomName ? roomName + ' · ' : ''}${caption} · ${date}`, padX, baseY + fontSub + 6);
 
       canvas.toBlob((blob) => {
         if (!blob) { resolve(false); return; }

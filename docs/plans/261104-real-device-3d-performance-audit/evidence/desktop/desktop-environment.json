@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "buildSha": "d4e1d5647a271cdae808ece9e8210ef6fcad2cef",
+    "device": "D01 ASUS Vivobook X1405VA; Intel i5-13500H; Iris Xe driver32.0.101.7076; RAM16786575360 bytes; Windows11 10.0.26200",
+    "conditions": "Local fixture over loopback; Edge hardware ANGLE D3D11; battery91percent at preflight, AC=True, charging=True; Balanced power plan; thermal and battery-saver state unavailable; display refresh unavailable; no concurrent build/test; controlled automated input, no CPU/network throttling",
+    "scenario": "P03",
+    "kind": "continuous",
+    "source": "fixture",
+    "target": "desktop"
+  },
+  "environment": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+    "viewportWidth": 1280,
+    "viewportHeight": 720,
+    "devicePixelRatio": 1,
+    "hardwareConcurrencyHint": 16,
+    "deviceMemoryGiBHint": 16,
+    "refreshRateHz": null,
+    "thermalState": null,
+    "gpuMemoryBytes": null,
+    "gpuTimeMs": null,
+    "timeOrigin": 1793802090243.7,
+    "longTaskSupported": true,
+    "rendererId": 1,
+    "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x0000A7A0) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+  },
+  "browser": "156.0.4314.58",
+  "headless": true,
+  "hardwareFlags": "no forced software ANGLE; default Playwright Chromium flags",
+  "workload": "museumContent.roomA: 5 illustrated exhibits, 0 GLB; alternating lateral keys every2s + sinusoidal mouse drag every~16ms",
+  "warmupMs": 10000,
+  "presentedFrameRate": "unavailable",
+  "gpuMemoryBytes": "unavailable",
+  "gpuTimeMs": "unavailable"
+}

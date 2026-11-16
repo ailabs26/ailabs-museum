@@ -1,14 +1,15 @@
-import { GalleryArchitecture } from './GalleryArchitecture';
+import { RotundaArchitecture } from './RotundaArchitecture';
 import { MUSEUM_ROOM_SIZE } from '@/interfaces/museumScene';
 import { useGallerySurfaces } from './GallerySurfaces';
 
 /** Preserve API placement bounds: x ±7, z ±8, floor 0, ceiling 5 metres. */
-export function MuseumRoom() {
-  const { stone, plaster } = useGallerySurfaces();
+/** Vỏ Rotunda dùng cho mọi phòng; `hasHeroHalo` chỉ bật khi bục trung tâm thật sự có mặt (phòng theo template). */
+export function MuseumRoom({ roomName, hasHeroHalo = false }: { roomName?: string; hasHeroHalo?: boolean }) {
+  const { plaster, floor } = useGallerySurfaces();
   return (
     <group>
-      <GalleryArchitecture />
-      <mesh position={[0, -0.12, 0]} userData={{ museumFloor: true }} material={stone} receiveShadow>
+      <RotundaArchitecture roomName={roomName} hasHeroHalo={hasHeroHalo} />
+      <mesh position={[0, -0.12, 0]} userData={{ museumFloor: true }} material={floor} receiveShadow>
         <boxGeometry args={[MUSEUM_ROOM_SIZE.width + 0.4, 0.24, MUSEUM_ROOM_SIZE.depth + 0.4]} />
       </mesh>
       {[-1, 1].map((side) => (

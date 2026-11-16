@@ -12,6 +12,11 @@ test('mobile CMS navigation exposes named keyboard controls', async ({ page }) =
   await page.keyboard.press('Space');
   await expect(page.getByRole('button', { name: 'Đóng điều hướng quản trị', exact: true })).toBeFocused();
   await page.keyboard.press('Space');
+  // Thứ tự Tab trong header sau burger.
+  for (const name of ['Tìm nhanh (Ctrl K)', /^Thông báo \(/, /^Chuyển giao diện/]) {
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name })).toBeFocused();
+  }
   await page.keyboard.press('Tab');
   const account = page.getByRole('button', { name: 'Tài khoản Reviewer', exact: true });
   await expect(account).toBeFocused();
@@ -42,6 +47,8 @@ test('CMS login and logout can be completed with keyboard-only controls', async 
   await page.keyboard.press('Enter');
   await expect(page.getByRole('menuitem', { name: 'Đăng xuất' })).toBeVisible();
   await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menuitem', { name: 'Cài đặt' })).toBeFocused();
+  await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('menuitem', { name: 'Đăng xuất' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/admin\/login$/);
@@ -59,7 +66,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await page.keyboard.press('Tab');
       const first = width < 768
         ? page.getByRole('button', { name: 'Mở điều hướng quản trị', exact: true })
-        : page.getByRole('button', { name: 'Tài khoản Reviewer', exact: true });
+        : page.getByRole('button', { name: 'Thu gọn thanh bên', exact: true });
       await expect(first).toBeFocused();
       await expect(first).toBeInViewport();
       await expect(first).toHaveCSS('outline-style', 'solid');

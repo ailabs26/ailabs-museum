@@ -51,3 +51,11 @@ Dự án **Aura Museum** giải quyết bài toán xây dựng một không gian
 - Tương tác đa người dùng trong cùng một phòng (Multiplayer / Realtime).
 - Hệ thống bán vé và thanh toán trực tuyến.
 - Bộ công cụ chỉnh sửa hoặc tạo mô hình 3D trực tiếp trên CMS.
+
+## 4. Tài liệu
+
+- **Bàn giao & nghiệm thu:** [`docs/handover/`](docs/handover/) — [bàn giao hệ thống](docs/handover/system-handover.md), [biên bản nghiệm thu](docs/handover/acceptance-report.md).
+- **Hướng dẫn sử dụng CMS:** [`docs/guides/cms-user-guide.md`](docs/guides/cms-user-guide.md).
+- **Tài liệu API (Swagger/OpenAPI):** [`docs/api/`](docs/api/) — Swagger UI động tại `/api/docs`, spec tĩnh [`openapi.json`](docs/api/openapi.json), trang Redoc [`index.html`](docs/api/index.html).
+- **Yêu cầu & kiến trúc:** [`docs/requirements.md`](docs/requirements.md), [`docs/architecture/`](docs/architecture/).
+- **Chạy nhanh:** xem [bàn giao hệ thống §4](docs/handover/system-handover.md#4-cài-đặt--chạy-local) hoặc `./start.sh`.

@@ -1,0 +1,10 @@
+== M4: record() không an toàn, ghi trước markSucceeded
+ℹ tests 45
+ℹ pass 44
+ℹ fail 1
+✖ TC21 — failure path: ghi audit lỗi → job vẫn succeeded có mediaId, không có patch failed (8.109326ms)
+== M5: ghi audit cả khi job failed
+ℹ tests 45
+ℹ pass 44
+ℹ fail 1
+✖ TC22 — negative: job failed (file bị từ chối, storage lỗi) → không có audit media.upload (9.558402ms)
