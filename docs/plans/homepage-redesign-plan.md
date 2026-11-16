@@ -185,10 +185,12 @@
 **Files:** `HomePage.tsx`, optional public UI seed/translation tests, `homepage-redesign.spec.ts`.
 **Consumes:** `PublicLocaleProvider`, SDD 11. **Produces:** copy mới không mất bản dịch, focus/contrast/reduced motion hợp lệ.
 
-- [ ] **Bước 1 — Locale:** audit các key cũ đang có seed; dùng lại key khi cùng nghĩa. Key/copy mới (nếu có) cập nhật rõ ràng trong `public-ui-strings.ts` cho `vi/en/fr/zh/ko/ja` theo quy trình duyệt ngôn ngữ; fixtures/locales kiểm biến đổi VI→EN/FR/ZH/KO/JA và fallback API error. Không sửa backend runtime.
-- [ ] **Bước 2 — Semantics:** chỉ một H1; H2 theo Hero→Featured→Immersive; `aria-labelledby` khớp, image alt đúng, neutral art `aria-hidden`, CTA và link chi tiết tiếp cận bằng bàn phím, có focus ring.
-- [ ] **Bước 3 — Motion:** không infinite particle/soundwave/glow, `prefers-reduced-motion` tắt mọi hiệu ứng còn lại; không làm thông tin/CTA phụ thuộc animation. Đo contrast chữ trên hero và label trên media.
-- [ ] **Bước 4 — Test/commit:** targeted locale/keyboard/reduced-motion, typecheck/lint/build. Nếu translation seeds yêu cầu publish vào CMS, ghi điều kiện triển khai tách biệt, không báo all locales production ready khi chưa verify.
+- [x] **Bước 1 — Locale:** giữ lại các key đã có seed; `public-ui-translations.spec.ts` kiểm đủ en/fr/zh/ko/ja và fallback khi API lỗi, vi là locale mặc định. Không sửa backend runtime/seed trong HR-10.
+- [x] **Bước 2 — Semantics:** browser assertion xác nhận một H1, H2 theo Hero→Featured→Immersive, `aria-labelledby` trỏ đúng heading, neutral artwork `aria-hidden`, image alt và hero keyboard/focus ring.
+- [x] **Bước 3 — Motion:** reduced-motion trả `transition-property: none`; Home không còn animation lặp vô hạn. Contrast tính từ token: hero text 15.61:1, bronze label và CTA text 6.98:1.
+- [x] **Bước 4 — Test/commit:** homepage + public UI translations 21/21; typecheck/lint/build pass. Không cần thay seed/publish translation trong HR-10; không claim screen-reader manual verification.
+
+**HR-10 evidence:** Commit `33fa865`; heading-order regression ban đầu đỏ vì Featured/Immersive bị đảo, sau DOM reorder test pass.
 
 **Commit dự kiến:** `fix(home): align editorial content with locale and accessibility` (nếu có fix); nếu chỉ thêm tests: `test(home): cover locale and accessible navigation`.
 

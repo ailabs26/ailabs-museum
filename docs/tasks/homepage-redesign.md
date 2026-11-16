@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-REDESIGN: Public Homepage Editorial Redesign
 
-**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-09 hoàn tất, HR-10 tiếp theo.
+**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-10 hoàn tất, HR-11 tiếp theo.
 **Nguồn code khảo sát:** `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841` tại 15/11/2026; xác minh lại khi thực thi.
 **Nhánh hiện tại:** `feat/public-homepage-redesign` từ `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841`; PR base `dev`.
 **Plan:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md).
@@ -111,10 +111,10 @@ Thiết kế lại **Homepage `/`** theo phong cách *Contemporary Heritage Edit
 
 ### HR-10 — i18n và accessibility
 
-- [ ] Reuse translation keys; thêm key mới vào seed chỉ khi cần, kiểm sáu locale & fallback API lỗi, không báo CMS đã cập nhật nếu chưa publish.
-- [ ] Kiểm một H1, H2 hợp lý, alt caption/landmark, CTA keyboard/focus, contrast, screen-reader labels.
-- [ ] `prefers-reduced-motion`: tắt animation bắt buộc, không còn hiệu ứng vô hạn; test code/browser.
-- [ ] Commit fix riêng nếu behavior thay đổi, hoặc test-only riêng nếu chỉ bổ sung bằng chứng.
+- [x] Reuse các UI keys đã seed; public UI translations pass cho vi/en/fr/zh/ko/ja và fallback khi API lỗi; không sửa seed/CMS.
+- [x] Browser kiểm một H1, H2 theo Hero → Featured → Immersive, landmark labels, neutral artwork aria-hidden, poster alt, keyboard/focus.
+- [x] Reduced motion tắt transition; contrast token đo được 15.61:1 cho hero text và 6.98:1 cho bronze label/CTA.
+- [x] Fix thứ tự section để khớp hierarchy; code/test commit `33fa865`.
 
 ### HR-11 — Integration / no-WebGL
 
@@ -170,7 +170,7 @@ Sử dụng các tập test tồn tại thực tế; `homepage-redesign.spec.ts`
 | HR-07 | dc6eac1 | homepage + public translations 20/20; typecheck/lint pass; seed spec 4/5 (baseline `ui.guided2d.progress` missing) | 390/1440 light/dark screenshots; translation seed added 8, rerun added 0; UI sign-off deferred to HR-12 | Complete |
 | HR-08 | a4b7ddd | Homepage + featured Playwright 15/15; typecheck/lint; `git diff --check` pass | `.superpowers/sdd/homepage-redesign-plan/hr08-home-{390,1440}-{light,dark}.png`; ảnh neutral do backend API không chạy | Complete |
 | HR-09 | 8b99bb3 | `home-featured.spec.ts` 8/8; typecheck/lint pass; poster object-fit + natural dimensions and CTA viewport bounds pass | 10 ảnh full-page 320/390/768/1024/1440 light/dark; no overflow, long room/exhibit text, landscape 844×390 | Complete |
-| HR-10 | — | Chưa chạy | — | TODO |
+| HR-10 | 33fa865 | homepage + `public-ui-translations` 21/21; typecheck/lint/build pass; reduced motion/semantics/contrast checked | locale API mocked from current UI seed; no screen-reader device/manual audit | Complete |
 | HR-11 | — | Chưa chạy | — | TODO |
 | HR-12 | — | Chưa chạy | Chưa chụp | TODO |
 
