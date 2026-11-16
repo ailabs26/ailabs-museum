@@ -49,9 +49,7 @@
 .heroImage { width: 100%; height: 100%; min-height: 0; padding: 24px 24px 0; }
 .posterCaption { padding: 14px 24px 20px; font: 600 16px/1.4 var(--public-font-display); }
 .content { padding-top: 32px; padding-bottom: 0; }
-.about { padding-block: 48px; border-top: 1px solid var(--public-border); }
 .featured { padding-block: clamp(44px, 6vw, 72px); border-top: 1px solid var(--public-border); background: var(--public-paper); }
-.aboutHead { margin-bottom: 28px; }
 .featuredHeader { max-width: 70ch; margin-bottom: 28px; }
 .featuredIntro { max-width: 65ch; margin: 0; color: var(--public-muted); font: 400 16px/1.7 var(--public-font-body); }
 .eyebrow { margin: 0 0 12px; color: var(--public-forest); font: 700 12px/1.4 var(--public-font-body); letter-spacing: 0.14em; text-transform: uppercase; }
@@ -65,6 +63,20 @@
 .bentoText { margin: 0; color: var(--public-muted); font: 400 15px/1.65 var(--public-font-body); }
 .bentoChips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 20px; }
 .bentoChips span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--public-border); border-radius: 999px; background: var(--public-bg); color: var(--public-muted); font: 600 12px/1.4 var(--public-font-body); }
+.immersive { padding-block: 48px; border-top: 1px solid var(--public-border); }
+.immersiveGrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .9fr); align-items: center; gap: clamp(32px, 5vw, 72px); }
+.immersiveCopy { min-width: 0; max-width: 68ch; }
+.immersiveTitle { margin: 0 0 16px; color: var(--public-ink); font: 600 clamp(30px, 3.2vw, 42px)/1.2 var(--public-font-display); text-wrap: balance; }
+.immersiveIntro { max-width: 65ch; margin: 0; color: var(--public-muted); font: 400 16px/1.7 var(--public-font-body); }
+.storyPoints { display: grid; gap: 22px; margin: 28px 0; padding: 0; list-style: none; }
+.storyPoint { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: start; gap: 14px; color: var(--public-forest); }
+.storyPointTitle { margin: 0 0 4px; color: var(--public-ink); font: 600 17px/1.35 var(--public-font-display); }
+.storyPointText { margin: 0; color: var(--public-muted); font: 400 14px/1.6 var(--public-font-body); }
+.storyActions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.storyActions .textLink { margin-top: 0; }
+.storyArtwork { position: relative; display: grid; min-height: 360px; place-items: center; overflow: hidden; border: 1px solid var(--public-border); border-radius: var(--public-radius-card); background: var(--public-sand); color: var(--public-forest); }
+.storyOrbit { position: absolute; width: min(70%, 320px); aspect-ratio: 1; border: 1px solid currentColor; border-radius: 50%; opacity: .45; transform: scaleY(.52) rotate(-28deg); }
+.storyOrbit::before { position: absolute; inset: 18%; border: 1px solid var(--public-bronze); border-radius: 50%; content: ''; }
 .featuredContent { margin-top: 0; }
 .featuredRoom { margin: 0 0 8px; color: var(--public-ink); font: 600 20px/1.3 var(--public-font-display); overflow-wrap: anywhere; }
 .textLink { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; margin-top: 20px; padding: 10px 16px; border: 1px solid var(--public-border); border-radius: var(--public-radius-control); color: var(--public-forest); font: 600 14px/1.4 var(--public-font-body); text-decoration: none; }
@@ -75,6 +87,8 @@
   .heroInner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 480px; }
   .heroArtwork { min-height: 340px; }
   .title { font-size: clamp(38px, 5vw, 56px); }
+  .immersiveGrid { grid-template-columns: minmax(0, 1fr); }
+  .storyArtwork { min-height: 300px; }
 }
 @media (max-width: 48em) {
   .heroInner { grid-template-columns: minmax(0, 1fr); gap: 32px; padding-block: 40px; }
@@ -82,9 +96,10 @@
   .title { font-size: clamp(38px, 10vw, 54px); }
   .introduction { font-size: 16px; }
   .ctaRow { align-items: stretch; flex-direction: column; }
+  .storyActions { align-items: stretch; flex-direction: column; }
+  .storyActions > * { width: 100%; }
   .bento { grid-template-columns: minmax(0, 1fr); }
   .bentoLarge, .bentoWide { grid-row: auto; grid-column: auto; }
-  .about { padding-block: 36px; }
   .featured { padding-block: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {

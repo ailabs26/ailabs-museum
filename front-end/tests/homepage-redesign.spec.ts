@@ -118,3 +118,31 @@ test('failed hero image uses its fallback without losing the real exhibit link',
   await expect(hero.getByRole('link', { name: /Hiện vật 1/ })).toHaveAttribute('href', `/collection/sculpture/exhibits/${imageExhibit.id}`);
   await expect(hero.getByRole('img', { name: 'Ảnh hiện vật' })).toHaveCount(0);
 });
+
+test('homepage story presents real 3D and audio features with working 3D and 2D links', async ({ page }) => {
+  await installMuseumApi(page);
+  for (const [width, expectedColumns] of [[390, 1], [768, 1], [1440, 2]] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const story = page.getByRole('region', { name: 'Hai cách khám phá di sản' });
+    await expect(story.getByRole('heading', { level: 2 })).toHaveText('Hai cách khám phá di sản');
+    await expect(story.getByText('Chọn tham quan 3D hoặc xem bộ sưu tập hiện vật ở dạng 2D.')).toBeVisible();
+    await expect(story.getByRole('listitem')).toHaveCount(2);
+    await expect(story.getByText('Tham quan trong không gian 3D')).toBeVisible();
+    await expect(story.getByText('Lắng nghe thuyết minh')).toBeVisible();
+    const tourLink = story.getByRole('link', { name: 'Vào tham quan 3D' });
+    await expect(tourLink).toHaveAttribute('href', '/tour');
+    await expect(story.getByRole('link', { name: 'Xem bộ sưu tập 2D' })).toHaveAttribute('href', '/collection');
+    await expect(story.getByText(/WCAG|100%|Quest|Pico|Vive|WebXR/i)).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const columns = await story.evaluate((section) =>
+      getComputedStyle(section.firstElementChild!).gridTemplateColumns.split(' ').length);
+    expect(columns).toBe(expectedColumns);
+    if (width === 1440) {
+      await tourLink.focus();
+      await tourLink.press('Enter');
+      await expect(page).toHaveURL(/\/tour$/);
+    }
+  }
+});

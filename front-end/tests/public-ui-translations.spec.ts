@@ -36,7 +36,13 @@ test.describe('Giao diện Client theo ngôn ngữ', () => {
 
       await expectNoVietnamese(page.locator('header'));
       await expectNoVietnamese(page.locator('footer'));
-      await expectNoVietnamese(page.locator('section[aria-labelledby="about-title"]'));
+      const story = page.getByRole('region', { name: value('ui.home.story.title') });
+      await expectNoVietnamese(story);
+      await expect(story).toContainText(value('ui.home.story.intro'));
+      await expect(story).toContainText(value('ui.home.story.tour.title'));
+      await expect(story).toContainText(value('ui.home.story.audio.title'));
+      await expect(story.getByRole('link', { name: value('ui.home.story.cta.tour') })).toHaveAttribute('href', '/tour');
+      await expect(story.getByRole('link', { name: value('ui.home.story.cta.collection') })).toHaveAttribute('href', '/collection');
       const hero = page.locator('section[aria-labelledby="home-title"]');
       await expectNoVietnamese(hero);
       await expect(hero).toContainText(value('ui.home.badge'));

@@ -1,5 +1,5 @@
 import { Container, Title } from '@mantine/core';
-import { IconAccessible, IconArrowRight, IconCube, IconDeviceGamepad2, IconHeadphones, IconSparkles } from '@tabler/icons-react';
+import { IconArrowRight, IconCube, IconHeadphones } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { usePublicLocale } from '@/core/i18n/public-locale';
 import { localizeExhibit, localizedAltText } from '@/helpers/localizeExhibit';
@@ -69,43 +69,46 @@ export function HomePage() {
       </section>
 
       <Container size="xl" className={classes.content}>
-        <section className={classes.about} aria-labelledby="about-title">
-          <div className={classes.aboutHead}>
-            <p className={classes.eyebrow}>{t('ui.home.about.eyebrow', 'Về Aura Museum')}</p>
-            <Title order={2} id="about-title" className={classes.sectionTitle}>
-              {t('ui.home.about.title.first', 'Không gian số.')}{' '}
-              <span className={classes.titleGradient}>{t('ui.home.about.title.second', 'Kết nối thật.')}</span>
-            </Title>
-          </div>
-          <div className={classes.bento}>
-            <article className={`${classes.bentoCard} ${classes.bentoLarge}`}>
-              <span className={classes.bentoIcon}><IconCube size={26} aria-hidden="true" /></span>
-              <h3 className={classes.bentoTitle}>{t('ui.home.bento.xr.title', 'Không gian thực tế ảo WebXR nhập vai')}</h3>
-              <p className={classes.bentoText}>
-                {t('ui.home.bento.xr.text', 'Dạo bước giữa phòng triển lãm 3D ngay trên trình duyệt. Tương thích kính VR (Quest, Pico, HTC Vive) và điều khiển linh hoạt WASD / cảm ứng.')}
+        <section className={classes.immersive} aria-labelledby="immersive-title">
+          <div className={classes.immersiveGrid}>
+            <div className={classes.immersiveCopy}>
+              <Title order={2} id="immersive-title" className={classes.immersiveTitle}>
+                {t('ui.home.story.title', 'Hai cách khám phá di sản')}
+              </Title>
+              <p className={classes.immersiveIntro}>
+                {t('ui.home.story.intro', 'Chọn tham quan 3D hoặc xem bộ sưu tập hiện vật ở dạng 2D.')}
               </p>
-              <span className={classes.bentoChips}>
-                <span><IconDeviceGamepad2 size={14} aria-hidden="true" /> WASD / Touch</span>
-                <span>Quest · Pico · Vive</span>
-              </span>
-            </article>
-            <article className={classes.bentoCard}>
-              <span className={classes.bentoIcon}><IconHeadphones size={24} aria-hidden="true" /></span>
-              <h3 className={classes.bentoTitle}>{t('ui.home.bento.audio.title', 'Thuyết minh âm thanh & sóng nhạc động')}</h3>
-              <p className={classes.bentoText}>{t('ui.home.bento.audio.text', 'Audio Player với phụ đề WebVTT song ngữ đồng bộ từng câu nói.')}</p>
-            </article>
-            <article className={classes.bentoCard}>
-              <span className={classes.bentoIcon}><IconSparkles size={24} aria-hidden="true" /></span>
-              <h3 className={classes.bentoTitle}>{t('ui.home.bento.detail.title', 'Tái hiện di sản độ chi tiết cao')}</h3>
-              <p className={classes.bentoText}>{t('ui.home.bento.detail.text', 'Soi rõ hoa văn, chất liệu gốm sứ / đồng thau cùng các điểm chú thích thông minh.')}</p>
-            </article>
-            <article className={`${classes.bentoCard} ${classes.bentoWide}`}>
-              <span className={classes.bentoIcon}><IconAccessible size={24} aria-hidden="true" /></span>
-              <h3 className={classes.bentoTitle}>{t('ui.home.bento.access.title', 'Tiếp cận toàn diện (WCAG 2.2 AA)')}</h3>
-              <p className={classes.bentoText}>
-                {t('ui.home.bento.access.text', '100% điều hướng bàn phím, tương phản đạt chuẩn và chế độ dự phòng 2D mượt mà khi thiết bị không hỗ trợ WebGL.')}
-              </p>
-            </article>
+              <ul className={classes.storyPoints}>
+                <li className={classes.storyPoint}>
+                  <IconCube size={22} aria-hidden="true" />
+                  <div>
+                    <h3 className={classes.storyPointTitle}>{t('ui.home.story.tour.title', 'Tham quan trong không gian 3D')}</h3>
+                    <p className={classes.storyPointText}>{t('ui.home.story.tour.text', 'Khám phá các phòng và hiện vật qua trang Tham quan 3D.')}</p>
+                  </div>
+                </li>
+                <li className={classes.storyPoint}>
+                  <IconHeadphones size={22} aria-hidden="true" />
+                  <div>
+                    <h3 className={classes.storyPointTitle}>{t('ui.home.story.audio.title', 'Lắng nghe thuyết minh')}</h3>
+                    <p className={classes.storyPointText}>{t('ui.home.story.audio.text', 'Một số hiện vật có thuyết minh âm thanh trên trang chi tiết.')}</p>
+                  </div>
+                </li>
+              </ul>
+              <div className={classes.storyActions}>
+                <Link to="/tour" className={classes.ctaPrimary}>
+                  <IconCube size={18} aria-hidden="true" />
+                  {t('ui.home.story.cta.tour', 'Vào tham quan 3D')}
+                </Link>
+                <Link to="/collection" className={classes.textLink}>
+                  {t('ui.home.story.cta.collection', 'Xem bộ sưu tập 2D')}
+                  <IconArrowRight size={18} aria-hidden="true" />
+                </Link>
+              </div>
+            </div>
+            <div className={classes.storyArtwork} aria-hidden="true">
+              <span className={classes.storyOrbit} />
+              <IconCube size={88} stroke={1.2} />
+            </div>
           </div>
         </section>
       </Container>
