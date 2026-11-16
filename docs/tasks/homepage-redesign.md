@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-REDESIGN: Public Homepage Editorial Redesign
 
-**Trạng thái:** HR-01–HR-11 hoàn tất trên `feat/public-homepage-redesign`; HR-12 gates đã pass, đang chờ người dùng duyệt visual trước khi kết luận.
+**Trạng thái:** HR-01–HR-12 hoàn tất trên `feat/public-homepage-redesign`; người dùng đã duyệt visual ngày 16/11/2026.
 **Nguồn code khảo sát:** `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841` tại 15/11/2026; xác minh lại khi thực thi.
 **Nhánh hiện tại:** `feat/public-homepage-redesign` từ `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841`; PR base `dev`.
 **Plan:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md).
@@ -128,21 +128,21 @@ Thiết kế lại **Homepage `/`** theo phong cách *Contemporary Heritage Edit
 - [x] Typecheck, lint, unit (408/408), build và focused Playwright (71/71) pass. Build warning >500 kB đã có trên `origin/dev`: `draco_decoder` 512.47 và `react-apexcharts` 543.94 không đổi; `react-three-fiber` 820.71 + `sanitizeModel` 64.41 trên baseline gộp thành `sanitizeModel` 884.24 (tổng giảm ~0.88 kB); `main` giảm 1,126.14 → 1,122.00 kB.
 - [x] Chụp 20 ảnh full-page: 5 widths × 2 themes × poster/neutral ở `.superpowers/sdd/homepage-redesign-plan/hr12-home-{320,390,768,1024,1440}-{light,dark}-{poster,neutral}.png`; poster nạp từ API local GET-only, là dữ liệu mẫu phát triển. Kiểm tra trực quan 320 và 1440 light/dark.
 - [x] Rà branch log, diff/staged diff, file scope và `git diff --check`; screenshot/temp capture không được stage.
-- [x] Ghi SHA/test/warning/screenshot và các giới hạn manual QA; docs commit riêng. Push/PR/merge chưa thực hiện.
+- [x] Ghi SHA/test/warning/screenshot và các giới hạn manual QA; người dùng đã duyệt giao diện ngày 16/11/2026. Push/PR/merge chưa thực hiện.
 
 ## Acceptance criteria
 
-- [ ] Homepage có Hero dark theo SDD, CTA `/tour` + `/collection`, 1 H1, visual neutral khi không có poster.
-- [ ] Có poster thật: ảnh, alt, tên, link detail cùng exhibit; không có poster: không hiện tên/link ảnh giả.
-- [ ] Không có hardcoded “Trống đồng Đông Sơn”, niên đại `~2.500 năm`, stats `5+`/`100%`/`0s` hoặc claims WCAG certification.
-- [ ] Featured 0–3 giữ first-room/order logic, không quét room khác, shared Card/Grid không fork.
-- [ ] Không tự mount Canvas, HeroCanvas/Three/R3F chunk hoặc request GLB ở route `/` khi chưa vào `/tour`.
-- [ ] Loading/empty/HTTP/schema error/retry/stale refetch không render thông tin sai; CTA hero độc lập network.
-- [ ] Immersive Story có hai điểm 3D/audio và CTA có thật; không dùng ảnh không có quyền đại diện cho phòng.
-- [ ] Light/dark, vi/en/fr/zh/ko/ja, keyboard/focus, reduced motion và 320–1440px có kiểm chứng.
-- [ ] Typecheck, lint, unit/build và affected Playwright pass; nếu live API skip phải ghi rõ chưa kiểm real integration.
-- [ ] Không sửa API/backend runtime/DB, Admin/CMS UI, Collection/Detail/Tour logic, global theme hoặc visitor stores.
-- [ ] Commit độc lập, review diff, có test và evidence thật; đã nhận sign-off giao diện trước khi kết luận hoàn thành.
+- [x] Homepage có Hero dark theo SDD, CTA `/tour` + `/collection`, 1 H1, visual neutral khi không có poster.
+- [x] Có poster thật: ảnh, alt, tên, link detail cùng exhibit; không có poster: không hiện tên/link ảnh giả.
+- [x] Không có hardcoded “Trống đồng Đông Sơn”, niên đại `~2.500 năm`, stats `5+`/`100%`/`0s` hoặc claims WCAG certification.
+- [x] Featured 0–3 giữ first-room/order logic, không quét room khác, shared Card/Grid không fork.
+- [x] Không tự mount Canvas, HeroCanvas/Three/R3F chunk hoặc request GLB ở route `/` khi chưa vào `/tour`.
+- [x] Loading/empty/HTTP/schema error/retry/stale refetch không render thông tin sai; CTA hero độc lập network.
+- [x] Immersive Story có hai điểm 3D/audio và CTA có thật; không dùng ảnh không có quyền đại diện cho phòng.
+- [x] Light/dark, vi/en/fr/zh/ko/ja, keyboard/focus, reduced motion và 320–1440px có kiểm chứng.
+- [x] Typecheck, lint, unit/build và affected Playwright pass; nếu live API skip phải ghi rõ chưa kiểm real integration.
+- [x] Không sửa API/backend runtime, migrations hay dữ liệu DB đang chạy; chỉ bổ sung public translation seed như HR-07 đã định rõ. Không sửa Admin/CMS UI, Collection/Detail/Tour logic, global theme hoặc visitor stores.
+- [x] Commit độc lập, review diff, có test và evidence thật; đã nhận sign-off giao diện trước khi kết luận hoàn thành.
 
 ## Validation commands
 
@@ -172,7 +172,7 @@ Sử dụng các tập test tồn tại thực tế; `homepage-redesign.spec.ts`
 | HR-09 | 8b99bb3 | `home-featured.spec.ts` 8/8; typecheck/lint pass; poster object-fit + natural dimensions and CTA viewport bounds pass | 10 ảnh full-page 320/390/768/1024/1440 light/dark; no overflow, long room/exhibit text, landscape 844×390 | Complete |
 | HR-10 | 33fa865 | homepage + `public-ui-translations` 21/21; typecheck/lint/build pass; reduced motion/semantics/contrast checked | locale API mocked from current UI seed; no screen-reader device/manual audit | Complete |
 | HR-11 | dc1c78e | 11 integration suites 71/71; homepage 9/9; typecheck/lint pass | zero canvas/3D renderer requests at `/`; image failure, stale retry, locale/theme, navigation covered | Complete |
-| HR-12 | pending | typecheck/lint pass; unit 408/408; build pass with >500 kB chunk warning; Playwright 71/71 | 20 ignored screenshots: poster + neutral, 5 widths, light/dark; user visual sign-off pending; manual zoom/screen reader/real device/network profile not checked | Awaiting review |
+| HR-12 | 6b381d8, 72b7144 | typecheck/lint pass; unit 408/408; build pass; Playwright 71/71 | 20 ignored screenshots: poster + neutral, 5 widths, light/dark; visual approved 2026-11-16; live API E2E skipped (GET-only poster capture); manual zoom/screen reader/real device/network profile not checked | Complete |
 
 **Bằng chứng phải là sự kiện thực:** không tự điền SHAs, test count hoặc browser audit kết quả. Nếu task không có diff, ghi `no-op` có giải thích và không commit rỗng. Bug trong QA được thêm dòng `fix` và regression cùng SHA tương ứng.
 

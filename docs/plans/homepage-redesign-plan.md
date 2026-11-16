@@ -218,7 +218,7 @@
 - [x] **Bước 3:** đã rà branch log, diff từng slice, staged diff và `git diff --check`; chỉ test homepage cùng plan/task docs thay đổi trong HR-11/12; không stage screenshot, log hoặc `.env`.
 - [x] **Bước 4:** cập nhật SHA, gate, warning, screenshot và giới hạn QA trong docs; commit docs riêng. Chưa push/PR/merge.
 
-**Visual sign-off pending:** cần người dùng duyệt 20 ảnh trước khi xác nhận UI đạt. Chưa kiểm zoom 200/400%, NVDA/VoiceOver, thiết bị mobile thật hoặc network profile; chưa đo Lighthouse/CLS. Build warning đã được đối chiếu với baseline `origin/dev`; chunk composition thay đổi nhưng tổng gần như giữ nguyên.
+**Visual sign-off:** người dùng đã duyệt giao diện qua bộ 20 screenshot ngày 16/11/2026. Chưa kiểm zoom 200/400%, NVDA/VoiceOver, thiết bị mobile thật hoặc network profile; chưa đo Lighthouse/CLS. Live API E2E riêng chưa chạy; ảnh poster lấy JSON public bằng GET-only và được render trên preview feature qua Playwright route. Build warning đã được đối chiếu với baseline `origin/dev`; chunk composition thay đổi nhưng tổng gần như giữ nguyên.
 
 **Commit dự kiến:** `docs(home): record homepage redesign verification`.
 
