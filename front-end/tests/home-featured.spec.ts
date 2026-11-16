@@ -126,24 +126,50 @@ test('failed refetch hides the cached hero poster and featured cards until retry
 });
 
 test('featured long content fits mobile and desktop in light and dark', async ({ page }) => {
+  const longRoomName = 'Tên phòng trưng bày dài '.repeat(4);
+  await page.route('**/api/rooms', (route) => fulfillMuseum(route, envelope(roomSummaries.map((room) =>
+    room.slug === roomA.slug ? { ...room, name: longRoomName } : room))));
   await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({
-    ...roomA, exhibits: roomA.exhibits.map((item) => ({ ...item, name: 'Tên hiện vật dài '.repeat(10), description: 'Mô tả tiếng Việt '.repeat(30) })),
+    ...roomA, name: longRoomName,
+    exhibits: roomA.exhibits.map((item, index) => ({
+      ...item, name: 'Tên hiện vật dài '.repeat(10), description: 'Mô tả tiếng Việt '.repeat(30),
+      image: index === 0 ? {
+        id: '30000000-0000-4000-8000-000000000001', url: 'https://museum.test/responsive-poster.svg',
+        mimeType: 'image/svg+xml', sizeBytes: 100,
+        rights: { source: null, author: null, license: null }, altText: { vi: 'Ảnh hero', en: 'Hero image' },
+      } : null,
+    })),
   })));
+  await page.route('https://museum.test/responsive-poster.svg', (route) => route.fulfill({
+    contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400"><rect width="800" height="400" fill="#8b7355"/></svg>',
+  }));
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme });
-    for (const width of [320, 768, 1024, 1440]) {
-      await page.setViewportSize({ width, height: 900 });
+    for (const [width, height] of [[320, 900], [390, 844], [768, 900], [1024, 900], [1440, 1000], [844, 390]]) {
+      await page.setViewportSize({ width, height });
       await page.goto('/');
-      await expect(page.getByRole('region', { name: 'Hiện vật nổi bật' }).getByRole('listitem')).toHaveCount(3);
+      const featured = page.getByRole('region', { name: 'Hiện vật nổi bật' });
+      await expect(featured.getByRole('listitem')).toHaveCount(3);
+      await expect(featured.getByText(longRoomName, { exact: true })).toBeVisible();
+      const poster = page.locator('section[aria-labelledby="home-title"]').getByRole('img', { name: 'Ảnh hero' });
+      await expect(poster).toBeVisible();
+      await expect(poster).toHaveCSS('object-fit', 'contain');
+      expect(await poster.evaluate((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])).toEqual([800, 400]);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+      const ctaBounds = await page.locator('section[aria-labelledby="home-title"] a[href="/tour"], section[aria-labelledby="home-title"] a[href="/collection"]').evaluateAll((links) =>
+        links.map((link) => {
+          const { left, right } = link.getBoundingClientRect();
+          return left >= 0 && right <= innerWidth;
+        }));
+      expect(ctaBounds).toEqual([true, true]);
     }
   }
 });
 
 test('featured section leads with an editorial introduction and adapts the shared grid', async ({ page }) => {
   await installMuseumApi(page);
-  for (const [width, columns] of [[390, 1], [768, 2], [1440, 3]] as const) {
+  for (const [width, columns] of [[320, 1], [390, 1], [768, 2], [1024, 3], [1440, 3]] as const) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     const featured = page.getByRole('region', { name: 'Hiện vật nổi bật' });
