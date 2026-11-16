@@ -38,6 +38,7 @@ export function HomePage() {
   const heroSlideRef = useRef<typeof heroSlide>(heroSlide);
   const visibleSlideRef = useRef<typeof heroSlide>(undefined);
   const transitionTimerRef = useRef<number | null>(null);
+  const swipeStartRef = useRef<{ id: number; x: number; y: number } | null>(null);
   heroSlidesRef.current = heroSlides;
   activeSlideKeyRef.current = activeSlideKey;
   heroSlideRef.current = heroSlide;
@@ -171,7 +172,23 @@ export function HomePage() {
             </div>
           </div>
 
-          <div className={classes.heroStage} aria-hidden={!heroSlide}>
+          <div className={classes.heroStage} aria-hidden={!heroSlide}
+            onPointerDown={(event) => {
+              if (event.pointerType !== 'touch' || (event.target instanceof Element && event.target.closest('button, a'))) {
+                swipeStartRef.current = null;
+                return;
+              }
+              swipeStartRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+            }}
+            onPointerUp={(event) => {
+              const start = swipeStartRef.current;
+              swipeStartRef.current = null;
+              if (!start || start.id !== event.pointerId) return;
+              const dx = event.clientX - start.x;
+              const dy = event.clientY - start.y;
+              if (Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy)) moveSlide(dx < 0 ? 1 : -1);
+            }}
+            onPointerCancel={() => { swipeStartRef.current = null; }}>
             {heroSlide ? (
               <>
                 {outgoingSlide && <div className={`${classes.heroPosterLayer} ${readySlideKey === heroSlide.key ? classes.heroPosterLeaving : classes.heroPosterVisible}`}>

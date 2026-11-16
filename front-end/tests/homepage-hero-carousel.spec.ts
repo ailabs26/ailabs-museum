@@ -364,6 +364,66 @@ test('reduced motion disables the crossfade and rapid navigation keeps the lates
     (image: HTMLImageElement) => parseFloat(getComputedStyle(image.parentElement!).transitionDuration),
   )).toBeLessThan(0.001);
 });
+test('hero swipe changes slides horizontally without blocking vertical gestures', async ({ page }) => {
+  const items = await installHeroSlides(page, 'Swipe');
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  const stage = hero.locator('[class*="heroStage"]');
+  await expect.poll(() => hero.getByRole('img', { name: 'Alt 1' }).evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
+  await stage.dispatchEvent('pointerdown', { pointerId: 1, pointerType: 'touch', button: 0, clientX: 240, clientY: 200 });
+  await stage.dispatchEvent('pointerup', { pointerId: 1, pointerType: 'touch', button: 0, clientX: 230, clientY: 280 });
+  await expect(hero.getByRole('heading', { level: 2, name: 'Swipe exhibit 1' })).toBeVisible();
+  await stage.dispatchEvent('pointerdown', { pointerId: 2, pointerType: 'touch', button: 0, clientX: 240, clientY: 200 });
+  await stage.dispatchEvent('pointerup', { pointerId: 2, pointerType: 'touch', button: 0, clientX: 150, clientY: 205 });
+  await expect(hero.getByRole('heading', { level: 2, name: 'Swipe exhibit 2' })).toBeVisible();
+  await expect(hero.locator(`a[href="/collection/${roomA.slug}/exhibits/${items[1].id}"]`)).toBeVisible();
+});
+
+test('hero controls and stage fit the supported desktop, tablet, and phone widths', async ({ page }) => {
+  await installHeroSlides(page, 'Responsive', 5);
+  await page.goto('/');
+  const widths = [320, 390, 768, 1024, 1280, 1440];
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 900 });
+    const geometry = await page.evaluate(() => {
+      const hero = document.querySelector('section[aria-labelledby="home-title"]')!;
+      const stage = hero.querySelector('[class*="heroStage"]')!;
+      const rect = stage.getBoundingClientRect();
+      const zone = (selector: string) => {
+        const bounds = hero.querySelector(selector)!.getBoundingClientRect();
+        return { left: bounds.left, right: bounds.right, top: bounds.top, bottom: bounds.bottom };
+      };
+      const controls = Array.from(hero.querySelectorAll('[class*="heroControls"] button')).map((button) => {
+        const bounds = button.getBoundingClientRect();
+        return { left: bounds.left, right: bounds.right, top: bounds.top, bottom: bounds.bottom, width: bounds.width, height: bounds.height };
+      });
+      return {
+        scrollWidth: document.documentElement.scrollWidth, width: innerWidth,
+        stage: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, width: rect.width },
+        content: zone('[class*="heroContent"]'), metadata: zone('[class*="heroMetadata"]'), controls,
+      };
+    });
+    expect(geometry.scrollWidth).toBeLessThanOrEqual(width);
+    expect(geometry.stage.left).toBeGreaterThanOrEqual(0);
+    expect(geometry.stage.right).toBeLessThanOrEqual(width);
+    expect(geometry.controls).toHaveLength(8);
+    expect(geometry.controls.every((button) => button.width >= 44 && button.height >= 44
+      && button.left >= 0 && button.right <= width && button.top >= geometry.stage.top
+      && button.bottom <= geometry.stage.bottom)).toBe(true);
+    if (width <= 768) {
+      expect(geometry.content.bottom).toBeLessThanOrEqual(geometry.stage.top);
+      expect(geometry.stage.bottom).toBeLessThanOrEqual(geometry.metadata.top);
+    } else if (width <= 1120) {
+      expect(geometry.content.right).toBeLessThanOrEqual(geometry.stage.left);
+      expect(geometry.content.right).toBeLessThanOrEqual(geometry.metadata.left);
+      expect(geometry.stage.bottom).toBeLessThanOrEqual(geometry.metadata.top);
+    } else {
+      expect(geometry.content.right).toBeLessThanOrEqual(geometry.stage.left);
+      expect(geometry.stage.right).toBeLessThanOrEqual(geometry.metadata.left);
+    }
+  }
+});
 test('hero supplements a sparse first room with at most two concurrent room queries and stops at three posters', async ({ page }) => {
   await installMuseumApi(page);
   const rooms = [

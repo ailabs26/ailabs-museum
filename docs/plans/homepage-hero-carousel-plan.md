@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-HERO-CAROUSEL: Nâng cấp Hero Editorial Carousel
 
-**Trạng thái:** IN PROGRESS — HC-01 through HC-07 complete; responsive and swipe work continues in HC-08.
+**Trạng thái:** IN PROGRESS — HC-01 through HC-08 complete; localization and accessibility hardening continues in HC-09.
 **Nhánh triển khai:** `feat/public-homepage-redesign` — **tiếp tục trên nhánh Homepage hiện tại, không tạo nhánh mới**.
 **Plan:** [homepage-hero-carousel-plan.md](../plans/homepage-hero-carousel-plan.md).
 **Kế hoạch gốc:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md), [homepage-redesign.md](./homepage-redesign.md).
@@ -104,11 +104,10 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 
 ### HC-08 — Mobile/tablet & swipe
 
-- [ ] Desktop 3 vùng, tablet 2 và metadata chuyển vị trí hợp lý, mobile 1 cột giữ DOM/tab order.
-- [ ] Swipe chỉ chuyển khi ngang chủ đạo, không block cuộn dọc; buttons/dots vẫn dùng cho keyboard/assistive tech.
-- [ ] Responsive 320/390/768/1024/1280/1440, lang dài/ảnh dọc/zoom nếu có; không overflow/che CTA.
-- [ ] Light/dark screenshot matrix, focused tests và commit riêng.
-
+- [x] Desktop giữ ba vùng; tablet dùng hai cột với metadata dưới poster; mobile stack content → stage → metadata, đúng DOM/tab order.
+- [x] Touch swipe chỉ đổi slide khi ngang chủ đạo và vượt 48px; kéo dọc không bị chặn; keyboard/buttons/dots không đổi hành vi.
+- [x] Geometry và hit target kiểm tại 320/390/768/1024/1280/1440; không tràn ngang, controls ≥44px và không bị cắt.
+- [ ] Screenshot light/dark và ảnh reference matrix để HC-11; ảnh dọc/zoom 200–400% chưa đo.
 ### HC-09 — i18n & accessibility
 
 - [ ] `vi/en/fr/zh/ko/ja`; UI labels được dịch qua `t`; alt, tên, mô tả dùng helper localization hiện có.
@@ -165,7 +164,7 @@ Mỗi slice: test mục tiêu → `git status --short` → `git diff --check` �
 | HC-05 | — | Chưa chạy | — | TODO |
 | HC-06 | — | Chưa chạy | — | TODO |
 | HC-07 | Ghi SHA ở HC-11 | Home regression 32/32; typecheck/lint pass | Screenshot HC-11 | DONE |
-| HC-08 | — | Chưa chạy | Chưa chụp | TODO |
+| HC-08 | Ghi SHA ở HC-11 | Home regression 34/34; responsive/swipe target pass | Screenshot HC-11 | DONE |
 | HC-09 | — | Chưa chạy | — | TODO |
 | HC-10 | — | Chưa chạy | — | TODO |
 | HC-11 | — | Chưa chạy | Chưa chụp | TODO |
