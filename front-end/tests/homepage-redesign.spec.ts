@@ -45,6 +45,8 @@ test('homepage hero and shared navigation remain available when room API fails',
 });
 
 test('hero selects the first sorted exhibit with an image and keeps its localized name, alt, and detail link together', async ({ page }) => {
+  const requests: string[] = [];
+  page.on('request', (request) => requests.push(request.url()));
   await installMuseumApi(page);
   await page.addInitScript(() => localStorage.setItem('aura:visitor:locale:v1', '{"version":1,"value":"en"}'));
   const withImage = (index: number, id: string, name: string, filename: string, altText: { vi: string; en: string }) => ({
@@ -55,18 +57,18 @@ test('hero selects the first sorted exhibit with an image and keeps its localize
     },
     image: {
       id: `30000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
-      url: `https://museum.test/${filename}`, mimeType: 'image/png', sizeBytes: 68,
+      url: `https://museum.test/${filename}`, mimeType: 'image/svg+xml', sizeBytes: 120,
       rights: { source: null, author: null, license: null }, altText,
     },
   });
   const idFirst = '10000000-0000-4000-8000-000000000001';
   const idSecond = '10000000-0000-4000-8000-000000000002';
-  const firstById = withImage(1, idFirst, 'Candidate by ID', 'first.png', { vi: 'Ảnh tiếng Việt', en: 'Localized image alt' });
-  const secondById = withImage(2, idSecond, 'Candidate by arrival order', 'second.png', { vi: 'Ảnh thứ hai', en: 'Second image alt' });
+  const firstById = withImage(1, idFirst, 'Candidate by ID', 'first.svg', { vi: 'Ảnh tiếng Việt', en: 'Localized image alt' });
+  const secondById = withImage(2, idSecond, 'Candidate by arrival order', 'second.svg', { vi: 'Ảnh thứ hai', en: 'Second image alt' });
   const noImage = { ...exhibit(3), displayOrder: 0 };
   await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: [secondById, noImage, firstById] })));
-  await page.route('https://museum.test/*.png', (route) => route.fulfill({
-    contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jCRkAAAAASUVORK5CYII=', 'base64'),
+  await page.route('https://museum.test/*.svg', (route) => route.fulfill({
+    contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 400"><circle cx="100" cy="200" r="80" fill="#c7a46e"/></svg>',
   }));
   await page.goto('/');
 
@@ -74,10 +76,13 @@ test('hero selects the first sorted exhibit with an image and keeps its localize
   const heroImage = hero.getByRole('img', { name: 'Localized image alt' });
   await expect(heroImage).toBeVisible();
   await expect(heroImage).toHaveAttribute('loading', 'eager');
+  await expect(heroImage).toHaveCSS('object-fit', 'contain');
+  await expect.poll(() => heroImage.evaluate((image: HTMLImageElement) => image.naturalHeight / image.naturalWidth)).toBeGreaterThan(1);
   const heroLink = hero.getByRole('link', { name: /English Candidate by ID/ });
   await expect(heroLink).toHaveAttribute('href', `/collection/sculpture/exhibits/${idFirst}`);
   await expect(hero.getByRole('img', { name: 'Second image alt' })).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Hiện vật nổi bật' }).getByRole('img').first()).toHaveAttribute('loading', 'lazy');
+  expect(requests.filter((url) => /\/(model|audio)\//i.test(url))).toEqual([]);
 });
 
 test('hero stays neutral when the first public room has no image or no exhibits', async ({ page }) => {
