@@ -28,6 +28,19 @@ export function localizeExhibit<T extends LocalizableExhibit>(exhibit: T, locale
   };
 }
 
+/**
+ * Ngôn ngữ audio/phụ đề sẽ phát cho khách. Hiện hệ thống chỉ thu vi/en:
+ * - UI tiếng Anh và có bản thu `en` → dùng `en`.
+ * - Mọi trường hợp khác (vi, hoặc fr/zh/ko/ja chưa có bản thu) → về tiếng Việt (ngôn ngữ gốc).
+ * Dùng để chọn track audio + phụ đề WebVTT đúng, và để báo khách khi đang nghe ngôn ngữ gốc.
+ */
+export function resolveAudioLocale(
+  audio: { vi: unknown | null; en: unknown | null } | null | undefined,
+  locale: string,
+): 'vi' | 'en' {
+  return locale === 'en' && audio?.en ? 'en' : 'vi';
+}
+
 /** Thuyết minh theo ngôn ngữ; thiếu thì dùng lời của audio tiếng Việt, rồi bản tiếng Việt. */
 export function localizedTranscript(
   exhibit: { transcript?: string | null; i18n?: Partial<Record<string, LocalizedCopy>>; audio?: { vi: { transcript: string | null } | null } | null },
