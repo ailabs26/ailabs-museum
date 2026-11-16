@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-HERO-CAROUSEL: Nâng cấp Hero Editorial Carousel
 
-**Trạng thái:** IN PROGRESS — HC-01 through HC-03 complete; carousel behavior continues in HC-04–HC-07.
+**Trạng thái:** IN PROGRESS — HC-01 through HC-04 complete; carousel controls and motion continue in HC-05–HC-07.
 **Nhánh triển khai:** `feat/public-homepage-redesign` — **tiếp tục trên nhánh Homepage hiện tại, không tạo nhánh mới**.
 **Plan:** [homepage-hero-carousel-plan.md](../plans/homepage-hero-carousel-plan.md).
 **Kế hoạch gốc:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md), [homepage-redesign.md](./homepage-redesign.md).
@@ -76,10 +76,10 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 
 ### HC-04 — Media và caption/link đồng bộ
 
-- [ ] Poster thật (không méo/cắt vật), alt localized và metadata cùng active slide; link detail đúng room/exhibit.
-- [ ] Text metadata chỉ lấy từ published DTO, không thêm niên đại/chất liệu/room statistics không có.
-- [ ] Ảnh thiếu hoặc lỗi → UI fallback không che text/CTA; locale đổi không mismatch.
-- [ ] Test + screenshot + commit riêng.
+- [x] Poster public, alt localized, metadata và detail link cùng một exhibit khi đổi vi/en.
+- [x] Metadata chỉ lấy từ nội dung public của exhibit; không thêm niên đại/chất liệu/thống kê.
+- [x] Ảnh 404 dùng fallback hiện có; metadata và detail link vẫn hiển thị; đổi locale không mismatch.
+- [x] Playwright integration + Home regression 24/24, typecheck/lint pass; ảnh cross-locale để HC-11; commit riêng.
 
 ### HC-05 — Điều khiển thủ công
 

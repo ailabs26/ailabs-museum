@@ -2,6 +2,71 @@ import { expect, test } from '@playwright/test';
 import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
 import { envelope, exhibit, roomA, roomB, roomC, roomSummaries, ROOM_B_ID } from './fixtures/museumContent';
 
+test('hero keeps poster, localized copy, and detail route on the same published exhibit', async ({ page }) => {
+  await installMuseumApi(page);
+  await page.route('https://media.example/**', (route) => route.fulfill({
+    contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+  }));
+  const item = roomA.exhibits[0];
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({
+    ...roomA,
+    exhibits: [{
+      ...item,
+      name: 'Tên hiện vật Việt',
+      description: 'Mô tả tiếng Việt',
+      i18n: {
+        vi: { name: 'Tên hiện vật Việt', description: 'Mô tả tiếng Việt', transcript: null },
+        en: { name: 'English exhibit name', description: 'English exhibit description', transcript: null },
+      },
+      image: {
+        id: '30000000-0000-4000-8000-000000000001', url: 'https://media.example/hero.svg',
+        mimeType: 'image/svg+xml', sizeBytes: 128, rights: { source: null, author: null, license: null },
+        altText: { vi: 'Ảnh hiện vật tiếng Việt', en: 'English exhibit image' },
+      },
+    }],
+  })));
+
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  const locale = page.getByRole('combobox').first();
+  const detailHref = `/collection/${roomA.slug}/exhibits/${item.id}`;
+  const detailLink = hero.locator(`a[href="${detailHref}"]`);
+
+  await expect(hero.getByRole('img', { name: 'Ảnh hiện vật tiếng Việt' })).toBeVisible();
+  await expect(hero.getByRole('heading', { level: 2, name: 'Tên hiện vật Việt' })).toBeVisible();
+  await expect(hero.getByText('Mô tả tiếng Việt', { exact: true })).toBeVisible();
+  await expect(detailLink).toBeVisible();
+
+  await locale.selectOption('en');
+  await expect(hero.getByRole('img', { name: 'English exhibit image' })).toBeVisible();
+  await expect(hero.getByRole('heading', { level: 2, name: 'English exhibit name' })).toBeVisible();
+  await expect(hero.getByText('English exhibit description', { exact: true })).toBeVisible();
+  await expect(detailLink).toBeVisible();
+});
+
+test('failed hero image falls back without hiding exhibit metadata or the detail link', async ({ page }) => {
+  await installMuseumApi(page);
+  await page.route('https://media.example/**', (route) => route.fulfill({ status: 404, body: '' }));
+  const item = roomA.exhibits[0];
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({
+    ...roomA,
+    exhibits: [{
+      ...item,
+      image: {
+        id: '30000000-0000-4000-8000-000000000002', url: 'https://media.example/broken.webp',
+        mimeType: 'image/webp', sizeBytes: 128, rights: { source: null, author: null, license: null },
+        altText: { vi: item.name, en: item.name },
+      },
+    }],
+  })));
+
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  await expect(hero.getByRole('img')).toHaveCount(0);
+  await expect(hero.getByRole('heading', { level: 2, name: item.name })).toBeVisible();
+  await expect(hero.getByRole('link', { name: `Xem chi tiết ${item.name}` })).toBeVisible();
+});
+
 test('hero supplements a sparse first room with at most two concurrent room queries and stops at three posters', async ({ page }) => {
   await installMuseumApi(page);
   const rooms = [
