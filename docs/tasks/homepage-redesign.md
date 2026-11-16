@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-REDESIGN: Public Homepage Editorial Redesign
 
-**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-05 hoàn tất, HR-06 tiếp theo.
+**Trạng thái:** Đang triển khai trên `feat/public-homepage-redesign`; HR-01–HR-06 hoàn tất, HR-07 tiếp theo.
 **Nguồn code khảo sát:** `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841` tại 15/11/2026; xác minh lại khi thực thi.
 **Nhánh hiện tại:** `feat/public-homepage-redesign` từ `origin/dev` SHA `95c2bbe609ef32b36f0fc272d65e104076ca0841`; PR base `dev`.
 **Plan:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md).
@@ -87,9 +87,9 @@ Thiết kế lại **Homepage `/`** theo phong cách *Contemporary Heritage Edit
 
 ### HR-06 — Featured editorial
 
-- [ ] Dùng `ExhibitGrid`/`ExhibitCard` có sẵn, không clone card; section gồm heading/copy/room link phù hợp.
-- [ ] Giữ featured 0–3, order, room link, loading/empty/error/retry, query-refetch guard như baseline.
-- [ ] Cập nhật tests heading/section có chủ đích nhưng không bỏ assertion dữ liệu; screenshot light/dark/mobile, commit riêng.
+- [x] Dùng `ExhibitGrid`/`ExhibitCard` có sẵn, không clone card; section có heading, intro và room link.
+- [x] Giữ featured 0–3, order, room link, loading/empty/error/retry, query-refetch guard như baseline.
+- [x] Test heading và responsive grid; không bỏ assertion dữ liệu. Screenshot light/dark ở 390/1024/1440; code commit riêng.
 
 ### HR-07 — Immersive Story
 
@@ -166,7 +166,7 @@ Sử dụng các tập test tồn tại thực tế; `homepage-redesign.spec.ts`
 | HR-03 | 06a44b9, b2225e0 | homepage-redesign 3/3; public-ui-translations 13/13; typecheck/lint/build pass | light/dark hero screenshots inspected; visual sign-off deferred to HR-12. Existing seed test failure: missing `ui.guided2d.progress` on origin/dev. | Complete |
 | HR-04 | 4abcba5 | focused Playwright 22/22; typecheck/lint/build pass | poster/neutral screenshots inspected; fixture illustration only, CMS poster sign-off deferred to HR-12 | Complete |
 | HR-05 | a7d3489, 2706a52 | focused Playwright 22/22; typecheck/lint/build pass | hero eager, featured/card lazy; portrait transparent SVG remains contained; no model/audio requests | Complete |
-| HR-06 | — | Chưa chạy | — | TODO |
+| HR-06 | 8140348 | `home-featured.spec.ts` 8/8; typecheck/lint pass | 390/1024/1440 light/dark screenshots; UI sign-off deferred to HR-12 | Complete |
 | HR-07 | — | Chưa chạy | — | TODO |
 | HR-08 | — | Chưa chạy | — | TODO |
 | HR-09 | — | Chưa chạy | — | TODO |

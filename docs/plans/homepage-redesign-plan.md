@@ -132,10 +132,12 @@
 **Files:** `HomePage.tsx`, `HomeFeaturedExhibits.tsx`, CSS, home tests.
 **Consumes:** shared `ExhibitGrid`/`ExhibitCard`, first room selection, API states. **Produces:** editorial section mới, behavior featured cũ không đổi.
 
-- [ ] **Bước 1 — Design:** nền ivory/light paper (dark tokens tương ứng), eyebrow/H2 giới thiệu ngắn và grid cards; desktop 3 cột, tablet 2, mobile 1 theo container, giữ whitespace phù hợp. Không sửa CSS/JSX `ExhibitCard` trong PR này nếu chưa có bug thật.
-- [ ] **Bước 2 — Content:** giữ tối đa 3 đầu theo sort hiện hành, link room `?room=` và tên phòng chỉ có khi đã load; section vẫn visible trong empty/error/loading, CTA hero không bị ảnh hưởng.
-- [ ] **Bước 3 — Test:** cập nhật có chủ đích assertions phụ thuộc heading/copy cũ; vẫn kiểm count 0/1/2/3, tie-break ID, loading/empty/schema error/retry/refetch error, không requests phòng khác. Không xóa test để làm pass.
-- [ ] **Bước 4:** screenshot 390/1024/1440, typecheck/lint, commit riêng.
+- [x] **Bước 1 — Design:** section nền `--public-paper` toàn chiều rộng, eyebrow/H2/intro phía trên shared grid; giữ CSS/JSX `ExhibitCard` nguyên trạng.
+- [x] **Bước 2 — Content:** giữ tối đa 3 exhibit theo sort hiện hành, tên phòng và room link chỉ khi detail đã load; không đổi các state/CTA.
+- [x] **Bước 3 — Test:** thêm assertion intro và responsive columns; bộ hiện có vẫn kiểm 0/1/2/3, order, loading/empty/error/retry/refetch và không tải phòng khác.
+- [x] **Bước 4:** screenshot light/dark ở 390/1024/1440, typecheck/lint và commit code riêng.
+
+**HR-06 evidence:** Commit `8140348` đưa Featured thành dải editorial dùng `--public-paper`, chuyển intro lên dưới H2 và tái sử dụng `ExhibitGrid`. `home-featured.spec.ts` 8/8, typecheck và lint pass; screenshot 390/1024/1440 light/dark đã chụp và kiểm tra trong `.superpowers/sdd/homepage-redesign-plan/`. Sign-off giao diện cuối vẫn dành cho HR-12.
 
 **Commit dự kiến:** `feat(home): present featured exhibits in editorial section`.
 
