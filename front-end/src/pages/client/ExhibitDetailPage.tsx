@@ -1,6 +1,7 @@
 import { Button, Container, Title } from '@mantine/core';
 import { usePublicErrorText, usePublicLocale } from '@/core/i18n/public-locale';
-import { hasTranslation, localizedAltText, localizedTranscript, localizeExhibit } from '@/helpers/localizeExhibit';
+import { hasTranslation, localizedAltText, localizedTranscript, localizeExhibit, resolveAudioLocale } from '@/helpers/localizeExhibit';
+import { LOCALES } from '@/services/translations.service';
 import { IconCube } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
@@ -74,8 +75,16 @@ export function ExhibitDetailPage() {
     recentStore.update(refs => rememberExhibit(refs, { roomId: validRoomId, exhibitId: validExhibitId }));
   }, [canRecordView, validRoomId, validExhibitId]);
   const credits = exhibit ? collectMediaCredits(exhibit) : [];
-  const audio = exhibit?.audio?.vi;
+  // Chọn bản thu theo ngôn ngữ UI (hiện có vi/en); fr/zh/ko/ja về tiếng Việt gốc.
+  const audioLocale = resolveAudioLocale(exhibit?.audio, locale);
+  const audio = exhibit?.audio?.[audioLocale] ?? exhibit?.audio?.vi;
+  // Audio/phụ đề đang ở ngôn ngữ khác ngôn ngữ UI → báo khách để không hiểu nhầm.
+  const audioLanguageNote = audio && audioLocale !== locale
+    ? LOCALES.find((item) => item.code === audioLocale)?.label ?? null
+    : null;
   const transcript = exhibit ? localizedTranscript(exhibit, locale) : null;
+  const localeTranscript = (exhibit?.i18n as Partial<Record<string, { transcript?: string | null }>> | undefined)?.[locale]?.transcript;
+  const transcriptIsOriginal = Boolean(transcript) && !localeTranscript && locale !== 'vi';
 
   let statusTitle: string | undefined;
   let statusMessage: string | undefined;
@@ -161,7 +170,10 @@ export function ExhibitDetailPage() {
             shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
           <div className={classes.sections}>
             <div className={classes.audioDock}>
-              <AudioPlayer key={`${detail.id}:${exhibit.id}:vi`} src={audio?.audio.url} subtitleUrl={audio?.subtitle?.url} locale="vi" />
+              <AudioPlayer key={`${detail.id}:${exhibit.id}:${audioLocale}`} src={audio?.audio.url} subtitleUrl={audio?.subtitle?.url} locale={audioLocale} />
+              {audioLanguageNote && <p className={classes.body}>
+                {t('ui.exhibit.audioLanguage', 'Thuyết minh và phụ đề hiện có bằng {language}.', { language: audioLanguageNote })}
+              </p>}
             </div>
             <section aria-labelledby="exhibit-description-title">
               <Title order={2} id="exhibit-description-title" className={classes.sectionTitle}>{t('ui.exhibit.story', 'Câu chuyện hiện vật')}</Title>
@@ -169,6 +181,9 @@ export function ExhibitDetailPage() {
             </section>
             {transcript && <section aria-labelledby="exhibit-transcript-title">
               <Title order={2} id="exhibit-transcript-title" className={classes.sectionTitle}>{t('ui.exhibit.transcript', 'Bản thuyết minh')}</Title>
+              {transcriptIsOriginal && <p className={classes.body}>
+                {t('ui.exhibit.transcriptOriginal', 'Chưa có bản dịch thuyết minh, đang hiển thị bản tiếng Việt gốc.')}
+              </p>}
               <p className={classes.body}>{transcript}</p>
             </section>}
             {exhibit.hotspots.length > 0 && <section aria-labelledby="exhibit-hotspots-title">

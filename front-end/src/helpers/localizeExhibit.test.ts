@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasTranslation, localizedAltText, localizedTranscript, localizeExhibit, localizeRoom } from './localizeExhibit';
+import { hasTranslation, localizedAltText, localizedTranscript, localizeExhibit, localizeRoom, resolveAudioLocale } from './localizeExhibit';
 
 const exhibit = {
   name: 'Trống đồng', description: 'Mô tả',
@@ -45,6 +45,23 @@ describe('localizedTranscript', () => {
     expect(localizedTranscript({ i18n }, 'ja')).toBe('Việt');
     expect(localizedTranscript({ transcript: 'Cũ' }, 'ja')).toBe('Cũ');
     expect(localizedTranscript({}, 'ja')).toBeNull();
+  });
+});
+
+describe('resolveAudioLocale', () => {
+  const both = { vi: {}, en: {} };
+  it('UI tiếng Anh + có bản en → en', () => {
+    expect(resolveAudioLocale(both, 'en')).toBe('en');
+  });
+  it('UI tiếng Anh nhưng thiếu bản en → vi', () => {
+    expect(resolveAudioLocale({ vi: {}, en: null }, 'en')).toBe('vi');
+  });
+  it('fr/zh/ko/ja và vi đều về vi (ngôn ngữ gốc)', () => {
+    for (const locale of ['vi', 'fr', 'zh', 'ko', 'ja']) expect(resolveAudioLocale(both, locale)).toBe('vi');
+  });
+  it('không có audio → vi', () => {
+    expect(resolveAudioLocale(null, 'en')).toBe('vi');
+    expect(resolveAudioLocale(undefined, 'ko')).toBe('vi');
   });
 });
 
