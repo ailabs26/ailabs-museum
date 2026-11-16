@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-HERO-CAROUSEL: Nâng cấp Hero Editorial Carousel
 
-**Trạng thái:** IN PROGRESS — HC-01 through HC-04 complete; carousel controls and motion continue in HC-05–HC-07.
+**Trạng thái:** IN PROGRESS — HC-01 through HC-05 complete; autoplay and transitions continue in HC-06–HC-07.
 **Nhánh triển khai:** `feat/public-homepage-redesign` — **tiếp tục trên nhánh Homepage hiện tại, không tạo nhánh mới**.
 **Plan:** [homepage-hero-carousel-plan.md](../plans/homepage-hero-carousel-plan.md).
 **Kế hoạch gốc:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md), [homepage-redesign.md](./homepage-redesign.md).
@@ -37,7 +37,7 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 | HC-02 | Chọn 0–5 poster published; bounded cross-room fallback | `feat(home): select bounded published hero carousel slides` |
 | HC-03 | Hero ba vùng theo reference, không đóng khung card | `feat(home): build three-zone editorial hero stage` |
 | HC-04 | Poster, tên/mô tả/alt và detail link đồng bộ | `feat(home): synchronize hero poster caption and detail link` |
-| HC-05 | Prev/Next/dots/Pause buttons, keyboard, wrap | `feat(home): add accessible hero carousel controls` |
+| HC-05 | Prev/Next/dots, keyboard, wrap | `feat(home): add accessible hero carousel controls` |
 | HC-06 | Auto 6s, pause/resume, visibility, reduced motion | `feat(home): implement pausable hero autoplay lifecycle` |
 | HC-07 | Crossfade, preload poster kế và xử lý ảnh lỗi | `feat(home): smooth crossfade and preload adjacent hero poster` |
 | HC-08 | Responsive tablet/mobile, swipe, no overflow | `style(home): adapt hero carousel to tablet and mobile` |
@@ -83,10 +83,10 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 
 ### HC-05 — Điều khiển thủ công
 
-- [ ] Prev/Next wrap, dots active, labels dịch được, buttons ≥44px; test keyboard Enter/Space.
-- [ ] Pause/Resume là nút thực; 0/1 slide không có controls không cần thiết; dot không nested trong link.
-- [ ] Active selection lưu key/index duy nhất, click nhanh/nguồn cập nhật không đổi sai ảnh/caption.
-- [ ] Focused tests + commit riêng, trước khi bật autoplay.
+- [x] Prev/Next wrap, dots active, labels đi qua `t()`, buttons ≥44px; Enter/Space và link metadata cùng slide đã được test.
+- [x] 0/1 slide không hiện controls; dot là button độc lập. Pause/Resume đi cùng autoplay ở HC-06 để không có nút giả.
+- [x] Lưu active selection bằng exhibit key; functional state update giữ đúng slide khi thao tác liên tiếp.
+- [x] Playwright carousel/Home regression 25/25; targeted 0/1/N tests 3/3; typecheck/lint pass; commit riêng trước autoplay.
 
 ### HC-06 — Autoplay và cleanup
 

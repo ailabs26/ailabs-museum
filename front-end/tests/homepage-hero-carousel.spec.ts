@@ -67,6 +67,53 @@ test('failed hero image falls back without hiding exhibit metadata or the detail
   await expect(hero.getByRole('link', { name: `Xem chi tiết ${item.name}` })).toBeVisible();
 });
 
+test('hero controls wrap, select a slide, and keep the poster, metadata, and link together', async ({ page }) => {
+  await installMuseumApi(page);
+  await page.route('https://media.example/**', (route) => route.fulfill({
+    contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+  }));
+  const items = roomA.exhibits.slice(0, 3).map((item, index) => ({
+    ...item,
+    name: `Hero exhibit ${index + 1}`,
+    description: `Description ${index + 1}`,
+    image: {
+      id: `30000000-0000-4000-8000-00000000000${index + 1}`, url: `https://media.example/${index + 1}.svg`,
+      mimeType: 'image/svg+xml', sizeBytes: 128, rights: { source: null, author: null, license: null },
+      altText: { vi: `Alt ${index + 1}`, en: `Alt ${index + 1}` },
+    },
+  }));
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: items })));
+
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  const next = hero.getByRole('button', { name: 'Hiện vật tiếp theo' });
+  const previous = hero.getByRole('button', { name: 'Hiện vật trước' });
+  const expectActive = async (index: number) => {
+    await expect(hero.getByRole('img', { name: `Alt ${index}` })).toBeVisible();
+    await expect(hero.getByRole('heading', { level: 2, name: `Hero exhibit ${index}` })).toBeVisible();
+    await expect(hero.getByText(`Description ${index}`, { exact: true })).toBeVisible();
+    await expect(hero.locator(`a[href="/collection/${roomA.slug}/exhibits/${items[index - 1].id}"]`)).toBeVisible();
+  };
+
+  await expectActive(1);
+  await next.focus();
+  await page.keyboard.press('Enter');
+  await expectActive(2);
+  await page.keyboard.press('Space');
+  await expectActive(3);
+  await next.click();
+  await expectActive(1);
+  await previous.click();
+  await expectActive(3);
+  const firstDot = hero.getByRole('button', { name: 'Đến hiện vật 1' });
+  await firstDot.click();
+  await expect(firstDot).toHaveAttribute('aria-pressed', 'true');
+  await expectActive(1);
+  const { width, height } = await firstDot.boundingBox() ?? { width: 0, height: 0 };
+  expect(width).toBeGreaterThanOrEqual(44);
+  expect(height).toBeGreaterThanOrEqual(44);
+});
+
 test('hero supplements a sparse first room with at most two concurrent room queries and stops at three posters', async ({ page }) => {
   await installMuseumApi(page);
   const rooms = [

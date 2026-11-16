@@ -99,6 +99,7 @@ test('hero stays neutral when the first public room has no image or no exhibits'
   const hero = page.locator('section[aria-labelledby="home-title"]');
   await expect(hero.locator('img')).toHaveCount(0);
   await expect(hero.locator('a[href*="/exhibits/"]')).toHaveCount(0);
+  await expect(hero.getByRole('group', { name: 'Điều khiển hiện vật nổi bật' })).toHaveCount(0);
 
   await page.unroute('**/api/rooms/sculpture');
   await page.route('**/api/rooms', (route) => fulfillMuseum(route, envelope([roomSummaries[2]])));
@@ -106,6 +107,7 @@ test('hero stays neutral when the first public room has no image or no exhibits'
   await page.goto('/');
   await expect(hero.locator('img')).toHaveCount(0);
   await expect(hero.locator('a[href*="/exhibits/"]')).toHaveCount(0);
+  await expect(hero.getByRole('group', { name: 'Điều khiển hiện vật nổi bật' })).toHaveCount(0);
 });
 
 test('failed hero image uses its fallback without losing the real exhibit link', async ({ page }) => {
@@ -123,6 +125,7 @@ test('failed hero image uses its fallback without losing the real exhibit link',
   const hero = page.locator('section[aria-labelledby="home-title"]');
   await expect(hero.getByRole('link', { name: /Hiện vật 1/ })).toHaveAttribute('href', `/collection/sculpture/exhibits/${imageExhibit.id}`);
   await expect(hero.getByRole('img', { name: 'Ảnh hiện vật' })).toHaveCount(0);
+  await expect(hero.getByRole('group', { name: 'Điều khiển hiện vật nổi bật' })).toHaveCount(0);
 });
 
 test('homepage story presents real 3D and audio features with working 3D and 2D links', async ({ page }) => {

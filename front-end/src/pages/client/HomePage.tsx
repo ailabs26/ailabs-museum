@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Container, Title } from '@mantine/core';
-import { IconArrowRight, IconCube, IconHeadphones } from '@tabler/icons-react';
+import { IconArrowRight, IconChevronLeft, IconChevronRight, IconCube, IconHeadphones } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { usePublicLocale } from '@/core/i18n/public-locale';
 import { useHomeHeroSlides } from '@/hooks/useHomeHeroSlides';
@@ -15,9 +16,18 @@ export function HomePage() {
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const exhibits = detail ? [...detail.exhibits]
     .sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)) : [];
-  const heroSlide = useHomeHeroSlides({ rooms, room, selectedRoom })[0];
+  const heroSlides = useHomeHeroSlides({ rooms, room, selectedRoom });
+  const [activeSlideKey, setActiveSlideKey] = useState<string | null>(null);
+  const activeIndex = Math.max(0, heroSlides.findIndex((slide) => slide.key === activeSlideKey));
+  const heroSlide = heroSlides[activeIndex];
   const featured = exhibits.slice(0, 3);
   usePageTitle(null);
+
+  const moveSlide = (direction: number) => setActiveSlideKey((key) => {
+    if (!heroSlides.length) return null;
+    const currentIndex = heroSlides.findIndex((slide) => slide.key === key);
+    return heroSlides[(Math.max(0, currentIndex) + direction + heroSlides.length) % heroSlides.length].key;
+  });
 
   return (
     <div className={classes.page}>
@@ -46,11 +56,31 @@ export function HomePage() {
 
           <div className={classes.heroStage} aria-hidden={!heroSlide}>
             {heroSlide ? (
+              <>
               <ExhibitImage image={{
                 url: heroSlide.imageUrl,
                 alt: heroSlide.imageAlt,
               }} loading="eager" shape={heroSlide.shape} color={heroSlide.color}
                 className={classes.heroImage} />
+              {heroSlides.length > 1 && <div className={classes.heroControls} role="group"
+                aria-label={t('ui.home.hero.carousel.controls', 'Điều khiển hiện vật nổi bật')}>
+                <button type="button" className={classes.heroControlButton}
+                  aria-label={t('ui.home.hero.carousel.previous', 'Hiện vật trước')} onClick={() => moveSlide(-1)}>
+                  <IconChevronLeft aria-hidden="true" size={20} />
+                </button>
+                {heroSlides.map((slide, index) => (
+                  <button key={slide.key} type="button" className={classes.heroControlButton}
+                    aria-label={t('ui.home.hero.carousel.go-to-slide', 'Đến hiện vật {index}', { index: index + 1 })}
+                    aria-pressed={slide.key === heroSlide.key} onClick={() => setActiveSlideKey(slide.key)}>
+                    <span className={classes.heroDot} aria-hidden="true" />
+                  </button>
+                ))}
+                <button type="button" className={classes.heroControlButton}
+                  aria-label={t('ui.home.hero.carousel.next', 'Hiện vật tiếp theo')} onClick={() => moveSlide(1)}>
+                  <IconChevronRight aria-hidden="true" size={20} />
+                </button>
+              </div>}
+              </>
             ) : (
               <>
                 <span className={classes.artworkMedallion} />

@@ -24,14 +24,20 @@
 .ctaSecondary { border-color: var(--public-border); color: var(--public-action-text); }
 .ctaSecondary:hover { border-color: var(--public-bronze); color: var(--public-bronze); }
 .ctaPrimary:focus-visible, .ctaSecondary:focus-visible { outline: 3px solid var(--public-focus); outline-offset: 4px; }
-.heroStage { position: relative; display: grid; min-width: 0; min-height: 440px; place-items: center; overflow: hidden; }
+.heroStage { position: relative; display: flex; min-width: 0; min-height: 440px; align-items: center; flex-direction: column; justify-content: center; overflow: hidden; }
 .artworkMedallion {
   position: relative; z-index: 1; display: block; width: min(42%, 250px); aspect-ratio: 1; border: 1px solid var(--public-bronze);
   border-radius: 50%;
 }
 .artworkOrbit { position: absolute; width: min(82%, 520px); aspect-ratio: 1.45; border: 1px solid var(--public-action-text); border-radius: 50%; opacity: .14; transform: rotate(-28deg); }
 .artworkAccent { position: absolute; right: 12%; bottom: 14%; width: 9px; height: 9px; border-radius: 50%; background: var(--public-bronze); }
-.heroImage { width: 100%; height: min(58vh, 500px); min-height: 0; padding: 0; }
+.heroImage { width: 100%; height: min(52vh, 450px); min-height: 0; padding: 0; }
+.heroControls { display: flex; min-height: 44px; align-items: center; justify-content: center; gap: 4px; margin-top: 8px; }
+.heroControlButton { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; border: 1px solid var(--public-border); border-radius: 50%; background: transparent; color: var(--public-action-text); cursor: pointer; }
+.heroControlButton:hover { border-color: var(--public-bronze); color: var(--public-bronze); }
+.heroControlButton:focus-visible { outline: 3px solid var(--public-focus); outline-offset: 2px; }
+.heroDot { display: block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .55; }
+.heroControlButton[aria-pressed='true'] .heroDot { width: 18px; border-radius: 999px; opacity: 1; }
 .heroMetadata { min-width: 0; max-width: 30ch; }
 .heroMetaTitle { margin: 0 0 16px; color: var(--public-action-text); font: 600 clamp(24px, 2vw, 32px)/1.18 var(--public-font-display); overflow-wrap: anywhere; }
 .heroMetaDescription { margin: 0; color: var(--public-action-text); font: 400 15px/1.65 var(--public-font-body); overflow-wrap: anywhere; }
