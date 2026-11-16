@@ -694,3 +694,35 @@ test('home with no published posters shows no carousel controls or exposed image
   await expect(stage.locator('[class*="heroControls"]')).toHaveCount(0);
   await expect(hero.getByRole('region', { name: 'Bộ sưu tập hiện vật nổi bật' })).toHaveCount(0);
 });
+
+test('hero clears its autoplay timer when navigating away', async ({ page }) => {
+  await page.addInitScript(() => {
+    const nativeSetTimeout = window.setTimeout.bind(window);
+    const nativeClearTimeout = window.clearTimeout.bind(window);
+    const heroTimers = new Set<number>();
+    Object.defineProperty(window, '__heroTimers', { value: heroTimers });
+    window.setTimeout = ((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
+      if (timeout !== 6000 || typeof handler !== 'function') return nativeSetTimeout(handler, timeout, ...args);
+      let id = 0;
+      id = nativeSetTimeout((...callbackArgs: Parameters<typeof handler>) => {
+        heroTimers.delete(id);
+        handler(...callbackArgs);
+      }, timeout, ...args);
+      heroTimers.add(id);
+      return id;
+    }) as typeof window.setTimeout;
+    window.clearTimeout = ((id: number) => {
+      heroTimers.delete(id);
+      return nativeClearTimeout(id);
+    }) as typeof window.clearTimeout;
+  });
+  await installHeroSlides(page, 'Unmount');
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  await expect(hero.getByRole('button', { name: 'Hiện vật tiếp theo' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => (window as Window & { __heroTimers: Set<number> }).__heroTimers.size)).toBe(1);
+
+  await hero.getByRole('link', { name: /danh mục bộ sưu tập/i }).click();
+  await expect(page).toHaveURL(/\/collection/);
+  expect(await page.evaluate(() => (window as Window & { __heroTimers: Set<number> }).__heroTimers.size)).toBe(0);
+});
