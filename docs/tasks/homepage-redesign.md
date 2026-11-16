@@ -125,7 +125,7 @@ Thiết kế lại **Homepage `/`** theo phong cách *Contemporary Heritage Edit
 
 ### HR-12 — Bàn giao
 
-- [x] Typecheck, lint, unit (408/408), build và focused Playwright (71/71) pass. Build warning chunks >500 kB: `draco_decoder` 512.47, `react-apexcharts` 543.94, `sanitizeModel` 884.24, `main` 1,122.00 kB; chưa build origin/dev để xác nhận baseline.
+- [x] Typecheck, lint, unit (408/408), build và focused Playwright (71/71) pass. Build warning >500 kB đã có trên `origin/dev`: `draco_decoder` 512.47 và `react-apexcharts` 543.94 không đổi; `react-three-fiber` 820.71 + `sanitizeModel` 64.41 trên baseline gộp thành `sanitizeModel` 884.24 (tổng giảm ~0.88 kB); `main` giảm 1,126.14 → 1,122.00 kB.
 - [x] Chụp 20 ảnh full-page: 5 widths × 2 themes × poster/neutral ở `.superpowers/sdd/homepage-redesign-plan/hr12-home-{320,390,768,1024,1440}-{light,dark}-{poster,neutral}.png`; poster nạp từ API local GET-only, là dữ liệu mẫu phát triển. Kiểm tra trực quan 320 và 1440 light/dark.
 - [x] Rà branch log, diff/staged diff, file scope và `git diff --check`; screenshot/temp capture không được stage.
 - [x] Ghi SHA/test/warning/screenshot và các giới hạn manual QA; docs commit riêng. Push/PR/merge chưa thực hiện.

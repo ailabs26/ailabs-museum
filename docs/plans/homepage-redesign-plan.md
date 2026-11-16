@@ -213,12 +213,12 @@
 **Files:** docs plan/task và test evidence; chỉ sửa code nếu có bug và commit fix riêng.
 **Consumes:** tất cả slice đã triển khai. **Produces:** trạng thái kiểm chứng có thể review, PR clean.
 
-- [x] **Bước 1:** `npm.cmd run typecheck`, `lint`, `test:unit` (408/408), `build` và 11 focused Playwright suites (71/71) đều pass. Vite 6.4.4 báo chunk >500 kB: `draco_decoder` 512.47, `react-apexcharts` 543.94, `sanitizeModel` 884.24, `main` 1,122.00 kB. Chưa build `origin/dev` để phân loại warning baseline; Lighthouse/CLS chưa đo.
+- [x] **Bước 1:** `npm.cmd run typecheck`, `lint`, `test:unit` (408/408), `build` và 11 focused Playwright suites (71/71) đều pass. Vite 6.4.4 báo chunk >500 kB. Baseline `origin/dev` (95c2bbe): `draco_decoder` 512.47, `react-apexcharts` 543.94, `react-three-fiber` 820.71 + `sanitizeModel` 64.41, `main` 1,126.14 kB. Feature: `draco_decoder`/`react-apexcharts` không đổi, `sanitizeModel` 884.24 kB (gộp hai chunk baseline, tổng 885.12 kB), `main` 1,122.00 kB. Warning đã tồn tại trên baseline; không có tăng chunk đáng kể. Lighthouse/CLS chưa đo.
 - [x] **Bước 2:** chụp 20 ảnh full-page ở 320/390/768/1024/1440, light/dark, poster từ API local (GET-only) và neutral không poster: `.superpowers/sdd/homepage-redesign-plan/hr12-home-{320,390,768,1024,1440}-{light,dark}-{poster,neutral}.png`. Kiểm tra trực quan ảnh 320 light/dark và 1440 light/dark; không thấy tràn ngang. Poster local là dữ liệu mẫu phát triển.
 - [x] **Bước 3:** đã rà branch log, diff từng slice, staged diff và `git diff --check`; chỉ test homepage cùng plan/task docs thay đổi trong HR-11/12; không stage screenshot, log hoặc `.env`.
 - [x] **Bước 4:** cập nhật SHA, gate, warning, screenshot và giới hạn QA trong docs; commit docs riêng. Chưa push/PR/merge.
 
-**Visual sign-off pending:** cần người dùng duyệt 20 ảnh trước khi xác nhận UI đạt. Chưa kiểm zoom 200/400%, NVDA/VoiceOver, thiết bị mobile thật hoặc network profile; chưa đo Lighthouse/CLS. Chưa so sánh build warning với baseline `origin/dev`.
+**Visual sign-off pending:** cần người dùng duyệt 20 ảnh trước khi xác nhận UI đạt. Chưa kiểm zoom 200/400%, NVDA/VoiceOver, thiết bị mobile thật hoặc network profile; chưa đo Lighthouse/CLS. Build warning đã được đối chiếu với baseline `origin/dev`; chunk composition thay đổi nhưng tổng gần như giữ nguyên.
 
 **Commit dự kiến:** `docs(home): record homepage redesign verification`.
 
