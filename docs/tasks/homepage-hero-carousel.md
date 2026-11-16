@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-HERO-CAROUSEL: Nâng cấp Hero Editorial Carousel
 
-**Trạng thái:** IN PROGRESS — HC-01 through HC-10 complete; HC-11 quality handoff remains.
+**Trạng thái:** IN PROGRESS — HC-01 through HC-10 complete; HC-11 code/regression gates complete, manual contrast/screen-reader and real CMS media review remain.
 **Nhánh triển khai:** `feat/public-homepage-redesign` — **tiếp tục trên nhánh Homepage hiện tại, không tạo nhánh mới**.
 **Plan:** [homepage-hero-carousel-plan.md](../plans/homepage-hero-carousel-plan.md).
 **Kế hoạch gốc:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md), [homepage-redesign.md](./homepage-redesign.md).
@@ -107,7 +107,7 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 - [x] Desktop giữ ba vùng; tablet dùng hai cột với metadata dưới poster; mobile stack content → stage → metadata, đúng DOM/tab order.
 - [x] Touch swipe chỉ đổi slide khi ngang chủ đạo và vượt 48px; kéo dọc không bị chặn; keyboard/buttons/dots không đổi hành vi.
 - [x] Geometry và hit target kiểm tại 320/390/768/1024/1280/1440; không tràn ngang, controls ≥44px và không bị cắt.
-- [ ] Screenshot light/dark và ảnh reference matrix để HC-11; ảnh dọc/zoom 200–400% chưa đo.
+- [x] Đã tạo và xem screenshot matrix light/dark tại HC-11; user đã duyệt giao diện. Ảnh reference gốc không có trong checkout nên chưa đối chiếu trực tiếp; ảnh dọc/zoom 200–400% chưa đo.
 ### HC-09 — i18n & accessibility
 
 - [x] `vi/en/fr/zh/ko/ja`; UI labels được dịch qua `t`; alt, tên, mô tả dùng helper localization hiện có.
@@ -125,26 +125,30 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 
 ### HC-11 — Quality gates và bàn giao
 
-- [x] `typecheck`, `lint`, `test:unit` 416/416, `build`, focused Playwright 46/46; build còn warning bundle >500 kB.
-- [ ] Đã tạo và xem 20 ảnh 0/1/3 poster × light/dark × viewport 320/390/768/1024/1280/1440 tại `.superpowers/sdd/homepage-hero-carousel/hc11-visual-review/`; chưa so được ảnh reference (không có trong checkout), fixture poster không đại diện ảnh CMS; contrast/screen reader thật vẫn pending.
-- [ ] Review `git diff origin/dev...HEAD`, `git show <SHA>`, staged diff/whitespace; chỉ phần Hero + tests + docs, không artifacts/secret.
-- [ ] Điền commit SHA, tests/screenshots, số poster nguồn thật, manual limitations và tình trạng push/PR/merge. Không tự tạo PR.
+- [x] `typecheck`, `lint`, `test:unit` 416/416, `build`, focused Playwright 46/46 và regression 12 spec 96/96; build còn warning bundle >500 kB.
+- [x] Tạo và xem đủ 20 ảnh 0/1/3 poster × light/dark × viewport 320/390/768/1024/1280/1440 tại `.superpowers/sdd/homepage-hero-carousel/hc11-visual-review/`; user đã duyệt giao diện. Fixture poster không đại diện ảnh CMS.
+- [ ] Đối chiếu trực tiếp ảnh reference (file gốc không có trong checkout), xác minh media CMS thật, đo contrast và kiểm screen reader thật.
+- [x] Review `git diff origin/dev...HEAD`, commit log, changed paths và whitespace; thay đổi nằm trong homepage hero, test, locale seed và docs; không artifacts/secret. Staged diff và whitespace đã được kiểm.
+- [x] Ghi test/screenshots, commit liên quan và giới hạn QA bên dưới. Branch local-only; chưa push/PR/merge.
+- [ ] Xác nhận số và chất lượng poster từ CMS thật sau khi media được gắn/xuất bản.
 
 ## Acceptance criteria
 
-- [ ] Hero giống **bố cục ảnh reference 16/11/2026**: copy trái/ảnh lớn giữa/metadata phải, không còn khung card showcase nhỏ.
-- [ ] Khi ≥2 poster thật, Hero tự chạy 6s/slide, crossfade ~550–650ms, Prev/Next/dots/Pause/Resume; mouse/keyboard/mobile gesture truy cập được.
-- [ ] 0/1 poster hoạt động đúng, không tự tạo ảnh; các poster đều có nguồn public đã xuất bản/đúng quyền nội dung.
-- [ ] Hình, alt, tên, mô tả và detail link luôn cùng exhibit trong mọi transition/locale; poster lỗi không làm hỏng Hero.
-- [ ] Truy vấn thêm phòng bị giới hạn, không tác động Featured 0–3 của phòng đầu, không phá loading/error/retry hiện tại.
-- [ ] Responsive, dark/light, `vi/en/fr/zh/ko/ja`, reduced motion, focus/labels, hover/focus/tab pause đều có tests.
-- [ ] Không mount WebGL/Canvas/HeroCanvas/Three/GLB ở `/`; giữ nguyên **Featured và Immersive Story**, PublicLayout, Admin/Collection/Detail/Tour.
-- [ ] Quality gates đã chạy thực tế và diff sạch; người dùng xác nhận visual trước khi đánh dấu hoàn tất.
+- [x] Hero ba vùng: copy trái/ảnh lớn giữa/metadata phải, không còn khung card showcase nhỏ; user duyệt screenshot matrix. Ảnh reference gốc không có để đối chiếu trực tiếp.
+- [x] Với ≥2 poster từ public API, Hero tự chạy 6s/slide, crossfade ~550–650ms, Prev/Next/dots/Pause/Resume; mouse/keyboard/mobile gesture có test.
+- [x] 0/1 poster hoạt động đúng, không tự tạo ảnh; Hero chỉ dùng ảnh nhận từ public published API.
+- [x] Hình, alt, tên, mô tả và detail link đồng bộ trong transition/locale; poster lỗi không làm hỏng Hero.
+- [x] Truy vấn thêm phòng bị giới hạn, không tác động Featured 0–3 của phòng đầu; loading/error/retry có regression coverage.
+- [x] Responsive, dark/light, `vi/en/fr/zh/ko/ja`, reduced motion, focus/labels, hover/focus/tab pause đều có tests.
+- [x] Không mount WebGL/Canvas/HeroCanvas/Three/GLB ở `/`; giữ nguyên **Featured và Immersive Story**, PublicLayout, Admin/Collection/Detail/Tour.
+- [x] Quality gates đã chạy thực tế, diff whitespace sạch và người dùng đã xác nhận visual.
 
 ## Kiểm thử và review commits
 
 ```powershell
-# Từ front-end/; sử dụng tên spec thực tế sau khi tạo test
+# Terminal 1 từ front-end/: giữ dev server chạy để phục vụ cả tests/fixtures trên port 4173.
+npm.cmd run dev -- --host 127.0.0.1 --port 4173
+# Terminal 2 từ front-end/:
 npm.cmd run typecheck
 npm.cmd run lint
 npm.cmd run test:unit
@@ -158,17 +162,17 @@ Mỗi slice: test mục tiêu → `git status --short` → `git diff --check` �
 
 | Task | SHA thực tế / no-op | Tests/kết quả | Screenshot / giới hạn | Trạng thái |
 |---|---|---|---|---|
-| HC-01 | — | Chưa chạy | Chưa chụp | TODO |
-| HC-02 | — | Chưa chạy | — | TODO |
-| HC-03 | — | Chưa chạy | Chưa chụp | TODO |
-| HC-04 | — | Chưa chạy | Chưa chụp | TODO |
-| HC-05 | — | Chưa chạy | — | TODO |
-| HC-06 | — | Chưa chạy | — | TODO |
-| HC-07 | Ghi SHA ở HC-11 | Home regression 32/32; typecheck/lint pass | Screenshot HC-11 | DONE |
-| HC-08 | Ghi SHA ở HC-11 | Home regression 34/34; responsive/swipe target pass | Screenshot HC-11 | DONE |
+| HC-01 | `6187d27` | Baseline 46/47; typecheck/lint/build pass | HR-12 screenshots; reference gốc không có | DONE |
+| HC-02 | `88e495c` | Selector 8/8; E2E 12/12; typecheck/lint pass | — | DONE |
+| HC-03 | `34ecaf8` | Layout regression 22/22; typecheck/lint pass | Screenshot desktop hero | DONE |
+| HC-04 | `8d00df1` | Home regression 24/24; typecheck/lint pass | Cross-locale image check | DONE |
+| HC-05 | `ca8c693` | Home 25/25; targeted 3/3; typecheck/lint pass | — | DONE |
+| HC-06 | `47a8b6c` | Home 28/28; lifecycle 4/4; typecheck/lint pass | — | DONE |
+| HC-07 | `ed84016` | Home regression 32/32; typecheck/lint pass | — | DONE |
+| HC-08 | `fb92432` | Home regression 34/34; responsive/swipe target pass | 20-screen matrix in HC-11 | DONE |
 | HC-09 | `124df7b` | Carousel + localization 36/36; typecheck/lint/unit/build pass | Contrast/screen reader manual còn pending | DONE |
-| HC-10 | `9aac3d9` | Combined Playwright 46/46 | No visual artifact committed | DONE |
-| HC-11 | Pending manual review | `typecheck`/lint pass, unit 416/416, Playwright 46/46, build pass | 20 screenshots reviewed at `.superpowers/sdd/homepage-hero-carousel/hc11-visual-review`; reference image absent, CMS image quality/contrast/real SR unchecked | IN PROGRESS |
+| HC-10 | `9aac3d9` | Combined Playwright 46/46; later full affected-surface regression 96/96 | No visual artifact committed | DONE |
+| HC-11 | Test correction `cf65c01`; HC-11 evidence recorded in this docs commit | Required 12-spec Playwright 96/96; `typecheck`, lint, unit 416/416 and build pass | 20 screenshots reviewed and UI approved; reference/CMS image/contrast/real SR checks remain | IN PROGRESS |
 
 **Không điền số test hoặc SHA giả.**
 
