@@ -1,7 +1,13 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { installMuseumApi } from './fixtures/museumApi';
 import { roomA } from './fixtures/museumContent';
+
+// Ghi evidence chi tiết (selector + màu) khi bật A11Y_EVIDENCE_DIR; mặc định tắt để
+// không tạo rác trong CI. Dùng để soạn accessibility-audit-report.md.
+const EVIDENCE_DIR = process.env.A11Y_EVIDENCE_DIR;
 
 /**
  * Audit tự động WCAG 2.2 AA cho các trang public chính bằng axe-core.
@@ -42,6 +48,13 @@ for (const colorScheme of ['light', 'dark'] as const) {
         }, null, 2),
         contentType: 'application/json',
       });
+
+      if (EVIDENCE_DIR) {
+        mkdirSync(EVIDENCE_DIR, { recursive: true });
+        writeFileSync(join(EVIDENCE_DIR, `axe-${route.id}-${colorScheme}.json`), JSON.stringify(
+          results.violations.map((v) => ({ id: v.id, impact: v.impact,
+            nodes: v.nodes.map((n) => ({ target: n.target, failureSummary: n.failureSummary })) })), null, 2));
+      }
 
       const summary = results.violations.map((v) => `${v.id} (${v.impact}): ${v.nodes.length} nút — ${v.help}`);
       expect(summary, `Vi phạm WCAG 2.2 AA trên ${route.path} [${colorScheme}]`).toEqual([]);
