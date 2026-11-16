@@ -44,16 +44,13 @@ export function HomePage() {
             </div>
           </div>
 
-          <div className={classes.heroArtwork} aria-hidden={!heroSlide}>
+          <div className={classes.heroStage} aria-hidden={!heroSlide}>
             {heroSlide ? (
-              <Link className={classes.heroPoster} to={heroSlide.detailHref}>
-                <ExhibitImage image={{
-                  url: heroSlide.imageUrl,
-                  alt: heroSlide.imageAlt,
-                }} loading="eager" shape={heroSlide.shape} color={heroSlide.color}
-                  className={classes.heroImage} />
-                <span className={classes.posterCaption}>{heroSlide.name}</span>
-              </Link>
+              <ExhibitImage image={{
+                url: heroSlide.imageUrl,
+                alt: heroSlide.imageAlt,
+              }} loading="eager" shape={heroSlide.shape} color={heroSlide.color}
+                className={classes.heroImage} />
             ) : (
               <>
                 <span className={classes.artworkMedallion} />
@@ -62,6 +59,17 @@ export function HomePage() {
               </>
             )}
           </div>
+
+          <aside className={classes.heroMetadata} aria-labelledby="home-hero-exhibit-title">
+            {heroSlide && <>
+              <Title order={2} id="home-hero-exhibit-title" className={classes.heroMetaTitle}>{heroSlide.name}</Title>
+              <p className={classes.heroMetaDescription}>{heroSlide.description}</p>
+              <Link className={classes.heroMetaLink} to={heroSlide.detailHref}
+                aria-label={t('ui.collection.details-aria', 'Xem chi tiết {name}', { name: heroSlide.name })}>
+                {t('ui.collection.details', 'Xem chi tiết')} <IconArrowRight size={18} aria-hidden="true" />
+              </Link>
+            </>}
+          </aside>
         </div>
       </section>
 

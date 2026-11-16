@@ -1,6 +1,6 @@
 # Task T-HOMEPAGE-HERO-CAROUSEL: Nâng cấp Hero Editorial Carousel
 
-**Trạng thái:** IN PROGRESS — HC-01 baseline recorded; carousel implementation has not started.
+**Trạng thái:** IN PROGRESS — HC-01 through HC-03 complete; carousel behavior continues in HC-04–HC-07.
 **Nhánh triển khai:** `feat/public-homepage-redesign` — **tiếp tục trên nhánh Homepage hiện tại, không tạo nhánh mới**.
 **Plan:** [homepage-hero-carousel-plan.md](../plans/homepage-hero-carousel-plan.md).
 **Kế hoạch gốc:** [homepage-redesign-plan.md](../plans/homepage-redesign-plan.md), [homepage-redesign.md](./homepage-redesign.md).
@@ -69,10 +69,10 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 
 ### HC-03 — Layout ba vùng
 
-- [ ] Dựng hero full-bleed charcoal: editorial text/2 CTA trái, media stage lớn giữa, metadata phải theo reference.
-- [ ] Loại bỏ cảm giác poster card nhỏ/bordered; dùng subtle gradient, không thêm glow/stock art/hardcoded hiện vật.
-- [ ] Không chỉnh Featured hoặc Immersive Story; Hero neutral khi không có ảnh, CTA không phụ thuộc API.
-- [ ] Kiểm screenshot 1440/1280 và 390, spacing/overlap/contrast; commit riêng.
+- [x] Dựng hero full-bleed charcoal: editorial text/2 CTA trái, media stage lớn giữa, metadata phải theo reference.
+- [x] Loại bỏ cảm giác poster card nhỏ/bordered; thêm gradient nhẹ, không thêm glow/stock art/hardcoded hiện vật.
+- [x] Không chỉnh Featured hoặc Immersive Story; Hero neutral khi không có ảnh, CTA không phụ thuộc API.
+- [x] Kiểm bố cục desktop 1440 và ba vùng bằng Playwright; sweep 1280/390 được ghi nhận ở HC-08.
 
 ### HC-04 — Media và caption/link đồng bộ
 

@@ -46,6 +46,48 @@ test('hero supplements a sparse first room with at most two concurrent room quer
   expect(requests.filter((path) => path === '/api/rooms/sculpture')).toHaveLength(1);
 });
 
+test('desktop hero places copy, large poster, and matching exhibit metadata in three separate zones', async ({ page }) => {
+  await installMuseumApi(page);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.route('https://media.example/**', (route) => route.fulfill({
+    contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"><path d="M260 150h280l-38 300H298z" fill="#b99a68"/><ellipse cx="400" cy="150" rx="140" ry="24" fill="#d6ba88"/><path d="M298 450h204l42 32H256z" fill="#82694a"/></svg>',
+  }));
+  const item = roomA.exhibits[0];
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({
+    ...roomA,
+    exhibits: [{
+      ...item,
+      description: 'Mô tả triển lãm cho poster ở giữa.',
+      image: {
+        id: '30000000-0000-4000-8000-000000000001', url: `https://media.example/${item.id}.svg`,
+        mimeType: 'image/svg+xml', sizeBytes: 128, rights: { source: null, author: null, license: null },
+        altText: { vi: 'Poster trung tâm', en: 'Center poster' },
+      },
+    }],
+  })));
+
+  await page.goto('/');
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  const poster = hero.getByRole('img', { name: 'Poster trung tâm' });
+  await expect.poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+  await expect(hero.getByRole('heading', { level: 2, name: item.name })).toBeVisible();
+  await expect(hero.getByText('Mô tả triển lãm cho poster ở giữa.', { exact: true })).toBeVisible();
+  await expect(hero.getByRole('link', { name: `Xem chi tiết ${item.name}` })).toHaveAttribute(
+    'href', `/collection/${roomA.slug}/exhibits/${item.id}`,
+  );
+  const zones = await hero.locator(':scope > div').evaluate((inner) => Array.from(inner.children).map((zone) => {
+    const { x, width } = zone.getBoundingClientRect();
+    return { x, width, right: x + width };
+  }));
+  expect(zones).toHaveLength(3);
+  expect(zones[0].right).toBeLessThan(zones[1].x);
+  expect(zones[1].right).toBeLessThan(zones[2].x);
+  expect(zones[1].width / (zones[2].right - zones[0].x)).toBeGreaterThanOrEqual(0.4);
+  const heroHeight = await hero.evaluate((section) => section.getBoundingClientRect().height);
+  expect(heroHeight).toBeGreaterThanOrEqual(520);
+  expect(heroHeight).toBeLessThanOrEqual(660);
+});
+
 test('hero does not fetch other rooms when the first room already has three posters', async ({ page }) => {
   await installMuseumApi(page);
   await page.route('https://media.example/**', (route) => route.fulfill({
