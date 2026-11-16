@@ -14,6 +14,49 @@ export function usePageTitle(page: string | null): void {
   }, [title]);
 }
 
+/** Tạo hoặc cập nhật một thẻ meta theo selector; trả hàm khôi phục giá trị cũ. */
+function upsertMeta(selector: string, create: () => HTMLMetaElement, value: string): () => void {
+  let meta = document.head.querySelector<HTMLMetaElement>(selector);
+  const created = !meta;
+  if (!meta) { meta = create(); document.head.appendChild(meta); }
+  const previous = meta.content;
+  meta.content = value;
+  return () => {
+    if (created) meta?.remove();
+    else if (meta) meta.content = previous;
+  };
+}
+
+/**
+ * Cập nhật thẻ OpenGraph/Twitter theo từng trang để chia sẻ liên kết (Facebook, Zalo, X…)
+ * hiển thị đúng tiêu đề/mô tả/URL. Scraper không chạy JS vẫn có bản tĩnh trong index.html.
+ */
+export function useSocialMeta(title: string, description: string): void {
+  useEffect(() => {
+    const url = window.location.href;
+    const restores = [
+      upsertMeta('meta[property="og:title"]', () => withProperty('og:title'), title),
+      upsertMeta('meta[name="twitter:title"]', () => withName('twitter:title'), title),
+      upsertMeta('meta[property="og:description"]', () => withProperty('og:description'), description),
+      upsertMeta('meta[name="twitter:description"]', () => withName('twitter:description'), description),
+      upsertMeta('meta[property="og:url"]', () => withProperty('og:url'), url),
+    ];
+    return () => { for (const restore of restores) restore(); };
+  }, [title, description]);
+}
+
+function withProperty(property: string): HTMLMetaElement {
+  const meta = document.createElement('meta');
+  meta.setAttribute('property', property);
+  return meta;
+}
+
+function withName(name: string): HTMLMetaElement {
+  const meta = document.createElement('meta');
+  meta.setAttribute('name', name);
+  return meta;
+}
+
 /** Mô tả trang cho công cụ tìm kiếm và chia sẻ liên kết, theo ngôn ngữ. */
 export function usePageDescription(): void {
   const t = usePublicT();

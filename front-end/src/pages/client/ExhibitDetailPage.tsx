@@ -25,7 +25,7 @@ import { VisitorStorageStatus } from './visitor/VisitorStorageStatus';
 import { ReadingControls } from './visitor/ReadingControls';
 import { VisitorNotes } from './visitor/VisitorNotes';
 import classes from './ExhibitDetailPage.module.css';
-import { usePageTitle } from '@/hooks/usePageTitle';
+import { usePageTitle, useSocialMeta } from '@/hooks/usePageTitle';
 
 export function ExhibitDetailPage() {
   const { locale, t } = usePublicLocale();
@@ -63,6 +63,11 @@ export function ExhibitDetailPage() {
     </section>
   ) : null;
   usePageTitle(exhibit?.name ?? t('ui.exhibit.page-title', 'Chi tiết hiện vật'));
+  // Chia sẻ liên kết hiện vật hiển thị đúng tên + mô tả; chưa tải xong thì dùng mặc định.
+  useSocialMeta(
+    exhibit ? t('ui.meta.title', '{page} — Aura Museum', { page: exhibit.name }) : t('ui.meta.home-title', 'Aura Museum — Nghệ thuật và di sản'),
+    exhibit?.description?.slice(0, 200) || t('ui.meta.description', 'Khám phá nghệ thuật và di sản cùng Aura Museum. Mỗi hiện vật mở ra một câu chuyện trong không gian bảo tàng số.'),
+  );
   const viewedRef = useRef<string | null>(null);
   const validRoomId = exhibit?.roomId;
   const validExhibitId = exhibit?.id;

@@ -4,7 +4,7 @@ import { IconArrowRight, IconCube, IconHeadphones } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { usePublicLocale } from '@/core/i18n/public-locale';
 import { useHomeHeroSlides } from '@/hooks/useHomeHeroSlides';
-import { usePageTitle } from '@/hooks/usePageTitle';
+import { usePageTitle, useSocialMeta } from '@/hooks/usePageTitle';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import { HomeFeaturedExhibits } from './HomeFeaturedExhibits';
@@ -44,6 +44,10 @@ export function HomePage() {
   heroSlideRef.current = heroSlide;
   const featured = exhibits.slice(0, 3);
   usePageTitle(null);
+  useSocialMeta(
+    t('ui.meta.home-title', 'Aura Museum — Nghệ thuật và di sản'),
+    t('ui.meta.description', 'Khám phá nghệ thuật và di sản cùng Aura Museum. Mỗi hiện vật mở ra một câu chuyện trong không gian bảo tàng số.'),
+  );
 
   const selectSlide = (key: string, announce = true) => {
     if (key === activeSlideKeyRef.current) return;
