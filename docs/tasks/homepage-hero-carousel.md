@@ -56,14 +56,16 @@ Sửa **chỉ Hero trên trang chủ `/`** theo layout ảnh tham chiếu: headl
 - [x] Chạy baseline focused Home tests/typecheck/lint/build khi môi trường cho phép; ghi lỗi có thật, không dùng số pass từ PR trước.
 - [x] Review/stage riêng hai file plan/task này và commit trên chính branch đang làm.
 
-**Baseline (16/11/2026):** 46/47 focused Playwright (existing timeout in long-content Featured test); typecheck/lint/build pass. Existing HR-12 screenshots reused for 390/1440 light/dark. Reference image itself is unavailable in the current repo/session, so visual comparison to that attachment remains for final review.
+**Baseline (16/11/2026):** 46/47 focused Playwright; the failure was the 12-scenario responsive matrix exceeding its default 30s timeout. Trace showed the poster URL returned HTTP 200. HC-02 gives that test 90s and waits for image decode; the combined regression now passes 12/12. Baseline typecheck/lint/build passed. HR-12 screenshots at 390/1440 light/dark were reused. The reference image is unavailable in the current repo/session, so comparison to that attachment remains for final visual review.
 
 ### HC-02 — Chọn dữ liệu carousel
 
-- [ ] Test 0/1/2/3/6 poster, sort order/tie ID, slug/ID encode, 0–5 slides, không mutation DTO.
-- [ ] Chỉ khi phòng đầu <3 ảnh mới fetch thêm tối đa 4 phòng public; concurrency ≤2; ngừng khi đủ, không fetch vô hạn.
-- [ ] Hỗ trợ partial failure của phòng thêm, primary error/refetch stale, cache và abort; locale change không gây fetch lại phòng.
-- [ ] Featured vẫn giữ phòng đầu, 0–3 card; typecheck/focused tests GREEN và commit riêng.
+- [x] Test 0/1/2/3/6 poster, sort order/tie ID, slug/ID encode, 0–5 slides, không mutation DTO.
+- [x] Chỉ khi phòng đầu <3 ảnh mới fetch thêm tối đa 4 phòng public; concurrency ≤2; ngừng khi đủ, không fetch vô hạn.
+- [x] Hỗ trợ partial failure của phòng thêm, primary error/refetch stale, cache và abort; locale change không gây fetch lại phòng.
+- [x] Featured vẫn giữ phòng đầu, 0–3 card; typecheck/focused tests GREEN và commit riêng.
+
+**HC-02 verification:** selector unit tests 8/8; carousel + Featured Playwright 12/12; typecheck/lint pass. E2E covers the four-room cap, two-request batches, early stop at three posters, partial room failure, locale cache reuse, and Featured's first-room selection. Build is reserved for HC-11.
 
 ### HC-03 — Layout ba vùng
 

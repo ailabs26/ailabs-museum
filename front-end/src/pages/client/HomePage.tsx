@@ -2,7 +2,7 @@ import { Container, Title } from '@mantine/core';
 import { IconArrowRight, IconCube, IconHeadphones } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { usePublicLocale } from '@/core/i18n/public-locale';
-import { localizeExhibit, localizedAltText } from '@/helpers/localizeExhibit';
+import { useHomeHeroSlides } from '@/hooks/useHomeHeroSlides';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
@@ -10,14 +10,12 @@ import { HomeFeaturedExhibits } from './HomeFeaturedExhibits';
 import classes from './HomePage.module.css';
 
 export function HomePage() {
-  const { locale, t } = usePublicLocale();
+  const { t } = usePublicLocale();
   const { rooms, room, selectedRoom } = useMuseumRooms(null);
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const exhibits = detail ? [...detail.exhibits]
     .sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id)) : [];
-  const heroExhibit = exhibits.find((exhibit) => !!exhibit.image?.url);
-  const localizedHeroExhibit = heroExhibit ? localizeExhibit(heroExhibit, locale) : null;
-  const heroImage = localizedHeroExhibit?.image;
+  const heroSlide = useHomeHeroSlides({ rooms, room, selectedRoom })[0];
   const featured = exhibits.slice(0, 3);
   usePageTitle(null);
 
@@ -46,16 +44,15 @@ export function HomePage() {
             </div>
           </div>
 
-          <div className={classes.heroArtwork} aria-hidden={!heroImage}>
-            {localizedHeroExhibit && heroImage && selectedRoom ? (
-              <Link className={classes.heroPoster}
-                to={`/collection/${encodeURIComponent(selectedRoom.slug)}/exhibits/${encodeURIComponent(localizedHeroExhibit.id)}`}>
+          <div className={classes.heroArtwork} aria-hidden={!heroSlide}>
+            {heroSlide ? (
+              <Link className={classes.heroPoster} to={heroSlide.detailHref}>
                 <ExhibitImage image={{
-                  url: heroImage.url,
-                  alt: localizedAltText(heroImage.altText, locale, localizedHeroExhibit.name),
-                }} loading="eager" shape={localizedHeroExhibit.placeholderShape} color={localizedHeroExhibit.placeholderColor}
+                  url: heroSlide.imageUrl,
+                  alt: heroSlide.imageAlt,
+                }} loading="eager" shape={heroSlide.shape} color={heroSlide.color}
                   className={classes.heroImage} />
-                <span className={classes.posterCaption}>{localizedHeroExhibit.name}</span>
+                <span className={classes.posterCaption}>{heroSlide.name}</span>
               </Link>
             ) : (
               <>

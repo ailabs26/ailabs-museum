@@ -20,7 +20,7 @@ test('homepage shows the first three ordered public exhibits and links to their 
   await expect(link).toHaveAttribute('href', '/collection?room=sculpture');
   expect(requests.filter((url) => new URL(url).pathname === '/api/rooms')).toHaveLength(1);
   expect(requests.filter((url) => new URL(url).pathname === '/api/rooms/sculpture')).toHaveLength(1);
-  expect(requests.filter((url) => url.includes('/api/rooms/ceramics'))).toEqual([]);
+  expect(requests.filter((url) => /\/api\/rooms\/(?!sculpture$)/.test(new URL(url).pathname)).length).toBeLessThanOrEqual(4);
   expect(requests.filter((url) => url.includes('/components/MuseumScene'))).toEqual([]);
   await expect(featured.getByRole('list', { name: 'Hiện vật trong bộ sưu tập' }).locator('canvas')).toHaveCount(0);
   await expect(featured.getByText('Một số hiện vật theo thứ tự trưng bày')).toBeVisible();
@@ -30,7 +30,7 @@ test('homepage shows the first three ordered public exhibits and links to their 
   await expect(page.getByRole('listitem')).toHaveCount(5);
 });
 
-test('homepage displays only available items and never searches another room to fill three slots', async ({ page }) => {
+test('Featured stays within the first room while Hero may query other rooms for posters', async ({ page }) => {
   for (const count of [0, 1, 2]) {
     await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({ ...roomA, exhibits: roomA.exhibits.slice(0, count) })));
     const paths: string[] = [];
@@ -42,7 +42,10 @@ test('homepage displays only available items and never searches another room to 
     await expect(featured.getByRole('link', { name: 'Xem bộ sưu tập của phòng này' })).toBeVisible();
     if (count === 0) await expect(featured.getByRole('status')).toHaveText('Phòng này chưa có hiện vật được xuất bản.');
     else await expect(featured.getByRole('heading', { level: 3 })).toHaveText(roomA.exhibits.slice(0, count).map((item) => item.name));
-    expect(paths.every((path) => path === '/api/rooms/sculpture')).toBe(true);
+    expect(paths.filter((path) => path === '/api/rooms/sculpture')).toHaveLength(1);
+    const heroFallbackPaths = paths.filter((path) => path !== '/api/rooms/sculpture');
+    expect(heroFallbackPaths.length).toBeLessThanOrEqual(4);
+    expect(new Set(heroFallbackPaths).size).toBe(heroFallbackPaths.length);
     page.off('request', capture);
     await page.unroute('**/api/rooms/sculpture');
   }
@@ -126,6 +129,7 @@ test('failed refetch hides the cached hero poster and featured cards until retry
 });
 
 test('featured long content fits mobile and desktop in light and dark', async ({ page }) => {
+  test.setTimeout(90_000);
   const longRoomName = 'Tên phòng trưng bày dài '.repeat(4);
   await page.route('**/api/rooms', (route) => fulfillMuseum(route, envelope(roomSummaries.map((room) =>
     room.slug === roomA.slug ? { ...room, name: longRoomName } : room))));
@@ -154,7 +158,7 @@ test('featured long content fits mobile and desktop in light and dark', async ({
       const poster = page.locator('section[aria-labelledby="home-title"]').getByRole('img', { name: 'Ảnh hero' });
       await expect(poster).toBeVisible();
       await expect(poster).toHaveCSS('object-fit', 'contain');
-      expect(await poster.evaluate((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])).toEqual([800, 400]);
+      await expect.poll(() => poster.evaluate((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])).toEqual([800, 400]);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
       const ctaBounds = await page.locator('section[aria-labelledby="home-title"] a[href="/tour"], section[aria-labelledby="home-title"] a[href="/collection"]').evaluateAll((links) =>
