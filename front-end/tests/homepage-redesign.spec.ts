@@ -146,3 +146,27 @@ test('homepage story presents real 3D and audio features with working 3D and 2D 
     }
   }
 });
+
+test('homepage section semantics follow the visual order and respect reduced motion', async ({ page }) => {
+  await installMuseumApi(page);
+  await page.goto('/');
+
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+  await expect(page.locator('main h2')).toHaveText(['Hiện vật nổi bật', 'Hai cách khám phá di sản']);
+  for (const [selector, id] of [
+    ['section[aria-labelledby="home-title"]', 'home-title'],
+    ['section[aria-labelledby="featured-title"]', 'featured-title'],
+    ['section[aria-labelledby="immersive-title"]', 'immersive-title'],
+  ]) {
+    await expect(page.locator(selector)).toHaveAttribute('aria-labelledby', id);
+    await expect(page.locator(`#${id}`)).toBeVisible();
+  }
+
+  const hero = page.locator('section[aria-labelledby="home-title"]');
+  await expect(hero.locator('div[aria-hidden="true"]')).toHaveCount(1);
+  const tourLink = hero.getByRole('link', { name: 'Khám phá Không gian 3D (WebXR)' });
+  await tourLink.focus();
+  await expect(tourLink).toHaveCSS('outline-style', 'solid');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await tourLink.evaluate((link) => getComputedStyle(link).transitionProperty)).toBe('none');
+});

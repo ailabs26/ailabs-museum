@@ -68,6 +68,17 @@ export function HomePage() {
         </div>
       </section>
 
+      <section className={classes.featured} aria-labelledby="featured-title">
+        <Container size="xl">
+          <div className={classes.featuredHeader}>
+            <p className={classes.eyebrow}>{t('ui.home.featured.eyebrow', 'Từ bộ sưu tập')}</p>
+            <Title order={2} id="featured-title" className={classes.sectionTitle}>{t('ui.home.featured.title', 'Hiện vật nổi bật')}</Title>
+            <p className={classes.featuredIntro}>{t('ui.home.featured.description', 'Một số hiện vật theo thứ tự trưng bày')}</p>
+          </div>
+          <HomeFeaturedExhibits rooms={rooms} room={room} detail={detail} exhibits={featured} />
+        </Container>
+      </section>
+
       <Container size="xl" className={classes.content}>
         <section className={classes.immersive} aria-labelledby="immersive-title">
           <div className={classes.immersiveGrid}>
@@ -112,17 +123,6 @@ export function HomePage() {
           </div>
         </section>
       </Container>
-
-      <section className={classes.featured} aria-labelledby="featured-title">
-        <Container size="xl">
-          <div className={classes.featuredHeader}>
-            <p className={classes.eyebrow}>{t('ui.home.featured.eyebrow', 'Từ bộ sưu tập')}</p>
-            <Title order={2} id="featured-title" className={classes.sectionTitle}>{t('ui.home.featured.title', 'Hiện vật nổi bật')}</Title>
-            <p className={classes.featuredIntro}>{t('ui.home.featured.description', 'Một số hiện vật theo thứ tự trưng bày')}</p>
-          </div>
-          <HomeFeaturedExhibits rooms={rooms} room={room} detail={detail} exhibits={featured} />
-        </Container>
-      </section>
     </div>
   );
 }
