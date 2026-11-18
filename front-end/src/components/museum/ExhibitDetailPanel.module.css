@@ -13,5 +13,13 @@
 .title { font-family: 'Times New Roman', serif; overflow-wrap: anywhere; }
 .title:focus-visible { outline: 2px solid #2b6865; outline-offset: 4px; }
 .body { white-space: pre-wrap; overflow-wrap: anywhere; }
+.story { background: #eef4ed; padding: 14px; border-radius: 8px; }
+.storyHeading { overflow-wrap: anywhere; }
+.storyNavigation > button { min-width: 0; }
+.story button, .storyChoice { min-height: 44px; height: auto; max-width: 100%; }
+.story :global(.mantine-Button-label), .storyChoice :global(.mantine-Button-label) { white-space: normal; overflow-wrap: anywhere; }
+.story [aria-disabled='true'] { background: transparent; color: #60695f; cursor: default; }
+.storyBack { align-self: flex-start; }
+.storyChoice { justify-content: flex-start; }
 .preview { --public-surface: #eee8dc; --public-muted: #60695f; border-radius: 8px; }
 @media (max-width: 800px) { .panel { max-height: none; overflow: visible; padding: 20px; } }

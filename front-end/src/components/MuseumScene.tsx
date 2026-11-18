@@ -17,7 +17,8 @@ import classes from './MuseumScene.module.css';
 import { useRoomModels } from '@/hooks/useRoomModels';
 import { ModelLoadingStatus } from '@/components/museum/ModelLoadingStatus';
 import { ArtifactHotspotControls } from '@/components/museum/ArtifactHotspotControls';
-import { getArtifactFocusBounds } from '@/helpers/artifactHotspots';
+import { getArtifactFocusBounds, getHotspotWorldTarget } from '@/helpers/artifactHotspots';
+import type { HotspotStorySelection, SelectHotspot } from '@/helpers/hotspotStory';
 import type { ArtifactRenderState } from '@/components/museum/ArtifactModelBoundary';
 import { reportModelFailure } from '@/helpers/modelDiagnostics';
 import { createNavigationInput } from '@/helpers/museumNavigation';
@@ -58,8 +59,10 @@ function xrMessage(message: string, t: Translator): string {
   return known ? t(known.key, known.label) : message;
 }
 
-export function MuseumScene({ displays, navigationDisplays = displays, roomName, selectedId, onSelect, onClear, fallback, immersive = false, onXrChange, guided, modelLodSets = [] }: {
+export function MuseumScene({ displays, navigationDisplays = displays, roomName, selectedId, onSelect, onClear, activeHotspotId, onSelectHotspot, hotspotRequest,
+  fallback, immersive = false, onXrChange, guided, modelLodSets = [] }: {
   displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void; onClear: () => void;
+  activeHotspotId?: string; onSelectHotspot?: SelectHotspot; hotspotRequest?: HotspotStorySelection;
   navigationDisplays?: readonly MuseumDisplay[];
   /** Tên phòng (đã theo ngôn ngữ của khách) cho biển trên vách trung tâm của Gallery Template. */
   roomName?: string;
@@ -80,11 +83,18 @@ export function MuseumScene({ displays, navigationDisplays = displays, roomName,
   useEffect(() => () => {
     onXrChange?.({ capability: 'unavailable', phase: 'idle', message: '' }, null);
   }, [onXrChange]);
-  const [xrHoveredId, setXrHoveredId] = useState<string | null>(null);
+  const [xrHover, setXrHover] = useState<{ artifactId: string; hotspotId?: string } | null>(null);
+  const handleXrHover = useCallback((artifactId: string | null, hotspotId?: string) => {
+    setXrHover(artifactId ? { artifactId, hotspotId } : null);
+  }, []);
   const [isRendererRestarting, setIsRendererRestarting] = useState(false);
   const [canvasEpoch, setCanvasEpoch] = useState(0);
   const rendererResets = useRef(0);
   const isWebInputEnabled = !isRendererRestarting && webglStatus === 'ready' && xrStatus.phase === 'idle';
+  const handledHotspotFocus = useRef<HotspotStorySelection | null>(null);
+  useEffect(() => {
+    if (!isWebInputEnabled && hotspotRequest) handledHotspotFocus.current = hotspotRequest;
+  }, [isWebInputEnabled, hotspotRequest]);
   const handleRendererReset = useCallback(() => {
     if (++rendererResets.current > 2) { setWebglStatus('failed'); return; }
     setIsRendererRestarting(true); setXrOwner(null);
@@ -106,7 +116,10 @@ export function MuseumScene({ displays, navigationDisplays = displays, roomName,
   const [isActive, setIsActive] = useState(false);
   const [hasTouch, setHasTouch] = useState(false);
   useEffect(() => { setHasTouch(navigator.maxTouchPoints > 0 || matchMedia('(any-pointer: coarse)').matches); }, []);
-  const handleSceneSelect = (id: string) => { if (gestures.canSelect) onSelect(id); };
+  const handleSceneSelect = (id: string) => { if (isWebInputEnabled && gestures.canSelect) onSelect(id); };
+  const handleMarkerSelect = onSelectHotspot && ((exhibitId: string, hotspotId: string) => {
+    if (isWebInputEnabled && gestures.canSelect) onSelectHotspot(exhibitId, hotspotId);
+  });
   const { models, retry, selectLod, retainModel } = useRoomModels(displays, modelLodSets);
   // Phòng rỗng/khớp đủ bục dùng Gallery Template; phòng tọa độ tự do giữ nguyên cách dựng cũ.
   const layout = useMemo(() => resolveGalleryLayout(displays), [displays]);
@@ -115,12 +128,16 @@ export function MuseumScene({ displays, navigationDisplays = displays, roomName,
     : displays.filter(display => !display.isOutsideRoom).map(display => ({ id: display.id, position: display.position,
       isHero: !!display.model || display.shape === 'torus' })), [layout, displays]);
   const selectedDisplay = displays.find((display) => display.id === selectedId);
+  const navigationDisplay = navigationDisplays.find(display => display.id === selectedId);
   const selection = useMemo(() => ({ id: selectedId, issuedAt: performance.now() }), [selectedId]);
   const selectedModel = selectedDisplay?.model ? models[selectedDisplay.model.checksumSha256] : undefined;
   const selectedRenderState = renderStates[selectedDisplay?.id ?? ''];
   const selectedAsset = selectedModel?.status === 'ready' && !(selectedRenderState?.checksum === selectedDisplay?.model?.checksumSha256 && selectedRenderState?.failed) ? selectedModel.asset : undefined;
-  const focusBounds = useMemo(() => selectedDisplay?.model ? getArtifactFocusBounds(selectedDisplay, selectedAsset?.normalization)
-    : undefined, [selectedDisplay, selectedAsset]);
+  const focusBounds = useMemo(() => navigationDisplay?.model ? getArtifactFocusBounds(navigationDisplay, selectedAsset?.normalization)
+    : undefined, [navigationDisplay, selectedAsset]);
+  const hotspotTarget = navigationDisplay && hotspotRequest
+    ? getHotspotWorldTarget(navigationDisplay, hotspotRequest.hotspotId, selectedAsset?.normalization) ?? undefined
+    : undefined;
   const guidedDisplay = navigationDisplays.find(display => display.id === guided?.request?.exhibitId);
   const guidedModel = guidedDisplay?.model ? models[guidedDisplay.model.checksumSha256] : undefined;
   const guidedBounds = useMemo(() => guidedDisplay?.model ? getArtifactFocusBounds(guidedDisplay,
@@ -148,9 +165,11 @@ export function MuseumScene({ displays, navigationDisplays = displays, roomName,
     lodSet: modelLodSets.find(set => set.sourceChecksumSha256 === display.model?.checksumSha256),
     isFocused: display.id === guided?.request?.exhibitId, onLodChange: selectLod, onRetainModel: retainModel,
     isSelected: display.id === selectedId, onSelect: handleSceneSelect,
+    activeHotspotId, onSelectHotspot: handleMarkerSelect,
     modelState: display.model ? models[display.model.checksumSha256] : undefined, renderAttempt: renderStates[display.id]?.attempts,
     hasRenderError: renderStates[display.id]?.checksum === display.model?.checksumSha256 && renderStates[display.id]?.failed,
-    isXrHovered: xrHoveredId === display.id, onRenderError: () => handleRenderError(display),
+    isXrHovered: xrHover?.artifactId === display.id, xrHoveredHotspotId: xrHover?.artifactId === display.id ? xrHover.hotspotId : undefined,
+    onRenderError: () => handleRenderError(display),
   });
   const handleCommand = (action: CameraAction) => commandHandler.current?.(action);
   const captureRef = useRef<(() => string | null) | null>(null);
@@ -199,9 +218,11 @@ export function MuseumScene({ displays, navigationDisplays = displays, roomName,
         failedGlbRenders: displays.filter(display => display.model && renderStates[display.id]?.checksum === display.model.checksumSha256 && renderStates[display.id]?.failed).length,
         tier: quality.tier, dprCap: quality.dpr, shadowSize: quality.shadowSize, anisotropy: quality.anisotropy } : undefined} />
       <MuseumXr available={webglStatus === 'ready'} displays={displays} selectedId={selectedId} onSelect={onSelect}
-        onController={setXrOwner} onStatus={setXrStatus} onHover={setXrHoveredId} onRendererReset={handleRendererReset} />
+        activeHotspotId={activeHotspotId} onSelectHotspot={onSelectHotspot} onController={setXrOwner} onStatus={setXrStatus}
+        onHover={handleXrHover} onRendererReset={handleRendererReset} />
       <PhotoCapture bind={(fn) => { captureRef.current = fn; }} />
-      <MuseumControls enabled={isWebInputEnabled} commandHandler={commandHandler} selectionIssuedAt={selection.issuedAt} selectedDisplay={selectedDisplay} focusBounds={focusBounds}
+      <MuseumControls enabled={isWebInputEnabled} commandHandler={commandHandler} selectionIssuedAt={selection.issuedAt} selectedDisplay={navigationDisplay} focusBounds={focusBounds}
+        activeHotspotId={activeHotspotId} hotspotRequest={hotspotRequest} hotspotTarget={hotspotTarget} handledHotspotFocus={handledHotspotFocus}
         displays={navigationDisplays} input={input} gestures={gestures} onModeChange={setMode} onActiveChange={setIsActive} guided={guided} guidedBounds={guidedBounds} guidedModelFailed={guidedModelFailed} />
       <GallerySurfaces anisotropy={quality.anisotropy}>
       <MuseumRoom roomName={roomName} hasHeroHalo={layout.mode === 'slotted'} />
@@ -242,7 +263,8 @@ export function MuseumScene({ displays, navigationDisplays = displays, roomName,
     {xrStatus.message && <Text className={classes.xrFeedback} size="xs" role="status">{xrMessage(xrStatus.message, t)}</Text>}
     {displays.some(display => !display.model) && <p className={classes.illustrationNote}>{t('ui.tour.shapes-note', 'Hình khối minh họa cho hiện vật chưa có mô hình')}</p>}
     <details data-hotspots className={classes.hotspotMenu}><summary>{t('ui.tour.hotspots-summary', 'Điểm tương tác')}</summary>
-      <ArtifactHotspotControls displays={displays} selectedId={selectedId} onSelect={onSelect} />
+      <ArtifactHotspotControls displays={displays} selectedId={selectedId} onSelect={onSelect}
+        activeHotspotId={activeHotspotId} onSelectHotspot={onSelectHotspot} />
     </details>
     <div className={classes.modelStatus}><ModelLoadingStatus displays={displays} models={models} onRetry={retry} renderStates={renderStates} onRetryRender={handleRetryRender} /></div>
     </div>

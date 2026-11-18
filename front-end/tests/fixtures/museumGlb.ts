@@ -49,7 +49,7 @@ export async function installFiveModels(page: Page, options: { failIndex?: numbe
       if (options.failure === 'checksum') { body = Buffer.from(body); body[body.length - 1] ^= 1; }
     }
     return route.fulfill({ status: 200, contentType: 'model/gltf-binary', body,
-      headers: { 'Access-Control-Allow-Origin': 'http://127.0.0.1:4173', 'Access-Control-Allow-Credentials': 'true' } });
+      headers: { 'Access-Control-Allow-Origin': route.request().headers().origin ?? 'http://127.0.0.1:4173', 'Access-Control-Allow-Credentials': 'true' } });
   });
   return { exhibits, requests };
 }

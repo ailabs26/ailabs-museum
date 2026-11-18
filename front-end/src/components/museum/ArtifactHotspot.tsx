@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useThree } from '@react-three/fiber';
+import { BackSide } from 'three';
 import type { ArtifactHotspot as Hotspot } from '@/helpers/artifactHotspots';
 import { ArtifactCaption } from './ArtifactCaption';
 import { usePublicT } from '@/core/i18n/public-locale';
 
-export function ArtifactHotspot({ hotspot, artifactTitle, isSelected, isXrHovered = false, onSelect }: {
+export function ArtifactHotspot({ hotspot, artifactTitle, isSelected, isStoryActive, isXrHovered = false, onSelect }: {
   isXrHovered?: boolean;
-  hotspot: Hotspot; artifactTitle: string; isSelected: boolean; onSelect: (id: string) => void;
+  hotspot: Hotspot; artifactTitle: string; isSelected: boolean; isStoryActive: boolean; onSelect: () => void;
 }) {
   const t = usePublicT();
   const [isPointerHovered, setIsHovered] = useState(false);
@@ -16,12 +17,16 @@ export function ArtifactHotspot({ hotspot, artifactTitle, isSelected, isXrHovere
     if (!isHovered) return;
     canvas.style.cursor = 'pointer'; return () => { canvas.style.cursor = ''; };
   }, [canvas, isHovered]);
-  return <group position={hotspot.position} userData={{ hotspotId: hotspot.id, artifactId: hotspot.artifactId }}
+  return <group position={hotspot.position}
+    userData={{ hotspotId: hotspot.id, artifactId: hotspot.artifactId, hotspotActive: isStoryActive }}
     onPointerOver={event => { event.stopPropagation(); setIsHovered(true); }} onPointerOut={() => setIsHovered(false)}
-    onClick={event => { event.stopPropagation(); if (event.delta <= 5) onSelect(hotspot.artifactId); }}>
-    <mesh scale={isHovered ? 1.2 : 1}>
+    onClick={event => { event.stopPropagation(); if (event.delta <= 5) onSelect(); }}>
+    <mesh scale={isStoryActive ? 1.35 : isHovered ? 1.2 : 1}>
       <sphereGeometry args={[0.12, 12, 8]} /><meshBasicMaterial color={isSelected ? '#25645c' : isHovered ? '#b69761' : '#f7f3ea'} />
     </mesh>
-    {isHovered && <ArtifactCaption title={artifactTitle} subtitle={hotspot.label === artifactTitle ? t('ui.artifact.select-to-explore', 'Chọn để khám phá') : hotspot.label} position={[0, 0.4, 0]} />}
+    {isStoryActive && <mesh raycast={() => {}}>
+      <sphereGeometry args={[0.192, 12, 8]} /><meshBasicMaterial side={BackSide} color="#f7f3ea" />
+    </mesh>}
+    {isHovered && <ArtifactCaption title={artifactTitle} subtitle={hotspot.isDefault ? t('ui.artifact.select-to-explore', 'Chọn để khám phá') : hotspot.label} position={[0, 0.4, 0]} />}
   </group>;
 }
