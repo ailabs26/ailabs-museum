@@ -2,7 +2,7 @@
 
 **Quy ước:** SP = Story Point (Fibonacci). Owner = thành viên (TV1–TV5, xem `team-allocation.md`). Dep = phụ thuộc. AC = tiêu chí nghiệm thu rút gọn.
 
-Tổng: **15 epic · 63 task · 273 SP**. Phân bổ cân bằng: TV1=54, TV2=52, TV3=56, TV4=55, TV5=56.
+Tổng: **15 epic · 71 task · 273 SP**. Phân bổ cân bằng theo SP: TV1=54, TV2=52, TV3=56, TV4=55, TV5=56 (số task lệch 9–18 do task 3D/AR của TV4 nặng hơn — chia đều theo **khối lượng SP**, không theo số lượng task).
 
 ---
 
