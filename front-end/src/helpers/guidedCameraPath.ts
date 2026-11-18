@@ -22,33 +22,45 @@ const distance = (a: NavigationVector, b: NavigationVector) => Math.hypot(b.x - 
 const mix = (a: NavigationVector, b: NavigationVector, t: number): NavigationVector => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
 
 /** Use actual bounds for framing and reject a safe but occluded destination. */
-export function getGuidedView(display: MuseumDisplay, displays: readonly MuseumDisplay[], bounds?: ModelFocusBounds, aspect = 1.7, fov = 60): MuseumCameraView | null {
+export function getGuidedView(display: MuseumDisplay, displays: readonly MuseumDisplay[], bounds?: ModelFocusBounds, aspect = 1.7, fov = 60,
+  hotspotTarget?: MuseumCameraView['target']): MuseumCameraView | null {
   if (!display.position.every(Number.isFinite) || !Number.isFinite(aspect) || aspect <= 0
     || (bounds && (!bounds.center.every(Number.isFinite) || !Number.isFinite(bounds.radius) || bounds.radius <= 0))) return null;
   const view = getExhibitView(display, bounds, aspect, fov);
   if (!view) return null;
-  const target: MuseumCameraView['target'] = bounds?.center ?? [display.position[0], view.target[1], display.position[2]];
+  const center: MuseumCameraView['target'] = bounds?.center ?? [display.position[0], view.target[1], display.position[2]];
+  const target = hotspotTarget ?? center;
+  if (hotspotTarget && (!target.every(Number.isFinite) || target[1] < 0.2 || target[1] > MUSEUM_ROOM_SIZE.height - 0.2)) return null;
   const halfFov = Math.min(fov * Math.PI / 360, Math.atan(Math.tan(fov * Math.PI / 360) * aspect));
-  const minimumDistance = (bounds?.radius ?? (display.shape === 'torus' ? 1.15 : 0.85)) * 1.15 / Math.sin(halfFov);
+  const boundRadius = bounds?.radius ?? (display.shape === 'torus' ? 1.15 : 0.85);
+  const minimumDistance = boundRadius * 1.15 / Math.sin(halfFov);
+  const dx = target[0] - center[0], dz = target[2] - center[2];
+  const side = Math.hypot(dx, dz);
+  const preferred: MuseumCameraView['position'] = side > 0.08 ? [
+    target[0] + dx / side * minimumDistance, view.position[1], target[2] + dz / side * minimumDistance,
+  ] : view.position;
   // Bục trống cũng che tầm nhìn/chắn chỗ đứng; chỉ bỏ vật cản của chính hiện vật đang ngắm.
   const colliders = getGalleryColliders(displays);
   const otherColliders = getGalleryColliders(displays, display.id);
+  if (hotspotTarget && !isNavigationPositionSafe(target[0], target[2], MUSEUM_ROOM_SIZE, otherColliders)) return null;
   const safe = (position: MuseumCameraView['position']) => position.every(Number.isFinite)
     && position[1] >= NAVIGATION.wallMargin && position[1] <= MUSEUM_ROOM_SIZE.height - NAVIGATION.wallMargin
-    && Math.hypot(...position.map((value, i) => value - target[i])) >= minimumDistance - 1e-6
+    && Math.hypot(...position.map((value, i) => value - center[i])) >= minimumDistance - 1e-6
+    && (!hotspotTarget || (Math.hypot(...position.map((value, i) => value - target[i])) >= Math.max(0.65, minimumDistance - boundRadius)
+      && (side <= 0.08 || ((position[0] - target[0]) * dx + (position[2] - target[2]) * dz) / side > 0.1)))
     && isNavigationPositionSafe(position[0], position[2], MUSEUM_ROOM_SIZE, colliders)
     && isNavigationSegmentSafe({ x: position[0], y: position[2] }, { x: target[0], y: target[2] }, MUSEUM_ROOM_SIZE, otherColliders);
-  if (safe(view.position)) return { target, position: view.position };
+  if (safe(preferred)) return { target, position: preferred };
   const candidates: MuseumCameraView['position'][] = [];
-  const nearest = findSafeNavigationPoint({ x: view.position[0], y: view.position[2] }, MUSEUM_ROOM_SIZE, colliders);
+  const nearest = findSafeNavigationPoint({ x: preferred[0], y: preferred[2] }, MUSEUM_ROOM_SIZE, colliders);
   if (nearest) candidates.push([nearest.x, view.position[1], nearest.y]);
-  const radius = Math.max(minimumDistance, Math.hypot(view.position[0] - target[0], view.position[2] - target[2]));
+  const radius = Math.max(minimumDistance, Math.hypot(preferred[0] - target[0], preferred[2] - target[2]));
   for (let ring = 0; ring < 4; ring++) for (let i = 0; i < 48; i++) {
     const angle = i * Math.PI / 24, r = radius + ring * 0.4;
     candidates.push([target[0] + Math.sin(angle) * r, Math.max(0.45, Math.min(4.55, view.position[1])), target[2] + Math.cos(angle) * r]);
   }
   const position = candidates.filter(safe).sort((a, b) =>
-    Math.hypot(...a.map((v, i) => v - view.position[i])) - Math.hypot(...b.map((v, i) => v - view.position[i])))[0];
+    Math.hypot(...a.map((v, i) => v - preferred[i])) - Math.hypot(...b.map((v, i) => v - preferred[i])))[0];
   return position ? { target, position } : null;
 }
 
