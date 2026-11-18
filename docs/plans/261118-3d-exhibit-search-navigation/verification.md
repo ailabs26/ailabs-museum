@@ -84,6 +84,21 @@ Exported the tracked `front-end` tree from `07ecea2498258390db0259de1d37c1df7433
 - Shift speed: **PARTIAL**. Baseline passed 8/8, and the candidate passed 3/3 in isolation. The full run still failed. Both revisions use the unchanged 50 ms per-frame movement cap and the test compares two fixed 700 ms wall-clock windows, so different frame delivery can affect the result. These runs do not isolate that cause or prove the failure is baseline. Preserve the observed failure for review.
 - Regression assertions and timeouts were kept unchanged. `git diff` against the base is empty for `museum-navigation.spec.ts` and the shared movement math.
 
+### PR #206 follow-up: Shift speed under uneven frame delivery
+
+Compared base `07ecea2` and PR code `58b60a8` on the same Windows host, Edge `157.0.4341.60` with SwiftShader, the same room fixture, a 390×844 viewport and one Playwright worker. Tested production previews sequentially in base → PR → PR → base order. Each run used the existing `npx playwright test museum-navigation.spec.ts --grep 'Shift increases' --workers=1 --repeat-each=3` with its original assertions and timeout.
+
+| Build | Unchanged 700 ms test | Walk after 4 capped frames | Shift + walk after 4 capped frames |
+| --- | ---: | ---: | ---: |
+| Base `07ecea2` | 6/6 | 0.248453 m | 0.447215 m |
+| PR `58b60a8` | 5/6 | 0.248453 m | 0.447215 m |
+
+The unmodified PR test failed once with zero displacement in both windows. To isolate the speed calculation, a local diagnostic reset the camera to the same pose, waited for idle, imposed a minimum 65 ms animation-callback interval to exercise the existing 50 ms movement cap, and recorded camera X before each render. It held each input until four moving samples and compared the first four corresponding positions. Both builds passed (exit `0`; 13.8 s base, 13.0 s PR) and produced the same positions and 1.80× Shift/walk ratio. No application or tracked test code changed.
+
+A separate 700 ms diagnostic reproduced the original assertion's failure mechanism on both builds. With unequal frame delivery, one base sample moved 0.160883 m walking (3 moving frames) and 0.150358 m sprinting (2), below its 0.217192 m threshold. One PR sample had the same 3-vs-2 result. At the second corresponding frame on both builds, walking had moved 0.083532 m and sprinting 0.150358 m (1.80×). Even the original 0.614936 m sprint result is numerically identical to five capped 50 ms steps at 3.6 m/s with damping 12 from rest. The original run did not record per-trial frame counts, so that last correspondence is supporting evidence, not a measured frame count.
+
+**Conclusion:** The wall-clock assertion can fail even when Shift acceleration is correct; it compares displacement over unequal amounts of simulated movement. The diagnostic reproduces that mechanism on base and PR, while at matched simulation steps no speed regression was observed. This does not establish identical rendering throughput or turn the 93/95 suite result green. The original regression test and its threshold were left intact. Ordinary delayed GLB portrait framing remains a separate baseline issue.
+
 ### Acceptance and remaining proof
 
 | Area | Status | Evidence |

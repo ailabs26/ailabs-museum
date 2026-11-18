@@ -1,6 +1,6 @@
 # Handoff: 3D Exhibit Search & Navigation
 
-Branch: `feat/3d-exhibit-search-navigation`. Base: `07ecea2498258390db0259de1d37c1df74337c73` (`origin/dev` at task start). Delivery is local. PR, push and merge were not requested. A future PR targets `dev`.
+Branch: `feat/3d-exhibit-search-navigation`. Base: `07ecea2498258390db0259de1d37c1df74337c73` (`origin/dev` at task start). Published as [PR #206](https://github.com/ailabs26/ailabs-museum/pull/206) into `dev`. Review requested an isolated Shift comparison; the results are in the verification ledger.
 
 Collection still owns cross-room API search. Immersive search uses the current room’s validated, localized display data. An immutable index normalizes case, spacing and Vietnamese diacritics, including `đ`. Results rank exact title, title prefix, other title match, description, then hotspot label. Published display order breaks ties. Outside-room exhibits keep their 2D detail link. Scene rings and minimap outlines share the result IDs and distinguish the active target.
 
@@ -25,4 +25,4 @@ Code is grouped by responsibility: `helpers/exhibitSearch*` for indexing and ran
 | `49b933d` | 18 browser search and takeover journeys |
 | This commit | Final verification, evidence index and handoff |
 
-Frontend typecheck, lint, 438 unit tests and production build passed. All 18 search browser cases passed. The full affected browser batch had 93/95 passes. One failure (delayed GLB in portrait) reproduced on baseline with the same extent. The Shift timing case passed on focused reruns but did not pass in the full batch. Review both before merge. The separate 250-entry fixture passed and observed 4.05 ms median to update the result DOM, idle rendering and renderer release on exit. Hardware/physical-device coverage remains partial; see the [verification ledger](verification.md) for exact scope and commands.
+Frontend typecheck, lint, 438 unit tests and production build passed. All 18 search browser cases passed. The full affected browser batch had 93/95 passes. One failure (delayed GLB in portrait) reproduced on baseline with the same extent. The Shift wall-clock assertion can fail with fewer render frames on either revision, while matched frames show identical acceleration. The full batch remains red. Review the comparison and delayed GLB finding before merge. The separate 250-entry fixture passed and observed 4.05 ms median to update the result DOM, idle rendering and renderer release on exit. Hardware/physical-device coverage remains partial; see the [verification ledger](verification.md) for exact scope and commands.
