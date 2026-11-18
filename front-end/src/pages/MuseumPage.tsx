@@ -20,6 +20,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useGuidedCameraTour } from '@/hooks/useGuidedCameraTour';
 import { GuidedTourBar } from '@/components/museum/GuidedTourBar';
 import { guidedTour2dDetailPath } from '@/helpers/guidedTour2dNavigation';
+import { resolveHotspotStory, type HotspotStorySelection, type SelectHotspot } from '@/helpers/hotspotStory';
 
 const LazyMuseumScene = lazy(() => import('@/components/MuseumScene').then((module) => ({ default: module.MuseumScene })));
 const LazyMuseumAuditPanel = lazy(() => import('@/components/museum/MuseumAuditPanel').then(module => ({ default: module.MuseumAuditPanel })));
@@ -27,6 +28,7 @@ const exhibitIdSchema = z.string().uuid();
 
 export function MuseumPage() {
   const [reportTarget, setReportTarget] = useState<{ exhibitId: string; reportedRevisionId: string } | null>(null);
+  const [storySelection, setStorySelection] = useState<HotspotStorySelection | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { rooms, room, selectedRoom, selectedSlug, refresh } = useMuseumRooms(searchParams.get('room'));
@@ -45,12 +47,18 @@ export function MuseumPage() {
   const { isOpen: isSceneOpen, containerRef, isXrPresentingRef, open: openScene, close: closeScene } = useImmersiveTour();
   const catalogueContainerRef = useRef<HTMLDivElement>(null);
   const catalogueHeightRef = useRef(0);
+  const sceneOpenedAt = useRef(Infinity);
   const handleOpenScene = () => {
+    sceneOpenedAt.current = performance.now();
     catalogueHeightRef.current = catalogueContainerRef.current?.getBoundingClientRect().height ?? 0;
     openScene();
   };
   const xrOwnerRef = useRef<XrSessionController | null>(null);
+  const xrPhaseRef = useRef<XrSnapshot['phase']>('idle');
   const handleXrChange = useCallback((snapshot: XrSnapshot, owner: XrSessionController | null) => {
+    if ((xrPhaseRef.current === 'idle' && snapshot.phase !== 'idle')
+      || (xrPhaseRef.current === 'active' && snapshot.phase !== 'active')) setStorySelection(null);
+    xrPhaseRef.current = snapshot.phase;
     isXrPresentingRef.current = snapshot.phase !== 'idle';
     xrOwnerRef.current = owner;
   }, [isXrPresentingRef]);
@@ -67,12 +75,20 @@ export function MuseumPage() {
   const selectedDisplay = detail && isRequestedExhibitValid
     ? displays.find((display) => display.id === requestedExhibitId)
     : undefined;
+  const story = useMemo(() => resolveHotspotStory(storySelection, selectedDisplay), [storySelection, selectedDisplay]);
+  useEffect(() => {
+    if (storySelection && (storySelection.exhibitId !== requestedExhibitId
+      || (rooms.isSuccess && storySelection.roomId !== selectedRoom?.id) || (detail && !story))) setStorySelection(null);
+  }, [storySelection, requestedExhibitId, rooms.isSuccess, selectedRoom?.id, detail, story]);
   const selectGuidedDisplay = (id: string) => {
+    setStorySelection(null);
     if (requestedExhibitId === id) return;
     const next = new URLSearchParams(searchParams); next.set('exhibit', id);
     setSearchParams(next, { replace: true });
   };
   const guided = useGuidedCameraTour(detail, isSceneOpen, selectGuidedDisplay);
+  const guidedRequest = guided.camera.request;
+  useEffect(() => { if (guidedRequest) setStorySelection(null); }, [guidedRequest]);
   useEffect(() => {
     if (rooms.isSuccess && !selectedRoom && guided.tour.currentStep) guided.tour.invalidateRoom(guided.tour.currentStep.roomId);
   }, [rooms.isSuccess, selectedRoom, guided.tour]);
@@ -95,9 +111,11 @@ export function MuseumPage() {
     reportedRevisionId: selectedDisplay.revisionId,
   } : null;
   const selectionTriggerRef = useRef<HTMLElement | null>(null);
+  const storyTriggerRef = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const handleSelectDisplay = (id: string) => {
     if (!detail || !displays.some((display) => display.id === id)) return;
+    setStorySelection(null);
     guided.tour.exit();
     const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     selectionTriggerRef.current = active?.closest('details[data-catalogue]')?.querySelector('summary') ?? active;
@@ -106,7 +124,30 @@ export function MuseumPage() {
     next.set('exhibit', id);
     setSearchParams(next, { replace: true });
   };
+  const handleSelectHotspot: SelectHotspot = (exhibitId, hotspotId, trigger) => {
+    if (!detail) return;
+    const candidate = { roomId: detail.id, exhibitId, hotspotId, issuedAt: performance.now() };
+    const display = displays.find(item => item.id === exhibitId);
+    if (!resolveHotspotStory(candidate, display) || (story?.hotspot.id === hotspotId && selectedDisplay?.id === exhibitId)) return;
+    guided.pause();
+    if (trigger || storySelection?.exhibitId !== exhibitId) storyTriggerRef.current = trigger ?? null;
+    if (requestedExhibitId !== exhibitId) {
+      selectionTriggerRef.current = trigger ?? null;
+      const next = new URLSearchParams(searchParams);
+      next.set('exhibit', exhibitId);
+      setSearchParams(next, { replace: true });
+    }
+    setStorySelection(candidate);
+  };
+  const handleCloseStory = () => {
+    setStorySelection(null);
+    const trigger = storyTriggerRef.current;
+    storyTriggerRef.current = null;
+    if (trigger?.isConnected && trigger.getClientRects().length) trigger.focus({ preventScroll: true });
+    else (isSceneOpen ? containerRef.current : document)?.querySelector<HTMLElement>('[data-exhibit-detail-title]')?.focus({ preventScroll: true });
+  };
   const handleCloseDetail = () => {
+    setStorySelection(null);
     guided.pause();
     const next = new URLSearchParams(searchParams);
     next.delete('exhibit');
@@ -119,6 +160,7 @@ export function MuseumPage() {
   const wasSceneOpenRef = useRef(false);
   useEffect(() => {
     if (wasSceneOpenRef.current && !isSceneOpen && failedRoomId !== currentRoomId) {
+      setStorySelection(null);
       // The readable detail panel mounts on exit and focuses its title first.
       // Restore the user's opener after those panel effects have completed.
       const frame = requestAnimationFrame(() => startButtonRef.current?.focus({ preventScroll: true }));
@@ -128,6 +170,7 @@ export function MuseumPage() {
     wasSceneOpenRef.current = isSceneOpen;
   }, [isSceneOpen, failedRoomId, currentRoomId]);
   const handleSelectRoom = (slug: string) => {
+    setStorySelection(null);
     guided.tour.exit();
     const next = new URLSearchParams(searchParams);
     next.set('room', slug);
@@ -141,6 +184,7 @@ export function MuseumPage() {
   const sceneFallback = <SceneFallback read2dHref={read2dHref} onUnavailable={handleUnavailable}
     onRead2d={guided.tour.status !== 'idle' ? handleContinue2d : undefined} onRetry={handleRetry3d} retriesRemaining={2 - sceneAttempt} />;
   const detailPanel = selectedDisplay && detail && <ExhibitDetailPanel display={selectedDisplay} onClose={handleCloseDetail}
+    story={story} onSelectHotspot={handleSelectHotspot} onCloseStory={handleCloseStory}
     detail2dHref={guided.tour.status !== 'idle' ? guidedDetailHref : guidedTour2dDetailPath(detail.slug, selectedDisplay.id)}
     onRead2d={guided.tour.status !== 'idle' ? handleContinue2d : undefined}
     onReport={selectedReportTarget ? () => setReportTarget(selectedReportTarget) : undefined} />;
@@ -149,7 +193,10 @@ export function MuseumPage() {
     {...reportTarget} opened onClose={() => setReportTarget(null)} portalTarget={isSceneOpen ? containerRef.current ?? undefined : undefined} />;
   return (
     <Container size="xl" py="xl" className={classes.page} onKeyDown={(event) => {
-      if (!isSceneOpen && !reportTarget && event.key === 'Escape' && selectedDisplay) { event.preventDefault(); handleCloseDetail(); }
+      if (!isSceneOpen && !reportTarget && event.key === 'Escape' && selectedDisplay) {
+        event.preventDefault();
+        if (story) handleCloseStory(); else handleCloseDetail();
+      }
     }}>
       <Stack>
         <Text size="xs" tt="uppercase" className={classes.eyebrow} fw={700}>{t('ui.tour.eyebrow', 'Aura / Tham quan bảo tàng')}</Text>
@@ -205,13 +252,15 @@ export function MuseumPage() {
         </>}
       </Stack>
       {isSceneOpen && <ImmersiveTour containerRef={containerRef} roomName={detail?.name ?? selectedRoom?.name ?? t('ui.tour.room-fallback', 'Phòng trưng bày')} hasModal={!!reportTarget}
-        onClose={() => { setReportTarget(null); closeScene(); }} onEscape={() => {
+        onClose={() => { setReportTarget(null); setStorySelection(null); closeScene(); }} onEscape={() => {
           if (isXrPresentingRef.current) { void xrOwnerRef.current?.exit(); return; }
-          if (selectedDisplay) handleCloseDetail(); else closeScene();
+          if (story) handleCloseStory(); else if (selectedDisplay) handleCloseDetail(); else closeScene();
         }}>
         {detail ? <ErrorBoundary key={`${detail.id}:${sceneAttempt}`} fallback={sceneFallback}>
           <Suspense fallback={<MuseumLoading text={t('ui.tour.opening', 'Đang mở phòng 3D…')} />}>
             <LazyMuseumScene displays={displays} navigationDisplays={navigationDisplays} roomName={detail.name} selectedId={selectedDisplay?.id ?? null} onSelect={handleSelectDisplay}
+              activeHotspotId={story?.hotspot.id} onSelectHotspot={handleSelectHotspot}
+              hotspotRequest={story && storySelection && storySelection.issuedAt >= sceneOpenedAt.current ? storySelection : undefined}
               onClear={handleCloseDetail} fallback={sceneFallback} immersive onXrChange={handleXrChange} guided={guided.camera} />
           </Suspense>
         </ErrorBoundary> : <div className={classes.immersiveLoading}>
@@ -225,7 +274,7 @@ export function MuseumPage() {
           <NativeSelect aria-label={t('ui.tour.room-select', 'Chọn phòng trưng bày')} value={selectedSlug ?? ''}
             onChange={event => handleSelectRoom(event.currentTarget.value)} data={rooms.data?.map(item => ({ value: item.slug, label: item.name })) ?? []} />
         </div>
-        <div className={`${classes.immersiveDetail} ${guided.camera.hasSession ? classes.guidedDetail : ''}`}>{detailPanel}</div>
+        <div className={`${classes.immersiveDetail} ${guided.camera.hasSession ? classes.guidedDetail : ''} ${story ? classes.storyDetail : ''}`}>{detailPanel}</div>
         {detail && <GuidedTourBar controller={guided} title={displays.find(display => display.id === guided.tour.currentStep?.exhibitId)?.title}
           onContinue2D={handleContinue2d} />}
         {detail && <details data-catalogue className={classes.immersiveCatalogue} open={displays.length === 0 ? true : undefined}><summary>{t('ui.tour.catalogue-summary', 'Danh mục hiện vật')}</summary>

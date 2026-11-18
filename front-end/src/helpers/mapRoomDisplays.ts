@@ -25,7 +25,8 @@ export function mapRoomDisplays<Room extends Pick<RoomDetail, 'id' | 'exhibits'>
       audio: exhibit.audio?.vi ?? null,
       audioLocale: 'vi',
       ...(exhibit.image ? { image: { url: exhibit.image.url, alt: localizedAltText(exhibit.image.altText, locale, exhibit.name) } } : {}),
-      hotspots: [...exhibit.hotspots].sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
+      hotspots: [...exhibit.hotspots].sort((left, right) => left.displayOrder - right.displayOrder
+        || (left.id < right.id ? -1 : left.id > right.id ? 1 : 0))
         .map(({ id, label, body, positionX, positionY, positionZ }) => ({ id, label, body, position: [positionX, positionY, positionZ] })),
       position: exhibit.positionX !== undefined && exhibit.positionY !== undefined && exhibit.positionZ !== undefined
         ? [exhibit.positionX, exhibit.positionY, exhibit.positionZ]

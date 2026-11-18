@@ -8,16 +8,22 @@ import { getGalleryColliders } from '@/helpers/gallerySlots';
 import { MUSEUM_ROOM_SIZE, type MuseumDisplay } from '@/interfaces/museumScene';
 import { XrDetailsPanel } from './XrDetailsPanel';
 import { bindXrRenderer } from '@/helpers/xrRendererBinding';
+import type { SelectHotspot } from '@/helpers/hotspotStory';
 
-export function MuseumXr({ available, displays, selectedId, onSelect, onController, onStatus, onHover, onRendererReset }: {
+const artifactKey = (target: XrTarget | null) => target?.artifactId ? `${target.artifactId}:${target.hotspotId ?? ''}` : '';
+
+export function MuseumXr({ available, displays, selectedId, activeHotspotId, onSelect, onSelectHotspot, onController, onStatus, onHover, onRendererReset }: {
   available: boolean; displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void;
-  onController: (controller: XrSessionController | null) => void; onStatus: (snapshot: XrSnapshot) => void; onHover: (id: string | null) => void;
+  activeHotspotId?: string; onSelectHotspot?: SelectHotspot;
+  onController: (controller: XrSessionController | null) => void; onStatus: (snapshot: XrSnapshot) => void;
+  onHover: (artifactId: string | null, hotspotId?: string) => void;
   onRendererReset: () => void;
 }) {
   const { camera, gl, scene, invalidate, get } = useThree();
   const origin = useMemo(() => new Group(), []);
   const ownerRef = useRef<XrSessionController | null>(null);
-  const props = useRef({ displays, selectedId, onSelect, onHover, available }); props.current = { displays, selectedId, onSelect, onHover, available };
+  const props = useRef({ displays, onSelect, onSelectHotspot, onHover, available });
+  props.current = { displays, onSelect, onSelectHotspot, onHover, available };
   const colliders = useMemo(() => getGalleryColliders(displays), [displays]);
   const collidersRef = useRef(colliders); collidersRef.current = colliders;
   const [session, setSession] = useState<XRSession | null>(null);
@@ -29,17 +35,17 @@ export function MuseumXr({ available, displays, selectedId, onSelect, onControll
     matrix: new Matrix4(), position: new Vector3(), direction: new Vector3(), rotation: new Quaternion(), scale: new Vector3(),
     head: new Vector3(), ray: new Raycaster(), targets: new Map<XRInputSource, XrTarget | null>(),
     pressed: new Set<XRInputSource>(), snapLatched: new Set<XRInputSource>(), lastSnap: 0,
-    hover: null as string | null, dwellKey: '', dwellStart: 0, dwellFired: false,
+    hover: '', dwellKey: '', dwellStart: 0, dwellFired: false,
     forward: new Vector3(0, 0, -1),
     poseValid: false,
   }), []);
   runtime.ray.far = 12;
-  useEffect(() => { setPage(0); }, [selectedId]);
+  useEffect(() => { setPage(0); }, [selectedId, activeHotspotId]);
   useEffect(() => {
     let snapshot: { parent: typeof camera.parent; position: Vector3; quaternion: Quaternion; scale: Vector3; fov?: number; zoom: number } | null = null;
     let mounted = true;
     const resetInput = () => {
-      runtime.targets.clear(); runtime.pressed.clear(); runtime.snapLatched.clear(); runtime.dwellKey = ''; runtime.hover = null;
+      runtime.targets.clear(); runtime.pressed.clear(); runtime.snapLatched.clear(); runtime.dwellKey = ''; runtime.hover = '';
       props.current.onHover(null);
     };
     const owner = new XrSessionController({ xr: navigator.xr, secure: window.isSecureContext,
@@ -101,7 +107,13 @@ export function MuseumXr({ available, displays, selectedId, onSelect, onControll
     if (target.action === 'exit') { void ownerRef.current.exit(); return; }
     if (target.action === 'next') { setPage(value => Math.min(pageCountRef.current - 1, value + 1)); return; }
     if (target.action === 'previous') { setPage(value => Math.max(0, value - 1)); return; }
-    if (target.artifactId && props.current.displays.some(display => display.id === target.artifactId && !display.isOutsideRoom)) props.current.onSelect(target.artifactId);
+    const exhibit = props.current.displays.find(display => display.id === target.artifactId && !display.isOutsideRoom);
+    if (exhibit) {
+      const { onSelect, onSelectHotspot } = props.current;
+      const hotspotId = target.hotspotId;
+      if (onSelectHotspot && hotspotId && exhibit.hotspots?.some(hotspot => hotspot.id === hotspotId)) onSelectHotspot(exhibit.id, hotspotId);
+      else onSelect(exhibit.id);
+    }
     else if (allowTeleport && target.floor && canTeleport(runtime.head, target.point, MUSEUM_ROOM_SIZE, collidersRef.current)) {
       teleportOrigin(origin, runtime.head, target.point);
     }
@@ -139,7 +151,7 @@ export function MuseumXr({ available, displays, selectedId, onSelect, onControll
     origin.updateMatrixWorld(true);
     runtime.head.setFromMatrixPosition(runtime.matrix.fromArray(viewer.transform.matrix).premultiply(origin.matrixWorld));
     const sources = Array.from(session.inputSources).filter(source => source.targetRayMode === 'tracked-pointer' || source.targetRayMode === 'gaze' || source.targetRayMode === 'screen');
-    let hover: string | null = null;
+    let hover: XrTarget | null = null;
     for (let index = 0; index < 2; index++) {
       const source = sources[index], pointer = pointers.current[index], reticle = reticles.current[index];
       if (!pointer || !reticle) continue;
@@ -153,7 +165,8 @@ export function MuseumXr({ available, displays, selectedId, onSelect, onControll
         reticle.visible = true; reticle.position.copy(target.point);
         const validFloor = target.floor && canTeleport(runtime.head, target.point, MUSEUM_ROOM_SIZE, collidersRef.current);
         if (reticle.material instanceof MeshBasicMaterial) reticle.material.color.set(validFloor ? '#33dcc3' : target.floor ? '#de684f' : '#f6dc8f');
-        reticle.scale.setScalar(validFloor ? 1.8 : 1); hover ??= target.artifactId ?? null;
+        reticle.scale.setScalar(validFloor ? 1.8 : 1);
+        if (target.artifactId) hover ??= target;
       }
       const axis = source.handedness === 'right' ? getSnapAxis(source) : 0;
       if (!axis) runtime.snapLatched.delete(source);
@@ -169,19 +182,22 @@ export function MuseumXr({ available, displays, selectedId, onSelect, onControll
       if (!sources.length) {
         const target = targetAtRef.current(frame); gaze.position.copy(runtime.position); gaze.quaternion.setFromUnitVectors(runtime.forward, runtime.direction);
         gaze.scale.z = target?.distance ?? 4;
-        const key = target?.action ?? target?.artifactId ?? '';
+        const key = target?.action ?? artifactKey(target);
         if (key !== runtime.dwellKey) { runtime.dwellKey = key; runtime.dwellStart = performance.now(); runtime.dwellFired = false; }
         if (target && key) {
-          gazeReticle.visible = true; gazeReticle.position.copy(target.point); hover = target.artifactId ?? null;
+          gazeReticle.visible = true; gazeReticle.position.copy(target.point);
+          if (target.artifactId) hover = target;
           if (!runtime.dwellFired && performance.now() - runtime.dwellStart > 1500) { runtime.dwellFired = true; activateRef.current(target, false); }
         }
       }
     }
-    if (hover !== runtime.hover) { runtime.hover = hover; props.current.onHover(hover); }
+    const hoverKey = artifactKey(hover);
+    if (hoverKey !== runtime.hover) { runtime.hover = hoverKey; props.current.onHover(hover?.artifactId ?? null, hover?.hotspotId); }
   });
   return <>
     <primitive object={origin}>
-      {session && <XrDetailsPanel display={displays.find(display => display.id === selectedId)} page={page} onPageCount={setPageCount} />}
+      {session && <XrDetailsPanel display={displays.find(display => display.id === selectedId)} activeHotspotId={activeHotspotId}
+        page={page} onPageCount={setPageCount} />}
     </primitive>
     {session && <>
       {[0, 1, 2].map(index => <group key={index} userData={{ xrIgnore: true }}>

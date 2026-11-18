@@ -5,28 +5,40 @@ import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
 import { MediaCreditList } from './MediaCreditList';
+import { HotspotStory } from './HotspotStory';
+import type { resolveHotspotStory, SelectHotspot } from '@/helpers/hotspotStory';
 import classes from './ExhibitDetailPanel.module.css';
 import { usePublicT } from '@/core/i18n/public-locale';
 
 /** Nonmodal so the scene and room selector stay usable. CMS preview omits the 2D link (drafts have no public page). */
-export function ExhibitDetailPanel({ display, onClose, detail2dHref, onRead2d, onReport }: {
+export function ExhibitDetailPanel({ display, onClose, detail2dHref, onRead2d, onReport, story, onSelectHotspot, onCloseStory }: {
   display: MuseumDisplay;
   onClose: () => void;
   detail2dHref?: string;
   onRead2d?: () => void;
   onReport?: () => void;
+  story?: ReturnType<typeof resolveHotspotStory>;
+  onSelectHotspot?: SelectHotspot;
+  onCloseStory?: () => void;
 }) {
   const t = usePublicT();
   const titleRef = useRef<HTMLHeadingElement>(null);
-  useEffect(() => titleRef.current?.focus(), [display.id]);
+  const panelRef = useRef<HTMLElement>(null);
+  const hasStory = !!story;
+  useEffect(() => {
+    if (!document.activeElement?.matches('[data-hotspot-control]')) titleRef.current?.focus();
+  }, [display.id]);
+  useEffect(() => { if (hasStory && panelRef.current) panelRef.current.scrollTop = 0; }, [hasStory]);
   return (
-    <aside aria-label={t('ui.panel.aria', 'Chi tiết hiện vật')} className={classes.panel}>
+    <aside ref={panelRef} aria-label={t('ui.panel.aria', 'Chi tiết hiện vật')} className={classes.panel}>
       <Stack gap="lg">
         <div className={classes.header}>
           <Badge color="teal.9" variant="light">{t('ui.panel.viewing', 'Đang xem')}</Badge>
           <Button variant="subtle" color="dark" onClick={onClose} aria-label={t('ui.panel.close-aria', 'Đóng chi tiết hiện vật')}>{t('ui.panel.close', 'Đóng ×')}</Button>
         </div>
-        <Title ref={titleRef} tabIndex={-1} order={2} size="h3" className={classes.title}>{display.title}</Title>
+        <Title ref={titleRef} tabIndex={-1} order={2} size="h3" className={classes.title} data-exhibit-detail-title>{display.title}</Title>
+        {story && onSelectHotspot && onCloseStory && <HotspotStory story={story} exhibitTitle={display.title}
+          onSelect={id => onSelectHotspot(display.id, id)} onClose={onCloseStory} />}
         {detail2dHref && <Link to={detail2dHref} onClick={onRead2d}>{t('ui.panel.read-2d', 'Đọc chi tiết 2D')}</Link>}
         {onReport && <Button variant="default" onClick={onReport}>{t('ui.common.report-content', 'Báo nội dung')}</Button>}
         <ExhibitImage image={display.image} shape={display.shape} color={display.color} className={classes.preview} />
@@ -41,10 +53,15 @@ export function ExhibitDetailPanel({ display, onClose, detail2dHref, onRead2d, o
           <Title order={3} size="h5" mb="xs">{t('ui.exhibit.transcript', 'Bản thuyết minh')}</Title>
           <Text size="sm" className={classes.body}>{display.transcript}</Text>
         </section>}
-        {!!display.hotspots?.length && <section aria-label={t('ui.exhibit.hotspots', 'Điểm chú ý')}>
+        {!story && !!display.hotspots?.length && <section aria-label={t('ui.exhibit.hotspots', 'Điểm chú ý')}>
           <Title order={3} size="h5" mb="sm">{t('ui.exhibit.hotspots', 'Điểm chú ý')}</Title>
           <Stack gap="md">{display.hotspots.map((hotspot, index) => <div key={`${hotspot.id}-${index}`}>
-            <Text fw={600} size="sm" className={classes.body}>{hotspot.label}</Text>
+            {onSelectHotspot ? <Button fullWidth variant="light" color="teal.9" className={classes.storyChoice}
+              onClick={() => {
+                titleRef.current?.focus({ preventScroll: true });
+                onSelectHotspot(display.id, hotspot.id);
+              }}>{hotspot.label || display.title}</Button>
+              : <Text fw={600} size="sm" className={classes.body}>{hotspot.label}</Text>}
             <Text size="sm" className={classes.body}>{hotspot.body}</Text>
           </div>)}</Stack>
         </section>}

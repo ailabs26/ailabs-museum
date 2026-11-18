@@ -4,14 +4,15 @@ import { Euler, Matrix4, Quaternion, PerspectiveCamera, Vector3 } from 'three';
 import { useReducedMotion } from '@mantine/hooks';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import { MUSEUM_ROOM_SIZE } from '@/interfaces/museumScene';
-import { getExhibitView, getMuseumFov, INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET, type ModelFocusBounds } from '@/helpers/museumCamera';
-import { applyLook, findNavigationPath, findSafeNavigationPoint, isNavigationPositionSafe, moveWithCollisions, NAVIGATION, stepMovement, type NavigationInput, type NavigationVector } from '@/helpers/museumNavigation';
+import { getExhibitView, getMuseumFov, INITIAL_CAMERA_POSITION, INITIAL_CAMERA_TARGET, type ModelFocusBounds, type MuseumCameraView } from '@/helpers/museumCamera';
+import { applyLook, findNavigationPath, findSafeNavigationPoint, isNavigationPositionSafe, moveWithCollisions, NAVIGATION, stepMovement, type NavigationCollider, type NavigationInput, type NavigationVector } from '@/helpers/museumNavigation';
 import { getGalleryColliders } from '@/helpers/gallerySlots';
 import { attachNavigationInput, type NavigationAction } from '@/helpers/attachNavigationInput';
 import type { NavigationGestures } from '@/helpers/navigationGestures';
 import type { NavigationMode } from './NavigationHud';
 import { cinematicPosition, getCinematicEntrance, type Vec3 } from '@/helpers/cinematicIntro';
 import { usePublicT } from '@/core/i18n/public-locale';
+import type { HotspotStorySelection } from '@/helpers/hotspotStory';
 import type { GuidedCameraBinding, GuidedCameraRequest } from '@/hooks/useGuidedCameraTour';
 import { advanceGuidedTime, buildGuidedPath, getGuidedView, getGuidedDuration, GUIDED_MOTION, sampleGuidedDistance, sampleGuidedPath, type GuidedPath } from '@/helpers/guidedCameraPath';
 
@@ -20,15 +21,29 @@ interface FocusTransition {
   fromPosition: Vector3; fromTarget: Vector3; toPosition: Vector3; toTarget: Vector3; startedAt: number;
   path: NavigationVector[]; lengths: number[]; totalLength: number;
 }
+type RoutedMotion = {
+  path: GuidedPath; elapsed: number; duration: number; fromY: number; toY: number; target: Vector3;
+} & ({ request: GuidedCameraRequest; hotspotRequest?: never } | { request?: never; hotspotRequest: HotspotStorySelection });
+
+function planRoutedMotion(position: Vector3, view: MuseumCameraView, colliders: readonly NavigationCollider[]) {
+  const path = buildGuidedPath({ x: position.x, y: position.z }, { x: view.position[0], y: view.position[2] }, MUSEUM_ROOM_SIZE, colliders);
+  if (!path) return null;
+  const [, toY] = view.position;
+  return { path, elapsed: 0, duration: getGuidedDuration(path.duration, toY - position.y),
+    fromY: position.y, toY, target: new Vector3(...view.target) };
+}
 
 /** Sole transform owner: exploration and focus share one demand-frame pipeline. */
-export function MuseumControls({ enabled = true, commandHandler, selectionIssuedAt, selectedDisplay, focusBounds, displays, input, gestures, onModeChange, onActiveChange, guided, guidedBounds, guidedModelFailed }: {
+export function MuseumControls({ enabled = true, commandHandler, selectionIssuedAt, selectedDisplay, focusBounds, displays, input, gestures,
+  onModeChange, onActiveChange, guided, guidedBounds, guidedModelFailed, activeHotspotId, hotspotRequest, hotspotTarget, handledHotspotFocus }: {
   enabled?: boolean;
   selectedDisplay?: MuseumDisplay; focusBounds?: ModelFocusBounds; selectionIssuedAt: number;
   commandHandler: MutableRefObject<((action: CameraAction) => void) | null>;
   displays: readonly MuseumDisplay[]; input: NavigationInput; gestures: NavigationGestures;
   onModeChange: (mode: NavigationMode) => void; onActiveChange: (isActive: boolean) => void;
   guided?: GuidedCameraBinding; guidedBounds?: ModelFocusBounds; guidedModelFailed?: boolean;
+  activeHotspotId?: string; hotspotRequest?: HotspotStorySelection; hotspotTarget?: MuseumCameraView['target'];
+  handledHotspotFocus: MutableRefObject<HotspotStorySelection | null>;
 }) {
   const t = usePublicT();
   const canvasLabel = t('ui.tour.canvas-aria', 'Phòng trưng bày 3D');
@@ -49,7 +64,7 @@ export function MuseumControls({ enabled = true, commandHandler, selectionIssued
   const actionRef = useRef<((action: CameraAction) => void) | null>(null);
   const modeRef = useRef<NavigationMode>('explore');
   const guidedRef = useRef(guided); guidedRef.current = guided;
-  const guidedMotion = useRef<{ request: GuidedCameraRequest; path: GuidedPath; elapsed: number; duration: number; fromY: number; toY: number; target: Vector3 } | null>(null);
+  const routedMotion = useRef<RoutedMotion | null>(null);
   const runtime = useMemo(() => ({
     velocity: new Vector3(), euler: new Euler(0, 0, 0, 'YXZ'),
     look: { yaw: 0, pitch: 0 }, goal: { yaw: 0, pitch: 0 }, movement: { x: 0, y: 0 },
@@ -82,7 +97,7 @@ export function MuseumControls({ enabled = true, commandHandler, selectionIssued
     };
     const explore = () => {
       manualInputAt.current = performance.now();
-      guidedMotion.current = null;
+      routedMotion.current = null;
       if (guidedRef.current?.hasSession) guidedRef.current.onManual();
       if (introRef.current) { introRef.current = null; syncLook(); }
       transitionRef.current = null; autoFocusRef.current = { id: selectedRef.current?.id, allowed: false };
@@ -92,7 +107,7 @@ export function MuseumControls({ enabled = true, commandHandler, selectionIssued
     input.wake = () => { explore(); callbacks.current.onActiveChange(true); invalidate(); };
     syncLook();
     const action = (action: CameraAction) => {
-      guidedMotion.current = null;
+      routedMotion.current = null;
       if (guidedRef.current?.hasSession) guidedRef.current.onManual();
       introRef.current = null;
       stop(); transitionRef.current = null; autoFocusRef.current.allowed = action === 'focus';
@@ -158,7 +173,7 @@ export function MuseumControls({ enabled = true, commandHandler, selectionIssued
     commandHandler.current = manualAction;
     const detach = attachNavigationInput(gl.domElement, input, gestures, manualAction, active => callbacks.current.onActiveChange(active), labelRef.current);
     return () => {
-      detach(); transitionRef.current = null; guidedMotion.current = null; actionRef.current = null;
+      detach(); transitionRef.current = null; routedMotion.current = null; actionRef.current = null;
       commandHandler.current = null;
       input.wake = input.invalidate = input.stop = () => {};
     };
@@ -179,12 +194,13 @@ export function MuseumControls({ enabled = true, commandHandler, selectionIssued
     // the nearest free proxy boundary, never remain trapped inside new geometry.
     const safe = findSafeNavigationPoint({ x: camera.position.x, y: camera.position.z }, MUSEUM_ROOM_SIZE, colliders);
     if (safe && (safe.x !== camera.position.x || safe.y !== camera.position.z)) {
-      transitionRef.current = null; introRef.current = null; camera.position.x = safe.x; camera.position.z = safe.y; invalidate();
+      transitionRef.current = null; introRef.current = null; routedMotion.current = null;
+      camera.position.x = safe.x; camera.position.z = safe.y; invalidate();
     }
   }, [enabled, camera, colliders, invalidate]);
 
   useEffect(() => {
-    if (guided?.hasSession) { autoFocusRef.current = { id: selectedDisplay?.id, allowed: false }; return; }
+    if (guided?.hasSession || activeHotspotId) { autoFocusRef.current = { id: selectedDisplay?.id, allowed: false }; return; }
     if (!enabled) { autoFocusRef.current = { id: selectedDisplay?.id, allowed: false }; return; }
     if (autoFocusRef.current.id !== selectedDisplay?.id) autoFocusRef.current = { id: selectedDisplay?.id, allowed: selectionIssuedAt > manualInputAt.current };
     if (selectedDisplay && autoFocusRef.current.allowed) actionRef.current?.('focus');
@@ -194,40 +210,62 @@ export function MuseumControls({ enabled = true, commandHandler, selectionIssued
       runtime.look.yaw = runtime.goal.yaw = runtime.euler.y; runtime.look.pitch = runtime.goal.pitch = runtime.euler.x;
       modeRef.current = 'explore'; callbacks.current.onModeChange('explore');
     }
-  }, [enabled, selectedDisplay, focusBounds, size.width, size.height, camera, runtime, guided?.hasSession, selectionIssuedAt]);
+  }, [enabled, selectedDisplay, focusBounds, size.width, size.height, camera, runtime, guided?.hasSession, selectionIssuedAt, activeHotspotId]);
 
   const guidedRequest = guided?.request;
   useEffect(() => {
-    guidedMotion.current = null;
-    if (guidedRef.current?.hasSession) {
-      transitionRef.current = null; introRef.current = null;
-    }
+    if (routedMotion.current?.request) routedMotion.current = null;
     if (!enabled || gl.xr.isPresenting || !guidedRequest) return;
+    routedMotion.current = null; transitionRef.current = null; introRef.current = null;
     input.stop();
     guidedRef.current?.onMoving(guidedRequest);
     const display = displays.find(item => item.id === guidedRequest.exhibitId);
     const view = display && getGuidedView(display, displays, guidedBounds, size.width / size.height, camera instanceof PerspectiveCamera ? camera.fov : 60);
-    const path = view && buildGuidedPath({ x: camera.position.x, y: camera.position.z }, { x: view.position[0], y: view.position[2] }, MUSEUM_ROOM_SIZE, colliders);
-    if (!view || !path || guidedModelFailed) { guidedRef.current?.onResult(guidedRequest, 'blocked'); return; }
-    guidedMotion.current = {
-      request: guidedRequest, path, elapsed: 0,
-      duration: getGuidedDuration(path.duration, view.position[1] - camera.position.y),
-      fromY: camera.position.y, toY: view.position[1], target: new Vector3(...view.target),
-    };
+    const motion = view && !guidedModelFailed && planRoutedMotion(camera.position, view, colliders);
+    if (!motion) { guidedRef.current?.onResult(guidedRequest, 'blocked'); return; }
+    routedMotion.current = { ...motion, request: guidedRequest };
     modeRef.current = 'focusing'; callbacks.current.onModeChange('focusing'); invalidate();
-    return () => { guidedMotion.current = null; };
+    return () => { if (routedMotion.current?.request === guidedRequest) routedMotion.current = null; };
   }, [guidedRequest, guided?.hasSession, enabled, displays, guidedBounds, guidedModelFailed, size.width, size.height, camera, gl, input, colliders, invalidate]);
-  useEffect(() => { if (guidedMotion.current) invalidate(); }, [prefersReducedMotion, invalidate]);
+
+  const [targetX, targetY, targetZ] = hotspotTarget ?? [];
+  useEffect(() => {
+    if (!enabled || gl.xr.isPresenting || guidedRequest || !hotspotRequest || hotspotRequest === handledHotspotFocus.current) return;
+    if (hotspotRequest.issuedAt <= manualInputAt.current) { handledHotspotFocus.current = hotspotRequest; return; }
+
+    // Clear other camera work even while the real annotation transform is loading.
+    if (introRef.current || transitionRef.current) {
+      input.stop(); introRef.current = null; transitionRef.current = null;
+    }
+    if (modeRef.current === 'focusing' && !routedMotion.current) {
+      modeRef.current = 'explore'; callbacks.current.onModeChange('explore');
+    }
+    if (!selectedRef.current || targetX === undefined || targetY === undefined || targetZ === undefined) return;
+    const view = getGuidedView(selectedRef.current, displays, boundsRef.current, aspectRef.current,
+      camera instanceof PerspectiveCamera ? camera.fov : 60, [targetX, targetY, targetZ]);
+    const motion = view && planRoutedMotion(camera.position, view, colliders);
+    if (!motion) { handledHotspotFocus.current = hotspotRequest; return; }
+    input.stop();
+    routedMotion.current = { ...motion, hotspotRequest };
+    modeRef.current = 'focusing'; callbacks.current.onModeChange('focusing'); invalidate();
+    return () => {
+      if (routedMotion.current?.hotspotRequest !== hotspotRequest) return;
+      routedMotion.current = null;
+      modeRef.current = 'explore'; callbacks.current.onModeChange('explore');
+    };
+  }, [enabled, guidedRequest, hotspotRequest, targetX, targetY, targetZ, handledHotspotFocus, displays, colliders, camera, gl, input, invalidate]);
+  useEffect(() => { if (routedMotion.current) invalidate(); }, [prefersReducedMotion, invalidate]);
 
   useFrame((_, rawDelta) => {
     if (!enabled || gl.xr.isPresenting) return;
-    const motion = guidedMotion.current;
+    const motion = routedMotion.current;
     // DOM pause can cancel the request before R3F receives the next props.
-    if (motion && !guidedRef.current?.isCurrent(motion.request)) {
-      guidedMotion.current = null;
+    if (motion?.request && !guidedRef.current?.isCurrent(motion.request)) {
+      routedMotion.current = null;
       return;
     }
-    if (motion && motion.request === guidedRef.current?.request) {
+    if (motion) {
+      if (motion.hotspotRequest) handledHotspotFocus.current = motion.hotspotRequest;
       motion.elapsed = advanceGuidedTime(motion.elapsed, rawDelta, true);
       const progress = reducedRef.current || motion.duration === 0 ? 1 : Math.min(1, motion.elapsed / motion.duration);
       const sample = sampleGuidedPath(motion.path, motion.path.duration * progress);
@@ -249,8 +287,8 @@ export function MuseumControls({ enabled = true, commandHandler, selectionIssued
       camera.quaternion.setFromEuler(runtime.euler);
       runtime.look.yaw = runtime.goal.yaw = runtime.euler.y; runtime.look.pitch = runtime.goal.pitch = runtime.euler.x;
       if (progress === 1 && (reducedRef.current || angle < 0.001)) {
-        guidedMotion.current = null; modeRef.current = 'inspect'; callbacks.current.onModeChange('inspect');
-        guidedRef.current?.onResult(motion.request, 'arrived');
+        routedMotion.current = null; modeRef.current = 'inspect'; callbacks.current.onModeChange('inspect');
+        if (motion.request) guidedRef.current?.onResult(motion.request, 'arrived');
       } else invalidate();
       return;
     }

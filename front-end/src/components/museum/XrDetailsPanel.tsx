@@ -6,7 +6,9 @@ import { placeXrPanel } from '@/helpers/xrInteraction';
 import { usePublicT } from '@/core/i18n/public-locale';
 
 /** Essential headset UI is a real scene object; ordinary DOM is not visible in VR. */
-export function XrDetailsPanel({ display, page, onPageCount }: { display?: MuseumDisplay; page: number; onPageCount: (count: number) => void }) {
+export function XrDetailsPanel({ display, activeHotspotId, page, onPageCount }: {
+  display?: MuseumDisplay; activeHotspotId?: string; page: number; onPageCount: (count: number) => void;
+}) {
   const t = usePublicT();
   const { gl, invalidate } = useThree();
   const panel = useRef<Group>(null);
@@ -17,8 +19,11 @@ export function XrDetailsPanel({ display, page, onPageCount }: { display?: Museu
     const context = canvas.getContext('2d');
     if (!context) return;
     context.font = '30px sans-serif';
-    const copy = display ? [display.title, display.description || t('ui.common.no-description', 'Chưa có mô tả.'), display.transcript,
-      ...display.hotspots?.map(hotspot => `${hotspot.label}: ${hotspot.body}`) ?? []].filter(Boolean).join('\n\n')
+    const story = display?.hotspots?.find(hotspot => hotspot.id === activeHotspotId);
+    const paragraphs = story ? [story.label, story.body]
+      : [display?.description || t('ui.common.no-description', 'Chưa có mô tả.'), display?.transcript,
+        ...display?.hotspots?.map(hotspot => `${hotspot.label}: ${hotspot.body}`) ?? []];
+    const copy = display ? [display.title, ...paragraphs].filter(Boolean).join('\n\n')
       : t('ui.xr.intro', 'Tham quan VR\n\nNgắm điểm tương tác và bóp cò để chọn hiện vật. Ngắm sàn trống và bóp cò để dịch chuyển (tối đa 8 m, đường thẳng không bị bệ chắn). Cần điều khiển bên phải: xoay từng bước 30°.\n\nKhông có controller: nhìn giữ 1,5 giây để chọn hoặc dùng thao tác chọn của thiết bị. Nhìn giữ không tự dịch chuyển.');
     const lines: string[] = [];
     for (const paragraph of copy.split('\n')) {
@@ -40,7 +45,7 @@ export function XrDetailsPanel({ display, page, onPageCount }: { display?: Museu
     context.fillText(t('ui.xr.next', 'Sau ›'), 500, 680); context.fillText('Exit VR', 800, 680);
     const next = new CanvasTexture(canvas); next.colorSpace = SRGBColorSpace; setTexture(next); invalidate();
     return () => next.dispose();
-  }, [display, page, invalidate, onPageCount, t]);
+  }, [display, activeHotspotId, page, invalidate, onPageCount, t]);
   useLayoutEffect(() => { needsPlacement.current = true; }, [display?.id]);
   useFrame((_, __, frame) => {
     const space = gl.xr.getReferenceSpace();

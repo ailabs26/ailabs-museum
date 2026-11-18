@@ -9,6 +9,19 @@ import { roomDetailSchema } from '@/validations/roomSchema';
 const obstacle = { minX: -1.5, maxX: 1.5, minZ: -1.5, maxZ: 1.5 };
 const display: MuseumDisplay = { id: 'one', title: 'One', description: '', position: [0, 0, 0], shape: 'sphere', color: '#fff' };
 
+it('frames an authored hotspot from its visible side and keeps camera travel outside the exhibit', () => {
+  const target: [number, number, number] = [0, 1.8, -0.6];
+  const view = getGuidedView(display, [display], undefined, 1.7, 60, target);
+  expect(view?.target).toEqual(target);
+  expect(view!.position[2]).toBeLessThan(target[2]);
+  const colliders = getDisplayColliders([display]);
+  const path = buildGuidedPath({ x: 0, y: 5 }, { x: view!.position[0], y: view!.position[2] }, room, colliders);
+  expect(path).not.toBeNull();
+  expect(path!.points.every((point, i, points) => !i || isNavigationSegmentSafe(points[i - 1], point, room, colliders))).toBe(true);
+  expect(getGuidedView(display, [display], undefined, 1.7, 60, [9, 1, 0])).toBeNull();
+  expect(getGuidedView(display, [display], undefined, 1.7, 60, [0, Infinity, 0])).toBeNull();
+});
+
 function assertSafe(path: NonNullable<ReturnType<typeof buildGuidedPath>>, colliders: NavigationCollider[]) {
   expect(path.points[0]).toEqual({ x: -4, y: 0 });
   expect(path.points.at(-1)).toEqual({ x: 4, y: 0 });

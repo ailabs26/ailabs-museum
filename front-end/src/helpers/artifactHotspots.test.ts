@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { mapRoomDisplays } from './mapRoomDisplays';
-import { getArtifactHotspots, getArtifactFocusBounds } from './artifactHotspots';
+import { getArtifactHotspots, getArtifactFocusBounds, getHotspotWorldTarget } from './artifactHotspots';
 import { normalizeModel } from './modelNormalization';
 import { BoxGeometry, Group, Mesh } from 'three';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
@@ -38,6 +38,25 @@ it('keeps explicit primitive positions and generates distinct positions for unpo
   expect(getArtifactHotspots({ ...display, model: null, hotspots: [{ id: 'x', label: 'X', body: '', position: [0.2, 2, 0.3] }] })[0].position).toEqual([0.2, 2, 0.3]);
   const points = getArtifactHotspots({ ...display, hotspots: [{ id: 'x', label: 'X', body: '' }, { id: 'y', label: 'Y', body: '' }] });
   expect(points[0].position).not.toEqual(points[1].position);
+});
+
+it('uses the rendered gallery placement and normalization for a story world target', () => {
+  const item: MuseumDisplay = { ...display, position: [3, 0.4, -2],
+    hotspots: [{ id: 'detail', label: 'Hoa văn', body: '', position: [15, 20, -5] }] };
+  const normalization = { scale: 0.1, offset: [-10, -10, 10] as [number, number, number],
+    size: [1, 2, 1] as [number, number, number], center: [0, 1, 0] as [number, number, number], radius: 1.3 };
+  const [x, y, z] = getHotspotWorldTarget(item, 'detail', normalization)!;
+  expect([x, z]).toEqual([3.5, -1.5]);
+  expect(y).toBeCloseTo(2.54);
+  expect(getHotspotWorldTarget({ ...item, model: null }, 'detail')).toBeNull();
+});
+
+it('rejects synthetic, missing-model and invalid authored targets without hiding their markers', () => {
+  const item: MuseumDisplay = { ...display, hotspots: [{ id: 'detail', label: 'Hoa văn', body: '', position: [12, 2, 0] }] };
+  expect(getHotspotWorldTarget(display, 'artifact-a:default')).toBeNull();
+  expect(getHotspotWorldTarget(item, 'detail')).toBeNull();
+  expect(getHotspotWorldTarget({ ...item, model: null }, 'detail')).toBeNull();
+  expect(getArtifactHotspots(item)[0].position.every(Number.isFinite)).toBe(true);
 });
 
 it('preserves API hotspot coordinates and order in the room mapper', () => {

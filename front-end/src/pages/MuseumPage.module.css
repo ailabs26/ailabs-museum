@@ -61,3 +61,9 @@
   .guidedDetail { top: 390px; bottom: 110px; left: 144px; height: auto; }
 }
 @media (max-height: 500px) { .immersiveDetail { top: 156px; right: 120px; bottom: 90px; width: min(380px, 48vw); height: auto; } .immersiveDetail > aside { padding: 12px; } .immersiveCatalogue[open] { max-height: calc(100dvh - 180px); } }
+@media (max-width: 600px) and (min-height: 501px) {
+  .storyDetail { top: auto; left: 12px; width: auto; height: clamp(140px, calc(50dvh - 126px), 380px); }
+}
+@media (max-width: 600px) and (min-height: 501px) and (any-pointer: coarse) {
+  .storyDetail { left: 132px; }
+}

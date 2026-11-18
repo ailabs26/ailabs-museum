@@ -7,6 +7,7 @@ import type { ModelLodLevel, ModelLodSet } from '@/helpers/modelLod';
 import type { MuseumDisplay } from '@/interfaces/museumScene';
 import type { LoadedModel, ModelLoadState } from '@/helpers/roomModelAssets';
 import { ARTIFACT_BASE_Y, getArtifactHotspots } from '@/helpers/artifactHotspots';
+import type { SelectHotspot } from '@/helpers/hotspotStory';
 import { ArtifactFallback3D } from './ArtifactFallback3D';
 import { ArtifactHotspot } from './ArtifactHotspot';
 import { ArtifactModel } from './ArtifactModel';
@@ -17,13 +18,15 @@ import { GalleryPedestal, type PedestalKind } from './GalleryPedestal';
 
 export interface ExhibitRenderProps {
   isSelected: boolean; isXrHovered?: boolean; onSelect: (id: string) => void; modelState?: ModelLoadState;
+  activeHotspotId?: string; xrHoveredHotspotId?: string; onSelectHotspot?: SelectHotspot;
   renderAttempt?: number; hasRenderError?: boolean; onRenderError: () => void;
   lodSet?: ModelLodSet; isFocused?: boolean; onLodChange?: (checksum: string, level: ModelLodLevel, consumerId: string) => void;
   onRetainModel?: (asset: LoadedModel) => (() => void) | undefined;
 }
 
 /** Nội dung hiện vật trên bục: chỉ mount khi vị trí này có hiện vật. Model lỗi/đang tải vẫn giữ bục. */
-function ExhibitContent({ display, isCenterpiece, isHovered, isSelected, isXrHovered = false, onSelect, modelState, renderAttempt = 0, hasRenderError = false, onRenderError, onRetainModel }:
+function ExhibitContent({ display, isCenterpiece, isHovered, isSelected, isXrHovered = false, xrHoveredHotspotId, onSelect,
+  activeHotspotId, onSelectHotspot, modelState, renderAttempt = 0, hasRenderError = false, onRenderError, onRetainModel }:
   ExhibitRenderProps & { display: MuseumDisplay; isCenterpiece: boolean; isHovered: boolean }) {
   return <>
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.009, 0]}>
@@ -38,7 +41,14 @@ function ExhibitContent({ display, isCenterpiece, isHovered, isSelected, isXrHov
       : <ExhibitPlaceholder shape={display.shape} color={display.color} isSelected={isSelected} isHovered={isHovered} />}
     <ExhibitLabel title={display.title} isSelected={isSelected} isCenterpiece={isCenterpiece} />
     {getArtifactHotspots(display, !hasRenderError && modelState?.status === 'ready' ? modelState.asset.normalization : undefined).map(hotspot =>
-      <ArtifactHotspot key={hotspot.id} hotspot={hotspot} artifactTitle={display.title} isSelected={isSelected} isXrHovered={isXrHovered} onSelect={onSelect} />)}
+      <ArtifactHotspot key={hotspot.id} hotspot={hotspot} artifactTitle={display.title}
+        isSelected={isSelected && (hotspot.isDefault || !onSelectHotspot || hotspot.id === activeHotspotId)}
+        isXrHovered={isXrHovered && (hotspot.id === xrHoveredHotspotId || (hotspot.isDefault && !xrHoveredHotspotId))}
+        isStoryActive={isSelected && !hotspot.isDefault && hotspot.id === activeHotspotId}
+        onSelect={() => {
+          if (!hotspot.isDefault && onSelectHotspot) onSelectHotspot(display.id, hotspot.id);
+          else onSelect(display.id);
+        }} />)}
   </>;
 }
 
