@@ -26,7 +26,7 @@ export function ExhibitDetailPanel({ display, onClose, detail2dHref, onRead2d, o
   const panelRef = useRef<HTMLElement>(null);
   const hasStory = !!story;
   useEffect(() => {
-    if (!document.activeElement?.matches('[data-hotspot-control]')) titleRef.current?.focus();
+    if (!document.activeElement?.matches('[data-hotspot-control]') && !document.activeElement?.closest('[data-exhibit-search]')) titleRef.current?.focus();
   }, [display.id]);
   useEffect(() => { if (hasStory && panelRef.current) panelRef.current.scrollTop = 0; }, [hasStory]);
   return (
