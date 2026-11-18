@@ -1,0 +1,16 @@
+.panel { min-width: 0; color: #30392f; background: #f7f3ea; border: 1px solid #bdab8d; border-radius: 8px; }
+.panel button { min-height: 44px; height: auto; }
+.panel :global(.mantine-Button-label) { white-space: normal; }
+.panel :global(.mantine-Input-input) { color: #30392f; background: #fffdf7; caret-color: #17665b; min-height: 44px; }
+.panel :global(.mantine-Input-input)::placeholder { color: #68634f; }
+.content { padding: 12px; }
+.count, .status { margin: 8px 0; font-size: 12px; line-height: 1.5; }
+.status { padding-inline: 12px; }
+.results { list-style: none; margin: 0; padding: 0; max-height: min(30dvh, 240px); overflow: auto; overscroll-behavior: contain; scrollbar-color: #8c805f #eee8da; }
+.results li { padding-block: 12px; border-top: 1px solid #d4cbb8; }
+.results h3 { margin: 0 0 6px; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+.description { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0 0 8px; font-size: 13px; line-height: 1.5; }
+.availability { display: block; font-size: 12px; margin-bottom: 8px; }
+.results a { display: block; padding-block: 10px; min-height: 44px; color: #18574c; font-size: 13px; text-underline-offset: 3px; }
+.panel :focus-visible { outline: 2px solid #17665b; outline-offset: 2px; }
+.panel ::selection { color: #fffdf7; background: #17665b; }

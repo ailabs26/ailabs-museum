@@ -67,3 +67,9 @@
 @media (max-width: 600px) and (min-height: 501px) and (any-pointer: coarse) {
   .storyDetail { left: 132px; }
 }
+@media (max-width: 600px) {
+  :global([data-immersive-tour]:has([data-search-open='true'])) .immersiveDetail { visibility: hidden; }
+}
+@media (min-width: 601px) and (max-height: 500px) {
+  .immersiveDetail { width: min(380px, calc(100vw - 360px)); }
+}
