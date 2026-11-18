@@ -21,13 +21,13 @@ Repeated same target; stale A completion after B; held WASD then input focus; la
 
 ## Tasks
 
-- [ ] 1. Baseline quality gates and focused browser regression; record commands, exits and limits in verification.md.
-- [ ] 2. Add helper tests for normalization, ranking, field boundaries, localization and room changes; implement createExhibitSearchIndex/searchExhibits.
-- [ ] 3. Add browser search/navigation tests that initially fail because the feature is absent.
-- [ ] 4. Add useExhibitSearchNavigation intent binding and extend existing routed motion union in MuseumControls. Actual arrival alone updates URL selection; blocked routes keep the current selection.
-- [ ] 5. Add compact ExhibitSearchPanel with localized copy, normal semantic list/buttons, Enter-first-result and scoped Escape. Add primitive rings and minimap outlines for matches/target.
-- [ ] 6. Wire page takeover: pause guided tour, clear hotspot, latest explicit intent wins; renderer readiness and scope changes cancel requests.
-- [ ] 7. Run required frontend gates and affected browser suites; inspect desktop/mobile screenshots, trajectory samples, GLB requests and idle frames.
-- [ ] 8. Review complete diff, fix evidenced defects, create atomic local commits, finish verification/handoff. Do not push/open PR/merge.
+- [x] 1. Run the baseline quality gates and focused browser regression. Record commands, exits and limits in verification.md.
+- [x] 2. Add helper tests for normalization, ranking, field boundaries, localization and room changes. Implement `createExhibitSearchIndex` and `searchExhibits`.
+- [x] 3. Add browser search/navigation tests that initially fail because the feature is absent.
+- [x] 4. Add `useExhibitSearchNavigation` and extend routed motion in `MuseumControls`. Actual arrival updates URL selection. Blocked routes keep the current selection.
+- [x] 5. Add `ExhibitSearchPanel` with localized copy, semantic controls, Enter to go to the first eligible result, and scoped Escape. Add rings and minimap outlines for matches and the target.
+- [x] 6. Pause guided tours and clear hotspot stories on search takeover. The latest explicit intent wins. Renderer readiness changes and room changes cancel requests.
+- [x] 7. Run required frontend gates and affected browser suites; inspect desktop/mobile screenshots, trajectory samples, GLB requests and idle frames. The regression batch was 93/95; see verification.md for baseline and focused evidence.
+- [x] 8. Review complete diff, fix evidenced defects, create atomic local commits, finish verification/handoff. Do not push/open PR/merge.
 
 Implementation proceeds directly under the user's explicit instruction to continue after planning. Progress and rulings are recorded in verification.md.
