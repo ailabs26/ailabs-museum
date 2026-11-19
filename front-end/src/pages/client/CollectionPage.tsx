@@ -39,6 +39,8 @@ export function CollectionPage() {
   const location = useLocation();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const roomChipsRef = useRef<HTMLDivElement>(null);
+  const emptyRoomRef = useRef<HTMLParagraphElement>(null);
   const focusedLocation = useRef<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { rooms, room, selectedRoom, selectedSlug, refresh } = useMuseumRooms(searchParams.get('room'));
@@ -51,10 +53,12 @@ export function CollectionPage() {
     setLoadingAnnouncement(loadingMessage);
   }, [loadingMessage]);
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
+  const isEmptyRoom = detail?.exhibits.length === 0;
   const tour2d = useGuidedTour2D({
     room: detail && !room.isError ? detail : undefined,
     publicRooms: rooms.isSuccess && !rooms.isError && !rooms.isFetching ? rooms.data : undefined,
   });
+  const canContinueTour = tour2d.isSameRoom && !isEmptyRoom;
   const exhibits = useMemo(() => detail ? [...detail.exhibits].sort((left, right) =>
     left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
     .map((exhibit) => localizeExhibit(exhibit, locale)) : [], [detail, locale]);
@@ -78,6 +82,23 @@ export function CollectionPage() {
     setQuery('');
   };
 
+  useEffect(() => {
+    const rail = roomChipsRef.current;
+    const active = rail?.querySelector('[aria-pressed="true"]');
+    if (!rail || !active) return;
+    const revealActiveRoom = () => {
+      const bounds = rail.getBoundingClientRect();
+      const chip = active.getBoundingClientRect();
+      if (chip.left < bounds.left) rail.scrollLeft += Math.floor(chip.left - bounds.left);
+      else if (chip.right > bounds.right) rail.scrollLeft += Math.ceil(chip.right - bounds.right);
+    };
+    revealActiveRoom();
+    // Web fonts can change chip widths after the selected room first renders.
+    let cancelled = false;
+    void document.fonts.ready.then(() => { if (!cancelled) revealActiveRoom(); });
+    return () => { cancelled = true; };
+  }, [rooms.data, selectedSlug]);
+
   const globalSearch = rooms.isSuccess
     ? <GlobalExhibitSearch key="cross-room-search" query={query} currentRoomId={selectedRoom?.id} rooms={rooms.data} /> : null;
   // Phòng đang xem không có kết quả: đưa kết quả phòng khác lên trước để khách không tưởng là không tìm thấy.
@@ -100,7 +121,7 @@ export function CollectionPage() {
       <Container size={1360} className={classes.content}>
         {rooms.data && rooms.data.length > 0 && (
           <div className={classes.toolbar}>
-            <div className={classes.pills} role="group" aria-label={t('ui.collection.pick-room-aria', 'Chọn phòng trưng bày')}>
+            <div ref={roomChipsRef} className={classes.pills} role="group" aria-label={t('ui.collection.pick-room-aria', 'Chọn phòng trưng bày')}>
               {!selectedRoom && selectedSlug && (
                 <span className={`${classes.pill} ${classes.pillActive}`}>{t('ui.collection.room-unavailable', 'Phòng không khả dụng')}</span>
               )}
@@ -142,24 +163,21 @@ export function CollectionPage() {
                 </p>
               </div>
               <div className={classes.roomActions}>
-                {tour2d.isSameRoom ? <>
+                {canContinueTour ? <>
                   <Button variant="filled" className={classes.roomAction} onClick={tour2d.resume}>
                     {t('ui.guided2d.continue', tourMessages.continue)}
                   </Button>
                   <Button variant="default" className={classes.roomAction} onClick={tour2d.exit}>{t('ui.guided.exit', guidedMessages.exit)}</Button>
-                </> : <Button variant="filled" className={classes.roomAction} disabled={detail.exhibits.length === 0}
-                  aria-describedby={detail.exhibits.length === 0 ? 'guided-tour-empty-room' : undefined}
+                </> : <Button variant="filled" className={classes.roomAction} disabled={isEmptyRoom}
+                  aria-describedby={isEmptyRoom ? 'collection-room-empty' : undefined}
                   onClick={() => tour2d.startFromRoom(detail)}>
                   {t('ui.guided2d.start', tourMessages.start)}
                 </Button>}
-                {detail.exhibits.length === 0 && <p id="guided-tour-empty-room" className={classes.emptyTour}>
-                  {t('ui.guided2d.empty', tourMessages.empty)}
-                </p>}
-                <Link to={tour2d.isSameRoom && tour2d.currentStep
+                <Link to={canContinueTour && tour2d.currentStep
                   ? guidedTour3dPath(detail.slug, tour2d.currentStep.exhibitId)
                   : `/tour?${new URLSearchParams({ room: detail.slug })}`}
-                  onClick={tour2d.isSameRoom ? tour2d.pause : undefined} className={classes.tourLink}>
-                  {tour2d.isSameRoom ? t('ui.guided2d.continue-3d', tourMessages.continue3d)
+                  onClick={canContinueTour ? tour2d.pause : undefined} className={classes.tourLink}>
+                  {canContinueTour ? t('ui.guided2d.continue-3d', tourMessages.continue3d)
                     : t('ui.collection.tour-link', 'Tham quan phòng này trong 3D')} <IconArrowRight size={18} aria-hidden="true" />
                 </Link>
               </div>
@@ -170,18 +188,33 @@ export function CollectionPage() {
             {detail && (
               <div className={classes.galleryHeader}>
                 <Title order={2} id="collection-gallery-title" className={classes.galleryTitle}>{galleryTitle}</Title>
-                {query.trim() && <p className={classes.count}>
+                {!isEmptyRoom && query.trim() && <p className={classes.count}>
                   {t('ui.collection.count-matched', '{shown}/{total} hiện vật khớp tìm kiếm', { shown: filtered.length, total: exhibits.length })}
                 </p>}
               </div>
             )}
-            <Checkbox my="md" label={t('ui.collection.favorites-only', 'Chỉ hiện vật yêu thích trong phòng này')} checked={isFavoritesOnly}
-              onChange={event => setIsFavoritesOnly(event.currentTarget.checked)} />
+            {isEmptyRoom ? (
+              <p ref={emptyRoomRef} id="collection-room-empty" role="status" tabIndex={-1} className={`${classes.empty} ${classes.roomEmpty}`}>
+                {t('ui.rooms.no-exhibits', 'Phòng này chưa có hiện vật được xuất bản.')}
+              </p>
+            ) : (
+              <Checkbox my="md" label={t('ui.collection.favorites-only', 'Chỉ hiện vật yêu thích trong phòng này')} checked={isFavoritesOnly}
+                onChange={event => setIsFavoritesOnly(event.currentTarget.checked)} />
+            )}
             <VisitorStorageStatus error={favorites.error} />
-            <div className={classes.visitorPanel}>
-              <ExhibitComparison selection={comparison.selection} message={comparison.message} rooms={rooms.isSuccess ? rooms.data : []}
-                onRemove={comparison.toggle} onClear={comparison.clear} />
-            </div>
+            {(!isEmptyRoom || comparison.selection.length > 0) && (
+              <div className={classes.visitorPanel}>
+                <ExhibitComparison selection={comparison.selection} message={comparison.message} rooms={rooms.isSuccess ? rooms.data : []}
+                  onRemove={(target) => {
+                    if (comparison.selection.length === 1) emptyRoomRef.current?.focus();
+                    comparison.toggle(target);
+                  }}
+                  onClear={() => {
+                    emptyRoomRef.current?.focus();
+                    comparison.clear();
+                  }} />
+              </div>
+            )}
 
             {rooms.isPending ? <ExhibitSkeleton />
               : rooms.isError ? <Alert color="red" role="alert" title={t('ui.rooms.load-error', 'Không tải được danh sách phòng')}>
@@ -198,8 +231,7 @@ export function CollectionPage() {
 
             {detail && <>
               {room.isFetching && <p role="status">{t('ui.collection.updating', 'Đang cập nhật hiện vật…')}</p>}
-              {exhibits.length === 0 ? <p role="status" className={classes.empty}>{t('ui.rooms.no-exhibits', 'Phòng này chưa có hiện vật được xuất bản.')}</p>
-                : filtered.length === 0 ? <p role="status" className={classes.empty}>{isFavoritesOnly
+              {!isEmptyRoom && (filtered.length === 0 ? <p role="status" className={classes.empty}>{isFavoritesOnly
                   ? t('ui.collection.no-favorites', 'Không có hiện vật yêu thích khớp trong phòng này. Hãy đánh dấu yêu thích hoặc thay đổi tìm kiếm.')
                   : t('ui.collection.no-match', 'Không có hiện vật nào khớp với “{query}”.', { query })}</p> : (
                 <ExhibitGrid exhibits={filtered} roomSlug={detail.slug} onReport={(exhibit) =>
@@ -211,7 +243,7 @@ export function CollectionPage() {
                       aria-pressed={comparison.selection.some(ref => isSameExhibit(ref, { roomId: detail.id, exhibitId: exhibit.id }))}
                       onClick={() => comparison.toggle({ roomId: detail.id, exhibitId: exhibit.id })}>{t('ui.collection.compare', 'So sánh')}</Button>
                   </>} />
-              )}
+              ))}
             </>}
           </section>
         </div>

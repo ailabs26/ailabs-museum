@@ -85,6 +85,39 @@ test('cross-room results lead even when the current room has no exhibits', async
   expect(remote!.y).toBeLessThan(room!.y);
 });
 
+test('an empty room shows its state without unused controls and keeps the selected room chip in view', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto('/collection?room=empty');
+  const gallery = page.getByRole('region', { name: 'Hiện vật trong bộ sưu tập' });
+  const empty = gallery.getByRole('status').filter({ hasText: 'Phòng này chưa có hiện vật được xuất bản.' });
+  await expect(empty).toBeVisible();
+  await expect(gallery.getByRole('checkbox')).toHaveCount(0);
+  await expect(gallery.getByRole('region', { name: 'Lựa chọn so sánh' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Bắt đầu tham quan 2D' })).toHaveAccessibleDescription('Phòng này chưa có hiện vật được xuất bản.');
+  const chips = page.getByRole('group', { name: 'Chọn phòng trưng bày' });
+  await page.evaluate(() => document.fonts.ready);
+  await expect.poll(() => chips.evaluate((rail) => {
+    const active = rail.querySelector('[aria-pressed="true"]')!.getBoundingClientRect();
+    const bounds = rail.getBoundingClientRect();
+    return active.left >= bounds.left - 1 && active.right <= bounds.right + 1;
+  })).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});
+
+test('an empty room keeps selections from other rooms until cleared', async ({ page }) => {
+  await page.goto('/collection?room=sculpture');
+  for (const exhibit of roomA.exhibits.slice(0, 2)) {
+    await page.getByRole('button', { name: `So sánh ${exhibit.name}`, exact: true }).click();
+  }
+  await page.getByRole('button', { name: roomC.name, exact: true }).click();
+  const empty = page.getByRole('status').filter({ hasText: 'Phòng này chưa có hiện vật được xuất bản.' });
+  await expect(empty).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mở so sánh (2)', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Xóa lựa chọn so sánh' }).click();
+  await expect(page.getByRole('region', { name: 'Lựa chọn so sánh' })).toHaveCount(0);
+  await expect(empty).toBeFocused();
+});
+
 test('moving cross-room results preserves the 300ms debounce', async ({ page }) => {
   await page.goto('/collection');
   await expect(page.getByRole('heading', { name: roomA.name, level: 2 })).toBeVisible();

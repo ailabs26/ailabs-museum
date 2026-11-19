@@ -54,13 +54,14 @@
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+  max-width: 100%;
   padding: 8px 16px;
   border: 1px solid var(--public-border);
   border-radius: 999px;
   background: var(--public-paper);
   color: var(--public-ink);
   font: 600 14px/1.35 var(--public-font-body);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 button.pill { cursor: pointer; }
 button.pill:hover { border-color: var(--public-forest); }
@@ -102,7 +103,6 @@ button.pill:hover { border-color: var(--public-forest); }
 .roomDescription { margin: 10px 0 0; color: var(--public-muted); line-height: 1.65; overflow-wrap: anywhere; }
 .count { color: var(--public-muted); font-size: 14px; margin: 10px 0 0; }
 .roomActions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
-.emptyTour { flex-basis: 100%; margin: 0; color: var(--public-muted); font-size: 13px; overflow-wrap: anywhere; }
 .roomAction, .tourLink {
   min-height: 44px;
   height: auto;
@@ -124,6 +124,8 @@ button.pill:hover { border-color: var(--public-forest); }
 .galleryHeader { padding-bottom: 14px; border-bottom: 1px solid var(--public-border); }
 .visitorPanel > :global(.mantine-Paper-root) { min-width: 0; border-color: var(--public-border); background: var(--public-paper); color: var(--public-ink); overflow-wrap: anywhere; }
 .empty { color: var(--public-muted); border: 1px dashed var(--public-border); border-radius: var(--public-radius-card); padding: clamp(16px, 3vw, 32px); line-height: 1.65; background: var(--public-paper); overflow-wrap: anywhere; }
+.roomEmpty { margin: 16px 0 0; }
+.roomEmpty:focus-visible { outline: 2px solid var(--public-focus); outline-offset: 2px; }
 
 @media (min-width: 64em) {
   .roomLayout { grid-template-columns: clamp(244px, 24%, 320px) minmax(0, 1fr); }

@@ -124,7 +124,13 @@ npm.cmd run test -- collection-redesign.spec.ts collection.spec.ts collection-gl
 
 - Bộ ảnh dựa trên API fixture trong `.superpowers/sdd/collection-redesign-plan/visual/review/`: 12 ảnh toàn trang ở 320/390/768/1024/1280/1440px cho hai theme, cùng ảnh viewport để xem nhanh.
 - Ảnh pending/error/empty chụp lại ở 390px trong `.superpowers/sdd/collection-redesign-plan/visual/review-states/`. JSON axe nằm trong `.superpowers/sdd/collection-redesign-plan/axe/`. Ảnh và log đều là artifact local, không đưa vào Git.
-- Đã đối chiếu bố cục với đặc tả §7. Bitmap tham chiếu gốc không có trong checkout. Chưa xác minh bằng API live, screen reader, zoom browser 200% hoặc thiết bị thật. Visual sign-off của người dùng đang chờ.
+- Đã đối chiếu bố cục với đặc tả §7. Bitmap tham chiếu gốc không có trong checkout. Người dùng đã duyệt giao diện phòng có hiện vật. Giao diện phòng trống còn chờ duyệt sau bản sửa bên dưới. Chưa kiểm screen reader, zoom trình duyệt 200% hoặc thiết bị thật.
+
+### Bản sửa giao diện phòng trống
+
+- Đưa thông báo phòng trống lên dưới tiêu đề gallery. Bộ lọc yêu thích và khay so sánh rỗng được ẩn; lựa chọn từ phòng khác vẫn có thể mở, xóa hoặc bỏ từng mục. Khi khay biến mất, focus về thông báo. Nút 2D vẫn có lý do bị khóa và lối vào phòng 3D vẫn dùng đường dẫn phòng hiện tại.
+- Kiểm tra API local trên phòng Lịch Sử Phòng Không Không Quân ở 320/390/1440px sau khi font tải. Tab phòng được chọn nằm trọn trong hàng cuộn và trang không tràn ngang. Ảnh trước/sau nằm trong `.superpowers/sdd/collection-redesign-plan/visual/empty-fix/`.
+- Hai test mới thất bại trên bản cũ. Lượt kiểm tập trung cuối đạt 6/6, gồm phòng trống, cuộn tab, tìm kiếm liên phòng, so sánh và gallery ở các kích thước hỗ trợ.
 
 ## Rủi ro và điều kiện bàn giao
 
