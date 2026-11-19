@@ -8,7 +8,7 @@
 
 **Tech Stack:** React 18, TypeScript, Vite, Mantine 7, React Router 6, TanStack Query, Tabler Icons, CSS Modules, Playwright, Vitest, axe-core.
 
-**Status:** Đã triển khai và kiểm chứng kỹ thuật trên `feat/public-collection-redesign`, tạo trực tiếp trong checkout project từ `origin/dev` tại `2de067bd2a2fa688aa35b65649dadedaac085e4f`. Visual đang chờ duyệt. Các commit gộp checkpoint theo thay đổi thực tế, ghi trong [task ledger](../tasks/collection-redesign.md#evidence--commit-ledger).
+**Status:** Đã triển khai, kiểm chứng kỹ thuật và được người dùng duyệt giao diện trên `feat/public-collection-redesign`. Nhánh tạo trực tiếp trong checkout project từ `origin/dev` tại `2de067bd2a2fa688aa35b65649dadedaac085e4f`. Các commit và bằng chứng nằm trong [task ledger](../tasks/collection-redesign.md#evidence--commit-ledger).
 
 **Baseline khảo sát:** `origin/dev` SHA `2de067bd2a2fa688aa35b65649dadedaac085e4f`, kiểm tra ngày 19/11/2026; trước khi tạo nhánh phải `git fetch origin` và ghi **SHA thực tế** mới nếu đã đổi. PR mục tiêu: `dev`. Nhánh đề xuất: `feat/public-collection-redesign`.
 
@@ -345,9 +345,9 @@ Bổ sung đúng tên `visitor-favorites.spec.ts`, `visitor-comparison.spec.ts` 
 - [ ] Search local, global results ordering & pagination, favorite, compare, report và recently viewed không đổi data/query/visitor behavior.
 - [ ] Không fake room image, metadata, public state; no API/DB/theme/route/3D runtime edits.
 - [ ] 320–1440 responsive, light/dark, VI/EN/FR/ZH/KO/JA, keyboard/axe và fallback states được kiểm chứng với bằng chứng thực tế.
-- [ ] Tests + build/typecheck/lint pass hoặc các blocker được mô tả rõ; user đã xem ảnh và duyệt visual khi sẵn sàng.
+- [x] Tests, build, typecheck và lint đã được ghi trong task ledger. Người dùng đã duyệt giao diện sau bản sửa phòng trống.
 - [ ] Chỉ những commit thực sự có diff và được verify mới được tạo; task ledger đúng SHA/kết quả, không có claims fake.
 
 ## Self-review và bàn giao
 
-Kết quả runtime dùng API fixture và axe, ghi cùng SHA, ảnh và giới hạn kiểm chứng ở [task ledger](../tasks/collection-redesign.md#evidence--commit-ledger). Visual sign-off đang chờ; live API, thiết bị thật và screen reader chưa được kiểm tra.
+Kết quả với API fixture, axe và kiểm tra phòng trống qua API local được ghi cùng SHA và ảnh trong [task ledger](../tasks/collection-redesign.md#evidence--commit-ledger). Người dùng đã duyệt giao diện. Thiết bị thật và screen reader chưa được kiểm tra.

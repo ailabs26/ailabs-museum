@@ -1,6 +1,6 @@
 # Task T-COLLECTION-REDESIGN: Public Collection Editorial Redesign
 
-- **Trạng thái:** Đã triển khai và kiểm chứng kỹ thuật; chờ duyệt visual.
+- **Trạng thái:** Đã triển khai, kiểm chứng kỹ thuật và được người dùng duyệt giao diện.
 - **Nhánh:** `feat/public-collection-redesign` → PR base `dev`.
 - **Base xác minh sau fetch (19/11/2026):** `origin/dev` tại `2de067bd2a2fa688aa35b65649dadedaac085e4f`.
 - **Plan:** [collection-redesign-plan.md](../plans/collection-redesign-plan.md).
@@ -40,7 +40,7 @@ Redesign `/collection` theo phong cách **Contemporary Heritage Editorial** đã
 | CR-11 | Pending / error / empty / stale states | `style(collection): polish collection loading and empty states` | DONE |
 | CR-12 | Localization / responsive / a11y | `fix(collection): align editorial layout with locale and accessibility` | DONE |
 | CR-13 | Affected-surface E2E + regression | `test(collection): cover editorial integration regressions` | DONE |
-| CR-14 | Quality gates / visual sign-off / handoff | `docs(collection): record collection redesign verification` | Chờ visual |
+| CR-14 | Quality gates / visual sign-off / handoff | `docs(collection): record collection redesign verification` | DONE |
 
 **Quy tắc:** Đây là checkpoint nhỏ để review. Nếu một checkpoint không cần sửa code/tests, ghi **no-op** và lý do thay vì tạo commit rỗng. Bug mới từ QA có `fix(collection): ...` riêng với regression test.
 
@@ -59,7 +59,7 @@ Redesign `/collection` theo phong cách **Contemporary Heritage Editorial** đã
 - [x] **CR-11:** Pending / error / empty / stale states. Xem evidence bên dưới.
 - [x] **CR-12:** Localization / responsive / a11y. Xem evidence bên dưới.
 - [x] **CR-13:** Affected-surface E2E + regression. Xem evidence bên dưới.
-- [ ] **CR-14:** Quality gates và tài liệu bàn giao đã xong. Chờ người dùng duyệt ảnh.
+- [x] **CR-14:** Quality gates, tài liệu bàn giao và duyệt giao diện đã xong.
 
 ### Gate chi tiết trước khi đánh dấu một task `[x]`
 
@@ -111,7 +111,7 @@ npm.cmd run test -- collection-redesign.spec.ts collection.spec.ts collection-gl
 | CR-11 | `b512bba`, `0a06d0b` | Pending/error/retry/refetch stale qua test Collection; axe lỗi RED ở 2,57:1 → GREEN ở cả hai theme. | Có ảnh pending/error/empty riêng | DONE |
 | CR-12 | `75f8837`, `0a06d0b` | Nút xóa qua VI/EN/FR/ZH/KO/JA, fallback và CMS override. Axe 8/8 và contrast khi lỗi ở cả hai theme. | Chưa kiểm NVDA/VoiceOver, zoom browser và thiết bị thật | DONE |
 | CR-13 | `75f8837`, `caed377` | Preview 109/112. Hai test HTML fixture qua Vite dev; test grid qua khi đo container thật. Luồng Home → Collection → Detail → quay lại và kiểm no Canvas/GLB qua. | Chạy bằng API fixture, không phải API live | DONE |
-| CR-14 | Commit bàn giao này | Node v22.23.2, npm 10.9.8. Typecheck, lint, Vitest 438/438, build đạt. Build báo chunk >500 kB. Production preview cuối đạt 19/19 (Collection Redesign, Shared Grid, axe). | Ảnh đã gửi người dùng, đang chờ duyệt | QA kỹ thuật xong, chờ visual |
+| CR-14 | `fc8f3df`, `3362763` | Node v22.23.2, npm 10.9.8. Typecheck, lint, Vitest 438/438, build đạt. Build báo chunk >500 kB. Production preview đạt 19/19 trước bản sửa phòng trống; bản sửa đạt 6/6 test tập trung. | Người dùng đã duyệt giao diện sau bản sửa phòng trống | DONE |
 
 ### Lần chạy kiểm chứng
 
@@ -124,7 +124,7 @@ npm.cmd run test -- collection-redesign.spec.ts collection.spec.ts collection-gl
 
 - Bộ ảnh dựa trên API fixture trong `.superpowers/sdd/collection-redesign-plan/visual/review/`: 12 ảnh toàn trang ở 320/390/768/1024/1280/1440px cho hai theme, cùng ảnh viewport để xem nhanh.
 - Ảnh pending/error/empty chụp lại ở 390px trong `.superpowers/sdd/collection-redesign-plan/visual/review-states/`. JSON axe nằm trong `.superpowers/sdd/collection-redesign-plan/axe/`. Ảnh và log đều là artifact local, không đưa vào Git.
-- Đã đối chiếu bố cục với đặc tả §7. Bitmap tham chiếu gốc không có trong checkout. Người dùng đã duyệt giao diện phòng có hiện vật. Giao diện phòng trống còn chờ duyệt sau bản sửa bên dưới. Chưa kiểm screen reader, zoom trình duyệt 200% hoặc thiết bị thật.
+- Đã đối chiếu bố cục với đặc tả §7. Bitmap tham chiếu gốc không có trong checkout. Người dùng đã duyệt giao diện phòng có hiện vật và phòng trống sau bản sửa. Chưa kiểm screen reader, zoom trình duyệt 200% hoặc thiết bị thật.
 
 ### Bản sửa giao diện phòng trống
 
@@ -142,4 +142,4 @@ npm.cmd run test -- collection-redesign.spec.ts collection.spec.ts collection-gl
 
 ## Handoff
 
-Nhánh và các commit ở trong checkout project. Xem ảnh desktop/mobile trước khi chốt visual. Chỉ push hoặc tạo PR sau khi có yêu cầu riêng.
+Người dùng đã duyệt giao diện và yêu cầu đẩy nhánh lên origin. Việc mở PR và merge sẽ theo yêu cầu riêng.
