@@ -1,6 +1,6 @@
 # Collection Redesign — Implementation Plan
 
-> **For agentic workers:** Thực hiện theo thứ tự task, đọc source thật ở HEAD trước mỗi slice, test liên quan trước và sau, review staged diff rồi mới commit. Đây là **plan mới, chưa triển khai**; không tự điền kết quả kiểm thử hoặc SHA. Theo `docs/plans/client-homepage-plan.md` và `docs/plans/client-collection-plan.md`: **chỉ hai file Plan/Task, không tạo `commit-plan.md`**.
+> **For agentic workers:** Đọc source thật ở HEAD trước mỗi slice, chạy test liên quan trước và sau rồi review staged diff. Kết quả thực tế và SHA nằm trong [task ledger](../tasks/collection-redesign.md#evidence--commit-ledger). Giữ hai file Plan/Task theo cách tổ chức của kế hoạch trước.
 
 **Goal:** Thiết kế lại route `/collection` theo **Contemporary Heritage Editorial** trong `docs/architecture/fe/PUBLIC_PORTAL_DESIGN.md` §7: banner tối, thanh duyệt phòng và tìm kiếm, room feature panel, gallery hiện vật thống nhất với Home, giữ nguyên hành vi công khai của hệ thống.
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** React 18, TypeScript, Vite, Mantine 7, React Router 6, TanStack Query, Tabler Icons, CSS Modules, Playwright, Vitest, axe-core.
 
-**Status:** IN PROGRESS trên `feat/public-collection-redesign`, tạo trực tiếp trong checkout project từ `origin/dev` tại `2de067bd2a2fa688aa35b65649dadedaac085e4f`.
+**Status:** Đã triển khai và kiểm chứng kỹ thuật trên `feat/public-collection-redesign`, tạo trực tiếp trong checkout project từ `origin/dev` tại `2de067bd2a2fa688aa35b65649dadedaac085e4f`. Visual đang chờ duyệt. Các commit gộp checkpoint theo thay đổi thực tế, ghi trong [task ledger](../tasks/collection-redesign.md#evidence--commit-ledger).
 
 **Baseline khảo sát:** `origin/dev` SHA `2de067bd2a2fa688aa35b65649dadedaac085e4f`, kiểm tra ngày 19/11/2026; trước khi tạo nhánh phải `git fetch origin` và ghi **SHA thực tế** mới nếu đã đổi. PR mục tiêu: `dev`. Nhánh đề xuất: `feat/public-collection-redesign`.
 
@@ -350,4 +350,4 @@ Bổ sung đúng tên `visitor-favorites.spec.ts`, `visitor-comparison.spec.ts` 
 
 ## Self-review và bàn giao
 
-Đây là **bản kế hoạch trước triển khai**. Không được chuyển `TODO` thành `DONE` chỉ vì dự án đã có code chức năng từ những PR trước. Không khẳng định đã có ảnh room, performance score, live API validation, full WCAG hoặc screen reader device coverage khi chưa thực sự test. Với thay đổi CSS-only, review ảnh desktop & mobile dưới cùng dữ liệu/scheme; giữ một PR duy nhất cho Collection.
+Kết quả runtime dùng API fixture và axe, ghi cùng SHA, ảnh và giới hạn kiểm chứng ở [task ledger](../tasks/collection-redesign.md#evidence--commit-ledger). Visual sign-off đang chờ; live API, thiết bị thật và screen reader chưa được kiểm tra.
