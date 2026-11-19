@@ -149,3 +149,24 @@ test('the room error and retry remain readable in light and dark', async ({ page
     expect(result.violations.map(({ nodes }) => nodes.map(({ failureSummary }) => failureSummary)), scheme).toEqual([]);
   }
 });
+
+test('the comparison tray and modal controls fit at 320px', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto('/collection');
+  await page.getByRole('button', { name: `So sánh ${roomA.exhibits[0].name}`, exact: true }).click();
+  await page.getByRole('button', { name: roomB.name, exact: true }).click();
+  await page.getByRole('button', { name: `So sánh ${roomB.exhibits[0].name}`, exact: true }).click();
+
+  const opener = page.getByRole('button', { name: 'Mở so sánh (2)', exact: true });
+  await opener.click();
+  const dialog = page.getByRole('dialog', { name: 'So sánh hiện vật' });
+  await expect(dialog).toBeVisible();
+  const close = dialog.getByRole('button', { name: 'Đóng so sánh' });
+  const bounds = await close.boundingBox();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(320);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(opener).toBeFocused();
+});
