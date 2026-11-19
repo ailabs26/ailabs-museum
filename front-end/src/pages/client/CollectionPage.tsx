@@ -79,9 +79,10 @@ export function CollectionPage() {
   };
 
   const globalSearch = rooms.isSuccess
-    ? <GlobalExhibitSearch query={query} currentRoomId={selectedRoom?.id} rooms={rooms.data} /> : null;
+    ? <GlobalExhibitSearch key="cross-room-search" query={query} currentRoomId={selectedRoom?.id} rooms={rooms.data} /> : null;
   // Phòng đang xem không có kết quả: đưa kết quả phòng khác lên trước để khách không tưởng là không tìm thấy.
-  const noLocalMatch = Boolean(query.trim()) && exhibits.length > 0 && filtered.length === 0;
+  const noLocalMatch = Boolean(detail) && query.trim().length >= 2 && filtered.length === 0;
+  const galleryTitle = t('ui.collection.grid-aria', 'Hiện vật trong bộ sưu tập');
 
   return (
     <div className={classes.page}>
@@ -97,115 +98,129 @@ export function CollectionPage() {
       </header>
 
       <Container size={1360} className={classes.content}>
-      {/* Filter pills + live search */}
-      {rooms.data && rooms.data.length > 0 && (
-        <div className={classes.toolbar}>
-          <div className={classes.pills} role="group" aria-label={t('ui.collection.pick-room-aria', 'Chọn phòng trưng bày')}>
-            {!selectedRoom && selectedSlug && (
-              <span className={`${classes.pill} ${classes.pillActive}`}>{t('ui.collection.room-unavailable', 'Phòng không khả dụng')}</span>
-            )}
-            {rooms.data.map((item) => (
-              <button key={item.slug} type="button"
-                className={`${classes.pill} ${item.slug === selectedSlug ? classes.pillActive : ''}`}
-                aria-pressed={item.slug === selectedSlug}
-                onClick={() => handleSelectRoom(item.slug)}>{item.name}</button>
-            ))}
-          </div>
-          <div className={classes.toolbarRight}>
-            <TextInput ref={searchRef} className={classes.search} classNames={{ input: classes.searchInput }}
-              value={query} onChange={(e) => setQuery(e.currentTarget.value)}
-              placeholder={t('ui.collection.search', 'Tìm hiện vật theo tên hoặc từ khóa…')} aria-label={t('ui.collection.search-aria', 'Tìm kiếm hiện vật')}
-              leftSection={<IconSearch size={18} aria-hidden="true" />}
-              rightSectionWidth={query ? 46 : undefined}
-              rightSection={query && (
-                <ActionIcon type="button" variant="subtle" className={classes.clearSearch}
-                  aria-label={t('ui.collection.search-clear', 'Xóa tìm kiếm')}
-                  onClick={() => { setQuery(''); searchRef.current?.focus(); }}>
-                  <IconX size={18} aria-hidden="true" />
-                </ActionIcon>
-              )} />
-            <Button variant="default" className={classes.refresh} disabled={rooms.isFetching || room.isFetching}
-              onClick={() => void refresh()}>{t('ui.collection.refresh', 'Làm mới')}</Button>
-          </div>
-        </div>
-      )}
-
-      <Checkbox my="md" label={t('ui.collection.favorites-only', 'Chỉ hiện vật yêu thích trong phòng này')} checked={isFavoritesOnly}
-        onChange={event => setIsFavoritesOnly(event.currentTarget.checked)} />
-      <VisitorStorageStatus error={favorites.error} />
-      <ExhibitComparison selection={comparison.selection} message={comparison.message} rooms={rooms.isSuccess ? rooms.data : []}
-        onRemove={comparison.toggle} onClear={comparison.clear} />
-
-      {rooms.isPending ? <ExhibitSkeleton />
-        : rooms.isError ? <Alert color="red" role="alert" title={t('ui.rooms.load-error', 'Không tải được danh sách phòng')}>
-          <Text>{errorText(rooms.error)}</Text>
-          <Button mt="sm" onClick={() => void rooms.refetch()}>{t('ui.common.retry', 'Thử lại')}</Button>
-        </Alert>
-        : rooms.data.length === 0 ? <p role="status" className={classes.empty}>{t('ui.rooms.empty', 'Chưa có phòng trưng bày công khai.')}</p>
-        : !selectedRoom ? <Alert color="red" role="alert">{t('ui.collection.room-not-listed', 'Phòng được chọn không có trong danh sách công khai. Hãy chọn phòng khác.')}</Alert>
-        : room.isPending ? <ExhibitSkeleton />
-        : room.isError ? <Alert color="red" role="alert" title={t('ui.collection.exhibits-load-error', 'Không tải được hiện vật')}>
-          <Text>{errorText(room.error)}</Text>
-          <Button mt="sm" onClick={() => void room.refetch()}>{t('ui.common.retry', 'Thử lại')}</Button>
-        </Alert> : null}
-
-      {noLocalMatch && globalSearch}
-      {detail && (
-        <section aria-labelledby="collection-room-title">
-          <div className={classes.roomHeader}>
-            <div>
-              <Title order={2} id="collection-room-title" className={classes.roomTitle}>{detail.name}</Title>
-              {detail.description && <p className={classes.roomDescription}>{detail.description}</p>}
-              <p className={classes.count}>
-                {query.trim()
-                  ? t('ui.collection.count-matched', '{shown}/{total} hiện vật khớp tìm kiếm', { shown: filtered.length, total: exhibits.length })
-                  : t('ui.collection.count', '{total} hiện vật đã xuất bản', { total: exhibits.length })}
-              </p>
+        {rooms.data && rooms.data.length > 0 && (
+          <div className={classes.toolbar}>
+            <div className={classes.pills} role="group" aria-label={t('ui.collection.pick-room-aria', 'Chọn phòng trưng bày')}>
+              {!selectedRoom && selectedSlug && (
+                <span className={`${classes.pill} ${classes.pillActive}`}>{t('ui.collection.room-unavailable', 'Phòng không khả dụng')}</span>
+              )}
+              {rooms.data.map((item) => (
+                <button key={item.slug} type="button"
+                  className={`${classes.pill} ${item.slug === selectedSlug ? classes.pillActive : ''}`}
+                  aria-pressed={item.slug === selectedSlug}
+                  onClick={() => handleSelectRoom(item.slug)}>{item.name}</button>
+              ))}
             </div>
-            <div className={classes.roomActions}>
-              {tour2d.isSameRoom ? <>
-                <Button color="teal.9" onClick={tour2d.resume}>
-                  {t('ui.guided2d.continue', tourMessages.continue)}
-                </Button>
-                <Button variant="default" onClick={tour2d.exit}>{t('ui.guided.exit', guidedMessages.exit)}</Button>
-              </> : <Button color="teal.9" disabled={detail.exhibits.length === 0}
-                aria-describedby={detail.exhibits.length === 0 ? 'guided-tour-empty-room' : undefined}
-                onClick={() => tour2d.startFromRoom(detail)}>
-                {t('ui.guided2d.start', tourMessages.start)}
-              </Button>}
-              {detail.exhibits.length === 0 && <p id="guided-tour-empty-room" className={classes.emptyTour}>
-                {t('ui.guided2d.empty', tourMessages.empty)}
-              </p>}
-              <Link to={tour2d.isSameRoom && tour2d.currentStep
-                ? guidedTour3dPath(detail.slug, tour2d.currentStep.exhibitId)
-                : `/tour?${new URLSearchParams({ room: detail.slug })}`}
-                onClick={tour2d.isSameRoom ? tour2d.pause : undefined} className={classes.tourLink}>
-                {tour2d.isSameRoom ? t('ui.guided2d.continue-3d', tourMessages.continue3d)
-                  : t('ui.collection.tour-link', 'Tham quan phòng này trong 3D')} <IconArrowRight size={18} aria-hidden="true" />
-              </Link>
+            <div className={classes.toolbarRight}>
+              <TextInput ref={searchRef} className={classes.search} classNames={{ input: classes.searchInput }}
+                value={query} onChange={(e) => setQuery(e.currentTarget.value)}
+                placeholder={t('ui.collection.search', 'Tìm hiện vật theo tên hoặc từ khóa…')} aria-label={t('ui.collection.search-aria', 'Tìm kiếm hiện vật')}
+                leftSection={<IconSearch size={18} aria-hidden="true" />}
+                rightSectionWidth={query ? 46 : undefined}
+                rightSection={query && (
+                  <ActionIcon type="button" variant="subtle" className={classes.clearSearch}
+                    aria-label={t('ui.collection.search-clear', 'Xóa tìm kiếm')}
+                    onClick={() => { setQuery(''); searchRef.current?.focus(); }}>
+                    <IconX size={18} aria-hidden="true" />
+                  </ActionIcon>
+                )} />
+              <Button variant="default" className={classes.refresh} disabled={rooms.isFetching || room.isFetching}
+                onClick={() => void refresh()}>{t('ui.collection.refresh', 'Làm mới')}</Button>
             </div>
           </div>
-          {room.isFetching && <p role="status">{t('ui.collection.updating', 'Đang cập nhật hiện vật…')}</p>}
-          {exhibits.length === 0 ? <p role="status" className={classes.empty}>{t('ui.rooms.no-exhibits', 'Phòng này chưa có hiện vật được xuất bản.')}</p>
-            : filtered.length === 0 ? <p role="status" className={classes.empty}>{isFavoritesOnly
-              ? t('ui.collection.no-favorites', 'Không có hiện vật yêu thích khớp trong phòng này. Hãy đánh dấu yêu thích hoặc thay đổi tìm kiếm.')
-              : t('ui.collection.no-match', 'Không có hiện vật nào khớp với “{query}”.', { query })}</p> : (
-            <ExhibitGrid exhibits={filtered} roomSlug={detail.slug} onReport={(exhibit) =>
-              setReportTarget({ exhibitId: exhibit.id, reportedRevisionId: exhibit.revisionId })}
-              renderActions={exhibit => <>
-                <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name}
-                  onRemove={isFavoritesOnly ? () => titleRef.current?.focus() : undefined} />
-                <Button variant="default" size="sm" aria-label={t('ui.collection.compare-aria', 'So sánh {name}', { name: exhibit.name })}
-                  aria-pressed={comparison.selection.some(ref => isSameExhibit(ref, { roomId: detail.id, exhibitId: exhibit.id }))}
-                  onClick={() => comparison.toggle({ roomId: detail.id, exhibitId: exhibit.id })}>{t('ui.collection.compare', 'So sánh')}</Button>
-              </>} />
+        )}
+
+        {noLocalMatch && globalSearch}
+        <div key="room-gallery" className={detail ? classes.roomLayout : undefined}>
+          {detail && (
+            <section className={classes.roomPanel} aria-labelledby="collection-room-title">
+              <div>
+                <Title order={2} id="collection-room-title" className={classes.roomTitle}>{detail.name}</Title>
+                {detail.description && <p className={classes.roomDescription}>{detail.description}</p>}
+                <p id="collection-room-count" className={classes.count}>
+                  {t('ui.collection.count', '{total} hiện vật đã xuất bản', { total: exhibits.length })}
+                </p>
+              </div>
+              <div className={classes.roomActions}>
+                {tour2d.isSameRoom ? <>
+                  <Button variant="filled" className={classes.roomAction} onClick={tour2d.resume}>
+                    {t('ui.guided2d.continue', tourMessages.continue)}
+                  </Button>
+                  <Button variant="default" className={classes.roomAction} onClick={tour2d.exit}>{t('ui.guided.exit', guidedMessages.exit)}</Button>
+                </> : <Button variant="filled" className={classes.roomAction} disabled={detail.exhibits.length === 0}
+                  aria-describedby={detail.exhibits.length === 0 ? 'guided-tour-empty-room' : undefined}
+                  onClick={() => tour2d.startFromRoom(detail)}>
+                  {t('ui.guided2d.start', tourMessages.start)}
+                </Button>}
+                {detail.exhibits.length === 0 && <p id="guided-tour-empty-room" className={classes.emptyTour}>
+                  {t('ui.guided2d.empty', tourMessages.empty)}
+                </p>}
+                <Link to={tour2d.isSameRoom && tour2d.currentStep
+                  ? guidedTour3dPath(detail.slug, tour2d.currentStep.exhibitId)
+                  : `/tour?${new URLSearchParams({ room: detail.slug })}`}
+                  onClick={tour2d.isSameRoom ? tour2d.pause : undefined} className={classes.tourLink}>
+                  {tour2d.isSameRoom ? t('ui.guided2d.continue-3d', tourMessages.continue3d)
+                    : t('ui.collection.tour-link', 'Tham quan phòng này trong 3D')} <IconArrowRight size={18} aria-hidden="true" />
+                </Link>
+              </div>
+            </section>
           )}
-        </section>
-      )}
-      {!noLocalMatch && globalSearch}
-      <RecentlyViewed rooms={rooms.data ?? []} isRoomsReady={rooms.isSuccess} />
-      {reportTarget && <PublicReportModal key={`${reportTarget.exhibitId}:${reportTarget.reportedRevisionId}`}
-        {...reportTarget} opened onClose={() => setReportTarget(null)} />}
+          <section className={classes.gallery} aria-labelledby={detail ? 'collection-gallery-title' : undefined}
+            aria-describedby={detail ? 'collection-room-count' : undefined}>
+            {detail && (
+              <div className={classes.galleryHeader}>
+                <Title order={2} id="collection-gallery-title" className={classes.galleryTitle}>{galleryTitle}</Title>
+                {query.trim() && <p className={classes.count}>
+                  {t('ui.collection.count-matched', '{shown}/{total} hiện vật khớp tìm kiếm', { shown: filtered.length, total: exhibits.length })}
+                </p>}
+              </div>
+            )}
+            <Checkbox my="md" label={t('ui.collection.favorites-only', 'Chỉ hiện vật yêu thích trong phòng này')} checked={isFavoritesOnly}
+              onChange={event => setIsFavoritesOnly(event.currentTarget.checked)} />
+            <VisitorStorageStatus error={favorites.error} />
+            <div className={classes.visitorPanel}>
+              <ExhibitComparison selection={comparison.selection} message={comparison.message} rooms={rooms.isSuccess ? rooms.data : []}
+                onRemove={comparison.toggle} onClear={comparison.clear} />
+            </div>
+
+            {rooms.isPending ? <ExhibitSkeleton />
+              : rooms.isError ? <Alert color="red" role="alert" title={t('ui.rooms.load-error', 'Không tải được danh sách phòng')}>
+                <Text>{errorText(rooms.error)}</Text>
+                <Button mt="sm" onClick={() => void rooms.refetch()}>{t('ui.common.retry', 'Thử lại')}</Button>
+              </Alert>
+              : rooms.data.length === 0 ? <p role="status" className={classes.empty}>{t('ui.rooms.empty', 'Chưa có phòng trưng bày công khai.')}</p>
+              : !selectedRoom ? <Alert color="red" role="alert">{t('ui.collection.room-not-listed', 'Phòng được chọn không có trong danh sách công khai. Hãy chọn phòng khác.')}</Alert>
+              : room.isPending ? <ExhibitSkeleton />
+              : room.isError ? <Alert color="red" role="alert" title={t('ui.collection.exhibits-load-error', 'Không tải được hiện vật')}>
+                <Text>{errorText(room.error)}</Text>
+                <Button mt="sm" onClick={() => void room.refetch()}>{t('ui.common.retry', 'Thử lại')}</Button>
+              </Alert> : null}
+
+            {detail && <>
+              {room.isFetching && <p role="status">{t('ui.collection.updating', 'Đang cập nhật hiện vật…')}</p>}
+              {exhibits.length === 0 ? <p role="status" className={classes.empty}>{t('ui.rooms.no-exhibits', 'Phòng này chưa có hiện vật được xuất bản.')}</p>
+                : filtered.length === 0 ? <p role="status" className={classes.empty}>{isFavoritesOnly
+                  ? t('ui.collection.no-favorites', 'Không có hiện vật yêu thích khớp trong phòng này. Hãy đánh dấu yêu thích hoặc thay đổi tìm kiếm.')
+                  : t('ui.collection.no-match', 'Không có hiện vật nào khớp với “{query}”.', { query })}</p> : (
+                <ExhibitGrid exhibits={filtered} roomSlug={detail.slug} onReport={(exhibit) =>
+                  setReportTarget({ exhibitId: exhibit.id, reportedRevisionId: exhibit.revisionId })}
+                  renderActions={exhibit => <>
+                    <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name}
+                      onRemove={isFavoritesOnly ? () => titleRef.current?.focus() : undefined} />
+                    <Button variant="default" size="sm" aria-label={t('ui.collection.compare-aria', 'So sánh {name}', { name: exhibit.name })}
+                      aria-pressed={comparison.selection.some(ref => isSameExhibit(ref, { roomId: detail.id, exhibitId: exhibit.id }))}
+                      onClick={() => comparison.toggle({ roomId: detail.id, exhibitId: exhibit.id })}>{t('ui.collection.compare', 'So sánh')}</Button>
+                  </>} />
+              )}
+            </>}
+          </section>
+        </div>
+        {!noLocalMatch && globalSearch}
+        <div className={classes.visitorPanel}>
+          <RecentlyViewed rooms={rooms.data ?? []} isRoomsReady={rooms.isSuccess} />
+        </div>
+        {reportTarget && <PublicReportModal key={`${reportTarget.exhibitId}:${reportTarget.reportedRevisionId}`}
+          {...reportTarget} opened onClose={() => setReportTarget(null)} />}
       </Container>
     </div>
   );
