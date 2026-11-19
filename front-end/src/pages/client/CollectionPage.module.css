@@ -1,5 +1,6 @@
 .page {
   --mantine-color-dimmed: var(--public-muted);
+  --mantine-color-red-light-color: var(--public-error);
   background: var(--public-bg);
   color: var(--public-ink);
   font-family: var(--public-font-body);

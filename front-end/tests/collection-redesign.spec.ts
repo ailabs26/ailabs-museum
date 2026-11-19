@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import { fulfillMuseum, installMuseumApi } from './fixtures/museumApi';
 import { envelope, roomA, roomB, roomC, roomSummaries } from './fixtures/museumContent';
 
@@ -133,5 +134,18 @@ test('the gallery uses its own width across all supported viewports and themes',
       const items = await gallery.boundingBox();
       if (width < 1024) expect(room!.y).toBeLessThan(items!.y);
     }
+  }
+});
+
+test('the room error and retry remain readable in light and dark', async ({ page }) => {
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route,
+    { success: false, data: null, message: 'Lỗi máy chủ' }, 500));
+  await page.goto('/collection');
+  const error = page.getByRole('alert').filter({ hasText: 'Không tải được hiện vật' });
+  await expect(error.getByRole('button', { name: 'Thử lại' })).toBeVisible();
+  for (const scheme of ['light', 'dark']) {
+    await page.locator('html').evaluate((html, theme) => html.setAttribute('data-mantine-color-scheme', theme), scheme);
+    const result = await new AxeBuilder({ page }).include('[role="alert"]').withRules(['color-contrast']).analyze();
+    expect(result.violations.map(({ nodes }) => nodes.map(({ failureSummary }) => failureSummary)), scheme).toEqual([]);
   }
 });
