@@ -1,5 +1,5 @@
-import { Alert, Button, Checkbox, Container, Text, TextInput, Title, VisuallyHidden } from '@mantine/core';
-import { IconArrowRight, IconSearch } from '@tabler/icons-react';
+import { ActionIcon, Alert, Button, Checkbox, Container, Text, TextInput, Title, VisuallyHidden } from '@mantine/core';
+import { IconArrowRight, IconSearch, IconX } from '@tabler/icons-react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePublicErrorText, usePublicLocale } from '@/core/i18n/public-locale';
@@ -38,6 +38,7 @@ export function CollectionPage() {
   const [loadingAnnouncement, setLoadingAnnouncement] = useState('');
   const location = useLocation();
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const focusedLocation = useRef<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { rooms, room, selectedRoom, selectedSlug, refresh } = useMuseumRooms(searchParams.get('room'));
@@ -83,16 +84,19 @@ export function CollectionPage() {
   const noLocalMatch = Boolean(query.trim()) && exhibits.length > 0 && filtered.length === 0;
 
   return (
-    <Container size="lg" className={classes.page}>
+    <div className={classes.page}>
       <VisuallyHidden role="status" aria-live="polite" aria-atomic="true" aria-label={t('ui.collection.status-aria', 'Trạng thái tải bộ sưu tập')}>
         {loadingAnnouncement}
       </VisuallyHidden>
       <header className={classes.intro}>
-        <p className={classes.eyebrow}>{t('ui.collection.eyebrow', 'Aura Museum / Khám phá hiện vật')}</p>
-        <Title ref={titleRef} tabIndex={-1} order={1} className={classes.title}>{t('ui.collection.title', 'Bộ sưu tập')}</Title>
-        <p className={classes.description}>{t('ui.collection.intro', 'Dành một chút thời gian cho mỗi câu chuyện. Khám phá nội dung hiện vật trong giao diện 2D, không cần mở không gian 3D.')}</p>
+        <Container size={1360} className={classes.bannerInner}>
+          <p className={classes.eyebrow}>{t('ui.collection.eyebrow', 'Aura Museum / Khám phá hiện vật')}</p>
+          <Title ref={titleRef} tabIndex={-1} order={1} className={classes.title}>{t('ui.collection.title', 'Bộ sưu tập')}</Title>
+          <p className={classes.description}>{t('ui.collection.intro', 'Dành một chút thời gian cho mỗi câu chuyện. Khám phá nội dung hiện vật trong giao diện 2D, không cần mở không gian 3D.')}</p>
+        </Container>
       </header>
 
+      <Container size={1360} className={classes.content}>
       {/* Filter pills + live search */}
       {rooms.data && rooms.data.length > 0 && (
         <div className={classes.toolbar}>
@@ -108,10 +112,19 @@ export function CollectionPage() {
             ))}
           </div>
           <div className={classes.toolbarRight}>
-            <TextInput className={classes.search} value={query} onChange={(e) => setQuery(e.currentTarget.value)}
+            <TextInput ref={searchRef} className={classes.search} classNames={{ input: classes.searchInput }}
+              value={query} onChange={(e) => setQuery(e.currentTarget.value)}
               placeholder={t('ui.collection.search', 'Tìm hiện vật theo tên hoặc từ khóa…')} aria-label={t('ui.collection.search-aria', 'Tìm kiếm hiện vật')}
-              leftSection={<IconSearch size={16} aria-hidden="true" />} />
-            <Button variant="default" disabled={rooms.isFetching || room.isFetching}
+              leftSection={<IconSearch size={18} aria-hidden="true" />}
+              rightSectionWidth={query ? 46 : undefined}
+              rightSection={query && (
+                <ActionIcon type="button" variant="subtle" className={classes.clearSearch}
+                  aria-label={t('ui.collection.search-clear', 'Xóa tìm kiếm')}
+                  onClick={() => { setQuery(''); searchRef.current?.focus(); }}>
+                  <IconX size={18} aria-hidden="true" />
+                </ActionIcon>
+              )} />
+            <Button variant="default" className={classes.refresh} disabled={rooms.isFetching || room.isFetching}
               onClick={() => void refresh()}>{t('ui.collection.refresh', 'Làm mới')}</Button>
           </div>
         </div>
@@ -193,6 +206,7 @@ export function CollectionPage() {
       <RecentlyViewed rooms={rooms.data ?? []} isRoomsReady={rooms.isSuccess} />
       {reportTarget && <PublicReportModal key={`${reportTarget.exhibitId}:${reportTarget.reportedRevisionId}`}
         {...reportTarget} opened onClose={() => setReportTarget(null)} />}
-    </Container>
+      </Container>
+    </div>
   );
 }
