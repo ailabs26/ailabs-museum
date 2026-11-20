@@ -48,7 +48,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       backgroundColor: '#0F766E',
     },
   },
-  plugins: ['expo-router'],
+  plugins: [
+    'expo-router',
+    [
+      '@reactvision/react-viro',
+      {
+        android: {
+          xRMode: ['AR'],
+        },
+        ios: {
+          cameraUsagePermission:
+            'Aura Museum cần quyền camera để đặt và quan sát hiện vật 3D trong không gian thực (AR).',
+        },
+      },
+    ],
+  ],
   experiments: {
     typedRoutes: true,
   },
