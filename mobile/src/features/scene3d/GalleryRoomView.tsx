@@ -1,12 +1,22 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Canvas } from '@react-three/fiber/native';
 import { useTheme } from '@/theme/ThemeProvider';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Scene3DErrorBoundary } from './Scene3DErrorBoundary';
 import { configureExpoGlContext } from './glbLoader';
 import { GalleryRoomDisplays3D, MuseumRoomShell3D } from './GalleryRoomComponents';
 import { resolveGalleryLayout } from './gallerySlots';
 import type { MuseumDisplay } from './museumTypes';
+import {
+  INITIAL_CAMERA_POSITION,
+  INITIAL_CAMERA_TARGET,
+  NavigationGestures,
+  createNavigationInput,
+  type CameraAction,
+} from './museumNavigation';
+import { TouchCameraController } from './TouchCameraController';
+import { TouchNavigationHud } from './TouchNavigationHud';
 import {
   RoomModelManager,
   type RoomModelManagerOptions,
@@ -34,11 +44,27 @@ export function GalleryRoomView({
   onSelectExhibit,
 }: GalleryRoomViewProps) {
   const theme = useTheme();
+  const reducedMotion = useReducedMotion();
   const [viewMode, setViewMode] = useState<'3d' | '2d'>(initialMode);
   const [selectedId, setSelectedId] = useState<string | null>(displays[0]?.id ?? null);
   const [modelStates, setModelStates] = useState<ReadonlyMap<string, RoomModelState>>(
     () => new Map(),
   );
+
+  const navInput = useMemo(() => createNavigationInput(), []);
+  const navGestures = useMemo(() => new NavigationGestures(), []);
+  const commandHandlerRef = useRef<((action: CameraAction) => void) | null>(null);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState !== 'active') navInput.stop();
+    });
+    return () => subscription.remove();
+  }, [navInput]);
+
+  const handleCameraAction = useCallback((action: CameraAction) => {
+    commandHandlerRef.current?.(action);
+  }, []);
 
   const layout = useMemo(() => resolveGalleryLayout(displays), [displays]);
   const selectedDisplay = useMemo(
@@ -115,21 +141,33 @@ export function GalleryRoomView({
         <View style={[styles.viewport, { borderRadius: theme.radius.lg }]} testID="gallery-3d-viewport">
           <Scene3DErrorBoundary onFallback2D={() => setViewMode('2d')}>
             <Canvas
-              camera={{ position: [0, 2.6, 5.8], fov: 60 }}
+              camera={{ position: INITIAL_CAMERA_POSITION, fov: 60 }}
               gl={{ antialias: true }}
               onCreated={(state) => {
                 configureExpoGlContext(state.gl.getContext());
-                state.camera.lookAt(0, 1.35, -1.5);
+                state.camera.lookAt(...INITIAL_CAMERA_TARGET);
               }}
             >
               <MuseumRoomShell3D />
+              <TouchCameraController
+                input={navInput}
+                commandHandler={commandHandlerRef}
+                reducedMotion={reducedMotion}
+              />
               <GalleryRoomDisplays3D
                 displays={displays}
                 modelStates={modelStates}
                 selectedExhibitId={selectedId}
-                onSelectExhibit={handleSelectById}
+                onSelectExhibit={(id) => {
+                  if (navGestures.canSelect) handleSelectById(id);
+                }}
               />
             </Canvas>
+            <TouchNavigationHud
+              input={navInput}
+              gestures={navGestures}
+              onAction={handleCameraAction}
+            />
           </Scene3DErrorBoundary>
         </View>
       ) : (

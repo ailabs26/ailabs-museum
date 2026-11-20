@@ -1,8 +1,12 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { AccessibilityInfo } from 'react-native';
+import { PerspectiveCamera } from 'three';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { GALLERY_SLOTS } from './gallerySlots';
 import { GalleryRoomView } from './GalleryRoomView';
 import type { MuseumDisplay } from './museumTypes';
+
+const mockCamera = new PerspectiveCamera(60, 0.56, 0.1, 100);
 
 jest.mock('@react-three/fiber/native', () => {
   const React = require('react');
@@ -10,10 +14,22 @@ jest.mock('@react-three/fiber/native', () => {
   return {
     Canvas: ({ children }: { children: React.ReactNode }) =>
       React.createElement(View, { testID: 'mock-gallery-canvas' }, children),
+    useFrame: jest.fn(),
+    useThree: () => ({ camera: mockCamera, size: { width: 390, height: 700 } }),
   };
 });
 
 describe('GalleryRoomView (MOB-E6-04)', () => {
+  beforeEach(() => {
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
+    jest.spyOn(AccessibilityInfo, 'addEventListener').mockReturnValue({
+      remove: jest.fn(),
+    } as unknown as ReturnType<typeof AccessibilityInfo.addEventListener>);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
   const displays: MuseumDisplay[] = [
     {
       id: 'ex-1',
@@ -33,7 +49,7 @@ describe('GalleryRoomView (MOB-E6-04)', () => {
     },
   ];
 
-  it('hiển thị phòng 3D chuẩn 5 bục, chuyển đổi mượt sang danh sách 2D và chọn hiện vật', () => {
+  it('hiển thị phòng 3D chuẩn 5 bục, chuyển đổi mượt sang danh sách 2D và chọn hiện vật', async () => {
     const onSelect = jest.fn();
     render(
       <ThemeProvider>
@@ -44,6 +60,7 @@ describe('GalleryRoomView (MOB-E6-04)', () => {
         />
       </ThemeProvider>,
     );
+    await act(async () => {});
 
     expect(screen.getByTestId('gallery-3d-viewport')).toBeOnTheScreen();
     expect(screen.getByTestId('gallery-layout-badge')).toHaveTextContent(
@@ -61,7 +78,7 @@ describe('GalleryRoomView (MOB-E6-04)', () => {
     expect(screen.getByTestId('gallery-selected-card')).toHaveTextContent(/Bình gốm Chu Đậu/);
   });
 
-  it('nhận diện chính xác bố cục legacy khi hiện vật đặt tọa độ tự do', () => {
+  it('nhận diện chính xác bố cục legacy khi hiện vật đặt tọa độ tự do', async () => {
     const legacyDisplays: MuseumDisplay[] = [
       {
         id: 'free-1',
@@ -78,6 +95,7 @@ describe('GalleryRoomView (MOB-E6-04)', () => {
         <GalleryRoomView roomName="Phòng Legacy" displays={legacyDisplays} />
       </ThemeProvider>,
     );
+    await act(async () => {});
 
     expect(screen.getByTestId('gallery-layout-badge')).toHaveTextContent(/Bố cục tự do/);
   });
