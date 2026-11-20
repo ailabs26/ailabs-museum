@@ -13,4 +13,17 @@ export default tseslint.config(
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
+  {
+    // React Three Fiber dùng thuộc tính Three.js trực tiếp trên JSX (<mesh>, <directionalLight>, ...).
+    files: ['src/features/scene3d/**/*.tsx', 'src/features/ar/**/*.tsx'],
+    rules: {
+      'react/no-unknown-property': 'off',
+    },
+  },
+  {
+    files: ['**/*.test.{ts,tsx}', 'metro.config.js', 'jest.config.js', 'babel.config.js'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
 );

@@ -15,6 +15,10 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="room/[slug]" options={{ headerShown: true, title: 'Phòng' }} />
+          <Stack.Screen
+            name="spike-3d"
+            options={{ headerShown: true, title: 'Spike 3D (MOB-E6-01)' }}
+          />
           <Stack.Screen name="+not-found" />
         </Stack>
       </ThemeProvider>
