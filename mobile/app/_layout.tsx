@@ -29,7 +29,7 @@ export default function RootLayout() {
           />
           <Stack.Screen
             name="ar-exhibit"
-            options={{ headerShown: true, title: 'Đặt hiện vật AR (MOB-E9-02)' }}
+            options={{ headerShown: true, title: 'AR Hiện vật & Hotspot (MOB-E9)' }}
           />
           <Stack.Screen name="+not-found" />
         </Stack>

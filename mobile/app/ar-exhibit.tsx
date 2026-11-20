@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Screen } from '@/components/layout/Screen';
-import { ArArtifactPlacementView } from '@/features/ar/ArArtifactPlacementView';
+import { ArExhibitExperienceView } from '@/features/ar/ArExhibitExperienceView';
 import type { MuseumDisplay } from '@/features/scene3d/museumTypes';
 
 const DEMO_AR_EXHIBIT: MuseumDisplay = {
@@ -33,12 +33,12 @@ const DEMO_AR_EXHIBIT: MuseumDisplay = {
   ],
 };
 
-/** Màn hình đặt hiện vật trên mặt phẳng AR + xoay/zoom (`MOB-E9-02`). */
+/** Màn hình đặt hiện vật trên mặt phẳng AR + xoay/zoom + Hotspot overlay (`MOB-E9-02`, `MOB-E9-03`). */
 export default function ArExhibitScreen() {
   const router = useRouter();
   return (
     <Screen edges={['bottom']}>
-      <ArArtifactPlacementView
+      <ArExhibitExperienceView
         exhibit={DEMO_AR_EXHIBIT}
         onFallback3D={() => router.replace('/room/demo-room')}
         onExit={() => router.back()}
