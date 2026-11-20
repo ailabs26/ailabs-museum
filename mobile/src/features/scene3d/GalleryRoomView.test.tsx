@@ -15,7 +15,11 @@ jest.mock('@react-three/fiber/native', () => {
     Canvas: ({ children }: { children: React.ReactNode }) =>
       React.createElement(View, { testID: 'mock-gallery-canvas' }, children),
     useFrame: jest.fn(),
-    useThree: () => ({ camera: mockCamera, size: { width: 390, height: 700 } }),
+    useThree: () => ({
+      camera: mockCamera,
+      size: { width: 390, height: 700 },
+      gl: { setPixelRatio: jest.fn() },
+    }),
   };
 });
 
@@ -67,6 +71,13 @@ describe('GalleryRoomView (MOB-E6-04)', () => {
       /Bố cục chuẩn 5 bục \(2\/5 hiện vật\)/,
     );
     expect(screen.getByTestId('gallery-selected-card')).toHaveTextContent(/Trống đồng Ngọc Lũ/);
+
+    // Đổi chế độ chất lượng 3D bằng nút pill (Auto -> Thấp -> Cân bằng).
+    const qualityBtn = screen.getByTestId('gallery-quality-toggle');
+    fireEvent.press(qualityBtn);
+    expect(qualityBtn).toHaveTextContent(/Thấp/);
+    fireEvent.press(qualityBtn);
+    expect(qualityBtn).toHaveTextContent(/Cân bằng/);
 
     // Chuyển sang chế độ danh sách 2D dễ tiếp cận.
     fireEvent.press(screen.getByRole('button', { name: 'Chuyển sang danh sách hiện vật 2D' }));
