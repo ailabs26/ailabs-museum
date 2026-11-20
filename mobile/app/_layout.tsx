@@ -27,6 +27,10 @@ export default function RootLayout() {
             name="spike-ar"
             options={{ headerShown: true, title: 'Spike AR (MOB-E9-01)' }}
           />
+          <Stack.Screen
+            name="ar-exhibit"
+            options={{ headerShown: true, title: 'Đặt hiện vật AR (MOB-E9-02)' }}
+          />
           <Stack.Screen name="+not-found" />
         </Stack>
       </ThemeProvider>
