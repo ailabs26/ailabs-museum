@@ -6,6 +6,9 @@ import {
   createNavigationInput,
   type CameraAction,
 } from './museumNavigation';
+import { GALLERY_SLOTS } from './gallerySlots';
+import { getGalleryColliders, isNavigationPositionSafe } from './museumCollision';
+import { MUSEUM_ROOM_SIZE, type MuseumDisplay } from './museumTypes';
 import { TouchCameraController } from './TouchCameraController';
 import { TouchNavigationHud } from './TouchNavigationHud';
 
@@ -93,5 +96,55 @@ describe('TouchCameraController & TouchNavigationHud (MOB-E6-05)', () => {
       'right',
       'reset',
     ]);
+  });
+
+  it('chạy lộ trình focus vòng quanh bục và tự giải thoát nếu camera khởi tạo trong bục (MOB-E6-06)', () => {
+    const input = createNavigationInput();
+    const commandRef: { current: ((action: CameraAction) => void) | null } = { current: null };
+    const displays: MuseumDisplay[] = GALLERY_SLOTS.map((slot, idx) => ({
+      id: `ex-${idx}`,
+      title: slot.label,
+      description: '',
+      shape: 'cube',
+      color: '#0F766E',
+      position: [slot.position[0], slot.position[1], slot.position[2]],
+    }));
+    const colliders = getGalleryColliders(displays);
+
+    // Đặt camera cố ý kẹt giữa tâm bục S01 (0, -2) -> controller phải tự đẩy ra biên an toàn.
+    mockCamera.position.set(0, 1.7, -2);
+    const { rerender } = render(
+      <TouchCameraController
+        input={input}
+        commandHandler={commandRef}
+        colliders={colliders}
+        reducedMotion={false}
+      />,
+    );
+    expect(
+      isNavigationPositionSafe(mockCamera.position.x, mockCamera.position.z, MUSEUM_ROOM_SIZE, colliders),
+    ).toBe(true);
+
+    // Kích hoạt focus tới hiện vật S03 và chạy nhiều khung hình -> camera di chuyển an toàn.
+    rerender(
+      <TouchCameraController
+        input={input}
+        commandHandler={commandRef}
+        colliders={colliders}
+        reducedMotion={false}
+        focusRequest={{ exhibit: displays[2]!, displays, issuedAt: 100 }}
+      />,
+    );
+    for (let i = 0; i < 60; i++) {
+      mockFrameCb?.({}, 1 / 30);
+      expect(
+        isNavigationPositionSafe(
+          mockCamera.position.x,
+          mockCamera.position.z,
+          MUSEUM_ROOM_SIZE,
+          colliders,
+        ),
+      ).toBe(true);
+    }
   });
 });
