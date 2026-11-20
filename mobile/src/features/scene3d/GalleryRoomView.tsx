@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Canvas } from '@react-three/fiber/native';
+import { AppState, PixelRatio, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Canvas, useFrame, useThree } from '@react-three/fiber/native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Scene3DErrorBoundary } from './Scene3DErrorBoundary';
+import { FpsMeter, type FpsSnapshot } from './fpsMeter';
 import { configureExpoGlContext } from './glbLoader';
 import { GalleryRoomDisplays3D, MuseumRoomShell3D } from './GalleryRoomComponents';
 import { resolveGalleryLayout } from './gallerySlots';
 import type { MuseumDisplay } from './museumTypes';
+import { useSceneQuality } from './useSceneQuality';
 import {
   INITIAL_CAMERA_POSITION,
   INITIAL_CAMERA_TARGET,
@@ -36,9 +38,38 @@ export interface GalleryRoomViewProps {
   onSelectExhibit?: (exhibit: MuseumDisplay) => void;
 }
 
+function AdaptiveFpsMonitor({
+  dprCap,
+  onSample,
+}: {
+  dprCap: number;
+  onSample: (snapshot: FpsSnapshot) => void;
+}) {
+  const { gl } = useThree();
+  const meterRef = useRef<FpsMeter>(new FpsMeter({ windowSize: 60, maxGapMs: 500 }));
+  const elapsedRef = useRef(0);
+
+  useEffect(() => {
+    if (typeof gl?.setPixelRatio === 'function') {
+      gl.setPixelRatio(Math.min(PixelRatio.get(), dprCap));
+    }
+  }, [gl, dprCap]);
+
+  useFrame((_state, deltaSec) => {
+    const ms = deltaSec * 1000;
+    meterRef.current.recordDelta(ms);
+    elapsedRef.current += ms;
+    if (elapsedRef.current >= 1000) {
+      elapsedRef.current = 0;
+      onSample(meterRef.current.getSnapshot());
+    }
+  });
+  return null;
+}
+
 /**
- * Màn hình tham quan phòng 3D với nhiều hiện vật đặt đúng theo Gallery Slots (MOB-E6-04).
- * Luôn đi kèm chế độ 2D song song để đảm bảo khả năng tiếp cận và dự phòng khi GL lỗi.
+ * Màn hình tham quan phòng 3D với nhiều hiện vật đặt đúng theo Gallery Slots (MOB-E6-04),
+ * điều khiển cảm ứng + va chạm (MOB-E6-05/06) và tự điều chỉnh chất lượng theo thiết bị (MOB-E6-08).
  */
 export function GalleryRoomView({
   roomName,
@@ -49,6 +80,7 @@ export function GalleryRoomView({
 }: GalleryRoomViewProps) {
   const theme = useTheme();
   const reducedMotion = useReducedMotion();
+  const quality = useSceneQuality(reducedMotion);
   const [viewMode, setViewMode] = useState<'3d' | '2d'>(initialMode);
   const [selectedId, setSelectedId] = useState<string | null>(displays[0]?.id ?? null);
   const [modelStates, setModelStates] = useState<ReadonlyMap<string, RoomModelState>>(
@@ -79,14 +111,17 @@ export function GalleryRoomView({
   );
 
   useEffect(() => {
-    const manager = new RoomModelManager(managerOptions);
+    const manager = new RoomModelManager({
+      maxConcurrent: quality.profile.maxConcurrentGlbLoads,
+      ...managerOptions,
+    });
     void manager.loadRoomDisplays(displays, (nextStates) => {
       setModelStates(nextStates);
     });
     return () => {
       manager.dispose();
     };
-  }, [displays, managerOptions]);
+  }, [displays, managerOptions, quality.profile.maxConcurrentGlbLoads]);
 
   const handleSelectById = (exhibitId: string) => {
     setSelectedId(exhibitId);
@@ -126,21 +161,41 @@ export function GalleryRoomView({
             {layoutLabel}
           </Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={
-            viewMode === '3d' ? 'Chuyển sang danh sách hiện vật 2D' : 'Quay lại phòng trưng bày 3D'
-          }
-          onPress={() => setViewMode((prev) => (prev === '3d' ? '2d' : '3d'))}
-          style={[
-            styles.modeToggle,
-            { backgroundColor: theme.colors.primary, borderRadius: theme.radius.md },
-          ]}
-        >
-          <Text style={{ color: theme.colors.primaryText, fontSize: theme.fontSize.xs, fontWeight: '600' }}>
-            {viewMode === '3d' ? 'Danh sách 2D' : 'Xem 3D'}
-          </Text>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable
+            testID="gallery-quality-toggle"
+            accessibilityRole="button"
+            accessibilityLabel={`Đổi chất lượng 3D, hiện tại ${quality.profile.label}`}
+            onPress={quality.cycleMode}
+            style={[
+              styles.qualityPill,
+              {
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.background,
+                borderRadius: theme.radius.md,
+              },
+            ]}
+          >
+            <Text style={{ color: theme.colors.text, fontSize: theme.fontSize.xs, fontWeight: '600' }}>
+              {quality.mode === 'auto' ? `Auto: ${quality.profile.tier}` : quality.profile.label}
+            </Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              viewMode === '3d' ? 'Chuyển sang danh sách hiện vật 2D' : 'Quay lại phòng trưng bày 3D'
+            }
+            onPress={() => setViewMode((prev) => (prev === '3d' ? '2d' : '3d'))}
+            style={[
+              styles.modeToggle,
+              { backgroundColor: theme.colors.primary, borderRadius: theme.radius.md },
+            ]}
+          >
+            <Text style={{ color: theme.colors.primaryText, fontSize: theme.fontSize.xs, fontWeight: '600' }}>
+              {viewMode === '3d' ? 'Danh sách 2D' : 'Xem 3D'}
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       {viewMode === '3d' ? (
@@ -148,13 +203,19 @@ export function GalleryRoomView({
           <Scene3DErrorBoundary onFallback2D={() => setViewMode('2d')}>
             <Canvas
               camera={{ position: INITIAL_CAMERA_POSITION, fov: 60 }}
-              gl={{ antialias: true }}
+              shadows={quality.profile.enableShadows}
+              gl={{ antialias: quality.profile.antialias }}
               onCreated={(state) => {
                 configureExpoGlContext(state.gl.getContext());
+                state.gl.setPixelRatio(Math.min(PixelRatio.get(), quality.profile.dprCap));
                 state.camera.lookAt(...INITIAL_CAMERA_TARGET);
               }}
             >
-              <MuseumRoomShell3D />
+              <AdaptiveFpsMonitor
+                dprCap={quality.profile.dprCap}
+                onSample={quality.reportFpsSample}
+              />
+              <MuseumRoomShell3D quality={quality.profile} />
               <TouchCameraController
                 input={navInput}
                 commandHandler={commandHandlerRef}
@@ -167,6 +228,7 @@ export function GalleryRoomView({
                 displays={displays}
                 modelStates={modelStates}
                 selectedExhibitId={selectedId}
+                quality={quality.profile}
                 onSelectExhibit={(id) => {
                   if (navGestures.canSelect) handleSelectById(id);
                 }}
@@ -294,6 +356,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerText: { flex: 1, gap: 2 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  qualityPill: {
+    minHeight: 40,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   roomTitle: { fontWeight: '700' },
   modeToggle: {
     minHeight: 40,

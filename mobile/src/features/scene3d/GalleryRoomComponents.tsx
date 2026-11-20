@@ -8,18 +8,24 @@ import {
   type MuseumDisplay,
 } from './museumTypes';
 import { resolveGalleryLayout, type GalleryLayoutResolution } from './gallerySlots';
+import { QUALITY_PROFILES, type QualityProfile } from './performanceTier';
 import type { RoomModelState } from './roomModelManager';
 
 export type PedestalKind = 'hero' | 'standard' | 'square';
 
 /**
- * Vỏ phòng trưng bày 14 x 16 x 5 m kèm ánh sáng Heritage Warm tối ưu cho mobile (MOB-E6-04).
+ * Vỏ phòng trưng bày 14 x 16 x 5 m kèm ánh sáng Heritage Warm tối ưu theo tầng hiệu năng (MOB-E6-04, MOB-E6-08).
  */
-export function MuseumRoomShell3D({ enableShadows = false }: { enableShadows?: boolean }) {
+export function MuseumRoomShell3D({
+  quality = QUALITY_PROFILES.balanced,
+}: {
+  quality?: QualityProfile;
+}) {
+  const enableShadows = quality.enableShadows;
   return (
     <group name="museum-room-shell">
       <color attach="background" args={['#14181D']} />
-      <ambientLight color="#f4f1e8" intensity={0.45} />
+      <ambientLight color="#f4f1e8" intensity={quality.enableSecondaryLights ? 0.45 : 0.65} />
       <hemisphereLight args={['#f6efe2', '#7d7362', 0.65]} />
       <directionalLight
         color="#ffe8cc"
@@ -27,7 +33,9 @@ export function MuseumRoomShell3D({ enableShadows = false }: { enableShadows?: b
         position={[-3.5, 4.8, 4]}
         castShadow={enableShadows}
       />
-      <directionalLight color="#d6f0ea" intensity={0.35} position={[4.5, 3.8, -5]} />
+      {quality.enableSecondaryLights ? (
+        <directionalLight color="#d6f0ea" intensity={0.35} position={[4.5, 3.8, -5]} />
+      ) : null}
 
       {/* Mặt sàn y = 0 */}
       <mesh position={[0, -0.12, 0]} receiveShadow={enableShadows}>
@@ -68,9 +76,11 @@ export function MuseumRoomShell3D({ enableShadows = false }: { enableShadows?: b
 export function GalleryPedestal3D({
   kind,
   isSelected = false,
+  segments = 24,
 }: {
   kind: PedestalKind;
   isSelected?: boolean;
+  segments?: number;
 }) {
   const isHero = kind === 'hero';
   const isRound = kind !== 'square';
@@ -83,7 +93,7 @@ export function GalleryPedestal3D({
       {/* Đế bục */}
       <mesh position={[0, 0.04, 0]}>
         {isRound ? (
-          <cylinderGeometry args={[footprint, footprint, 0.08, 24]} />
+          <cylinderGeometry args={[footprint, footprint, 0.08, segments]} />
         ) : (
           <boxGeometry
             args={[EXHIBIT_PLINTH_SIZE.squareWidth, 0.08, EXHIBIT_PLINTH_SIZE.squareWidth]}
@@ -95,7 +105,7 @@ export function GalleryPedestal3D({
       {/* Thân bục */}
       <mesh position={[0, 0.58, 0]}>
         {isRound ? (
-          <cylinderGeometry args={[isHero ? 1.1 : 0.66, isHero ? 1.16 : 0.7, 1.04, 24]} />
+          <cylinderGeometry args={[isHero ? 1.1 : 0.66, isHero ? 1.16 : 0.7, 1.04, segments]} />
         ) : (
           <boxGeometry args={[1.05, 1.04, 1.05]} />
         )}
@@ -105,7 +115,7 @@ export function GalleryPedestal3D({
       {/* Mặt đồng đặt hiện vật ở y = 1.14 */}
       <mesh position={[0, 1.12, 0]}>
         {isRound ? (
-          <cylinderGeometry args={[isHero ? 1.13 : 0.7, isHero ? 1.13 : 0.7, 0.04, 24]} />
+          <cylinderGeometry args={[isHero ? 1.13 : 0.7, isHero ? 1.13 : 0.7, 0.04, segments]} />
         ) : (
           <boxGeometry args={[1.09, 0.04, 1.09]} />
         )}
@@ -119,7 +129,7 @@ export function GalleryPedestal3D({
       {/* Vòng sáng đánh dấu khi bục đang được chọn */}
       {isSelected ? (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]}>
-          <ringGeometry args={[isHero ? 1.3 : 0.84, isHero ? 1.48 : 0.96, 28]} />
+          <ringGeometry args={[isHero ? 1.3 : 0.84, isHero ? 1.48 : 0.96, segments]} />
           <meshBasicMaterial color="#0D9488" transparent opacity={0.8} depthWrite={false} />
         </mesh>
       ) : null}
@@ -177,11 +187,13 @@ export function GalleryRoomDisplays3D({
   displays,
   modelStates,
   selectedExhibitId,
+  quality = QUALITY_PROFILES.balanced,
   onSelectExhibit,
 }: {
   displays: readonly MuseumDisplay[];
   modelStates: ReadonlyMap<string, RoomModelState>;
   selectedExhibitId: string | null;
+  quality?: QualityProfile;
   onSelectExhibit?: (exhibitId: string) => void;
 }) {
   const layout: GalleryLayoutResolution = useMemo(
@@ -231,6 +243,7 @@ export function GalleryRoomDisplays3D({
             <GalleryPedestal3D
               kind={slot.plinthKind}
               isSelected={Boolean(exhibit && exhibit.id === selectedExhibitId)}
+              segments={quality.geometrySegments}
             />
             {exhibit ? renderExhibitOnPedestal(exhibit) : null}
           </group>
@@ -258,7 +271,11 @@ export function GalleryRoomDisplays3D({
               onSelectExhibit?.(exhibit.id);
             }}
           >
-            <GalleryPedestal3D kind={kind} isSelected={exhibit.id === selectedExhibitId} />
+            <GalleryPedestal3D
+              kind={kind}
+              isSelected={exhibit.id === selectedExhibitId}
+              segments={quality.geometrySegments}
+            />
             {renderExhibitOnPedestal(exhibit)}
           </group>
         );
