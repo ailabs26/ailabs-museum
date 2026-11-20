@@ -21,6 +21,12 @@ export default function RoomsScreen() {
         <Link href="/spike-3d" style={{ color: theme.colors.primary, fontSize: theme.fontSize.md }}>
           → Mở Spike 3D Cube (MOB-E6-01)
         </Link>
+        <Link
+          href="/glb-preview"
+          style={{ color: theme.colors.primary, fontSize: theme.fontSize.md }}
+        >
+          → Mở kiểm thử GLB + Cache (MOB-E6-02)
+        </Link>
       </View>
     </Screen>
   );
