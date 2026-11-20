@@ -18,6 +18,9 @@ export default function RoomsScreen() {
         <Link href="/room/demo-room" style={{ color: theme.colors.primary, fontSize: theme.fontSize.md }}>
           → Mở phòng demo (nested stack)
         </Link>
+        <Link href="/spike-3d" style={{ color: theme.colors.primary, fontSize: theme.fontSize.md }}>
+          → Mở Spike 3D Cube (MOB-E6-01)
+        </Link>
       </View>
     </Screen>
   );
