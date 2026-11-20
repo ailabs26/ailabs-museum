@@ -15,7 +15,11 @@ import {
   createNavigationInput,
   type CameraAction,
 } from './museumNavigation';
-import { TouchCameraController } from './TouchCameraController';
+import {
+  TouchCameraController,
+  type FocusExhibitRequest,
+} from './TouchCameraController';
+import { getGalleryColliders, moveWithCollisions } from './museumCollision';
 import { TouchNavigationHud } from './TouchNavigationHud';
 import {
   RoomModelManager,
@@ -67,6 +71,8 @@ export function GalleryRoomView({
   }, []);
 
   const layout = useMemo(() => resolveGalleryLayout(displays), [displays]);
+  const colliders = useMemo(() => getGalleryColliders(displays), [displays]);
+  const [focusRequest, setFocusRequest] = useState<FocusExhibitRequest | null>(null);
   const selectedDisplay = useMemo(
     () => displays.find((item) => item.id === selectedId) ?? null,
     [displays, selectedId],
@@ -153,6 +159,9 @@ export function GalleryRoomView({
                 input={navInput}
                 commandHandler={commandHandlerRef}
                 reducedMotion={reducedMotion}
+                colliders={colliders}
+                moveHandler={moveWithCollisions}
+                focusRequest={focusRequest}
               />
               <GalleryRoomDisplays3D
                 displays={displays}
@@ -224,9 +233,45 @@ export function GalleryRoomView({
             },
           ]}
         >
-          <Text style={{ color: theme.colors.text, fontSize: theme.fontSize.sm, fontWeight: '700' }}>
-            Đang chọn: {selectedDisplay.title}
-          </Text>
+          <View style={styles.selectedHeaderRow}>
+            <Text
+              style={{
+                flex: 1,
+                color: theme.colors.text,
+                fontSize: theme.fontSize.sm,
+                fontWeight: '700',
+              }}
+            >
+              Đang chọn: {selectedDisplay.title}
+            </Text>
+            {viewMode === '3d' ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Di chuyển camera tới gần ${selectedDisplay.title}`}
+                onPress={() =>
+                  setFocusRequest({
+                    exhibit: selectedDisplay,
+                    displays,
+                    issuedAt: Date.now(),
+                  })
+                }
+                style={[
+                  styles.focusBtn,
+                  { backgroundColor: theme.colors.primary, borderRadius: theme.radius.sm },
+                ]}
+              >
+                <Text
+                  style={{
+                    color: theme.colors.primaryText,
+                    fontSize: theme.fontSize.xs,
+                    fontWeight: '600',
+                  }}
+                >
+                  Đến gần
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
           <Text
             numberOfLines={2}
             style={{ color: theme.colors.textMuted, fontSize: theme.fontSize.xs }}
@@ -266,4 +311,16 @@ const styles = StyleSheet.create({
   listContent: { gap: 10, paddingBottom: 12 },
   listCard: { borderWidth: 1.5, gap: 4 },
   selectedCard: { borderWidth: 1, gap: 4 },
+  selectedHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  focusBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    minHeight: 32,
+    justifyContent: 'center',
+  },
 });
