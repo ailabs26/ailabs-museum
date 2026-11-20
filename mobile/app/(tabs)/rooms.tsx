@@ -33,6 +33,12 @@ export default function RoomsScreen() {
         >
           → Mở Spike AR iOS/Android (MOB-E9-01)
         </Link>
+        <Link
+          href="/ar-exhibit"
+          style={{ color: theme.colors.primary, fontSize: theme.fontSize.md }}
+        >
+          → Mở đặt hiện vật AR lên mặt phẳng (MOB-E9-02/03)
+        </Link>
       </View>
     </Screen>
   );
