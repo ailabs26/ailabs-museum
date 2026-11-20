@@ -23,6 +23,10 @@ export default function RootLayout() {
             name="glb-preview"
             options={{ headerShown: true, title: 'GLB Cache Preview (MOB-E6-02)' }}
           />
+          <Stack.Screen
+            name="spike-ar"
+            options={{ headerShown: true, title: 'Spike AR (MOB-E9-01)' }}
+          />
           <Stack.Screen name="+not-found" />
         </Stack>
       </ThemeProvider>

@@ -27,6 +27,12 @@ export default function RoomsScreen() {
         >
           → Mở kiểm thử GLB + Cache (MOB-E6-02)
         </Link>
+        <Link
+          href="/spike-ar"
+          style={{ color: theme.colors.primary, fontSize: theme.fontSize.md }}
+        >
+          → Mở Spike AR iOS/Android (MOB-E9-01)
+        </Link>
       </View>
     </Screen>
   );
