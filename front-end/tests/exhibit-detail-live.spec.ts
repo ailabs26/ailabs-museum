@@ -29,7 +29,9 @@ test('live detail page matches a published API exhibit and public navigation', a
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(item.name);
     await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
     await expect(page.getByRole('region', { name: 'Câu chuyện hiện vật' })).toContainText(item.description || 'Chưa có mô tả.');
-    await expect(page.locator('[data-shape]')).toHaveAttribute('data-shape', item.placeholderShape);
+    const hero = page.locator('article header');
+    if (item.image) await expect(hero.locator('img')).toHaveAttribute('src', item.image.url);
+    else await expect(hero.locator('[data-shape]')).toHaveAttribute('data-shape', item.placeholderShape);
     if (item.transcript) await expect(page.getByRole('region', { name: 'Bản thuyết minh' })).toContainText(item.transcript);
     else await expect(page.getByRole('heading', { name: 'Bản thuyết minh' })).toHaveCount(0);
     const hotspots = [...item.hotspots].sort((a, b) => a.displayOrder - b.displayOrder || a.id.localeCompare(b.id));
@@ -41,7 +43,7 @@ test('live detail page matches a published API exhibit and public navigation', a
     await expect(page.locator('canvas')).toHaveCount(0);
     await expect(page.getByRole('alert')).toHaveCount(0);
   }
-  const back = page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true });
+  const back = page.getByRole('link', { name: /Quay lại bộ sưu tập của phòng này/ });
   await expect(back).toHaveAttribute('href', `/collection?${new URLSearchParams({ room: room.slug })}`);
   await back.click();
   const card = page.getByRole('link', { name: `Xem chi tiết ${item.name}`, exact: true });

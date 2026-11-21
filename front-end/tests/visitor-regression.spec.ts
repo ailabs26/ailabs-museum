@@ -22,7 +22,7 @@ test('recent lists never show cached content after failed public detail refresh'
   await installMuseumApi(page);
   await page.goto(`/collection/sculpture/exhibits/${roomA.exhibits[0].id}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Hiện vật 1');
-  await page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true }).click();
+  await page.getByRole('link', { name: /Quay lại bộ sưu tập của phòng này/ }).click();
   const recent = page.getByRole('region', { name: 'Đã xem gần đây' });
   await expect(recent.getByRole('link')).toHaveCount(1);
   await page.route('**/api/rooms/sculpture', route => fulfillMuseum(route, { success: false, data: null, message: 'Unavailable' }, 503));

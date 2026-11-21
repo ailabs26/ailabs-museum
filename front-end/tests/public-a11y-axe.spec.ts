@@ -35,6 +35,9 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await page.goto(route.path);
       // Chờ nội dung chính dựng xong để axe soi DOM thật, không phải skeleton.
       await expect(page.getByRole('main')).toBeVisible();
+      if (route.id === 'exhibit-detail-2d') {
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText(roomA.exhibits[0].name);
+      }
 
       const results = await new AxeBuilder({ page }).withTags(WCAG_AA_TAGS).analyze();
 
