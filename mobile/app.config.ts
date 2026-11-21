@@ -21,6 +21,17 @@ const NAME_SUFFIX: Record<AppEnv, string> = {
   production: '',
 };
 
+const FLAG_ENV_PREFIX = 'EXPO_PUBLIC_FLAG_';
+
+/** Gom `EXPO_PUBLIC_FLAG_*` thành `{ OFFLINE_PREFETCH: 'true' }`; `src/config/feature-flags.ts` diễn giải. */
+function featureFlagOverrides(): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(process.env)
+      .filter((entry): entry is [string, string] => entry[0].startsWith(FLAG_ENV_PREFIX) && entry[1] !== undefined)
+      .map(([key, value]) => [key.slice(FLAG_ENV_PREFIX.length), value]),
+  );
+}
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: `Aura Museum${NAME_SUFFIX[APP_ENV]}`,
@@ -55,6 +66,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     appEnv: APP_ENV,
     apiUrl: process.env.EXPO_PUBLIC_API_URL ?? API_URL_BY_ENV[APP_ENV],
+    // DSN Sentry đặt qua EAS secret; rỗng thì không khởi tạo Sentry (MOB-E13-01).
+    sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
+    featureFlagOverrides: featureFlagOverrides(),
     // eas: { projectId: '<điền sau khi tạo EAS project>' },
   },
 });
