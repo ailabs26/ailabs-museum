@@ -1,10 +1,10 @@
-import { AxiosError, type AxiosAdapter, type InternalAxiosRequestConfig } from 'axios';
+import { AxiosError, CanceledError, type AxiosAdapter, type InternalAxiosRequestConfig } from 'axios';
 import { ApiException, endsSession, toApiException } from './api-error';
 import { http, REQUEST_TIMEOUT_MS } from './http-client';
 
 type Reply =
   | { status: number; data?: unknown }
-  | { fail: 'network' | 'timeout' };
+  | { fail: 'network' | 'timeout' | 'cancel' };
 
 /** Adapter giả: trả lần lượt theo `replies`, ghi lại request để kiểm. */
 function installAdapter(...replies: Reply[]) {
@@ -13,6 +13,7 @@ function installAdapter(...replies: Reply[]) {
     requests.push(config);
     const reply = replies.shift() ?? { status: 500 };
     if ('fail' in reply) {
+      if (reply.fail === 'cancel') throw new CanceledError(undefined, undefined, config);
       throw reply.fail === 'timeout'
         ? new AxiosError('timeout exceeded', AxiosError.ECONNABORTED, config)
         : new AxiosError('Network Error', AxiosError.ERR_NETWORK, config);
@@ -52,6 +53,18 @@ describe('http-client', () => {
     installAdapter(ok([{ id: 'a' }, { id: 'b' }]), ok(null));
     await expect(http.getPage('/rooms')).resolves.toEqual({ items: [{ id: 'a' }, { id: 'b' }], page: 1, pageSize: 2, total: 2 });
     await expect(http.getPage('/rooms')).resolves.toEqual({ items: [], page: 1, pageSize: 0, total: 0 });
+  });
+
+  it('body rỗng (204) không crash', async () => {
+    installAdapter({ status: 204, data: null }, { status: 204, data: '' }, { status: 204, data: null });
+    await expect(http.delete('/reports/x')).resolves.toBeUndefined();
+    await expect(http.delete('/reports/x')).resolves.toBeUndefined();
+    await expect(http.getPage('/rooms')).resolves.toEqual({ items: [], page: 1, pageSize: 0, total: 0 });
+  });
+
+  it('request bị hủy -> isCanceled, không phải lỗi mạng', async () => {
+    installAdapter({ fail: 'cancel' });
+    await expect(http.get('/rooms')).rejects.toMatchObject({ status: 0, isCanceled: true, isNetworkError: false });
   });
 
   it('gửi body cho post/patch/put', async () => {

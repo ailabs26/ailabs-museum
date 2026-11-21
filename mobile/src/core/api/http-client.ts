@@ -22,15 +22,16 @@ client.interceptors.response.use(
   (error: unknown) => Promise.reject(toApiException(error)),
 );
 
-/** Bóc envelope -> trả thẳng data. */
-function unwrap<T>(res: AxiosResponse<ApiResponse<T>>): T {
-  return res.data.data as T;
+/** Bóc envelope -> trả thẳng data; body rỗng (vd 204) trả undefined thay vì crash. */
+function unwrap<T>(res: AxiosResponse<ApiResponse<T> | null | ''>): T {
+  return (res.data || undefined)?.data as T;
 }
 
 /** Bóc envelope list -> Page<T> (gộp data + meta); thiếu meta thì coi cả danh sách là một trang. */
-function unwrapPage<T>(res: AxiosResponse<ApiResponse<T[]>>): Page<T> {
-  const items = res.data.data ?? [];
-  const meta = res.data.meta ?? { page: 1, pageSize: items.length, total: items.length };
+function unwrapPage<T>(res: AxiosResponse<ApiResponse<T[]> | null | ''>): Page<T> {
+  const body = res.data || undefined;
+  const items = body?.data ?? [];
+  const meta = body?.meta ?? { page: 1, pageSize: items.length, total: items.length };
   return { items, ...meta };
 }
 

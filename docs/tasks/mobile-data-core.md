@@ -38,5 +38,6 @@
 - `src/core/api/api-error.ts`: `ApiException` (`status`, `errors`, `fieldErrors`, `isNetworkError`), `toApiException` (envelope lỗi → message BE; mất mạng/timeout → status 0 với thông điệp riêng; lỗi không envelope giữ status), `endsSession` (chỉ 401).
 - `src/core/api/http-client.ts`: axios instance `baseURL = appConfig.apiUrl`, timeout 15s; interceptor chuẩn hóa mọi lỗi thành `ApiException`; `http.get/getPage/post/patch/put/delete` bóc envelope; `http.raw` để gắn interceptor auth/log ở PR sau.
 - Chưa thêm `zod` (chỉ cần khi parse auth ở PR auth store).
-- Kiểm chứng: typecheck, lint, 21 test pass (adapter giả: unwrap, Paginated có/thiếu meta, body, lỗi envelope, 502, mất mạng, timeout).
+- Tự review: body rỗng (204) không còn crash ở `unwrap`; request bị hủy (AbortSignal) thành `isCanceled` thay vì bị coi là mất mạng.
+- Kiểm chứng: typecheck, lint, 23 test pass (adapter giả: unwrap, Paginated có/thiếu meta, 204, body, lỗi envelope, 502, mất mạng, timeout, hủy).
 - Phát hiện ngoài phạm vi: `npx expo export` lỗi `expo-asset cannot be found` (có sẵn từ nền, cần `npx expo install expo-asset`) — xử lý ở PR riêng.

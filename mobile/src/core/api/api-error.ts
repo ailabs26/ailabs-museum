@@ -1,8 +1,11 @@
-import { AxiosError } from 'axios';
+import { AxiosError, isCancel } from 'axios';
 import type { ApiError, ApiResponse } from './api-response';
 
 /** status 0 = không có phản hồi từ máy chủ (mất mạng, timeout, DNS...). */
 export const NETWORK_ERROR_STATUS = 0;
+
+/** Mã lỗi gắn khi request bị hủy chủ động (react-query hủy query, rời màn hình...). */
+export const CANCELED_ERROR_CODE = 'CANCELED';
 
 /** Lỗi chuẩn hóa ném ra từ http-client để UI/react-query xử lý đồng nhất (MOB-E3-01). */
 export class ApiException extends Error {
@@ -16,9 +19,14 @@ export class ApiException extends Error {
     this.errors = errors;
   }
 
+  /** Request bị hủy chủ động — không phải lỗi, không retry, không log. */
+  get isCanceled(): boolean {
+    return this.errors.some((e) => e.code === CANCELED_ERROR_CODE);
+  }
+
   /** Không có phản hồi từ máy chủ — thường thử lại được khi có mạng. */
   get isNetworkError(): boolean {
-    return this.status === NETWORK_ERROR_STATUS;
+    return this.status === NETWORK_ERROR_STATUS && !this.isCanceled;
   }
 
   /** Lỗi theo từng field (để map vào form). */
@@ -37,6 +45,10 @@ function isEnvelope(body: unknown): body is ApiResponse<unknown> {
 /** Chuyển lỗi bất kỳ (AxiosError, Error...) -> ApiException với thông điệp thân thiện. */
 export function toApiException(error: unknown): ApiException {
   if (error instanceof ApiException) return error;
+  if (isCancel(error)) {
+    const message = 'Yêu cầu đã bị hủy';
+    return new ApiException(message, NETWORK_ERROR_STATUS, [{ code: CANCELED_ERROR_CODE, message }]);
+  }
   if (!(error instanceof AxiosError)) {
     return new ApiException(error instanceof Error ? error.message : 'Đã xảy ra lỗi', NETWORK_ERROR_STATUS);
   }
