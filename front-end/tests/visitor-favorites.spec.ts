@@ -26,9 +26,10 @@ test('favorites toggle from cards and detail, persist, and combine with room sea
 
 test('removed exhibits are never restored from favorite storage', async ({ page }) => {
   await page.addInitScript(({ roomId, exhibitId }) => localStorage.setItem('aura:visitor:favorites:v1', JSON.stringify({ version: 1, value: [{ roomId, exhibitId }] })), { roomId: roomA.id, exhibitId: roomA.exhibits[0].id });
-  await page.route('**/api/rooms/sculpture', route => fulfillMuseum(route, envelope({ ...roomA, exhibits: [] })));
+  await page.route('**/api/rooms/sculpture', route => fulfillMuseum(route, envelope({ ...roomA, exhibits: roomA.exhibits.slice(1) })));
   await page.goto('/collection');
   await page.getByRole('checkbox', { name: 'Chỉ hiện vật yêu thích trong phòng này' }).check();
+  await expect(page.getByText(/Không có hiện vật yêu thích khớp/)).toBeVisible();
   await expect(page.getByRole('link', { name: `Xem chi tiết ${roomA.exhibits[0].name}`, exact: true })).toHaveCount(0);
 });
 
