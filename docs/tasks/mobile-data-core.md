@@ -9,8 +9,8 @@
 | # | Nhánh | Task | Trạng thái |
 |---|---|---|---|
 | 1 | `feat/mob-config-feature-flags` | Config/env + feature flags | Đã merge (#210) |
-| 2 | `feat/mob-http-client` | axios http-client + unwrap + chuẩn hóa lỗi | PR mở |
-| 3 | `feat/mob-query-persist` | TanStack Query + persist AsyncStorage | Chưa làm |
+| 2 | `feat/mob-http-client` | axios http-client + unwrap + chuẩn hóa lỗi | Đã merge (#211) |
+| 3 | `feat/mob-query-persist` | TanStack Query + persist AsyncStorage | PR mở |
 | 4 | `feat/auth-native-refresh-token` (BE) | Refresh token qua body cho client native | Chưa làm |
 | 5 | `feat/mob-auth-store` | Auth store secure-store + refresh interceptor | Chưa làm |
 | 6 | `feat/mob-file-cache` | File cache GLB/audio | Chưa làm |
@@ -40,4 +40,15 @@
 - Chưa thêm `zod` (chỉ cần khi parse auth ở PR auth store).
 - Tự review: body rỗng (204) không còn crash ở `unwrap`; request bị hủy (AbortSignal) thành `isCanceled` thay vì bị coi là mất mạng.
 - Kiểm chứng: typecheck, lint, 23 test pass (adapter giả: unwrap, Paginated có/thiếu meta, 204, body, lỗi envelope, 502, mất mạng, timeout, hủy).
-- Phát hiện ngoài phạm vi: `npx expo export` lỗi `expo-asset cannot be found` (có sẵn từ nền, cần `npx expo install expo-asset`) — xử lý ở PR riêng.
+- Phát hiện ngoài phạm vi: `npx expo export` lỗi `expo-asset cannot be found` (có sẵn từ nền) — đã sửa ở PR 3.
+
+## 3. TanStack Query + persist offline (AsyncStorage)
+
+- `src/core/query/query-client.ts`: `queryClient` dùng chung (staleTime 5 phút, `gcTime` = `PERSIST_MAX_AGE_MS` 7 ngày); `shouldRetry` chỉ thử lại lỗi tạm thời (mất mạng, 5xx, 408, 429; tối đa 2 lần; không retry 4xx/hủy); `createPersistOptions` dùng `createAsyncStoragePersister` (key `aura.query-cache`), `buster` = version app, chỉ lưu query thành công và không có `meta: { persist: false }` (dùng cho dữ liệu nhạy cảm như hồ sơ người dùng).
+- `src/core/query/QueryProvider.tsx`: `PersistQueryClientProvider`; trên native nối `focusManager` với `AppState` để refetch khi app quay lại foreground. Gắn vào `app/_layout.tsx`.
+- Sửa nền để app bundle được (trước đó `expo start`/`expo export` lỗi trên mọi nền tảng):
+  - `expo-router` 4.0.22 dùng `query-string` nhưng không khai báo; `@react-navigation/native` 7.1+ không còn kéo theo → thêm `query-string@^7.1.3`.
+  - Thêm `expo-asset` (cần cho `expo export`), `react-native-web`, `react-dom`, `@expo/metro-runtime` (chạy được script `npm run web` có sẵn).
+- Kiểm chứng:
+  - typecheck, lint, 28 test pass (retry; persist lưu/khôi phục qua AsyncStorage giả; đổi version bỏ cache; `persist: false` không lưu).
+  - Trình duyệt (Expo web + Playwright, harness tạm không commit trên màn Home): query chạy 1 lần, cache có trong `localStorage`; reload trang → giá trị giữ nguyên, query không chạy lại; không có lỗi console.
