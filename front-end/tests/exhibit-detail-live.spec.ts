@@ -41,7 +41,7 @@ test('live detail page matches a published API exhibit and public navigation', a
     await expect(page.locator('canvas')).toHaveCount(0);
     await expect(page.getByRole('alert')).toHaveCount(0);
   }
-  const back = page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true });
+  const back = page.getByRole('link', { name: /Quay lại bộ sưu tập của phòng này/ });
   await expect(back).toHaveAttribute('href', `/collection?${new URLSearchParams({ room: room.slug })}`);
   await back.click();
   const card = page.getByRole('link', { name: `Xem chi tiết ${item.name}`, exact: true });

@@ -1,8 +1,8 @@
-import { Button, Container, Title } from '@mantine/core';
+import { Button, Title } from '@mantine/core';
 import { usePublicErrorText, usePublicLocale } from '@/core/i18n/public-locale';
 import { hasTranslation, localizedAltText, localizedTranscript, localizeExhibit, resolveAudioLocale } from '@/helpers/localizeExhibit';
 import { LOCALES } from '@/services/translations.service';
-import { IconCube } from '@tabler/icons-react';
+import { IconChevronRight, IconCube } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -88,6 +88,7 @@ export function ExhibitDetailPage() {
     ? LOCALES.find((item) => item.code === audioLocale)?.label ?? null
     : null;
   const transcript = exhibit ? localizedTranscript(exhibit, locale) : null;
+  const description = exhibit?.description.trim();
   const localeTranscript = (exhibit?.i18n as Partial<Record<string, { transcript?: string | null }>> | undefined)?.[locale]?.transcript;
   const transcriptIsOriginal = Boolean(transcript) && !localeTranscript && locale !== 'vi';
 
@@ -128,19 +129,39 @@ export function ExhibitDetailPage() {
   }, [roomSlug, exhibitId, statusTitle, isLoading]);
 
   return (
-    <Container size="lg" className={classes.page}>
-      {statusTitle ? <>
+    <div className={classes.page}>
+      {statusTitle ? <div className={classes.status}>
         <Title ref={titleRef} tabIndex={-1} order={1} className={classes.title}>{statusTitle}</Title>
         <p role={isError ? 'alert' : isLoading ? 'status' : undefined} className={classes.body}>{statusMessage}</p>
         {isError && <Button mt="md" onClick={() => void (rooms.isError ? rooms.refetch() : room.refetch())}>{t('ui.common.retry', 'Thử lại')}</Button>}
         {recovery}
-        {!isLoading && <p><Link to="/collection">{t('ui.exhibit.back-to-collection', 'Về bộ sưu tập')}</Link></p>}
-      </> : detail && exhibit ? <article aria-labelledby="exhibit-title">
-        <Link className={classes.backLink} to={`/collection?${new URLSearchParams({ room: detail.slug })}`}>{t('ui.exhibit.back-to-room', 'Quay lại bộ sưu tập của phòng này')}</Link>
-        <header className={classes.header}>
-          <p className={classes.roomName}>{detail.name}</p>
-          <Title ref={titleRef} tabIndex={-1} order={1} id="exhibit-title" className={classes.title}>{exhibit.name}</Title>
-          <div className={classes.headerActions}>
+        {!isLoading && <Link className={classes.backLink} to="/collection">{t('ui.exhibit.back-to-collection', 'Về bộ sưu tập')}</Link>}
+      </div> : detail && exhibit ? <article aria-labelledby="exhibit-title">
+        <nav className={classes.breadcrumb} aria-label={t('ui.exhibit.breadcrumb', 'Đường dẫn hiện vật')}>
+          <ol>
+            <li><Link to="/collection">{t('ui.nav.collection', 'Bộ sưu tập')}</Link></li>
+            <li>
+              <IconChevronRight size={14} aria-hidden="true" />
+              <Link to={`/collection?${new URLSearchParams({ room: detail.slug })}`}
+                aria-label={`${detail.name} — ${t('ui.exhibit.back-to-room', 'Quay lại bộ sưu tập của phòng này')}`}>{detail.name}</Link>
+            </li>
+            <li><IconChevronRight size={14} aria-hidden="true" /><span aria-current="page">{exhibit.name}</span></li>
+          </ol>
+        </nav>
+        <header className={classes.hero}>
+          <div className={classes.intro}>
+            <p className={classes.roomName}>{detail.name}</p>
+            <Title ref={titleRef} tabIndex={-1} order={1} id="exhibit-title" className={classes.title}>{exhibit.name}</Title>
+            {description && <p className={classes.summary}>{description}</p>}
+            {!hasTranslation(exhibit, locale) && (
+              <p role="note" className={classes.note}>{t('ui.exhibit.translationMissing', 'Chưa có bản dịch, đang hiển thị tiếng Việt.')}</p>
+            )}
+          </div>
+          <div className={classes.poster}>
+            <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: localizedAltText(exhibit.image.altText, locale, exhibit.name) } : null}
+              shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} loading="eager" fetchPriority="high" />
+          </div>
+          <div className={classes.actions}>
             {(!tour2d.isSameRoom || !tour2d.isCurrentRoute) && <Link className={classes.jump3d}
               to={tour2d.isSameRoom && tour2d.currentStep
                 ? guidedTour3dPath(detail.slug, tour2d.currentStep.exhibitId)
@@ -150,10 +171,15 @@ export function ExhibitDetailPage() {
                 ? t('ui.guided2d.continue-3d', tourMessages.continue3d)
                 : t('ui.exhibit.view-3d', 'Xem trong không gian 3D')}
             </Link>}
-            <Button variant="default" onClick={() => setIsReportOpen(true)}>{t('ui.common.report-content', 'Báo nội dung')}</Button>
-            <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name} />
+            <div className={classes.headerActions}>
+              <FavoriteButton target={{ roomId: detail.id, exhibitId: exhibit.id }} name={exhibit.name} />
+              <Button variant="default" onClick={() => setIsReportOpen(true)}>{t('ui.common.report-content', 'Báo nội dung')}</Button>
+            </div>
+            <VisitorStorageStatus error={favorites.error} />
+            {!tour2d.isSameRoom && <Button className={classes.startTour} variant="subtle" onClick={() => tour2d.startFromExhibit(detail, exhibit.id)}>
+              {t('ui.guided2d.start-from-exhibit', tourMessages.startFromExhibit)}
+            </Button>}
           </div>
-          <VisitorStorageStatus error={favorites.error} />
         </header>
         {tour2d.isCurrentRoute && tour2d.status !== 'idle' && <GuidedTour2DControls
           roomName={detail.name} exhibitName={exhibit.name} status={tour2d.status}
@@ -161,32 +187,23 @@ export function ExhibitDetailPage() {
           onPrevious={tour2d.previous} onPause={tour2d.pause} onResume={tour2d.resume}
           onNext={tour2d.next} onExit={tour2d.exit} onRestart={() => tour2d.restart(detail)}
           onContinue3D={() => tour2d.continueIn3D(detail)} />}
-        {!tour2d.isSameRoom && <Button color="teal.9" mt="md" onClick={() => tour2d.startFromExhibit(detail, exhibit.id)}>
-          {t('ui.guided2d.start-from-exhibit', tourMessages.startFromExhibit)}
-        </Button>}
         {recovery}
-        <ReadingControls />
-        {!hasTranslation(exhibit, locale) && (
-          <p role="note" className={classes.body}>{t('ui.exhibit.translationMissing', 'Chưa có bản dịch, đang hiển thị tiếng Việt.')}</p>
-        )}
+        <div className={classes.audioDock}>
+          <AudioPlayer key={`${detail.id}:${exhibit.id}:${audioLocale}`} src={audio?.audio.url} subtitleUrl={audio?.subtitle?.url} locale={audioLocale} />
+          {audioLanguageNote && <p className={classes.note}>
+            {t('ui.exhibit.audioLanguage', 'Thuyết minh và phụ đề hiện có bằng {language}.', { language: audioLanguageNote })}
+          </p>}
+        </div>
         <div className={`${classes.content} ${reading.value.enabled ? classes.reading : ''}`}
           style={{ '--reading-scale': reading.value.fontScale } as CSSProperties}>
-          <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: localizedAltText(exhibit.image.altText, locale, exhibit.name) } : null}
-            shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} />
           <div className={classes.sections}>
-            <div className={classes.audioDock}>
-              <AudioPlayer key={`${detail.id}:${exhibit.id}:${audioLocale}`} src={audio?.audio.url} subtitleUrl={audio?.subtitle?.url} locale={audioLocale} />
-              {audioLanguageNote && <p className={classes.body}>
-                {t('ui.exhibit.audioLanguage', 'Thuyết minh và phụ đề hiện có bằng {language}.', { language: audioLanguageNote })}
-              </p>}
-            </div>
             <section aria-labelledby="exhibit-description-title">
               <Title order={2} id="exhibit-description-title" className={classes.sectionTitle}>{t('ui.exhibit.story', 'Câu chuyện hiện vật')}</Title>
-              <p className={classes.body}>{exhibit.description || t('ui.common.no-description', 'Chưa có mô tả.')}</p>
+              <p className={classes.body}>{description ? exhibit.description : t('ui.common.no-description', 'Chưa có mô tả.')}</p>
             </section>
-            {transcript && <section aria-labelledby="exhibit-transcript-title">
+            {transcript?.trim() && <section aria-labelledby="exhibit-transcript-title">
               <Title order={2} id="exhibit-transcript-title" className={classes.sectionTitle}>{t('ui.exhibit.transcript', 'Bản thuyết minh')}</Title>
-              {transcriptIsOriginal && <p className={classes.body}>
+              {transcriptIsOriginal && <p className={classes.note}>
                 {t('ui.exhibit.transcriptOriginal', 'Chưa có bản dịch thuyết minh, đang hiển thị bản tiếng Việt gốc.')}
               </p>}
               <p className={classes.body}>{transcript}</p>
@@ -201,16 +218,19 @@ export function ExhibitDetailPage() {
                   </li>)}
               </ul>
             </section>}
-            {credits.length > 0 && <section aria-labelledby="exhibit-credits-title">
+          </div>
+          <div className={classes.tools}>
+            <ReadingControls />
+            <VisitorNotes key={`${detail.id}:${exhibit.id}`} target={{ roomId: detail.id, exhibitId: exhibit.id }} />
+            {credits.length > 0 && <section className={classes.credits} aria-labelledby="exhibit-credits-title">
               <Title order={2} id="exhibit-credits-title" className={classes.sectionTitle}>{t('ui.exhibit.credits', 'Nguồn & bản quyền')}</Title>
               <MediaCreditList credits={credits} className={classes.body} />
             </section>}
           </div>
         </div>
-        <VisitorNotes key={`${detail.id}:${exhibit.id}`} target={{ roomId: detail.id, exhibitId: exhibit.id }} />
       </article> : null}
       {exhibit && isReportOpen && <PublicReportModal key={`${exhibit.id}:${exhibit.revisionId}`} exhibitId={exhibit.id}
         reportedRevisionId={exhibit.revisionId} opened onClose={() => setIsReportOpen(false)} />}
-    </Container>
+    </div>
   );
 }

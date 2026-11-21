@@ -17,7 +17,8 @@ test('reading preferences persist, stay bounded, and reset without changing sema
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('status', { name: 'Cỡ chữ đọc' })).toHaveText('Cỡ chữ 150%');
   await expect(page.getByRole('heading', { name: 'Câu chuyện hiện vật', level: 2 })).toBeVisible();
-  await expect(page.getByText(roomA.exhibits[0].description, { exact: true })).toHaveCSS('font-size', '24px');
+  await expect(page.getByRole('region', { name: 'Câu chuyện hiện vật' })
+    .getByText(roomA.exhibits[0].description, { exact: true })).toHaveCSS('font-size', '24px');
   await page.getByRole('button', { name: 'Đặt lại chế độ đọc' }).press('Enter');
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   await toggle.click();

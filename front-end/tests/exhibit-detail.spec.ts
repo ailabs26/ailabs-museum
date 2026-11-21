@@ -8,15 +8,16 @@ test('[D02] direct URL and reload show the correct public exhibit without loadin
   const requests: string[] = [];
   page.on('request', (request) => requests.push(request.url()));
   const exhibit = roomA.exhibits[1];
+  const hero = page.locator('article header');
   await page.goto(`/collection/sculpture/exhibits/${exhibit.id}`);
   for (const reload of [false, true]) {
     if (reload) await page.reload();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(exhibit.name);
-    await expect(page.getByText(roomA.name, { exact: true })).toBeVisible();
-    await expect(page.getByText(exhibit.description, { exact: true })).toBeVisible();
-    await expect(page.getByText('Hình minh họa thay thế', { exact: true })).toBeVisible();
-    await expect(page.locator('[data-shape]')).toHaveAttribute('data-shape', exhibit.placeholderShape);
-    await expect(page.getByText('Chưa có ảnh', { exact: true })).toBeVisible();
+    await expect(hero.getByText(roomA.name, { exact: true })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Câu chuyện hiện vật' })).toContainText(exhibit.description);
+    await expect(hero.getByText('Hình minh họa thay thế', { exact: true })).toBeVisible();
+    await expect(hero.locator('[data-shape]')).toHaveAttribute('data-shape', exhibit.placeholderShape);
+    await expect(hero.getByText('Chưa có ảnh', { exact: true })).toBeVisible();
     await expect(page.locator('canvas')).toHaveCount(0);
   }
   expect(requests.filter((url) => url.includes('/api/admin/') || url.includes('/components/MuseumScene'))).toEqual([]);
@@ -59,7 +60,7 @@ test('[D03] published transcript and ordered hotspots render as plain text', asy
   await page.goto(`/collection/sculpture/exhibits/${item.id}`);
   await expect(page.getByRole('heading', { name: 'Bản thuyết minh', level: 2 })).toBeVisible();
   await expect(page.getByText('<b>Thuyết minh</b>', { exact: true })).toBeVisible();
-  await expect(page.getByText('<b>Câu chuyện</b>', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Câu chuyện hiện vật' }).getByText('<b>Câu chuyện</b>', { exact: true })).toBeVisible();
   const hotspots = page.getByRole('list', { name: 'Điểm chú ý của hiện vật' }).getByRole('listitem');
   await expect(hotspots).toHaveText(['Điểm trướcNội dung tiếng Việt', 'Điểm sau<img src=x onerror=alert(1)>']);
   await expect(page.locator('main b, main img')).toHaveCount(0);
@@ -167,7 +168,7 @@ test('[D05] collection and featured card links open details and return to the co
     await link.press('Enter');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(item.name);
     await page.reload();
-    const back = page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true });
+    const back = page.getByRole('link', { name: /Quay lại bộ sưu tập của phòng này/ });
     await expect(back).toHaveAttribute('href', `/collection?room=${slug}`);
     await back.click();
     await expect(page.getByRole('group', { name: 'Chọn phòng trưng bày' })
@@ -187,7 +188,7 @@ test('[D05] card detail URLs encode the room slug as a path segment', async ({ p
   await expect(link).toHaveAttribute('href', `/collection/${encodeURIComponent(slug)}/exhibits/${room.exhibits[0].id}`);
   await link.click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(room.exhibits[0].name);
-  await expect(page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true })).toHaveAttribute('href', `/collection?${new URLSearchParams({ room: slug })}`);
+  await expect(page.getByRole('link', { name: /Quay lại bộ sưu tập của phòng này/ })).toHaveAttribute('href', `/collection?${new URLSearchParams({ room: slug })}`);
 });
 
 test('[D06] route changes focus the destination title and error recovery focuses the exhibit', async ({ page }) => {
@@ -224,7 +225,7 @@ test('[D06] background refresh does not steal focus from the back link', async (
   const item = roomA.exhibits[0];
   await page.goto(`/collection/sculpture/exhibits/${item.id}`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(item.name);
-  await page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true }).click();
+  await page.getByRole('link', { name: /Quay lại bộ sưu tập của phòng này/ }).click();
   let release!: () => void;
   const gate = new Promise<void>((resolve) => { release = resolve; });
   await page.route('**/api/rooms/sculpture', async (route) => {
@@ -236,10 +237,10 @@ test('[D06] background refresh does not steal focus from the back link', async (
   // Navigate in the SPA so the same cache/request stays active.
   await page.getByRole('link', { name: `Xem chi tiết ${item.name}`, exact: true }).click();
   await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
-  const back = page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true });
+  const back = page.getByRole('link', { name: /Quay lại bộ sưu tập của phòng này/ });
   await back.focus();
   release();
-  await expect(page.getByText('Mô tả đã cập nhật', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Câu chuyện hiện vật' })).toContainText('Mô tả đã cập nhật');
   await expect(back).toBeFocused();
 });
 
@@ -267,7 +268,7 @@ test('[D06] complete detail remains readable without WebGL and reflows in both c
       await page.setViewportSize({ width, height: 900 });
       await page.goto(`/collection/sculpture/exhibits/${item.id}`);
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(item.name);
-      await expect(page.getByRole('heading', { level: 1 })).toHaveCSS('font-family', /"Plus Jakarta Sans"/);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveCSS('font-family', /"Noto Serif"/);
       await expect(page.getByRole('heading', { level: 2 })).toHaveText(['Câu chuyện hiện vật', 'Bản thuyết minh', 'Điểm chú ý']);
       await expect(page.getByText(item.transcript, { exact: true })).toBeVisible();
       await expect(page.getByText('Chi tiết vẫn đọc được', { exact: true })).toBeVisible();
