@@ -115,6 +115,34 @@ test.describe('Giao diện Client theo ngôn ngữ', () => {
 test.describe('Bộ sưu tập và chi tiết theo ngôn ngữ', () => {
   const value = (key: string, locale: Locale = 'ko') => PUBLIC_UI_STRINGS.find((item) => item.namespace === key)!.values[locale];
 
+  test('collection search clear stays usable and localized in all six languages', async ({ page }) => {
+    await page.goto('/collection');
+    for (const locale of ['vi', 'en', 'fr', 'zh', 'ko', 'ja'] as const) {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await chooseLanguage(page, locale);
+      await page.setViewportSize({ width: 320, height: 800 });
+      const input = page.getByRole('textbox', { name: value('ui.collection.search-aria', locale), exact: true });
+      await input.fill('zzz');
+      await page.getByRole('button', { name: value('ui.collection.search-clear', locale), exact: true }).click();
+      await expect(input).toBeFocused();
+      await expect(input).toBeEmpty();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+    }
+  });
+
+  test('collection search clear uses its fallback and then a CMS override', async ({ page }) => {
+    await installStrings(page, { 'ui.collection.search-clear': '' });
+    await page.goto('/collection');
+    const input = page.getByRole('textbox', { name: value('ui.collection.search-aria'), exact: true });
+    await input.fill('zzz');
+    await expect(page.getByRole('button', { name: 'Xóa tìm kiếm', exact: true })).toBeVisible();
+
+    await installStrings(page, { 'ui.collection.search-clear': '입력한 검색어 지우기' });
+    await page.reload();
+    await input.fill('zzz');
+    await expect(page.getByRole('button', { name: '입력한 검색어 지우기', exact: true })).toBeVisible();
+  });
+
   test.beforeEach(async ({ page }) => {
     await installMuseumApi(page);
     await installStrings(page);
