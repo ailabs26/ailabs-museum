@@ -10,8 +10,8 @@
 |---|---|---|---|
 | 1 | `feat/mob-config-feature-flags` | Config/env + feature flags | Đã merge (#210) |
 | 2 | `feat/mob-http-client` | axios http-client + unwrap + chuẩn hóa lỗi | Đã merge (#211) |
-| 3 | `feat/mob-query-persist` | TanStack Query + persist AsyncStorage | PR mở |
-| 4 | `feat/auth-native-refresh-token` (BE) | Refresh token qua body cho client native | Chưa làm |
+| 3 | `feat/mob-query-persist` | TanStack Query + persist AsyncStorage | Đã merge (#212) |
+| 4 | `feat/auth-native-refresh-token` (BE) | Refresh token qua body cho client native | PR mở |
 | 5 | `feat/mob-auth-store` | Auth store secure-store + refresh interceptor | Chưa làm |
 | 6 | `feat/mob-file-cache` | File cache GLB/audio | Chưa làm |
 | 7 | `feat/mob-cache-policy` | Hạn mức + dọn cache | Chưa làm |
@@ -53,3 +53,11 @@
   - Tự review: `shouldRetry` chỉ retry `ApiException`; lỗi khác (parse dữ liệu, bug) trước đó bị coi là mất mạng và retry vô ích.
   - typecheck, lint, 29 test pass (retry; persist lưu/khôi phục qua AsyncStorage giả; đổi version bỏ cache; `persist: false` không lưu).
   - Trình duyệt (Expo web + Playwright, harness tạm không commit trên màn Home): query chạy 1 lần, cache có trong `localStorage`; reload trang → giá trị giữ nguyên, query không chạy lại; không có lỗi console.
+
+## 4. Back-end: refresh token qua body cho client native
+
+- Lý do: back-end chỉ phát refresh token qua cookie HttpOnly; app native cần tự lưu token bằng `expo-secure-store` (task Auth store).
+- `auth.controller.ts`: header `X-Client: mobile` → `login`, `login/2fa`, `refresh` trả `refreshToken` trong body, không set cookie; `refresh`/`logout` đọc token từ body (`RefreshTokenDto`, tùy chọn, chuỗi ≤128) và bỏ qua cookie; lỗi 401 không xóa cookie. Không có header → hành vi web giữ nguyên, body bị bỏ qua.
+- `X-Client` không mở trong CORS → trang web khác không dùng được nhánh body. Xoay vòng, reuse-detection, rate limit, audit, `RefreshCookieOriginGuard` giữ nguyên (native không gửi Origin).
+- Docs: `docs/architecture/05-security-rbac.md` §5.1, `06-api-contract.md` bảng auth.
+- Kiểm chứng: `back-end` typecheck, lint; `auth-controller-http.spec.ts` 12/12 (6 test mới: login/refresh/logout native, bỏ qua cookie, body sai → 400, web bỏ qua body); `npm run test:core` 401/401.

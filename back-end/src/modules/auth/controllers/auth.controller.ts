@@ -40,6 +40,7 @@ import { RefreshFailedException } from '../exceptions/refresh-failed.exception';
 import { AuthService } from '../services/auth.service';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { LoginDto } from '../dto/login.dto';
+import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { WrongCurrentPasswordException } from '../exceptions/wrong-current-password.exception';
 import { SessionResponse } from '../dto/session-response.dto';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
@@ -50,6 +51,17 @@ import type { SessionClient } from '../services/token.service';
 import { TokenService } from '../services/token.service';
 
 type RequestWithCookies = Request & { cookies?: Record<string, string> };
+
+/**
+ * Client native (app mobile) gửi `X-Client: mobile` để nhận/gửi refresh token qua body thay vì cookie
+ * (lưu bằng secure storage của thiết bị). Không mở header này trong CORS: trang web khác không gửi được
+ * nên trình duyệt luôn đi đường cookie HttpOnly.
+ */
+export const CLIENT_HEADER = 'x-client';
+export const NATIVE_CLIENT = 'mobile';
+
+/** Phần refresh token trả trong body — chỉ có với client native. */
+type NativeRefresh = { refreshToken?: string };
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -71,13 +83,14 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Sai thông tin đăng nhập hoặc tài khoản bị khóa.' })
   @ApiTooManyRequestsResponse({ description: 'Quá nhiều lần thử theo IP hoặc email; xem Retry-After.' })
   @ApiOkResponse({
-    description: 'Access token và user trong ApiResponse; refresh token qua cookie HttpOnly.',
+    description: 'Access token và user trong ApiResponse; refresh token qua cookie HttpOnly '
+      + '(client native `X-Client: mobile`: thêm `refreshToken` trong body, không set cookie).',
   })
   async login(
     @Body() dto: LoginDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ accessToken: string; user: AuthUser } | { mfaRequired: true; mfaToken: string }> {
+  ): Promise<({ accessToken: string; user: AuthUser } & NativeRefresh) | { mfaRequired: true; mfaToken: string }> {
     const ip = req.ip ?? 'unknown';
     await this.limitWithAudit(req, res, 'auth.login_blocked', 'ip', ip, null, () => this.limiter.consumeIp(ip));
     await this.limitWithAudit(req, res, 'auth.login_blocked', 'email', dto.email, null,
@@ -101,9 +114,9 @@ export class AuthController {
       // Đúng mật khẩu, tài khoản bật 2FA: chưa cấp phiên, chờ POST /auth/login/2fa.
       return { mfaRequired: true, mfaToken: result.mfaToken };
     }
-    this.setRefreshCookie(res, result.refreshToken);
+    const refresh = this.deliverRefresh(req, res, result.refreshToken);
     await this.recordAuthEvent(req, 'auth.login', result.user.id, result.user.id);
-    return { accessToken: result.accessToken, user: result.user };
+    return { accessToken: result.accessToken, user: result.user, ...refresh };
   }
 
   @Public()
@@ -112,12 +125,12 @@ export class AuthController {
   @ApiOperation({ summary: 'Bước 2 đăng nhập khi bật 2FA: mfaToken + mã 6 số (hoặc mã khôi phục)' })
   @ApiUnauthorizedResponse({ description: 'Mã sai, token hết hạn (5 phút) hoặc tài khoản bị khóa.' })
   @ApiTooManyRequestsResponse({ description: 'Sai mã quá 5 lần / 15 phút / tài khoản, hoặc quá nhiều request theo IP.' })
-  @ApiOkResponse({ description: 'Như /auth/login thành công: access token + user; refresh token qua cookie HttpOnly.' })
+  @ApiOkResponse({ description: 'Như /auth/login thành công: access token + user; refresh token qua cookie HttpOnly (hoặc body với client native).' })
   async loginTwoFactor(
     @Body() dto: LoginTwoFactorDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ accessToken: string; user: AuthUser }> {
+  ): Promise<{ accessToken: string; user: AuthUser } & NativeRefresh> {
     const ip = req.ip ?? 'unknown';
     await this.limitWithAudit(req, res, 'auth.login_blocked', 'ip', ip, null, () => this.limiter.consumeIp(ip));
     if (!dto.code === !dto.recoveryCode) {
@@ -135,16 +148,16 @@ export class AuthController {
       }
       throw error;
     }
-    this.setRefreshCookie(res, result.refreshToken);
+    const refresh = this.deliverRefresh(req, res, result.refreshToken);
     await this.recordAuthEvent(req, 'auth.login', result.user.id, result.user.id, { twoFactor: dto.code ? 'totp' : 'recovery_code' });
-    return { accessToken: result.accessToken, user: result.user };
+    return { accessToken: result.accessToken, user: result.user, ...refresh };
   }
 
   @Public()
   @Post('refresh')
   @UseGuards(RefreshCookieOriginGuard)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Làm mới access token bằng refresh cookie (xoay vòng)' })
+  @ApiOperation({ summary: 'Làm mới access token bằng refresh cookie (xoay vòng); client native gửi token trong body' })
   @ApiUnauthorizedResponse({
     description: 'Cookie bị xóa khi phiên không hợp lệ, hết hạn hoặc bị tái sử dụng.',
   })
@@ -152,14 +165,16 @@ export class AuthController {
     description: 'Quá nhiều lần làm mới theo phiên, theo IP, hoặc với cookie sai; xem Retry-After.',
   })
   @ApiOkResponse({
-    description: 'Access token mới trong ApiResponse và refresh cookie đã xoay vòng.',
+    description: 'Access token mới trong ApiResponse và refresh cookie đã xoay vòng '
+      + '(client native: `refreshToken` mới trong body).',
   })
   async refresh(
     @Req() req: RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ accessToken: string }> {
+    @Body() body: RefreshTokenDto,
+  ): Promise<{ accessToken: string } & NativeRefresh> {
     const ip = req.ip ?? 'unknown';
-    const raw = this.readRefreshCookie(req);
+    const raw = this.readRefreshToken(req, body);
     // Tách khỏi login (issue #126): trần rộng theo IP trước khi chạm DB, rồi đếm theo phiên; không có hoặc
     // sai cookie thì đếm chặt theo IP (chống dò token).
     await this.limitWithAudit(req, res, 'auth.refresh_blocked', 'refresh_ip', ip, null,
@@ -174,12 +189,11 @@ export class AuthController {
     }
     try {
       const result = await this.auth.refresh(raw, this.clientOf(req));
-      this.setRefreshCookie(res, result.refreshToken);
-      return { accessToken: result.accessToken };
+      return { accessToken: result.accessToken, ...this.deliverRefresh(req, res, result.refreshToken) };
     } catch (error) {
       // Ân hạn: cookie trình duyệt đang giữ là token mới vừa cấp cho tab khác — xóa thì tab đó mất phiên.
       const rotatedRecently = error instanceof RefreshFailedException && error.reason === 'rotated_recently';
-      if (error instanceof UnauthorizedException && !rotatedRecently) {
+      if (error instanceof UnauthorizedException && !rotatedRecently && !this.isNativeClient(req)) {
         this.clearRefreshCookie(res);
       }
       if (error instanceof RefreshFailedException && error.reason === 'reuse') {
@@ -210,9 +224,10 @@ export class AuthController {
   async logout(
     @Req() req: RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
+    @Body() body: RefreshTokenDto,
   ): Promise<null> {
-    const userId = await this.auth.logout(this.readRefreshCookie(req));
-    this.clearRefreshCookie(res);
+    const userId = await this.auth.logout(this.readRefreshToken(req, body));
+    if (!this.isNativeClient(req)) this.clearRefreshCookie(res);
     if (userId) await this.recordAuthEvent(req, 'auth.logout', userId, userId);
     return null;
   }
@@ -430,6 +445,22 @@ export class AuthController {
 
   private readRefreshCookie(req: RequestWithCookies): string | undefined {
     return req.cookies?.[this.cookieName()];
+  }
+
+  private isNativeClient(req: Request): boolean {
+    return req.get(CLIENT_HEADER)?.trim().toLowerCase() === NATIVE_CLIENT;
+  }
+
+  /** Client native lấy token từ body; trình duyệt chỉ từ cookie (body bị bỏ qua). */
+  private readRefreshToken(req: RequestWithCookies, body?: RefreshTokenDto): string | undefined {
+    return this.isNativeClient(req) ? body?.refreshToken : this.readRefreshCookie(req);
+  }
+
+  /** Giao refresh token mới: client native nhận trong body, trình duyệt nhận cookie HttpOnly. */
+  private deliverRefresh(req: Request, res: Response, token: string): NativeRefresh {
+    if (this.isNativeClient(req)) return { refreshToken: token };
+    this.setRefreshCookie(res, token);
+    return {};
   }
 
   private setRefreshCookie(res: Response, token: string): void {

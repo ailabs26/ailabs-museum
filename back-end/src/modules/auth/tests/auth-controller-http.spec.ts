@@ -133,4 +133,51 @@ describe('AuthController HTTP — refresh cookie', () => {
     await request(app.getHttpServer()).post('/auth/logout').expect(200);
     assert.deepEqual(calls, [['logout', 'rt-2'], ['logout', undefined]]);
   });
+
+  describe('client native (X-Client: mobile) — refresh token qua body', () => {
+    const native = (path: string) => request(app.getHttpServer()).post(path).set('X-Client', 'mobile');
+
+    it('login trả refreshToken trong body, không set cookie', async () => {
+      const res = await native('/auth/login').send({ email: 'admin@aura.local', password: 'Passw0rd!' }).expect(200);
+      assert.deepEqual(res.body.data, { accessToken: 'acc', user: USER, refreshToken: 'rt-1' });
+      assert.equal(res.headers['set-cookie'], undefined);
+    });
+
+    it('refresh nhận token trong body, trả token xoay vòng trong body, không set cookie', async () => {
+      calls.length = 0;
+      const res = await native('/auth/refresh').send({ refreshToken: 'rt-1' }).expect(200);
+      assert.deepEqual(res.body.data, { accessToken: 'acc-2', refreshToken: 'rt-2' });
+      assert.equal(res.headers['set-cookie'], undefined);
+      assert.deepEqual(calls, [['refresh', 'rt-1']]);
+    });
+
+    it('refresh bỏ qua cookie; 401 không động tới cookie', async () => {
+      calls.length = 0;
+      const res = await native('/auth/refresh').set('Cookie', `${COOKIE}=rt-1`).expect(401);
+      assert.equal(res.headers['set-cookie'], undefined);
+      assert.deepEqual(calls, [['refresh', undefined]]);
+    });
+
+    it('logout thu hồi token gửi trong body, không set cookie', async () => {
+      calls.length = 0;
+      const res = await native('/auth/logout').send({ refreshToken: 'rt-2' }).expect(200);
+      assert.equal(res.headers['set-cookie'], undefined);
+      assert.deepEqual(calls, [['logout', 'rt-2']]);
+    });
+
+    it('body sai định dạng hoặc có field lạ -> 400, service không bị gọi', async () => {
+      calls.length = 0;
+      await native('/auth/refresh').send({ refreshToken: 123 }).expect(400);
+      await native('/auth/refresh').send({ refreshToken: 'rt-1', userId: 'u1' }).expect(400);
+      await native('/auth/refresh').send({ refreshToken: 'x'.repeat(129) }).expect(400);
+      assert.deepEqual(calls, []);
+    });
+  });
+
+  it('trình duyệt (không có X-Client) bỏ qua refreshToken trong body, chỉ dùng cookie', async () => {
+    calls.length = 0;
+    await request(app.getHttpServer()).post('/auth/refresh').send({ refreshToken: 'rt-1' }).expect(401);
+    await request(app.getHttpServer()).post('/auth/logout').send({ refreshToken: 'rt-1' }).expect(200);
+    assert.deepEqual(calls, [['refresh', undefined], ['logout', undefined]]);
+  });
 });
