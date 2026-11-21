@@ -1,6 +1,6 @@
 # Danh sách công việc — Thiết kế lại trang Chi tiết hiện vật (T-EXHIBIT-DETAIL-REDESIGN)
 
-**Trạng thái:** **TODO / SẴN SÀNG TRIỂN KHAI**. Hiện chỉ có tài liệu Plan, Task và mock minh họa; chưa sửa mã nguồn và chưa ghi nhận commit hoặc kết quả test của tính năng mới.
+**Trạng thái:** Đã triển khai trên nhánh local `feat/public-exhibit-detail-redesign` từ `origin/dev@115e5df`. Chờ người dùng duyệt UI.
 
 - **Nhánh đề xuất:** `feat/public-exhibit-detail-redesign` → `dev` (**một PR**).
 - **Mốc đã kiểm tra:** `dev@115e5df5125d2fc95941405f1b016fdd56eebcfb` ngày 21/11/2026; phải fetch và xác minh lại khi bắt đầu.
@@ -26,20 +26,20 @@ Thiết kế lại `/collection/:roomSlug/exhibits/:exhibitId` theo phong cách 
 
 | Mã | Trạng thái | Kết quả cần bàn giao | Commit đề xuất |
 |---|---|---|---|
-| ED-01 | [ ] | Kiểm tra nhánh, baseline, tài liệu và ảnh trước thay đổi | `docs(exhibit): plan editorial detail redesign` |
-| ED-02 | [ ] | Tổ chức semantic DOM, giữ nguyên dữ liệu/hành vi | `refactor(exhibit): organize editorial detail sections` |
-| ED-03 | [ ] | Breadcrumb, H1, phòng, tóm tắt và ngữ cảnh CTA | `feat(exhibit): add editorial breadcrumb and summary` |
-| ED-04 | [ ] | Media Hero ảnh lớn nền charcoal, fallback trung tính | `feat(exhibit): introduce large media hero poster` |
-| ED-05 | [ ] | Bố trí link phòng 3D, Guided Tour, yêu thích, báo nội dung | `refactor(exhibit): align tour and visitor actions` |
-| ED-06 | [ ] | Thiết kế lại vị trí AudioPlayer, giữ một audio owner | `style(exhibit): present narration in editorial audio dock` |
-| ED-07 | [ ] | Typography câu chuyện và transcript có điều kiện | `style(exhibit): refine exhibit story and transcript` |
-| ED-08 | [ ] | Danh sách hotspot được sắp xếp, không phụ thuộc WebGL | `style(exhibit): refine accessible hotspot reading` |
-| ED-09 | [ ] | Reading Mode, ghi chú riêng, credits | `style(exhibit): integrate reading notes and attribution` |
-| ED-10 | [ ] | Tối đa 3 hiện vật khác trong cùng phòng bằng shared card/grid | `feat(exhibit): show other exhibits from current room` |
-| ED-11 | [ ] | Trạng thái tải/lỗi/không tìm thấy/retry/chống stale content | `fix(exhibit): polish detail status and fallback views` |
-| ED-12 | [ ] | Tablet/mobile, light/dark, reduced motion, nội dung dài | `style(exhibit): refine responsive editorial layout` |
-| ED-13 | [ ] | Sáu locale, focus, tương phản, axe/accessibility | `fix(exhibit): localize and harden detail accessibility` |
-| ED-14 | [ ] | Regression tương tác, audio, Guided Tour, visitor và không WebGL | `test(exhibit): cover editorial detail interaction regressions` |
+| ED-01 | [x] | Kiểm tra nhánh, baseline, tài liệu và ảnh trước thay đổi | `docs(exhibit): plan editorial detail redesign` |
+| ED-02 | [x] | Tổ chức semantic DOM, giữ nguyên dữ liệu/hành vi | `refactor(exhibit): organize editorial detail sections` |
+| ED-03 | [x] | Breadcrumb, H1, phòng, tóm tắt và ngữ cảnh CTA | `feat(exhibit): add editorial breadcrumb and summary` |
+| ED-04 | [x] | Media Hero ảnh lớn nền charcoal, fallback trung tính | `feat(exhibit): introduce large media hero poster` |
+| ED-05 | [x] | Bố trí link phòng 3D, Guided Tour, yêu thích, báo nội dung | `refactor(exhibit): align tour and visitor actions` |
+| ED-06 | [x] | Thiết kế lại vị trí AudioPlayer, giữ một audio owner | `style(exhibit): present narration in editorial audio dock` |
+| ED-07 | [x] | Typography câu chuyện và transcript có điều kiện | `style(exhibit): refine exhibit story and transcript` |
+| ED-08 | [x] | Danh sách hotspot được sắp xếp, không phụ thuộc WebGL | `style(exhibit): refine accessible hotspot reading` |
+| ED-09 | [x] | Reading Mode, ghi chú riêng, credits | `style(exhibit): integrate reading notes and attribution` |
+| ED-10 | [x] | Tối đa 3 hiện vật khác trong cùng phòng bằng shared card/grid | `feat(exhibit): show other exhibits from current room` |
+| ED-11 | [x] | Trạng thái tải/lỗi/không tìm thấy/retry/chống stale content | `fix(exhibit): polish detail status and fallback views` |
+| ED-12 | [x] | Tablet/mobile, light/dark, reduced motion, nội dung dài | `style(exhibit): refine responsive editorial layout` |
+| ED-13 | [x] | Sáu locale, focus, tương phản, axe/accessibility | `fix(exhibit): localize and harden detail accessibility` |
+| ED-14 | [x] | Regression tương tác, audio, Guided Tour, visitor và không WebGL | `test(exhibit): cover editorial detail interaction regressions` |
 | ED-15 | [ ] | Ảnh kiểm chứng, quality gates, bằng chứng và bàn giao | `docs(exhibit): record detail redesign verification` |
 
 Checkpoint không tạo diff thật phải ghi `no-op` và lý do; **không tạo commit rỗng**. Tên commit là dự kiến, không phải bằng chứng đã thực hiện.
@@ -167,25 +167,29 @@ npm.cmd run test -- exhibit-detail-redesign.spec.ts exhibit-detail.spec.ts publi
 
 | Task | Commit SHA thực / no-op | Lệnh và kết quả test | Bằng chứng UI / giới hạn | Trạng thái |
 |---|---|---|---|---|
-| ED-01 | — | Chưa chạy | Chưa chụp baseline | TODO |
-| ED-02 | — | Chưa chạy | — | TODO |
-| ED-03 | — | Chưa chạy | — | TODO |
-| ED-04 | — | Chưa chạy | — | TODO |
-| ED-05 | — | Chưa chạy | — | TODO |
-| ED-06 | — | Chưa chạy | — | TODO |
-| ED-07 | — | Chưa chạy | — | TODO |
-| ED-08 | — | Chưa chạy | — | TODO |
-| ED-09 | — | Chưa chạy | — | TODO |
-| ED-10 | — | Chưa chạy | — | TODO |
-| ED-11 | — | Chưa chạy | — | TODO |
-| ED-12 | — | Chưa chạy | — | TODO |
-| ED-13 | — | Chưa chạy | — | TODO |
-| ED-14 | — | Chưa chạy | — | TODO |
-| ED-15 | — | Chưa chạy | — | TODO |
+| ED-01 | `fc21a9d` | Baseline Playwright trên Vite dev 45/47 | 4 ảnh 390/1440px sáng/tối với fixture; xác minh `origin/dev@115e5df`. | Đã khảo sát |
+| ED-02 | `4b77939` | `exhibit-detail.spec.ts` pass | Cấu trúc theo ngữ nghĩa và giữ tập trung ở H1 đúng route. | Đạt |
+| ED-03 | `4b77939`, `e042eed` | Regression breadcrumb và nội dung đầy đủ pass | Breadcrumb về đúng phòng; đoạn tóm tắt lấy từ CMS. | Đạt |
+| ED-04 | `4b77939`, `e042eed` | Regression ảnh lỗi và URL ảnh dùng chung pass | Ảnh contain; giữ kích thước khi thay bằng placeholder. | Đạt |
+| ED-05 | `4b77939` | `guided-tour-2d` và `guided-tour-mode-sync` pass | Link sang `/tour`, hành vi tour và thao tác khách được giữ. | Đạt |
+| ED-06 | `4b77939` | `public-audio.spec.ts` 11/11 | Một AudioPlayer; không tự phát; ảnh trạng thái có audio trên API local. | Đạt |
+| ED-07 | `4b77939` | `exhibit-detail.spec.ts` pass | Văn bản đầy đủ và transcript tùy chọn vẫn hiện như dữ liệu đã xuất bản. | Đạt |
+| ED-08 | `4b77939` | Regression hotspot thứ tự và văn bản thuần pass | Danh sách đọc được khi WebGL không khả dụng. | Đạt |
+| ED-09 | `4b77939`, `bad1d26`, `e042eed` | Reading Mode, notes, credits pass | 100% giữ cỡ chữ gốc, tăng tới 150%; credit lấy từ DTO. | Đạt |
+| ED-10 | `bad1d26`, `e042eed` | Regression cùng phòng và locale pass | Kiểm 0/1/4 ứng viên, thứ tự, tối đa 3 và route. | Đạt |
+| ED-11 | `4b77939` | Regression URL sai, schema/HTTP, retry và dữ liệu cũ pass | Ảnh `after-error-*.png`. | Đạt |
+| ED-12 | `4b77939`, `bad1d26` | 12 tổ hợp viewport và theme trên API local | 320–1440px không tràn ở zoom mặc định. Test CSS zoom 200% vẫn tràn ở header chung. | Đạt trong vùng Detail |
+| ED-13 | `bad1d26`, `e042eed` | Playwright sáu locale/CMS override pass; axe Detail sáng/tối pass lại | Hai khóa mới đủ sáu locale trong seed; chưa chạy seed hoặc kiểm screen reader. | Đạt tự động |
+| ED-14 | `e042eed`, `eac0e1f` | Bộ rộng 127/131 trước chỉnh cuối; 8/8 ca trọng tâm trên Vite dev và 9/9 trên production preview sau sửa | Kiểm không Canvas/WebGL/GLB, ảnh, điều hướng, thay đổi owner. Xem kết quả chạy lại bên dưới. | Đã kiểm với giới hạn |
+| ED-15 | Commit tài liệu bàn giao | Typecheck, lint và Vitest frontend 438/438; build đạt | Ảnh trước/sau, có ảnh, thiếu ảnh, ảnh lỗi, Reading Mode và URL sai. Chờ người dùng xem UI. | Chờ duyệt UI |
 
 ## 7. Ghi chú bàn giao
 
-- Hiện đã có: **Plan + Task tiếng Việt** và mock minh họa. Chưa thay đổi source code production chỉ bằng việc viết tài liệu.
-- Title PR đề xuất khi hoàn thành: `feat(exhibit): redesign public exhibit detail with editorial layout`.
+- Checkpoint dùng chung bố cục được gộp vào một commit thay vì tách CSS cùng DOM thành các diff không độc lập. Hai khóa mới là `ui.exhibit.breadcrumb` và `ui.exhibit.related`. DB local đang dùng fallback với bất kỳ khóa nào chưa có trong CMS.
+- Kiểm tra trên Windows với Node v22.23.2, npm 10.9.8, Edge/Chromium Playwright. Frontend `npm.cmd run typecheck`, `lint`, `test:unit` (438/438), `build` đạt. Vite vẫn cảnh báo chunk lớn. Backend `typecheck`, `lint`, `build` đạt. Kiểm thử trực tiếp `public-ui-strings.spec.ts` 4/5 ở baseline và sau sửa, do `ui.guided2d.progress` còn thiếu trên dev. Hai khóa D01 đã kiểm dạng seed fixture, gồm đủ sáu locale và CMS override.
+- Baseline chạy `exhibit-detail.spec.ts`, `public-audio.spec.ts`, `guided-tour-mode-sync.spec.ts` và các nhóm visitor, 45/47. Ca favorites chờ bộ lọc bị ẩn ở phòng trống; fixture đã đổi sang phòng còn hiện vật khác để kiểm đúng việc không khôi phục mục đã gỡ. Ca CSS zoom 200% vẫn thất bại vì header chung tràn tới 1428px ở viewport 1280px; không thấy vùng Detail tràn trong probe đó.
+- Bộ rộng production preview gồm 131 ca, 127 ca pass ở lần chạy trước chỉnh cuối. Hai lỗi của D01 (tương phản nút đặt lại và cỡ chữ 100%) đã qua targeted rerun. Ca audio visitor journey timeout ở lần rộng dù request WAV trả HTTP 200 và player chuyển sang đang phát; ca này pass khi chạy lại một worker trên build cuối. Lần chạy lại production preview đạt 9/9 gồm bốn bài D01, hai axe, locale, reading và visitor journey. Không chạy lại toàn bộ 131 ca sau hai chỉnh sửa UI cục bộ và việc reset poster.
+- Ảnh trước/sau lưu trong `.superpowers/sdd/exhibit-detail-redesign-plan/visual/` local. Ảnh sau dùng API local chỉ đọc ở trang Trống đồng Đông Sơn (ảnh và các thẻ cùng phòng) và [Mẫu] Mũ bảo hộ (audio, transcript và placeholder). Có ảnh trạng thái ảnh lỗi và URL sai. Ca `exhibit-detail-live.spec.ts` pass. Không commit ảnh, trace hoặc log.
+- Chưa kiểm NVDA/VoiceOver, điện thoại vật lý, zoom trình duyệt thật 200–400% hoặc LCP/CLS. Không chạy seed hay ghi DB, không push, không tạo PR.
 - **On-demand 3D Viewer là PR riêng sau bước này**. Hero Full-Bleed/3D tự xoay của Homepage vẫn hoãn.
 - Mock là bản định hướng thị giác, **không phải cam kết** có đa ảnh, waveform, metadata lịch sử hoặc nút 3D tại chỗ. Chỉ triển khai các hành vi đã được xác minh trong Plan.

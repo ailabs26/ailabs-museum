@@ -7,7 +7,7 @@
 | Mục | Thông tin |
 |---|---|
 | Tính năng | Thiết kế lại trang Chi tiết hiện vật công khai — D01 |
-| Trạng thái | **SẴN SÀNG TRIỂN KHAI — CHƯA BẮT ĐẦU** |
+| Trạng thái | **ĐÃ TRIỂN KHAI TRÊN NHÁNH LOCAL — CHỜ DUYỆT UI** |
 | Đường dẫn trang | `/collection/:roomSlug/exhibits/:exhibitId` |
 | Nhánh đề xuất | `feat/public-exhibit-detail-redesign` |
 | Nhánh đích của PR | `dev` |
