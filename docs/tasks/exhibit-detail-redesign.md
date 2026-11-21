@@ -1,6 +1,6 @@
 # Danh sách công việc — Thiết kế lại trang Chi tiết hiện vật (T-EXHIBIT-DETAIL-REDESIGN)
 
-**Trạng thái:** Đã triển khai trên nhánh local `feat/public-exhibit-detail-redesign` từ `origin/dev@115e5df`. Chờ người dùng duyệt UI.
+**Trạng thái:** Đã triển khai trên nhánh `feat/public-exhibit-detail-redesign` từ `origin/dev@115e5df`. Người dùng đã duyệt giao diện.
 
 - **Nhánh đề xuất:** `feat/public-exhibit-detail-redesign` → `dev` (**một PR**).
 - **Mốc đã kiểm tra:** `dev@115e5df5125d2fc95941405f1b016fdd56eebcfb` ngày 21/11/2026; phải fetch và xác minh lại khi bắt đầu.
@@ -40,7 +40,7 @@ Thiết kế lại `/collection/:roomSlug/exhibits/:exhibitId` theo phong cách 
 | ED-12 | [x] | Tablet/mobile, light/dark, reduced motion, nội dung dài | `style(exhibit): refine responsive editorial layout` |
 | ED-13 | [x] | Sáu locale, focus, tương phản, axe/accessibility | `fix(exhibit): localize and harden detail accessibility` |
 | ED-14 | [x] | Regression tương tác, audio, Guided Tour, visitor và không WebGL | `test(exhibit): cover editorial detail interaction regressions` |
-| ED-15 | [ ] | Ảnh kiểm chứng, quality gates, bằng chứng và bàn giao | `docs(exhibit): record detail redesign verification` |
+| ED-15 | [x] | Ảnh kiểm chứng, quality gates, bằng chứng và bàn giao | `docs(exhibit): record detail redesign verification` |
 
 Checkpoint không tạo diff thật phải ghi `no-op` và lý do; **không tạo commit rỗng**. Tên commit là dự kiến, không phải bằng chứng đã thực hiện.
 
@@ -135,7 +135,7 @@ Checkpoint không tạo diff thật phải ghi `no-op` và lý do; **không tạ
 - [ ] Chạy typecheck, lint, Vitest, build, focused Playwright, axe và kiểm `git diff --check`, staged diff. Ghi kết quả kèm Node/npm, lệnh, môi trường và số bài pass/fail.
 - [ ] Rà ảnh desktop/mobile, Light/Dark, ảnh lỗi, transcript/hotspots tùy chọn, phòng/hiện vật khác nhau; rà qua chất lượng tiếng Việt và các locale.
 - [ ] Ghi rõ phần kiểm thủ công còn thiếu (NVDA/VoiceOver, thiết bị thật, zoom, CMS live). Cập nhật bảng bằng chứng dưới đây bằng SHA và log **thực**.
-- [ ] Người dùng duyệt giao diện; chỉ đề xuất title/description PR khi được hỏi. **Không tự push, tạo PR hoặc merge.**
+- [x] Người dùng đã duyệt giao diện và yêu cầu push nhánh. Chưa mở PR.
 
 ## 4. Lệnh kiểm thử dự kiến (PowerShell)
 
@@ -159,7 +159,7 @@ npm.cmd run test -- exhibit-detail-redesign.spec.ts exhibit-detail.spec.ts publi
 - [ ] Loading/error/not-found/retry/empty đúng; không hiện stale exhibit hoặc ảnh/âm thanh sai phòng.
 - [ ] Mở trang Detail không tải WebGL/Canvas/GLB và không có nút Viewer 3D giả.
 - [ ] Sáu locale, light/dark, 320px và accessibility regression đạt; khoảng trống manual QA được ghi trung thực.
-- [ ] Quality gates đạt hoặc có blocker chính xác; staged diff đã review; người dùng duyệt giao diện.
+- [x] Quality gates và các giới hạn đã được ghi lại, staged diff đã review và người dùng đã duyệt giao diện.
 
 ## 6. Bảng bằng chứng và commit thực tế
 
@@ -181,7 +181,7 @@ npm.cmd run test -- exhibit-detail-redesign.spec.ts exhibit-detail.spec.ts publi
 | ED-12 | `4b77939`, `bad1d26` | 12 tổ hợp viewport và theme trên API local | 320–1440px không tràn ở zoom mặc định. Test CSS zoom 200% vẫn tràn ở header chung. | Đạt trong vùng Detail |
 | ED-13 | `bad1d26`, `e042eed` | Playwright sáu locale/CMS override pass; axe Detail sáng/tối pass lại | Hai khóa mới đủ sáu locale trong seed; chưa chạy seed hoặc kiểm screen reader. | Đạt tự động |
 | ED-14 | `e042eed`, `eac0e1f` | Bộ rộng 127/131 trước chỉnh cuối; 8/8 ca trọng tâm trên Vite dev và 9/9 trên production preview sau sửa | Kiểm không Canvas/WebGL/GLB, ảnh, điều hướng, thay đổi owner. Xem kết quả chạy lại bên dưới. | Đã kiểm với giới hạn |
-| ED-15 | Commit tài liệu bàn giao | Typecheck, lint và Vitest frontend 438/438; build đạt | Ảnh trước/sau, có ảnh, thiếu ảnh, ảnh lỗi, Reading Mode và URL sai. Chờ người dùng xem UI. | Chờ duyệt UI |
+| ED-15 | `f71d6d5` | Typecheck, lint và Vitest frontend 438/438; build đạt | Ảnh trước/sau, có ảnh, thiếu ảnh, ảnh lỗi, Reading Mode và URL sai. Người dùng đã duyệt UI. | Hoàn tất |
 
 ## 7. Ghi chú bàn giao
 
@@ -190,6 +190,6 @@ npm.cmd run test -- exhibit-detail-redesign.spec.ts exhibit-detail.spec.ts publi
 - Baseline chạy `exhibit-detail.spec.ts`, `public-audio.spec.ts`, `guided-tour-mode-sync.spec.ts` và các nhóm visitor, 45/47. Ca favorites chờ bộ lọc bị ẩn ở phòng trống; fixture đã đổi sang phòng còn hiện vật khác để kiểm đúng việc không khôi phục mục đã gỡ. Ca CSS zoom 200% vẫn thất bại vì header chung tràn tới 1428px ở viewport 1280px; không thấy vùng Detail tràn trong probe đó.
 - Bộ rộng production preview gồm 131 ca, 127 ca pass ở lần chạy trước chỉnh cuối. Hai lỗi của D01 (tương phản nút đặt lại và cỡ chữ 100%) đã qua targeted rerun. Ca audio visitor journey timeout ở lần rộng dù request WAV trả HTTP 200 và player chuyển sang đang phát; ca này pass khi chạy lại một worker trên build cuối. Lần chạy lại production preview đạt 9/9 gồm bốn bài D01, hai axe, locale, reading và visitor journey. Không chạy lại toàn bộ 131 ca sau hai chỉnh sửa UI cục bộ và việc reset poster.
 - Ảnh trước/sau lưu trong `.superpowers/sdd/exhibit-detail-redesign-plan/visual/` local. Ảnh sau dùng API local chỉ đọc ở trang Trống đồng Đông Sơn (ảnh và các thẻ cùng phòng) và [Mẫu] Mũ bảo hộ (audio, transcript và placeholder). Có ảnh trạng thái ảnh lỗi và URL sai. Ca `exhibit-detail-live.spec.ts` pass. Không commit ảnh, trace hoặc log.
-- Chưa kiểm NVDA/VoiceOver, điện thoại vật lý, zoom trình duyệt thật 200–400% hoặc LCP/CLS. Không chạy seed hay ghi DB, không push, không tạo PR.
+- Chưa kiểm NVDA/VoiceOver, điện thoại vật lý, zoom trình duyệt thật 200–400% hoặc LCP/CLS. Không chạy seed hay ghi DB. Người dùng đã yêu cầu push nhánh và chưa mở PR.
 - **On-demand 3D Viewer là PR riêng sau bước này**. Hero Full-Bleed/3D tự xoay của Homepage vẫn hoãn.
 - Mock là bản định hướng thị giác, **không phải cam kết** có đa ảnh, waveform, metadata lịch sử hoặc nút 3D tại chỗ. Chỉ triển khai các hành vi đã được xác minh trong Plan.
