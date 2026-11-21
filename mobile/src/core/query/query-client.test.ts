@@ -21,6 +21,10 @@ describe('shouldRetry', () => {
     expect(shouldRetry(2, new ApiException('mất mạng', 0))).toBe(false);
   });
 
+  it('không thử lại lỗi không phải HTTP (parse dữ liệu, bug)', () => {
+    expect(shouldRetry(0, new TypeError('Cannot read properties of undefined'))).toBe(false);
+  });
+
   it('không thử lại lỗi 4xx và request bị hủy', () => {
     expect(shouldRetry(0, new ApiException('không tìm thấy', 404))).toBe(false);
     expect(shouldRetry(0, new ApiException('hết hạn', 401))).toBe(false);

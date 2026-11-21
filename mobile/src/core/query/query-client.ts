@@ -3,7 +3,7 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 import { QueryClient, type Query } from '@tanstack/react-query';
 import type { PersistQueryClientOptions } from '@tanstack/react-query-persist-client';
 import Constants from 'expo-constants';
-import { toApiException } from '@/core/api/api-error';
+import { ApiException } from '@/core/api/api-error';
 
 /**
  * TanStack Query + lưu cache offline (MOB-E3-02).
@@ -28,11 +28,10 @@ declare module '@tanstack/react-query' {
  * Lịch backoff chi tiết làm ở task Retry/backoff (MOB-E12-03).
  */
 export function shouldRetry(failureCount: number, error: unknown): boolean {
-  if (failureCount >= MAX_RETRIES) return false;
-  const apiError = toApiException(error);
-  if (apiError.isCanceled) return false;
-  const { status } = apiError;
-  return apiError.isNetworkError || status >= 500 || status === 408 || status === 429;
+  // http-client luôn ném ApiException; lỗi khác (parse dữ liệu, bug) thử lại cũng không khỏi.
+  if (failureCount >= MAX_RETRIES || !(error instanceof ApiException) || error.isCanceled) return false;
+  const { status } = error;
+  return error.isNetworkError || status >= 500 || status === 408 || status === 429;
 }
 
 export function createQueryClient(): QueryClient {

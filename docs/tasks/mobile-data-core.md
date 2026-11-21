@@ -50,5 +50,6 @@
   - `expo-router` 4.0.22 dùng `query-string` nhưng không khai báo; `@react-navigation/native` 7.1+ không còn kéo theo → thêm `query-string@^7.1.3`.
   - Thêm `expo-asset` (cần cho `expo export`), `react-native-web`, `react-dom`, `@expo/metro-runtime` (chạy được script `npm run web` có sẵn).
 - Kiểm chứng:
-  - typecheck, lint, 28 test pass (retry; persist lưu/khôi phục qua AsyncStorage giả; đổi version bỏ cache; `persist: false` không lưu).
+  - Tự review: `shouldRetry` chỉ retry `ApiException`; lỗi khác (parse dữ liệu, bug) trước đó bị coi là mất mạng và retry vô ích.
+  - typecheck, lint, 29 test pass (retry; persist lưu/khôi phục qua AsyncStorage giả; đổi version bỏ cache; `persist: false` không lưu).
   - Trình duyệt (Expo web + Playwright, harness tạm không commit trên màn Home): query chạy 1 lần, cache có trong `localStorage`; reload trang → giá trị giữ nguyên, query không chạy lại; không có lỗi console.
