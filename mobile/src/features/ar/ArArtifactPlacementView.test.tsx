@@ -20,12 +20,14 @@ function createInteractiveMockViro() {
     React.createElement(View, rest, children as React.ReactNode);
 
   const viro: ViroRuntimeComponents = {
-    ViroARSceneNavigator: ({ initialScene }: Record<string, unknown>) => {
-      const SceneComp = (initialScene as { scene: React.ComponentType }).scene;
+    ViroARSceneNavigator: ({ initialScene, viroAppProps }: Record<string, unknown>) => {
+      // Mô phỏng Viro: chỉ đọc initialScene khi khởi tạo, nhận state mới qua viroAppProps.
+      const initial = React.useRef(initialScene);
+      const SceneComp = (initial.current as { scene: React.ComponentType<Record<string, unknown>> }).scene;
       return React.createElement(
         View,
         { testID: 'mock-ar-nav' },
-        React.createElement(SceneComp),
+        React.createElement(SceneComp, { arSceneNavigator: { viroAppProps } }),
       );
     },
     ViroARScene: Passthrough,
@@ -34,8 +36,8 @@ function createInteractiveMockViro() {
       return React.createElement(View, { testID: 'mock-plane-selector' }, children as React.ReactNode);
     },
     ViroNode: ({ children, onPinch, onRotate }: Record<string, unknown>) => {
-      onPinchRef = (onPinch as typeof onPinchRef) ?? null;
-      onRotateRef = (onRotate as typeof onRotateRef) ?? null;
+      if (onPinch) onPinchRef = onPinch as typeof onPinchRef;
+      if (onRotate) onRotateRef = onRotate as typeof onRotateRef;
       return React.createElement(View, { testID: 'mock-placed-node' }, children as React.ReactNode);
     },
     Viro3DObject: (props: Record<string, unknown>) => {
@@ -92,6 +94,11 @@ describe('ArArtifactPlacementView — tích hợp cache GLB thật + mặt phẳ
     };
 
     const mock = createInteractiveMockViro();
+    const normalizationImpl = () => Promise.resolve({
+      scale: 0.5, offset: [0, 1, 0] as [number, number, number],
+      size: [1, 1, 1] as [number, number, number],
+      center: [0, 0.5, 0] as [number, number, number], radius: 0.866,
+    });
 
     render(
       <ThemeProvider>
@@ -102,6 +109,7 @@ describe('ArArtifactPlacementView — tích hợp cache GLB thật + mặt phẳ
           sha256Impl={(buf) =>
             Promise.resolve(crypto.createHash('sha256').update(Buffer.from(buf)).digest('hex'))
           }
+          normalizationImpl={normalizationImpl}
           capabilityOverride={{
             supported: true,
             engine: 'ARCore',

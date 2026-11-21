@@ -1,68 +1,44 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useMemo } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Screen } from '@/components/layout/Screen';
+import { useTheme } from '@/theme/ThemeProvider';
 import { GalleryRoomView } from '@/features/scene3d/GalleryRoomView';
-import { GALLERY_SLOTS } from '@/features/scene3d/gallerySlots';
-import type { MuseumDisplay } from '@/features/scene3d/museumTypes';
+import { mapRoomDisplays } from '@/features/scene3d/gallerySlots';
+import { usePublicRoom } from '@/features/scene3d/usePublicRoom';
 
-const DEMO_SLOTTED_EXHIBITS: readonly MuseumDisplay[] = [
-  {
-    id: 'demo-s01',
-    roomId: 'demo-room',
-    title: 'Trống đồng Ngọc Lũ',
-    description: 'Hiện vật trung tâm đặt tại Bục 01 (S01) — biểu tượng văn hóa Đông Sơn.',
-    position: [...GALLERY_SLOTS[0]!.position],
-    shape: 'torus',
-    color: '#B45309',
-  },
-  {
-    id: 'demo-s02',
-    roomId: 'demo-room',
-    title: 'Bình gốm Chu Đậu',
-    description: 'Gốm hoa lam thế kỷ XV đặt tại Bục 02 – Trái sau (S02).',
-    position: [...GALLERY_SLOTS[1]!.position],
-    shape: 'cylinder',
-    color: '#0F766E',
-  },
-  {
-    id: 'demo-s03',
-    roomId: 'demo-room',
-    title: 'Ấn vàng Hoàng đế',
-    description: 'Hiện vật triều Nguyễn đặt tại Bục 03 – Phải sau (S03).',
-    position: [...GALLERY_SLOTS[2]!.position],
-    shape: 'cube',
-    color: '#D97706',
-  },
-  {
-    id: 'demo-s04',
-    roomId: 'demo-room',
-    title: 'Tượng đá Champa',
-    description: 'Điêu khắc sa thạch cổ đặt tại Bục 04 – Trái trước (S04).',
-    position: [...GALLERY_SLOTS[3]!.position],
-    shape: 'cone',
-    color: '#64748B',
-  },
-  {
-    id: 'demo-s05',
-    roomId: 'demo-room',
-    title: 'Đĩa men ngọc thời Lý',
-    description: 'Gốm men ngọc thế kỷ XI đặt tại Bục 05 – Phải trước (S05).',
-    position: [...GALLERY_SLOTS[4]!.position],
-    shape: 'sphere',
-    color: '#0D9488',
-  },
-];
-
-/**
- * Màn chi tiết phòng 3D trên nested stack (`/room/:slug`) — MOB-E6-04.
- * Render đủ 5 bục Gallery Template V1 và song song danh sách 2D dễ tiếp cận.
- */
 export default function RoomDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  const roomName = slug ? `Phòng trưng bày: ${slug}` : 'Phòng trưng bày 3D';
+  const router = useRouter();
+  const theme = useTheme();
+  const { state, retry } = usePublicRoom(slug);
+  const room = state.status === 'ready' ? state.room : null;
+  const displays = useMemo(() => room ? mapRoomDisplays(room) : [], [room]);
 
   return (
     <Screen edges={['bottom']}>
-      <GalleryRoomView roomName={roomName} displays={DEMO_SLOTTED_EXHIBITS} />
+      {state.status === 'loading' ? (
+        <View accessibilityRole="progressbar" style={{ flex: 1, justifyContent: 'center' }}>
+          <ActivityIndicator color={theme.colors.primary} />
+          <Text style={{ color: theme.colors.text, textAlign: 'center' }}>Đang tải phòng trưng bày...</Text>
+        </View>
+      ) : state.status === 'error' ? (
+        <View style={{ flex: 1, justifyContent: 'center', padding: theme.spacing.lg, gap: theme.spacing.md }}>
+          <Text accessibilityRole="alert" style={{ color: theme.colors.text }}>{state.message}</Text>
+          <Pressable accessibilityRole="button" onPress={retry}>
+            <Text style={{ color: theme.colors.primary }}>Thử lại</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <GalleryRoomView
+          roomName={state.room.name}
+          displays={displays}
+          onOpenAr={(exhibit) => router.push({
+            pathname: '/ar-exhibit',
+            params: { roomSlug: state.room.slug, exhibitId: exhibit.id },
+          })}
+        />
+      )}
     </Screen>
   );
 }

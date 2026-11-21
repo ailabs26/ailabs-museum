@@ -36,6 +36,7 @@ export interface GalleryRoomViewProps {
   /** Cho phép mở thẳng danh sách 2D (accessibility fallback). */
   initialMode?: '3d' | '2d';
   onSelectExhibit?: (exhibit: MuseumDisplay) => void;
+  onOpenAr?: (exhibit: MuseumDisplay) => void;
 }
 
 function AdaptiveFpsMonitor({
@@ -77,6 +78,7 @@ export function GalleryRoomView({
   managerOptions,
   initialMode = '3d',
   onSelectExhibit,
+  onOpenAr,
 }: GalleryRoomViewProps) {
   const theme = useTheme();
   const reducedMotion = useReducedMotion();
@@ -86,6 +88,11 @@ export function GalleryRoomView({
   const [modelStates, setModelStates] = useState<ReadonlyMap<string, RoomModelState>>(
     () => new Map(),
   );
+
+  useEffect(() => {
+    setSelectedId((current) => displays.some((item) => item.id === current)
+      ? current : displays[0]?.id ?? null);
+  }, [displays]);
 
   const navInput = useMemo(() => createNavigationInput(), []);
   const navGestures = useMemo(() => new NavigationGestures(), []);
@@ -306,6 +313,18 @@ export function GalleryRoomView({
             >
               Đang chọn: {selectedDisplay.title}
             </Text>
+            {onOpenAr ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Xem ${selectedDisplay.title} trong AR`}
+                onPress={() => onOpenAr(selectedDisplay)}
+                style={[styles.focusBtn, { backgroundColor: theme.colors.primary, borderRadius: theme.radius.sm }]}
+              >
+                <Text style={{ color: theme.colors.primaryText, fontSize: theme.fontSize.xs, fontWeight: '600' }}>
+                  Xem AR
+                </Text>
+              </Pressable>
+            ) : null}
             {viewMode === '3d' ? (
               <Pressable
                 accessibilityRole="button"
