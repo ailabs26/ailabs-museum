@@ -15,6 +15,7 @@ import { GUIDED_TOUR_MESSAGES } from '@/helpers/guidedTourMessages';
 import { guidedTour3dPath } from '@/helpers/guidedTour2dNavigation';
 import { useMuseumRooms } from '@/hooks/useMuseumRooms';
 import { useGuidedTour2D } from '@/hooks/useGuidedTour2D';
+import { ExhibitGrid } from '@/shared/components/data/ExhibitGrid';
 import { ExhibitImage } from '@/shared/components/media/ExhibitImage';
 import { AudioPlayer } from '@/shared/components/media/AudioPlayer';
 import { PublicReportModal } from '@/shared/components/feedback/PublicReportModal';
@@ -42,6 +43,9 @@ export function ExhibitDetailPage() {
   const detail = rooms.isSuccess && selectedRoom && room.isSuccess ? room.data : undefined;
   const found = detail && isValidId ? detail.exhibits.find((item) => item.id === exhibitId) : undefined;
   const exhibit = found ? localizeExhibit(found, locale) : undefined;
+  const related = exhibit && detail ? detail.exhibits.filter((item) => item.id !== exhibit.id)
+    .sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id))
+    .slice(0, 3).map((item) => localizeExhibit(item, locale)) : [];
   const tour2d = useGuidedTour2D({
     room: detail && !room.isError ? detail : undefined,
     publicRooms: rooms.isSuccess && !rooms.isError && !rooms.isFetching ? rooms.data : undefined,
@@ -218,16 +222,22 @@ export function ExhibitDetailPage() {
                   </li>)}
               </ul>
             </section>}
-          </div>
-          <div className={classes.tools}>
-            <ReadingControls />
-            <VisitorNotes key={`${detail.id}:${exhibit.id}`} target={{ roomId: detail.id, exhibitId: exhibit.id }} />
             {credits.length > 0 && <section className={classes.credits} aria-labelledby="exhibit-credits-title">
               <Title order={2} id="exhibit-credits-title" className={classes.sectionTitle}>{t('ui.exhibit.credits', 'Nguồn & bản quyền')}</Title>
               <MediaCreditList credits={credits} className={classes.body} />
             </section>}
           </div>
+          <div className={classes.tools}>
+            <ReadingControls />
+            <VisitorNotes key={`${detail.id}:${exhibit.id}`} target={{ roomId: detail.id, exhibitId: exhibit.id }} />
+          </div>
         </div>
+        {related.length > 0 && <section className={classes.related} aria-labelledby="exhibit-related-title">
+          <Title order={2} id="exhibit-related-title" className={classes.sectionTitle}>
+            {t('ui.exhibit.related', 'Hiện vật khác trong cùng phòng')}
+          </Title>
+          <ExhibitGrid exhibits={related} roomSlug={detail.slug} />
+        </section>}
       </article> : null}
       {exhibit && isReportOpen && <PublicReportModal key={`${exhibit.id}:${exhibit.revisionId}`} exhibitId={exhibit.id}
         reportedRevisionId={exhibit.revisionId} opened onClose={() => setIsReportOpen(false)} />}

@@ -1446,6 +1446,30 @@ export const PUBLIC_UI_STRINGS: PublicUiString[] = [
     },
   },
   {
+    namespace: "ui.exhibit.breadcrumb",
+    context: "Nhãn điều hướng breadcrumb chi tiết hiện vật",
+    values: {
+      vi: "Đường dẫn hiện vật",
+      en: "Exhibit breadcrumb",
+      fr: "Fil d’Ariane de l’objet",
+      zh: "展品路径",
+      ko: "전시품 탐색 경로",
+      ja: "展示品のパンくずリスト",
+    },
+  },
+  {
+    namespace: "ui.exhibit.related",
+    context: "Tiêu đề hiện vật khác trong cùng phòng",
+    values: {
+      vi: "Hiện vật khác trong cùng phòng",
+      en: "Other exhibits in this room",
+      fr: "Autres objets dans cette salle",
+      zh: "同一展厅的其他展品",
+      ko: "같은 전시실의 다른 전시품",
+      ja: "同じ展示室のほかの展示品",
+    },
+  },
+  {
     namespace: "ui.exhibit.view-3d",
     context: "Liên kết sang tour",
     values: {

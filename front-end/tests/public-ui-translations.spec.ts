@@ -23,6 +23,29 @@ async function expectNoVietnamese(area: Locator) {
 
 const chooseLanguage = (page: Page, locale: string) => page.getByRole('combobox', { name: /./ }).first().selectOption(locale);
 
+test('detail breadcrumb and same-room label use the active locale and CMS overrides', async ({ page }) => {
+  test.setTimeout(60000);
+  await installMuseumApi(page);
+  await installStrings(page);
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto(`/collection/${roomA.slug}/exhibits/${roomA.exhibits[0].id}`);
+  for (const locale of ['vi', 'en', 'fr', 'zh', 'ko', 'ja'] as const) {
+    if (locale !== 'vi') {
+      // The desktop language picker stays outside the page and is available without the mobile drawer.
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await chooseLanguage(page, locale);
+      await page.setViewportSize({ width: 320, height: 800 });
+    }
+    const value = (key: string) => PUBLIC_UI_STRINGS.find((item) => item.namespace === key)!.values[locale];
+    await expect(page.getByRole('navigation', { name: value('ui.exhibit.breadcrumb') })).toBeVisible();
+    await expect(page.getByRole('heading', { name: value('ui.exhibit.related') })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await installStrings(page, { 'ui.exhibit.related': 'CMS label' });
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'CMS label' })).toBeVisible();
+});
+
 test.describe('Giao diện Client theo ngôn ngữ', () => {
   test.beforeEach(async ({ page }) => { await installMuseumApi(page); });
 
