@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { QueryProvider } from '@/core/query/QueryProvider';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
 /**
@@ -10,14 +11,16 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <StatusBar style="light" />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="room/[slug]" options={{ headerShown: true, title: 'Phòng' }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-      </ThemeProvider>
+      <QueryProvider>
+        <ThemeProvider>
+          <StatusBar style="light" />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="room/[slug]" options={{ headerShown: true, title: 'Phòng' }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+        </ThemeProvider>
+      </QueryProvider>
     </SafeAreaProvider>
   );
 }
