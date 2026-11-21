@@ -128,11 +128,12 @@
 .body {
   margin: var(--public-space-3) 0 0;
   color: var(--public-ink);
-  font-size: 1.0625rem;
+  font-size: 1rem;
   line-height: 1.8;
   white-space: pre-wrap;
 }
 .tools { gap: var(--public-space-4); }
+.tools button[data-variant='subtle'] { color: var(--public-forest); }
 .credits { padding-top: var(--public-space-4); border-top: 1px solid var(--public-border); }
 .credits .body { font-size: .9375rem; }
 

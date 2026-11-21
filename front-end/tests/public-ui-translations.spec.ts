@@ -27,6 +27,17 @@ test('detail breadcrumb and same-room label use the active locale and CMS overri
   test.setTimeout(60000);
   await installMuseumApi(page);
   await installStrings(page);
+  const [, second] = roomA.exhibits;
+  await page.route('**/api/rooms/sculpture', (route) => fulfillMuseum(route, envelope({
+    ...roomA,
+    exhibits: [roomA.exhibits[0], {
+      ...second,
+      i18n: {
+        vi: { name: null, description: null, transcript: null },
+        en: { name: 'Ceramic bowl', description: 'Published translation', transcript: null },
+      },
+    }],
+  })));
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto(`/collection/${roomA.slug}/exhibits/${roomA.exhibits[0].id}`);
   for (const locale of ['vi', 'en', 'fr', 'zh', 'ko', 'ja'] as const) {
@@ -39,6 +50,12 @@ test('detail breadcrumb and same-room label use the active locale and CMS overri
     const value = (key: string) => PUBLIC_UI_STRINGS.find((item) => item.namespace === key)!.values[locale];
     await expect(page.getByRole('navigation', { name: value('ui.exhibit.breadcrumb') })).toBeVisible();
     await expect(page.getByRole('heading', { name: value('ui.exhibit.related') })).toBeVisible();
+    if (locale === 'en') {
+      const related = page.getByRole('region', { name: value('ui.exhibit.related') });
+      await expect(related.getByRole('heading', { name: 'Ceramic bowl' })).toBeVisible();
+      await expect(related.getByRole('link', { name: value('ui.collection.details-aria').replace('{name}', 'Ceramic bowl') }))
+        .toHaveAttribute('href', `/collection/${roomA.slug}/exhibits/${second.id}`);
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
   await installStrings(page, { 'ui.exhibit.related': 'CMS label' });

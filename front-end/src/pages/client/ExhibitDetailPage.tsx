@@ -162,7 +162,8 @@ export function ExhibitDetailPage() {
             )}
           </div>
           <div className={classes.poster}>
-            <ExhibitImage image={exhibit.image ? { url: exhibit.image.url, alt: localizedAltText(exhibit.image.altText, locale, exhibit.name) } : null}
+            <ExhibitImage key={`${detail.id}:${exhibit.id}`}
+              image={exhibit.image ? { url: exhibit.image.url, alt: localizedAltText(exhibit.image.altText, locale, exhibit.name) } : null}
               shape={exhibit.placeholderShape} color={exhibit.placeholderColor} className={classes.preview} loading="eager" fetchPriority="high" />
           </div>
           <div className={classes.actions}>
