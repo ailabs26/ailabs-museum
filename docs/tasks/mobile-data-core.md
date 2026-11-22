@@ -14,8 +14,8 @@
 | 4 | `feat/auth-native-refresh-token` (BE) | Refresh token qua body cho client native | Đã merge (#213) |
 | 5 | `feat/mob-auth-store` | Auth store secure-store + refresh interceptor | Đã merge (#214) |
 | 6 | `feat/mob-file-cache` | File cache GLB/audio | Đã merge (#215) |
-| 7 | `feat/mob-cache-policy` | Hạn mức + dọn cache | PR mở |
-| 8 | `feat/mob-retry-error-boundary` | Retry/backoff + error boundary | Chưa làm |
+| 7 | `feat/mob-cache-policy` | Hạn mức + dọn cache | Đã merge (#216) |
+| 8 | `feat/mob-retry-error-boundary` | Retry/backoff + error boundary | PR mở |
 | 9 | `feat/mob-api-error-log` | Log lỗi API tập trung | Chưa làm |
 | 10 | `feat/mob-offline-banner` | Offline catalogue + banner | Chưa làm |
 | 11 | `feat/mob-cache-settings` | Quản lý cache trong Settings | Chưa làm |
@@ -96,3 +96,12 @@
 - Thêm `expo-image` (đúng tech-stack: "Ảnh: expo-image (cache sẵn)").
 - Chưa gộp: `glbCache` của TV4 có hạn mức riêng 150MB, không nằm trong `CACHE_LIMITS` (xem mục 6).
 - Kiểm chứng: typecheck, lint sạch; 8 test mới (`cache-policy.test.ts`: LRU, giữ file vừa tải, hạn mức theo loại, byte giải phóng, xóa cache ảnh) + 11 test file cache cũ pass.
+
+## 8. Retry/backoff + error boundary toàn cục
+
+- `src/core/api/retry.ts` (chuyển `shouldRetry` từ query-client sang): thử lại lỗi tạm thời (mất mạng, 5xx, 408, 429) tối đa 3 lần (trước là 2); `retryDelay` lũy thừa 1s→2s→4s… trần 30s, jitter trong [nửa khoảng, khoảng]; ưu tiên `Retry-After` của server; server bắt chờ > 30s thì báo lỗi luôn. Gắn vào `queryClient` (`retry`, `retryDelay`); mutation vẫn không retry (không idempotent).
+- `ApiException.retryAfterMs` đọc từ header `Retry-After` (số giây hoặc ngày HTTP) — `parseRetryAfter`.
+- `src/components/feedback/AppErrorFallback.tsx` + `export function ErrorBoundary` ở `app/_layout.tsx`: lỗi render ở bất kỳ màn nào → màn "Đã xảy ra sự cố" có nút Thử lại (re-render route) thay vì crash. Tự dựng theme theo hệ điều hành (có thể hiện ngoài ThemeProvider). Thông điệp thân thiện (mất mạng / lỗi chung), chi tiết lỗi chỉ hiện ở bản dev. A11y: tiêu đề `header`, lý do lỗi `alert` + live region, nút 48dp.
+- Lỗi query của react-query không ném lên boundary (mặc định `throwOnError: false`) → màn tự hiển thị trạng thái lỗi; boundary là lưới an toàn cuối cùng.
+- Gửi lỗi về Sentry: PR Sentry (MOB-E13-01).
+- Kiểm chứng: typecheck, lint sạch; 13 test mới (`retry.test.ts`: retry/backoff/Retry-After; `AppErrorFallback.test.tsx`: route ném lỗi qua `renderRouter` → hiện màn lỗi → Thử lại render lại). Expo web: app khởi động bình thường; route tạm ném lỗi → hiện màn lỗi, app không sập.

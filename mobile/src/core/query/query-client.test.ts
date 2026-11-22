@@ -1,32 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { QueryClient } from '@tanstack/react-query';
 import { persistQueryClientRestore, persistQueryClientSave } from '@tanstack/react-query-persist-client';
-import { ApiException, CANCELED_ERROR_CODE } from '@/core/api/api-error';
 import {
   QUERY_CACHE_STORAGE_KEY,
   createPersistOptions,
   createQueryClient,
-  shouldRetry,
 } from './query-client';
-
-describe('shouldRetry', () => {
-  it('thử lại lỗi tạm thời tối đa 2 lần', () => {
-    expect(shouldRetry(0, new ApiException('mất mạng', 0))).toBe(true);
-    expect(shouldRetry(1, new ApiException('lỗi server', 503))).toBe(true);
-    expect(shouldRetry(0, new ApiException('quá tải', 429))).toBe(true);
-    expect(shouldRetry(2, new ApiException('mất mạng', 0))).toBe(false);
-  });
-
-  it('không thử lại lỗi không phải HTTP (parse dữ liệu, bug)', () => {
-    expect(shouldRetry(0, new TypeError('Cannot read properties of undefined'))).toBe(false);
-  });
-
-  it('không thử lại lỗi 4xx và request bị hủy', () => {
-    expect(shouldRetry(0, new ApiException('không tìm thấy', 404))).toBe(false);
-    expect(shouldRetry(0, new ApiException('hết hạn', 401))).toBe(false);
-    expect(shouldRetry(0, new ApiException('hủy', 0, [{ code: CANCELED_ERROR_CODE, message: 'hủy' }]))).toBe(false);
-  });
-});
 
 describe('persist cache qua AsyncStorage', () => {
   // gcTime 7 ngày để lại timer; clear() hủy timer để Jest thoát được.
