@@ -13,8 +13,8 @@
 | 3 | `feat/mob-query-persist` | TanStack Query + persist AsyncStorage | Đã merge (#212) |
 | 4 | `feat/auth-native-refresh-token` (BE) | Refresh token qua body cho client native | Đã merge (#213) |
 | 5 | `feat/mob-auth-store` | Auth store secure-store + refresh interceptor | Đã merge (#214) |
-| 6 | `feat/mob-file-cache` | File cache GLB/audio | PR mở |
-| 7 | `feat/mob-cache-policy` | Hạn mức + dọn cache | Chưa làm |
+| 6 | `feat/mob-file-cache` | File cache GLB/audio | Đã merge (#215) |
+| 7 | `feat/mob-cache-policy` | Hạn mức + dọn cache | PR mở |
 | 8 | `feat/mob-retry-error-boundary` | Retry/backoff + error boundary | Chưa làm |
 | 9 | `feat/mob-api-error-log` | Log lỗi API tập trung | Chưa làm |
 | 10 | `feat/mob-offline-banner` | Offline catalogue + banner | Chưa làm |
@@ -85,3 +85,14 @@
 - Hạn mức + dọn LRU: PR 7 (Media/image cache policy).
 - Quan hệ với `features/scene3d/glbCache.ts` (TV4): cache đó nhận/trả `ArrayBuffer` qua base64 (cả file nằm trong bộ nhớ JS), thư mục riêng `aura-glb-cache/`, hạn mức riêng 150MB. Đề xuất TV4 chuyển `GlbCacheAdapter` sang dùng `fileCache` (kind `glb`, key = checksum) để có một nơi quản lý dung lượng; chưa sửa code TV4 trong PR này.
 - Kiểm chứng: typecheck, lint sạch; 11 test `file-cache.test.ts` (tải một lần, presigned URL, đồng thời, khởi động lại, LRU timestamp, HTTP lỗi không để file dở, mất mạng, file bị OS xóa, remove/clear/usage, khóa độc hại, web).
+
+## 7. Media/image cache policy + quản lý dung lượng
+
+- `src/core/cache/cache-policy.ts`:
+  - `CACHE_LIMITS`: GLB 500MB, audio 200MB (đề xuất, chỉnh khi có số liệu thiết bị).
+  - `selectEvictions(entries, limit, keep)`: LRU thuần — xóa file ít dùng gần đây nhất trước, vừa đủ về dưới hạn mức; không xóa file trong `keep`.
+  - `IMAGE_CACHE_POLICY = 'memory-disk'` cho `expo-image` (TV3 dùng khi hiển thị ảnh catalogue); `clearImageCache()` xóa RAM + đĩa. Không đo được dung lượng cache ảnh (expo-image không có API), hệ điều hành tự dọn khi thiếu chỗ.
+- `FileCache`: hạn mức theo loại (ghi đè qua `limits`), tự `enforceLimit(kind, keep)` sau mỗi lần tải — giữ file vừa tải kể cả khi riêng nó vượt hạn mức; hạn mức từng loại độc lập.
+- Thêm `expo-image` (đúng tech-stack: "Ảnh: expo-image (cache sẵn)").
+- Chưa gộp: `glbCache` của TV4 có hạn mức riêng 150MB, không nằm trong `CACHE_LIMITS` (xem mục 6).
+- Kiểm chứng: typecheck, lint sạch; 8 test mới (`cache-policy.test.ts`: LRU, giữ file vừa tải, hạn mức theo loại, byte giải phóng, xóa cache ảnh) + 11 test file cache cũ pass.
