@@ -12,8 +12,8 @@
 | 2 | `feat/mob-http-client` | axios http-client + unwrap + chuẩn hóa lỗi | Đã merge (#211) |
 | 3 | `feat/mob-query-persist` | TanStack Query + persist AsyncStorage | Đã merge (#212) |
 | 4 | `feat/auth-native-refresh-token` (BE) | Refresh token qua body cho client native | Đã merge (#213) |
-| 5 | `feat/mob-auth-store` | Auth store secure-store + refresh interceptor | PR mở |
-| 6 | `feat/mob-file-cache` | File cache GLB/audio | Chưa làm |
+| 5 | `feat/mob-auth-store` | Auth store secure-store + refresh interceptor | Đã merge (#214) |
+| 6 | `feat/mob-file-cache` | File cache GLB/audio | PR mở |
 | 7 | `feat/mob-cache-policy` | Hạn mức + dọn cache | Chưa làm |
 | 8 | `feat/mob-retry-error-boundary` | Retry/backoff + error boundary | Chưa làm |
 | 9 | `feat/mob-api-error-log` | Log lỗi API tập trung | Chưa làm |
@@ -72,4 +72,16 @@
 - `jest-setup.ts`: mock AsyncStorage toàn cục (mọi test import query-client cần).
 - Kiểm chứng: typecheck, lint sạch; 46 test core/config pass (token store 5, http-client auth 10, AuthProvider 7). Expo web: app khởi động, chuyển 4 tab, không lỗi auth/SecureStore.
 - Giới hạn: refresh không thành công giữa chừng (server đã xoay vòng nhưng phản hồi mất do rớt mạng) → token đã lưu thành token cũ, lần refresh sau bị coi là tái dùng → phải đăng nhập lại. Đăng nhập trên Expo web không chạy được (CORS chặn `X-Client`), chỉ test được trên emulator/thiết bị.
-- Phát hiện ngoài phạm vi: 2 test tích hợp GLB của TV4 (`glbLoader.integration.test.ts`, test AR placement) đọc file trong `back-end/public/media/uploads/` (gitignore) → lỗi trên mọi bản checkout không có file đó.
+- Phát hiện ngoài phạm vi: 2 test GLB của TV4 (`glbValidation.test.ts`, `ArArtifactPlacementView.test.tsx`) đọc file trong `back-end/public/media/uploads/` (gitignore) → lỗi trên mọi bản checkout không có file đó.
+
+## 6. File cache service (expo-file-system) cho GLB/audio
+
+- `src/core/cache/file-cache.ts`: `fileCache.getOrDownload(url, { kind: 'glb' | 'audio', key? })` → `{ uri: 'file://...', sizeBytes, fromCache }`; `get`, `remove`, `clear(kind?)`, `list`, `getUsage`.
+  - Tải thẳng xuống đĩa (`downloadAsync`, không qua bộ nhớ JS) vào file `.part` rồi đổi tên → không còn file tải dở.
+  - Gộp lời gọi đồng thời theo khóa (cả bước kiểm tra cache lẫn tải) → một file chỉ tải một lần.
+  - Khóa: `key` ổn định do caller truyền (checksum/id media); mặc định SHA-256 của URL đã bỏ query/hash (URL presigned đổi chữ ký mỗi lần). Khóa chỉ nhận `[A-Za-z0-9_-]` (chống ghi ra ngoài thư mục cache).
+  - Index JSON nằm trong thư mục cache (không dùng AsyncStorage như plan): hệ điều hành dọn cache thì index mất theo, không lệch; file bị xóa ngoài ý muốn → tải lại. Ghi index tuần tự (khóa promise).
+  - Lỗi tải → `ApiException` (HTTP status, mất mạng = 0). Expo web không có file system → trả URL gốc.
+- Hạn mức + dọn LRU: PR 7 (Media/image cache policy).
+- Quan hệ với `features/scene3d/glbCache.ts` (TV4): cache đó nhận/trả `ArrayBuffer` qua base64 (cả file nằm trong bộ nhớ JS), thư mục riêng `aura-glb-cache/`, hạn mức riêng 150MB. Đề xuất TV4 chuyển `GlbCacheAdapter` sang dùng `fileCache` (kind `glb`, key = checksum) để có một nơi quản lý dung lượng; chưa sửa code TV4 trong PR này.
+- Kiểm chứng: typecheck, lint sạch; 11 test `file-cache.test.ts` (tải một lần, presigned URL, đồng thời, khởi động lại, LRU timestamp, HTTP lỗi không để file dở, mất mạng, file bị OS xóa, remove/clear/usage, khóa độc hại, web).
