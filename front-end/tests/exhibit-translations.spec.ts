@@ -55,7 +55,8 @@ test.describe('Khách: đổi ngôn ngữ và fallback', () => {
 
     await language.selectOption('ko');
     await expect(page.getByRole('heading', { name: '꽃병', level: 1 })).toBeVisible();
-    await expect(page.getByText('Mô tả hiện vật 1')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Câu chuyện hiện vật' })
+      .getByText('Mô tả hiện vật 1', { exact: true })).toBeVisible();
     await expect(page.getByText('한국어 해설')).toBeVisible();
     await expect(page.getByText('입구')).toBeVisible();
     await expect(page.getByText('Thân', { exact: true })).toBeVisible();
