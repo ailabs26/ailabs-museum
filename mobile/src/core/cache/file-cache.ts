@@ -1,6 +1,7 @@
 import * as Crypto from 'expo-crypto';
 import * as FileSystem from 'expo-file-system';
 import { ApiException, NETWORK_ERROR_STATUS } from '@/core/api/api-error';
+import { CACHE_LIMITS, selectEvictions } from './cache-policy';
 
 /**
  * Cache file cho media lớn (GLB, audio) trên thiết bị — MOB-E3-05.
@@ -9,7 +10,7 @@ import { ApiException, NETWORK_ERROR_STATUS } from '@/core/api/api-error';
  *   không bao giờ còn file tải dở trong cache.
  * - Nhiều lời gọi cùng lúc cho một file chỉ tải một lần.
  * - Index (JSON) nằm cùng thư mục cache: hệ điều hành dọn `cacheDirectory` thì index mất theo, không lệch.
- * - Giới hạn dung lượng + dọn LRU: task Media/image cache policy (MOB-E3-06).
+ * - Sau mỗi lần tải, dọn file ít dùng nhất nếu loại đó vượt hạn mức (`cache-policy.ts`, MOB-E3-06).
  *
  * Web (Expo web, chỉ dùng khi dev) không có file system: trả thẳng URL gốc, không cache.
  */
@@ -72,14 +73,18 @@ const entryId = (kind: CacheKind, key: string) => `${kind}:${key}`;
 export class FileCache {
   private readonly root: string | null;
   private readonly now: () => number;
+  private readonly limits: Readonly<Record<CacheKind, number>>;
   private readonly pending = new Map<string, Promise<CachedFileResult>>();
   /** Ghi index tuần tự: hai thao tác song song không làm mất cập nhật của nhau. */
   private indexLock: Promise<unknown> = Promise.resolve();
 
-  constructor(options: { rootDir?: string | null; now?: () => number } = {}) {
+  constructor(
+    options: { rootDir?: string | null; now?: () => number; limits?: Partial<Record<CacheKind, number>> } = {},
+  ) {
     const base = options.rootDir === undefined ? FileSystem.cacheDirectory : options.rootDir;
     this.root = base ? `${base.endsWith('/') ? base : `${base}/`}${ROOT_DIR_NAME}` : null;
     this.now = options.now ?? Date.now;
+    this.limits = { ...CACHE_LIMITS, ...options.limits };
   }
 
   /** Có cache trên đĩa không (false trên web). */
@@ -204,7 +209,15 @@ export class FileCache {
     await this.updateIndex((index) => {
       index.entries[entryId(kind, key)] = entry;
     });
+    await this.enforceLimit(kind, key);
     return entry;
+  }
+
+  /** Xóa file ít dùng nhất của `kind` tới khi về dưới hạn mức; giữ file `keep` vừa tải. Trả số byte đã giải phóng. */
+  async enforceLimit(kind: CacheKind, keep?: string): Promise<number> {
+    const victims = selectEvictions(await this.list(kind), this.limits[kind], keep ? [keep] : []);
+    for (const victim of victims) await this.remove(kind, victim.key);
+    return victims.reduce((sum, victim) => sum + victim.sizeBytes, 0);
   }
 
   private indexPath(): string {
