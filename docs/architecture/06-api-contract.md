@@ -65,9 +65,9 @@ Cơ chế phiên, thu hồi và rate limit: [05 — Bảo mật](05-security-rba
 
 | Route | Body / kết quả | Ghi chú | Audit |
 |---|---|---|---|
-| `POST /auth/login` | `{ email, password }` → `{ accessToken, user }` + cookie refresh | 401 sai/khóa; 429 khi vượt ngưỡng | — |
-| `POST /auth/refresh` | cookie → `{ accessToken }` + cookie mới | xoay vòng; 401 thì xóa cookie; chặn Origin lạ (403) | — |
-| `POST /auth/logout` | cookie → `null` | thu hồi family hiện tại, xóa cookie; gọi lại vẫn 200 | — |
+| `POST /auth/login` | `{ email, password }` → `{ accessToken, user }` + cookie refresh | 401 sai/khóa; 429 khi vượt ngưỡng; `X-Client: mobile` → thêm `refreshToken` trong body, không set cookie | — |
+| `POST /auth/refresh` | cookie → `{ accessToken }` + cookie mới | xoay vòng; 401 thì xóa cookie; chặn Origin lạ (403); `X-Client: mobile`: body `{ refreshToken }` → `{ accessToken, refreshToken }`, bỏ qua cookie | — |
+| `POST /auth/logout` | cookie → `null` | thu hồi family hiện tại, xóa cookie; gọi lại vẫn 200; `X-Client: mobile`: body `{ refreshToken }` | — |
 | `PATCH /auth/me` | `{ displayName }` (trim, 1–160) → AuthUser | chỉ sửa tên hiển thị của chính mình; gửi kèm trường khác → 400 | `auth.profile_update` |
 | `POST /auth/change-password` | `{ currentPassword, newPassword }` → `{ id }` | mới 8–128 ký tự, khác cũ; sai mật khẩu hiện tại → **400** gắn field `currentPassword` (không dùng 401 để FE không đăng xuất); 409 nếu Admin vừa đặt lại; đăng xuất mọi thiết bị khác | `auth.password_change` |
 | `GET /auth/sessions` | → `[{ id, userAgent, ip, signedInAt, lastActiveAt, expiresAt, current }]` | `id` = family; mỗi dòng một thiết bị còn đăng nhập | — |

@@ -35,6 +35,8 @@ Không commit `.env`. Các biến (tạo file `.env` cục bộ hoặc đặt qu
 | --- | --- | --- |
 | `APP_ENV` | `development` \| `staging` \| `production` | Chọn môi trường; quyết định API mặc định |
 | `EXPO_PUBLIC_API_URL` | URL | Ghi đè API base URL (tùy chọn) |
+| `EXPO_PUBLIC_SENTRY_DSN` | DSN | Bật Sentry (đặt qua EAS secret); rỗng thì không khởi tạo |
+| `EXPO_PUBLIC_FLAG_<TÊN>` | `true` \| `false` | Ghi đè feature flag: `SCENE3D`, `AR`, `ANALYTICS`, `OFFLINE_PREFETCH` (mặc định theo `APP_ENV`, xem `src/config/feature-flags.ts`) |
 
 `app.config.ts` đọc các biến này và đưa vào `extra`; code đọc qua `src/config/env.ts`.
 
@@ -51,7 +53,7 @@ mobile/
     theme/                   design tokens + ThemeProvider (dark mode)
     components/layout/        Screen (SafeArea), AppHeader
     hooks/                   useReducedMotion
-    config/                  env runtime
+    config/                  env runtime + feature flags (isFeatureEnabled)
   app.config.ts              cấu hình động theo APP_ENV
   eas.json                   build/submit profiles
 ```

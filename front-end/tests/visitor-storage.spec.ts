@@ -58,6 +58,6 @@ test('history restores at most twenty valid refs and corrupt reading preferences
   expect(refs).toHaveLength(20);
   expect(refs[0]).toEqual({ roomId: roomA.id, exhibitId: roomA.exhibits[0].id });
   expect(refs.at(-1).exhibitId).toBe('10000000-0000-4000-8000-000000000020');
-  await page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true }).click();
+  await page.getByRole('link', { name: /Quay lại bộ sưu tập của phòng này/ }).click();
   await expect(page.getByRole('region', { name: 'Đã xem gần đây' }).getByRole('link')).toHaveCount(5);
 });

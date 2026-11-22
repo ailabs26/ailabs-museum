@@ -10,7 +10,7 @@ export function ReadingControls() {
   const changeScale = (step: number) => readingStore.update(current => ({
     ...current, fontScale: Math.max(1, Math.min(1.5, Math.round((current.fontScale + step) * 10) / 10)),
   }));
-  return <Paper component="section" aria-label={t('ui.reading.aria', 'Tùy chọn đọc hiện vật')} p="md" radius="md" withBorder mb="lg">
+  return <Paper component="section" aria-label={t('ui.reading.aria', 'Tùy chọn đọc hiện vật')} p="md" radius="md" withBorder>
     <Group>
       <Button variant={value.enabled ? 'light' : 'default'} aria-pressed={value.enabled}
         onClick={() => readingStore.update(current => ({ ...current, enabled: !current.enabled }))}>{t('ui.reading.mode', 'Chế độ đọc')}</Button>

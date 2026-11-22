@@ -10,7 +10,7 @@ test('recent exhibits link to the right room, deduplicate after reload and can b
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(room.exhibits[0].name);
   }
   await page.reload();
-  await page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true }).click();
+  await page.getByRole('link', { name: /Quay lại bộ sưu tập của phòng này/ }).click();
   const recent = page.getByRole('region', { name: 'Đã xem gần đây' });
   await expect(recent).toBeVisible({ timeout: 3000 });
   const links = recent.getByRole('link');
@@ -19,7 +19,7 @@ test('recent exhibits link to the right room, deduplicate after reload and can b
   await expect(links.nth(1)).toHaveAttribute('href', `/collection/ceramics/exhibits/${roomB.exhibits[0].id}`);
   await links.nth(1).press('Enter');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(roomB.exhibits[0].name);
-  await page.getByRole('link', { name: 'Quay lại bộ sưu tập của phòng này', exact: true }).click();
+  await page.getByRole('link', { name: /Quay lại bộ sưu tập của phòng này/ }).click();
   await recent.getByRole('button', { name: 'Xóa lịch sử' }).click();
   await expect(recent.getByText('Chưa có hiện vật đã xem.')).toBeVisible();
   await page.reload();

@@ -11,6 +11,11 @@
   `POST /auth/change-password`, `GET /auth/sessions`, `DELETE /auth/sessions/:id`,
   `POST /auth/sessions/revoke-others`, `POST /auth/logout-all` (chi tiết: [06 — API](06-api-contract.md)).
 - Nhiều tab refresh đồng thời: khóa mềm (single-flight) ở FE `http-client` để tránh đăng xuất nhầm.
+- **Client native (app mobile):** gửi header `X-Client: mobile` → `login`, `login/2fa`, `refresh` trả `refreshToken`
+  trong body (không set cookie); `refresh`/`logout` nhận `{ refreshToken }` trong body và bỏ qua cookie. App lưu token
+  bằng secure storage của thiết bị. Thiếu header thì body bị bỏ qua, trình duyệt luôn đi đường cookie. `X-Client`
+  không nằm trong CORS `allowedHeaders` nên trang web khác không gửi được (preflight bị chặn); xoay vòng, reuse-detection,
+  rate limit và audit giữ nguyên như web.
 
 ```mermaid
 sequenceDiagram
