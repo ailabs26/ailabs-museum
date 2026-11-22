@@ -12,6 +12,7 @@ import {
   sessionTokensSchema,
 } from '@/core/auth/auth-schema';
 import { tokenStore } from '@/core/auth/token-store';
+import { apiErrorLog, toApiErrorRecord } from '@/core/observability/api-error-log';
 import type { ApiResponse, Page } from './api-response';
 import { ApiException, endsSession, toApiException } from './api-error';
 
@@ -36,6 +37,8 @@ type SessionRequestConfig = InternalAxiosRequestConfig & {
   _sessionId?: number;
   /** Access token đã gửi kèm request. */
   _accessToken?: string | null;
+  /** Thời điểm gửi lần gần nhất — để log thời lượng lỗi. */
+  _startedAt?: number;
 };
 
 /** Endpoint đăng nhập/làm mới/đăng xuất: không gắn Bearer, 401 của chúng không kích hoạt refresh. */
@@ -45,6 +48,7 @@ function isAuthEndpoint(url: string | undefined): boolean {
 
 client.interceptors.request.use((config: SessionRequestConfig) => {
   config._sessionId ??= tokenStore.getSessionId();
+  config._startedAt = Date.now();
   const token = isAuthEndpoint(config.url) ? null : tokenStore.getAccessToken();
   config._accessToken = token;
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -83,6 +87,30 @@ function refreshAccessToken(): Promise<string> {
   return refreshing;
 }
 
+// Một lỗi chỉ ghi log một lần: request gửi lại sau refresh trả về đúng exception đã ghi ở lượt trong.
+const loggedErrors = new WeakSet<ApiException>();
+
+/** Chuẩn hóa lỗi, ghi log lỗi API tập trung (MOB-E13-03), rồi reject. Request bị hủy không phải lỗi, không ghi. */
+function fail(error: unknown, config: SessionRequestConfig | undefined): Promise<never> {
+  const exception = toApiException(error);
+  if (config && !exception.isCanceled && !loggedErrors.has(exception)) {
+    loggedErrors.add(exception);
+    const requestId = isAxiosError(error) ? error.response?.headers?.['x-request-id'] : undefined;
+    apiErrorLog.record(
+      toApiErrorRecord(
+        {
+          method: config.method,
+          url: config.url,
+          startedAt: config._startedAt,
+          requestId: typeof requestId === 'string' ? requestId : null,
+        },
+        exception,
+      ),
+    );
+  }
+  return Promise.reject(exception);
+}
+
 client.interceptors.response.use(
   (response) => response,
   async (error: unknown) => {
@@ -104,14 +132,14 @@ client.interceptors.response.use(
           if (!current || current === original._accessToken) await refreshAccessToken();
           if (original._sessionId === tokenStore.getSessionId()) return await client(original);
         } catch (retryError) {
-          return Promise.reject(toApiException(retryError));
+          return fail(retryError, original);
         }
       } else if (original._accessToken === tokenStore.getAccessToken()) {
         // Vừa làm mới mà vẫn 401: phiên không còn hiệu lực, không lặp refresh vô hạn.
         await tokenStore.clear();
       }
     }
-    return Promise.reject(toApiException(error));
+    return fail(error, original);
   },
 );
 

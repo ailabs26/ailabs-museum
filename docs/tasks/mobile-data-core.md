@@ -15,8 +15,8 @@
 | 5 | `feat/mob-auth-store` | Auth store secure-store + refresh interceptor | Đã merge (#214) |
 | 6 | `feat/mob-file-cache` | File cache GLB/audio | Đã merge (#215) |
 | 7 | `feat/mob-cache-policy` | Hạn mức + dọn cache | Đã merge (#216) |
-| 8 | `feat/mob-retry-error-boundary` | Retry/backoff + error boundary | PR mở |
-| 9 | `feat/mob-api-error-log` | Log lỗi API tập trung | Chưa làm |
+| 8 | `feat/mob-retry-error-boundary` | Retry/backoff + error boundary | Đã merge (#217) |
+| 9 | `feat/mob-api-error-log` | Log lỗi API tập trung | PR mở |
 | 10 | `feat/mob-offline-banner` | Offline catalogue + banner | Chưa làm |
 | 11 | `feat/mob-cache-settings` | Quản lý cache trong Settings | Chưa làm |
 | 12 | `feat/mob-room-prefetch` | Prefetch phòng (chờ roomsApi của TV3) | Chưa làm |
@@ -105,3 +105,11 @@
 - Lỗi query của react-query không ném lên boundary (mặc định `throwOnError: false`) → màn tự hiển thị trạng thái lỗi; boundary là lưới an toàn cuối cùng.
 - Gửi lỗi về Sentry: PR Sentry (MOB-E13-01).
 - Kiểm chứng: typecheck, lint sạch; 13 test mới (`retry.test.ts`: retry/backoff/Retry-After; `AppErrorFallback.test.tsx`: route ném lỗi qua `renderRouter` → hiện màn lỗi → Thử lại render lại). Expo web: app khởi động bình thường; route tạm ném lỗi → hiện màn lỗi, app không sập.
+
+## 9. Log API lỗi tập trung
+
+- `src/core/observability/api-error-log.ts`: `apiErrorLog` — bộ đệm vòng 50 lỗi gần nhất (`getRecent`), tổng hợp theo method + endpoint + status (`getSummary`), sink cắm thêm (`addSink`; console khi dev, Sentry ở PR Sentry). Sink lỗi không làm hỏng luồng gọi API.
+- Bản ghi: thời điểm, method, endpoint đã chuẩn hóa (`/rooms/:id` — bỏ origin, query, hash; UUID/số/hex dài → `:id`), status (0 = mất mạng), mã lỗi đầu tiên của back-end, message, thời lượng, `X-Request-Id` (đối chiếu log server). Không ghi body, header, query, token.
+- `http-client`: mọi lỗi đi qua `fail()` → chuẩn hóa + ghi log một lần (WeakSet, request gửi lại sau refresh không ghi trùng); request bị hủy không ghi; 401 được refresh xử lý êm thì không ghi.
+- Ngoài phạm vi: `features/scene3d/publicRoomApi.ts` (TV4) gọi `fetch` trực tiếp nên lỗi của nó không vào log — nên chuyển sang `http`.
+- Kiểm chứng: typecheck, lint sạch; 9 test mới (chuẩn hóa endpoint, bộ đệm vòng, tổng hợp, sink lỗi; tích hợp http-client: request id, mất mạng/hủy, refresh êm không ghi, không ghi trùng, không lộ token/body/query).
