@@ -16,6 +16,12 @@ export const QUERY_STALE_TIME_MS = 5 * 60 * 1000;
 export const QUERY_CACHE_STORAGE_KEY = 'aura.query-cache';
 const MAX_RETRIES = 2;
 
+/**
+ * Tiền tố key cho dữ liệu riêng của người dùng đã đăng nhập (vd `['session', 'reports']`).
+ * Không bao giờ ghi ra đĩa và bị xóa khi đăng xuất; dữ liệu public giữ lại để xem offline.
+ */
+export const SESSION_QUERY_KEY = ['session'] as const;
+
 /** Dữ liệu nhạy cảm (vd hồ sơ người dùng) đặt `meta: { persist: false }` để không ghi ra đĩa. */
 declare module '@tanstack/react-query' {
   interface Register {
@@ -29,13 +35,14 @@ declare module '@tanstack/react-query' {
  */
 export function shouldRetry(failureCount: number, error: unknown): boolean {
   // http-client luôn ném ApiException; lỗi khác (parse dữ liệu, bug) thử lại cũng không khỏi.
-  if (failureCount >= MAX_RETRIES || !(error instanceof ApiException) || error.isCanceled) return false;
+  if (failureCount >= MAX_RETRIES || !(error instanceof ApiException) || error.isCanceled)
+    return false;
   const { status } = error;
   return error.isNetworkError || status >= 500 || status === 408 || status === 429;
 }
 
 export function createQueryClient(): QueryClient {
-  return new QueryClient({
+  const client = new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: QUERY_STALE_TIME_MS,
@@ -45,6 +52,8 @@ export function createQueryClient(): QueryClient {
       mutations: { retry: false },
     },
   });
+  client.setQueryDefaults(SESSION_QUERY_KEY, { meta: { persist: false } });
+  return client;
 }
 
 /** Client dùng chung toàn app (auth cần gọi `queryClient.clear()` khi đăng xuất). */
@@ -60,7 +69,11 @@ export function createPersistOptions(
   buster = Constants.expoConfig?.version ?? 'dev',
 ): Omit<PersistQueryClientOptions, 'queryClient'> {
   return {
-    persister: createAsyncStoragePersister({ storage, key: QUERY_CACHE_STORAGE_KEY, throttleTime: 1000 }),
+    persister: createAsyncStoragePersister({
+      storage,
+      key: QUERY_CACHE_STORAGE_KEY,
+      throttleTime: 1000,
+    }),
     maxAge: PERSIST_MAX_AGE_MS,
     // Đổi phiên bản app -> bỏ cache cũ (cấu trúc dữ liệu có thể đã đổi).
     buster,

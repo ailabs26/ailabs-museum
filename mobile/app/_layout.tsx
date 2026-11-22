@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider } from '@/core/auth/AuthProvider';
 import { QueryProvider } from '@/core/query/QueryProvider';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
@@ -12,30 +13,32 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryProvider>
-        <ThemeProvider>
-          <StatusBar style="light" />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="room/[slug]" options={{ headerShown: true, title: 'Phòng' }} />
-            <Stack.Screen
-              name="spike-3d"
-              options={{ headerShown: true, title: 'Spike 3D (MOB-E6-01)' }}
-            />
-            <Stack.Screen
-              name="glb-preview"
-              options={{ headerShown: true, title: 'GLB Cache Preview (MOB-E6-02)' }}
-            />
-            <Stack.Screen
-              name="spike-ar"
-              options={{ headerShown: true, title: 'Spike AR (MOB-E9-01)' }}
-            />
-            <Stack.Screen
-              name="ar-exhibit"
-              options={{ headerShown: true, title: 'AR Hiện vật & Hotspot (MOB-E9)' }}
-            />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <StatusBar style="light" />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="room/[slug]" options={{ headerShown: true, title: 'Phòng' }} />
+              <Stack.Screen
+                name="spike-3d"
+                options={{ headerShown: true, title: 'Spike 3D (MOB-E6-01)' }}
+              />
+              <Stack.Screen
+                name="glb-preview"
+                options={{ headerShown: true, title: 'GLB Cache Preview (MOB-E6-02)' }}
+              />
+              <Stack.Screen
+                name="spike-ar"
+                options={{ headerShown: true, title: 'Spike AR (MOB-E9-01)' }}
+              />
+              <Stack.Screen
+                name="ar-exhibit"
+                options={{ headerShown: true, title: 'AR Hiện vật & Hotspot (MOB-E9)' }}
+              />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+          </ThemeProvider>
+        </AuthProvider>
       </QueryProvider>
     </SafeAreaProvider>
   );

@@ -11,8 +11,8 @@
 | 1 | `feat/mob-config-feature-flags` | Config/env + feature flags | Đã merge (#210) |
 | 2 | `feat/mob-http-client` | axios http-client + unwrap + chuẩn hóa lỗi | Đã merge (#211) |
 | 3 | `feat/mob-query-persist` | TanStack Query + persist AsyncStorage | Đã merge (#212) |
-| 4 | `feat/auth-native-refresh-token` (BE) | Refresh token qua body cho client native | PR mở |
-| 5 | `feat/mob-auth-store` | Auth store secure-store + refresh interceptor | Chưa làm |
+| 4 | `feat/auth-native-refresh-token` (BE) | Refresh token qua body cho client native | Đã merge (#213) |
+| 5 | `feat/mob-auth-store` | Auth store secure-store + refresh interceptor | PR mở |
 | 6 | `feat/mob-file-cache` | File cache GLB/audio | Chưa làm |
 | 7 | `feat/mob-cache-policy` | Hạn mức + dọn cache | Chưa làm |
 | 8 | `feat/mob-retry-error-boundary` | Retry/backoff + error boundary | Chưa làm |
@@ -61,3 +61,15 @@
 - `X-Client` không mở trong CORS → trang web khác không dùng được nhánh body. Xoay vòng, reuse-detection, rate limit, audit, `RefreshCookieOriginGuard` giữ nguyên (native không gửi Origin).
 - Docs: `docs/architecture/05-security-rbac.md` §5.1, `06-api-contract.md` bảng auth.
 - Kiểm chứng: `back-end` typecheck, lint; `auth-controller-http.spec.ts` 12/12 (6 test mới: login/refresh/logout native, bỏ qua cookie, body sai → 400, web bỏ qua body); `npm run test:core` 401/401.
+
+## 5. Auth store (secure-store) + JWT access/refresh interceptor
+
+- `src/core/auth/token-store.ts`: access token chỉ trong bộ nhớ; refresh token trong bộ nhớ + `expo-secure-store` (Expo web: chỉ bộ nhớ). `sessionId` đổi khi đăng nhập/đăng xuất, giữ nguyên khi xoay vòng.
+- `src/core/auth/auth-schema.ts`, `auth-api.ts`: schema zod (login/2fa trả `refreshToken`), `authApi.login/loginTwoFactor/logout/me`; header `X-Client: mobile` chỉ gắn cho request auth (gắn toàn cục thì Expo web bị CORS chặn ở endpoint public).
+- `src/core/api/http-client.ts`: gắn Bearer (trừ endpoint auth); 401 → refresh single-flight (body `{ refreshToken }`) → gửi lại 1 lần; refresh 401 hoặc vẫn 401 sau khi làm mới → kết thúc phiên; 429/5xx/mất mạng giữ phiên; đăng xuất trong lúc refresh → bỏ token trả về. `http.waitForRefresh()` cho đăng xuất.
+- `src/core/auth/AuthProvider.tsx` + `useAuth`: trạng thái `restoring | signedIn | signedOut | unverified` (có phiên nhưng chưa xác minh được do mất mạng — giữ phiên, `retryRestore`), `login` (trả `mfaToken` nếu bật 2FA), `completeTwoFactor`, `logout` (xóa token cục bộ trước, thu hồi trên server nếu có mạng). Gắn vào `app/_layout.tsx`.
+- Quy ước query: dữ liệu riêng người dùng dùng key `['session', ...]` (`SESSION_QUERY_KEY`) — không ghi ra đĩa, bị xóa khi đăng xuất; dữ liệu public giữ lại để xem offline.
+- `jest-setup.ts`: mock AsyncStorage toàn cục (mọi test import query-client cần).
+- Kiểm chứng: typecheck, lint sạch; 46 test core/config pass (token store 5, http-client auth 10, AuthProvider 7). Expo web: app khởi động, chuyển 4 tab, không lỗi auth/SecureStore.
+- Giới hạn: refresh không thành công giữa chừng (server đã xoay vòng nhưng phản hồi mất do rớt mạng) → token đã lưu thành token cũ, lần refresh sau bị coi là tái dùng → phải đăng nhập lại. Đăng nhập trên Expo web không chạy được (CORS chặn `X-Client`), chỉ test được trên emulator/thiết bị.
+- Phát hiện ngoài phạm vi: 2 test tích hợp GLB của TV4 (`glbLoader.integration.test.ts`, test AR placement) đọc file trong `back-end/public/media/uploads/` (gitignore) → lỗi trên mọi bản checkout không có file đó.
