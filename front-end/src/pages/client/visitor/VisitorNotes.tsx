@@ -17,7 +17,7 @@ export function VisitorNotes({ target }: { target: VisitorExhibitRef }) {
     const others = entries.filter(item => !isSameExhibit(item, target));
     return nextText ? [...others, { ...target, text: nextText }] : others;
   });
-  return <Paper component="section" aria-label={t('ui.notes.aria', 'Ghi chú riêng')} withBorder radius="md" p="md" mt="xl">
+  return <Paper component="section" aria-label={t('ui.notes.aria', 'Ghi chú riêng')} withBorder radius="md" p="md">
     <Textarea ref={inputRef} label={t('ui.notes.label', 'Ghi chú của bạn')} description={t('ui.notes.description', 'Ghi chú chỉ được lưu trên trình duyệt này')}
       value={text} maxLength={2000} autosize minRows={3} maxRows={8} disabled={isFull}
       onChange={event => save(event.currentTarget.value)} />
