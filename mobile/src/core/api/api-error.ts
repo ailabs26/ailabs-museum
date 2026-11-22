@@ -11,12 +11,15 @@ export const CANCELED_ERROR_CODE = 'CANCELED';
 export class ApiException extends Error {
   readonly status: number;
   readonly errors: ApiError[];
+  /** Thời gian server yêu cầu chờ trước khi thử lại (header `Retry-After` của 429/503); null nếu không có. */
+  readonly retryAfterMs: number | null;
 
-  constructor(message: string, status: number, errors: ApiError[] = []) {
+  constructor(message: string, status: number, errors: ApiError[] = [], retryAfterMs: number | null = null) {
     super(message);
     this.name = 'ApiException';
     this.status = status;
     this.errors = errors;
+    this.retryAfterMs = retryAfterMs;
   }
 
   /** Request bị hủy chủ động — không phải lỗi, không retry, không log. */
@@ -38,6 +41,15 @@ export class ApiException extends Error {
   }
 }
 
+/** `Retry-After` là số giây hoặc ngày HTTP; trả mili giây (>= 0) hoặc null nếu không đọc được. */
+export function parseRetryAfter(value: unknown, now = Date.now()): number | null {
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds)) return seconds >= 0 ? seconds * 1000 : null;
+  const date = Date.parse(value);
+  return Number.isNaN(date) ? null : Math.max(0, date - now);
+}
+
 function isEnvelope(body: unknown): body is ApiResponse<unknown> {
   return typeof body === 'object' && body !== null && 'success' in body;
 }
@@ -54,14 +66,15 @@ export function toApiException(error: unknown): ApiException {
   }
   const status = error.response?.status ?? NETWORK_ERROR_STATUS;
   const body: unknown = error.response?.data;
+  const retryAfterMs = parseRetryAfter(error.response?.headers?.['retry-after']);
   if (isEnvelope(body)) {
-    return new ApiException(body.message ?? 'Đã xảy ra lỗi', status, body.errors ?? []);
+    return new ApiException(body.message ?? 'Đã xảy ra lỗi', status, body.errors ?? [], retryAfterMs);
   }
   if (status === NETWORK_ERROR_STATUS) {
     const timedOut = error.code === AxiosError.ECONNABORTED || error.code === AxiosError.ETIMEDOUT;
     return new ApiException(timedOut ? 'Máy chủ phản hồi quá lâu' : 'Không kết nối được máy chủ', NETWORK_ERROR_STATUS);
   }
-  return new ApiException(error.message || 'Đã xảy ra lỗi', status);
+  return new ApiException(error.message || 'Đã xảy ra lỗi', status, [], retryAfterMs);
 }
 
 /**
