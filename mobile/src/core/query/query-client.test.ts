@@ -9,10 +9,6 @@ import {
   shouldRetry,
 } from './query-client';
 
-jest.mock('@react-native-async-storage/async-storage', () =>
-  jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'),
-);
-
 describe('shouldRetry', () => {
   it('thử lại lỗi tạm thời tối đa 2 lần', () => {
     expect(shouldRetry(0, new ApiException('mất mạng', 0))).toBe(true);
