@@ -2,7 +2,11 @@ import { focusManager } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect, useState, type ReactNode } from 'react';
 import { AppState, Platform } from 'react-native';
+import { bindOnlineManagerToNetInfo } from '@/core/network/online-status';
 import { createPersistOptions, queryClient } from './query-client';
+
+// Native: query biết khi nào mất/có mạng để tạm dừng/tự tải lại (MOB-E12-01). Web có sẵn sự kiện online/offline.
+if (Platform.OS !== 'web') bindOnlineManagerToNetInfo();
 
 /**
  * Bọc app bằng react-query có lưu cache (MOB-E3-02).
