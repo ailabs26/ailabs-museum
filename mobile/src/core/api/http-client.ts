@@ -1,7 +1,19 @@
-import { create, type AxiosRequestConfig, type AxiosResponse } from 'axios';
+import {
+  create,
+  isAxiosError,
+  type AxiosRequestConfig,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from 'axios';
 import { appConfig } from '@/config/env';
+import {
+  NATIVE_CLIENT_HEADERS,
+  parseAuthResponse,
+  sessionTokensSchema,
+} from '@/core/auth/auth-schema';
+import { tokenStore } from '@/core/auth/token-store';
 import type { ApiResponse, Page } from './api-response';
-import { toApiException } from './api-error';
+import { ApiException, endsSession, toApiException } from './api-error';
 
 /** Mạng di động chập chờn: đủ lâu cho 3G, không treo màn hình vô hạn. */
 export const REQUEST_TIMEOUT_MS = 15_000;
@@ -9,7 +21,7 @@ export const REQUEST_TIMEOUT_MS = 15_000;
 /**
  * Axios instance dùng chung cho mọi service (MOB-E3-01).
  * Mọi lỗi được chuẩn hóa thành `ApiException` ngay tại interceptor, nên tầng trên chỉ cần bắt một kiểu.
- * Interceptor auth (Bearer + refresh) gắn thêm ở `core/auth` (MOB-E3-03).
+ * Gắn Bearer và tự làm mới access token khi gặp 401 (MOB-E3-03).
  */
 const client = create({
   baseURL: appConfig.apiUrl,
@@ -17,9 +29,90 @@ const client = create({
   headers: { Accept: 'application/json' },
 });
 
+type SessionRequestConfig = InternalAxiosRequestConfig & {
+  /** Đã thử lại một lần sau khi làm mới token. */
+  _retried?: boolean;
+  /** Phiên lúc gửi request — phiên đổi (đăng xuất/đăng nhập lại) thì không retry. */
+  _sessionId?: number;
+  /** Access token đã gửi kèm request. */
+  _accessToken?: string | null;
+};
+
+/** Endpoint đăng nhập/làm mới/đăng xuất: không gắn Bearer, 401 của chúng không kích hoạt refresh. */
+function isAuthEndpoint(url: string | undefined): boolean {
+  return /\/auth\/(login|refresh|logout)(?:[/?#]|$)/.test(url ?? '');
+}
+
+client.interceptors.request.use((config: SessionRequestConfig) => {
+  config._sessionId ??= tokenStore.getSessionId();
+  const token = isAuthEndpoint(config.url) ? null : tokenStore.getAccessToken();
+  config._accessToken = token;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  else config.headers.delete('Authorization');
+  return config;
+});
+
+// Single-flight: nhiều request 401 cùng lúc chỉ gọi /auth/refresh một lần (gửi trùng token = back-end coi là tái dùng).
+let refreshing: Promise<string> | null = null;
+
+function refreshAccessToken(): Promise<string> {
+  refreshing ??= (async () => {
+    const session = tokenStore.getSessionId();
+    const refreshToken = tokenStore.getRefreshToken();
+    if (!refreshToken) throw new ApiException('Phiên đăng nhập đã kết thúc', 401);
+    try {
+      const res = await client.post<ApiResponse<unknown>>(
+        '/auth/refresh',
+        { refreshToken },
+        { headers: NATIVE_CLIENT_HEADERS },
+      );
+      const tokens = parseAuthResponse(sessionTokensSchema, res.data?.data);
+      // Đăng xuất/đăng nhập lại trong lúc refresh đang chạy: bỏ token trả về.
+      if (session !== tokenStore.getSessionId())
+        throw new ApiException('Phiên đăng nhập đã thay đổi', 401);
+      await tokenStore.rotate(tokens);
+      return tokens.accessToken;
+    } catch (error) {
+      // Chỉ 401 mới là hết phiên; 429/5xx/mất mạng giữ refresh token để lần sau thử lại.
+      if (endsSession(error) && session === tokenStore.getSessionId()) await tokenStore.clear();
+      throw toApiException(error);
+    }
+  })().finally(() => {
+    refreshing = null;
+  });
+  return refreshing;
+}
+
 client.interceptors.response.use(
   (response) => response,
-  (error: unknown) => Promise.reject(toApiException(error)),
+  async (error: unknown) => {
+    const original = (isAxiosError(error) ? error.config : undefined) as
+      SessionRequestConfig | undefined;
+    const status = isAxiosError(error) ? error.response?.status : undefined;
+    if (
+      status === 401 &&
+      original &&
+      !isAuthEndpoint(original.url) &&
+      original._sessionId === tokenStore.getSessionId() &&
+      tokenStore.hasSession()
+    ) {
+      if (!original._retried) {
+        original._retried = true;
+        try {
+          // 401 đến muộn sau khi request khác đã xoay vòng: chỉ cần gửi lại bằng token mới.
+          const current = tokenStore.getAccessToken();
+          if (!current || current === original._accessToken) await refreshAccessToken();
+          if (original._sessionId === tokenStore.getSessionId()) return await client(original);
+        } catch (retryError) {
+          return Promise.reject(toApiException(retryError));
+        }
+      } else if (original._accessToken === tokenStore.getAccessToken()) {
+        // Vừa làm mới mà vẫn 401: phiên không còn hiệu lực, không lặp refresh vô hạn.
+        await tokenStore.clear();
+      }
+    }
+    return Promise.reject(toApiException(error));
+  },
 );
 
 /** Bóc envelope -> trả thẳng data; body rỗng (vd 204) trả undefined thay vì crash. */
@@ -54,6 +147,10 @@ export const http = {
   async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
     return unwrap(await client.delete<ApiResponse<T>>(url, config));
   },
-  /** Instance gốc — để gắn interceptor (auth, log lỗi) và adapter giả trong test. */
+  /** Đợi refresh đang chạy (nếu có) xong — để đăng xuất gửi đúng refresh token mới nhất. */
+  async waitForRefresh(): Promise<void> {
+    await refreshing?.catch(() => undefined);
+  },
+  /** Instance gốc — để gắn interceptor (log lỗi) và adapter giả trong test. */
   raw: client,
 };
