@@ -1,9 +1,15 @@
-import { Stack } from 'expo-router';
+import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AppErrorFallback } from '@/components/feedback/AppErrorFallback';
 import { AuthProvider } from '@/core/auth/AuthProvider';
 import { QueryProvider } from '@/core/query/QueryProvider';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+
+/** Lỗi render ở bất kỳ màn nào: hiện màn lỗi có nút thử lại thay vì crash app (MOB-E12-03). */
+export function ErrorBoundary(props: ErrorBoundaryProps) {
+  return <AppErrorFallback {...props} />;
+}
 
 /**
  * Root layout: providers toàn cục + Stack gốc (MOB-E1-03).
