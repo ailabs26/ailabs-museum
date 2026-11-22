@@ -17,6 +17,7 @@ import { ExhibitPlaceholder } from './ExhibitPlaceholder';
 import { GalleryPedestal, type PedestalKind } from './GalleryPedestal';
 
 export interface ExhibitRenderProps {
+  isSearchMatch?: boolean; isSearchTarget?: boolean;
   isSelected: boolean; isXrHovered?: boolean; onSelect: (id: string) => void; modelState?: ModelLoadState;
   activeHotspotId?: string; xrHoveredHotspotId?: string; onSelectHotspot?: SelectHotspot;
   renderAttempt?: number; hasRenderError?: boolean; onRenderError: () => void;
@@ -25,10 +26,20 @@ export interface ExhibitRenderProps {
 }
 
 /** Nội dung hiện vật trên bục: chỉ mount khi vị trí này có hiện vật. Model lỗi/đang tải vẫn giữ bục. */
-function ExhibitContent({ display, isCenterpiece, isHovered, isSelected, isXrHovered = false, xrHoveredHotspotId, onSelect,
+function ExhibitContent({ display, isCenterpiece, isHovered, isSelected, isSearchMatch, isSearchTarget, isXrHovered = false, xrHoveredHotspotId, onSelect,
   activeHotspotId, onSelectHotspot, modelState, renderAttempt = 0, hasRenderError = false, onRenderError, onRetainModel }:
   ExhibitRenderProps & { display: MuseumDisplay; isCenterpiece: boolean; isHovered: boolean }) {
   return <>
+    {(isSearchMatch || isSearchTarget) && <group userData={{ searchMatch: !!isSearchMatch, searchTarget: !!isSearchTarget, exhibitId: display.id, xrIgnore: true }}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.018, 0]} raycast={() => {}}>
+        <ringGeometry args={[isCenterpiece ? 1.54 : 1.02, isCenterpiece ? 1.62 : 1.1, 40]} />
+        <meshBasicMaterial color={isSearchTarget ? '#87551e' : '#17665b'} depthWrite={false} />
+      </mesh>
+      {isSearchTarget && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} raycast={() => {}}>
+        <ringGeometry args={[isCenterpiece ? 1.7 : 1.18, isCenterpiece ? 1.78 : 1.26, 40, 1, 0, Math.PI * 1.7]} />
+        <meshBasicMaterial color="#87551e" depthWrite={false} />
+      </mesh>}
+    </group>}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.009, 0]}>
       <ringGeometry args={[isCenterpiece ? 1.3 : 0.84, isCenterpiece ? 1.5 : 0.95, 32]} />
       <meshBasicMaterial color={isSelected ? '#b89b5e' : '#b69761'} transparent opacity={isSelected ? .65 : isHovered ? .4 : 0} depthWrite={false} />

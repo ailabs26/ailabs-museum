@@ -1062,6 +1062,18 @@ export const PUBLIC_UI_STRINGS: PublicUiString[] = [
     },
   },
   {
+    namespace: "ui.collection.search-clear",
+    context: "Nhãn nút xóa từ khóa trong bộ sưu tập",
+    values: {
+      vi: "Xóa tìm kiếm",
+      en: "Clear search",
+      fr: "Effacer la recherche",
+      zh: "清除搜索",
+      ko: "검색 지우기",
+      ja: "検索をクリア",
+    },
+  },
+  {
     namespace: "ui.collection.favorites-only",
     context: "Ô chọn lọc yêu thích",
     values: {

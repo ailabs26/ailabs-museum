@@ -22,8 +22,9 @@ function toPlan(x: number, z: number) {
  * Mini-map 2D (radar) ở góc màn hình: sơ đồ mặt bằng phòng + chấm sáng từng hiện vật,
  * chấm được chọn phát hào quang. Click vào chấm để chọn hiện vật đó.
  */
-export function SpatialMinimap({ displays, selectedId, onSelect }: {
+export function SpatialMinimap({ displays, selectedId, onSelect, searchMatchIds, searchTargetId }: {
   displays: readonly MuseumDisplay[]; selectedId: string | null; onSelect: (id: string) => void;
+  searchMatchIds?: ReadonlySet<string>; searchTargetId?: string;
 }) {
   const t = usePublicT();
   const inRoom = displays.filter((d) => !d.isOutsideRoom);
@@ -46,9 +47,12 @@ export function SpatialMinimap({ displays, selectedId, onSelect }: {
           const active = d.id === selectedId;
           return (
             <g key={d.id} className={active ? classes.dotActive : classes.dot} onClick={() => onSelect(d.id)}
+              data-search-match={searchMatchIds?.has(d.id) || undefined} data-search-target={searchTargetId === d.id || undefined}
               role="button" tabIndex={0} aria-label={t('ui.minimap.go-to', 'Đi tới {name}', { name: d.title })} aria-pressed={active}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(d.id); } }}>
               <circle cx={cx} cy={cy} r="12" className={classes.hitArea} />
+              {searchMatchIds?.has(d.id) && <circle cx={cx} cy={cy} r="5.5" className={classes.searchMatch} />}
+              {searchTargetId === d.id && <circle cx={cx} cy={cy} r="9" className={classes.searchTarget} />}
               {active && <circle cx={cx} cy={cy} r="7" className={classes.halo} />}
               <circle cx={cx} cy={cy} r={active ? 3.4 : 2.4} />
               <title>{d.title}</title>
