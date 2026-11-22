@@ -16,8 +16,8 @@
 | 6 | `feat/mob-file-cache` | File cache GLB/audio | Đã merge (#215) |
 | 7 | `feat/mob-cache-policy` | Hạn mức + dọn cache | Đã merge (#216) |
 | 8 | `feat/mob-retry-error-boundary` | Retry/backoff + error boundary | Đã merge (#217) |
-| 9 | `feat/mob-api-error-log` | Log lỗi API tập trung | PR mở |
-| 10 | `feat/mob-offline-banner` | Offline catalogue + banner | Chưa làm |
+| 9 | `feat/mob-api-error-log` | Log lỗi API tập trung | Đã merge (#218) |
+| 10 | `feat/mob-offline-banner` | Offline catalogue + banner | PR mở |
 | 11 | `feat/mob-cache-settings` | Quản lý cache trong Settings | Chưa làm |
 | 12 | `feat/mob-room-prefetch` | Prefetch phòng (chờ roomsApi của TV3) | Chưa làm |
 | 13 | `feat/mob-sentry` | Sentry (chờ DSN/tài khoản) | Chưa làm |
@@ -113,3 +113,13 @@
 - `http-client`: mọi lỗi đi qua `fail()` → chuẩn hóa + ghi log một lần (WeakSet, request gửi lại sau refresh không ghi trùng); request bị hủy không ghi; 401 được refresh xử lý êm thì không ghi.
 - Ngoài phạm vi: `features/scene3d/publicRoomApi.ts` (TV4) gọi `fetch` trực tiếp nên lỗi của nó không vào log — nên chuyển sang `http`.
 - Kiểm chứng: typecheck, lint sạch; 9 test mới (chuẩn hóa endpoint, bộ đệm vòng, tổng hợp, sink lỗi; tích hợp http-client: request id, mất mạng/hủy, refresh êm không ghi, không ghi trùng, không lộ token/body/query).
+
+## 10. Offline catalogue (persist) + banner trạng thái
+
+- `src/core/network/online-status.ts`: native nối `onlineManager` của react-query với NetInfo (`isInternetReachable` chưa biết → coi như online); `useIsOnline()`. Web dùng sự kiện online/offline sẵn có. Offline: query **tạm dừng** (không báo lỗi), dữ liệu cache vẫn hiện; có mạng lại tự tải.
+- `src/components/feedback/OfflineBanner.tsx` (`OfflineAware`, bọc Stack ở `app/_layout.tsx`): banner trên cùng "Không có mạng — đang hiển thị nội dung đã tải trước đó.", tự chiếm vùng tai thỏ và đặt inset trên = 0 cho màn bên dưới (header không đệm hai lần); cây component giữ nguyên khi đổi trạng thái → navigation không bị dựng lại. A11y: `alert` + live region polite.
+- `src/features/catalogue/room-queries.ts`: `roomKeys`, `useRoomsQuery`, `useRoomQuery` (dùng lại `publicRoomApi` của TV4) → catalogue đi qua react-query nên được lưu cache (MOB-E3-02). `isWaitingForNetwork`: offline mà chưa có cache → báo rõ thay vì quay vòng mãi.
+- Chuyển màn của TV4 sang query (giữ nguyên giao diện/kiểu trả về): `app/(tabs)/rooms.tsx`, `usePublicRoom` (`room/[slug]`, `ar-exhibit` không phải sửa). Có dữ liệu thì luôn hiện, lỗi làm mới nền không che nội dung; Thử lại không hiện lỗi cùng lúc với vòng quay.
+- Ghi chú cho TV3 (MOB-E4-01 roomsApi + useRooms/useRoom): xây tiếp trên `room-queries.ts`; nên chuyển `publicRoomApi` từ `fetch` sang `http` để có retry/log lỗi.
+- `jest-setup.ts`: mock NetInfo toàn cục.
+- Kiểm chứng: typecheck, lint sạch; 10 test mới (online-status, banner + không remount + inset, catalogue offline có/không cache, có mạng lại tự tải, lỗi API + thử lại). Expo web + Playwright (API giả bằng `page.route`, không cần back-end): tải danh sách → cache vào storage → API chết + reload → danh sách vẫn hiện, sự kiện offline → banner hiện, online → banner ẩn; không lỗi trang.
