@@ -54,8 +54,9 @@ type RequestWithCookies = Request & { cookies?: Record<string, string> };
 
 /**
  * Client native (app mobile) gửi `X-Client: mobile` để nhận/gửi refresh token qua body thay vì cookie
- * (lưu bằng secure storage của thiết bị). Không mở header này trong CORS: trang web khác không gửi được
- * nên trình duyệt luôn đi đường cookie HttpOnly.
+ * (lưu bằng secure storage của thiết bị). CORS chỉ cho origin front-end đọc phản hồi; riêng header này
+ * không bị CORS chặn với origin đó. Nhánh native không đọc cookie nên script trên front-end không đổi được
+ * refresh cookie HttpOnly lấy token trong body.
  */
 export const CLIENT_HEADER = 'x-client';
 export const NATIVE_CLIENT = 'mobile';
