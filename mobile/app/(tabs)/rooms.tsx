@@ -2,6 +2,7 @@ import { Link } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Screen } from '@/components/layout/Screen';
 import { useTheme } from '@/theme/ThemeProvider';
+import { OfflineRoomButton } from '@/features/offline/OfflineRoomButton';
 import {
   OFFLINE_NOT_CACHED_MESSAGE,
   isWaitingForNetwork,
@@ -53,14 +54,16 @@ export default function RoomsScreen() {
         ) : null}
         {!loading && !error
           ? rooms.map((room) => (
-              <Link
-                key={room.id}
-                href={{ pathname: '/room/[slug]', params: { slug: room.slug } }}
-                accessibilityRole="link"
-                style={{ color: theme.colors.primary, fontSize: theme.fontSize.md }}
-              >
-                {room.name}
-              </Link>
+              <View key={room.id}>
+                <Link
+                  href={{ pathname: '/room/[slug]', params: { slug: room.slug } }}
+                  accessibilityRole="link"
+                  style={{ color: theme.colors.primary, fontSize: theme.fontSize.md }}
+                >
+                  {room.name}
+                </Link>
+                <OfflineRoomButton slug={room.slug} name={room.name} />
+              </View>
             ))
           : null}
       </ScrollView>

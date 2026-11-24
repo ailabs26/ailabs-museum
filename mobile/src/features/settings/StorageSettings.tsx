@@ -2,12 +2,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState, useSyncExternalStore } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { formatBytes } from '@/shared/format-bytes';
 import { useTheme } from '@/theme/ThemeProvider';
 import {
   STORAGE_GROUPS,
   clearStorage,
   countCatalogue,
-  formatBytes,
   getMediaUsage,
   type MediaUsage,
   type StorageGroup,

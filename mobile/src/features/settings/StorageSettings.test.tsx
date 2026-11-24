@@ -7,7 +7,7 @@ import { fileCache } from '@/core/cache/file-cache';
 import { createQueryClient } from '@/core/query/query-client';
 import { ExpoFileSystemGlbCache } from '@/features/scene3d/glbCache';
 import { StorageSettings } from './StorageSettings';
-import { formatBytes } from './storage-usage';
+import { formatBytes } from '@/shared/format-bytes';
 
 jest.mock('expo-file-system', () => ({
   ...jest.requireActual('@/core/cache/file-system-mock').fileSystemMock(),
@@ -52,7 +52,7 @@ describe('StorageSettings', () => {
   afterEach(() => {
     act(() => onlineManager.setOnline(true));
     jest.restoreAllMocks();
-    client.clear();
+    act(() => client.clear());
   });
 
   it('cộng model của fileCache và glbCache; không đếm dữ liệu riêng của người dùng', async () => {

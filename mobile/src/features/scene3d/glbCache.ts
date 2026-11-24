@@ -156,6 +156,12 @@ export class ExpoFileSystemGlbCache implements GlbCacheAdapter {
     }
   }
 
+  /** Đã có đủ file chưa — không đọc nội dung; kích thước lệch là file ghi dở. */
+  async has(checksumSha256: string, sizeBytes: number): Promise<boolean> {
+    const info = await FileSystem.getInfoAsync(this.fileUri(checksumSha256));
+    return info.exists && info.size === sizeBytes;
+  }
+
   async putBuffer(checksumSha256: string, buffer: ArrayBuffer): Promise<CachedGlbEntry> {
     assertValidChecksum(checksumSha256);
     await this.ensureDir();
