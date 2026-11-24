@@ -18,8 +18,8 @@
 | 8 | `feat/mob-retry-error-boundary` | Retry/backoff + error boundary | Đã merge (#217) |
 | 9 | `feat/mob-api-error-log` | Log lỗi API tập trung | Đã merge (#218) |
 | 10 | `feat/mob-offline-banner` | Offline catalogue + banner | Đã merge (#219, bổ sung #220) |
-| 11 | `feat/mob-cache-settings` | Quản lý cache trong Settings | PR mở |
-| 12 | `feat/mob-room-prefetch` | Prefetch phòng (chờ roomsApi của TV3) | Chưa làm |
+| 11 | `feat/mob-cache-settings` | Quản lý cache trong Settings | Đã merge (#222) |
+| 12 | `feat/mob-room-prefetch` | Prefetch phòng | PR mở |
 | 13 | `feat/mob-sentry` | Sentry (chờ DSN/tài khoản) | Chưa làm |
 | 14 | `feat/mob-analytics-adapter` | Analytics ẩn danh (adapter, chưa gửi ra ngoài) | Chưa làm |
 | 15 | `feat/mob-perf-baseline` | Perf baseline (chờ 3D của TV4) | Chưa làm |
@@ -137,3 +137,12 @@
 - Hình ảnh không đo được (expo-image không có API). Nội dung offline hiển thị số mục; dữ liệu `['session', ...]` không bị đếm/xóa.
 - Một loại xóa lỗi thì báo tên loại đó, các loại khác vẫn xóa. Xóa khi offline không treo.
 - Kiểm chứng: typecheck, lint; 6 test mới; bundle Android + web; E2E web: xóa xong nội dung biến mất khỏi localStorage và không hiện lại sau khi tải lại trang. E2E phát hiện số mục không cập nhật khi cache khôi phục chậm → đã sửa. Chưa chạy trên thiết bị.
+
+## 12. Prefetch phòng để dùng offline onsite
+
+- `src/features/offline/`: nút "Tải để xem offline" ở từng phòng (tab Phòng), sau flag `offlinePrefetch` (production đang **tắt** mặc định); ẩn trên web.
+- Khác plan: model tải qua `loadGlbModel` vào `glbCache` của TV4, không vào `fileCache` — màn 3D/AR chỉ đọc `glbCache`. Kiểm SHA-256 + validate như khi xem, dừng trước bước giải mã. Thêm `ExpoFileSystemGlbCache.has()` (kiểm đủ kích thước, không đọc nội dung).
+- Lỗi ghi đĩa được báo (loader vốn bỏ qua). Phòng vượt hạn mức `glbCache` (150MB) bị từ chối trước khi tải, nếu không LRU xóa chính model của phòng. Từng phòng, từng model một. Hủy được; lần sau chỉ tải phần thiếu.
+- "Đã tải" = file thật còn đủ trên máy, không lưu cờ (LRU/hệ điều hành có thể dọn).
+- Chưa có: audio và ảnh hiện vật (API phòng chưa trả; nối khi TV3 làm E5-01/E5-02). Tải nhiều phòng: phòng sau có thể đẩy phòng trước khỏi 150MB.
+- Kiểm chứng: typecheck, lint; 13 test mới, phần lớn chạy `loadGlbModel` thật; bundle Android + web. Chưa chạy trên thiết bị.
