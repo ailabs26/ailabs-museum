@@ -55,4 +55,15 @@ describe('persist cache qua AsyncStorage', () => {
     expect(restored.getQueryData(['rooms'])).toEqual([]);
     expect(restored.getQueryData(['auth', 'me'])).toBeUndefined();
   });
+
+  it('làm mới nền thất bại vẫn giữ dữ liệu đã tải trong cache đĩa', async () => {
+    const client = newClient();
+    client.setQueryData(['rooms'], [{ slug: 'phong-1' }]);
+    await client
+      .fetchQuery({ queryKey: ['rooms'], queryFn: () => Promise.reject(new Error('503')), staleTime: 0, retry: false })
+      .catch(() => undefined);
+    expect(client.getQueryState(['rooms'])?.status).toBe('error');
+    await persistQueryClientSave({ queryClient: client, ...createPersistOptions(AsyncStorage, 'v1') });
+    expect((await restoreInto()).getQueryData(['rooms'])).toEqual([{ slug: 'phong-1' }]);
+  });
 });

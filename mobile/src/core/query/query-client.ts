@@ -1,14 +1,14 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { QueryClient, type Query } from '@tanstack/react-query';
 import type { PersistQueryClientOptions } from '@tanstack/react-query-persist-client';
 import Constants from 'expo-constants';
 import { retryDelay, shouldRetry } from '@/core/api/retry';
+import { queryStorage, type QueryStorage } from './query-storage';
 
 /**
  * TanStack Query + lưu cache offline (MOB-E3-02).
  *
- * Cache được ghi vào AsyncStorage (web: localStorage) nên dữ liệu đã tải sống qua lần mở lại app.
+ * Cache được ghi ra file (web: localStorage, xem `query-storage.ts`) nên dữ liệu đã tải sống qua lần mở lại app.
  * `gcTime` phải >= `PERSIST_MAX_AGE_MS`, nếu không query bị dọn khỏi bộ nhớ trước khi kịp lưu.
  */
 export const PERSIST_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -47,13 +47,13 @@ export function createQueryClient(): QueryClient {
 /** Client dùng chung toàn app (auth cần gọi `queryClient.clear()` khi đăng xuất). */
 export const queryClient = createQueryClient();
 
-/** Chỉ lưu query thành công và không bị đánh dấu `persist: false`. */
+/** Lưu mọi query đã có dữ liệu (kể cả khi lần làm mới nền gần nhất lỗi), trừ khi đánh dấu `persist: false`. */
 export function shouldPersistQuery(query: Query): boolean {
-  return query.state.status === 'success' && query.meta?.persist !== false;
+  return query.state.data !== undefined && query.meta?.persist !== false;
 }
 
 export function createPersistOptions(
-  storage = AsyncStorage,
+  storage: QueryStorage = queryStorage,
   buster = Constants.expoConfig?.version ?? 'dev',
 ): Omit<PersistQueryClientOptions, 'queryClient'> {
   return {
