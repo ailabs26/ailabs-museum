@@ -123,3 +123,9 @@
 - Ghi chú cho TV3 (MOB-E4-01 roomsApi + useRooms/useRoom): xây tiếp trên `room-queries.ts`; nên chuyển `publicRoomApi` từ `fetch` sang `http` để có retry/log lỗi.
 - `jest-setup.ts`: mock NetInfo toàn cục.
 - Kiểm chứng: typecheck, lint sạch; 10 test mới (online-status, banner + không remount + inset, catalogue offline có/không cache, có mạng lại tự tải, lỗi API + thử lại). Expo web + Playwright (API giả bằng `page.route`, không cần back-end): tải danh sách → cache vào storage → API chết + reload → danh sách vẫn hiện, sự kiện offline → banner hiện, online → banner ẩn; không lỗi trang.
+
+## Bổ sung sau PR 10: lưu cache query bằng file
+
+- `src/core/query/query-storage.ts`: native ghi cache vào file trong `documentDirectory` (ghi file tạm rồi đổi tên, thao tác tuần tự); web giữ AsyncStorage. Lý do: cả cache nằm trong một key, catalogue nhiều phòng có thể vượt giới hạn AsyncStorage trên Android.
+- Sửa lỗi: query đã có dữ liệu nhưng lần làm mới nền thất bại (`status: error`) trước đây bị loại khỏi cache đĩa → mất nội dung offline sau khi mở lại app.
+- Kiểm chứng: typecheck, lint; 6 test mới (test lỗi trên đỏ trước khi sửa); bundle Android + web; E2E web: dữ liệu cũ + API chết + reload hai lần vẫn hiện danh sách. Chưa chạy trên thiết bị.
