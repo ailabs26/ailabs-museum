@@ -14,8 +14,8 @@ import {
 
 /**
  * Gọi API xác thực và kiểm tra phản hồi (MOB-E3-03).
- * Header `X-Client: mobile` chỉ gắn cho login/logout (refresh ở http-client) — gắn cho mọi request thì
- * Expo web bị CORS chặn ở cả endpoint public.
+ * Header `X-Client: mobile` chỉ gắn cho login/logout (refresh ở http-client) — request public
+ * không cần header này.
  */
 export const authApi = {
   async login(payload: LoginPayload): Promise<LoginOutcome> {
