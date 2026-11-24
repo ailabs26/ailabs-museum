@@ -1,5 +1,8 @@
-import { useEffect, useState } from 'react';
-import { publicRoomApi } from './publicRoomApi';
+import {
+  OFFLINE_NOT_CACHED_MESSAGE,
+  isWaitingForNetwork,
+  useRoomQuery,
+} from '@/features/catalogue/room-queries';
 import type { PublicRoomPayload } from './museumTypes';
 
 type RoomState =
@@ -7,26 +10,20 @@ type RoomState =
   | { status: 'ready'; room: PublicRoomPayload }
   | { status: 'error'; message: string };
 
+/** Phòng trưng bày theo slug — qua react-query nên xem lại được khi offline (MOB-E12-01). */
 export function usePublicRoom(slug: string | undefined) {
-  const [state, setState] = useState<RoomState>({ status: 'loading' });
-  const [attempt, setAttempt] = useState(0);
+  const query = useRoomQuery(slug);
+  const retry = () => void query.refetch();
 
-  useEffect(() => {
-    if (!slug) {
-      setState({ status: 'error', message: 'Thiếu mã phòng trưng bày.' });
-      return;
-    }
-    const controller = new AbortController();
-    setState({ status: 'loading' });
-    publicRoomApi.detail(slug, controller.signal)
-      .then((room) => { if (!controller.signal.aborted) setState({ status: 'ready', room }); })
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted) setState({
-          status: 'error', message: error instanceof Error ? error.message : 'Không thể tải phòng trưng bày.',
-        });
-      });
-    return () => controller.abort();
-  }, [slug, attempt]);
+  let state: RoomState;
+  if (!slug) state = { status: 'error', message: 'Thiếu mã phòng trưng bày.' };
+  // Có dữ liệu (kể cả từ cache khi offline) thì luôn hiển thị, lỗi làm mới nền không che nội dung.
+  else if (query.data) state = { status: 'ready', room: query.data };
+  else if (isWaitingForNetwork(query))
+    state = { status: 'error', message: OFFLINE_NOT_CACHED_MESSAGE };
+  else if (query.isError && !query.isFetching)
+    state = { status: 'error', message: query.error.message || 'Không thể tải phòng trưng bày.' };
+  else state = { status: 'loading' };
 
-  return { state, retry: () => setAttempt((value) => value + 1) };
+  return { state, retry };
 }

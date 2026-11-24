@@ -1,41 +1,49 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Screen } from '@/components/layout/Screen';
 import { useTheme } from '@/theme/ThemeProvider';
-import { publicRoomApi, type PublicRoomSummary } from '@/features/scene3d/publicRoomApi';
+import {
+  OFFLINE_NOT_CACHED_MESSAGE,
+  isWaitingForNetwork,
+  useRoomsQuery,
+} from '@/features/catalogue/room-queries';
 
 export default function RoomsScreen() {
   const theme = useTheme();
-  const [rooms, setRooms] = useState<PublicRoomSummary[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [attempt, setAttempt] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true);
-    setError(null);
-    publicRoomApi.list(controller.signal)
-      .then((result) => { if (!controller.signal.aborted) setRooms(result); })
-      .catch((cause: unknown) => {
-        if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Không tải được danh sách phòng.');
-      })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
-  }, [attempt]);
+  // Qua react-query: danh sách đã tải được lưu cache và vẫn hiện khi mất mạng (MOB-E12-01).
+  const query = useRoomsQuery();
+  const rooms = query.data ?? [];
+  const loading = query.data === undefined && query.isFetching;
+  const error =
+    query.data || loading
+      ? null
+      : isWaitingForNetwork(query)
+        ? OFFLINE_NOT_CACHED_MESSAGE
+        : query.isError
+          ? query.error.message || 'Không tải được danh sách phòng.'
+          : null;
 
   return (
     <Screen>
       <ScrollView contentContainerStyle={{ gap: theme.spacing.md, padding: theme.spacing.md }}>
-        <Text accessibilityRole="header" style={{ color: theme.colors.text, fontSize: theme.fontSize.lg, fontWeight: '700' }}>
+        <Text
+          accessibilityRole="header"
+          style={{ color: theme.colors.text, fontSize: theme.fontSize.lg, fontWeight: '700' }}
+        >
           Danh sách phòng
         </Text>
-        {loading ? <ActivityIndicator accessibilityLabel="Đang tải danh sách phòng" color={theme.colors.primary} /> : null}
+        {loading ? (
+          <ActivityIndicator
+            accessibilityLabel="Đang tải danh sách phòng"
+            color={theme.colors.primary}
+          />
+        ) : null}
         {error ? (
           <View style={{ gap: theme.spacing.sm }}>
-            <Text accessibilityRole="alert" style={{ color: theme.colors.danger }}>{error}</Text>
-            <Pressable accessibilityRole="button" onPress={() => setAttempt((value) => value + 1)}>
+            <Text accessibilityRole="alert" style={{ color: theme.colors.danger }}>
+              {error}
+            </Text>
+            <Pressable accessibilityRole="button" onPress={() => void query.refetch()}>
               <Text style={{ color: theme.colors.primary }}>Thử lại</Text>
             </Pressable>
           </View>
@@ -43,12 +51,18 @@ export default function RoomsScreen() {
         {!loading && !error && rooms.length === 0 ? (
           <Text style={{ color: theme.colors.textMuted }}>Chưa có phòng trưng bày công khai.</Text>
         ) : null}
-        {!loading && !error ? rooms.map((room) => (
-          <Link key={room.id} href={{ pathname: '/room/[slug]', params: { slug: room.slug } }}
-            accessibilityRole="link" style={{ color: theme.colors.primary, fontSize: theme.fontSize.md }}>
-            {room.name}
-          </Link>
-        )) : null}
+        {!loading && !error
+          ? rooms.map((room) => (
+              <Link
+                key={room.id}
+                href={{ pathname: '/room/[slug]', params: { slug: room.slug } }}
+                accessibilityRole="link"
+                style={{ color: theme.colors.primary, fontSize: theme.fontSize.md }}
+              >
+                {room.name}
+              </Link>
+            ))
+          : null}
       </ScrollView>
     </Screen>
   );
