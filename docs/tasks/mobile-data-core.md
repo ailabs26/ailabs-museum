@@ -17,8 +17,8 @@
 | 7 | `feat/mob-cache-policy` | Hạn mức + dọn cache | Đã merge (#216) |
 | 8 | `feat/mob-retry-error-boundary` | Retry/backoff + error boundary | Đã merge (#217) |
 | 9 | `feat/mob-api-error-log` | Log lỗi API tập trung | Đã merge (#218) |
-| 10 | `feat/mob-offline-banner` | Offline catalogue + banner | PR mở |
-| 11 | `feat/mob-cache-settings` | Quản lý cache trong Settings | Chưa làm |
+| 10 | `feat/mob-offline-banner` | Offline catalogue + banner | Đã merge (#219, bổ sung #220) |
+| 11 | `feat/mob-cache-settings` | Quản lý cache trong Settings | PR mở |
 | 12 | `feat/mob-room-prefetch` | Prefetch phòng (chờ roomsApi của TV3) | Chưa làm |
 | 13 | `feat/mob-sentry` | Sentry (chờ DSN/tài khoản) | Chưa làm |
 | 14 | `feat/mob-analytics-adapter` | Analytics ẩn danh (adapter, chưa gửi ra ngoài) | Chưa làm |
@@ -129,3 +129,11 @@
 - `src/core/query/query-storage.ts`: native ghi cache vào file trong `documentDirectory` (ghi file tạm rồi đổi tên, thao tác tuần tự); web giữ AsyncStorage. Lý do: cả cache nằm trong một key, catalogue nhiều phòng có thể vượt giới hạn AsyncStorage trên Android.
 - Sửa lỗi: query đã có dữ liệu nhưng lần làm mới nền thất bại (`status: error`) trước đây bị loại khỏi cache đĩa → mất nội dung offline sau khi mở lại app.
 - Kiểm chứng: typecheck, lint; 6 test mới (test lỗi trên đỏ trước khi sửa); bundle Android + web; E2E web: dữ liệu cũ + API chết + reload hai lần vẫn hiện danh sách. Chưa chạy trên thiết bị.
+
+## 11. Quản lý dung lượng cache + xóa
+
+- `src/features/settings/`: mục "Bộ nhớ đệm" trong Cài đặt — mô hình 3D, âm thanh, hình ảnh, nội dung xem offline; xóa từng loại hoặc tất cả, có xác nhận ngay trong màn (`Alert` của RN không hiện trên web).
+- Mô hình 3D = `fileCache` + `glbCache` của TV4 (model thật đang nằm ở đó); không sửa code TV4.
+- Hình ảnh không đo được (expo-image không có API). Nội dung offline hiển thị số mục; dữ liệu `['session', ...]` không bị đếm/xóa.
+- Một loại xóa lỗi thì báo tên loại đó, các loại khác vẫn xóa. Xóa khi offline không treo.
+- Kiểm chứng: typecheck, lint; 6 test mới; bundle Android + web; E2E web: xóa xong nội dung biến mất khỏi localStorage và không hiện lại sau khi tải lại trang. E2E phát hiện số mục không cập nhật khi cache khôi phục chậm → đã sửa. Chưa chạy trên thiết bị.
