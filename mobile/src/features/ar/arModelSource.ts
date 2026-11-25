@@ -7,19 +7,21 @@ import {
   GlbLoadError,
   computeSha256Hex,
 } from '@/features/scene3d/glbLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {
   MAX_GLB_BYTES,
   publicModelSchema,
   resolvePublicModelUrl,
   type PublicModel,
 } from '@/features/scene3d/glbSchema';
-import { validateGlb } from '@/features/scene3d/glbValidation';
+import { disposeModel, normalizeModel, validateGlb, type ModelNormalization } from '@/features/scene3d/glbValidation';
 
 export interface PreparedArGlbSource {
   localUri: string;
   checksumSha256: string;
   sizeBytes: number;
   source: 'cache' | 'network';
+  normalization: ModelNormalization;
 }
 
 export interface PrepareArGlbOptions {
@@ -29,6 +31,17 @@ export interface PrepareArGlbOptions {
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
   sha256Impl?: (buffer: ArrayBuffer) => Promise<string>;
+  normalizationImpl?: (buffer: ArrayBuffer) => Promise<ModelNormalization>;
+}
+
+async function inspectArModel(buffer: ArrayBuffer): Promise<ModelNormalization> {
+  const gltf = await new GLTFLoader().parseAsync(buffer, '');
+  if (!gltf.scene) throw new Error('GLB không có scene để hiển thị.');
+  try {
+    return normalizeModel(gltf.scene);
+  } finally {
+    disposeModel(gltf.scenes);
+  }
 }
 
 let sharedArCache: GlbCacheAdapter | null = null;
@@ -54,6 +67,7 @@ export async function prepareArGlbSource(
   const fetchImpl = options.fetchImpl ?? globalThis.fetch;
   const apiBaseUrl = options.apiBaseUrl ?? appConfig.apiUrl;
   const fullUrl = resolvePublicModelUrl(apiBaseUrl, model.url);
+  const normalizationImpl = options.normalizationImpl ?? inspectArModel;
 
   // Thử đọc lại từ bộ nhớ đệm cục bộ trước.
   const cachedBuffer = await cache.getBuffer(model.checksumSha256);
@@ -61,12 +75,14 @@ export async function prepareArGlbSource(
     const hash = await sha256Impl(cachedBuffer);
     if (hash === model.checksumSha256 && cachedBuffer.byteLength === model.sizeBytes) {
       validateGlb(cachedBuffer);
+      const normalization = await normalizationImpl(cachedBuffer);
       const entry = await cache.putBuffer(model.checksumSha256, cachedBuffer);
       return {
         localUri: entry.uri,
         checksumSha256: model.checksumSha256,
         sizeBytes: entry.sizeBytes,
         source: 'cache',
+        normalization,
       };
     }
     await cache.remove(model.checksumSha256);
@@ -98,6 +114,7 @@ export async function prepareArGlbSource(
     throw new GlbLoadError('verify', 'checksum', 'Mã băm SHA-256 của mô hình AR không khớp.');
   }
   validateGlb(buffer);
+  const normalization = await normalizationImpl(buffer);
 
   const stored = await cache.putBuffer(model.checksumSha256, buffer);
   return {
@@ -105,5 +122,6 @@ export async function prepareArGlbSource(
     checksumSha256: model.checksumSha256,
     sizeBytes: stored.sizeBytes,
     source: 'network',
+    normalization,
   };
 }
