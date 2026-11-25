@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import type { ModelNormalization } from '@/features/scene3d/glbValidation';
 import {
   ArArtifactPlacementView,
@@ -19,11 +19,18 @@ export interface ArExhibitExperienceViewProps
 export function ArExhibitExperienceView({
   exhibit,
   normalization,
+  onModelPrepared,
   ...rest
 }: ArExhibitExperienceViewProps) {
+  const [preparedNormalization, setPreparedNormalization] = useState<ModelNormalization | null>(null);
+  useEffect(() => setPreparedNormalization(null), [exhibit.model]);
+  const handleModelPrepared = useCallback((value: ModelNormalization) => {
+    setPreparedNormalization(value);
+    onModelPrepared?.(value);
+  }, [onModelPrepared]);
   const hotspots = useMemo(
-    () => resolveArHotspots(exhibit, normalization),
-    [exhibit, normalization],
+    () => resolveArHotspots(exhibit, preparedNormalization ?? normalization),
+    [exhibit, normalization, preparedNormalization],
   );
 
   const [storyState, dispatchStory] = useReducer(arHotspotStoryReducer, { selectedId: null });
@@ -36,6 +43,7 @@ export function ArExhibitExperienceView({
     <ArArtifactPlacementView
       {...rest}
       exhibit={exhibit}
+      onModelPrepared={handleModelPrepared}
       renderPlacedSceneChildren={({ viro, placement }) => (
         <ArHotspotSceneMarkers
           viro={viro}
