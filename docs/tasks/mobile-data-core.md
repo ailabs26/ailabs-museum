@@ -22,7 +22,7 @@
 | 12 | `feat/mob-room-prefetch` | Prefetch phòng | Đã merge (#223) |
 | 13 | `feat/mob-sentry` | Sentry (chờ DSN/tài khoản để nghiệm thu) | Đã merge (#224) |
 | 14 | `feat/mob-analytics-adapter` | Analytics ẩn danh (adapter, chưa gửi ra ngoài) | Đã merge (#225) |
-| 15 | `feat/mob-perf-baseline` | Perf baseline (chờ đo trên máy thật) | PR mở |
+| 15 | `feat/mob-perf-baseline` | Perf baseline (chờ đo trên máy thật) | Đã merge (#226) |
 
 ## 1. Config/env + feature flags
 
