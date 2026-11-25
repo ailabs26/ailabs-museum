@@ -25,9 +25,17 @@ Quy tắc an toàn:
 | Trường hợp | Xử lý |
 |---|---|
 | Hiện vật **không có** hotspot | Tạo 1 hotspot mặc định `<exhibitId>:default` với tên + mô tả hiện vật (`isDefault: true`) |
-| Có GLB + normalization | Biến đổi như trên |
-| Không có GLB (placeholder) | Dùng toạ độ gốc |
-| Toạ độ NaN/Infinity, \|x\| hoặc \|z\| > 3 m, y ngoài [−0.25, 3.2] | Thay bằng vị trí dự phòng: hàng ngang trên đỉnh mô hình (y = 0.69), cách nhau ≤ 0.18 m, **không trùng nhau** |
+| Có GLB **và** đã có `normalization` | Biến đổi như trên |
+| Có GLB nhưng **chưa có** `normalization` (đang tải hoặc tải lỗi) | **Vị trí dự phòng** — không dùng toạ độ gốc, vì toạ độ đó thuộc hệ của GLB chưa biến đổi |
+| Hiện vật **không có** GLB (`model` rỗng) | Dùng toạ độ gốc nếu an toàn |
+| Toạ độ NaN/Infinity, \|x\| hoặc \|z\| > 3 m, y ngoài [−0.25, 3.2] | Vị trí dự phòng |
+
+**Vị trí dự phòng:** hàng ngang trên đỉnh mô hình (y = 0.69 m), cách nhau ≤ 0.18 m, không trùng nhau.
+
+Hệ quả khi dùng: `app/ar-exhibit.tsx` không truyền prop `normalization`, nên trong lúc
+`prepareArGlbSource` chạy, mọi marker nằm ở vị trí dự phòng phía trên hộp thay thế 0.32 m. Khi
+chuẩn bị xong, `ArExhibitExperienceView` tính lại và marker **nhảy** về vị trí thật; id không đổi nên
+`RECONCILE` giữ nguyên điểm đang chọn. Nếu tải GLB lỗi, marker ở lại vị trí dự phòng.
 | Nhãn rỗng | Dùng tên hiện vật |
 
 Kết quả `ArHotspotMarker { id, exhibitId, label, body, position, orderIndex, isDefault }`.
