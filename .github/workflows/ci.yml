@@ -1,4 +1,4 @@
-# Kiểm tra tự động mỗi PR: typecheck, lint, test, build cho back-end và front-end, cùng e2e Playwright.
+# Kiểm tra tự động mỗi PR: typecheck, lint, test, build cho back-end, front-end và mobile, cùng e2e Playwright.
 # Không deploy, không dùng secret. Back-end test chạy trên PostgreSQL tạm của runner (localhost),
 # không bao giờ chạm DB dùng chung.
 name: CI
@@ -77,6 +77,27 @@ jobs:
       - run: npm run lint
       - run: npm run test:unit
       - run: npm run build
+
+  # Không build native (cần EAS); tạo bundle Hermes để bắt lỗi Metro và so ngân sách dung lượng.
+  mobile:
+    name: Mobile
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test -- --ci
+      - run: npm run perf:bundle
 
   # Playwright với API giả, không cần back-end hay secret. Các spec 3D, tour, audio chưa đưa vào
   # vì còn lỗi trên runner; toàn bộ bộ test chạy tuần tự mất khoảng 26 phút.

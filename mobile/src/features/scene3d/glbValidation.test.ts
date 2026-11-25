@@ -63,9 +63,13 @@ describe('glbSchema & resolvePublicModelUrl (MOB-E6-02)', () => {
   });
 });
 
+// File GLB thật bị gitignore: có trên máy thì kiểm, không có (CI, checkout mới) thì bỏ qua thay vì lỗi.
+const modelsDir = path.resolve(__dirname, '../../../../back-end/public/media/uploads/models');
+const itWithRealGlb =
+  fs.existsSync(modelsDir) && fs.readdirSync(modelsDir).some((file) => file.endsWith('.glb')) ? it : it.skip;
+
 describe('validateGlb trên tệp thật từ back-end/public/media/uploads/models và payload tấn công', () => {
-  it('xác thực thành công toàn bộ tệp GLB thật đang lưu trong back-end', () => {
-    const modelsDir = path.resolve(__dirname, '../../../../back-end/public/media/uploads/models');
+  itWithRealGlb('xác thực thành công toàn bộ tệp GLB thật đang lưu trong back-end', () => {
     const glbFiles = fs.readdirSync(modelsDir).filter((file) => file.endsWith('.glb'));
     expect(glbFiles.length).toBeGreaterThan(0);
 
