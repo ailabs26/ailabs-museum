@@ -32,6 +32,16 @@ function featureFlagOverrides(): Record<string, string> {
   );
 }
 
+/**
+ * Plugin Sentry tải sourcemap lên lúc build release và làm build FAIL nếu thiếu cấu hình → chỉ bật khi có đủ
+ * `SENTRY_ORG` + `SENTRY_PROJECT` (kèm `SENTRY_AUTH_TOKEN` ở EAS secret). SDK vẫn chạy khi không có plugin.
+ */
+function sentryPlugin(): [string, { organization: string; project: string }][] {
+  const organization = process.env.SENTRY_ORG;
+  const project = process.env.SENTRY_PROJECT;
+  return organization && project ? [['@sentry/react-native/expo', { organization, project }]] : [];
+}
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: `Aura Museum${NAME_SUFFIX[APP_ENV]}`,
@@ -73,6 +83,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         },
       },
     ],
+    ...sentryPlugin(),
   ],
   experiments: {
     typedRoutes: true,

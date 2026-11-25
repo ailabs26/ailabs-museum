@@ -1,8 +1,9 @@
 // Cấu hình Metro cho Three.js, @react-three/fiber/native và tài nguyên 3D (.glb/.gltf) — MOB-E6-01.
-const { getDefaultConfig } = require('expo/metro-config');
+// getSentryExpoConfig = getDefaultConfig của Expo + mã định danh để Sentry khớp sourcemap (MOB-E13-01).
+const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 
 /** @type {import('expo/metro-config').MetroConfig} */
-const config = getDefaultConfig(__dirname);
+const config = getSentryExpoConfig(__dirname);
 
 const extraSourceExts = ['cjs', 'mjs'];
 const extraAssetExts = ['glb', 'gltf', 'bin'];

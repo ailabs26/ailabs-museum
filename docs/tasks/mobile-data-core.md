@@ -19,8 +19,8 @@
 | 9 | `feat/mob-api-error-log` | Log lỗi API tập trung | Đã merge (#218) |
 | 10 | `feat/mob-offline-banner` | Offline catalogue + banner | Đã merge (#219, bổ sung #220) |
 | 11 | `feat/mob-cache-settings` | Quản lý cache trong Settings | Đã merge (#222) |
-| 12 | `feat/mob-room-prefetch` | Prefetch phòng | PR mở |
-| 13 | `feat/mob-sentry` | Sentry (chờ DSN/tài khoản) | Chưa làm |
+| 12 | `feat/mob-room-prefetch` | Prefetch phòng | Đã merge (#223) |
+| 13 | `feat/mob-sentry` | Sentry (chờ DSN/tài khoản để nghiệm thu) | PR mở |
 | 14 | `feat/mob-analytics-adapter` | Analytics ẩn danh (adapter, chưa gửi ra ngoài) | Chưa làm |
 | 15 | `feat/mob-perf-baseline` | Perf baseline (chờ 3D của TV4) | Chưa làm |
 
@@ -146,3 +146,11 @@
 - "Đã tải" = file thật còn đủ trên máy, không lưu cờ (LRU/hệ điều hành có thể dọn).
 - Chưa có: audio và ảnh hiện vật (API phòng chưa trả; nối khi TV3 làm E5-01/E5-02). Tải nhiều phòng: phòng sau có thể đẩy phòng trước khỏi 150MB.
 - Kiểm chứng: typecheck, lint; 13 test mới, phần lớn chạy `loadGlbModel` thật; bundle Android + web. Chưa chạy trên thiết bị.
+
+## 13. Sentry crash reporting
+
+- `src/core/observability/sentry.ts`: khởi tạo trước khi render, chỉ khi có `EXPO_PUBLIC_SENTRY_DSN`. Nối màn lỗi toàn cục (`reportError`) và `apiErrorLog` (5xx thành sự kiện, tối đa một lần/phút mỗi endpoint; còn lại là breadcrumb).
+- Riêng tư: bỏ user/request/extra/tên máy; che email, token, query; breadcrumb chỉ giữ điều hướng và request đã gom nhóm; không chụp màn hình, không tracing, không session. Mất mạng/hủy không gửi.
+- Plugin native (tải sourcemap) chỉ bật khi có `SENTRY_ORG` + `SENTRY_PROJECT`, nếu không build release sẽ fail. `metro.config.js` dùng `getSentryExpoConfig`.
+- Còn chờ: DSN, `SENTRY_ORG`/`SENTRY_PROJECT`/`SENTRY_AUTH_TOKEN` trong EAS; bật "Prevent Storing of IP Addresses" trên Sentry; gửi thử crash native từ bản build (crash native không qua `beforeSend` JS).
+- Kiểm chứng: typecheck, lint; 10 test mới; bundle Android + web. Trình duyệt với DSN giả trỏ server local: lỗi gửi một lần, email/token đã che; không DSN thì không gửi gì.

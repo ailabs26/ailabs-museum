@@ -36,6 +36,7 @@ Không commit `.env`. Các biến (tạo file `.env` cục bộ hoặc đặt qu
 | `APP_ENV` | `development` \| `staging` \| `production` | Chọn môi trường; quyết định API mặc định |
 | `EXPO_PUBLIC_API_URL` | URL | Ghi đè API base URL (tùy chọn) |
 | `EXPO_PUBLIC_SENTRY_DSN` | DSN | Bật Sentry (đặt qua EAS secret); rỗng thì không khởi tạo |
+| `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` | chuỗi | Chỉ khi build EAS: tải sourcemap lên Sentry. Thiếu org/project thì bỏ qua bước này |
 | `EXPO_PUBLIC_FLAG_<TÊN>` | `true` \| `false` | Ghi đè feature flag: `SCENE3D`, `AR`, `ANALYTICS`, `OFFLINE_PREFETCH` (mặc định theo `APP_ENV`, xem `src/config/feature-flags.ts`) |
 
 `app.config.ts` đọc các biến này và đưa vào `extra`; code đọc qua `src/config/env.ts`.

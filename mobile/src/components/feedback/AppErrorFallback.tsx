@@ -1,7 +1,8 @@
 import type { ErrorBoundaryProps } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
 import { ApiException } from '@/core/api/api-error';
+import { reportError } from '@/core/observability/sentry';
 import { buildTheme } from '@/theme/tokens';
 
 /** Thông điệp thân thiện; không lộ chi tiết kỹ thuật cho người dùng. */
@@ -19,6 +20,8 @@ export function describeError(error: Error): string {
 export function AppErrorFallback({ error, retry }: ErrorBoundaryProps) {
   const theme = buildTheme(useColorScheme());
   const [retrying, setRetrying] = useState(false);
+
+  useEffect(() => reportError(error), [error]);
 
   const onRetry = async () => {
     setRetrying(true);
