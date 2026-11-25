@@ -48,9 +48,14 @@ mobile/
   app/                       expo-router (file-based)
     _layout.tsx              Stack gốc + providers
     (tabs)/                  Trang chủ · Phòng · Tìm kiếm · Cài đặt
-    room/[slug].tsx          nested stack (deep link /room/:slug)
+    room/[slug].tsx          nested stack (deep link /room/:slug) — phòng 3D
+    ar-exhibit.tsx           xem 1 hiện vật trong AR (?roomSlug&exhibitId)
+    glb-preview.tsx          xem thử 1 GLB
+    spike-3d.tsx, spike-ar.tsx  màn spike E6-01 / E9-01
     +not-found.tsx
   src/
+    features/scene3d/        3D engine: GLB pipeline, phòng 5 bục, điều hướng, va chạm, tầng chất lượng
+    features/ar/             AR: kiểm tra thiết bị, cầu nối Viro, đặt hiện vật, hotspot
     theme/                   design tokens + ThemeProvider (dark mode)
     components/layout/        Screen (SafeArea), AppHeader
     hooks/                   useReducedMotion
