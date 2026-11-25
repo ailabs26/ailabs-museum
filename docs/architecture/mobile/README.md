@@ -76,3 +76,4 @@ Gom từ các tài liệu con; chi tiết ở link tương ứng.
 | 3 | `anisotropy` và `maxCacheBytes` của tầng chất lượng chưa được áp dụng | thiếu sót | [04](04-performance-tiers.md#việc-còn-mở) |
 | 4 | Chuyển `GlbCacheAdapter` sang `fileCache` chung, bỏ TODO trong `storage-usage.ts` | nợ kỹ thuật | [08](08-integration-guide.md#tv2--cache-dùng-chung) |
 | 5 | Commit GLB mẫu nhỏ làm fixture để 2 test GLB thật chạy được trên CI | kiểm thử | [07](07-testing-and-verification.md#lỗ-hổng-kiểm-thử) |
+| 6 | Đổi tầng chất lượng (kể cả tự hạ tầng) tạo lại `RoomModelManager` → huỷ và parse lại mọi GLB trong phòng. Nên chỉ cập nhật giới hạn song song thay vì tạo lại | hiệu năng | [02](02-room-rendering.md#tải-nhiều-glb--roommodelmanager) |
