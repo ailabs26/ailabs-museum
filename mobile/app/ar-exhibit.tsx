@@ -1,48 +1,45 @@
-import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Screen } from '@/components/layout/Screen';
+import { useTheme } from '@/theme/ThemeProvider';
 import { ArExhibitExperienceView } from '@/features/ar/ArExhibitExperienceView';
-import type { MuseumDisplay } from '@/features/scene3d/museumTypes';
+import { mapRoomDisplays } from '@/features/scene3d/gallerySlots';
+import { usePublicRoom } from '@/features/scene3d/usePublicRoom';
 
-const DEMO_AR_EXHIBIT: MuseumDisplay = {
-  id: 'demo-ar-bronze-drum',
-  roomId: 'demo-room',
-  title: 'Trống đồng Ngọc Lũ (AR)',
-  description: 'Hiện vật văn hóa Đông Sơn chuẩn bị cho chế độ đặt trên mặt phẳng thực tế.',
-  position: [0, 0, -2],
-  shape: 'torus',
-  color: '#B45309',
-  hotspots: [
-    {
-      id: 'hs-sun',
-      label: 'Ngôi sao mặt trời 14 cánh',
-      body: 'Trung tâm mặt trống khắc họa ngôi sao nổi 14 cánh biểu trưng cho thần Mặt Trời.',
-      position: [0, 0.36, 0],
-    },
-    {
-      id: 'hs-birds',
-      label: 'Vành chim Lạc bay ngược chiều kim đồng hồ',
-      body: 'Họa tiết chim Lạc bay vòng tròn thể hiện khát vọng vươn lên và lịch nông nghiệp cổ.',
-      position: [0.22, 0.28, 0.14],
-    },
-    {
-      id: 'hs-handles',
-      label: 'Quai trống hình bện thừng',
-      body: 'Bốn đôi quai đúc liền thân trống dùng để treo và vận chuyển trong lễ hội.',
-      position: [-0.24, 0.18, 0.08],
-    },
-  ],
-};
-
-/** Màn hình đặt hiện vật trên mặt phẳng AR + xoay/zoom + Hotspot overlay (`MOB-E9-02`, `MOB-E9-03`). */
 export default function ArExhibitScreen() {
+  const { roomSlug, exhibitId } = useLocalSearchParams<{ roomSlug: string; exhibitId: string }>();
   const router = useRouter();
+  const theme = useTheme();
+  const { state, retry } = usePublicRoom(roomSlug);
+  const room = state.status === 'ready' ? state.room : null;
+  const exhibit = useMemo(() => room && exhibitId
+    ? mapRoomDisplays(room).find((item) => item.id === exhibitId) ?? null
+    : null, [room, exhibitId]);
+
   return (
     <Screen edges={['bottom']}>
-      <ArExhibitExperienceView
-        exhibit={DEMO_AR_EXHIBIT}
-        onFallback3D={() => router.replace('/room/demo-room')}
-        onExit={() => router.back()}
-      />
+      {state.status === 'loading' ? (
+        <View accessibilityRole="progressbar" style={{ flex: 1, justifyContent: 'center' }}>
+          <ActivityIndicator color={theme.colors.primary} />
+          <Text style={{ color: theme.colors.text, textAlign: 'center' }}>Đang tải hiện vật AR...</Text>
+        </View>
+      ) : state.status === 'error' || !exhibit ? (
+        <View style={{ flex: 1, justifyContent: 'center', padding: theme.spacing.lg, gap: theme.spacing.md }}>
+          <Text accessibilityRole="alert" style={{ color: theme.colors.text }}>
+            {state.status === 'error' ? state.message : 'Không tìm thấy hiện vật đã xuất bản trong phòng này.'}
+          </Text>
+          <Pressable accessibilityRole="button" onPress={retry}>
+            <Text style={{ color: theme.colors.primary }}>Thử lại</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <ArExhibitExperienceView
+          exhibit={exhibit}
+          onFallback3D={() => router.replace({ pathname: '/room/[slug]', params: { slug: roomSlug } })}
+          onExit={() => router.back()}
+        />
+      )}
     </Screen>
   );
 }
