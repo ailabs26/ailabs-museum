@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Screen } from '@/components/layout/Screen';
+import { useTrackExhibitView } from '@/core/observability/analytics';
 import { useTheme } from '@/theme/ThemeProvider';
 import { ArExhibitExperienceView } from '@/features/ar/ArExhibitExperienceView';
 import { mapRoomDisplays } from '@/features/scene3d/gallerySlots';
@@ -16,6 +17,7 @@ export default function ArExhibitScreen() {
   const exhibit = useMemo(() => room && exhibitId
     ? mapRoomDisplays(room).find((item) => item.id === exhibitId) ?? null
     : null, [room, exhibitId]);
+  useTrackExhibitView(exhibit?.id, 'ar');
 
   return (
     <Screen edges={['bottom']}>
