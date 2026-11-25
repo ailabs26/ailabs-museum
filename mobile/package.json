@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "test": "jest",
     "test:watch": "jest --watch",
-    "prebuild": "expo prebuild"
+    "prebuild": "expo prebuild",
+    "perf:bundle": "node scripts/bundle-size.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
