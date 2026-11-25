@@ -51,6 +51,8 @@ xem trong phòng 3D mở AR không phải tải lại.
 | 04 | [04-performance-tiers.md](04-performance-tiers.md) | Đo FPS, 3 tầng chất lượng, tự hạ/nâng tầng có hysteresis |
 | 05 | [05-ar-engine.md](05-ar-engine.md) | Kiểm tra thiết bị AR, nạp Viro an toàn, máy trạng thái đặt mô hình và cử chỉ |
 | 06 | [06-ar-hotspots.md](06-ar-hotspots.md) | Đổi toạ độ hotspot sang không gian AR, marker, thẻ thuyết minh |
+| 07 | [07-testing-and-verification.md](07-testing-and-verification.md) | 22 file / 71 test, kết quả CI, test bị bỏ qua, việc kiểm chứng trên máy thật còn chờ |
+| 08 | [08-integration-guide.md](08-integration-guide.md) | Dùng lại engine cho E6-07, E9-04 (TV1), E6-03 (TV3), E7/E8 (TV5), cache chung (TV2) |
 
 ## Nguyên tắc chung
 
