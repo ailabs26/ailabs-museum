@@ -53,6 +53,7 @@ xem trong phòng 3D mở AR không phải tải lại.
 | 06 | [06-ar-hotspots.md](06-ar-hotspots.md) | Đổi toạ độ hotspot sang không gian AR, marker, thẻ thuyết minh |
 | 07 | [07-testing-and-verification.md](07-testing-and-verification.md) | 22 file / 71 test, kết quả CI, test bị bỏ qua, việc kiểm chứng trên máy thật còn chờ |
 | 08 | [08-integration-guide.md](08-integration-guide.md) | Dùng lại engine cho E6-07, E9-04 (TV1), E6-03 (TV3), E7/E8 (TV5), cache chung (TV2) |
+| 09 | [09-troubleshooting.md](09-troubleshooting.md) | Lỗi thường gặp: Jest thiếu module, GLB bị từ chối, bố cục legacy, AR trên Expo Go, không nhận mặt phẳng |
 
 ## Nguyên tắc chung
 
