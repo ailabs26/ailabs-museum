@@ -77,11 +77,17 @@ Hiện vật đã xem trong phòng 3D sẽ có `source: 'cache'` — không tả
 
 Reducer thuần, mọi thao tác Viro và nút bấm đều đi qua đây:
 
-```text
-scanning ──PLANE_DETECTED──► plane_detected ──PLACE_AT(pos)──► placed
-    ▲                              ▲                              │
-    └──────── REPOSITION (chưa có mặt phẳng) ─┴── REPOSITION ◄────┘
+```mermaid
+stateDiagram-v2
+    [*] --> scanning
+    scanning --> plane_detected: PLANE_DETECTED
+    plane_detected --> placed: PLACE_AT(pos hợp lệ)
+    placed --> plane_detected: REPOSITION (planeCount > 0)
+    placed --> scanning: REPOSITION (planeCount = 0)
+    placed --> placed: PINCH / ROTATE / STEP_* / RESET_TRANSFORM
 ```
+
+Khi chưa ở `placed`, các action cử chỉ bị bỏ qua (trả nguyên state).
 
 | Action | Tác dụng |
 |---|---|
