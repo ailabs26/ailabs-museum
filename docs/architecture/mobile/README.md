@@ -63,3 +63,15 @@ xem trong phòng 3D mở AR không phải tải lại.
 3. **Không tin dữ liệu từ mạng** — metadata qua Zod, URL model bị khoá về origin API, nhị phân GLB
    được kiểm tra cấu trúc + SHA-256 trước khi vào `GLTFLoader`.
 4. **Luôn có đường lui** — GL lỗi → 2D; AR không hỗ trợ → phòng 3D; GLB lỗi → hình placeholder.
+
+## Việc còn mở
+
+Gom từ các tài liệu con; chi tiết ở link tương ứng.
+
+| # | Việc | Loại | Chi tiết |
+|---|---|---|---|
+| 1 | Kiểm chứng trên iPhone/Android thật: FPS, va chạm, đặt AR, chạm marker | kiểm chứng | [07](07-testing-and-verification.md#kiểm-chứng-trên-thiết-bị--còn-chờ) |
+| 2 | Marker hotspot gắn `onClick` ở cả node cha và sphere con — có thể chọn rồi bỏ chọn trong một lần chạm | rủi ro | [06](06-ar-hotspots.md#cần-kiểm-chứng-trên-máy-thật) |
+| 3 | `anisotropy` và `maxCacheBytes` của tầng chất lượng chưa được áp dụng | thiếu sót | [04](04-performance-tiers.md#việc-còn-mở) |
+| 4 | Chuyển `GlbCacheAdapter` sang `fileCache` chung, bỏ TODO trong `storage-usage.ts` | nợ kỹ thuật | [08](08-integration-guide.md#tv2--cache-dùng-chung) |
+| 5 | Commit GLB mẫu nhỏ làm fixture để 2 test GLB thật chạy được trên CI | kiểm thử | [07](07-testing-and-verification.md#lỗ-hổng-kiểm-thử) |
