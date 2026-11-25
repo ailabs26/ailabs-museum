@@ -143,3 +143,8 @@ Mỗi lỗi mang `stage` (bước hỏng) và `category` (loại lỗi) để UI
   và huỷ giữa chừng; dọn LRU khi vượt dung lượng.
 
 Chưa có test riêng cho nhánh timeout 25 s và GLB dùng Draco.
+
+> **Lưu ý CI:** test `validateGlb` trên GLB thật dùng `it.skip` khi thư mục
+> `back-end/public/media/uploads/models` không có file `.glb`. Thư mục này không được commit nên
+> **trên CI test luôn bị bỏ qua**; chỉ chạy trên máy đã có dữ liệu upload. Các ca payload tấn công
+> trong cùng file vẫn chạy bình thường. Xem [07-testing-and-verification](07-testing-and-verification.md).
