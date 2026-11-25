@@ -12,7 +12,7 @@ Ngưỡng đánh dấu "đề xuất" **chưa được lead duyệt**.
 
 ## Bundle
 
-`cd mobile && npm run perf:bundle` — vượt `scripts/bundle-budget.json` thì exit 1. Chưa gắn CI (CI chưa có job mobile). Script luôn tách sourcemap; không tách thì file lớn hơn khoảng 65% và không so sánh được.
+`cd mobile && npm run perf:bundle` — vượt `scripts/bundle-budget.json` thì exit 1. Chạy trong job CI `Mobile`. Script luôn tách sourcemap; không tách thì file lớn hơn khoảng 65% và không so sánh được.
 
 Nguồn lớn nhất (chưa nén): react-native 2,1 MB, three 1,4 MB, Sentry hơn 1,2 MB.
 

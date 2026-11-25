@@ -60,10 +60,14 @@ function createInteractiveMockViro() {
   };
 }
 
+// File GLB thật bị gitignore: có trên máy thì kiểm, không có (CI, checkout mới) thì bỏ qua thay vì lỗi.
+const modelsDir = path.resolve(__dirname, '../../../../back-end/public/media/uploads/models');
+const itWithRealGlb =
+  fs.existsSync(modelsDir) && fs.readdirSync(modelsDir).some((file) => file.endsWith('.glb')) ? it : it.skip;
+
 describe('ArArtifactPlacementView — tích hợp cache GLB thật + mặt phẳng + xoay/zoom (MOB-E9-02)', () => {
-  it('đọc tệp GLB thật từ cache MOB-E6-02, đặt lên mặt phẳng và xoay/phóng to ổn định', async () => {
+  itWithRealGlb('đọc tệp GLB thật từ cache MOB-E6-02, đặt lên mặt phẳng và xoay/phóng to ổn định', async () => {
     // Dùng tệp GLB thật đang có trong back-end/public/media/uploads/models/
-    const modelsDir = path.resolve(__dirname, '../../../../back-end/public/media/uploads/models');
     const firstGlb = fs.readdirSync(modelsDir).find((f) => f.endsWith('.glb'))!;
     const glbBytes = fs.readFileSync(path.join(modelsDir, firstGlb));
     const sha256 = crypto.createHash('sha256').update(glbBytes).digest('hex');
