@@ -72,6 +72,40 @@ manager.dispose();
   khi huỷ cũng bị giải phóng ngay.
 - Bỏ qua hiện vật không có `model` hoặc `isOutsideRoom`.
 
+```mermaid
+sequenceDiagram
+    participant S as room/[slug].tsx
+    participant Q as usePublicRoom (react-query)
+    participant V as GalleryRoomView
+    participant M as RoomModelManager
+    participant L as loadGlbModel
+    participant C as GlbCache
+
+    S->>Q: slug
+    Q-->>S: PublicRoomPayload (mạng hoặc cache offline)
+    S->>V: mapRoomDisplays(room)
+    V->>M: new RoomModelManager({ maxConcurrent theo tầng })
+    V->>M: loadRoomDisplays(displays, onUpdate)
+    M-->>V: mọi hiện vật có GLB = loading (placeholder hiện ngay)
+    par tối đa maxConcurrent worker
+        M->>L: model (1 lần / checksum)
+        L->>C: getBuffer(checksum)
+        alt cache hit hợp lệ
+            C-->>L: buffer
+        else miss / hỏng
+            L->>L: fetch → SHA-256 → validateGlb
+            L->>C: putBuffer
+        end
+        L-->>M: LoadedGlbAsset hoặc GlbLoadError
+        M-->>V: ready / error cho mọi exhibitId cùng checksum
+    end
+    Note over V,M: rời màn hình / đổi displays / đổi tầng
+    V->>M: dispose() → abort + disposeModel
+```
+
+Đổi tầng chất lượng làm `maxConcurrentGlbLoads` đổi → effect tạo manager mới. Các GLB đã tải nằm
+trong cache nên lần tải lại đi nhánh cache hit, không tốn mạng (nhưng vẫn parse lại).
+
 ## Component
 
 | Component | Vai trò |
