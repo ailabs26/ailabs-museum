@@ -20,8 +20,8 @@
 | 10 | `feat/mob-offline-banner` | Offline catalogue + banner | Đã merge (#219, bổ sung #220) |
 | 11 | `feat/mob-cache-settings` | Quản lý cache trong Settings | Đã merge (#222) |
 | 12 | `feat/mob-room-prefetch` | Prefetch phòng | Đã merge (#223) |
-| 13 | `feat/mob-sentry` | Sentry (chờ DSN/tài khoản để nghiệm thu) | PR mở |
-| 14 | `feat/mob-analytics-adapter` | Analytics ẩn danh (adapter, chưa gửi ra ngoài) | Chưa làm |
+| 13 | `feat/mob-sentry` | Sentry (chờ DSN/tài khoản để nghiệm thu) | Đã merge (#224) |
+| 14 | `feat/mob-analytics-adapter` | Analytics ẩn danh (adapter, chưa gửi ra ngoài) | PR mở |
 | 15 | `feat/mob-perf-baseline` | Perf baseline (chờ 3D của TV4) | Chưa làm |
 
 ## 1. Config/env + feature flags
@@ -154,3 +154,10 @@
 - Plugin native (tải sourcemap) chỉ bật khi có `SENTRY_ORG` + `SENTRY_PROJECT`, nếu không build release sẽ fail. `metro.config.js` dùng `getSentryExpoConfig`.
 - Còn chờ: DSN, `SENTRY_ORG`/`SENTRY_PROJECT`/`SENTRY_AUTH_TOKEN` trong EAS; bật "Prevent Storing of IP Addresses" trên Sentry; gửi thử crash native từ bản build (crash native không qua `beforeSend` JS).
 - Kiểm chứng: typecheck, lint; 10 test mới; bundle Android + web. Trình duyệt với DSN giả trỏ server local: lỗi gửi một lần, email/token đã che; không DSN thì không gửi gì.
+
+## 14. Analytics sự kiện ẩn danh
+
+- `src/core/observability/analytics.ts`: `analytics.track` với `room_view`, `exhibit_view`, `tour_start/step/complete`; flag `analytics`; `addSink` để cắm nhà cung cấp. Hiện **chưa gửi ra ngoài** và không lưu đĩa: 100 sự kiện gần nhất trong bộ nhớ, bản dev in console.
+- Riêng tư: danh sách cho phép theo từng sự kiện, kiểm định dạng (UUID nội dung, số, giá trị cố định); sai thì bỏ cả sự kiện. Không có trường chuỗi tự do. Khác plan: không tạo ID cài đặt ẩn danh (chưa gửi đi đâu nên chưa cần).
+- Đã gắn: mở phòng, chọn hiện vật trong phòng, mở AR. Tour: khai báo sẵn, TV5 gọi `track` khi làm guided tour. Màn chi tiết 2D: TV3 gọi khi làm (thêm `mode`).
+- Kiểm chứng: typecheck, lint; 7 test mới; bundle Android + web. Trình duyệt (bản dev): mở phòng + chọn hiện vật ra đúng hai sự kiện, không có request ra ngoài; flag tắt thì không ghi.

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Screen } from '@/components/layout/Screen';
+import { analytics, useTrackRoomView } from '@/core/observability/analytics';
 import { useTheme } from '@/theme/ThemeProvider';
 import { GalleryRoomView } from '@/features/scene3d/GalleryRoomView';
 import { mapRoomDisplays } from '@/features/scene3d/gallerySlots';
@@ -13,6 +14,7 @@ export default function RoomDetailScreen() {
   const theme = useTheme();
   const { state, retry } = usePublicRoom(slug);
   const room = state.status === 'ready' ? state.room : null;
+  useTrackRoomView(room?.id);
   const displays = useMemo(() => room ? mapRoomDisplays(room) : [], [room]);
 
   return (
@@ -33,6 +35,7 @@ export default function RoomDetailScreen() {
         <GalleryRoomView
           roomName={state.room.name}
           displays={displays}
+          onSelectExhibit={(exhibit) => analytics.track('exhibit_view', { exhibitId: exhibit.id, mode: 'room' })}
           onOpenAr={(exhibit) => router.push({
             pathname: '/ar-exhibit',
             params: { roomSlug: state.room.slug, exhibitId: exhibit.id },
