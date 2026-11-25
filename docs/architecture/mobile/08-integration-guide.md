@@ -24,15 +24,35 @@ hoặc GL lỗi 2 lần liên tiếp) và nội dung màn 2D (mô tả, ảnh, a
 
 Hiện tại (`app/ar-exhibit.tsx`):
 
-- Nút "Thoát chế độ AR" → `router.back()`. Phòng 3D được mở bằng `router.push`, nên màn phòng vẫn
-  nằm trong stack và **giữ nguyên** hiện vật đang chọn và vị trí camera khi quay lại.
+- Nút "Thoát chế độ AR" → `router.back()` **không kiểm tra** màn trước. Khi AR được mở từ phòng 3D
+  (`router.push`), màn phòng vẫn nằm trong stack nên quay về **giữ nguyên** hiện vật đang chọn và vị
+  trí camera. Nhưng nếu AR được mở bằng deep link hoặc từ màn khác, "Thoát" sẽ về màn đó, hoặc không
+  về đâu nếu stack trống.
 - Nút "Xem hiện vật trong phòng 3D" (khi thiết bị không hỗ trợ AR hoặc camera lỗi) dùng
   `router.replace` tới `/room/[slug]` → tạo màn phòng **mới**, mất hiện vật đang chọn và camera.
 
 Cần làm:
 
-1. Đổi nhánh fallback sang `router.back()` khi màn trước là đúng phòng đó (dùng
-   `router.canGoBack()`), chỉ `replace` khi mở AR từ deep link.
+1. Cả hai nút cần biết **màn ngay trước có đúng là phòng `roomSlug` không**. `router.canGoBack()`
+   **không đủ**: nó chỉ cho biết stack có màn trước, không cho biết màn đó là gì. Phải đọc route
+   trước trong state của Stack (expo-router 4 / React Navigation):
+
+   ```tsx
+   const navigation = useNavigation();
+   const goBackToRoom = () => {
+     const state = navigation.getState();
+     const prev = state?.routes[state.index - 1];
+     const isSameRoom =
+       prev?.name === 'room/[slug]' &&
+       (prev.params as { slug?: string } | undefined)?.slug === roomSlug;
+     if (isSameRoom) router.back();               // giữ state phòng
+     else router.replace({ pathname: '/room/[slug]', params: { slug: roomSlug } });
+   };
+   ```
+
+   `room/[slug]` là tên route khai báo trong `app/_layout.tsx`. Dùng `goBackToRoom` cho nút fallback.
+   Với nút "Thoát", nhóm cần chọn: về phòng (dùng hàm trên) hay về đúng màn trước bất kể là gì
+   (`router.back()` khi `router.canGoBack()`, ngược lại `router.replace('/')`).
 2. Nếu cần khôi phục cả khi app bị kill: lưu `{ roomSlug, selectedId, cameraPosition }` (vd. vào
    AsyncStorage đã có từ E3-02) và truyền vào `GalleryRoomView` — hiện component chưa nhận vị trí
    camera ban đầu, sẽ cần thêm prop.
