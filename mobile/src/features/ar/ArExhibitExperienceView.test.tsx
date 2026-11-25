@@ -14,9 +14,10 @@ function createHotspotTestViro() {
     React.createElement(View, rest, children as React.ReactNode);
 
   const viro: ViroRuntimeComponents = {
-    ViroARSceneNavigator: ({ initialScene }: Record<string, unknown>) => {
-      const SceneComp = (initialScene as { scene: React.ComponentType }).scene;
-      return React.createElement(View, { testID: 'ar-nav' }, React.createElement(SceneComp));
+    ViroARSceneNavigator: ({ initialScene, viroAppProps }: Record<string, unknown>) => {
+      const initial = React.useRef(initialScene);
+      const SceneComp = (initial.current as { scene: React.ComponentType<Record<string, unknown>> }).scene;
+      return React.createElement(View, { testID: 'ar-nav' }, React.createElement(SceneComp, { arSceneNavigator: { viroAppProps } }));
     },
     ViroARScene: Passthrough,
     ViroARPlaneSelector: ({ children, onPlaneSelected }: Record<string, unknown>) => {
