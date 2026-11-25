@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useReducer, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useReducer, useState, type Dispatch, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Scene3DErrorBoundary } from '@/features/scene3d/Scene3DErrorBoundary';
 import type { GlbCacheAdapter } from '@/features/scene3d/glbCache';
+import type { ModelNormalization } from '@/features/scene3d/glbValidation';
 import type { MuseumDisplay } from '@/features/scene3d/museumTypes';
 import {
   detectDeviceArCapability,
@@ -22,6 +23,7 @@ import {
   arPlacementReducer,
   computeArModelTransform,
   createInitialArPlacementState,
+  type ArPlacementAction,
   type ArPlacementState,
 } from './arPlacementMath';
 
@@ -37,6 +39,8 @@ export interface ArArtifactPlacementViewProps {
   cache?: GlbCacheAdapter;
   fetchImpl?: PrepareArGlbOptions['fetchImpl'];
   sha256Impl?: PrepareArGlbOptions['sha256Impl'];
+  normalizationImpl?: PrepareArGlbOptions['normalizationImpl'];
+  onModelPrepared?: (normalization: ModelNormalization) => void;
   capabilityOverride?: ArCapabilityResult;
   viroOverride?: ViroRuntimeComponents | null;
   /** Điểm mở rộng cho MOB-E9-03 gắn marker hotspot 3D lên hiện vật đã đặt trong AR. */
@@ -53,6 +57,69 @@ type ModelPrepState =
   | { status: 'ready'; prepared: PreparedArGlbSource }
   | { status: 'error'; message: string };
 
+interface PlacementSceneProps {
+  viro: ViroRuntimeComponents;
+  placement: ArPlacementState;
+  dispatch: Dispatch<ArPlacementAction>;
+  exhibit: MuseumDisplay;
+  placedUri: string | null;
+  normalization: ModelNormalization | null;
+  renderPlacedSceneChildren?: (ctx: PlacedArNodeContext) => ReactNode;
+}
+
+// Viro giữ `initialScene` từ lúc navigator khởi tạo. Trạng thái thay đổi phải đi qua
+// viroAppProps, không được đóng trong một component tạo lại ở mỗi lần render.
+function PlacementArScene({ arSceneNavigator }: { arSceneNavigator: { viroAppProps: PlacementSceneProps } }) {
+  const { viro, placement, dispatch, exhibit, placedUri, normalization, renderPlacedSceneChildren } = arSceneNavigator.viroAppProps;
+  const {
+    ViroARScene, ViroARPlaneSelector, ViroAmbientLight, ViroDirectionalLight,
+    ViroNode, Viro3DObject, ViroBox,
+  } = viro;
+  const modelTransform = computeArModelTransform(placement.scale);
+  const fitTransform = normalization ? computeArModelTransform(1, normalization) : null;
+
+  return (
+    <ViroARScene
+      onTrackingUpdated={(stateCode: number, reasonCode?: number) => {
+        const mapped = mapViroTrackingState(stateCode, reasonCode);
+        dispatch({ type: 'TRACKING_UPDATED', quality: mapped.quality, message: mapped.label });
+      }}
+      onAnchorFound={() => dispatch({ type: 'PLANE_DETECTED' })}
+    >
+      <ViroAmbientLight color="#FFFFFF" intensity={650} />
+      <ViroDirectionalLight color="#FFE8CC" direction={[0, -1, -0.4]} />
+      <ViroARPlaneSelector
+        alignment="Horizontal"
+        maxPlanes={5}
+        onPlaneSelected={(anchorMap: { position?: [number, number, number] }) => {
+          dispatch({ type: 'PLACE_AT', position: anchorMap?.position ?? [0, -0.4, -1.2] });
+        }}
+      >
+        {placement.status === 'placed' ? (
+          <ViroNode
+            position={[0, 0, 0]}
+            rotation={[0, placement.rotationYDeg, 0]}
+            scale={modelTransform.scale}
+            onPinch={(pinchState: number, scaleFactor: number) =>
+              dispatch({ type: 'PINCH_GESTURE', gestureState: pinchState, scaleFactor })}
+            onRotate={(rotateState: number, rotationFactor: number) =>
+              dispatch({ type: 'ROTATE_GESTURE', gestureState: rotateState, rotationFactorDeg: rotationFactor })}
+          >
+            {placedUri && fitTransform ? (
+              <ViroNode position={fitTransform.positionOffset} scale={fitTransform.scale}>
+                <Viro3DObject source={{ uri: placedUri }} type="GLB" />
+              </ViroNode>
+            ) : (
+              <ViroBox width={0.32} height={0.32} length={0.32} position={[0, 0.16, 0]} />
+            )}
+            {renderPlacedSceneChildren?.({ viro, placement, exhibit })}
+          </ViroNode>
+        ) : null}
+      </ViroARPlaneSelector>
+    </ViroARScene>
+  );
+}
+
 /**
  * Màn hình đặt hiện vật lên mặt phẳng ngang AR kèm xoay 360° & phóng to/thu nhỏ ổn định
  * (MOB-E9-02). Tái sử dụng cache GLB `MOB-E6-02` và có thanh nút điều khiển 1 tay / a11y.
@@ -63,6 +130,8 @@ export function ArArtifactPlacementView({
   cache,
   fetchImpl,
   sha256Impl,
+  normalizationImpl,
+  onModelPrepared,
   capabilityOverride,
   viroOverride,
   renderPlacedSceneChildren,
@@ -102,10 +171,14 @@ export function ArArtifactPlacementView({
       cache,
       fetchImpl,
       sha256Impl,
+      normalizationImpl,
       signal: controller.signal,
     })
       .then((prepared) => {
-        if (active) setModelPrep({ status: 'ready', prepared });
+        if (active) {
+          setModelPrep({ status: 'ready', prepared });
+          onModelPrepared?.(prepared.normalization);
+        }
       })
       .catch((error: unknown) => {
         if (!active) return;
@@ -120,7 +193,7 @@ export function ArArtifactPlacementView({
       active = false;
       controller.abort();
     };
-  }, [exhibit.model, capability.supported, apiBaseUrl, cache, fetchImpl, sha256Impl]);
+  }, [exhibit.model, capability.supported, apiBaseUrl, cache, fetchImpl, sha256Impl, normalizationImpl, onModelPrepared]);
 
   if (!capability.supported || !viro) {
     return (
@@ -175,71 +248,8 @@ export function ArArtifactPlacementView({
     );
   }
 
-  const {
-    ViroARSceneNavigator,
-    ViroARScene,
-    ViroARPlaneSelector,
-    ViroAmbientLight,
-    ViroDirectionalLight,
-    ViroNode,
-    Viro3DObject,
-    ViroBox,
-  } = viro;
-
-  const modelTransform = computeArModelTransform(placement.scale);
+  const { ViroARSceneNavigator } = viro;
   const placedUri = modelPrep.status === 'ready' ? modelPrep.prepared.localUri : null;
-
-  const PlacementArScene = () => (
-    <ViroARScene
-      onTrackingUpdated={(stateCode: number, reasonCode?: number) => {
-        const mapped = mapViroTrackingState(stateCode, reasonCode);
-        dispatch({ type: 'TRACKING_UPDATED', quality: mapped.quality, message: mapped.label });
-      }}
-      onAnchorFound={() => {
-        dispatch({ type: 'PLANE_DETECTED' });
-      }}
-    >
-      <ViroAmbientLight color="#FFFFFF" intensity={650} />
-      <ViroDirectionalLight color="#FFE8CC" direction={[0, -1, -0.4]} />
-      <ViroARPlaneSelector
-        alignment="Horizontal"
-        maxPlanes={5}
-        onPlaneSelected={(anchorMap: { position?: [number, number, number] }) => {
-          const pos = anchorMap?.position ?? [0, -0.4, -1.2];
-          dispatch({ type: 'PLACE_AT', position: pos });
-        }}
-      >
-        {placement.status === 'placed' ? (
-          <ViroNode
-            position={[0, 0, 0]}
-            rotation={[0, placement.rotationYDeg, 0]}
-            scale={modelTransform.scale}
-            onPinch={(pinchState: number, scaleFactor: number) => {
-              dispatch({ type: 'PINCH_GESTURE', gestureState: pinchState, scaleFactor });
-            }}
-            onRotate={(rotateState: number, rotationFactor: number) => {
-              dispatch({
-                type: 'ROTATE_GESTURE',
-                gestureState: rotateState,
-                rotationFactorDeg: rotationFactor,
-              });
-            }}
-          >
-            {placedUri ? (
-              <Viro3DObject
-                source={{ uri: placedUri }}
-                type="GLB"
-                position={modelTransform.positionOffset}
-              />
-            ) : (
-              <ViroBox width={0.32} height={0.32} length={0.32} position={[0, 0.16, 0]} />
-            )}
-            {renderPlacedSceneChildren?.({ viro, placement, exhibit })}
-          </ViroNode>
-        ) : null}
-      </ViroARPlaneSelector>
-    </ViroARScene>
-  );
 
   const statusHeadline =
     placement.status === 'placed'
@@ -294,6 +304,9 @@ export function ArArtifactPlacementView({
           <ViroARSceneNavigator
             autofocus
             initialScene={{ scene: PlacementArScene }}
+            viroAppProps={{ viro, placement, dispatch, exhibit, placedUri,
+              normalization: modelPrep.status === 'ready' ? modelPrep.prepared.normalization : null,
+              renderPlacedSceneChildren }}
             style={styles.navigator}
           />
         </Scene3DErrorBoundary>
