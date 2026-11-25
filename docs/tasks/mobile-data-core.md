@@ -21,8 +21,8 @@
 | 11 | `feat/mob-cache-settings` | Quản lý cache trong Settings | Đã merge (#222) |
 | 12 | `feat/mob-room-prefetch` | Prefetch phòng | Đã merge (#223) |
 | 13 | `feat/mob-sentry` | Sentry (chờ DSN/tài khoản để nghiệm thu) | Đã merge (#224) |
-| 14 | `feat/mob-analytics-adapter` | Analytics ẩn danh (adapter, chưa gửi ra ngoài) | PR mở |
-| 15 | `feat/mob-perf-baseline` | Perf baseline (chờ 3D của TV4) | Chưa làm |
+| 14 | `feat/mob-analytics-adapter` | Analytics ẩn danh (adapter, chưa gửi ra ngoài) | Đã merge (#225) |
+| 15 | `feat/mob-perf-baseline` | Perf baseline (chờ đo trên máy thật) | PR mở |
 
 ## 1. Config/env + feature flags
 
@@ -161,3 +161,10 @@
 - Riêng tư: danh sách cho phép theo từng sự kiện, kiểm định dạng (UUID nội dung, số, giá trị cố định); sai thì bỏ cả sự kiện. Không có trường chuỗi tự do. Khác plan: không tạo ID cài đặt ẩn danh (chưa gửi đi đâu nên chưa cần).
 - Đã gắn: mở phòng, chọn hiện vật trong phòng, mở AR. Tour: khai báo sẵn, TV5 gọi `track` khi làm guided tour. Màn chi tiết 2D: TV3 gọi khi làm (thêm `mode`).
 - Kiểm chứng: typecheck, lint; 7 test mới; bundle Android + web. Trình duyệt (bản dev): mở phòng + chọn hiện vật ra đúng hai sự kiện, không có request ra ngoài; flag tắt thì không ghi.
+
+## 15. Perf: bundle, startup, memory 3D
+
+- Ngưỡng và cách đo: [performance.md](../plans/261118-mobile-expo-visitor-app/performance.md). Ngưỡng "đề xuất" chờ lead duyệt.
+- `npm run perf:bundle` so bundle với `scripts/bundle-budget.json`. `useStartupTiming` đo phần JS của khởi động.
+- Bỏ `@sentry-internal/replay` khỏi bundle: 3,57 → 3,43 MB (tùy chọn `includeWebReplay` của SDK 6.10 không có tác dụng vì so tên gói cũ). Đã chạy lại E2E gói tin Sentry: vẫn gửi và lọc đúng.
+- Còn chờ: cold start, RAM, fps trên máy thật — **AC chưa đạt** tới khi có số đo.
