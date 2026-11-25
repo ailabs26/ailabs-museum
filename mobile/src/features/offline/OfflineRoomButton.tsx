@@ -6,6 +6,7 @@ import { fileCache } from '@/core/cache/file-cache';
 import { useIsOnline } from '@/core/network/online-status';
 import { roomKeys } from '@/features/catalogue/room-queries';
 import type { PublicRoomPayload } from '@/features/scene3d/museumTypes';
+import { publicRoomApi } from '@/features/scene3d/publicRoomApi';
 import { useTheme } from '@/theme/ThemeProvider';
 import { OFFLINE_STATUS_KEY, isRoomAvailableOffline, prefetchRoom, roomModels } from './room-prefetch';
 
@@ -29,7 +30,11 @@ export function OfflineRoomControl({ slug, name }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   // Chỉ theo dõi nội dung đã có trong cache, không tự tải.
-  const { data: room } = useQuery<PublicRoomPayload>({ queryKey: roomKeys.detail(slug), enabled: false });
+  const { data: room } = useQuery<PublicRoomPayload>({
+    queryKey: roomKeys.detail(slug),
+    queryFn: ({ signal }) => publicRoomApi.detail(slug, signal),
+    enabled: false,
+  });
   // Kiểm file thật trên máy thay vì lưu cờ "đã tải": LRU hoặc hệ điều hành có thể đã dọn.
   const { data: available = false } = useQuery({
     queryKey: [...OFFLINE_STATUS_KEY, slug, room ? roomModels(room).map((m) => m.checksumSha256) : null],
