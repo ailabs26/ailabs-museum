@@ -5,6 +5,7 @@ import { AppErrorFallback } from '@/components/feedback/AppErrorFallback';
 import { OfflineAware } from '@/components/feedback/OfflineBanner';
 import { AuthProvider } from '@/core/auth/AuthProvider';
 import { initSentry } from '@/core/observability/sentry';
+import { useStartupTiming } from '@/core/observability/startup-timing';
 import { QueryProvider } from '@/core/query/QueryProvider';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
@@ -21,6 +22,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps) {
  * Nhóm (tabs) là màn chính; các màn như room/[slug] đẩy lên stack.
  */
 export default function RootLayout() {
+  useStartupTiming();
   return (
     <SafeAreaProvider>
       <QueryProvider>

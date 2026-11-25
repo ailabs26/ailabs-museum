@@ -16,4 +16,12 @@ config.resolver.assetExts = Array.from(
   new Set([...(config.resolver.assetExts ?? []), ...extraAssetExts]),
 );
 
+// Quay màn hình web của Sentry: app không dùng (MOB-E11-03). Tùy chọn includeWebReplay của SDK 6.10 không có
+// tác dụng vì so tên gói cũ `@sentry/replay`.
+const upstreamResolveRequest = config.resolver.resolveRequest;
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (/^@sentry-internal\/replay(-canvas)?$/.test(moduleName)) return { type: 'empty' };
+  return (upstreamResolveRequest ?? context.resolveRequest)(context, moduleName, platform);
+};
+
 module.exports = config;
