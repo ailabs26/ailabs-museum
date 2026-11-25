@@ -136,8 +136,10 @@ trong closure — nếu không scene AR sẽ đứng yên ở trạng thái đ�
 - `arPlacementMath.test.ts` — chuỗi trạng thái và từ chối NaN; pinch 3 pha không nhân dồn; xoay
   không cộng dồn, chuẩn hoá [0, 360), reset; transform đặt khít mặt phẳng.
 - `arModelSource.test.ts` — đo kích thước/vị trí từ GLB thật trước khi cấp URI cho Viro.
-- `ArArtifactPlacementView.test.tsx` — GLB thật trong `back-end/public/media/uploads/models`
-  (bỏ qua nếu thư mục trống): đọc cache, đặt lên mặt phẳng, xoay/phóng to ổn định.
+- `ArArtifactPlacementView.test.tsx` — GLB thật trong `back-end/public/media/uploads/models`:
+  đọc cache, đặt lên mặt phẳng, xoay/phóng to ổn định. Thư mục này không được commit nên **trên CI
+  cả suite bị bỏ qua** (đây là suite "1 skipped" trong báo cáo Jest). Luồng đặt + cử chỉ vẫn được
+  phủ gián tiếp bởi `arPlacementMath.test.ts` và `ArExhibitExperienceView.test.tsx`.
 
 Viro được mock trong Jest. Hành vi trên ARKit/ARCore thật **chưa được kiểm chứng** — xem báo cáo
 từng task.
