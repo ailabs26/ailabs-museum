@@ -92,6 +92,25 @@ npx eas update --channel preview                      # OTA (MOB-E1-07)
 | MOB-E6-07 | 2D fallback | ⏳ chờ 3D engine (TV4, MOB-E6) |
 | MOB-E9-04 | Thoát AR | ⏳ chờ AR (TV4, MOB-E9) |
 
+## Trạng thái task TV4 (3D & AR Engine)
+
+Tài liệu kỹ thuật: [`docs/architecture/mobile/`](../docs/architecture/mobile/README.md).
+
+| Task | Mô tả | Trạng thái |
+| --- | --- | --- |
+| MOB-E6-01 | Spike r3f/native + expo-gl, đo FPS | ✅ Merged · ⏳ đo 60 FPS trên máy thật |
+| MOB-E6-02 | Tải GLB + kiểm tra nhị phân + cache LRU | ✅ Merged |
+| MOB-E6-04 | Phòng 5 bục + nhiều hiện vật | ✅ Merged |
+| MOB-E6-05 | Camera cảm ứng | ✅ Merged |
+| MOB-E6-06 | Va chạm + tìm đường | ✅ Merged |
+| MOB-E6-08 | Tầng chất lượng theo thiết bị | ✅ Merged · ⚠️ `anisotropy`/`maxCacheBytes` chưa áp dụng |
+| MOB-E9-01 | Spike AR (Viro, ARKit/ARCore) | ✅ Merged · ⏳ cần EAS dev build trên máy thật |
+| MOB-E9-02 | Đặt hiện vật lên mặt phẳng + xoay/zoom | ✅ Merged · ⏳ kiểm chứng trên máy thật |
+| MOB-E9-03 | Hotspot overlay trong AR | ✅ Merged · ⏳ kiểm chứng chạm marker trên máy thật |
+
+Engine 3D/AR đã có trên `dev`, nên MOB-E6-07 và MOB-E9-04 của TV1 có thể bắt đầu — xem
+[hướng dẫn tích hợp](../docs/architecture/mobile/08-integration-guide.md).
+
 ## Chưa kiểm chứng (DoD gap)
 
 Môi trường hiện tại **chưa chạy `npm install`/build/device** nên chưa xác minh được app khởi động trên iOS/Android. Người làm cần:
