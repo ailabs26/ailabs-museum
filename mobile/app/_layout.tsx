@@ -4,8 +4,12 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppErrorFallback } from '@/components/feedback/AppErrorFallback';
 import { OfflineAware } from '@/components/feedback/OfflineBanner';
 import { AuthProvider } from '@/core/auth/AuthProvider';
+import { initSentry } from '@/core/observability/sentry';
 import { QueryProvider } from '@/core/query/QueryProvider';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+
+// Trước khi render, để bắt được cả lỗi lúc khởi động (MOB-E13-01).
+initSentry();
 
 /** Lỗi render ở bất kỳ màn nào: hiện màn lỗi có nút thử lại thay vì crash app (MOB-E12-03). */
 export function ErrorBoundary(props: ErrorBoundaryProps) {
