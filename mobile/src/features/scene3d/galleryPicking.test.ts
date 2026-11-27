@@ -1,11 +1,14 @@
 import {
   BoxGeometry,
+  DataTexture,
   Group,
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
+  PlaneGeometry,
   Scene,
   SphereGeometry,
+  type Intersection,
 } from 'three';
 import { GALLERY_PICK_TARGET, pickGalleryTarget } from './galleryPicking';
 
@@ -17,6 +20,7 @@ function setUpPicking() {
   camera.position.z = 5;
   return {
     scene,
+    camera,
     pick: (x = 100, y = 100) => pickGalleryTarget(scene, camera, size, x, y),
   };
 }
@@ -41,6 +45,27 @@ it('chọn một marker gần nhất, trước exhibit cha và marker cùng ID �
   expect(pick()).toEqual({ exhibitId: 'near', hotspotId: 'shared' });
   expect(pick(113, 100)).toEqual({ exhibitId: 'near' });
   expect(pick(200, 200)).toBeUndefined();
+});
+
+it('chọn marker qua lỗ của texture MASK và giữ hiện vật tiền cảnh ở vùng đục', () => {
+  const { scene, camera } = setUpPicking();
+  const pixels = new Uint8Array([255, 255, 255, 0, 255, 255, 255, 255]);
+  const map = new DataTexture(pixels, 2, 1);
+  const material = new MeshBasicMaterial({ map, alphaTest: 0.5 });
+  const front = new Mesh(new PlaneGeometry(1.5, 1), material);
+  front.position.z = 1;
+  front.userData = { [GALLERY_PICK_TARGET]: { exhibitId: 'front' } };
+  const marker = new Mesh(new SphereGeometry(0.4), new MeshBasicMaterial());
+  marker.userData = { [GALLERY_PICK_TARGET]: { exhibitId: 'rear', hotspotId: 'detail' } };
+  scene.add(front, marker);
+
+  // Nearest filtering on the two texels used by this fixture. Native uses the GPU probe.
+  const probe = (hit: Intersection) => pixels[hit.uv!.x < 0.5 ? 3 : 7]! / 255 >= material.alphaTest;
+  expect(pickGalleryTarget(scene, camera, size, 95, 100, probe)).toEqual({
+    exhibitId: 'rear',
+    hotspotId: 'detail',
+  });
+  expect(pickGalleryTarget(scene, camera, size, 105, 100, probe)).toEqual({ exhibitId: 'front' });
 });
 
 it('không raycast xuyên bục trống hay geometry trước marker và bỏ qua mesh ẩn', () => {

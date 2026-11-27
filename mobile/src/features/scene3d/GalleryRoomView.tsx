@@ -17,6 +17,7 @@ import { configureExpoGlContext } from './glbLoader';
 import { GalleryRoomDisplays3D, MuseumRoomShell3D } from './GalleryRoomComponents';
 import { resolveGalleryLayout } from './gallerySlots';
 import { pickGalleryTarget, type GalleryPickTarget } from './galleryPicking';
+import { createGalleryAlphaProbe, GalleryRenderer } from './galleryAlphaProbe';
 import { resolveHotspotStory, type HotspotStorySelection, type SelectHotspot } from './hotspotStory';
 import type { MuseumDisplay } from './museumTypes';
 import { useSceneQuality } from './useSceneQuality';
@@ -86,13 +87,18 @@ function AdaptiveFpsMonitor({
 type PickAt = (x: number, y: number) => GalleryPickTarget | undefined;
 
 function GalleryTouchPicker({ pickAt }: { pickAt: MutableRefObject<PickAt | null> }) {
-  const { camera, scene, size } = useThree();
+  const { camera, gl, scene, size } = useThree();
   useLayoutEffect(() => {
-    pickAt.current = (x, y) => pickGalleryTarget(scene, camera, size, x, y);
+    const alphaProbe =
+      gl instanceof GalleryRenderer
+        ? createGalleryAlphaProbe(gl, gl.renderOffscreen, camera)
+        : undefined;
+    pickAt.current = (x, y) => pickGalleryTarget(scene, camera, size, x, y, alphaProbe?.test);
     return () => {
       pickAt.current = null;
+      alphaProbe?.dispose();
     };
-  }, [camera, scene, size, pickAt]);
+  }, [camera, gl, scene, size, pickAt]);
   return null;
 }
 
@@ -272,7 +278,14 @@ export function GalleryRoomView({
               pointerEvents="none"
               camera={{ position: INITIAL_CAMERA_POSITION, fov: 60 }}
               shadows={quality.profile.enableShadows}
-              gl={{ antialias: quality.profile.antialias }}
+              gl={(canvas) =>
+                new GalleryRenderer({
+                  canvas,
+                  alpha: true,
+                  antialias: quality.profile.antialias,
+                  powerPreference: 'high-performance',
+                })
+              }
               onCreated={(state) => {
                 configureExpoGlContext(state.gl.getContext());
                 state.gl.setPixelRatio(Math.min(PixelRatio.get(), quality.profile.dprCap));
