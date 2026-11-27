@@ -7,8 +7,15 @@ import {
   type ExhibitPlaceholderShape,
   type MuseumDisplay,
 } from './museumTypes';
-import { resolveGalleryLayout, type GalleryLayoutResolution } from './gallerySlots';
+import {
+  isDisplayOutsideRoom,
+  resolveGalleryLayout,
+  type GalleryLayoutResolution,
+} from './gallerySlots';
 import { GALLERY_PICK_TARGET } from './galleryPicking';
+import { ArtifactHotspot3D } from './ArtifactHotspot3D';
+import { getArtifactHotspots } from './artifactHotspots';
+import type { HotspotStorySelection } from './hotspotStory';
 import { QUALITY_PROFILES, type QualityProfile } from './performanceTier';
 import type { RoomModelState } from './roomModelManager';
 
@@ -188,11 +195,13 @@ export function GalleryRoomDisplays3D({
   displays,
   modelStates,
   selectedExhibitId,
+  activeHotspotSelection,
   quality = QUALITY_PROFILES.balanced,
 }: {
   displays: readonly MuseumDisplay[];
   modelStates: ReadonlyMap<string, RoomModelState>;
   selectedExhibitId: string | null;
+  activeHotspotSelection?: HotspotStorySelection | null;
   quality?: QualityProfile;
 }) {
   const layout: GalleryLayoutResolution = useMemo(
@@ -203,26 +212,40 @@ export function GalleryRoomDisplays3D({
   const renderExhibitOnPedestal = (exhibit: MuseumDisplay) => {
     const state = modelStates.get(exhibit.id);
     const isSelected = exhibit.id === selectedExhibitId;
-
-    if (exhibit.model && state?.status === 'ready') {
-      const { scale, offset } = state.asset.normalization;
-      return (
-        <group position={[0, ARTIFACT_BASE_Y, 0]}>
-          <group scale={[scale, scale, scale]}>
-            <group position={offset}>
-              <ClonedModelInstance scene={state.asset.scene} />
+    const asset =
+      state?.status === 'ready' && state.asset.checksumSha256 === exhibit.model?.checksumSha256
+        ? state.asset
+        : undefined;
+    const normalization = asset?.normalization;
+    const hotspots = (exhibit.isOutsideRoom ?? isDisplayOutsideRoom(exhibit))
+      ? []
+      : getArtifactHotspots(exhibit, normalization);
+    return (
+      <>
+        {asset && normalization ? (
+          <group position={[0, ARTIFACT_BASE_Y, 0]}>
+            <group scale={[normalization.scale, normalization.scale, normalization.scale]}>
+              <group position={normalization.offset}>
+                <ClonedModelInstance scene={asset.scene} />
+              </group>
             </group>
           </group>
-        </group>
-      );
-    }
-
-    return (
-      <ExhibitPlaceholder3D
-        shape={exhibit.shape}
-        color={exhibit.color}
-        isSelected={isSelected}
-      />
+        ) : (
+          <ExhibitPlaceholder3D shape={exhibit.shape} color={exhibit.color} isSelected={isSelected} />
+        )}
+        {hotspots.map((hotspot) => (
+          <ArtifactHotspot3D
+            key={hotspot.id}
+            hotspot={hotspot}
+            active={
+              isSelected &&
+              (hotspot.isDefault ||
+                (activeHotspotSelection?.exhibitId === exhibit.id &&
+                  activeHotspotSelection.hotspotId === hotspot.id))
+            }
+          />
+        ))}
+      </>
     );
   };
 
