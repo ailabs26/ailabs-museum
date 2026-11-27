@@ -1,12 +1,15 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { AccessibilityInfo } from 'react-native';
-import { PerspectiveCamera } from 'three';
+import { BoxGeometry, Mesh, MeshBasicMaterial, PerspectiveCamera, Scene } from 'three';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { GALLERY_SLOTS } from './gallerySlots';
+import { GALLERY_PICK_TARGET } from './galleryPicking';
 import { GalleryRoomView } from './GalleryRoomView';
 import type { MuseumDisplay } from './museumTypes';
 
 const mockCamera = new PerspectiveCamera(60, 0.56, 0.1, 100);
+const mockScene = new Scene();
+const viewport = { width: 390, height: 700 };
 
 jest.mock('@react-three/fiber/native', () => {
   const React = require('react');
@@ -17,14 +20,37 @@ jest.mock('@react-three/fiber/native', () => {
     useFrame: jest.fn(),
     useThree: () => ({
       camera: mockCamera,
-      size: { width: 390, height: 700 },
+      scene: mockScene,
+      size: viewport,
       gl: { setPixelRatio: jest.fn() },
     }),
   };
 });
 
+function tapViewport(x: number, y: number) {
+  const surface = screen.getByTestId('touch-look-surface');
+  const touch = { identifier: 1, pageX: x + 4, pageY: y + 24, locationX: x, locationY: y };
+  const event = (touches: typeof touch[]) => ({
+    nativeEvent: { touches, changedTouches: [touch] },
+    touchHistory: {
+      numberActiveTouches: touches.length,
+      indexOfSingleActiveTouch: touch.identifier,
+      mostRecentTimeStamp: 1,
+      touchBank: [undefined, {
+        touchActive: true, currentPageX: touch.pageX, currentPageY: touch.pageY, currentTimeStamp: 1,
+      }],
+    },
+  });
+  fireEvent(surface, 'responderGrant', event([touch]));
+  fireEvent(surface, 'responderStart', event([touch]));
+  fireEvent(surface, 'responderEnd', event([]));
+  fireEvent(surface, 'responderRelease', event([]));
+}
+
 describe('GalleryRoomView (MOB-E6-04)', () => {
   beforeEach(() => {
+    mockScene.clear();
+    mockCamera.position.set(0, 0, 6);
     jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
     jest.spyOn(AccessibilityInfo, 'addEventListener').mockReturnValue({
       remove: jest.fn(),
@@ -109,5 +135,23 @@ describe('GalleryRoomView (MOB-E6-04)', () => {
     await act(async () => {});
 
     expect(screen.getByTestId('gallery-layout-badge')).toHaveTextContent(/Bố cục tự do/);
+  });
+
+  it('tap vùng nhìn raycast và chọn exhibit trước mặt đúng một lần', async () => {
+    const onSelectExhibit = jest.fn();
+    const mesh = new Mesh(new BoxGeometry(), new MeshBasicMaterial());
+    mesh.userData = { [GALLERY_PICK_TARGET]: { exhibitId: displays[1]!.id } };
+    mockScene.add(mesh);
+    render(
+      <ThemeProvider>
+        <GalleryRoomView roomName="Phòng Đông Sơn" displays={displays} onSelectExhibit={onSelectExhibit} />
+      </ThemeProvider>,
+    );
+    await act(async () => {});
+
+    tapViewport(viewport.width / 2, viewport.height / 2);
+    expect(onSelectExhibit).toHaveBeenCalledTimes(1);
+    expect(onSelectExhibit).toHaveBeenCalledWith(displays[1]);
+    expect(screen.getByTestId('gallery-selected-card')).toHaveTextContent(/Bình gốm Chu Đậu/);
   });
 });

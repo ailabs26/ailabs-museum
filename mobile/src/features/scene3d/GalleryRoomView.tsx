@@ -1,5 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, PixelRatio, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from 'react';
+import { PixelRatio, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Canvas, useFrame, useThree } from '@react-three/fiber/native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -8,6 +16,7 @@ import { FpsMeter, type FpsSnapshot } from './fpsMeter';
 import { configureExpoGlContext } from './glbLoader';
 import { GalleryRoomDisplays3D, MuseumRoomShell3D } from './GalleryRoomComponents';
 import { resolveGalleryLayout } from './gallerySlots';
+import { pickGalleryTarget, type GalleryPickTarget } from './galleryPicking';
 import type { MuseumDisplay } from './museumTypes';
 import { useSceneQuality } from './useSceneQuality';
 import {
@@ -68,6 +77,19 @@ function AdaptiveFpsMonitor({
   return null;
 }
 
+type PickAt = (x: number, y: number) => GalleryPickTarget | undefined;
+
+function GalleryTouchPicker({ pickAt }: { pickAt: MutableRefObject<PickAt | null> }) {
+  const { camera, scene, size } = useThree();
+  useLayoutEffect(() => {
+    pickAt.current = (x, y) => pickGalleryTarget(scene, camera, size, x, y);
+    return () => {
+      pickAt.current = null;
+    };
+  }, [camera, scene, size, pickAt]);
+  return null;
+}
+
 /**
  * Màn hình tham quan phòng 3D với nhiều hiện vật đặt đúng theo Gallery Slots (MOB-E6-04),
  * điều khiển cảm ứng + va chạm (MOB-E6-05/06) và tự điều chỉnh chất lượng theo thiết bị (MOB-E6-08).
@@ -97,13 +119,7 @@ export function GalleryRoomView({
   const navInput = useMemo(() => createNavigationInput(), []);
   const navGestures = useMemo(() => new NavigationGestures(), []);
   const commandHandlerRef = useRef<((action: CameraAction) => void) | null>(null);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      if (nextState !== 'active') navInput.stop();
-    });
-    return () => subscription.remove();
-  }, [navInput]);
+  const pickAt = useRef<PickAt | null>(null);
 
   const handleCameraAction = useCallback((action: CameraAction) => {
     commandHandlerRef.current?.(action);
@@ -134,6 +150,11 @@ export function GalleryRoomView({
     setSelectedId(exhibitId);
     const found = displays.find((item) => item.id === exhibitId);
     if (found) onSelectExhibit?.(found);
+  };
+
+  const handleViewportTap = (x: number, y: number) => {
+    const target = pickAt.current?.(x, y);
+    if (target) handleSelectById(target.exhibitId);
   };
 
   const layoutLabel =
@@ -209,6 +230,7 @@ export function GalleryRoomView({
         <View style={[styles.viewport, { borderRadius: theme.radius.lg }]} testID="gallery-3d-viewport">
           <Scene3DErrorBoundary onFallback2D={() => setViewMode('2d')}>
             <Canvas
+              pointerEvents="none"
               camera={{ position: INITIAL_CAMERA_POSITION, fov: 60 }}
               shadows={quality.profile.enableShadows}
               gl={{ antialias: quality.profile.antialias }}
@@ -223,6 +245,7 @@ export function GalleryRoomView({
                 onSample={quality.reportFpsSample}
               />
               <MuseumRoomShell3D quality={quality.profile} />
+              <GalleryTouchPicker pickAt={pickAt} />
               <TouchCameraController
                 input={navInput}
                 commandHandler={commandHandlerRef}
@@ -236,15 +259,13 @@ export function GalleryRoomView({
                 modelStates={modelStates}
                 selectedExhibitId={selectedId}
                 quality={quality.profile}
-                onSelectExhibit={(id) => {
-                  if (navGestures.canSelect) handleSelectById(id);
-                }}
               />
             </Canvas>
             <TouchNavigationHud
               input={navInput}
               gestures={navGestures}
               onAction={handleCameraAction}
+              onTap={handleViewportTap}
             />
           </Scene3DErrorBoundary>
         </View>

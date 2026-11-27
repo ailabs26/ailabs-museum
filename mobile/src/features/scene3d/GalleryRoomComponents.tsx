@@ -8,6 +8,7 @@ import {
   type MuseumDisplay,
 } from './museumTypes';
 import { resolveGalleryLayout, type GalleryLayoutResolution } from './gallerySlots';
+import { GALLERY_PICK_TARGET } from './galleryPicking';
 import { QUALITY_PROFILES, type QualityProfile } from './performanceTier';
 import type { RoomModelState } from './roomModelManager';
 
@@ -128,7 +129,7 @@ export function GalleryPedestal3D({
 
       {/* Vòng sáng đánh dấu khi bục đang được chọn */}
       {isSelected ? (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]} raycast={() => {}}>
           <ringGeometry args={[isHero ? 1.3 : 0.84, isHero ? 1.48 : 0.96, segments]} />
           <meshBasicMaterial color="#0D9488" transparent opacity={0.8} depthWrite={false} />
         </mesh>
@@ -188,13 +189,11 @@ export function GalleryRoomDisplays3D({
   modelStates,
   selectedExhibitId,
   quality = QUALITY_PROFILES.balanced,
-  onSelectExhibit,
 }: {
   displays: readonly MuseumDisplay[];
   modelStates: ReadonlyMap<string, RoomModelState>;
   selectedExhibitId: string | null;
   quality?: QualityProfile;
-  onSelectExhibit?: (exhibitId: string) => void;
 }) {
   const layout: GalleryLayoutResolution = useMemo(
     () => resolveGalleryLayout(displays),
@@ -235,10 +234,7 @@ export function GalleryRoomDisplays3D({
             key={slot.id}
             name={`slot-${slot.id}`}
             position={[slot.position[0], slot.position[1], slot.position[2]]}
-            onClick={(event) => {
-              event.stopPropagation();
-              if (exhibit) onSelectExhibit?.(exhibit.id);
-            }}
+            userData={exhibit ? { [GALLERY_PICK_TARGET]: { exhibitId: exhibit.id } } : {}}
           >
             <GalleryPedestal3D
               kind={slot.plinthKind}
@@ -266,10 +262,7 @@ export function GalleryRoomDisplays3D({
             key={exhibit.id}
             name={`exhibit-${exhibit.id}`}
             position={exhibit.position}
-            onClick={(event) => {
-              event.stopPropagation();
-              onSelectExhibit?.(exhibit.id);
-            }}
+            userData={{ [GALLERY_PICK_TARGET]: { exhibitId: exhibit.id } }}
           >
             <GalleryPedestal3D
               kind={kind}
