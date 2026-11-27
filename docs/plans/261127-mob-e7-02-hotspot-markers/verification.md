@@ -1,8 +1,20 @@
 # Kiểm chứng MOB-E7-02
 
-Base `23825f585c6f345fb0981b35a0a851d06ab81bac` trên `origin/dev` đã chứa PR #229. Nhánh `feat/mob-e7-02-hotspot-markers`. Commit mã được kiểm chứng là `59b0a5a0b70bb026499e83589cdfb880227db573`.
+Base `23825f585c6f345fb0981b35a0a851d06ab81bac` trên `origin/dev` đã chứa PR #229. Nhánh `feat/mob-e7-02-hotspot-markers`. Commit mã mới nhất được kiểm chứng là `d39cd7ed75eeac8b253f43dbde1e4190797a1db2`.
 
 **Implementation hoàn tất. Kiểm chứng tự động PASS. NATIVE TOUCH NOT VERIFIED.** AC chạm marker trên thiết bị còn chờ xác nhận Android/iOS.
+
+## Cập nhật sau review PR #231
+
+Regression test tái hiện việc chạm qua lỗ của GLB `alphaMode: MASK` chọn nhầm hiện vật tiền cảnh. Với hit có `alphaTest`, picker dùng shader Three.js để render riêng tam giác đã trúng vào render target 1×1. Nếu shader bỏ pixel vì alpha dưới ngưỡng, picker tiếp tục xét hit kế tiếp. [Góp ý review](https://github.com/ailabs26/ailabs-museum/pull/231#discussion_r4720861058)
+
+| Kiểm tra ở `d39cd7e` | Kết quả |
+| --- | --- |
+| Jest `galleryPicking` và `GalleryRoomView` | 11 PASS. Test mới xác nhận lỗ alpha chọn marker phía sau và phần đục chọn hiện vật phía trước. |
+| Chrome headless dùng WebGL | PASS cho lỗ alpha, vùng đục, texture transform trên UV1 và vertex alpha. Pass ngoài màn hình khôi phục render target và clear alpha. |
+| Full Jest, typecheck và lint | 232 PASS / 0 FAIL / 2 SKIP. Typecheck và lint PASS. |
+| Hermes Android và iOS qua Expo CLI | 3.602.680 và 3.604.020 byte. Cả hai dưới giới hạn 4.194.304 byte. |
+| Chạm native qua lỗ alpha trên Android và iOS | NOT RUN. Cần thiết bị hoặc emulator có dev build tương thích Viro. |
 
 ## Ma trận kiểm chứng
 
@@ -18,7 +30,7 @@ Base `23825f585c6f345fb0981b35a0a851d06ab81bac` trên `origin/dev` đã chứa P
 
 Test tích hợp dùng Canvas mock để host JSX, dựng các mesh từ props marker đã render và gọi raycast Three.js thật. RNTL gửi chuỗi sự kiện responder. Việc đưa touch từ OS vào viewport Expo GL cần dev build để kiểm chứng.
 
-## Lệnh đã chạy
+## Lệnh đã chạy trước review
 
 Windows 11, Node `24.8.0`, npm `11.6.0`. Các lệnh npm chạy bằng `npm.cmd` trong PowerShell từ `mobile/`.
 
@@ -44,8 +56,8 @@ Expo CLI chạy offline với `EXPO_OFFLINE=1` và `EXPO_NO_TELEMETRY=1`. Kích 
 
 | OS | Thiết bị và build | SHA dự kiến | Kết quả |
 | --- | --- | --- | --- |
-| Android | Máy Windows thiếu Android SDK, `adb` và emulator khả dụng. | `59b0a5a` | NOT RUN |
-| iOS | Máy Windows thiếu Xcode, simulator và dev build iOS khả dụng. | `59b0a5a` | NOT RUN |
+| Android | Máy Windows thiếu Android SDK, `adb` và emulator khả dụng. | `d39cd7e` | NOT RUN |
+| iOS | Máy Windows thiếu Xcode, simulator và dev build iOS khả dụng. | `d39cd7e` | NOT RUN |
 
 Dùng dev build tương thích Viro. Ghi OS, model, loại build, SHA, kết quả thực tế và ảnh/video nếu có.
 
@@ -53,6 +65,7 @@ Dùng dev build tương thích Viro. Ghi OS, model, loại build, SHA, kết qu�
 | --- | --- |
 | Mở phòng nhiều hiện vật và chạm lần lượt hai điểm trên cùng hiện vật, rồi một điểm trùng ID ở hiện vật khác | Marker active đổi đúng theo cặp exhibit/hotspot, đúng exhibit được chọn và analytics phát một lần mỗi tap. |
 | Chạm marker mặc định, marker bị che hoặc bục trống | Marker mặc định chọn exhibit. Bề mặt phía trước chặn điểm bị che. Bục trống giữ lựa chọn hiện tại. |
+| Chạm marker nhìn thấy qua lỗ của GLB dùng `alphaMode: MASK`, rồi chạm phần đục của cùng GLB | Lỗ alpha chọn marker phía sau. Phần đục chọn hiện vật tiền cảnh. |
 | Drag qua marker, pinch rồi nhấc một ngón, thả tay và tap lại | Yaw/pitch và dolly phản hồi. Chỉ tap mới chọn. |
 | Đưa app vào background khi đang chạm rồi quay lại | Gesture cũ hết hiệu lực và tap mới hoạt động. |
 | Thử joystick, nút camera, focus và AR | Điều khiển camera, collision và AR entry hoạt động, HUD không phát selection hotspot. |
@@ -73,6 +86,7 @@ Dùng dev build tương thích Viro. Ghi OS, model, loại build, SHA, kết qu�
 | `3c8c44f` | `feat(mob): add native 3D hotspot markers [MOB-E7-02]` | Marker dùng lại và active visual | `ArtifactHotspot3D.tsx`, `ArtifactHotspot3D.test.tsx` | 1 case Jest, typecheck, lint | Committed |
 | `3a7eab1` | `fix(mob): route gallery taps through the navigation HUD [MOB-E7-02]` | Responder và raycast giữ hành vi chọn exhibit | `TouchNavigationHud.tsx`, `TouchNavigationHud.test.tsx`, `galleryPicking.ts`, `galleryPicking.test.ts`, `GalleryRoomComponents.tsx`, `GalleryRoomView.tsx`, `GalleryRoomView.test.tsx` | 22 case Jest, typecheck, lint | Committed |
 | `59b0a5a` | `feat(mob): connect gallery hotspot selection [MOB-E7-02]` | Marker theo layout/model, lifecycle và nút 2D dùng chung selection | `room/[slug].tsx`, `ArtifactHotspot3D.tsx`, `GalleryRoomComponents.tsx`, `GalleryRoomView.tsx`, `GalleryRoomView.test.tsx` | Hotspot 13, gallery 8, navigation 7, typecheck, lint | Committed |
-| Commit tài liệu này | `docs(mob): record hotspot interaction verification [MOB-E7-02]` | Kết quả, native checklist và contract bàn giao | `verification.md` | Full Jest, Hermes budget và diff check | Handoff |
+| `aedefc2` | `docs(mob): record hotspot interaction verification [MOB-E7-02]` | Kết quả, native checklist và contract bàn giao | `verification.md` | Full Jest, Hermes budget và diff check | Committed |
+| `d39cd7e` | `fix(mob): respect GLB alpha masks when picking hotspots [MOB-E7-02]` | Raycast nhận diện vùng bị cắt alpha theo shader | `GalleryRoomView.tsx`, `galleryAlphaProbe.ts`, `galleryPicking.ts`, `galleryPicking.test.ts` | Jest hồi quy, Chrome WebGL, full Jest, typecheck, lint và Hermes budget | Committed |
 
-Tách marker và routing để mỗi commit có test độc lập. Gộp layout, authored selection và nút 2D vì chúng chia sẻ dữ liệu và handler. Mở một draft PR về `dev` để review và ghi kết quả native khi có dev build.
+Tách marker và routing để mỗi commit có test độc lập. Gộp layout, authored selection và nút 2D vì chúng chia sẻ dữ liệu và handler. PR #231 vào `dev` đang ở trạng thái Ready for review. [PR #231](https://github.com/ailabs26/ailabs-museum/pull/231)
