@@ -60,3 +60,13 @@ Toàn bộ lược đồ hiện tại được dựng tuần tự qua **13 file 
 - Chỉ người phụ trách database chạy `npm run migration:run` / `migration:revert` trên DB dùng chung.
 - Không sửa hoặc xóa file migration đã chạy; luôn tạo migration mới cho thay đổi tiếp theo.
 - Không chỉnh sửa thủ công bảng `public.migrations` do TypeORM quản lý.
+
+## 4. Các script Seed và Tiện ích lưu trữ (`src/database/seeds/`, `scripts/`)
+
+| Lệnh npm | File nguồn | Chức năng & Tính an toàn (Idempotency) |
+|---|---|---|
+| `npm run seed` | `seeds/seed.ts` | Tạo đủ 31 quyền, 3 vai trò mặc định (`admin`, `moderator`, `editor`) và tài khoản admin đầu tiên từ `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD`. Bảo toàn cấu hình RBAC hiện có (kiểm chứng bởi `seed-rbac-preservation.spec.ts`). |
+| `npm run seed:translations` | `seeds/seed-translations.ts` | Nạp bộ chuỗi UI công khai từ `public-ui-strings.ts` vào bảng `translations` cho 6 ngôn ngữ. |
+| `npm run seed:demo` | `seeds/seed-demo-content.ts` | Thêm 5 hiện vật `[Mẫu]` đã xuất bản vào phòng `phong-lich-su-quan-su-viet-nam` trong 1 transaction có khóa phòng; bỏ qua bản ghi đã tồn tại, không ghi đè chỉnh sửa của admin. |
+| `npm run seed:models` | `seeds/seed-storage-models.ts` | Tải và kiểm SHA-256 đủ 5 model GLB từ Supabase Storage trước khi tạo phòng `bo-suu-tap-glb`, 5 bản ghi `media` và 5 cặp `exhibit`/`exhibit_revision`. |
+| `npm run media:upload-supabase` | `scripts/upload-media-to-supabase.ts` | Tiện ích tải các file media mẫu/cục bộ lên bucket private `SUPABASE_STORAGE_BUCKET` của Supabase Storage. |
