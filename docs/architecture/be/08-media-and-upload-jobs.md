@@ -58,3 +58,35 @@ Route `GET /media/uploads/:directory/:fileName` nằm **ngoài tiền tố `/api
 Chạy tự động lúc **03:30 hằng ngày** (`@Cron('30 3 * * *', { name: 'media-orphan-cleanup' })`), điều khiển bởi `MEDIA_ORPHAN_CLEANUP` (`off` | `dry-run` mặc định | `on`):
 1. **Dọn thùng rác quá hạn**: xóa vĩnh viễn các bản ghi `media` đã xóa mềm quá `MEDIA_TRASH_RETENTION_DAYS` (mặc định 30 ngày) và không còn revision nào tham chiếu, ghi audit `media.purge` (`actorId: null`) rồi xóa file trên storage.
 2. **Dọn file mồ côi trên storage**: xóa file khớp mẫu key do media quản lý nhưng không có bản ghi DB và cũ hơn 24 giờ (sót lại từ upload dở dang).
+
+## 6. Hàng đợi Upload bất đồng bộ (`MediaUploadJob` — BT3)
+
+Để không làm nghẽn request HTTP khi upload và kiểm định các tệp lớn (GLB/MP3 tới 10 MB), `AdminUploadJobsController` (`/api/admin/media/upload-jobs`) cung cấp luồng bất đồng bộ:
+
+- `POST /api/admin/media/upload-jobs` (`media:upload`, `@Audit('media.upload_job.create')`): nhận file + header `Idempotency-Key`, tạo bản ghi `media_upload_jobs` trạng thái `queued` và trả ngay thông tin job.
+- `GET /api/admin/media/upload-jobs/:id` (`media:upload`): polling tiến độ (`progress` 0..100), trạng thái (`status`), `media_id` khi hoàn tất hoặc `error_code`/`error_message` khi lỗi.
+
+### Cơ chế Idempotency, giới hạn đồng thời & dọn dẹp
+- **Idempotency theo `(created_by, idempotency_key)`**: lưu `request_checksum` (SHA-256). Nếu gửi lại cùng `Idempotency-Key` với cùng nội dung → trả lại job cũ; nếu khác checksum → từ chối xung đột để tránh ghi đè nhầm.
+- **Hàng đợi FIFO có giới hạn đồng thời**: chạy tối đa `MEDIA_UPLOAD_JOB_CONCURRENCY` job song song (mặc định 3) trong tiến trình; các job thừa xếp hàng FIFO.
+- **Đối soát khi khởi động & lưu giữ**: khi server khởi động lại, các job bị treo giữa chừng được đối soát (reconcile); các job đã kết thúc quá `MEDIA_UPLOAD_JOB_RETENTION_DAYS` (mặc định 7 ngày) được dọn sạch.
+
+```mermaid
+sequenceDiagram
+    participant CMS as Admin CMS
+    participant Ctl as AdminUploadJobsController
+    participant Svc as MediaUploadJobService
+    participant DB as media_upload_jobs / media
+    participant Store as Local / Supabase Storage
+
+    CMS->>Ctl: POST /api/admin/media/upload-jobs (file + Idempotency-Key)
+    Ctl->>Svc: Kiểm tra Idempotency-Key & request_checksum
+    Svc->>DB: Lưu job (status = queued, progress = 0)
+    Svc-->>CMS: 202 / 201 { jobId, status: queued }
+    Note over Svc: Worker pool (tối đa MEDIA_UPLOAD_JOB_CONCURRENCY = 3)
+    Svc->>Svc: MediaInspectionService (magic bytes + structure)
+    Svc->>Store: Ghi file theo storage_key
+    Svc->>DB: Tạo bản ghi media + cập nhật job (completed, media_id)
+    CMS->>Ctl: GET /api/admin/media/upload-jobs/:id
+    Ctl-->>CMS: 200 { status: completed, progress: 100, mediaId }
+```
