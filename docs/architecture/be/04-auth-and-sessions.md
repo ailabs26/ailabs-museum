@@ -39,3 +39,25 @@ Bảng `refresh_sessions` lưu trạng thái từng refresh token (chỉ lưu **
 - **`used_at` / `revoked_at` / `expires_at`**: kiểm soát trạng thái sử dụng, thu hồi và hết hạn (mặc định `JWT_REFRESH_TTL_DAYS = 7`).
 - **`signed_in_at` / `user_agent` / `ip`**: hiển thị danh sách thiết bị đang đăng nhập trong CMS.
 - **Index tối ưu**: `IDX_refresh_sessions_user_family (user_id, family_id)` và partial index `IDX_refresh_sessions_family_live (family_id) WHERE revoked_at IS NULL` giúp `ActiveSessionGuard` kiểm tra nhanh.
+
+## 3. Cơ chế bảo vệ phiên, chống CSRF và chống lạm dụng
+
+### 3.1 `ActiveSessionGuard` (thu hồi tức thì access token)
+Access token có hạn ngắn (`JWT_ACCESS_TTL = 15m`), nhưng hệ thống **không chờ hết hạn** khi đăng xuất, đổi mật khẩu, khóa hoặc xóa tài khoản. Sau `JwtAuthGuard`, `ActiveSessionGuard` truy vấn `sessions.isFamilyLive(user.sessionId)`; nếu family đã bị thu hồi hoặc token cũ không có `sid`, guard lập tức trả `401 Phiên đăng nhập đã kết thúc`.
+
+### 3.2 Xoay vòng refresh token & phát hiện tái sử dụng (Reuse Detection)
+Mỗi lần gọi `POST /api/auth/refresh`:
+- Token cũ được đánh dấu `used_at` và liên kết `replaced_by_id` sang bản ghi mới trong cùng `family_id`.
+- Nếu một token đã dùng (`used_at != null`) bị gửi lại (dấu hiệu bị đánh cắp), backend **thu hồi toàn bộ `family_id`** và ghi vết sự kiện bảo mật vào `audit_logs`.
+
+### 3.3 `RefreshCookieOriginGuard`
+Vì `/auth/refresh` và `/auth/logout` là `@Public()` dùng httpOnly cookie, guard này kiểm tra header `Origin` trên request từ trình duyệt:
+- Nếu không có `Origin` (CLI / native mobile client) → cho qua.
+- Nếu có `Origin`, chỉ chấp nhận khi khớp `FRONTEND_ORIGIN` hoặc origin của chính API; sai origin → `403`.
+
+### 3.4 `AuthRateLimiter` và `SessionsCleanupService`
+- **`AuthRateLimiter`**: giới hạn tần suất theo cửa sổ trong bộ nhớ cho cả đăng nhập (chặn brute-force theo IP và theo email trước khi băm bcrypt) lẫn `/auth/refresh` với 3 ngưỡng cấu hình riêng:
+  - `REFRESH_RATE_LIMIT_PER_SESSION` (mặc định 30/phút)
+  - `REFRESH_RATE_LIMIT_PER_IP` (mặc định 300/phút)
+  - `REFRESH_RATE_LIMIT_INVALID_PER_IP` (mặc định 20/phút khi cookie thiếu/sai)
+- **`SessionsCleanupService`**: chạy định kỳ qua `@Cron` (`ScheduleModule`) để dọn các bản ghi `refresh_sessions` đã hết hạn/đã thu hồi lâu ngày, tránh phình bảng.
