@@ -42,3 +42,16 @@ Phân hệ RBAC tách rạch ròi giữa **định danh người dùng (`users`)
 | `GET /api/roles/:id/permissions` | `role:read` | — | Danh sách quyền đang gán cho vai trò |
 | `PUT /api/roles/:id/permissions` | `role:update` | `role.set_permissions` | Cập nhật ma trận quyền của vai trò |
 | `GET /api/permissions` | `permission:read` | — | Toàn bộ danh mục quyền của hệ thống |
+
+## 3. Luật nghiệp vụ & Bảo vệ đặc biệt
+
+1. **Kiểm tra quyền thứ cấp `role:assign` trong `UsersService`**:
+   - Khi tạo người dùng (`POST /api/users`) với `roleIds` khác rỗng hoặc cập nhật (`PATCH /api/users/:id`) có truyền `roleIds` (kể cả `[]`), service kiểm tra thêm quyền `role:assign` qua `user-access.util.ts`.
+   - Nếu thiếu `role:assign`, service ném `PermissionDeniedException` để trả `403` **và** kích hoạt `PermissionDeniedFilter` ghi vết `access.denied` giống hệt guard.
+2. **Thu hồi phiên tức thì khi thay đổi trạng thái/mật khẩu/xóa**:
+   - Khi tài khoản bị khóa (`status = locked`), xóa mềm (`DELETE` / `bulk-delete`), đặt lại mật khẩu hoặc đổi vai trò nhạy cảm, các `refresh_sessions` liên quan bị thu hồi ngay trong cùng transaction. Kết hợp với `ActiveSessionGuard`, mọi access token hiện hành lập tức mất hiệu lực ở request kế tiếp.
+3. **Bảo vệ an toàn khi xóa mềm và khôi phục**:
+   - Tài khoản không thể tự xóa hoặc tự khóa chính mình; vai trò hệ thống cốt lõi (như `admin`) hoặc vai trò đang được gán có kiểm tra ràng buộc trước khi xóa (`DeletionBlockedException`).
+   - Thao tác `bulk-delete` và `bulk-restore` chạy nguyên tử qua `TransactionManager` để tránh trạng thái dở dang một phần, đồng thời kiểm tra xung đột `code` / `email` khi khôi phục.
+4. **Ẩn hoàn toàn dữ liệu nhạy cảm**:
+   - Mọi phản hồi đi qua mapper sang `UserResponseDto`; `passwordHash`, `totpSecretEnc`, `totpPendingEnc`, `totpLastStep` không bao giờ xuất hiện trong JSON trả về.
