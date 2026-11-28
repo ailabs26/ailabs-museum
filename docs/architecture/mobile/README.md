@@ -39,7 +39,8 @@ app/(tabs)/rooms.tsx ──► app/room/[slug].tsx ──► GalleryRoomView ─
 ```
 
 Hai nhánh 3D và AR **dùng chung một lớp cache GLB và một bộ kiểm tra nhị phân** — một hiện vật đã
-xem trong phòng 3D mở AR không phải tải lại.
+xem trong phòng 3D khi mở AR sẽ không phải tải lại nếu cache vẫn còn bản đúng checksum SHA-256 và
+kích thước (chưa bị LRU xoá và lần ghi trước không bị bỏ qua do lỗi ổ đĩa).
 
 ## Mục lục
 
@@ -73,7 +74,7 @@ Gom từ các tài liệu con; chi tiết ở link tương ứng.
 |---|---|---|---|
 | 1 | Kiểm chứng trên iPhone/Android thật: FPS, va chạm, đặt AR, chạm marker | kiểm chứng | [07](07-testing-and-verification.md#kiểm-chứng-trên-thiết-bị--còn-chờ) |
 | 2 | Marker hotspot gắn `onClick` ở cả node cha và sphere con — có thể chọn rồi bỏ chọn trong một lần chạm | rủi ro | [06](06-ar-hotspots.md#cần-kiểm-chứng-trên-máy-thật) |
-| 3 | `anisotropy` và `maxCacheBytes` của tầng chất lượng chưa được áp dụng | thiếu sót | [04](04-performance-tiers.md#việc-còn-mở) |
+| 3 | `shadowMapSize`, `anisotropy` và `maxCacheBytes` của tầng chất lượng chưa được áp dụng | thiếu sót | [04](04-performance-tiers.md#việc-còn-mở) |
 | 4 | Chuyển `GlbCacheAdapter` sang `fileCache` chung, bỏ TODO trong `storage-usage.ts` | nợ kỹ thuật | [08](08-integration-guide.md#tv2--cache-dùng-chung) |
 | 5 | Commit GLB mẫu nhỏ làm fixture để 2 test GLB thật chạy được trên CI | kiểm thử | [07](07-testing-and-verification.md#lỗ-hổng-kiểm-thử) |
 | 6 | Đổi tầng chất lượng (kể cả tự hạ tầng) tạo lại `RoomModelManager` → huỷ và parse lại mọi GLB trong phòng. Nên chỉ cập nhật giới hạn song song thay vì tạo lại | hiệu năng | [02](02-room-rendering.md#tải-nhiều-glb--roommodelmanager) |

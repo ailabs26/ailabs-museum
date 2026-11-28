@@ -47,8 +47,10 @@ decay    = e^(−damping·Δt)
 v_next   = target + (v − target)·decay
 ```
 
-Đầu vào đường chéo được chuẩn hoá, hướng tính theo yaw. Khi không còn input và vận tốc ≈ 0 thì về
-trạng thái nghỉ (ngừng render liên tục).
+Đầu vào đường chéo được chuẩn hoá, hướng tính theo yaw. Khi không còn input và vận tốc ≈ 0 thì
+camera dừng di chuyển (vận tốc về 0); lưu ý `<Canvas>` trong `GalleryRoomView` không đặt
+`frameloop="demand"` nên phòng vẫn render liên tục và `AdaptiveFpsMonitor` vẫn lấy mẫu qua
+`useFrame` khi đứng yên.
 
 ## Va chạm — `museumCollision.ts`
 

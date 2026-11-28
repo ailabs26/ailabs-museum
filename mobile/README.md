@@ -108,7 +108,7 @@ Tài liệu kỹ thuật: [`docs/architecture/mobile/`](../docs/architecture/mob
 | MOB-E6-04 | Phòng 5 bục + nhiều hiện vật | ✅ Merged |
 | MOB-E6-05 | Camera cảm ứng | ✅ Merged |
 | MOB-E6-06 | Va chạm + tìm đường | ✅ Merged |
-| MOB-E6-08 | Tầng chất lượng theo thiết bị | ✅ Merged · ⚠️ `anisotropy`/`maxCacheBytes` chưa áp dụng |
+| MOB-E6-08 | Tầng chất lượng theo thiết bị | ✅ Merged · ⚠️ `shadowMapSize`/`anisotropy`/`maxCacheBytes` chưa áp dụng |
 | MOB-E9-01 | Spike AR (Viro, ARKit/ARCore) | ✅ Merged · ⏳ cần EAS dev build trên máy thật |
 | MOB-E9-02 | Đặt hiện vật lên mặt phẳng + xoay/zoom | ✅ Merged · ⏳ kiểm chứng trên máy thật |
 | MOB-E9-03 | Hotspot overlay trong AR | ✅ Merged · ⏳ kiểm chứng chạm marker trên máy thật |

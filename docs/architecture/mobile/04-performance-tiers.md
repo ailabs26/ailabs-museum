@@ -30,9 +30,10 @@ chạy được; `Scene3DErrorBoundary` bắt lỗi GL và đưa ra giao diện 
 |---|---|---|---|---|
 | `dprCap` (giới hạn pixel ratio) | 1 | 1.5 | 2 | `gl.setPixelRatio` |
 | `antialias` | tắt | bật | bật | `<Canvas gl>` |
-| `enableShadows` / `shadowMapSize` | tắt / 0 | bật / 1024 | bật / 2048 | đèn + sàn/tường |
+| `enableShadows` | tắt | bật | bật | `<Canvas shadows>` và `MuseumRoomShell3D` (`castShadow` / `receiveShadow`) |
+| `shadowMapSize` | 0 | 1024 | 2048 | **chưa áp dụng** — `MuseumRoomShell3D` chưa truyền vào đèn |
 | `enableSecondaryLights` | tắt | bật | bật | `MuseumRoomShell3D` |
-| `geometrySegments` | 16 | 24 | 32 | placeholder |
+| `geometrySegments` | 16 | 24 | 32 | `GalleryPedestal3D` (`ExhibitPlaceholder3D` vẫn dùng số segment cố định) |
 | `maxConcurrentGlbLoads` | 1 | 2 | 3 | `RoomModelManager` |
 | `anisotropy` | 2 | 4 | 8 | **chưa áp dụng** |
 | `maxCacheBytes` | 64 MB | 150 MB | 256 MB | **chưa áp dụng** — cache GLB vẫn dùng mặc định 150 MB |
@@ -74,6 +75,6 @@ Cao → …) và `wasAutoDowngraded`. Nút chất lượng trên header gọi `c
 
 ## Việc còn mở
 
-- Nối `maxCacheBytes` vào `ExpoFileSystemGlbCache` (hiện cố định 150 MB) và `anisotropy` vào texture
-  của GLB đã tải.
+- Nối `shadowMapSize` vào đèn đổ bóng trong `MuseumRoomShell3D`, `maxCacheBytes` vào
+  `ExpoFileSystemGlbCache` (hiện cố định 150 MB) và `anisotropy` vào texture của GLB đã tải.
 - Đo FPS trên máy thật theo từng tầng (hiện mới có số liệu từ test và spike).

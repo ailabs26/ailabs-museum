@@ -103,8 +103,10 @@ sequenceDiagram
     V->>M: dispose() → abort + disposeModel
 ```
 
-Đổi tầng chất lượng làm `maxConcurrentGlbLoads` đổi → effect tạo manager mới. Các GLB đã tải nằm
-trong cache nên lần tải lại đi nhánh cache hit, không tốn mạng (nhưng vẫn parse lại).
+Đổi tầng chất lượng làm `maxConcurrentGlbLoads` đổi → effect tạo manager mới. Với các GLB vẫn còn
+bản hợp lệ trong cache (đúng checksum SHA-256 và kích thước — chưa bị LRU xoá và lần ghi trước không
+lỗi vì `loadGlbModel` bỏ qua lỗi ghi cache), lần tải lại đi nhánh cache hit nên không tốn mạng
+(nhưng vẫn parse lại); các file không còn trong cache sẽ tải lại qua mạng.
 
 ## Component
 

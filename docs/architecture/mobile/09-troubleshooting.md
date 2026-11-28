@@ -35,7 +35,7 @@ cũng phải gọi hàm này.
 
 | `category` | Cách xử lý |
 |---|---|
-| `network`, `timeout` | Kiểm tra mạng / `EXPO_PUBLIC_API_URL`, bấm Thử lại |
+| `network`, `timeout` | Kiểm tra mạng / `EXPO_PUBLIC_API_URL`. Trên màn xem một hiện vật (`GlbArtifactView`), bấm **Thử lại** để tải lại GLB. Trên màn phòng (`GalleryRoomView`), hiện vật giữ placeholder và chưa có nút thử tải lại riêng cho từng GLB (nút **Thử lại 3D** của `Scene3DErrorBoundary` chỉ dùng khi lỗi renderer/WebGL); cần vào lại phòng hoặc đổi tầng chất lượng để `RoomModelManager` tải lại |
 | `rate_limit` | Đợi `retryAfterSeconds` (giới hạn rate của API công khai) |
 | `missing`, `permission` | Hiện vật đã gỡ xuất bản hoặc media bị khoá trên CMS |
 | `checksum` | File trên storage khác checksum đã lưu — upload lại media trên CMS |

@@ -71,7 +71,9 @@ lớp an toàn của [01-glb-pipeline](01-glb-pipeline.md):
 4. Parse bằng `GLTFLoader` **chỉ để đo** `normalizeModel`, rồi `disposeModel` ngay (Viro tự render).
 5. Trả `{ localUri, checksumSha256, sizeBytes, source, normalization }`.
 
-Hiện vật đã xem trong phòng 3D sẽ có `source: 'cache'` — không tải lại.
+Nếu hiện vật đã xem trong phòng 3D vẫn còn bản hợp lệ trong cache (đúng checksum SHA-256 và đúng
+kích thước — chưa bị LRU xoá và lần ghi trước thành công, vì `loadGlbModel` bỏ qua lỗi ghi cache),
+`prepareArGlbSource` sẽ trả `source: 'cache'` mà không tải lại; ngược lại sẽ tải lại qua mạng.
 
 ## 4. Máy trạng thái đặt hiện vật — `arPlacementReducer`
 
