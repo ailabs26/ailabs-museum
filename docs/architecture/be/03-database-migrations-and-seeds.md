@@ -70,3 +70,38 @@ Toàn bộ lược đồ hiện tại được dựng tuần tự qua **13 file 
 | `npm run seed:demo` | `seeds/seed-demo-content.ts` | Thêm 5 hiện vật `[Mẫu]` đã xuất bản vào phòng `phong-lich-su-quan-su-viet-nam` trong 1 transaction có khóa phòng; bỏ qua bản ghi đã tồn tại, không ghi đè chỉnh sửa của admin. |
 | `npm run seed:models` | `seeds/seed-storage-models.ts` | Tải và kiểm SHA-256 đủ 5 model GLB từ Supabase Storage trước khi tạo phòng `bo-suu-tap-glb`, 5 bản ghi `media` và 5 cặp `exhibit`/`exhibit_revision`. |
 | `npm run media:upload-supabase` | `scripts/upload-media-to-supabase.ts` | Tiện ích tải các file media mẫu/cục bộ lên bucket private `SUPABASE_STORAGE_BUCKET` của Supabase Storage. |
+
+## 5. Sơ đồ quan hệ tổng quát giữa 18 bảng
+
+```mermaid
+erDiagram
+    users ||--o{ user_roles : "has"
+    roles ||--o{ user_roles : "assigned_to"
+    roles ||--o{ role_permissions : "grants"
+    permissions ||--o{ role_permissions : "mapped"
+    users ||--o{ refresh_sessions : "owns"
+    users ||--o{ user_recovery_codes : "has_2fa_backup"
+    users ||--o{ notifications : "receives"
+    users ||--o{ audit_logs : "acts_as_actor"
+
+    rooms ||--o{ exhibits : "contains"
+    exhibits ||--o{ exhibit_revisions : "versions"
+    exhibit_revisions ||--o{ hotspots : "defines"
+    media ||--o{ exhibit_revisions : "referenced_by_6_slots"
+    media ||--o{ media_upload_jobs : "produced_by"
+
+    exhibits ||--o{ content_reports : "reported_on"
+    users ||--o{ content_reports : "assigned_to"
+
+    translations {
+        uuid id
+        varchar key
+        jsonb values
+    }
+    partner_api_keys {
+        uuid id
+        varchar partner_name
+        char key_hash
+        jsonb scopes
+    }
+```
