@@ -75,3 +75,47 @@ Hệ thống hỗ trợ 2FA TOTP tùy chọn theo chuẩn **RFC 6238** (`otplib`
 3. **Mã khôi phục (`UserRecoveryCode`)**:
    - Hàm `hashRecoveryCode()` loại khoảng trắng và dấu gạch ngang rồi lowercase trước khi băm SHA-256, nên người dùng nhập `ABCDE-FGHIJ` hay `abcdefghij` đều hợp lệ.
    - Mỗi mã khôi phục dùng đúng 1 lần (đánh dấu đã dùng trong transaction).
+
+## 5. Sơ đồ luồng đăng nhập 2FA và xoay vòng Refresh Token
+
+```mermaid
+sequenceDiagram
+    participant U as Admin Client
+    participant C as AuthController
+    participant RL as AuthRateLimiter
+    participant S as AuthService & TwoFactorService
+    participant DB as PostgreSQL
+
+    U->>C: POST /api/auth/login (email, password)
+    C->>RL: Kiểm giới hạn IP & email
+    C->>S: Xác thực tài khoản + bcrypt.compare
+    alt Tài khoản chưa bật 2FA
+        S->>DB: Tạo RefreshSession (family_id mới, token_hash)
+        S-->>U: 200 { accessToken (sid=family_id) } + Set-Cookie aura_rt (HttpOnly)
+    else Tài khoản đã bật 2FA
+        S-->>U: 200 { requiresTwoFactor: true, challengeToken }
+        U->>C: POST /api/auth/login/2fa (challengeToken, code / recoveryCode)
+        C->>S: Kiểm TOTP + claimStep (chống replay) hoặc khớp UserRecoveryCode
+        S->>DB: Tạo RefreshSession (family_id mới)
+        S-->>U: 200 { accessToken } + Set-Cookie aura_rt
+    end
+```
+
+```mermaid
+sequenceDiagram
+    participant U as Client
+    participant G as RefreshCookieOriginGuard
+    participant S as AuthService
+    participant DB as refresh_sessions
+
+    U->>G: POST /api/auth/refresh (Cookie: aura_rt)
+    G->>S: Origin hợp lệ
+    S->>DB: Tìm bản ghi theo SHA-256(token)
+    alt Token hợp lệ & chưa dùng
+        S->>DB: Đánh dấu used_at, tạo bản ghi mới cùng family_id, nối replaced_by_id
+        S-->>U: 200 { accessToken mới } + Cookie aura_rt mới
+    else Token đã used_at (Reuse detected)
+        S->>DB: Thu hồi toàn bộ family_id (revoked_at = now) + ghi AuditLog
+        S-->>U: 401 RefreshFailedException (ActiveSessionGuard khóa mọi access token cũ ngay)
+    end
+```
