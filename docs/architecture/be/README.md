@@ -54,6 +54,7 @@ AppModule
 | 02 | [02-common-infrastructure.md](02-common-infrastructure.md) | `CommonModule`, `BaseRepository`, `TransactionManager`, `ApiResponse`, ngoại lệ, bảo mật và 31 quyền RBAC |
 | 03 | [03-database-migrations-and-seeds.md](03-database-migrations-and-seeds.md) | `DatabaseModule`, 18 entity TypeORM, lịch sử 13 migration và các script seed/Supabase |
 | 04 | [04-auth-and-sessions.md](04-auth-and-sessions.md) | JWT access, `RefreshSession` xoay vòng, `ActiveSessionGuard`, rate limit và 2FA TOTP |
+| 05 | [05-users-and-roles-rbac.md](05-users-and-roles-rbac.md) | Quản lý tài khoản, vai trò, 31 quyền RBAC, xóa mềm/khôi phục và thu hồi phiên |
 <!-- INDEX_ENTRIES -->
 
 ## Nguyên tắc kiến trúc cốt lõi
