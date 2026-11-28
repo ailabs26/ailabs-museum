@@ -53,3 +53,26 @@ Các lớp ngoại lệ domain trong `common/exceptions/` ánh xạ trực tiế
   - Gắn header `X-RateLimit-Limit`, `X-RateLimit-Remaining`; khi vượt ngưỡng trả `429` kèm `Retry-After`.
 - **`UploadFileInterceptor`**: bọc Multer memoryStorage áp trần dung lượng `MAX_UPLOAD_BYTES` (10 MB) ngay tại tầng nhận multipart trước khi vào kiểm tra magic bytes.
 - **`csv.util.ts`**: thoát ký tự và chống CSV formula injection (`=`, `+`, `-`, `@`) cho xuất báo cáo audit và export hiện vật.
+
+## 6. Danh mục 31 quyền RBAC & Vai trò mặc định (`permissions.constant.ts`)
+
+Hệ thống định nghĩa cố định **31 permission** dạng `resource:action` làm nguồn sự thật chung cho `@Permissions(...)` ở controller và script `seed.ts`:
+
+| Nhóm | Danh sách quyền |
+|---|---|
+| Người dùng & phân quyền (10) | `user:read`, `user:create`, `user:update`, `user:delete`, `role:read`, `role:create`, `role:update`, `role:delete`, `role:assign`, `permission:read` |
+| Phòng & hiện vật (7) | `room:read`, `room:create`, `room:update`, `room:delete`, `exhibit:read`, `exhibit:create`, `exhibit:update` |
+| Revision & Media (7) | `revision:create`, `revision:submit`, `revision:publish`, `revision:reject`, `revision:hide`, `media:upload`, `media:attach` |
+| Báo cáo & Nhật ký (3) | `report:read`, `report:resolve`, `audit:read` |
+| Đa ngôn ngữ & Đối tác (4) | `translation:read`, `translation:manage`, `apikey:read`, `apikey:manage` |
+
+Phân bổ mặc định theo `RoleKey` (`DEFAULT_ROLE_PERMISSIONS`):
+- **`admin`**: toàn bộ **31 quyền**.
+- **`moderator`** (9 quyền): `room:read`, `exhibit:read`, `revision:publish`, `revision:reject`, `revision:hide`, `report:read`, `report:resolve`, `audit:read`, `permission:read`.
+- **`editor`** (11 quyền): `room:read/create/update/delete`, `exhibit:read/create/update`, `revision:create/submit`, `media:upload/attach`.
+
+## 7. DTO và Enum dùng chung
+
+- **DTO**: `PaginationQueryDto` (`page`, `pageSize`), `IdParamDto` (`UUID`), `BulkIdsDto` (mảng UUID cho xóa mềm/khôi phục hàng loạt), `DeletedFilterDto` (`active` | `deleted` | `all` cho tab Thùng rác).
+- **Enum**: `RoleKey` (`admin`, `moderator`, `editor`), `RevisionStatus`, `ReportStatus`.
+- **Type**: `AuthUser` (gắn vào `req.user` sau `JwtAuthGuard`), `JwtPayload`, `Paginated<T>`.
