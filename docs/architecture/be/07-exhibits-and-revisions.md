@@ -31,3 +31,31 @@
 | `S05` | Bục 05 – Phải trước | `(4.3, 0, 2.1)` |
 
 Hàm `matchGallerySlot(position)` so khớp trong sai số `GALLERY_SLOT_TOLERANCE = 0.05m` (đồng bộ 1:1 với `front-end/src/helpers/gallerySlots.ts` và `mobile/`). Tọa độ tự do không khớp bục nào (phòng legacy) trả `null` và không bị ràng buộc đụng bục.
+
+## 4. Sáu slot media cục bộ hóa & Cổng xuất bản `RevisionPublishGate`
+
+### 4.1 Nguồn sự thật 6 slot media (`constants/revision-media-slots.ts`)
+| Key | Cột DB | Trường DTO | `MediaKind` | Locale |
+|---|---|---|---|---|
+| `model` | `model_media_id` | `modelId` | `model` | — |
+| `image` | `image_media_id` | `imageId` | `image` | — |
+| `audioVi` | `audio_media_id` | `audioViId` | `audio` | `vi` |
+| `audioEn` | `audio_en_media_id` | `audioEnId` | `audio` | `en` |
+| `subtitleVi` | `subtitle_vi_media_id` | `subtitleViId` | `subtitle` | `vi` |
+| `subtitleEn` | `subtitle_en_media_id` | `subtitleEnId` | `subtitle` | `en` |
+
+### 4.2 Luật kiểm định của `RevisionPublishGate`
+Được dùng chung bởi cả `ExhibitsService` (khi `submit-review`) và `ModerationService` (khi `publish` / `unhide`), luôn chạy **bên trong transaction**:
+1. **Khóa media `FOR SHARE` (`MediaReferenceValidator.lockAndCheck`)**: ngăn media bị xóa trong lúc đang gửi duyệt/xuất bản; kiểm tra tồn tại (`media_not_found`), trạng thái sẵn sàng (`media_not_ready`) và đúng `MediaKind` (`media_kind_mismatch`).
+2. **Kiểm tra nội dung & trợ năng (§5.2 SRS)**:
+   - Nội dung tiếng Việt/Anh bắt buộc đầy đủ theo quy định; các ngôn ngữ tùy chọn (`fr`, `zh`, `ko`, `ja`) không bắt buộc.
+   - Ảnh phải có alt text (`image_alt_text_missing`), audio phải kèm transcript và phụ đề WebVTT tương ứng (`audio_transcript_missing`, `audio_subtitle_missing`, `subtitle_without_audio`), media phải khai báo quyền sử dụng (`media_rights_missing`).
+   - Mọi vi phạm gom trả về `422 DomainValidationException` với mảng `{ field, code, message }[]`.
+3. **Chống trùng bục (`assertSlotFree`)**: khóa các vị trí công khai hiện tại của phòng (`lockPublicPlacements`); nếu 2 hiện vật công khai cùng rơi vào 1 slot `S01..S05`, ném `422` mã `gallery_slot_occupied`.
+
+## 5. Sắp xếp tour, lưu nháp tự động và Import/Export
+
+- **Sắp xếp thứ tự tour (`PUT /api/admin/exhibits/rooms/:roomId/reorder`)**: cập nhật `display_order` theo phạm vi phòng, kiểm tra toàn bộ ID thuộc đúng `roomId`.
+- **Lưu nháp tự động (Draft Autosave — VT-079)**: `PATCH /api/admin/exhibits/:id` cho phép lưu bản nháp khi chỉ cần kiểm tham chiếu media tồn tại/đúng loại, chưa ép đủ điều kiện xuất bản §5.2; xử lý tránh ghi đè dữ liệu cũ bằng kiểm tra phiên bản.
+- **Bulk Transfer (`ExhibitTransferService`)**: hỗ trợ xuất/nhập hàng loạt theo danh mục cột cố định (`exhibit-transfer.columns.ts`), chống CSV injection và xác thực từng dòng trước khi ghi.
+- **Tìm kiếm công khai**: chi tiết thuật toán lọc và thứ tự cố định `roomId, displayOrder, id` xem tại [public-exhibit-search.md](public-exhibit-search.md).
