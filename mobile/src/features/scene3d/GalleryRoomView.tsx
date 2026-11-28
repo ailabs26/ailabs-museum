@@ -7,7 +7,7 @@ import {
   useState,
   type MutableRefObject,
 } from 'react';
-import { PixelRatio, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Canvas, useFrame, useThree } from '@react-three/fiber/native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -55,22 +55,9 @@ export interface GalleryRoomViewProps {
 
 const EMPTY_MODEL_STATES: ReadonlyMap<string, RoomModelState> = new Map();
 
-function AdaptiveFpsMonitor({
-  dprCap,
-  onSample,
-}: {
-  dprCap: number;
-  onSample: (snapshot: FpsSnapshot) => void;
-}) {
-  const { gl } = useThree();
+function AdaptiveFpsMonitor({ onSample }: { onSample: (snapshot: FpsSnapshot) => void }) {
   const meterRef = useRef<FpsMeter>(new FpsMeter({ windowSize: 60, maxGapMs: 500 }));
   const elapsedRef = useRef(0);
-
-  useEffect(() => {
-    if (typeof gl?.setPixelRatio === 'function') {
-      gl.setPixelRatio(Math.min(PixelRatio.get(), dprCap));
-    }
-  }, [gl, dprCap]);
 
   useFrame((_state, deltaSec) => {
     const ms = deltaSec * 1000;
@@ -287,15 +274,12 @@ export function GalleryRoomView({
                 })
               }
               onCreated={(state) => {
+                // R3F Native uses the physical Expo GL framebuffer size for the viewport.
                 configureExpoGlContext(state.gl.getContext());
-                state.gl.setPixelRatio(Math.min(PixelRatio.get(), quality.profile.dprCap));
                 state.camera.lookAt(...INITIAL_CAMERA_TARGET);
               }}
             >
-              <AdaptiveFpsMonitor
-                dprCap={quality.profile.dprCap}
-                onSample={quality.reportFpsSample}
-              />
+              <AdaptiveFpsMonitor onSample={quality.reportFpsSample} />
               <MuseumRoomShell3D quality={quality.profile} />
               <GalleryTouchPicker pickAt={pickAt} />
               <TouchCameraController

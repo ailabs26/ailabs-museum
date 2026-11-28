@@ -35,7 +35,6 @@ describe('performanceTier — phân tầng chất lượng 3D theo thiết bị 
     expect(resolveInitialQualityTier({ totalMemoryBytes: 12 * GB, deviceYearClass: 2024, isEmulator: true })).toBe('low');
 
     const low = getQualityProfile('low');
-    expect(low.dprCap).toBe(1);
     expect(low.enableShadows).toBe(false);
     expect(low.antialias).toBe(false);
     expect(low.maxConcurrentGlbLoads).toBe(1);

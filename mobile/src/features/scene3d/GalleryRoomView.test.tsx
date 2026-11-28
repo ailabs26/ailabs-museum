@@ -25,6 +25,7 @@ import type { RoomModelState } from './roomModelManager';
 
 const mockCamera = new PerspectiveCamera(60, 0.56, 0.1, 100);
 const mockScene = new Scene();
+const mockSetPixelRatio = jest.fn();
 const viewport = { width: 390, height: 700 };
 
 jest.mock('@react-three/fiber/native', () => {
@@ -38,7 +39,7 @@ jest.mock('@react-three/fiber/native', () => {
       camera: mockCamera,
       scene: mockScene,
       size: viewport,
-      gl: { setPixelRatio: jest.fn() },
+      gl: { setPixelRatio: mockSetPixelRatio },
     }),
   };
 });
@@ -167,6 +168,7 @@ function readyAsset(): LoadedGlbAsset {
 
 describe('GalleryRoomView (MOB-E6-04)', () => {
   beforeEach(() => {
+    mockSetPixelRatio.mockClear();
     mockScene.clear();
     mockCamera.position.set(0, 0, 6);
     jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
@@ -222,6 +224,7 @@ describe('GalleryRoomView (MOB-E6-04)', () => {
     expect(qualityBtn).toHaveTextContent(/Thấp/);
     fireEvent.press(qualityBtn);
     expect(qualityBtn).toHaveTextContent(/Cân bằng/);
+    expect(mockSetPixelRatio).not.toHaveBeenCalled();
 
     // Chuyển sang chế độ danh sách 2D dễ tiếp cận.
     fireEvent.press(screen.getByRole('button', { name: 'Chuyển sang danh sách hiện vật 2D' }));
