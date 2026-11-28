@@ -62,7 +62,8 @@ AppModule
 | 10 | [10-audit-and-notifications.md](10-audit-and-notifications.md) | Nhật ký `@Audit`/`PermissionDeniedFilter`, xuất CSV và hệ thống thông báo chuông CMS |
 | 11 | [11-translations-and-partner-api.md](11-translations-and-partner-api.md) | Hệ thống bản dịch 6 ngôn ngữ và cổng đối tác `/api/partner/v1/*` (SHA-256 key, scope, rate limit) |
 | 12 | [12-stats-and-health.md](12-stats-and-health.md) | Thống kê Dashboard admin (`overview`, `charts`, `storage`) và probe liveness/readiness |
-<!-- INDEX_ENTRIES -->
+| 13 | [13-testing-and-verification.md](13-testing-and-verification.md) | Danh mục 104 file `*.spec.ts`, cổng coverage 80%, fuzzing, k6/upload-jobs load test và diễn tập DB |
+| 14 | [14-troubleshooting-and-operations.md](14-troubleshooting-and-operations.md) | Sổ tay xử lý sự cố env/CORS/refresh/rate-limit/publish-gate/media/readiness |
 
 ## Nguyên tắc kiến trúc cốt lõi
 
@@ -70,3 +71,12 @@ AppModule
 2. **Mặc định khóa, mở tường minh**: 3 guard toàn cục chạy trên mọi route; chỉ route public mới gắn `@Public()`.
 3. **Giao dịch nguyên tử qua `TransactionManager`**: mọi thao tác liên bảng (publish revision, bulk delete/restore, bật 2FA, dọn thùng rác) truyền `EntityManager` chung để đảm bảo nhất quán và khóa bản ghi (`FOR SHARE` / `FOR UPDATE`).
 4. **Schema đổi qua migration**: `synchronize: false` cố định trên mọi môi trường; mọi thay đổi lược đồ đi qua `src/database/migrations/`.
+
+## Hạn chế hiện tại & Việc cần lưu ý khi mở rộng
+
+| # | Hạng mục | Ghi chú kỹ thuật | Tài liệu liên quan |
+|---|---|---|---|
+| 1 | Rate limiter lưu trong bộ nhớ tiến trình | `PublicRateLimiter`, `AuthRateLimiter`, `PartnerRateLimiter` dùng `Map` trong RAM; khi scale nhiều instance backend cần chuyển sang store dùng chung (Redis) | [02](02-common-infrastructure.md), [04](04-auth-and-sessions.md), [11](11-translations-and-partner-api.md) |
+| 2 | Hàng đợi upload bất đồng bộ chạy in-process | `MediaUploadJobService` giới hạn theo tiến trình (`MEDIA_UPLOAD_JOB_CONCURRENCY`); đa instance cần broker/worker rời nếu lưu lượng upload lớn | [08](08-media-and-upload-jobs.md) |
+| 3 | Job dọn media mồ côi mặc định `dry-run` | `MEDIA_ORPHAN_CLEANUP=dry-run` để tránh xóa nhầm file; cần rà log 03:30 trước khi bật `on` trên production | [08](08-media-and-upload-jobs.md), [14](14-troubleshooting-and-operations.md) |
+| 4 | Integration test cần DB cục bộ riêng | Các file `*.integration.spec.ts` chỉ chạy khi đặt `CORE_TEST_DATABASE_URL` trỏ tới PostgreSQL local | [13](13-testing-and-verification.md) |
