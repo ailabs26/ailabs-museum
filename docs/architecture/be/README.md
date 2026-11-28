@@ -52,6 +52,7 @@ AppModule
 | — | [public-exhibit-search.md](public-exhibit-search.md) | Chi tiết thiết kế API tìm kiếm hiện vật công khai (`GET /api/rooms/search`, VT-077) |
 | 01 | [01-bootstrap-and-config.md](01-bootstrap-and-config.md) | Khởi động NestJS (`main.ts`, `AppModule`), pipeline HTTP, namespace cấu hình và kiểm định biến môi trường |
 | 02 | [02-common-infrastructure.md](02-common-infrastructure.md) | `CommonModule`, `BaseRepository`, `TransactionManager`, `ApiResponse`, ngoại lệ, bảo mật và 31 quyền RBAC |
+| 03 | [03-database-migrations-and-seeds.md](03-database-migrations-and-seeds.md) | `DatabaseModule`, 18 entity TypeORM, lịch sử 13 migration và các script seed/Supabase |
 <!-- INDEX_ENTRIES -->
 
 ## Nguyên tắc kiến trúc cốt lõi
