@@ -96,7 +96,8 @@ export async function computeSha256Hex(buffer: ArrayBuffer): Promise<string> {
       '',
     );
   }
-  const digest = await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, buffer);
+  // Expo Crypto's native digest receives a JSI TypedArray.
+  const digest = await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, new Uint8Array(buffer));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
@@ -214,12 +215,29 @@ async function parseSelfContainedGlb(buffer: ArrayBuffer, signal?: AbortSignal):
   });
 
   const loader = new GLTFLoader(manager);
-  const gltf = await loader.parseAsync(buffer, '');
+  const gltf = await parseWithNativeNavigator(loader, buffer);
   if (signal?.aborted) {
     disposeModel(gltf.scenes);
     throw new GlbLoadError('parse', 'aborted', 'Đã hủy giải mã mô hình 3D.');
   }
   return gltf;
+}
+
+function parseWithNativeNavigator(loader: GLTFLoader, buffer: ArrayBuffer): Promise<GLTF> {
+  const navigator = globalThis.navigator;
+  if (navigator?.product !== 'ReactNative' || typeof navigator.userAgent === 'string') {
+    return loader.parseAsync(buffer, '');
+  }
+
+  // Three r166 reads userAgent synchronously when parseAsync constructs its parser.
+  const original = Object.getOwnPropertyDescriptor(navigator, 'userAgent');
+  Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'ReactNative' });
+  try {
+    return loader.parseAsync(buffer, '');
+  } finally {
+    if (original) Object.defineProperty(navigator, 'userAgent', original);
+    else Reflect.deleteProperty(navigator, 'userAgent');
+  }
 }
 
 let defaultCacheInstance: GlbCacheAdapter | null = null;
