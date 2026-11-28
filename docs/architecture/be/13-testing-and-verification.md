@@ -36,3 +36,14 @@ npm run build          # nest build
 npm test               # toàn bộ bộ spec
 npm run test:coverage  # ngưỡng bắt buộc >= 80% lines/branches/functions cho phạm vi lõi
 ```
+
+## 3. Kiểm thử nâng cao: Fuzz, Load Testing và An toàn Database
+
+| Hạng mục | Lệnh / Công cụ | Mô tả |
+|---|---|---|
+| **Fuzzing kiểm định media** | `npm run test:fuzz` | Chạy `media-upload-fuzz.spec.ts` và `media-validator-fuzz.spec.ts` kiểm chứng chống file lỗi cấu trúc, decompression bomb và payload đánh lừa magic bytes |
+| **Tải hàng đợi Upload Jobs** | `npm run load:upload-jobs` | Chạy `src/modules/media/tests/load/upload-jobs.load.ts` đánh giá hành vi FIFO concurrency (`MEDIA_UPLOAD_JOB_CONCURRENCY`) và idempotency dưới tải đồng thời |
+| **K6 Load Test API công khai** | `npm run load:k6:prepare` rồi `npm run load:k6` | Kịch bản `load/k6/public-visitor.js` đo độ trễ và thông lượng luồng khách tham quan (`/rooms`, `/rooms/:slug`, `/rooms/search`) |
+| **Kiểm thử script load** | `npm run test:load-scripts` | Chạy `scripts/*.spec.ts` xác minh script chuẩn bị dữ liệu k6 |
+| **Integration test trên PostgreSQL thật** | Đặt biến `CORE_TEST_DATABASE_URL` | Các file `*.integration.spec.ts` (core DB, RBAC HTTP, trash-restore, 2FA, autosave, gallery-slot-guard, public-search, media-attach, upload-jobs, notifications) chạy trực tiếp trên PostgreSQL cục bộ (vd container `postgres:16-alpine`), không chạm DB production/staging |
+| **Diễn tập an toàn & backup/restore DB** | `tools/db/check-db-config.sh` và `tools/db/backup-restore-drill.sh` | Kiểm cấu hình DB chỉ đọc và diễn tập khôi phục trên container tạm đo RPO/RTO |
