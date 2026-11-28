@@ -61,6 +61,7 @@ AppModule
 | 09 | [09-moderation-and-content-reports.md](09-moderation-and-content-reports.md) | Hàng chờ kiểm duyệt, diff đa ngôn ngữ, publish/reject/hide và quy trình báo cáo vi phạm (throttled) |
 | 10 | [10-audit-and-notifications.md](10-audit-and-notifications.md) | Nhật ký `@Audit`/`PermissionDeniedFilter`, xuất CSV và hệ thống thông báo chuông CMS |
 | 11 | [11-translations-and-partner-api.md](11-translations-and-partner-api.md) | Hệ thống bản dịch 6 ngôn ngữ và cổng đối tác `/api/partner/v1/*` (SHA-256 key, scope, rate limit) |
+| 12 | [12-stats-and-health.md](12-stats-and-health.md) | Thống kê Dashboard admin (`overview`, `charts`, `storage`) và probe liveness/readiness |
 <!-- INDEX_ENTRIES -->
 
 ## Nguyên tắc kiến trúc cốt lõi
