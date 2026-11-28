@@ -54,3 +54,33 @@ Mỗi nhóm cấu hình dùng `registerAs('<namespace>', ...)` và được nạ
 - **Xác thực `TRUST_PROXY` (`parseTrustProxy`)**: chấp nhận `false`, `true`, số hop nguyên không âm (`1`, `2`), tên dải mạng (`loopback`, `linklocal`, `uniquelocal`) hoặc danh sách IPv4/IPv6/CIDR phân tách bằng dấu phẩy.
 - **Điều kiện khi `MEDIA_STORAGE_DRIVER=supabase`**: bắt buộc có `SUPABASE_URL` hợp lệ và ít nhất một trong hai khóa `SUPABASE_SECRET_KEY` (ưu tiên `sb_secret_...`) hoặc `SUPABASE_SERVICE_ROLE_KEY` (≥ 20 ký tự).
 - **Chính sách khóa bí mật ở `NODE_ENV=production`**: các khóa trong `PRODUCTION_SECRETS` (`JWT_ACCESS_SECRET`, `MEDIA_URL_SIGNING_SECRET`, `TOTP_ENCRYPTION_KEY`) bắt buộc phải đặt tường minh, độ dài tối thiểu 32 ký tự và không được trùng giá trị mẫu/dev (`PLACEHOLDER_SECRETS`).
+
+## 5. Vòng đời request chuẩn qua chuỗi HTTP toàn cục
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant ReqId as RequestIdMiddleware
+    participant Sec as Helmet & CORS
+    participant Guards as Global Guards (JWT -> Session -> RBAC)
+    participant Pipe as ValidationPipe
+    participant Ctl as Controller & Service
+    participant Audit as AuditInterceptor
+    participant Resp as ResponseInterceptor
+    participant Filters as PermissionDenied / AllExceptionsFilter
+
+    Client->>ReqId: HTTP Request
+    ReqId->>Sec: Gắn X-Request-Id (UUID)
+    Sec->>Guards: Áp Helmet + kiểm CORS + cookieParser
+    alt Route @Public()
+        Guards->>Pipe: Bỏ qua JWT/Session/RBAC (chạy guard cục bộ nếu có)
+    else Route quản trị
+        Guards->>Guards: JwtAuthGuard -> ActiveSessionGuard -> PermissionsGuard
+    end
+    Guards->>Pipe: Kiểm DTO (whitelist + forbidNonWhitelisted + transform)
+    Pipe->>Ctl: Thực thi nghiệp vụ (Service -> Repository)
+    Ctl->>Audit: Nếu route có @Audit(...) -> ghi AuditLog append-only
+    Audit->>Resp: Trả DTO / StreamableFile
+    Resp-->>Client: ApiResponse { success: true, data, meta? } hoặc stream
+    Note over Filters: Bất kỳ ngoại lệ nào: PermissionDeniedFilter (403 + audit) rồi AllExceptionsFilter -> { success: false, message, errors }
+```
