@@ -1,0 +1,117 @@
+# Kiểm chứng MOB-E7-02
+
+Base `23825f585c6f345fb0981b35a0a851d06ab81bac` trên `origin/dev` đã chứa PR #229. Nhánh `feat/mob-e7-02-hotspot-markers`. Commit mã mới nhất được kiểm chứng là `c1dc551425d217e7ddefbacd8c150e4ebd7d2a42`.
+
+**Implementation hoàn tất.** Kiểm tra tự động pass. Checklist GLB `MASK` của reviewer pass trên Android emulator. iOS chưa chạy, nên điều kiện nghiệm thu native trên cả hai nền tảng vẫn còn mở.
+
+## Cập nhật sau review PR #231
+
+Regression test tái hiện việc chạm qua lỗ của GLB `alphaMode: MASK` chọn nhầm hiện vật tiền cảnh. Với hit có `alphaTest`, picker dùng shader Three.js để render riêng tam giác đã trúng vào render target 1×1. Nếu shader bỏ pixel vì alpha dưới ngưỡng, picker tiếp tục xét hit kế tiếp. [Góp ý review](https://github.com/ailabs26/ailabs-museum/pull/231#discussion_r4720861058)
+
+| Kiểm tra ở `d39cd7e` | Kết quả |
+| --- | --- |
+| Jest `galleryPicking` và `GalleryRoomView` | 11 PASS. Test mới xác nhận lỗ alpha chọn marker phía sau và phần đục chọn hiện vật phía trước. |
+| Chrome headless dùng WebGL | PASS cho lỗ alpha, vùng đục, texture transform trên UV1 và vertex alpha. Pass ngoài màn hình khôi phục render target và clear alpha. |
+| Full Jest, typecheck và lint | 232 PASS / 0 FAIL / 2 SKIP. Typecheck và lint PASS. |
+| Hermes Android và iOS qua Expo CLI | 3.602.680 và 3.604.020 byte. Cả hai dưới giới hạn 4.194.304 byte. |
+| Chạm native qua lỗ alpha trên Android và iOS | Chưa chạy ở commit này. Kết quả Android trên mã mới xem bên dưới. |
+
+## Kiểm chứng Android sau review Expo GL
+
+Android QA phát hiện hai lỗi tải GLB. Expo Crypto cần `Uint8Array` để tính SHA-256 và Three r166 đọc `navigator.userAgent` lúc khởi tạo parser. Mã mới dùng typed array và bổ sung `userAgent` trong lúc khởi tạo parser trên React Native khi thuộc tính này vắng mặt. Cả hai ca có test hồi quy.
+
+Ở chế độ Cân bằng, lệnh đặt DPR thu nhỏ vùng render trong framebuffer Expo GL trong khi tọa độ tap vẫn theo toàn bộ vùng hiển thị. Gallery đã bỏ DPR cap và dùng kích thước framebuffer do R3F Native cung cấp để khớp hình với vị trí chạm ở các chế độ chất lượng.
+
+| Fixture tại `c1dc551` | Chạm qua lỗ | Chạm phần đục | Camera sau chọn |
+| --- | --- | --- | --- |
+| GLB `MASK` một lớp, Thấp | Chọn “Hiện vật phía sau” | Chọn “Tấm chắn MASK” | Kéo xoay được, reset về khung ban đầu và giữ lựa chọn |
+| GLB `MASK` tám lớp có lỗ thẳng hàng, Thấp và Cân bằng | Chọn “Hiện vật phía sau” ở cả hai chế độ | Chọn “Tấm chắn MASK” ở cả hai chế độ | Ở Cân bằng, kéo xoay được, reset về khung ban đầu và giữ lựa chọn |
+
+ADB gửi thao tác chạm và kéo vào app đang chạy. UIAutomator xác nhận hiện vật đang chọn và ảnh trước/sau xác nhận camera đổi khung hình. Chưa đo độ trễ của lượt đọc GPU trên đường xử lý tap. [Yêu cầu kiểm chứng Expo GL](https://github.com/ailabs26/ailabs-museum/pull/231#discussion_r4721157282)
+
+Hai fixture dùng cùng hình và alpha cutout, với một hoặc tám mặt trên cùng tia. Fixture một lớp có SHA-256 `d0cae195e53a06437ab91245f25cd8f5d69b422427a8ff38a77561f853015862`. Fixture tám lớp có SHA-256 `5aa0abb5956f13e779e52ca109eae44dd29f68691bc26b8427e741962ab7eb0d`. Script phục vụ fixture qua HTTP, hướng dẫn và ảnh gốc nằm trong `mobile/.expo/native-qa/` ở máy kiểm thử.
+
+| Kiểm tra tại `c1dc551` | Kết quả |
+| --- | --- |
+| `npm run typecheck`, `npm run lint` | PASS |
+| `npm test -- --ci --runInBand --roots src app` | 50 suite PASS, 1 suite SKIP. 234 PASS / 0 FAIL / 2 SKIP. Cảnh báo React và hai case thiếu fixture giống baseline. |
+
+## Ma trận kiểm chứng
+
+| Phạm vi | Kịch bản và bằng chứng | Kết quả |
+| --- | --- | --- |
+| E7-01 | 7 case tọa độ/fallback và 2 case resolve story bằng hai helper đã có. | 9 PASS |
+| Marker 3D | Sphere bán kính 0,16 m với 12×8 segments. Tâm giữ nguyên tọa độ helper, active đổi màu và scale 1,2. Hit target dùng bề mặt sphere. | PASS |
+| Tọa độ | Payload thật qua `mapRoomDisplays` trong layout slotted và legacy. Marker gắn trực tiếp dưới placement group, cùng cấp với cụm GLB. Ready dùng cùng normalization với GLB. Loading, error và checksum cũ rơi về fallback. Bục trống và exhibit ngoài phòng có 0 marker. | PASS |
+| Selection | Tap hai authored hotspot trên cùng exhibit, hai exhibit dùng chung hotspot ID, marker mặc định, ID đã xóa, và nút 2D. Kiểm tra ID phòng, analytics một lần mỗi thao tác, callback hợp lệ, active state và loader chỉ chạy một lần khi đổi selection. | PASS |
+| Lifecycle | Refetch giữ selection còn hợp lệ và resolve story mới. Chọn exhibit, đổi phòng, gỡ exhibit hoặc gỡ hotspot xóa active selection. Đổi 2D/3D giữ selection hợp lệ. | PASS |
+| Raycast và gesture | Three.js thật kiểm bề mặt gần nhất, marker cùng tia, model tiền cảnh, bục trống và mesh ẩn. RNTL kiểm tap, drag quay lại điểm đầu, pinch về một ngón có hoặc thiếu move, terminate, background/resume, joystick và nav buttons. | PASS |
+| Hồi quy | Suite camera/focus, collisions, gallery, GLB, AR và 2D. Gallery test kiểm tra AR entry nhận hiện vật đang chọn. | PASS trừ 2 case fixture GLB đã skip trên base |
+
+Test tích hợp dùng Canvas mock để host JSX, dựng các mesh từ props marker đã render và gọi raycast Three.js thật. RNTL gửi chuỗi sự kiện responder. Việc đưa touch từ OS vào viewport Expo GL cần dev build để kiểm chứng.
+
+## Lệnh đã chạy trước review
+
+Windows 11, Node `24.8.0`, npm `11.6.0`. Các lệnh npm chạy bằng `npm.cmd` trong PowerShell từ `mobile/`.
+
+| Lệnh | Kết quả |
+| --- | --- |
+| `npm ci` | PASS, cài 1.419 package từ lockfile. Lần đầu bị DNS của sandbox chặn. |
+| Full Jest baseline trên mã base, loại đúng file test marker mới khỏi discovery | 47 suite PASS, 1 suite SKIP. 216 PASS / 0 FAIL / 2 SKIP. Lần targeted trước đó chạy khi dependency đang cài và gặp timeout trong gallery, đã pass khi chạy lại. |
+| `npm run typecheck`, `npm run lint` | PASS |
+| `npm test -- --runInBand hotspot` | 4 suite, 13 PASS / 0 FAIL / 0 SKIP, gồm đủ 9 parity case E7-01 |
+| `npm test -- --runInBand GalleryRoomView` | 1 suite, 8 PASS / 0 FAIL / 0 SKIP |
+| `npm test -- --runInBand museumNavigation` | 1 suite, 7 PASS / 0 FAIL / 0 SKIP |
+| `npm test -- --runInBand galleryPicking TouchNavigationHud GalleryRoomView museumNavigation TouchCameraController` tại commit routing | 5 suite, 22 PASS / 0 FAIL / 0 SKIP |
+| `npm test -- --ci --runInBand` | 50 suite PASS, 1 suite SKIP. 231 PASS / 0 FAIL / 2 SKIP. |
+| `npm run perf:bundle` | Lỗi Windows đã ghi nhận ở E7-01, `spawnSync npx ENOENT`. Script gọi `execFileSync('npx', ...)` trong khi Windows cung cấp `npx.cmd`. |
+| `node node_modules/expo/bin/cli export --platform <android\|ios> --dump-sourcemap --output-dir <temp-dir> --max-workers 2` | PASS. Hermes Android 3.599.180 byte và iOS 3.600.532 byte, dưới giới hạn 4.194.304 byte mỗi nền tảng. |
+| `git diff --check`, `git diff --check origin/dev...HEAD` | PASS |
+
+Hai case GLB thật trong `glbValidation.test.ts` và `ArArtifactPlacementView.test.tsx` yêu cầu fixture `.glb` dưới `back-end/public/media/uploads/models`. Thư mục fixture vắng trong checkout. Full suite có cảnh báo React `act(...)` từ các test offline/catalogue xuất hiện trên baseline.
+
+Expo CLI chạy offline với `EXPO_OFFLINE=1` và `EXPO_NO_TELEMETRY=1`. Kích thước dùng tổng byte các tệp `.hbc` như script gốc. Hai thư mục export tạm được dọn sau phép đo.
+
+## Android/iOS
+
+| OS | Thiết bị và build | SHA mã cần kiểm chứng | Kết quả |
+| --- | --- | --- | --- |
+| Android | LDPlayer 9, Android 9, model GM1900. APK debug ARM64 có Viro 2.43.3 và Expo GL 15.0.5, tải mã qua Metro. | `c1dc551` | PASS cho checklist GLB `MASK` một và tám lớp. |
+| iOS | Chưa có iPhone hoặc iOS Simulator kèm dev build khả dụng. | `c1dc551` | NOT RUN |
+
+Bản sao Android QA dùng ba ảnh launcher/splash tạm vì checkout thiếu các file cấu hình tham chiếu. Bản sao cài `expo-font@13.0.4` tương thích Expo SDK 52 vì lockfile hiện lấy `58.0.12` và Gradle dừng ở `expo-module-gradle-plugin`. X86_64 không chạy được vì Viro 2.43.3 thiếu `libviro_renderer.so` cho ABI đó.
+
+Checklist native đầy đủ để chạy khi có thiết bị phù hợp:
+
+| Kịch bản trên thiết bị | Kỳ vọng |
+| --- | --- |
+| Mở phòng nhiều hiện vật và chạm lần lượt hai điểm trên cùng hiện vật, rồi một điểm trùng ID ở hiện vật khác | Marker active đổi đúng theo cặp exhibit/hotspot, đúng exhibit được chọn và analytics phát một lần mỗi tap. |
+| Chạm marker mặc định, marker bị che hoặc bục trống | Marker mặc định chọn exhibit. Bề mặt phía trước chặn điểm bị che. Bục trống giữ lựa chọn hiện tại. |
+| Chạm marker nhìn thấy qua lỗ của GLB dùng `alphaMode: MASK`, rồi chạm phần đục của cùng GLB | Lỗ alpha chọn marker phía sau. Phần đục chọn hiện vật tiền cảnh. |
+| Drag qua marker, pinch rồi nhấc một ngón, thả tay và tap lại | Yaw/pitch và dolly phản hồi. Chỉ tap mới chọn. |
+| Đưa app vào background khi đang chạm rồi quay lại | Gesture cũ hết hiệu lực và tap mới hoạt động. |
+| Thử joystick, nút camera, focus và AR | Điều khiển camera, collision và AR entry hoạt động, HUD không phát selection hotspot. |
+| Chọn trong 2D với VoiceOver/TalkBack rồi quay lại 3D, sau đó đổi phòng | Nút đọc đúng label và trạng thái selected. 3D khôi phục điểm hợp lệ. Phòng mới bắt đầu phiên chọn mới. |
+| Dùng fixture model tải chậm, sẵn sàng rồi lỗi, ở cả slotted và legacy | Marker đặt đúng vị trí cùng asset hiện tại hoặc hiển thị ở điểm dự phòng theo E7-01. |
+
+## Bàn giao contract
+
+- **E7-03** đọc `activeHotspotSelection` trong `GalleryRoomView` và gọi `resolveHotspotStory(selection, selectedDisplay)`. State giữ `roomId`, `exhibitId`, `hotspotId` và `issuedAt`.
+- **E7-04** dùng `exhibitId` để tra current display và model state cùng lượt render. `getHotspotWorldTarget(display, hotspotId, normalization)` trả tọa độ authored hợp lệ cho camera.
+- **E7-05** dùng `onHotspotSelected(selection)` tại thời điểm chọn authored hotspot hợp lệ. Tap 3D và nút 2D đi qua cùng `SelectHotspot(exhibitId, hotspotId)`.
+
+## Commit ledger
+
+| SHA | Message | Mục đích | Files | Kiểm chứng | Trạng thái |
+| --- | --- | --- | --- | --- | --- |
+| `a153dd3` | `docs(mob): plan native hotspot selection [MOB-E7-02]` | Audit và thiết kế | `plan.md`, `commit-plan.md`, `verification.md` | Base, PR #229 và staged diff | Committed |
+| `3c8c44f` | `feat(mob): add native 3D hotspot markers [MOB-E7-02]` | Marker dùng lại và active visual | `ArtifactHotspot3D.tsx`, `ArtifactHotspot3D.test.tsx` | 1 case Jest, typecheck, lint | Committed |
+| `3a7eab1` | `fix(mob): route gallery taps through the navigation HUD [MOB-E7-02]` | Responder và raycast giữ hành vi chọn exhibit | `TouchNavigationHud.tsx`, `TouchNavigationHud.test.tsx`, `galleryPicking.ts`, `galleryPicking.test.ts`, `GalleryRoomComponents.tsx`, `GalleryRoomView.tsx`, `GalleryRoomView.test.tsx` | 22 case Jest, typecheck, lint | Committed |
+| `59b0a5a` | `feat(mob): connect gallery hotspot selection [MOB-E7-02]` | Marker theo layout/model, lifecycle và nút 2D dùng chung selection | `room/[slug].tsx`, `ArtifactHotspot3D.tsx`, `GalleryRoomComponents.tsx`, `GalleryRoomView.tsx`, `GalleryRoomView.test.tsx` | Hotspot 13, gallery 8, navigation 7, typecheck, lint | Committed |
+| `aedefc2` | `docs(mob): record hotspot interaction verification [MOB-E7-02]` | Kết quả, native checklist và contract bàn giao | `verification.md` | Full Jest, Hermes budget và diff check | Committed |
+| `d39cd7e` | `fix(mob): respect GLB alpha masks when picking hotspots [MOB-E7-02]` | Raycast nhận diện vùng bị cắt alpha theo shader | `GalleryRoomView.tsx`, `galleryAlphaProbe.ts`, `galleryPicking.ts`, `galleryPicking.test.ts` | Jest hồi quy, Chrome WebGL, full Jest, typecheck, lint và Hermes budget | Committed |
+| `f6cab6a` | `docs(mob): record alpha mask review verification [MOB-E7-02]` | Ghi kết quả kiểm chứng alpha mask trước lượt QA Expo GL | `verification.md` | Jest, Chrome WebGL và Hermes budget | Committed |
+| `7f69ac8` | `fix(mob): load GLB models on React Native [MOB-E7-02]` | Tương thích SHA-256 native và khởi tạo GLTFLoader | `glbLoader.ts`, `glbLoader.integration.test.ts` | 9 test loader và GLB thật qua HTTP trên Android | Committed |
+| `c1dc551` | `fix(mob): align gallery rendering with touch viewport [MOB-E7-02]` | Đồng bộ viewport render với tọa độ chạm | `GalleryRoomView.tsx`, `GalleryRoomView.test.tsx`, `performanceTier.ts`, `performanceTier.test.ts` | Android GLB một/tám lớp, full Jest, typecheck và lint | Committed |
+
+Tách marker và routing để mỗi commit có test độc lập. Gộp layout, authored selection và nút 2D vì chúng chia sẻ dữ liệu và handler. Tách sửa loader và viewport vì mỗi lớp có nguyên nhân và kiểm chứng riêng. PR #231 vào `dev` đang mở. [PR #231](https://github.com/ailabs26/ailabs-museum/pull/231)

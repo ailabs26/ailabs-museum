@@ -7,7 +7,15 @@ import {
   type ExhibitPlaceholderShape,
   type MuseumDisplay,
 } from './museumTypes';
-import { resolveGalleryLayout, type GalleryLayoutResolution } from './gallerySlots';
+import {
+  isDisplayOutsideRoom,
+  resolveGalleryLayout,
+  type GalleryLayoutResolution,
+} from './gallerySlots';
+import { GALLERY_PICK_TARGET } from './galleryPicking';
+import { ArtifactHotspot3D } from './ArtifactHotspot3D';
+import { getArtifactHotspots } from './artifactHotspots';
+import type { HotspotStorySelection } from './hotspotStory';
 import { QUALITY_PROFILES, type QualityProfile } from './performanceTier';
 import type { RoomModelState } from './roomModelManager';
 
@@ -128,7 +136,7 @@ export function GalleryPedestal3D({
 
       {/* Vòng sáng đánh dấu khi bục đang được chọn */}
       {isSelected ? (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]} raycast={() => {}}>
           <ringGeometry args={[isHero ? 1.3 : 0.84, isHero ? 1.48 : 0.96, segments]} />
           <meshBasicMaterial color="#0D9488" transparent opacity={0.8} depthWrite={false} />
         </mesh>
@@ -187,14 +195,14 @@ export function GalleryRoomDisplays3D({
   displays,
   modelStates,
   selectedExhibitId,
+  activeHotspotSelection,
   quality = QUALITY_PROFILES.balanced,
-  onSelectExhibit,
 }: {
   displays: readonly MuseumDisplay[];
   modelStates: ReadonlyMap<string, RoomModelState>;
   selectedExhibitId: string | null;
+  activeHotspotSelection?: HotspotStorySelection | null;
   quality?: QualityProfile;
-  onSelectExhibit?: (exhibitId: string) => void;
 }) {
   const layout: GalleryLayoutResolution = useMemo(
     () => resolveGalleryLayout(displays),
@@ -204,26 +212,40 @@ export function GalleryRoomDisplays3D({
   const renderExhibitOnPedestal = (exhibit: MuseumDisplay) => {
     const state = modelStates.get(exhibit.id);
     const isSelected = exhibit.id === selectedExhibitId;
-
-    if (exhibit.model && state?.status === 'ready') {
-      const { scale, offset } = state.asset.normalization;
-      return (
-        <group position={[0, ARTIFACT_BASE_Y, 0]}>
-          <group scale={[scale, scale, scale]}>
-            <group position={offset}>
-              <ClonedModelInstance scene={state.asset.scene} />
+    const asset =
+      state?.status === 'ready' && state.asset.checksumSha256 === exhibit.model?.checksumSha256
+        ? state.asset
+        : undefined;
+    const normalization = asset?.normalization;
+    const hotspots = (exhibit.isOutsideRoom ?? isDisplayOutsideRoom(exhibit))
+      ? []
+      : getArtifactHotspots(exhibit, normalization);
+    return (
+      <>
+        {asset && normalization ? (
+          <group position={[0, ARTIFACT_BASE_Y, 0]}>
+            <group scale={[normalization.scale, normalization.scale, normalization.scale]}>
+              <group position={normalization.offset}>
+                <ClonedModelInstance scene={asset.scene} />
+              </group>
             </group>
           </group>
-        </group>
-      );
-    }
-
-    return (
-      <ExhibitPlaceholder3D
-        shape={exhibit.shape}
-        color={exhibit.color}
-        isSelected={isSelected}
-      />
+        ) : (
+          <ExhibitPlaceholder3D shape={exhibit.shape} color={exhibit.color} isSelected={isSelected} />
+        )}
+        {hotspots.map((hotspot) => (
+          <ArtifactHotspot3D
+            key={hotspot.id}
+            hotspot={hotspot}
+            active={
+              isSelected &&
+              (hotspot.isDefault ||
+                (activeHotspotSelection?.exhibitId === exhibit.id &&
+                  activeHotspotSelection.hotspotId === hotspot.id))
+            }
+          />
+        ))}
+      </>
     );
   };
 
@@ -235,10 +257,7 @@ export function GalleryRoomDisplays3D({
             key={slot.id}
             name={`slot-${slot.id}`}
             position={[slot.position[0], slot.position[1], slot.position[2]]}
-            onClick={(event) => {
-              event.stopPropagation();
-              if (exhibit) onSelectExhibit?.(exhibit.id);
-            }}
+            userData={exhibit ? { [GALLERY_PICK_TARGET]: { exhibitId: exhibit.id } } : {}}
           >
             <GalleryPedestal3D
               kind={slot.plinthKind}
@@ -266,10 +285,7 @@ export function GalleryRoomDisplays3D({
             key={exhibit.id}
             name={`exhibit-${exhibit.id}`}
             position={exhibit.position}
-            onClick={(event) => {
-              event.stopPropagation();
-              onSelectExhibit?.(exhibit.id);
-            }}
+            userData={{ [GALLERY_PICK_TARGET]: { exhibitId: exhibit.id } }}
           >
             <GalleryPedestal3D
               kind={kind}

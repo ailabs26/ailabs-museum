@@ -33,6 +33,8 @@ export default function RoomDetailScreen() {
         </View>
       ) : (
         <GalleryRoomView
+          key={state.room.id}
+          roomId={state.room.id}
           roomName={state.room.name}
           displays={displays}
           onSelectExhibit={(exhibit) => analytics.track('exhibit_view', { exhibitId: exhibit.id, mode: 'room' })}

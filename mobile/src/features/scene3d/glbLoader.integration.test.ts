@@ -4,10 +4,31 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import type { AddressInfo } from 'node:net';
+import * as ExpoCrypto from 'expo-crypto';
 import { InMemoryGlbCache, type CachedGlbEntry, type GlbCacheAdapter, type GlbCacheStats } from './glbCache';
-import { GlbLoadError, loadGlbModel } from './glbLoader';
+import { computeSha256Hex, GlbLoadError, loadGlbModel } from './glbLoader';
 import type { PublicModel } from './glbSchema';
 import { disposeModel } from './glbValidation';
+
+it('passes a byte view to Expo Crypto when Web Crypto is unavailable', async () => {
+  const cryptoProperty = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
+  Object.defineProperty(globalThis, 'crypto', { configurable: true, value: undefined });
+  const nativeDigest = jest.spyOn(ExpoCrypto, 'digest').mockImplementation(async (_algorithm, data) => {
+    if (!(data instanceof Uint8Array)) throw new Error('Native digest requires a typed array');
+    return Uint8Array.from(crypto.createHash('sha256').update(data).digest()).buffer;
+  });
+  try {
+    const bytes = Uint8Array.of(0, 17, 255);
+    await expect(computeSha256Hex(bytes.buffer)).resolves.toBe(
+      crypto.createHash('sha256').update(bytes).digest('hex'),
+    );
+    expect(nativeDigest).toHaveBeenCalledWith(ExpoCrypto.CryptoDigestAlgorithm.SHA256, bytes);
+  } finally {
+    nativeDigest.mockRestore();
+    if (cryptoProperty) Object.defineProperty(globalThis, 'crypto', cryptoProperty);
+    else Reflect.deleteProperty(globalThis, 'crypto');
+  }
+});
 
 /**
  * Tạo một tệp GLB 2.0 hợp lệ hoàn chỉnh (1 tam giác có scene, node, mesh, POSITION VEC3)
@@ -202,6 +223,26 @@ describe('loadGlbModel — Kiểm thử tích hợp HTTP thật + Disk Cache + X
     serverMode = 'ok';
     await fs.rm(tempDir, { recursive: true, force: true });
     await fs.mkdir(tempDir, { recursive: true });
+  });
+
+  it('parses GLB with a React Native navigator that lacks userAgent', async () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+    const nativeNavigator = { product: 'ReactNative' };
+    Object.defineProperty(globalThis, 'navigator', { configurable: true, value: nativeNavigator });
+    try {
+      const asset = await loadGlbModel({
+        model: makeModel(),
+        apiBaseUrl: baseUrl,
+        cache: new InMemoryGlbCache(),
+        sha256Impl: sha256HexNode,
+      });
+      expect(asset.normalization.size[1]).toBeGreaterThan(0);
+      expect(nativeNavigator).not.toHaveProperty('userAgent');
+      disposeModel(asset.scenes);
+    } finally {
+      if (original) Object.defineProperty(globalThis, 'navigator', original);
+      else Reflect.deleteProperty(globalThis, 'navigator');
+    }
   });
 
   it('tải GLB thật qua HTTP ở lần 1 (network), lưu ổ đĩa và hiển thị từ cache ở lần 2 (0 request mạng)', async () => {

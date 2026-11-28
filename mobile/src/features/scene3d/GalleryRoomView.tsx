@@ -1,5 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, PixelRatio, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Canvas, useFrame, useThree } from '@react-three/fiber/native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -8,6 +16,9 @@ import { FpsMeter, type FpsSnapshot } from './fpsMeter';
 import { configureExpoGlContext } from './glbLoader';
 import { GalleryRoomDisplays3D, MuseumRoomShell3D } from './GalleryRoomComponents';
 import { resolveGalleryLayout } from './gallerySlots';
+import { pickGalleryTarget, type GalleryPickTarget } from './galleryPicking';
+import { createGalleryAlphaProbe, GalleryRenderer } from './galleryAlphaProbe';
+import { resolveHotspotStory, type HotspotStorySelection, type SelectHotspot } from './hotspotStory';
 import type { MuseumDisplay } from './museumTypes';
 import { useSceneQuality } from './useSceneQuality';
 import {
@@ -30,31 +41,23 @@ import {
 } from './roomModelManager';
 
 export interface GalleryRoomViewProps {
+  roomId?: string;
   roomName: string;
   displays: readonly MuseumDisplay[];
   managerOptions?: RoomModelManagerOptions;
   /** Cho phép mở thẳng danh sách 2D (accessibility fallback). */
   initialMode?: '3d' | '2d';
   onSelectExhibit?: (exhibit: MuseumDisplay) => void;
+  /** Phát khi visitor chọn một hotspot authored hợp lệ. */
+  onHotspotSelected?: (selection: HotspotStorySelection) => void;
   onOpenAr?: (exhibit: MuseumDisplay) => void;
 }
 
-function AdaptiveFpsMonitor({
-  dprCap,
-  onSample,
-}: {
-  dprCap: number;
-  onSample: (snapshot: FpsSnapshot) => void;
-}) {
-  const { gl } = useThree();
+const EMPTY_MODEL_STATES: ReadonlyMap<string, RoomModelState> = new Map();
+
+function AdaptiveFpsMonitor({ onSample }: { onSample: (snapshot: FpsSnapshot) => void }) {
   const meterRef = useRef<FpsMeter>(new FpsMeter({ windowSize: 60, maxGapMs: 500 }));
   const elapsedRef = useRef(0);
-
-  useEffect(() => {
-    if (typeof gl?.setPixelRatio === 'function') {
-      gl.setPixelRatio(Math.min(PixelRatio.get(), dprCap));
-    }
-  }, [gl, dprCap]);
 
   useFrame((_state, deltaSec) => {
     const ms = deltaSec * 1000;
@@ -68,16 +71,36 @@ function AdaptiveFpsMonitor({
   return null;
 }
 
+type PickAt = (x: number, y: number) => GalleryPickTarget | undefined;
+
+function GalleryTouchPicker({ pickAt }: { pickAt: MutableRefObject<PickAt | null> }) {
+  const { camera, gl, scene, size } = useThree();
+  useLayoutEffect(() => {
+    const alphaProbe =
+      gl instanceof GalleryRenderer
+        ? createGalleryAlphaProbe(gl, gl.renderOffscreen, camera)
+        : undefined;
+    pickAt.current = (x, y) => pickGalleryTarget(scene, camera, size, x, y, alphaProbe?.test);
+    return () => {
+      pickAt.current = null;
+      alphaProbe?.dispose();
+    };
+  }, [camera, gl, scene, size, pickAt]);
+  return null;
+}
+
 /**
  * Màn hình tham quan phòng 3D với nhiều hiện vật đặt đúng theo Gallery Slots (MOB-E6-04),
  * điều khiển cảm ứng + va chạm (MOB-E6-05/06) và tự điều chỉnh chất lượng theo thiết bị (MOB-E6-08).
  */
 export function GalleryRoomView({
+  roomId,
   roomName,
   displays,
   managerOptions,
   initialMode = '3d',
   onSelectExhibit,
+  onHotspotSelected,
   onOpenAr,
 }: GalleryRoomViewProps) {
   const theme = useTheme();
@@ -85,9 +108,14 @@ export function GalleryRoomView({
   const quality = useSceneQuality(reducedMotion);
   const [viewMode, setViewMode] = useState<'3d' | '2d'>(initialMode);
   const [selectedId, setSelectedId] = useState<string | null>(displays[0]?.id ?? null);
-  const [modelStates, setModelStates] = useState<ReadonlyMap<string, RoomModelState>>(
-    () => new Map(),
-  );
+  const [hotspotSelection, setHotspotSelection] = useState<HotspotStorySelection | null>(null);
+  const [modelSnapshot, setModelSnapshot] = useState<{
+    displays: readonly MuseumDisplay[];
+    states: ReadonlyMap<string, RoomModelState>;
+  }>();
+  // A refetch can render a new revision before its model manager effect starts.
+  const modelStates =
+    modelSnapshot?.displays === displays ? modelSnapshot.states : EMPTY_MODEL_STATES;
 
   useEffect(() => {
     setSelectedId((current) => displays.some((item) => item.id === current)
@@ -97,13 +125,7 @@ export function GalleryRoomView({
   const navInput = useMemo(() => createNavigationInput(), []);
   const navGestures = useMemo(() => new NavigationGestures(), []);
   const commandHandlerRef = useRef<((action: CameraAction) => void) | null>(null);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      if (nextState !== 'active') navInput.stop();
-    });
-    return () => subscription.remove();
-  }, [navInput]);
+  const pickAt = useRef<PickAt | null>(null);
 
   const handleCameraAction = useCallback((action: CameraAction) => {
     commandHandlerRef.current?.(action);
@@ -116,6 +138,17 @@ export function GalleryRoomView({
     () => displays.find((item) => item.id === selectedId) ?? null,
     [displays, selectedId],
   );
+  const activeHotspotSelection =
+    hotspotSelection?.roomId === roomId &&
+    resolveHotspotStory(hotspotSelection, selectedDisplay ?? undefined)
+      ? hotspotSelection
+      : null;
+
+  useEffect(() => {
+    if (hotspotSelection && !activeHotspotSelection) {
+      setHotspotSelection((current) => current === hotspotSelection ? null : current);
+    }
+  }, [hotspotSelection, activeHotspotSelection]);
 
   useEffect(() => {
     const manager = new RoomModelManager({
@@ -123,17 +156,37 @@ export function GalleryRoomView({
       ...managerOptions,
     });
     void manager.loadRoomDisplays(displays, (nextStates) => {
-      setModelStates(nextStates);
+      setModelSnapshot({ displays, states: nextStates });
     });
     return () => {
       manager.dispose();
     };
   }, [displays, managerOptions, quality.profile.maxConcurrentGlbLoads]);
 
+  const commitSelection = (display: MuseumDisplay, hotspot: HotspotStorySelection | null) => {
+    setSelectedId(display.id);
+    setHotspotSelection(hotspot);
+    onSelectExhibit?.(display);
+    if (hotspot) onHotspotSelected?.(hotspot);
+  };
+
   const handleSelectById = (exhibitId: string) => {
-    setSelectedId(exhibitId);
-    const found = displays.find((item) => item.id === exhibitId);
-    if (found) onSelectExhibit?.(found);
+    const display = displays.find((item) => item.id === exhibitId);
+    if (display) commitSelection(display, null);
+  };
+
+  const handleSelectHotspot: SelectHotspot = (exhibitId, hotspotId) => {
+    const display = displays.find((item) => item.id === exhibitId);
+    if (!roomId || !display) return;
+    const selection = { roomId, exhibitId, hotspotId, issuedAt: Date.now() };
+    if (resolveHotspotStory(selection, display)) commitSelection(display, selection);
+  };
+
+  const handleViewportTap = (x: number, y: number) => {
+    const target = pickAt.current?.(x, y);
+    if (!target) return;
+    if (target.hotspotId === undefined) handleSelectById(target.exhibitId);
+    else handleSelectHotspot(target.exhibitId, target.hotspotId);
   };
 
   const layoutLabel =
@@ -209,20 +262,26 @@ export function GalleryRoomView({
         <View style={[styles.viewport, { borderRadius: theme.radius.lg }]} testID="gallery-3d-viewport">
           <Scene3DErrorBoundary onFallback2D={() => setViewMode('2d')}>
             <Canvas
+              pointerEvents="none"
               camera={{ position: INITIAL_CAMERA_POSITION, fov: 60 }}
               shadows={quality.profile.enableShadows}
-              gl={{ antialias: quality.profile.antialias }}
+              gl={(canvas) =>
+                new GalleryRenderer({
+                  canvas,
+                  alpha: true,
+                  antialias: quality.profile.antialias,
+                  powerPreference: 'high-performance',
+                })
+              }
               onCreated={(state) => {
+                // R3F Native uses the physical Expo GL framebuffer size for the viewport.
                 configureExpoGlContext(state.gl.getContext());
-                state.gl.setPixelRatio(Math.min(PixelRatio.get(), quality.profile.dprCap));
                 state.camera.lookAt(...INITIAL_CAMERA_TARGET);
               }}
             >
-              <AdaptiveFpsMonitor
-                dprCap={quality.profile.dprCap}
-                onSample={quality.reportFpsSample}
-              />
+              <AdaptiveFpsMonitor onSample={quality.reportFpsSample} />
               <MuseumRoomShell3D quality={quality.profile} />
+              <GalleryTouchPicker pickAt={pickAt} />
               <TouchCameraController
                 input={navInput}
                 commandHandler={commandHandlerRef}
@@ -235,16 +294,15 @@ export function GalleryRoomView({
                 displays={displays}
                 modelStates={modelStates}
                 selectedExhibitId={selectedId}
+                activeHotspotSelection={activeHotspotSelection}
                 quality={quality.profile}
-                onSelectExhibit={(id) => {
-                  if (navGestures.canSelect) handleSelectById(id);
-                }}
               />
             </Canvas>
             <TouchNavigationHud
               input={navInput}
               gestures={navGestures}
               onAction={handleCameraAction}
+              onTap={handleViewportTap}
             />
           </Scene3DErrorBoundary>
         </View>
@@ -257,33 +315,61 @@ export function GalleryRoomView({
           {displays.map((item) => {
             const state = modelStates.get(item.id);
             const active = item.id === selectedId;
+            const hotspots = roomId && item.roomId === roomId ? item.hotspots : undefined;
             return (
-              <Pressable
-                key={item.id}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                onPress={() => handleSelectById(item.id)}
-                style={[
-                  styles.listCard,
-                  {
-                    backgroundColor: theme.colors.surface,
-                    borderColor: active ? theme.colors.primary : theme.colors.border,
-                    borderRadius: theme.radius.md,
-                    padding: theme.spacing.md,
-                  },
-                ]}
-              >
-                <Text style={{ color: theme.colors.text, fontSize: theme.fontSize.md, fontWeight: '700' }}>
-                  {item.title}
-                </Text>
-                <Text style={{ color: theme.colors.textMuted, fontSize: theme.fontSize.sm }}>
-                  {item.description}
-                </Text>
-                <Text style={{ color: theme.colors.primary, fontSize: theme.fontSize.xs }}>
-                  Tọa độ: ({item.position[0]}, {item.position[1]}, {item.position[2]}) m
-                  {state ? ` · GLB: ${state.status}` : ' · Hình khối mẫu'}
-                </Text>
-              </Pressable>
+              <View key={item.id} style={styles.listItem}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  onPress={() => handleSelectById(item.id)}
+                  style={[
+                    styles.listCard,
+                    {
+                      backgroundColor: theme.colors.surface,
+                      borderColor: active ? theme.colors.primary : theme.colors.border,
+                      borderRadius: theme.radius.md,
+                      padding: theme.spacing.md,
+                    },
+                  ]}
+                >
+                  <Text style={{ color: theme.colors.text, fontSize: theme.fontSize.md, fontWeight: '700' }}>
+                    {item.title}
+                  </Text>
+                  <Text style={{ color: theme.colors.textMuted, fontSize: theme.fontSize.sm }}>
+                    {item.description}
+                  </Text>
+                  <Text style={{ color: theme.colors.primary, fontSize: theme.fontSize.xs }}>
+                    Tọa độ: ({item.position[0]}, {item.position[1]}, {item.position[2]}) m
+                    {state ? ` · GLB: ${state.status}` : ' · Hình khối mẫu'}
+                  </Text>
+                </Pressable>
+                {hotspots?.map((hotspot) => {
+                  const selected = active && activeHotspotSelection?.hotspotId === hotspot.id;
+                  const label = hotspot.label || item.title;
+                  return (
+                    <Pressable
+                      key={hotspot.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Điểm tương tác ${item.title}, ${label}`}
+                      accessibilityState={{ selected }}
+                      onPress={() => handleSelectHotspot(item.id, hotspot.id)}
+                      style={[
+                        styles.hotspotButton,
+                        {
+                          backgroundColor: selected ? theme.colors.primary : theme.colors.surface,
+                          borderColor: selected ? theme.colors.primary : theme.colors.border,
+                          borderRadius: theme.radius.md,
+                          paddingHorizontal: theme.spacing.md,
+                        },
+                      ]}
+                    >
+                      <Text style={{ color: selected ? theme.colors.primaryText : theme.colors.text }}>
+                        {label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             );
           })}
         </ScrollView>
@@ -398,7 +484,9 @@ const styles = StyleSheet.create({
   },
   listScroll: { flex: 1 },
   listContent: { gap: 10, paddingBottom: 12 },
+  listItem: { gap: 6 },
   listCard: { borderWidth: 1.5, gap: 4 },
+  hotspotButton: { borderWidth: 1, justifyContent: 'center', minHeight: 44 },
   selectedCard: { borderWidth: 1, gap: 4 },
   selectedHeaderRow: {
     flexDirection: 'row',

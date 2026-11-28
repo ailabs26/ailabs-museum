@@ -8,7 +8,6 @@ export type QualityMode = 'auto' | QualityTier;
 export interface QualityProfile {
   tier: QualityTier;
   label: string;
-  dprCap: number;
   enableShadows: boolean;
   shadowMapSize: number;
   antialias: boolean;
@@ -35,7 +34,6 @@ export const QUALITY_PROFILES: Record<QualityTier, QualityProfile> = {
   low: {
     tier: 'low',
     label: 'Thấp (Tiết kiệm)',
-    dprCap: 1,
     enableShadows: false,
     shadowMapSize: 0,
     antialias: false,
@@ -48,7 +46,6 @@ export const QUALITY_PROFILES: Record<QualityTier, QualityProfile> = {
   balanced: {
     tier: 'balanced',
     label: 'Cân bằng',
-    dprCap: 1.5,
     enableShadows: true,
     shadowMapSize: 1024,
     antialias: true,
@@ -61,7 +58,6 @@ export const QUALITY_PROFILES: Record<QualityTier, QualityProfile> = {
   high: {
     tier: 'high',
     label: 'Cao',
-    dprCap: 2,
     enableShadows: true,
     shadowMapSize: 2048,
     antialias: true,
