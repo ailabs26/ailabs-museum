@@ -56,6 +56,7 @@ AppModule
 | 04 | [04-auth-and-sessions.md](04-auth-and-sessions.md) | JWT access, `RefreshSession` xoay vòng, `ActiveSessionGuard`, rate limit và 2FA TOTP |
 | 05 | [05-users-and-roles-rbac.md](05-users-and-roles-rbac.md) | Quản lý tài khoản, vai trò, 31 quyền RBAC, xóa mềm/khôi phục và thu hồi phiên |
 | 06 | [06-rooms-module.md](06-rooms-module.md) | CRUD phòng quản trị, API public chỉ đọc, bản dịch JSONB đa ngôn ngữ và bảo vệ xóa mềm |
+| 07 | [07-exhibits-and-revisions.md](07-exhibits-and-revisions.md) | `Exhibit`/`ExhibitRevision`/`Hotspot`, 5 bục Gallery V1, `RevisionPublishGate`, 6 slot media, import/export và sitemap |
 <!-- INDEX_ENTRIES -->
 
 ## Nguyên tắc kiến trúc cốt lõi
