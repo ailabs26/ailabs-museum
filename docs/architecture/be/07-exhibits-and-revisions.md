@@ -59,3 +59,22 @@ Hàm `matchGallerySlot(position)` so khớp trong sai số `GALLERY_SLOT_TOLERAN
 - **Lưu nháp tự động (Draft Autosave — VT-079)**: `PATCH /api/admin/exhibits/:id` cho phép lưu bản nháp khi chỉ cần kiểm tham chiếu media tồn tại/đúng loại, chưa ép đủ điều kiện xuất bản §5.2; xử lý tránh ghi đè dữ liệu cũ bằng kiểm tra phiên bản.
 - **Bulk Transfer (`ExhibitTransferService`)**: hỗ trợ xuất/nhập hàng loạt theo danh mục cột cố định (`exhibit-transfer.columns.ts`), chống CSV injection và xác thực từng dòng trước khi ghi.
 - **Tìm kiếm công khai**: chi tiết thuật toán lọc và thứ tự cố định `roomId, displayOrder, id` xem tại [public-exhibit-search.md](public-exhibit-search.md).
+
+## 6. Máy trạng thái vòng đời `ExhibitRevision`
+
+```mermaid
+stateDiagram-v2
+    [*] --> draft : Tạo mới / chỉnh sửa hiện vật
+    draft --> draft : Lưu nháp (autosave / PATCH)
+    draft --> in_review : POST /admin/exhibits/:id/submit-review\n(RevisionPublishGate pass)
+    in_review --> approved : POST /revisions/:id/publish\n(assertPublishable + assertSlotFree)\n-> cập nhật exhibit.published_revision_id
+    in_review --> rejected : POST /revisions/:id/reject (kèm lý do)
+    rejected --> draft : Biên tập viên sửa tạo revision nháp mới
+    approved --> draft : Sửa hiện vật đã xuất bản -> sinh revision nháp mới\n(bản approved cũ vẫn hiển thị công khai)
+
+    state approved {
+        [*] --> visible
+        visible --> hidden : POST /exhibits/:id/hide
+        hidden --> visible : POST /exhibits/:id/unhide\n(assertSlotFree)
+    }
+```
