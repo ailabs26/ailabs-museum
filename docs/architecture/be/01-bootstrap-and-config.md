@@ -32,3 +32,25 @@ Hàm `bootstrap()` dựng `NestExpressApplication` và cấu hình theo đúng t
 - **Nội dung bảo tàng**: `RoomsModule`, `ExhibitsModule`, `MediaModule`.
 - **Kiểm duyệt & báo cáo**: `ModerationModule`, `ContentReportsModule`.
 - **Hỗ trợ & tích hợp**: `StatsModule`, `TranslationsModule`, `PartnerApiKeysModule`, `NotificationsModule`, `HealthModule`.
+
+## 3. Các namespace cấu hình (`src/config/`)
+
+Mỗi nhóm cấu hình dùng `registerAs('<namespace>', ...)` và được nạp tập trung từ `src/config/index.ts`:
+
+| Namespace | File | Biến môi trường chính & mặc định |
+|---|---|---|
+| `app` | `app.config.ts` | `NODE_ENV` (`development`), `PORT` (`3001`), `FRONTEND_ORIGIN` (`http://localhost:5173`), `API_PREFIX` (`api`), `TRUST_PROXY` (`false`), `PUBLIC_API_RATE_LIMIT` (`600`/phút), `PUBLIC_MEDIA_RATE_LIMIT` (`3000`/phút) |
+| `database` | `database.config.ts` | `DATABASE_URL` (bắt buộc), `DATABASE_SSL` (`true`/`false`), `DATABASE_SSL_CA` (đường dẫn chứng chỉ CA) |
+| `jwt` | `jwt.config.ts` | `JWT_ACCESS_SECRET`, `JWT_ACCESS_TTL` (`15m`), `JWT_REFRESH_TTL_DAYS` (`7`), `REFRESH_COOKIE_NAME` (`aura_rt`), `BCRYPT_ROUNDS` (`12`), `TOTP_ENCRYPTION_KEY`, `REFRESH_RATE_LIMIT_PER_SESSION` (`30`), `REFRESH_RATE_LIMIT_PER_IP` (`300`), `REFRESH_RATE_LIMIT_INVALID_PER_IP` (`20`) |
+| `media` | `media.config.ts` | `MEDIA_PUBLIC_BASE_URL` (`http://localhost:3001`), `MEDIA_URL_SIGNING_SECRET`, `MEDIA_SIGNED_URL_TTL_SECONDS` (`900`), `MEDIA_STORAGE_DRIVER` (`local` \| `supabase`), `MEDIA_ORPHAN_CLEANUP` (`dry-run`), `MEDIA_TRASH_RETENTION_DAYS` (`30`), `MEDIA_UPLOAD_JOB_CONCURRENCY` (`3`), `MEDIA_UPLOAD_JOB_RETENTION_DAYS` (`7`), `SUPABASE_URL`, `SUPABASE_SECRET_KEY` / `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET` (`museum-assets`) |
+| `reports` | `reports.config.ts` | `PUBLIC_REPORT_RATE_LIMIT` (`5` request/phút) |
+| `swagger` | `swagger.config.ts` | Hằng số `OPENAPI_DOCS_PATH = 'api/docs'`, `OPENAPI_VERSION = '0.1.0'`, `buildOpenApiConfig()`, `createOpenApiDocument()` |
+
+## 4. Kiểm định biến môi trường (`env.validation.ts`)
+
+`validateEnvironment()` chạy ngay khi `ConfigModule` khởi tạo bằng `class-transformer` + `class-validator`:
+
+- **Fail-fast không lộ bí mật**: nếu bất kỳ biến nào sai kiểu/ngưỡng, ứng dụng ném `Error('Invalid environment: <danh sách tên biến>')` — chỉ in tên biến, tuyệt đối không in giá trị.
+- **Xác thực `TRUST_PROXY` (`parseTrustProxy`)**: chấp nhận `false`, `true`, số hop nguyên không âm (`1`, `2`), tên dải mạng (`loopback`, `linklocal`, `uniquelocal`) hoặc danh sách IPv4/IPv6/CIDR phân tách bằng dấu phẩy.
+- **Điều kiện khi `MEDIA_STORAGE_DRIVER=supabase`**: bắt buộc có `SUPABASE_URL` hợp lệ và ít nhất một trong hai khóa `SUPABASE_SECRET_KEY` (ưu tiên `sb_secret_...`) hoặc `SUPABASE_SERVICE_ROLE_KEY` (≥ 20 ký tự).
+- **Chính sách khóa bí mật ở `NODE_ENV=production`**: các khóa trong `PRODUCTION_SECRETS` (`JWT_ACCESS_SECRET`, `MEDIA_URL_SIGNING_SECRET`, `TOTP_ENCRYPTION_KEY`) bắt buộc phải đặt tường minh, độ dài tối thiểu 32 ký tự và không được trùng giá trị mẫu/dev (`PLACEHOLDER_SECRETS`).
