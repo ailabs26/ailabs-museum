@@ -50,6 +50,7 @@ AppModule
 |---|---|---|
 | — | [coding-conventions.md](coding-conventions.md) | Quy ước đặt tên, cấu trúc 3 lớp Controller → Service → Repository và chuẩn DTO |
 | — | [public-exhibit-search.md](public-exhibit-search.md) | Chi tiết thiết kế API tìm kiếm hiện vật công khai (`GET /api/rooms/search`, VT-077) |
+| 01 | [01-bootstrap-and-config.md](01-bootstrap-and-config.md) | Khởi động NestJS (`main.ts`, `AppModule`), pipeline HTTP, namespace cấu hình và kiểm định biến môi trường |
 <!-- INDEX_ENTRIES -->
 
 ## Nguyên tắc kiến trúc cốt lõi
