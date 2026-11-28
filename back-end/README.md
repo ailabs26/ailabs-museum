@@ -5,7 +5,7 @@ Gồm hai phần: **nội dung công khai** (chỉ đọc, phục vụ client) v
 (xác thực, RBAC, quản lý người dùng/vai trò/quyền, nhật ký) — nền cho các module CMS tiếp theo.
 
 Quy ước đặt tên và tổ chức code: [docs/coding-conventions.md](docs/coding-conventions.md).
-Kiến trúc & plan: [../docs/architecture/](../docs/architecture/), [../docs/plans/admin-subsystem-plan.md](../docs/plans/admin-subsystem-plan.md).
+Kiến trúc & chi tiết 14 module: [../docs/architecture/be/README.md](../docs/architecture/be/README.md), [../docs/architecture/](../docs/architecture/), [../docs/plans/admin-subsystem-plan.md](../docs/plans/admin-subsystem-plan.md).
 **Thành viên và AI agent đọc coding-conventions trước khi thêm code.**
 
 ## 1. Yêu cầu & biến môi trường
@@ -113,7 +113,7 @@ Quản lý tài khoản:
   Email của tài khoản đã xóa vẫn được giữ theo unique hiện có; tạo trùng trả 409.
 - JWT vẫn dùng quyền tại lúc cấp: khóa/xóa/bỏ quyền không vô hiệu access token cũ ngay.
   Login/refresh kiểm tra tài khoản và cấp quyền mới; menu frontend cập nhật khi tải lại/đăng nhập lại.
-  Chưa có cơ chế thu hồi tức thì access token hoặc khôi phục tài khoản đã xóa.
+  Đã bổ sung `ActiveSessionGuard` (thu hồi tức thì access token khi khóa/xóa/đổi mật khẩu/đăng xuất phiên) và khôi phục hàng loạt (`POST /api/users/bulk-restore`). Xem chi tiết tại [../docs/architecture/be/04-auth-and-sessions.md](../docs/architecture/be/04-auth-and-sessions.md) và [../docs/architecture/be/05-users-and-roles-rbac.md](../docs/architecture/be/05-users-and-roles-rbac.md).
 
 ## 4. Xác thực & RBAC
 
@@ -141,10 +141,12 @@ src/
 │   ├── repository/ (BaseRepository)  database/ (TransactionManager)  security/ (PasswordService)
 ├── config/        # app.config / database.config / jwt.config (registerAs) + env.validation + data-source + index
 ├── database/      # migrations/ + seeds/ + database.module.ts
-└── modules/       # feature theo domain, mỗi module: controllers/ services/ repositories/ entities/ dto/
-    ├── auth/      (refresh_session)   users/ (user, user_role)   roles/ (role, permission, role_permission)
-    ├── audit/ (audit_log + interceptor/decorator)   exhibits/ (exhibit, revision, hotspot)
-    └── rooms/ (room)   media/ (media)   content-reports/ (content_report)   health/
+└── modules/       # 14 feature module theo domain (18 entities, 13 migrations — xem ../docs/architecture/be/README.md)
+    ├── auth/ (refresh_session, user_recovery_code)   users/ (user, user_role)   roles/ (role, permission, role_permission)
+    ├── audit/ (audit_log + interceptor/filter)   notifications/ (notification)
+    ├── rooms/ (room)   exhibits/ (exhibit, exhibit_revision, hotspot)   media/ (media, media_upload_job)
+    ├── moderation/   content-reports/ (content_report)   translations/ (translation)
+    └── partner-api-keys/ (partner_api_key)   stats/   health/
 ```
 
 - Entity đặt theo DDD trong `modules/<domain>/entities/`.
@@ -180,6 +182,4 @@ và `tools/db/backup-restore-drill.sh` (diễn tập backup/restore, đo RPO/RTO
 Kết quả: [báo cáo coverage](../docs/plans/reports/core-backend-test-coverage-report.md),
 [biên bản kiểm thử DB](../docs/plans/reports/db-backup-restore-safety-report.md).
 
-Phân hệ quản trị đã có đầy đủ xác thực, RBAC, CRUD người dùng/vai trò/quyền và nhật ký.
-Các module nội dung CMS (CRUD rooms/exhibits, upload media, kiểm duyệt/report) và bộ kiểm thử
-sẽ dựng ở các PR tiếp theo theo [../docs/architecture/09-roadmap-and-branching.md](../docs/architecture/09-roadmap-and-branching.md).
+Toàn bộ 14 module backend (quản trị RBAC + 2FA, nội dung rooms/exhibits/media/upload-jobs, kiểm duyệt/báo cáo, nhật ký/thông báo, i18n, cổng đối tác, thống kê và health) đã triển khai kèm 104 file kiểm thử `*.spec.ts`. Xem sổ tay đầy đủ tại [../docs/architecture/be/README.md](../docs/architecture/be/README.md).
