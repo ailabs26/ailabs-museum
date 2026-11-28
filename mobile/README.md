@@ -48,9 +48,14 @@ mobile/
   app/                       expo-router (file-based)
     _layout.tsx              Stack gốc + providers
     (tabs)/                  Trang chủ · Phòng · Tìm kiếm · Cài đặt
-    room/[slug].tsx          nested stack (deep link /room/:slug)
+    room/[slug].tsx          nested stack (deep link /room/:slug) — phòng 3D
+    ar-exhibit.tsx           xem 1 hiện vật trong AR (?roomSlug&exhibitId)
+    glb-preview.tsx          xem thử 1 GLB
+    spike-3d.tsx, spike-ar.tsx  màn spike E6-01 / E9-01
     +not-found.tsx
   src/
+    features/scene3d/        3D engine: GLB pipeline, phòng 5 bục, điều hướng, va chạm, tầng chất lượng
+    features/ar/             AR: kiểm tra thiết bị, cầu nối Viro, đặt hiện vật, hotspot
     theme/                   design tokens + ThemeProvider (dark mode)
     components/layout/        Screen (SafeArea), AppHeader
     hooks/                   useReducedMotion
@@ -91,6 +96,25 @@ npx eas update --channel preview                      # OTA (MOB-E1-07)
 | MOB-E15-01..04 | Release & store | ⏳ cần tài khoản + build thật |
 | MOB-E6-07 | 2D fallback | ⏳ chờ 3D engine (TV4, MOB-E6) |
 | MOB-E9-04 | Thoát AR | ⏳ chờ AR (TV4, MOB-E9) |
+
+## Trạng thái task TV4 (3D & AR Engine)
+
+Tài liệu kỹ thuật: [`docs/architecture/mobile/`](../docs/architecture/mobile/README.md).
+
+| Task | Mô tả | Trạng thái |
+| --- | --- | --- |
+| MOB-E6-01 | Spike r3f/native + expo-gl, đo FPS | ✅ Merged · ⏳ đo 60 FPS trên máy thật |
+| MOB-E6-02 | Tải GLB + kiểm tra nhị phân + cache LRU | ✅ Merged |
+| MOB-E6-04 | Phòng 5 bục + nhiều hiện vật | ✅ Merged |
+| MOB-E6-05 | Camera cảm ứng | ✅ Merged |
+| MOB-E6-06 | Va chạm + tìm đường | ✅ Merged |
+| MOB-E6-08 | Tầng chất lượng theo thiết bị | ✅ Merged · ⚠️ `shadowMapSize`/`anisotropy`/`maxCacheBytes` chưa áp dụng |
+| MOB-E9-01 | Spike AR (Viro, ARKit/ARCore) | ✅ Merged · ⏳ cần EAS dev build trên máy thật |
+| MOB-E9-02 | Đặt hiện vật lên mặt phẳng + xoay/zoom | ✅ Merged · ⏳ kiểm chứng trên máy thật |
+| MOB-E9-03 | Hotspot overlay trong AR | ✅ Merged · ⏳ kiểm chứng chạm marker trên máy thật |
+
+Engine 3D/AR đã có trên `dev`, nên MOB-E6-07 và MOB-E9-04 của TV1 có thể bắt đầu — xem
+[hướng dẫn tích hợp](../docs/architecture/mobile/08-integration-guide.md).
 
 ## Chưa kiểm chứng (DoD gap)
 
