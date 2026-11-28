@@ -22,3 +22,37 @@
   - `GET /api/audit`: lọc theo `actorId`, `action`, `resourceType`, `resourceId`, khoảng thời gian và phân trang.
   - `GET /api/audit/export`: xuất tệp CSV (`audit-csv.util.ts` + `csv.util.ts` chống formula injection), trả kèm header `Content-Disposition` (đã mở trong CORS `exposedHeaders`).
   - `GET /api/audit/:id`: chi tiết 1 dòng nhật ký.
+
+## 2. Module Thông báo trong CMS (`NotificationsModule`)
+
+Phục vụ biểu tượng chuông thông báo theo từng tài khoản đăng nhập (không cần quyền RBAC riêng — chỉ cần JWT + phiên sống vì mọi truy vấn đều lọc cứng theo `userId = currentUser.id`).
+
+### Entity `Notification` (`notifications`)
+- Cột: `user_id` (`ON DELETE CASCADE`), `type` (`NotificationType`), `title` (`varchar(200)`), `body` (`text`, nullable), `link` (`varchar(300)`, đường dẫn điều hướng trong CMS), `read_at` (`timestamptz`, nullable), `created_at`.
+- Index tối ưu cho hộp thư và badge số chưa đọc: `IDX_notifications_user_created (user_id, created_at)` và partial index `IDX_notifications_user_unread (user_id) WHERE read_at IS NULL`.
+
+### 5 Loại sự kiện (`NotificationType`) & Cơ chế phát an toàn
+| `NotificationType` | Nguồn phát | Người nhận |
+|---|---|---|
+| `revision.submitted` | Editor gửi duyệt hiện vật | Tài khoản active có quyền duyệt (`revision:publish`) |
+| `revision.approved` | Moderator xuất bản revision | Biên tập viên tạo revision |
+| `revision.rejected` | Moderator từ chối revision | Biên tập viên tạo revision |
+| `report.created` | Khách gửi báo cáo vi phạm mới | Tài khoản active có quyền `report:resolve` |
+| `report.assigned` | Phân công xử lý báo cáo | Người được phân công (`assignedTo`) |
+
+Mọi lệnh phát thông báo đi qua hàm `safely()` trong `NotificationsService`: lỗi tạo thông báo chỉ ghi log cảnh báo, **không bao giờ làm rollback hay thất bại luồng nghiệp vụ chính** (như gửi duyệt hoặc gửi báo cáo công khai).
+
+### Endpoint (`NotificationsController` — `/api/notifications`)
+- `GET /api/notifications`: danh sách thông báo phân trang của chính người dùng.
+- `GET /api/notifications/unread-count`: trả `{ count }` cho badge chuông.
+- `POST /api/notifications/read-all`: đánh dấu toàn bộ đã đọc, trả `{ updated }`.
+- `PATCH /api/notifications/:id/read`: đánh dấu 1 thông báo đã đọc (`404` nếu không thuộc về mình).
+- `DELETE /api/notifications/:id`: xóa 1 thông báo thuộc về mình.
+
+```mermaid
+flowchart LR
+    Action["Sự kiện nghiệp vụ<br/>(Submit / Publish / Reject / Report)"] -->|thành công| Audit["AuditInterceptor<br/>ghi audit_logs (request_id)"]
+    Action -->|best-effort safely| Notif["NotificationsService<br/>tìm holders(permission)"]
+    Notif --> DBN["Bảng notifications<br/>(read_at = NULL)"]
+    CMS["CMS Bell UI"] -->|poll| Unread["GET /api/notifications/unread-count"]
+```
