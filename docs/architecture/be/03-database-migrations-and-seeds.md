@@ -34,3 +34,29 @@
 | 16 | `Translation` | `translations` | `translations` |
 | 17 | `PartnerApiKey` | `partner_api_keys` | `partner-api-keys` |
 | 18 | `Notification` | `notifications` | `notifications` |
+
+## 3. Lịch sử 13 Migration (`src/database/migrations/`)
+
+Toàn bộ lược đồ hiện tại được dựng tuần tự qua **13 file migration**:
+
+| # | Timestamp & Tên migration | Thay đổi chính |
+|---|---|---|
+| 1 | `1791483209234-AlignMuseumMvpSchema` | Khởi tạo extension (`uuid-ossp`, `citext`) và lược đồ nền MVP (rooms, exhibits, revisions, hotspots, media, users, roles, permissions, sessions, reports, audit) |
+| 2 | `1791948600000-ExtendMediaUploadPipeline` | Mở rộng bảng `media` cho pipeline kiểm tra định dạng, checksum, rights, alt text và xóa mềm |
+| 3 | `1792073130413-AddRevisionLocalizedMedia` | Thêm các cột media đa ngôn ngữ (`audio_en_media_id`, `subtitle_vi_media_id`, `subtitle_en_media_id`) và partial index trên `exhibit_revisions` |
+| 4 | `1792150000000-WidenHotspotLabel` | Mở rộng độ dài nhãn hotspot hỗ trợ mô tả đa ngôn ngữ/chi tiết hơn |
+| 5 | `1792943375524-AddRefreshSessionDeviceInfo` | Bổ sung thông tin thiết bị (`signed_in_at`, `user_agent`, `ip`) vào `refresh_sessions` cho quản lý phiên đăng nhập |
+| 6 | `1793033761577-SoftDeleteRoles` | Bổ sung `is_deleted`, `deleted_at` và partial unique index `UQ_roles_code_active` cho `roles` |
+| 7 | `1793300000000-AddTranslationsAndPartnerApiKeys` | Tạo bảng `translations` (CMS i18n) và `partner_api_keys` (tích hợp đối tác) |
+| 8 | `1793400000000-PartnerApiKeyRateLimitAndSoftDelete` | Thêm `rate_limit_per_minute`, `is_deleted`, `deleted_at` cho `partner_api_keys` |
+| 9 | `1793500000000-AuditNullableResourceAndClientInfo` | Cho phép `resource_id` nullable và bổ sung `ip`, `user_agent` vào `audit_logs` |
+| 10 | `1793600000000-AddNotifications` | Tạo bảng `notifications` kèm index `(user_id, created_at)` và partial index chưa đọc |
+| 11 | `1793700000000-AddTwoFactor` | Thêm các cột TOTP (`totp_enabled_at`, `totp_secret_enc`, `totp_pending_enc`, `totp_last_step`) vào `users` và tạo bảng `user_recovery_codes` |
+| 12 | `1793800000000-AddMediaUploadJobs` | Tạo bảng `media_upload_jobs` cho hàng đợi upload bất đồng bộ hỗ trợ `idempotency_key` |
+| 13 | `1793900000000-AddRoomTranslations` | Thêm cột JSONB `translations` cho bảng `rooms` |
+
+### Quy tắc an toàn migration
+
+- Chỉ người phụ trách database chạy `npm run migration:run` / `migration:revert` trên DB dùng chung.
+- Không sửa hoặc xóa file migration đã chạy; luôn tạo migration mới cho thay đổi tiếp theo.
+- Không chỉnh sửa thủ công bảng `public.migrations` do TypeORM quản lý.
