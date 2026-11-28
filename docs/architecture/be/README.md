@@ -59,6 +59,7 @@ AppModule
 | 07 | [07-exhibits-and-revisions.md](07-exhibits-and-revisions.md) | `Exhibit`/`ExhibitRevision`/`Hotspot`, 5 bục Gallery V1, `RevisionPublishGate`, 6 slot media, import/export và sitemap |
 | 08 | [08-media-and-upload-jobs.md](08-media-and-upload-jobs.md) | Kiểm định byte thực tế, Local/Supabase driver, phân phối ký HMAC/Range/304, dọn mồ côi và upload jobs bất đồng bộ |
 | 09 | [09-moderation-and-content-reports.md](09-moderation-and-content-reports.md) | Hàng chờ kiểm duyệt, diff đa ngôn ngữ, publish/reject/hide và quy trình báo cáo vi phạm (throttled) |
+| 10 | [10-audit-and-notifications.md](10-audit-and-notifications.md) | Nhật ký `@Audit`/`PermissionDeniedFilter`, xuất CSV và hệ thống thông báo chuông CMS |
 <!-- INDEX_ENTRIES -->
 
 ## Nguyên tắc kiến trúc cốt lõi
