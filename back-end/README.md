@@ -4,7 +4,7 @@ Backend cho bảo tàng WebXR (3D-WEB-03): **NestJS + TypeScript + PostgreSQL + 
 Gồm hai phần: **nội dung công khai** (chỉ đọc, phục vụ client) và **phân hệ quản trị hệ thống**
 (xác thực, RBAC, quản lý người dùng/vai trò/quyền, nhật ký) — nền cho các module CMS tiếp theo.
 
-Quy ước đặt tên và tổ chức code: [docs/coding-conventions.md](docs/coding-conventions.md).
+Quy ước đặt tên và tổ chức code: [../docs/architecture/be/coding-conventions.md](../docs/architecture/be/coding-conventions.md).
 Kiến trúc & chi tiết 14 module: [../docs/architecture/be/README.md](../docs/architecture/be/README.md), [../docs/architecture/](../docs/architecture/), [../docs/plans/admin-subsystem-plan.md](../docs/plans/admin-subsystem-plan.md).
 **Thành viên và AI agent đọc coding-conventions trước khi thêm code.**
 
