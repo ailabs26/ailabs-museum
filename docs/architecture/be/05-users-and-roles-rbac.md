@@ -55,3 +55,17 @@ Phân hệ RBAC tách rạch ròi giữa **định danh người dùng (`users`)
    - Thao tác `bulk-delete` và `bulk-restore` chạy nguyên tử qua `TransactionManager` để tránh trạng thái dở dang một phần, đồng thời kiểm tra xung đột `code` / `email` khi khôi phục.
 4. **Ẩn hoàn toàn dữ liệu nhạy cảm**:
    - Mọi phản hồi đi qua mapper sang `UserResponseDto`; `passwordHash`, `totpSecretEnc`, `totpPendingEnc`, `totpLastStep` không bao giờ xuất hiện trong JSON trả về.
+
+## 4. Sơ đồ mô hình RBAC và luồng kiểm quyền
+
+```mermaid
+flowchart LR
+    Req["HTTP Request + Bearer JWT"] --> Jwt["JwtAuthGuard<br/>Giải mã sub, sid, roles, permissions"]
+    Jwt --> Sess["ActiveSessionGuard<br/>isFamilyLive(sid)?"]
+    Sess -->|Không| E401["401 Unauthorized"]
+    Sess -->|Có| Perm["PermissionsGuard<br/>Đọc @Permissions(...)"]
+    Perm -->|Thiếu quyền| E403["PermissionDeniedException (403)<br/>-> PermissionDeniedFilter ghi access.denied"]
+    Perm -->|Đủ quyền| Svc["UsersService / RolesService"]
+    Svc -->|Cần role:assign nhưng thiếu| E403
+    Svc -->|Hợp lệ| Tx["TransactionManager<br/>Ghi DB + Thu hồi session nếu khóa/xóa"]
+```
