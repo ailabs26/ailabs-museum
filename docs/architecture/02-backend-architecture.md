@@ -1,5 +1,7 @@
 # 02 — Kiến trúc Backend (NestJS, Clean-inspired modular)
 
+> **Cập nhật đồng bộ với mã nguồn đang chạy trên `dev`:** Tài liệu này là bản thiết kế kiến trúc gốc. Trong triển khai thực tế, tầng hạ tầng dùng chung được gom vào `back-end/src/common/` (`CommonModule @Global`) và hệ thống đã mở rộng đủ **14 module nghiệp vụ** cùng **18 entity / 13 migration**. Xem bộ tài liệu chi tiết từng module tại **[be/README.md](be/README.md)**.
+
 ## 2.1 Triết lý
 
 Không bê nguyên 6 project như bản .NET (API/Application/Domain/Dto/Core/Repository) — với NestJS
@@ -201,3 +203,12 @@ app.enableCors({ origin: env.FRONTEND_ORIGIN, credentials: true });
 - Mỗi module export service của mình; module khác import module (không import service lẻ qua đường vòng).
 - Migration bắt buộc (không `synchronize: true` ở production). Seed 5 hiện vật mẫu trong `database/seeds`.
 - Mọi endpoint ghi/sửa của admin → tạo `AuditLog` (qua service hoặc interceptor audit).
+
+## 2.9 Đồng bộ trạng thái triển khai hiện tại (14 Module)
+
+So với khung ban đầu ở mục 2.2, `back-end/src/` hiện đã triển khai hoàn chỉnh:
+- **Hạ tầng `common/` (`CommonModule @Global`)**: gộp `repository/`, `database/`, `dto/`, `exceptions/`, `filters/`, `guards/`, `interceptors/`, `middleware/`, `rate-limit/`, `security/`, `constants/`, `enums/`, `types/`, `utils/`.
+- **Chuỗi bảo vệ toàn cục thực tế**: `RequestIdMiddleware` → `helmet` → `cookieParser` → `CORS` → `JwtAuthGuard` → `ActiveSessionGuard` → `PermissionsGuard` → `ValidationPipe` → `AuditInterceptor` → `ResponseInterceptor`; lỗi đi qua `PermissionDeniedFilter` rồi `AllExceptionsFilter`.
+- **14 module trong `src/modules/`**: `auth`, `users`, `roles`, `audit`, `rooms`, `exhibits`, `media`, `moderation`, `content-reports`, `notifications`, `translations`, `partner-api-keys`, `stats`, `health`.
+
+Xem tài liệu chi tiết từng module, bảng entity, danh sách endpoint và sơ đồ luồng tại [be/README.md](be/README.md).
