@@ -61,3 +61,17 @@ Vì `/auth/refresh` và `/auth/logout` là `@Public()` dùng httpOnly cookie, gu
   - `REFRESH_RATE_LIMIT_PER_IP` (mặc định 300/phút)
   - `REFRESH_RATE_LIMIT_INVALID_PER_IP` (mặc định 20/phút khi cookie thiếu/sai)
 - **`SessionsCleanupService`**: chạy định kỳ qua `@Cron` (`ScheduleModule`) để dọn các bản ghi `refresh_sessions` đã hết hạn/đã thu hồi lâu ngày, tránh phình bảng.
+
+## 4. Xác thực 2 lớp TOTP (`TwoFactorService`)
+
+Hệ thống hỗ trợ 2FA TOTP tùy chọn theo chuẩn **RFC 6238** (`otplib` + `qrcode`, `TOTP_ISSUER = 'Aura Museum'`, bước 30 giây, độ lệch cho phép ±1 bước):
+
+1. **Lưu trữ mật mã an toàn**:
+   - Cột `totp_secret_enc` và `totp_pending_enc` trên bảng `users` có `select: false` và được mã hóa **AES-256-GCM** qua `sealSecret`/`openSecret` với khóa `TOTP_ENCRYPTION_KEY`.
+   - `totp_last_step` (`bigint`, `select: false`) lưu bước TOTP gần nhất đã chấp nhận (`claimStep`) để **chống phát lại (replay attack)**: mỗi mã 6 chữ số chỉ dùng được đúng 1 lần trong cửa sổ 30 giây.
+2. **Quy trình bật 2FA**:
+   - `POST /api/auth/2fa/setup`: sinh secret 20 byte base32, lưu tạm vào `totp_pending_enc`, trả `otpauthUrl`, ảnh QR dạng PNG data URL (`qrDataUrl`) và `secret`.
+   - `POST /api/auth/2fa/enable`: xác minh mã 6 số đầu tiên; trong 1 transaction chuyển secret sang `totp_secret_enc`, đặt `totp_enabled_at`, sinh **10 mã khôi phục** (10 ký tự base32 dạng `xxxxx-xxxxx`, lưu hash SHA-256 tại bảng `user_recovery_codes`) và thu hồi các phiên thiết bị khác.
+3. **Mã khôi phục (`UserRecoveryCode`)**:
+   - Hàm `hashRecoveryCode()` loại khoảng trắng và dấu gạch ngang rồi lowercase trước khi băm SHA-256, nên người dùng nhập `ABCDE-FGHIJ` hay `abcdefghij` đều hợp lệ.
+   - Mỗi mã khôi phục dùng đúng 1 lần (đánh dấu đã dùng trong transaction).
