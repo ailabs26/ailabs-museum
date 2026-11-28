@@ -45,3 +45,36 @@ Hai module này đảm nhận khâu **kiểm soát chất lượng trước và 
 
 ### Chính sách giới hạn tần suất cấu hình động (VT-081)
 `ContentReportsModule` đăng ký `ThrottlerModule.forRootAsync()` đọc ngưỡng `reports.publicRateLimit` (`PUBLIC_REPORT_RATE_LIMIT`, mặc định **5 request / 60 giây**). Khi có báo cáo mới được tạo thành công, `NotificationsService` thông báo `report.created` cho nhóm quản trị có quyền `report:resolve`.
+
+## 3. Sơ đồ luồng Kiểm duyệt và Xử lý Báo cáo
+
+```mermaid
+sequenceDiagram
+    participant Ed as Editor
+    participant Mod as Moderator
+    participant API as ModerationService
+    participant Gate as RevisionPublishGate
+    participant DB as PostgreSQL (Tx)
+    participant Notif as NotificationsService
+
+    Ed->>API: POST /admin/exhibits/:id/submit-review
+    API->>Gate: assertPublishable (FOR SHARE media)
+    API->>DB: state = in_review
+    API->>Notif: Gửi revision.submitted cho moderator
+    Mod->>API: GET /moderation/revisions/:id/diff
+    Mod->>API: POST /revisions/:id/publish
+    API->>DB: Bắt đầu TransactionManager
+    API->>Gate: assertPublishable + assertSlotFree
+    API->>DB: state = approved, exhibit.published_revision_id = revId
+    API->>Notif: Gửi revision.approved cho Editor
+```
+
+```mermaid
+stateDiagram-v2
+    [*] --> open : POST /api/public/reports (ThrottlerGuard)
+    open --> reviewing : POST /api/reports/:id/assign
+    open --> resolved : POST /api/reports/:id/resolve
+    open --> dismissed : POST /api/reports/:id/dismiss
+    reviewing --> resolved : POST /api/reports/:id/resolve
+    reviewing --> dismissed : POST /api/reports/:id/dismiss
+```
