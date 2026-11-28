@@ -60,6 +60,7 @@ AppModule
 | 08 | [08-media-and-upload-jobs.md](08-media-and-upload-jobs.md) | Kiểm định byte thực tế, Local/Supabase driver, phân phối ký HMAC/Range/304, dọn mồ côi và upload jobs bất đồng bộ |
 | 09 | [09-moderation-and-content-reports.md](09-moderation-and-content-reports.md) | Hàng chờ kiểm duyệt, diff đa ngôn ngữ, publish/reject/hide và quy trình báo cáo vi phạm (throttled) |
 | 10 | [10-audit-and-notifications.md](10-audit-and-notifications.md) | Nhật ký `@Audit`/`PermissionDeniedFilter`, xuất CSV và hệ thống thông báo chuông CMS |
+| 11 | [11-translations-and-partner-api.md](11-translations-and-partner-api.md) | Hệ thống bản dịch 6 ngôn ngữ và cổng đối tác `/api/partner/v1/*` (SHA-256 key, scope, rate limit) |
 <!-- INDEX_ENTRIES -->
 
 ## Nguyên tắc kiến trúc cốt lõi
