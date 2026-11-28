@@ -37,3 +37,24 @@ Tất cả route quản trị đều yêu cầu quyền `media:upload`:
 - `PATCH /api/admin/media/:id` (`@Audit('media.update')` — cập nhật `altText`, `rights`, `license`…)
 - `DELETE /api/admin/media/:id`, `POST /api/admin/media/bulk-delete` (`@Audit('media.delete')`) — chặn xóa nếu còn revision tham chiếu (BR-21, `DeletionBlockedException`).
 - `POST /api/admin/media/bulk-restore` (`@Audit('media.restore')`).
+
+## 4. Phân phối tệp an toàn (`MediaDeliveryController`)
+
+Route `GET /media/uploads/:directory/:fileName` nằm **ngoài tiền tố `/api`** (cấu hình loại trừ trong `main.ts`), gắn `@Public()` + `@UseGuards(PublicRateLimitGuard)` với `@PublicRateBucketOf('media')` (3000 req/phút/IP).
+
+1. **Quyền truy cập tệp (`MediaDeliveryService.resolve`)**: chỉ trả tệp khi thỏa **một trong hai** điều kiện:
+   - Được một `ExhibitRevision` đang công khai hiện hành (`published_revision_id` của hiện vật visible trong phòng active) tham chiếu; HOẶC
+   - Có cặp query `?exp=<unix>&sig=<hmac>` hợp lệ được ký bằng `MEDIA_URL_SIGNING_SECRET` (`MediaUrlService`, hạn `MEDIA_SIGNED_URL_TTL_SECONDS = 900s`) cho chế độ Preview CMS.
+   - Mọi trường hợp khác trả `404` thống nhất để tránh lộ sự tồn tại của tệp nháp.
+2. **Header bảo mật & cache**:
+   - `Content-Type` lấy từ DB (riêng `subtitle` ép `text/vtt; charset=utf-8`), `Content-Disposition: inline`.
+   - `X-Content-Type-Options: nosniff`, `Content-Security-Policy: default-src 'none'; sandbox`, `Cross-Origin-Resource-Policy: cross-origin`.
+   - `ETag: "<checksumSha256>"`: trả `304 Not Modified` khi khớp `If-None-Match`.
+   - `Cache-Control: no-cache` (public) để Hide/Unpublish có hiệu lực ngay ở request kế tiếp (BR-22, AC-51); `private, no-store` cho URL ký xem trước.
+3. **Hỗ trợ `HEAD` và HTTP `Range` (`206 Partial Content`)**: phục vụ tua audio MP3 và tải GLB; dùng `node:stream.pipeline` và hủy stream nguồn nếu client đóng kết nối sớm để tránh unhandled upstream error từ Supabase.
+
+## 5. Cron dọn media mồ côi (`MediaCleanupService`)
+
+Chạy tự động lúc **03:30 hằng ngày** (`@Cron('30 3 * * *', { name: 'media-orphan-cleanup' })`), điều khiển bởi `MEDIA_ORPHAN_CLEANUP` (`off` | `dry-run` mặc định | `on`):
+1. **Dọn thùng rác quá hạn**: xóa vĩnh viễn các bản ghi `media` đã xóa mềm quá `MEDIA_TRASH_RETENTION_DAYS` (mặc định 30 ngày) và không còn revision nào tham chiếu, ghi audit `media.purge` (`actorId: null`) rồi xóa file trên storage.
+2. **Dọn file mồ côi trên storage**: xóa file khớp mẫu key do media quản lý nhưng không có bản ghi DB và cũ hơn 24 giờ (sót lại từ upload dở dang).
