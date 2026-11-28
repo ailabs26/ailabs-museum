@@ -1,8 +1,8 @@
 # Kiểm chứng MOB-E7-02
 
-Base `23825f585c6f345fb0981b35a0a851d06ab81bac` trên `origin/dev` đã chứa PR #229. Nhánh `feat/mob-e7-02-hotspot-markers`. Commit mã mới nhất được kiểm chứng là `d39cd7ed75eeac8b253f43dbde1e4190797a1db2`.
+Base `23825f585c6f345fb0981b35a0a851d06ab81bac` trên `origin/dev` đã chứa PR #229. Nhánh `feat/mob-e7-02-hotspot-markers`. Commit mã mới nhất được kiểm chứng là `c1dc551425d217e7ddefbacd8c150e4ebd7d2a42`.
 
-**Implementation hoàn tất. Kiểm chứng tự động PASS. NATIVE TOUCH NOT VERIFIED.** AC chạm marker trên thiết bị còn chờ xác nhận Android/iOS.
+**Implementation hoàn tất.** Kiểm tra tự động pass. Checklist GLB `MASK` của reviewer pass trên Android emulator. iOS chưa chạy, nên điều kiện nghiệm thu native trên cả hai nền tảng vẫn còn mở.
 
 ## Cập nhật sau review PR #231
 
@@ -14,7 +14,27 @@ Regression test tái hiện việc chạm qua lỗ của GLB `alphaMode: MASK` c
 | Chrome headless dùng WebGL | PASS cho lỗ alpha, vùng đục, texture transform trên UV1 và vertex alpha. Pass ngoài màn hình khôi phục render target và clear alpha. |
 | Full Jest, typecheck và lint | 232 PASS / 0 FAIL / 2 SKIP. Typecheck và lint PASS. |
 | Hermes Android và iOS qua Expo CLI | 3.602.680 và 3.604.020 byte. Cả hai dưới giới hạn 4.194.304 byte. |
-| Chạm native qua lỗ alpha trên Android và iOS | NOT RUN. Cần thiết bị hoặc emulator có dev build tương thích Viro. |
+| Chạm native qua lỗ alpha trên Android và iOS | Chưa chạy ở commit này. Kết quả Android trên mã mới xem bên dưới. |
+
+## Kiểm chứng Android sau review Expo GL
+
+Android QA phát hiện hai lỗi tải GLB. Expo Crypto cần `Uint8Array` để tính SHA-256 và Three r166 đọc `navigator.userAgent` lúc khởi tạo parser. Mã mới dùng typed array và bổ sung `userAgent` trong lúc khởi tạo parser trên React Native khi thuộc tính này vắng mặt. Cả hai ca có test hồi quy.
+
+Ở chế độ Cân bằng, lệnh đặt DPR thu nhỏ vùng render trong framebuffer Expo GL trong khi tọa độ tap vẫn theo toàn bộ vùng hiển thị. Gallery đã bỏ DPR cap và dùng kích thước framebuffer do R3F Native cung cấp để khớp hình với vị trí chạm ở các chế độ chất lượng.
+
+| Fixture tại `c1dc551` | Chạm qua lỗ | Chạm phần đục | Camera sau chọn |
+| --- | --- | --- | --- |
+| GLB `MASK` một lớp, Thấp | Chọn “Hiện vật phía sau” | Chọn “Tấm chắn MASK” | Kéo xoay được, reset về khung ban đầu và giữ lựa chọn |
+| GLB `MASK` tám lớp có lỗ thẳng hàng, Thấp và Cân bằng | Chọn “Hiện vật phía sau” ở cả hai chế độ | Chọn “Tấm chắn MASK” ở cả hai chế độ | Ở Cân bằng, kéo xoay được, reset về khung ban đầu và giữ lựa chọn |
+
+ADB gửi thao tác chạm và kéo vào app đang chạy. UIAutomator xác nhận hiện vật đang chọn và ảnh trước/sau xác nhận camera đổi khung hình. Chưa đo độ trễ của lượt đọc GPU trên đường xử lý tap. [Yêu cầu kiểm chứng Expo GL](https://github.com/ailabs26/ailabs-museum/pull/231#discussion_r4721157282)
+
+Hai fixture dùng cùng hình và alpha cutout, với một hoặc tám mặt trên cùng tia. Fixture một lớp có SHA-256 `d0cae195e53a06437ab91245f25cd8f5d69b422427a8ff38a77561f853015862`. Fixture tám lớp có SHA-256 `5aa0abb5956f13e779e52ca109eae44dd29f68691bc26b8427e741962ab7eb0d`. Script phục vụ fixture qua HTTP, hướng dẫn và ảnh gốc nằm trong `mobile/.expo/native-qa/` ở máy kiểm thử.
+
+| Kiểm tra tại `c1dc551` | Kết quả |
+| --- | --- |
+| `npm run typecheck`, `npm run lint` | PASS |
+| `npm test -- --ci --runInBand --roots src app` | 50 suite PASS, 1 suite SKIP. 234 PASS / 0 FAIL / 2 SKIP. Cảnh báo React và hai case thiếu fixture giống baseline. |
 
 ## Ma trận kiểm chứng
 
@@ -54,12 +74,14 @@ Expo CLI chạy offline với `EXPO_OFFLINE=1` và `EXPO_NO_TELEMETRY=1`. Kích 
 
 ## Android/iOS
 
-| OS | Thiết bị và build | SHA dự kiến | Kết quả |
+| OS | Thiết bị và build | SHA mã cần kiểm chứng | Kết quả |
 | --- | --- | --- | --- |
-| Android | Máy Windows thiếu Android SDK, `adb` và emulator khả dụng. | `d39cd7e` | NOT RUN |
-| iOS | Máy Windows thiếu Xcode, simulator và dev build iOS khả dụng. | `d39cd7e` | NOT RUN |
+| Android | LDPlayer 9, Android 9, model GM1900. APK debug ARM64 có Viro 2.43.3 và Expo GL 15.0.5, tải mã qua Metro. | `c1dc551` | PASS cho checklist GLB `MASK` một và tám lớp. |
+| iOS | Chưa có iPhone hoặc iOS Simulator kèm dev build khả dụng. | `c1dc551` | NOT RUN |
 
-Dùng dev build tương thích Viro. Ghi OS, model, loại build, SHA, kết quả thực tế và ảnh/video nếu có.
+Bản sao Android QA dùng ba ảnh launcher/splash tạm vì checkout thiếu các file cấu hình tham chiếu. Bản sao cài `expo-font@13.0.4` tương thích Expo SDK 52 vì lockfile hiện lấy `58.0.12` và Gradle dừng ở `expo-module-gradle-plugin`. X86_64 không chạy được vì Viro 2.43.3 thiếu `libviro_renderer.so` cho ABI đó.
+
+Checklist native đầy đủ để chạy khi có thiết bị phù hợp:
 
 | Kịch bản trên thiết bị | Kỳ vọng |
 | --- | --- |
@@ -88,5 +110,8 @@ Dùng dev build tương thích Viro. Ghi OS, model, loại build, SHA, kết qu�
 | `59b0a5a` | `feat(mob): connect gallery hotspot selection [MOB-E7-02]` | Marker theo layout/model, lifecycle và nút 2D dùng chung selection | `room/[slug].tsx`, `ArtifactHotspot3D.tsx`, `GalleryRoomComponents.tsx`, `GalleryRoomView.tsx`, `GalleryRoomView.test.tsx` | Hotspot 13, gallery 8, navigation 7, typecheck, lint | Committed |
 | `aedefc2` | `docs(mob): record hotspot interaction verification [MOB-E7-02]` | Kết quả, native checklist và contract bàn giao | `verification.md` | Full Jest, Hermes budget và diff check | Committed |
 | `d39cd7e` | `fix(mob): respect GLB alpha masks when picking hotspots [MOB-E7-02]` | Raycast nhận diện vùng bị cắt alpha theo shader | `GalleryRoomView.tsx`, `galleryAlphaProbe.ts`, `galleryPicking.ts`, `galleryPicking.test.ts` | Jest hồi quy, Chrome WebGL, full Jest, typecheck, lint và Hermes budget | Committed |
+| `f6cab6a` | `docs(mob): record alpha mask review verification [MOB-E7-02]` | Ghi kết quả kiểm chứng alpha mask trước lượt QA Expo GL | `verification.md` | Jest, Chrome WebGL và Hermes budget | Committed |
+| `7f69ac8` | `fix(mob): load GLB models on React Native [MOB-E7-02]` | Tương thích SHA-256 native và khởi tạo GLTFLoader | `glbLoader.ts`, `glbLoader.integration.test.ts` | 9 test loader và GLB thật qua HTTP trên Android | Committed |
+| `c1dc551` | `fix(mob): align gallery rendering with touch viewport [MOB-E7-02]` | Đồng bộ viewport render với tọa độ chạm | `GalleryRoomView.tsx`, `GalleryRoomView.test.tsx`, `performanceTier.ts`, `performanceTier.test.ts` | Android GLB một/tám lớp, full Jest, typecheck và lint | Committed |
 
-Tách marker và routing để mỗi commit có test độc lập. Gộp layout, authored selection và nút 2D vì chúng chia sẻ dữ liệu và handler. PR #231 vào `dev` đang ở trạng thái Ready for review. [PR #231](https://github.com/ailabs26/ailabs-museum/pull/231)
+Tách marker và routing để mỗi commit có test độc lập. Gộp layout, authored selection và nút 2D vì chúng chia sẻ dữ liệu và handler. Tách sửa loader và viewport vì mỗi lớp có nguyên nhân và kiểm chứng riêng. PR #231 vào `dev` đang mở. [PR #231](https://github.com/ailabs26/ailabs-museum/pull/231)
